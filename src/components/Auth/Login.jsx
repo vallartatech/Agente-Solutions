@@ -42,10 +42,10 @@ const LoginAgente = () => {
   // 1. AUTO-LOGIN: Si ya existe sesión, redirigir según el rol
   useEffect(() => {
     if (user) {
-      if (user.role_id === 0 || user.role_id === 4 || user.role_id === 5) navigate("/VistaRoot"); // Root o Autónomo
-      else if (user.role_id === 1) navigate("/VistaAdmin");
-      else if (user.role_id === 2) navigate("/VistaTecnico");
-      else if (user.role_id === 3) navigate("/propiedades");
+      const role = Number(user.role_id);
+      if ([0, 1, 4, 5, 6, 7].includes(role)) navigate("/VistaRoot");
+      else if (role === 2 || role === 8) navigate("/VistaTecnico");
+      else if (role === 3) navigate("/propiedades");
     }
   }, [user, navigate]);
 
@@ -125,7 +125,7 @@ const handleLogin = async (e) => {
         setTimeout(() => navigate("/VistaRoot"), 1000);
       } else if (roleNum === 1) {
         setMensaje(`¡Bienvenido ADMIN ${first_name}! Entrando al panel administrativo...`);
-        setTimeout(() => navigate("/VistaAdmin"), 1000);
+        setTimeout(() => navigate("/VistaRoot"), 1000);
       } else if (roleNum === 2) {
         setMensaje(`¡Bienvenido TÉCNICO INTERNO ${first_name}! Abriendo tu panel de trabajo...`);
         setTimeout(() => navigate("/VistaTecnico"), 1000);
