@@ -38,7 +38,7 @@ const TrabajoPropiedad = () => {
     }
   })();
   const effectiveRole = Number(user?.role_id ?? storedUser?.role_id ?? 0);
-  const isTecnicoRed = effectiveRole === 8 || user?.role_id === 8 || user?.role_id === '8' || storedUser?.role_id === 8 || Boolean(data?.is_from_network) || Boolean(data?.is_network_service) || Boolean(data?.network_quotes && data?.network_quotes.length > 0);
+  const isTecnicoRed = effectiveRole === 8 || user?.role_id === 8 || user?.role_id === '8' || storedUser?.role_id === 8;
   const puedeIniciarReporte = isTecnicoRed || materialesConfirmados;
 
   // --- ESTADOS PARA CONSULTA DE LEVANTAMIENTO ---
@@ -153,9 +153,8 @@ const TrabajoPropiedad = () => {
       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones`);
       const allQuotes = res.data.data || res.data;
       const found = allQuotes.find(q => 
-        ((isWorkOrder && q.work_order_id === parseInt(realId)) || 
-        (!isWorkOrder && q.service_id === parseInt(realId))) &&
-        q.created_by_role === 'Técnico'
+        (isWorkOrder && parseInt(q.work_order_id) === parseInt(realId)) || 
+        (!isWorkOrder && parseInt(q.service_id) === parseInt(realId))
       );
       if (found) {
         setCotizacionExistente(found);
@@ -717,7 +716,12 @@ const TrabajoPropiedad = () => {
 
                 <button className="tp-btn-consult variant-quote" onClick={handleAbrirCotizacion}>
                   <Calculator size={18} />
-                  <span>{(isTecnicoRed || cotizacionExistente || (data?.network_quotes && data.network_quotes.length > 0)) ? 'VER COTIZACIÓN' : 'COTIZAR TRABAJO'}</span>
+                  <span>
+                    {isTecnicoRed 
+                      ? (data?.network_quotes && data.network_quotes.length > 0 ? 'VER PROPUESTAS' : 'COTIZACIÓN RED') 
+                      : (cotizacionExistente ? 'VER / EDITAR COTIZACIÓN' : 'COTIZAR TRABAJO')
+                    }
+                  </span>
                 </button>
 
                 <div className="tp-divider-mini"></div>
@@ -1203,14 +1207,14 @@ const TrabajoPropiedad = () => {
         )}
       </AnimatePresence>
 
-      {showModalCotizacion && (
+      {showModalCotizacion && !isTecnicoRed && (
         <ModalCrearCotizacion
-          workOrderId={id.includes('work_order') ? id.split('-')[1] : null}
-          serviceId={!id.includes('work_order') ? (id.includes('-') ? id.split('-')[1] : id) : null}
+          workOrderId={data?.tipo_registro === 'work_order' || id.includes('work_order') ? getRealId(id) : null}
+          serviceId={data?.tipo_registro !== 'work_order' && !id.includes('work_order') ? getRealId(id) : null}
           cotizacionExistente={cotizacionExistente}
           onClose={() => setShowModalCotizacion(false)}
-          onSuccess={(data) => {
-            setCotizacionExistente(data.cotizacion || data);
+          onSuccess={(resData) => {
+            setCotizacionExistente(resData.cotizacion || resData);
             checkExistingQuote();
           }}
         />
@@ -1274,8 +1278,8 @@ const TrabajoPropiedad = () => {
         </div>
       )}
 
-      {/* ─── MODAL PARA VER COTIZACIÓN / PROPUESTAS EN EL MAPA ─── */}
-      {showModalCotizacion && (
+      {/* ─── MODAL PARA VER COTIZACIÓN / PROPUESTAS EN EL MAPA (SOLO TÉCNICO DE LA RED) ─── */}
+      {showModalCotizacion && isTecnicoRed && (
         <div className="mercado-modal-overlay" onClick={() => setShowModalCotizacion(false)}>
           <div className="mercado-premium-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px' }}>
             <div className="mercado-premium-header">
