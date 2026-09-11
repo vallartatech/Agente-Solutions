@@ -446,9 +446,17 @@ const TrabajoPropiedad = () => {
   };
 
   const openInGoogleMaps = () => {
-    if (data?.coordenadas) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${data.coordenadas}`, '_blank');
+    const coords = data?.coordenadas || data?.coordinates;
+    if (coords && typeof coords === 'string' && coords.trim() !== '' && coords.trim() !== 'null') {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coords.trim())}`, '_blank');
+      return;
     }
+    const dir = data?.address || data?.direccion;
+    if (dir && typeof dir === 'string' && dir.trim() !== '' && dir.trim() !== 'null') {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dir.trim())}`, '_blank');
+      return;
+    }
+    alert("Esta propiedad no tiene coordenadas ni dirección registradas.");
   };
 
   const checklistObj = data?.custom_checklist 

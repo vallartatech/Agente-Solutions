@@ -43,11 +43,20 @@ const TrabajosAsignados = () => {
     }
   };
 
-  const abrirMapa = (coords) => {
-    if (!coords)
-      return alert("Esta propiedad no tiene coordenadas registradas.");
-    const url = `https://www.google.com/maps?q=${coords}`;
-    window.open(url, "_blank");
+  const abrirMapa = (coords, direccion) => {
+    const coordenadasValidas = coords && typeof coords === 'string' && coords.trim() !== '' && coords.trim() !== 'null';
+    if (coordenadasValidas) {
+      const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coords.trim())}`;
+      window.open(url, "_blank");
+      return;
+    }
+    const direccionValida = direccion && typeof direccion === 'string' && direccion.trim() !== '' && direccion.trim() !== 'null';
+    if (direccionValida) {
+      const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccion.trim())}`;
+      window.open(url, "_blank");
+      return;
+    }
+    alert("Esta propiedad no tiene coordenadas ni dirección registradas.");
   };
 
   const verDetalle = (servicio) => {
@@ -147,7 +156,7 @@ const TrabajosAsignados = () => {
                           <button
                             className="btn-action map"
                             title="Ver en Google Maps"
-                            onClick={() => abrirMapa(s.coordinates)}
+                            onClick={() => abrirMapa(s.coordinates || s.coordenadas, s.address)}
                           >
                             <MapPin size={18} />
                             <span>Mapa</span>
@@ -285,6 +294,29 @@ const TrabajosAsignados = () => {
                     <div className="info-content">
                       <label>Dirección Completa</label>
                       <p>{detalleServicio.address}</p>
+                      {(detalleServicio.coordinates || detalleServicio.coordenadas) && (
+                        <p style={{ fontSize: '0.8rem', color: '#9CA3AF', marginTop: '3px' }}>
+                          📍 Coordenadas: <strong style={{ color: '#E5E7EB' }}>{detalleServicio.coordinates || detalleServicio.coordenadas}</strong>
+                        </p>
+                      )}
+                      <button
+                        onClick={() => abrirMapa(detalleServicio.coordinates || detalleServicio.coordenadas, detalleServicio.address)}
+                        style={{
+                          marginTop: '6px',
+                          background: 'none',
+                          border: 'none',
+                          color: '#FF6600',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: 0,
+                          fontSize: '0.85rem'
+                        }}
+                      >
+                        <MapPin size={14} /> Abrir en Google Maps
+                      </button>
                     </div>
                   </div>
 
