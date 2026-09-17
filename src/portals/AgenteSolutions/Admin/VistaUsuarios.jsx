@@ -8,7 +8,53 @@ import Header from "../../../components/Shared/Header";
 import RegisterModal from "../../../components/Auth/Register";
 import "../../../styles/AgenteSolutions/Admin/VistaUsuarios.css";
 
-const MAPA_ROLES = { 0: "ROOT", 1: "ADMIN", 2: "TECNICO", 3: "CLIENTE", 4: "AUTONOMO EMP.", 5: "AUTONOMO PER." };
+const MAPA_ROLES = { 
+  0: "ROOT", 
+  1: "ADMIN", 
+  2: "TECNICO", 
+  3: "CLIENTE", 
+  4: "AUTONOMO EMP.", 
+  5: "AUTONOMO PER.",
+  6: "CONTRATISTA",
+  7: "ADMIN. PROP.",
+  8: "TECNICO RED"
+};
+
+const OPCIONES_ROLES = [
+  { id: 1, label: "ADMIN (GLOBAL)" },
+  { id: 7, label: "ADMIN. PROPIEDADES" },
+  { id: 2, label: "TÉCNICO" },
+  { id: 3, label: "CLIENTE" },
+  { id: 4, label: "AUT. EMPRESARIAL ($999)" },
+  { id: 5, label: "AUT. PERSONAL ($499)" },
+  { id: 6, label: "CONTRATISTA" },
+  { id: 8, label: "TÉCNICO DE LA RED" }
+];
+
+const getRoleStyle = (roleId) => {
+  switch (Number(roleId)) {
+    case 0:
+      return { backgroundColor: '#ffd700', color: '#000000', border: '1px solid #e5c100' };
+    case 1:
+      return { backgroundColor: '#ff8800', color: '#ffffff', border: '1px solid #e67a00' };
+    case 7:
+      return { backgroundColor: '#d97706', color: '#ffffff', border: '1px solid #b45309' };
+    case 2:
+      return { backgroundColor: '#0284c7', color: '#ffffff', border: '1px solid #0369a1' };
+    case 3:
+      return { backgroundColor: '#16a34a', color: '#ffffff', border: '1px solid #15803d' };
+    case 4:
+      return { backgroundColor: '#8b5cf6', color: '#ffffff', border: '1px solid #7c3aed' };
+    case 5:
+      return { backgroundColor: '#f26522', color: '#ffffff', border: '1px solid #ea580c' };
+    case 6:
+      return { backgroundColor: '#0d9488', color: '#ffffff', border: '1px solid #0f766e' };
+    case 8:
+      return { backgroundColor: '#06b6d4', color: '#ffffff', border: '1px solid #0891b2' };
+    default:
+      return { backgroundColor: '#64748b', color: '#ffffff', border: '1px solid #475569' };
+  }
+};
 
 const CATEGORIAS = [
   { label: "TODOS", icon: "👥" },
@@ -224,11 +270,11 @@ const VistaUsuarios = () => {
 
                     <td 
                       data-label="Nombre"
-                      className={u.rol === "CLIENTE" || u.rol === "TECNICO" ? "clickable-name" : ""} 
+                      className={u.role_id === 3 || u.role_id === 2 || u.role_id === 8 ? "clickable-name" : ""} 
                       onClick={() => {
-                        if (u.rol === "CLIENTE") {
+                        if (u.role_id === 3) {
                           navigate("/detalle-cliente", { state: { cliente: u } });
-                        } if (u.rol === "TECNICO") {
+                        } else if (u.role_id === 2 || u.role_id === 8) {
                           navigate("/detalle-tecnico", { state: { tecnico: u } });
                         }
                       }}
@@ -240,42 +286,23 @@ const VistaUsuarios = () => {
 
                     <td data-label="Rol">
                       {u.role_id === 0 ? (
-                        <span className="badge-rol root">ROOT</span>
-                      ) : isRoot ? (
-                        <select 
-                          className={`badge-rol select-rol-inline`}
-                          style={{ backgroundColor: u.role_id === 4 || u.role_id === 5 ? '#f26522' : '#3b82f6', color: '#fff', fontWeight: 'bold' }}
-                          value={u.role_id}
-                          onChange={(e) => cambiarRol(u.id, parseInt(e.target.value), u.nombre)}
-                        >
-                          <option value="1">ADMIN (GLOBAL)</option>
-                          <option value="7">ADMIN. PROPIEDADES</option>
-                          <option value="2">TÉCNICO</option>
-                          <option value="3">CLIENTE</option>
-                          <option value="4">AUT. EMPRESARIAL ($999)</option>
-                          <option value="5">AUT. PERSONAL ($499)</option>
-                        </select>
-                      ) : u.role_id === 4 ? (
-                        <span className="badge-rol autonomo">AUT. EMPRESARIAL</span>
-                      ) : u.role_id === 5 ? (
-                        <span className="badge-rol autonomo">AUT. PERSONAL</span>
-                      ) : (user?.role_id === 7 || u.id === user?.id) ? (
-                        <span className={`badge-rol ${u.role_id === 7 ? 'admin' : typeof u.rol === 'string' ? u.rol.toLowerCase() : ''}`}>
-                          {u.role_id === 1 ? 'ADMIN (GLOBAL)' :
-                           u.role_id === 7 ? 'ADMIN. PROPIEDADES' :
-                           u.role_id === 2 ? 'TÉCNICO' :
-                           u.role_id === 3 ? 'CLIENTE' : 'DESCONOCIDO'}
-                        </span>
+                        <span className="badge-rol root" style={getRoleStyle(0)}>ROOT</span>
                       ) : (
                         <select 
-                          className={`badge-rol ${typeof u.rol === 'string' ? u.rol.toLowerCase() : ''} select-rol-inline`}
+                          className="badge-rol select-rol-inline"
+                          style={{
+                            ...getRoleStyle(u.role_id),
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
                           value={u.role_id}
                           onChange={(e) => cambiarRol(u.id, parseInt(e.target.value), u.nombre)}
                         >
-                          <option value="1">ADMIN (GLOBAL)</option>
-                          <option value="7">ADMIN. PROPIEDADES</option>
-                          <option value="2">TÉCNICO</option>
-                          <option value="3">CLIENTE</option>
+                          {OPCIONES_ROLES.map((op) => (
+                            <option key={op.id} value={op.id} style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>
+                              {op.label}
+                            </option>
+                          ))}
                         </select>
                       )}
                     </td>
@@ -294,7 +321,7 @@ const VistaUsuarios = () => {
                     </td>
 
                     <td data-label="Acciones" className="actions-cell">
-                      {u.role_id === 0 || ((u.role_id === 4 || u.role_id === 5) && !isRoot) ? (
+                      {u.role_id === 0 ? (
                         <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           🔒 Protegido
                         </span>

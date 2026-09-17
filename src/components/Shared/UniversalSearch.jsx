@@ -14,12 +14,19 @@ const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, typ
         if (filtroActual === "TODOS") {
           coincideFiltro = true;
         } else if (filtroActual === "AUTONOMOS") {
-          coincideFiltro = item.role_id === 4 || item.role_id === 5 || (typeof item.rol === 'string' && item.rol.includes("AUTONOMO"));
+          coincideFiltro = item.role_id === 4 || item.role_id === 5 || item.role_id === 6 || (typeof item.rol === 'string' && item.rol.includes("AUTONOMO"));
+        } else if (filtroActual === "ADMINS") {
+          coincideFiltro = item.role_id === 1 || item.role_id === 7 || (typeof item.rol === 'string' && item.rol.includes("ADMIN"));
+        } else if (filtroActual === "TECNICOS") {
+          coincideFiltro = item.role_id === 2 || item.role_id === 8 || (typeof item.rol === 'string' && item.rol.includes("TECNICO"));
+        } else if (filtroActual === "CLIENTES") {
+          coincideFiltro = item.role_id === 3 || (typeof item.rol === 'string' && item.rol.includes("CLIENTE"));
+        } else if (filtroActual === "ROOTS") {
+          coincideFiltro = item.role_id === 0 || item.rol === "ROOT";
         } else {
-          const rolBuscado = filtroActual === "ROOTS" ? "ROOT" : filtroActual.replace("S", "");
+          const rolBuscado = filtroActual.replace("S", "");
           coincideFiltro = item.rol === rolBuscado;
         }
-        
       } else if (type === 'PROPIEDADES') {
         coincideFiltro = filtroActual === "TODAS" || item.tipo === filtroActual;
         
