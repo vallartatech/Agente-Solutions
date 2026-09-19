@@ -20,6 +20,8 @@ import { useNavigate } from "react-router-dom";
 import Header from "../../../components/Shared/Header";
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosAsignados.css";
 
+//Esto es un cambio//
+
 const TrabajosAsignados = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
