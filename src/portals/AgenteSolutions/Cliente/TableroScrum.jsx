@@ -50,7 +50,14 @@ const TableroScrum = () => {
         tecnico: item.tecnico_nombre || 'Pendiente de asignar',
         fechaInicio: new Date(item.created_at).toLocaleDateString(),
         estado: estado,
-        descripcion: item.description,
+        descripcion: (() => {
+          let d = item.description || '';
+          d = d.replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '').trim();
+          if (d.includes('[EQUIPO AFECTADO]:')) {
+            d = d.split('[EQUIPO AFECTADO]:')[0].trim();
+          }
+          return d;
+        })(),
         scheduledAt: item.scheduled_at,
         evidencias: item.evidence_path ? [`http://127.0.0.1:8000/storage/${item.evidence_path}`] : []
       };

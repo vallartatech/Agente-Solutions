@@ -1144,6 +1144,8 @@ const DetallePropiedad = () => {
                               if (cleanCardDesc.includes('[EQUIPO AFECTADO]:')) {
                                 cleanCardDesc = cleanCardDesc.split('[EQUIPO AFECTADO]:')[0].trim();
                               }
+                              // Quitar prefijo de lote tipo [LOTE-XXXX] (1/1)
+                              cleanCardDesc = cleanCardDesc.replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '').trim();
 
                               return (
                                 <>
@@ -1979,6 +1981,9 @@ const DetallePropiedad = () => {
                 } else if (cleanDesc) {
                   problema = cleanDesc;
                 }
+
+                // Limpiar prefijo de lote tipo [LOTE-XXXX] (1/1) para que solo quede la sintaxis del problema
+                problema = problema.replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '').trim() || problema;
 
                 // Cálculo robusto del banner de 2da visita
                 const fullTaskDesc = (

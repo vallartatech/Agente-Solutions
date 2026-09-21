@@ -549,7 +549,7 @@ const TrabajoPropiedad = () => {
 
                   if (cleanDesc.includes('[EQUIPO AFECTADO]:')) {
                     const parts = cleanDesc.split('[EQUIPO AFECTADO]:');
-                    const problema = parts[0].trim();
+                    const problema = parts[0].trim().replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '').trim();
                     const equipo = parts[1].trim();
 
                     return (

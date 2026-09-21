@@ -210,7 +210,9 @@ const VistaDetallePropiedad = () => {
         const descBase = item.equipo 
           ? `${item.descripcion}\n\n[EQUIPO AFECTADO]: ${item.equipo}`
           : item.descripcion;
-        const descFinal = `[${loteId}] (${index + 1}/${total})\n${descBase}`;
+        const descFinal = total > 1
+          ? `[${loteId}] (${index + 1}/${total})\n${descBase}`
+          : descBase;
         
         formData.append('description', descFinal);
         if (total > 1) {

@@ -80,6 +80,7 @@ const VistaServiciosAdmin = () => {
       } else if (item.item_affected || item.equipo_afectado || item.affected_item || item.equipment) {
         equipoAfectado = item.item_affected || item.equipo_afectado || item.affected_item || item.equipment;
       }
+      problemaDetalle = problemaDetalle.replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '').trim() || problemaDetalle;
 
       const fechaHoraSolicitud = item.created_at 
         ? new Date(item.created_at).toLocaleString('es-MX', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true })
@@ -938,6 +939,7 @@ const VistaServiciosAdmin = () => {
                       if (cleanModalDesc.includes('[EQUIPO AFECTADO]:')) {
                         cleanModalDesc = cleanModalDesc.split('[EQUIPO AFECTADO]:')[0].trim();
                       }
+                      cleanModalDesc = cleanModalDesc.replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '').trim();
 
                       const is2daReq = 
                         activeTask.status === 'Segunda Visita Solicitada' || 
