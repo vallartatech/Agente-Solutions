@@ -2,24 +2,24 @@
    CONTENEDOR BASE Y LAYOUT
    ============================================= */
 .view-container {
-  padding: 30px 20px;
+  padding: 20px 30px;
   background-color: #fcfcfc;
   width: 100%;
   max-width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   box-sizing: border-box;
   overflow-x: hidden;
 }
 
 .main-layout-detail {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: 1.25fr 0.75fr;
   gap: 30px;
-  max-width: 1200px;
+  max-width: 100%;
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
   align-items: start;
   box-sizing: border-box;
   min-width: 0; /* Evita que el grid desborde */
@@ -107,7 +107,7 @@
    ============================================= */
 .hero-section-compact {
   width: 100%;
-  height: 350px;
+  height: 420px;
   border-radius: 25px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0,0,0,0.08);
@@ -419,7 +419,7 @@
 .property-id-header {
   margin-bottom: 15px;
   display: flex;
-  justify-content: center; /* Centramos el botón */
+  justify-content: flex-start; /* Centramos el botón */
 }
 
 .btn-id-profile {
@@ -1164,7 +1164,8 @@
    ============================================= */
 @media (min-width: 1200px) {
   .main-layout-detail {
-    max-width: 1400px;
+    max-width: 100%;
+    grid-template-columns: 1.25fr 0.75fr;
     gap: 40px;
   }
 
@@ -1217,7 +1218,8 @@
    ============================================= */
 @media (min-width: 1600px) {
   .main-layout-detail {
-    max-width: 1600px;
+    max-width: 100%;
+    grid-template-columns: 1.25fr 0.75fr;
     gap: 50px;
   }
 
