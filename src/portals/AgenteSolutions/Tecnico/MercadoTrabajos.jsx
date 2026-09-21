@@ -32,6 +32,7 @@ const MercadoTrabajos = () => {
   const [networkJobs, setNetworkJobs] = useState([]);
   const [quotePrice, setQuotePrice] = useState('');
   const [quoteMessage, setQuoteMessage] = useState('');
+  const [quoteStep, setQuoteStep] = useState(1);
   const [activePhoto, setActivePhoto] = useState(null);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -125,6 +126,7 @@ const MercadoTrabajos = () => {
     setQuotePrice(job.myQuote ? job.myQuote.price : '');
     setQuoteMessage(job.myQuote ? job.myQuote.message : '');
     setActivePhoto(job.fotos?.[0] || job.foto || null);
+    setQuoteStep(1);
     setShowQuoteModal(true);
   };
 
@@ -274,181 +276,224 @@ const MercadoTrabajos = () => {
         </div>
       </div>
 
-      {/* ─── Modal para Cotizar ─── */}
+      {/* ─── Modal para Cotizar en 2 Pasos (Responsivo) ─── */}
       {showQuoteModal && selectedJob && (
         <div className="mercado-modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowQuoteModal(false)}>
           <div className="mercado-premium-modal">
-            <div className="mercado-premium-header">
-              <h2>💼 Cotizar Trabajo</h2>
-              <span className="mercado-modal-close" onClick={() => setShowQuoteModal(false)}>×</span>
-            </div>
+            
+            {/* ══════════════════════════════════════════════════
+                PASO 1: DETALLES DEL TRABAJO
+            ══════════════════════════════════════════════════ */}
+            {quoteStep === 1 && (
+              <>
+                <div className="mercado-premium-header">
+                  <h2>💼 Detalle del Trabajo</h2>
+                  <span className="mercado-modal-close" onClick={() => setShowQuoteModal(false)}>×</span>
+                </div>
 
-            <div className="mercado-premium-body">
-              {/* Left panel: Info & Photo Gallery */}
-              <div className="mercado-premium-details">
-                {activePhoto ? (
-                  <div className="mercado-photo-gallery">
-                    <div
-                      className="mercado-premium-image-wrapper"
-                      onClick={() => setIsPhotoZoomed(true)}
-                      title="Clic para ampliar imagen"
-                    >
-                      <img src={activePhoto} alt="Evidencia" className="mercado-premium-image" />
-                      <div className="mercado-image-zoom-badge">
-                        <Maximize2 size={12} /> Clic para ampliar foto
+                <div className="mercado-premium-body">
+                  <div className="mercado-premium-details" style={{ width: '100%', borderRight: 'none' }}>
+                    {/* Galería de Fotos */}
+                    {activePhoto ? (
+                      <div className="mercado-photo-gallery">
+                        <div
+                          className="mercado-premium-image-wrapper"
+                          onClick={() => setIsPhotoZoomed(true)}
+                          title="Clic para ampliar imagen"
+                        >
+                          <img src={activePhoto} alt="Evidencia" className="mercado-premium-image" />
+                          <div className="mercado-image-zoom-badge">
+                            <Maximize2 size={12} /> Clic para ampliar foto
+                          </div>
+                        </div>
+
+                        {selectedJob.fotos && selectedJob.fotos.length > 1 && (
+                          <div className="mercado-thumbnails-row">
+                            {selectedJob.fotos.map((f, idx) => (
+                              <div
+                                key={idx}
+                                className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
+                                onClick={() => setActivePhoto(f)}
+                              >
+                                <img src={f} alt={`Evidencia ${idx + 1}`} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="mercado-no-photo-placeholder">
+                        <ImageIcon size={36} color="#94a3b8" />
+                        <span>Sin fotografías de evidencia</span>
+                      </div>
+                    )}
+
+                    {/* Información del Trabajo */}
+                    <div className="mercado-premium-text">
+                      <h3>{selectedJob.titulo}</h3>
+                      <div className="mercado-premium-info-grid">
+                        <div className="mercado-info-item full-width" style={{ background: '#fff7ed', border: '1.5px solid #fed7aa' }}>
+                          <MapPin size={18} color="#ea580c" style={{ marginTop: '2px', flexShrink: 0 }} />
+                          <div>
+                            <strong style={{ color: '#ea580c' }}>Zona / Área de Cobertura</strong>
+                            <span style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>{selectedJob.zona}</span>
+                            <div style={{ fontSize: '11px', color: '#9a3412', marginTop: '3px' }}>
+                              🔒 La dirección exacta de la casa se te revelará en tu panel de TRABAJOS al ser aceptada tu cotización.
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mercado-info-item">
+                          <User size={14} className="mercado-icon-blue" />
+                          <div><strong>Cliente</strong><span>{selectedJob.cliente}</span></div>
+                        </div>
+
+                        <div className="mercado-info-item">
+                          <Clock size={14} className="mercado-icon-blue" />
+                          <div><strong>Publicado</strong><span>{selectedJob.fecha}</span></div>
+                        </div>
+
+                        <div className="mercado-info-item full-width">
+                          <FileText size={14} className="mercado-icon-blue" />
+                          <div><strong>Descripción del Problema</strong><span>{selectedJob.descripcion}</span></div>
+                        </div>
                       </div>
                     </div>
 
-                    {selectedJob.fotos && selectedJob.fotos.length > 1 && (
-                      <div className="mercado-thumbnails-row">
-                        {selectedJob.fotos.map((f, idx) => (
-                          <div
-                            key={idx}
-                            className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
-                            onClick={() => setActivePhoto(f)}
-                          >
-                            <img src={f} alt={`Evidencia ${idx + 1}`} />
-                          </div>
-                        ))}
+                    {/* Botón de Chat Directo con el Cliente (si ya cotizó) */}
+                    {selectedJob.myQuote && (
+                      <div style={{ marginTop: '10px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setActiveChatQuote({ ...selectedJob.myQuote, jobTitle: selectedJob.titulo, cliente: selectedJob.cliente })}
+                          style={{
+                            width: '100%',
+                            padding: '12px 18px',
+                            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '12px',
+                            fontWeight: '800',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)'
+                          }}
+                        >
+                          <MessageCircle size={18} />
+                          <span>💬 Chat con el Cliente ({selectedJob.cliente})</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Historial de mis Cotizaciones */}
+                    {selectedJob.myQuotesHistory && selectedJob.myQuotesHistory.length > 0 && (
+                      <div className="mq-history-section">
+                        <div className="mq-history-title">📋 Historial de mis Cotizaciones</div>
+                        <div className="mq-history-list">
+                          {selectedJob.myQuotesHistory.map(q => (
+                            <div key={q.id} className={`mq-history-item ${q.status === 'rejected' ? 'is-rejected' : 'is-pending'}`}>
+                              <div className="mq-history-item-top">
+                                <span className="mq-history-price">
+                                  ${parseFloat(q.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                </span>
+                                <span className={`mq-history-status ${q.status}`}>{getStatusLabel(q.status)}</span>
+                              </div>
+                              {q.message && <div className="mq-history-message">"{q.message}"</div>}
+                              <div className="mq-history-date">{new Date(q.created_at).toLocaleString('es-MX')}</div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
-                ) : (
-                  <div className="mercado-no-photo-placeholder">
-                    <ImageIcon size={36} color="#94a3b8" />
-                    <span>Sin fotografías de evidencia</span>
-                  </div>
-                )}
+                </div>
 
-                <div className="mercado-premium-text">
-                  <h3>{selectedJob.titulo}</h3>
-                  <div className="mercado-premium-info-grid">
-                    <div className="mercado-info-item full-width" style={{ background: '#fff7ed', border: '1.5px solid #fed7aa' }}>
-                      <MapPin size={18} color="#ea580c" style={{ marginTop: '2px', flexShrink: 0 }} />
-                      <div>
-                        <strong style={{ color: '#ea580c' }}>Zona / Área de Cobertura</strong>
-                        <span style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>{selectedJob.zona}</span>
-                        <div style={{ fontSize: '11px', color: '#9a3412', marginTop: '3px' }}>
-                          🔒 La dirección exacta de la casa se te revelará en tu panel de TRABAJOS al ser aceptada tu cotización.
-                        </div>
+                <div className="mercado-premium-footer">
+                  <button className="mercado-btn-cancel" onClick={() => setShowQuoteModal(false)}>Cerrar</button>
+                  <button className="mercado-premium-submit" onClick={() => setQuoteStep(2)}>
+                    <DollarSign size={17} />
+                    {selectedJob.myQuote ? '✏️ Enviar Nueva Oferta' : '💼 Cotizar Trabajo'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* ══════════════════════════════════════════════════
+                PASO 2: FORMULARIO DE COTIZACIÓN
+            ══════════════════════════════════════════════════ */}
+            {quoteStep === 2 && (
+              <>
+                <div className="mercado-premium-header">
+                  <h2>💰 {selectedJob.myQuote ? 'Enviar Nueva Oferta' : 'Cotizar Trabajo'}</h2>
+                  <span className="mercado-modal-close" onClick={() => setShowQuoteModal(false)}>×</span>
+                </div>
+
+                <div className="mercado-premium-body">
+                  <div className="mercado-premium-form" style={{ width: '100%' }}>
+                    {/* Resumen compacto del trabajo */}
+                    <div className="mq-compact-summary">
+                      <div className="mq-compact-title">{selectedJob.titulo}</div>
+                      <div className="mq-compact-meta">
+                        <span><MapPin size={13} color="#ea580c" /> {selectedJob.zona}</span>
+                        <span><User size={13} color="#3b82f6" /> {selectedJob.cliente}</span>
                       </div>
                     </div>
-                    <div className="mercado-info-item">
-                      <User size={14} className="mercado-icon-blue" />
-                      <div><strong>Cliente</strong><span>{selectedJob.cliente}</span></div>
-                    </div>
-                    <div className="mercado-info-item">
-                      <Clock size={14} className="mercado-icon-blue" />
-                      <div><strong>Publicado</strong><span>{selectedJob.fecha}</span></div>
-                    </div>
-                    <div className="mercado-info-item full-width">
-                      <FileText size={14} className="mercado-icon-blue" />
-                      <div><strong>Descripción del Problema</strong><span>{selectedJob.descripcion}</span></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Right panel: Quote Form */}
-              <div className="mercado-premium-form">
-                {/* Botón de Chat Directo con el Cliente */}
-                {selectedJob.myQuote && (
-                  <div style={{ marginBottom: '16px' }}>
-                    <button
-                      type="button"
-                      onClick={() => setActiveChatQuote({ ...selectedJob.myQuote, jobTitle: selectedJob.titulo, cliente: selectedJob.cliente })}
-                      style={{
-                        width: '100%',
-                        padding: '12px 18px',
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '12px',
-                        fontWeight: '800',
-                        fontSize: '14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
-                        transition: 'transform 0.2s'
-                      }}
-                    >
-                      <MessageCircle size={18} />
-                      <span>💬 Chat con el Cliente ({selectedJob.cliente})</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Quote history */}
-                {selectedJob.myQuotesHistory && selectedJob.myQuotesHistory.length > 0 && (
-                  <div className="mq-history-section">
-                    <div className="mq-history-title">📋 Historial de mis Cotizaciones</div>
-                    <div className="mq-history-list">
-                      {selectedJob.myQuotesHistory.map(q => (
-                        <div key={q.id} className={`mq-history-item ${q.status === 'rejected' ? 'is-rejected' : 'is-pending'}`}>
-                          <div className="mq-history-item-top">
-                            <span className="mq-history-price">
-                              ${parseFloat(q.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                            </span>
-                            <span className={`mq-history-status ${q.status}`}>{getStatusLabel(q.status)}</span>
-                          </div>
-                          {q.message && <div className="mq-history-message">"{q.message}"</div>}
-                          <div className="mq-history-date">{new Date(q.created_at).toLocaleString('es-MX')}</div>
+                    {/* Alerta si fue rechazada */}
+                    {selectedJob.myQuote && selectedJob.myQuote.status === 'rejected' && (
+                      <div className="mq-rejection-warning">
+                        <span className="mq-rejection-icon">⚠️</span>
+                        <div className="mq-rejection-text">
+                          <strong>Tu última oferta fue rechazada</strong>
+                          <p>Revisa las condiciones y envía una nueva propuesta competitiva.</p>
                         </div>
-                      ))}
+                      </div>
+                    )}
+
+                    <div className="mercado-form-group" style={{ marginTop: '14px' }}>
+                      <label>Propuesta Económica ($)</label>
+                      <div className="mercado-input-wrapper">
+                        <DollarSign size={18} className="mercado-input-icon" />
+                        <input
+                          type="number"
+                          placeholder="Ej. 800"
+                          className="mercado-premium-input"
+                          value={quotePrice}
+                          onChange={(e) => setQuotePrice(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
 
-                {/* Rejection warning */}
-                {selectedJob.myQuote && selectedJob.myQuote.status === 'rejected' && (
-                  <div className="mq-rejection-warning">
-                    <span className="mq-rejection-icon">⚠️</span>
-                    <div className="mq-rejection-text">
-                      <strong>Tu última oferta fue rechazada</strong>
-                      <p>Revisa las condiciones y envía una nueva propuesta competitiva.</p>
+                    <div className="mercado-form-group">
+                      <label>Mensaje para el cliente</label>
+                      <textarea
+                        placeholder="Hola, tengo experiencia en esto. Puedo ir hoy mismo..."
+                        className="mercado-premium-textarea"
+                        value={quoteMessage}
+                        onChange={(e) => setQuoteMessage(e.target.value)}
+                        rows={4}
+                      />
                     </div>
-                  </div>
-                )}
-
-                <div className="mq-form-divider" />
-                <h4>{selectedJob.myQuote ? '✏️ Enviar Nueva Oferta' : '💰 Tu Propuesta'}</h4>
-
-                <div className="mercado-form-group">
-                  <label>Propuesta Económica ($)</label>
-                  <div className="mercado-input-wrapper">
-                    <DollarSign size={18} className="mercado-input-icon" />
-                    <input
-                      type="number"
-                      placeholder="Ej. 800"
-                      className="mercado-premium-input"
-                      value={quotePrice}
-                      onChange={(e) => setQuotePrice(e.target.value)}
-                    />
                   </div>
                 </div>
 
-                <div className="mercado-form-group">
-                  <label>Mensaje para el cliente</label>
-                  <textarea
-                    placeholder="Hola, tengo experiencia en esto. Puedo ir hoy mismo..."
-                    className="mercado-premium-textarea"
-                    value={quoteMessage}
-                    onChange={(e) => setQuoteMessage(e.target.value)}
-                  />
+                <div className="mercado-premium-footer">
+                  <button className="mercado-btn-cancel" onClick={() => setQuoteStep(1)}>
+                    ← Volver al Detalle
+                  </button>
+                  <button className="mercado-premium-submit" onClick={handleEnviarCotizacion}>
+                    <Send size={16} />
+                    {selectedJob.myQuote ? 'Enviar Nueva Oferta' : 'Enviar Cotización'}
+                  </button>
                 </div>
-              </div>
-            </div>
+              </>
+            )}
 
-            <div className="mercado-premium-footer">
-              <button className="mercado-btn-cancel" onClick={() => setShowQuoteModal(false)}>Cancelar</button>
-              <button className="mercado-premium-submit" onClick={handleEnviarCotizacion}>
-                <Send size={16} />
-                {selectedJob.myQuote ? 'Enviar Nueva Oferta' : 'Enviar Cotización'}
-              </button>
-            </div>
           </div>
         </div>
       )}

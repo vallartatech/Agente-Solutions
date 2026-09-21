@@ -1086,3 +1086,41 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ===== RESUMEN COMPACTO (PASO 2) ===== */
+.mq-compact-summary {
+  background: #fff7ed;
+  border: 1.5px solid #fed7aa;
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.mq-compact-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.mq-compact-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.mq-compact-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (min-width: 769px) {
+  .mercado-premium-modal {
+    max-width: 580px;
+  }
+}
