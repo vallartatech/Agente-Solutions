@@ -198,10 +198,13 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
         formData.append('zone', item.zona);
         formData.append('equipment', item.equipo || '');
         
-        const descBase = item.equipo 
+        const hasValidEquipo = item.equipo && item.equipo.toLowerCase() !== 'otro' && item.equipo.toLowerCase() !== 'ninguno';
+        const descBase = hasValidEquipo 
           ? `${item.descripcion}\n\n[EQUIPO AFECTADO]: ${item.equipo}`
           : item.descripcion;
-        const descFinal = `[${loteId}] (${index + 1}/${total})\n${descBase}`;
+        const descFinal = total > 1
+          ? `[${loteId}] (${index + 1}/${total})\n${descBase}`
+          : descBase;
         
         formData.append('description', descFinal);
         if (total > 1) {

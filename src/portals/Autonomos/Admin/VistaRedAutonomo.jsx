@@ -16,6 +16,19 @@ const mapContainerStyle = {
 
 const defaultCenter = { lat: 21.0181, lng: -89.6242 }; // Mérida, Yucatán
 
+const limpiarDescripcion = (rawDesc) => {
+  if (!rawDesc) return 'Sin descripción adicional';
+  let clean = rawDesc;
+  // Quitar prefijo de lote tipo [LOTE-XXXX] (1/1)
+  clean = clean.replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '');
+  // Quitar [EQUIPO AFECTADO]: otro o Otro
+  clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*(otro|Otro|ninguno|Ninguno|n\/a|N\/A)\s*/gi, '');
+  // Si tiene un equipo válido, formatearlo limpio
+  clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*/gi, ' - Equipo: ');
+  return clean.trim() || rawDesc;
+};
+
+
 const mockSolicitudes = [
   { id: 1, titulo: "Mantenimiento de 5 Minisplits", lat: 21.0250, lng: -89.6300, presupuesto: "$2,000", estado: "Cotizando", cotizaciones: 3, fecha: "2026-08-11", lugar: "Casa 1", zona: "Col. Itzimná, Mérida", calle: "C. 30 x 7", cotizaciones_list: [], fotos: [] },
   { id: 2, titulo: "Reparación de Fuga de Agua", lat: 21.0100, lng: -89.6200, presupuesto: "A convenir", estado: "Completado", cotizaciones: 1, fecha: "2026-08-09", lugar: "Casa 2", zona: "Col. San Lorenzo, Umán", calle: "C. 20 x 15", cotizaciones_list: [], fotos: [] }
@@ -63,7 +76,7 @@ const VistaRedAutonomo = () => {
             lugar: order.property?.property_name || 'Lugar no especificado',
             zona: zonaTexto,
             calle: order.property?.address || 'Dirección no especificada',
-            descripcion: order.description,
+            descripcion: limpiarDescripcion(order.description),
             foto: fotos[0] || null,
             fotos: fotos,
             cotizaciones: order.network_quotes_count || 0,
@@ -359,7 +372,7 @@ const VistaRedAutonomo = () => {
                     </div>
                     <div className="mercado-info-item full-width">
                       <FileText size={14} className="mercado-icon-blue" />
-                      <div><strong>Descripción del Problema</strong><span>{selectedJobForQuotes.descripcion || 'Sin descripción adicional'}</span></div>
+                      <div><strong>Problema</strong><span>{selectedJobForQuotes.descripcion || 'Sin descripción adicional'}</span></div>
                     </div>
                   </div>
                 </div>

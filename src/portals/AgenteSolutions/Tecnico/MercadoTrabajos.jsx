@@ -13,6 +13,19 @@ const mapContainerStyle = {
 };
 
 const defaultCenter = { lat: 21.0181, lng: -89.6242 };
+
+const limpiarDescripcion = (rawDesc) => {
+  if (!rawDesc) return 'Sin descripción adicional';
+  let clean = rawDesc;
+  // Quitar prefijo de lote tipo [LOTE-XXXX] (1/1)
+  clean = clean.replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '');
+  // Quitar [EQUIPO AFECTADO]: otro o Otro
+  clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*(otro|Otro|ninguno|Ninguno|n\/a|N\/A)\s*/gi, '');
+  // Si tiene un equipo válido, formatearlo limpio
+  clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*/gi, ' - Equipo: ');
+  return clean.trim() || rawDesc;
+};
+
 const darkMapStyles = [];
 
 const mockJobs = [
@@ -74,7 +87,7 @@ const MercadoTrabajos = () => {
             lugar: order.property?.property_name || 'Lugar no especificado',
             zona: zonaTexto,
             calle: order.property?.address || 'Dirección protegida',
-            descripcion: order.description,
+            descripcion: limpiarDescripcion(order.description),
             foto: fotos[0] || null,
             fotos: fotos,
             fecha: new Date(order.created_at).toLocaleDateString('es-MX'),
@@ -356,7 +369,7 @@ const MercadoTrabajos = () => {
 
                         <div className="mercado-info-item full-width">
                           <FileText size={14} className="mercado-icon-blue" />
-                          <div><strong>Descripción del Problema</strong><span>{selectedJob.descripcion}</span></div>
+                          <div><strong>Problema</strong><span>{selectedJob.descripcion}</span></div>
                         </div>
                       </div>
                     </div>
