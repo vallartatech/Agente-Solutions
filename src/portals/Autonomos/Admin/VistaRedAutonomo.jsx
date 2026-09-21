@@ -52,7 +52,7 @@ const VistaRedAutonomo = () => {
 
           return {
             id: order.id,
-            titulo: order.type + (order.equipment ? ` - ${order.equipment}` : ''),
+            titulo: `${order.type || 'Mantenimiento'} - ${order.owner_name || 'Cliente de la Red'}`,
             lat: rawLat,
             lng: rawLng,
             presupuesto: "A convenir",
