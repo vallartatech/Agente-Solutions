@@ -58,6 +58,20 @@ const ChatModal = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 250);
+  };
+
+
   const handleSendMessage = async (e) => {
     if (e) e.preventDefault();
     if (!inputText.trim() || sending) return;
@@ -178,6 +192,7 @@ const ChatModal = ({
               className="chat-input-field"
               placeholder="Escribe un mensaje aquí..."
               value={inputText}
+              onFocus={handleInputFocus}
               onChange={(e) => setInputText(e.target.value)}
               disabled={sending}
               autoFocus
