@@ -11,11 +11,13 @@
   align-items: stretch;
   box-sizing: border-box;
   overflow-x: hidden;
+  flex-shrink: 0; /* Evita que el contenedor se encoja y recorte el contenido */
+  min-height: max-content;
 }
 
 .main-layout-detail {
   display: grid;
-  grid-template-columns: 1.25fr 0.75fr;
+  grid-template-columns: 1.15fr 0.85fr;
   gap: 30px;
   max-width: 100%;
   width: 100%;
@@ -33,10 +35,10 @@
 
 /* Permitir que los botones superiores hagan wrap por defecto si no caben en PC */
 .action-header-right {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap; /* CRUCIAL para que los botones bajen de línea si no hay espacio */
-  margin-bottom: 15px;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) !important;
+  gap: 12px !important;
+  margin-bottom: 20px;
 }
 
 /* iPad horizontal / tablet grande (1050px) - columnas compactas */
@@ -252,7 +254,7 @@
   border: 1px solid rgba(0,0,0,0.05);
   text-align: center;
   transition: 0.3s;
-  word-break: break-word; /* Permite que el texto se rompa y no desborde */
+  word-break: keep-all; word-wrap: normal; /* Evita que las palabras se rompan a la mitad */ /* Permite que el texto se rompa y no desborde */
 }
 
 .stat-box:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
@@ -575,7 +577,7 @@
 }
 /* --- BOTÓN AGREGAR SERVICIO (SUPERIOR) --- */
 .action-header-right {
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
 .btn-add-service-full {
@@ -1165,7 +1167,7 @@
 @media (min-width: 1200px) {
   .main-layout-detail {
     max-width: 100%;
-    grid-template-columns: 1.25fr 0.75fr;
+    grid-template-columns: 1.15fr 0.85fr;
     gap: 40px;
   }
 
@@ -1219,7 +1221,7 @@
 @media (min-width: 1600px) {
   .main-layout-detail {
     max-width: 100%;
-    grid-template-columns: 1.25fr 0.75fr;
+    grid-template-columns: 1.15fr 0.85fr;
     gap: 50px;
   }
 
