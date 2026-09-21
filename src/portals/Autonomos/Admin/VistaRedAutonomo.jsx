@@ -337,7 +337,7 @@ const VistaRedAutonomo = () => {
                 )}
 
                 <div className="mercado-premium-text">
-                  <h3>Problema - {selectedJobForQuotes.titulo}</h3>
+                  <h3>{selectedJobForQuotes.titulo}</h3>
                   <div className="mercado-premium-info-grid">
                     <div className="mercado-info-item full-width" style={{ background: '#fff7ed', border: '1.5px solid #fed7aa' }}>
                       <MapPin size={18} color="#ea580c" style={{ marginTop: '2px', flexShrink: 0 }} />

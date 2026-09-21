@@ -1119,8 +1119,4 @@
   gap: 4px;
 }
 
-@media (min-width: 769px) {
-  .mercado-premium-modal {
-    max-width: 580px;
-  }
-}
+
