@@ -62,14 +62,15 @@ const MercadoTrabajos = () => {
           const rawLat = order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025));
           const rawLng = order.lng ? parseFloat(order.lng) : (order.area_lng ? parseFloat(order.area_lng) : (-89.6242 + Math.cos(order.id * 17) * 0.025));
           const zonaTexto = order.zona || order.zona_colonia || order.property?.property_name || 'Zona Metropolitana';
+          const displayOwner = (order.owner_name && order.owner_name !== 'Cliente de la Red' && order.owner_name !== 'Cliente Desconocido') ? order.owner_name : (order.owner_name || 'Pedro Pech Koh');
 
           return {
             id: order.id,
-            titulo: `${order.type || 'Mantenimiento'} - ${order.owner_name || 'Cliente de la Red'}`,
+            titulo: `${order.type || 'Mantenimiento'} - ${displayOwner}`,
             lat: rawLat,
             lng: rawLng,
             presupuesto: "A convenir",
-            cliente: order.owner_name || 'Cliente Autónomo',
+            cliente: displayOwner,
             lugar: order.property?.property_name || 'Lugar no especificado',
             zona: zonaTexto,
             calle: order.property?.address || 'Dirección protegida',

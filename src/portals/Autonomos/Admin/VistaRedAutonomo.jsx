@@ -43,6 +43,8 @@ const VistaRedAutonomo = () => {
           const rawLat = order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025));
           const rawLng = order.lng ? parseFloat(order.lng) : (order.area_lng ? parseFloat(order.area_lng) : (-89.6242 + Math.cos(order.id * 17) * 0.025));
           const zonaTexto = order.zona || order.zona_colonia || order.property?.property_name || 'Zona Metropolitana';
+          const authUserName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name) : 'Pedro Pech Koh';
+          const displayOwner = (order.owner_name && order.owner_name !== 'Cliente de la Red' && order.owner_name !== 'Cliente Desconocido') ? order.owner_name : authUserName;
 
           const fotos = [
             order.evidence_path,
@@ -52,7 +54,7 @@ const VistaRedAutonomo = () => {
 
           return {
             id: order.id,
-            titulo: `${order.type || 'Mantenimiento'} - ${order.owner_name || 'Cliente de la Red'}`,
+            titulo: `${order.type || 'Mantenimiento'} - ${displayOwner}`,
             lat: rawLat,
             lng: rawLng,
             presupuesto: "A convenir",
@@ -66,7 +68,7 @@ const VistaRedAutonomo = () => {
             fotos: fotos,
             cotizaciones: order.network_quotes_count || 0,
             cotizaciones_list: order.network_quotes || [],
-            cliente: order.owner_name || 'Cliente'
+            cliente: displayOwner
           };
         });
         setNetworkJobs(jobs);
