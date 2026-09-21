@@ -151,77 +151,48 @@ const MainLayoutCliente = ({ children }) => {
           <aside className={`tt-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
           {isMobileMenuOpen && (
             <button className="btn-close-mobile" onClick={() => setIsMobileMenuOpen(false)}>
-              <X size={24} color="white" />
+              <X size={20} color="white" />
             </button>
           )}
   
+          {/* LOGO EN LA PARTE SUPERIOR */}
           <div className="logo-section">
              <img src={appLogo} alt="Agente Logo" className="main-logo" style={{ cursor: 'pointer', objectFit: 'contain' }} onClick={() => navigate('/propiedades')} />
           </div>
 
-          <div className="sidebar-search-wrapper">
-            <div className="sidebar-search-input-container">
-              <Search size={16} className="sidebar-search-icon" />
-              <input 
-                type="text" 
-                placeholder="BUSCAR..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="sidebar-search-input"
-              />
+          {/* 🔥 SECCIÓN INFERIOR: LINKS SOCIALES, AYUDA Y MEMBRESÍA PRO */}
+          <div className="sidebar-bottom-group">
+            <div className="tt-nav">
+              {sidebarLinks.map((link) => (
+                <button 
+                  key={link.id}
+                  className="tt-nav-btn" 
+                  onClick={() => window.open(link.url, '_blank')}
+                >
+                  {getIconComponent(link.icon)} <span>{link.label}</span>
+                </button>
+              ))}
             </div>
-          </div>
-  
-          <div className="tt-nav">
-            {sidebarLinks.map((link) => (
+
+            <div className="sidebar-actions-stack">
               <button 
-                key={link.id}
-                className="tt-nav-btn" 
-                onClick={() => window.open(link.url, '_blank')}
+                onClick={() => setShowHelpModal(true)}
+                className="tt-nav-btn btn-help-sidebar"
               >
-                {getIconComponent(link.icon)} <span>{link.label}</span>
+                <span className="btn-icon-symbol">❓</span> <span>¿Necesitas ayuda?</span>
               </button>
-            ))}
-          </div>
 
-          {/* 🔥 SECCIÓN INFERIOR: AYUDA Y MEMBRESÍA PRO */}
-          <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '25px' }}>
-            <button 
-              onClick={() => setShowHelpModal(true)}
-              className="tt-nav-btn"
-              style={{ 
-                backgroundColor: '#4a4a4a', 
-                color: '#fff', 
-                border: '1px solid #888',
-                justifyContent: 'center',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-              }}
-            >
-              <span>❓</span> <span>¿Necesitas ayuda?</span>
-            </button>
-
-            <button 
-              onClick={() => {
-                setIsEditingPendingPro(false);
-                setShowProModal(true);
-              }}
-              className="tt-nav-btn"
-              style={{ 
-                background: pendingProTenant 
-                  ? 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)' 
-                  : 'linear-gradient(135deg, #FF6600 0%, #FF9900 100%)', 
-                color: '#fff', 
-                border: '2px solid #FFF',
-                fontWeight: '900',
-                justifyContent: 'center',
-                textAlign: 'center',
-                boxShadow: pendingProTenant 
-                  ? '0 4px 15px rgba(59, 130, 246, 0.5)' 
-                  : '0 4px 15px rgba(255, 102, 0, 0.5)'
-              }}
-            >
-              <span>{pendingProTenant ? '⏳' : '🚀'}</span> <span>{pendingProTenant ? 'En Proceso PRO' : 'Cámbiate a PRO'}</span>
-            </button>
+              <button 
+                onClick={() => {
+                  setIsEditingPendingPro(false);
+                  setShowProModal(true);
+                }}
+                className={`tt-nav-btn btn-pro-sidebar ${pendingProTenant ? 'is-pending' : ''}`}
+              >
+                <span className="btn-icon-symbol">{pendingProTenant ? '⏳' : '🚀'}</span> 
+                <span>{pendingProTenant ? 'En Proceso PRO' : 'Cámbiate a PRO'}</span>
+              </button>
+            </div>
           </div>
         </aside>
         </>
