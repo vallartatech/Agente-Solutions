@@ -204,12 +204,12 @@ const ClientRegister = () => {
   const [companyCode, setCompanyCode] = useState("");
   const [selectedSpecialties, setSelectedSpecialties] = useState(["Electricidad"]);
 
-  // Estado de navegación de categorías (SOLO 2: 'agente' | 'autonomo')
+  // Estado de categorías (SOLO 2: 'agente' | 'autonomo')
   const [activeCategory, setActiveCategory] = useState("agente");
   const [selectedRoleKey, setSelectedRoleKey] = useState("client");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Estados visuales y de estado de carga
+  // Estados de validación y respuesta
   const [isCaptchaValid, setIsCaptchaValid] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
   const [message, setMessage] = useState("");
@@ -218,9 +218,6 @@ const ClientRegister = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPendingApproval, setIsPendingApproval] = useState(false);
   const [backgroundSettings, setBackgroundSettings] = useState({ imageUrl: null, colorHex: '#000000', appLogo: null });
-
-  // Referencia para scroll responsivo en dock móvil
-  const iconDockRef = useRef(null);
 
   // Leer parámetros de URL al montar (?code=AUT_123 & ?role=...)
   useEffect(() => {
@@ -254,7 +251,7 @@ const ClientRegister = () => {
 
   // Filtrar roles según la categoría activa ('agente' o 'autonomo')
   const rolesFiltrados = ROLES_PUBLICOS.filter(r => r.category === activeCategory);
-  const rolActual = ROLES_PUBLICOS.find(r => r.key === selectedRoleKey) || ROLES_PUBLICOS[0];
+  const rolActual = ROLES_PUBLICOS.find(r => r.key === selectedRoleKey) || rolesFiltrados[0] || ROLES_PUBLICOS[0];
 
   // Cambiar categoría activa
   const handleCategoryChange = (cat) => {
@@ -273,7 +270,7 @@ const ClientRegister = () => {
     setIsModalOpen(true);
   };
 
-  // Navegar al rol anterior/siguiente en móvil
+  // Navegar al rol anterior/siguiente
   const handleStepRole = (direction) => {
     const currentIndex = rolesFiltrados.findIndex(r => r.key === selectedRoleKey);
     if (currentIndex === -1) return;
@@ -284,13 +281,6 @@ const ClientRegister = () => {
 
     const nextRole = rolesFiltrados[nextIndex];
     setSelectedRoleKey(nextRole.key);
-    
-    if (iconDockRef.current) {
-      const targetBtn = iconDockRef.current.querySelector(`[data-role-key="${nextRole.key}"]`);
-      if (targetBtn) {
-        targetBtn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-      }
-    }
   };
 
   // Manejar selección de especialidades
@@ -373,6 +363,9 @@ const ClientRegister = () => {
     }
   };
 
+  const currentIndex = rolesFiltrados.findIndex(r => r.key === selectedRoleKey);
+  const activeRoleIndex = currentIndex !== -1 ? currentIndex : 0;
+
   return (
     <div 
       className="main-viewport"
@@ -383,19 +376,27 @@ const ClientRegister = () => {
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         minHeight: '100vh',
-        width: '100%',
+        width: '100vw',
+        position: 'relative',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'flex-start',
-        padding: '30px 15px 60px 15px',
-        boxSizing: 'border-box',
-        overflowY: 'auto',
+        justifyContent: 'flex-end',
+        fontFamily: '"Arial Black", sans-serif',
         overflowX: 'hidden',
-        fontFamily: '"Arial Black", sans-serif'
+        overflowY: 'auto',
+        boxSizing: 'border-box'
       }}
     >
-      {/* CAPA DECORATIVA DE FRANJAS (IGUAL QUE EN LOGIN) */}
+      {/* ── LOGO DE AGENTE SOLUTIONS EN LA MISMA POSICIÓN DEL LOGIN ── */}
+      <img 
+        src={backgroundSettings.appLogo || Logo4} 
+        alt="Agente Solutions" 
+        className="logo-top-left"
+        onClick={() => navigate('/')}
+        style={{ cursor: 'pointer', objectFit: 'contain' }}
+      />
+
+      {/* ── CAPA DECORATIVA DE FRANJAS (IGUAL QUE EN LOGIN) ── */}
       <div className="decoration-layer">
         <div className="stripe-top"></div>
         <div className="stripe-bottom"></div>
@@ -403,189 +404,74 @@ const ClientRegister = () => {
       </div>
 
       <style>{`
-        /* ── BOTÓN VOLVER ── */
-        .back-nav-btn {
-          position: fixed;
-          top: 30px;
-          left: 30px;
-          background: rgba(0, 0, 0, 0.7);
-          border: 2px solid #f26522;
-          color: #fff;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 20px;
-          border-radius: 50px;
-          transition: all 0.25s ease;
-          z-index: 100;
-          font-weight: 900;
-          font-style: italic;
-          font-size: 0.95rem;
-          box-shadow: 0 4px 15px rgba(242, 101, 34, 0.3);
-        }
-        .back-nav-btn:hover {
-          background: #f26522;
-          color: #fff;
-          transform: scale(1.05);
-          box-shadow: 0 6px 20px rgba(242, 101, 34, 0.5);
-        }
-
-        /* ── ENCABEZADO ── */
-        .register-header-section {
+        /* ── SECCIÓN DE REGISTRO ALINEADA AL COSTADO DERECHO ── */
+        .register-side-section {
+          position: relative;
+          z-index: 10;
           display: flex;
           flex-direction: column;
           align-items: center;
-          text-align: center;
-          margin-bottom: 25px;
-          z-index: 10;
-        }
-        .reg-main-logo {
-          max-width: 280px;
-          width: 100%;
-          height: auto;
-          object-fit: contain;
-          margin-bottom: 15px;
-          filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
-          cursor: pointer;
-        }
-        .reg-main-title {
-          color: white;
-          font-style: italic;
-          font-size: 2.2rem;
-          letter-spacing: 2px;
-          margin: 0 0 8px 0;
-          text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.7);
-          font-weight: 900;
-        }
-        .reg-main-desc {
-          color: #cbd5e1;
-          font-size: 0.95rem;
-          font-weight: normal;
-          font-family: system-ui, sans-serif;
-          margin: 0;
-          max-width: 540px;
+          justify-content: center;
+          gap: 16px;
+          width: 440px;
+          margin-right: 7%;
+          padding: 20px 0;
+          box-sizing: border-box;
         }
 
-        /* ── SELECTOR DE LAS 2 CATEGORÍAS ── */
-        .two-category-tabs-container {
+        /* ── SELECTOR DE LAS 2 CATEGORÍAS EN CAPSULA ── */
+        .side-category-pills {
           display: flex;
-          background: rgba(20, 20, 20, 0.85);
-          padding: 6px;
+          background: rgba(30, 30, 30, 0.85);
+          padding: 5px;
           border-radius: 50px;
-          border: 2px solid rgba(242, 101, 34, 0.4);
-          margin-bottom: 28px;
-          gap: 10px;
-          max-width: 560px;
+          border: 2px solid rgba(242, 101, 34, 0.5);
+          gap: 6px;
           width: 100%;
-          z-index: 10;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
         }
-        .two-cat-tab-btn {
+        .side-cat-btn {
           flex: 1;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          padding: 12px 18px;
+          gap: 6px;
+          padding: 10px 12px;
           border-radius: 40px;
           border: none;
           background: transparent;
           color: #94a3b8;
-          font-size: 0.92rem;
+          font-size: 0.82rem;
           font-weight: 900;
           font-style: italic;
           cursor: pointer;
           transition: all 0.25s ease;
           white-space: nowrap;
         }
-        .two-cat-tab-btn:hover {
+        .side-cat-btn:hover {
           color: #fff;
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(255, 255, 255, 0.06);
         }
-        .two-cat-tab-btn.active {
+        .side-cat-btn.active {
           background: #f26522;
           color: #fff;
-          box-shadow: 0 4px 18px rgba(242, 101, 34, 0.5);
-          transform: scale(1.02);
+          box-shadow: 0 4px 15px rgba(242, 101, 34, 0.5);
         }
 
-        /* ── DOCK DE ICONOS MÓVIL (< 900px) ── */
-        .mobile-icon-dock {
-          display: none;
-          width: 100%;
-          max-width: 500px;
-          margin-bottom: 20px;
+        /* ── CARRUSEL CON FLECHAS DE NAVEGACIÓN ── */
+        .role-carousel-wrapper {
           position: relative;
-          z-index: 10;
-        }
-        .mobile-dock-scroll {
-          display: flex;
-          gap: 12px;
-          overflow-x: auto;
-          padding: 10px 8px;
-          scroll-snap-type: x mandatory;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: none;
-        }
-        .mobile-dock-scroll::-webkit-scrollbar {
-          display: none;
-        }
-        .mobile-dock-item {
-          flex: 0 0 76px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 6px;
-          background: rgba(30, 30, 30, 0.85);
-          border: 2px solid rgba(255, 255, 255, 0.15);
-          padding: 10px 4px 8px 4px;
-          border-radius: 20px;
-          cursor: pointer;
-          transition: all 0.25s ease;
-          scroll-snap-align: center;
-        }
-        .mobile-dock-item .dock-icon-circle {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.08);
+          width: 100%;
           display: flex;
           align-items: center;
-          justify-content: center;
-          font-size: 1.35rem;
-          transition: all 0.25s ease;
         }
-        .mobile-dock-item .dock-label {
-          font-size: 0.7rem;
-          font-weight: 900;
-          color: #94a3b8;
-          text-align: center;
-          line-height: 1.1;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 70px;
-        }
-        .mobile-dock-item.active {
-          transform: translateY(-4px) scale(1.08);
-          background: #111;
-          border-color: #f26522;
-          box-shadow: 0 8px 20px rgba(242, 101, 34, 0.4);
-        }
-        .mobile-dock-item.active .dock-label {
-          color: #fff;
-        }
-        .mobile-dock-item.active .dock-icon-circle {
-          background: #f26522;
-          transform: scale(1.1);
-        }
-        .dock-arrow-btn {
+
+        .side-arrow-btn {
           position: absolute;
           top: 50%;
           transform: translateY(-50%);
-          width: 34px;
-          height: 34px;
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
           background: rgba(0, 0, 0, 0.85);
           border: 2px solid #f26522;
@@ -594,63 +480,42 @@ const ClientRegister = () => {
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          z-index: 15;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+          z-index: 20;
+          box-shadow: 0 6px 18px rgba(242, 101, 34, 0.4);
+          transition: all 0.2s;
         }
-        .dock-arrow-btn.left { left: -14px; }
-        .dock-arrow-btn.right { right: -14px; }
+        .side-arrow-btn:hover {
+          background: #f26522;
+          transform: translateY(-50%) scale(1.1);
+        }
+        .side-arrow-btn.left { left: -22px; }
+        .side-arrow-btn.right { right: -22px; }
 
-        /* ── GRID DE TARJETAS EN ESCRITORIO ── */
-        .desktop-cards-container {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 22px;
+        /* ── TARJETA DEL USUARIO ACTUAL ── */
+        .current-role-card {
           width: 100%;
-          max-width: 1140px;
-          z-index: 10;
-          margin-bottom: 30px;
-        }
-        .desktop-role-card {
-          background: rgba(20, 20, 20, 0.9);
-          border: 2px solid rgba(255, 255, 255, 0.12);
+          background: rgba(20, 20, 20, 0.95);
+          border: 2px solid #f26522;
           border-radius: 24px;
-          padding: 24px 20px;
+          padding: 24px 22px;
+          box-shadow: 0 15px 40px rgba(242, 101, 34, 0.35);
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.2, 0.9, 0.2, 1);
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
-          position: relative;
-          overflow: hidden;
+          box-sizing: border-box;
+          animation: cardSwap 0.25s ease-out;
         }
-        .desktop-role-card::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 5px;
-          background: #f26522;
+        @keyframes cardSwap {
+          from { opacity: 0; transform: scale(0.96); }
+          to { opacity: 1; transform: scale(1); }
         }
-        .desktop-role-card:hover {
-          transform: translateY(-8px) scale(1.02);
-          border-color: #f26522;
-          box-shadow: 0 20px 45px rgba(242, 101, 34, 0.3);
-          background: rgba(26, 26, 26, 0.98);
-        }
-        .desktop-role-card.active {
-          border-color: #f26522;
-          box-shadow: 0 20px 50px rgba(242, 101, 34, 0.45);
-          background: #111;
-        }
-        .role-badge-pill {
+
+        .card-top-badge {
           display: inline-flex;
           align-items: center;
           gap: 5px;
           padding: 4px 12px;
           border-radius: 50px;
-          font-size: 0.75rem;
+          font-size: 0.72rem;
           font-weight: 900;
           font-style: italic;
           letter-spacing: 0.5px;
@@ -658,75 +523,73 @@ const ClientRegister = () => {
           background: rgba(242, 101, 34, 0.15);
           color: #f26522;
           border: 1px solid rgba(242, 101, 34, 0.4);
-          margin-bottom: 12px;
+          margin-bottom: 10px;
           align-self: flex-start;
         }
-        .role-card-heading {
-          font-size: 1.35rem;
+
+        .card-role-title {
+          font-size: 1.5rem;
           font-weight: 900;
           font-style: italic;
           color: #fff;
-          margin: 0 0 6px 0;
+          margin: 0 0 4px 0;
           display: flex;
           align-items: center;
           gap: 10px;
           letter-spacing: 0.5px;
         }
-        .role-card-tagline {
-          font-size: 0.88rem;
+
+        .card-role-tagline {
+          font-size: 0.85rem;
           color: #f26522;
           font-weight: 900;
-          margin-bottom: 10px;
+          font-style: italic;
+          margin-bottom: 12px;
         }
-        .role-card-body {
+
+        .card-role-description {
           font-size: 0.88rem;
           color: #cbd5e1;
           font-family: system-ui, sans-serif;
           line-height: 1.45;
-          margin-bottom: 16px;
-          flex-grow: 1;
+          margin-bottom: 14px;
         }
-        .role-card-features {
+
+        .card-features-box {
           display: flex;
           flex-direction: column;
           gap: 8px;
-          margin-bottom: 20px;
+          margin-bottom: 18px;
           font-family: system-ui, sans-serif;
           font-size: 0.82rem;
           color: #94a3b8;
         }
-        .role-card-feature-row {
+        .card-feature-item {
           display: flex;
           align-items: center;
           gap: 8px;
         }
 
-        /* Botón de Selección en Tarjeta */
-        .role-select-trigger-btn {
-          width: 100%;
-          padding: 13px;
-          border-radius: 50px;
-          border: none;
-          background: #f26522;
-          color: white;
-          font-size: 1.05rem;
-          font-weight: 900;
-          font-style: italic;
-          cursor: pointer;
+        .dots-indicator-container {
           display: flex;
-          align-items: center;
           justify-content: center;
-          gap: 8px;
-          box-shadow: 0 6px 18px rgba(242, 101, 34, 0.4);
+          gap: 6px;
+          margin-bottom: 14px;
+        }
+        .dot-indicator {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.2);
           transition: all 0.2s;
         }
-        .role-select-trigger-btn:hover {
-          transform: scale(1.03);
-          background: #ff7438;
-          box-shadow: 0 8px 24px rgba(242, 101, 34, 0.6);
+        .dot-indicator.active {
+          width: 22px;
+          border-radius: 10px;
+          background: #f26522;
         }
 
-        /* ── VENTANA EMERGENTE (MODAL DE REGISTRO) ── */
+        /* ── MODAL EMERGENTE ── */
         .register-modal-overlay {
           position: fixed;
           inset: 0;
@@ -738,32 +601,22 @@ const ClientRegister = () => {
           backdrop-filter: blur(8px);
           padding: 20px;
           box-sizing: border-box;
-          animation: fadeIn 0.25s ease-out;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
         }
 
         .register-modal-card {
           background-color: #1e2229;
           border: 3px solid #f26522;
           border-radius: 24px;
-          padding: 32px 28px;
+          padding: 32px 26px;
           width: 100%;
-          max-width: 560px;
-          max-height: 92vh;
+          max-width: 540px;
+          max-height: 90vh;
           overflow-y: auto;
           display: flex;
           flex-direction: column;
           box-shadow: 0 20px 60px rgba(242, 101, 34, 0.35);
           position: relative;
           box-sizing: border-box;
-          animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes popUp {
-          from { transform: scale(0.92); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
         }
 
         .modal-close-btn {
@@ -790,40 +643,39 @@ const ClientRegister = () => {
 
         .modal-header-box {
           text-align: center;
-          margin-bottom: 22px;
-          padding-bottom: 15px;
+          margin-bottom: 20px;
+          padding-bottom: 14px;
           border-bottom: 1.5px solid rgba(255, 255, 255, 0.1);
         }
         .modal-title {
           color: white;
           font-style: italic;
-          font-size: 1.8rem;
+          font-size: 1.7rem;
           letter-spacing: 1.5px;
-          margin: 0 0 6px 0;
+          margin: 0 0 4px 0;
           font-weight: 900;
         }
         .modal-subtitle {
           color: #f26522;
-          font-size: 0.95rem;
+          font-size: 0.9rem;
           font-weight: 900;
           font-style: italic;
           margin: 0;
         }
 
-        /* Selector de Especialidades en Modal */
         .modal-specialties-box {
           background: rgba(0, 0, 0, 0.35);
           border: 1.5px solid rgba(255, 255, 255, 0.1);
           border-radius: 18px;
-          padding: 14px;
-          margin-bottom: 15px;
+          padding: 12px;
+          margin-bottom: 14px;
         }
         .modal-specialties-title {
-          font-size: 0.85rem;
+          font-size: 0.82rem;
           color: #94a3b8;
           font-weight: 900;
           font-style: italic;
-          margin-bottom: 10px;
+          margin-bottom: 8px;
           display: flex;
           align-items: center;
           gap: 6px;
@@ -831,14 +683,14 @@ const ClientRegister = () => {
         .modal-specialties-grid {
           display: flex;
           flex-wrap: wrap;
-          gap: 8px;
-          max-height: 120px;
+          gap: 6px;
+          max-height: 110px;
           overflow-y: auto;
         }
         .modal-spec-chip {
-          padding: 6px 12px;
+          padding: 5px 10px;
           border-radius: 20px;
-          font-size: 0.78rem;
+          font-size: 0.75rem;
           font-weight: 900;
           background: #2b313a;
           border: 1.5px solid #444;
@@ -846,7 +698,7 @@ const ClientRegister = () => {
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 5px;
+          gap: 4px;
           transition: all 0.2s;
         }
         .modal-spec-chip.selected {
@@ -856,487 +708,401 @@ const ClientRegister = () => {
           box-shadow: 0 0 10px rgba(242, 101, 34, 0.35);
         }
 
-        /* ── RESPONSIVO MÓVIL ── */
-        @media (max-width: 900px) {
-          .desktop-cards-container {
-            display: none;
+        /* ── RESPONSIVO (< 960px) ── */
+        @media (max-width: 960px) {
+          .main-viewport {
+            justify-content: center !important;
+            flex-direction: column !important;
+            padding: 20px 15px 40px 15px !important;
           }
-          .mobile-icon-dock {
-            display: block;
+          .logo-top-left {
+            position: relative !important;
+            top: 0 !important;
+            left: 0 !important;
+            margin: 20px auto 30px auto !important;
+            display: block !important;
+            width: 240px !important;
+            transform: scale(1.6) !important;
+            transform-origin: top center !important;
           }
-          .reg-main-title {
-            font-size: 1.6rem;
-          }
-          .back-nav-btn {
-            top: 15px;
-            left: 15px;
-            padding: 8px 14px;
-            font-size: 0.85rem;
+          .register-side-section {
+            margin-right: 0 !important;
+            width: 100% !important;
+            max-width: 420px !important;
           }
         }
       `}</style>
 
-      {/* BOTÓN REGRESAR */}
-      <button 
-        type="button" 
-        className="back-nav-btn" 
-        onClick={() => navigate("/")}
-        title="Regresar al inicio de sesión"
-      >
-        <ArrowLeft size={18} />
-        <span>VOLVER</span>
-      </button>
+      {/* ── SECCIÓN DE REGISTRO LATERAL DERECHA (IGUAL QUE EN EL LOGIN) ── */}
+      <div className="register-side-section">
+        <h2 className="form-title">REGISTRO</h2>
 
-      {/* LOGO Y ENCABEZADO */}
-      <div className="register-header-section">
-        <img 
-          src={backgroundSettings.appLogo || Logo4} 
-          alt="Agente Solutions" 
-          className="reg-main-logo"
-          onClick={() => navigate("/")}
-        />
-        <h1 className="reg-main-title">REGISTRO DE USUARIOS</h1>
-        <p className="reg-main-desc">
-          Elige el perfil con el que deseas ingresar a la plataforma.
-        </p>
-      </div>
-
-      {/* PANTALLA DE PENDIENTE DE APROBACIÓN */}
-      {isPendingApproval ? (
-        <div style={{
-          width: '100%',
-          maxWidth: '520px',
-          padding: '40px 25px',
-          textAlign: 'center',
-          borderRadius: '24px',
-          backgroundColor: '#1e2229',
-          border: '3px solid #f26522',
-          boxShadow: '0 15px 40px rgba(242, 101, 34, 0.35)',
-          color: '#fff',
-          zIndex: 10
-        }}>
+        {isPendingApproval ? (
           <div style={{
-            width: '75px',
-            height: '75px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(242, 101, 34, 0.2)',
+            width: '100%',
+            textAlign: 'center',
+            backgroundColor: '#1e2229',
+            borderRadius: '24px',
+            padding: '30px 20px',
             border: '2px solid #f26522',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 20px auto'
+            color: '#fff',
+            boxShadow: '0 15px 35px rgba(242, 101, 34, 0.3)',
+            boxSizing: 'border-box'
           }}>
-            <Clock size={40} color="#f26522" />
-          </div>
-          <h2 style={{ fontSize: '1.7rem', color: '#fff', marginBottom: '12px', fontWeight: '900', fontStyle: 'italic' }}>
-            ¡PERFIL EN REVISIÓN!
-          </h2>
-          <p style={{ color: '#cbd5e1', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '22px', fontFamily: 'system-ui, sans-serif' }}>
-            Tu registro se ha completado con éxito. Por seguridad, tu cuenta está en la sala de espera y debe ser revisada y autorizada por el <strong>Administrador de tu empresa</strong> para iniciar sesión.
-          </p>
-          <div style={{
-            padding: '14px',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '12px',
-            borderLeft: '4px solid #f26522',
-            textAlign: 'left',
-            marginBottom: '24px',
-            fontFamily: 'system-ui, sans-serif'
-          }}>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#eee' }}>
-              <strong style={{ color: '#f26522' }}>Empresa / Código:</strong> {companyCode || 'Agente Solutions (Matriz Oficial)'}<br />
-              <strong style={{ color: '#f26522' }}>Estado:</strong> <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>⏳ Pendiente de aprobación</span>
+            <div style={{
+              width: '70px',
+              height: '70px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(242, 101, 34, 0.2)',
+              border: '2px solid #f26522',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px auto'
+            }}>
+              <Clock size={36} color="#f26522" />
+            </div>
+            <h3 style={{ fontSize: '1.5rem', color: '#fff', marginBottom: '10px', fontWeight: '900', fontStyle: 'italic' }}>
+              ¡PERFIL EN REVISIÓN!
+            </h3>
+            <p style={{ color: '#cbd5e1', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '18px', fontFamily: 'system-ui, sans-serif' }}>
+              Tu registro se ha completado. Tu cuenta debe ser autorizada por el <strong>Administrador</strong> para poder iniciar sesión.
             </p>
-          </div>
-          <button 
-            type="button" 
-            className="btn-login"
-            onClick={() => navigate("/")}
-          >
-            VOLVER AL INICIO DE SESIÓN
-          </button>
-        </div>
-      ) : (
-        <>
-          {/* PESTAÑAS: EXACTAMENTE 2 CATEGORÍAS (AGENTE SOLUTIONS vs AUTÓNOMOS Y RED) */}
-          <div className="two-category-tabs-container">
-            <button
-              type="button"
-              className={`two-cat-tab-btn ${activeCategory === "agente" ? "active" : ""}`}
-              onClick={() => handleCategoryChange("agente")}
-            >
-              <span>🟠 Agente Solutions (2)</span>
-            </button>
-            <button
-              type="button"
-              className={`two-cat-tab-btn ${activeCategory === "autonomo" ? "active" : ""}`}
-              onClick={() => handleCategoryChange("autonomo")}
-            >
-              <span>🔵 Autónomos & Red (5)</span>
-            </button>
-          </div>
-
-          {/* DOCK / CARRUSEL DE ICONOS MÓVIL (< 900px) */}
-          <div className="mobile-icon-dock">
             <button 
               type="button" 
-              className="dock-arrow-btn left"
-              onClick={() => handleStepRole(-1)}
-              aria-label="Rol anterior"
+              className="btn-login"
+              onClick={() => navigate('/')}
             >
-              <ChevronLeft size={20} />
+              VOLVER AL LOGIN
             </button>
-
-            <div ref={iconDockRef} className="mobile-dock-scroll">
-              {rolesFiltrados.map((r) => {
-                const isActive = r.key === selectedRoleKey;
-                return (
-                  <div
-                    key={r.key}
-                    data-role-key={r.key}
-                    className={`mobile-dock-item ${isActive ? "active" : ""}`}
-                    onClick={() => setSelectedRoleKey(r.key)}
-                  >
-                    <div className="dock-icon-circle">
-                      {r.icon}
-                    </div>
-                    <span className="dock-label">{r.shortLabel}</span>
-                  </div>
-                );
-              })}
+          </div>
+        ) : (
+          <>
+            {/* ── PESTAÑAS: EXACTAMENTE 2 CATEGORÍAS ── */}
+            <div className="side-category-pills">
+              <button
+                type="button"
+                className={`side-cat-btn ${activeCategory === "agente" ? "active" : ""}`}
+                onClick={() => handleCategoryChange("agente")}
+              >
+                <span>🟠 Agente Solutions (2)</span>
+              </button>
+              <button
+                type="button"
+                className={`side-cat-btn ${activeCategory === "autonomo" ? "active" : ""}`}
+                onClick={() => handleCategoryChange("autonomo")}
+              >
+                <span>🔵 Autónomos & Red (5)</span>
+              </button>
             </div>
 
-            <button 
-              type="button" 
-              className="dock-arrow-btn right"
-              onClick={() => handleStepRole(1)}
-              aria-label="Rol siguiente"
-            >
-              <ChevronRight size={20} />
-            </button>
+            {/* ── CARRUSEL CON FLECHAS Y TARJETA DEL USUARIO ── */}
+            <div className="role-carousel-wrapper">
+              {/* FLECHA ANTERIOR */}
+              <button
+                type="button"
+                className="side-arrow-btn left"
+                onClick={() => handleStepRole(-1)}
+                title="Usuario anterior"
+              >
+                <ChevronLeft size={24} />
+              </button>
 
-            {/* Tarjeta activa en móvil con botón de abrir ventana emergente */}
-            <div style={{ marginTop: '16px' }}>
-              <div className="desktop-role-card active" style={{ cursor: 'default' }}>
-                <div>
-                  <span className="role-badge-pill">{rolActual.badge}</span>
-                  <h3 className="role-card-heading">
-                    <span>{rolActual.icon}</span>
-                    <span>{rolActual.label}</span>
-                  </h3>
-                  <div className="role-card-tagline">{rolActual.tagline}</div>
-                  <p className="role-card-body">{rolActual.description}</p>
-                  
-                  <div className="role-card-features">
-                    {rolActual.features.map((feat, idx) => (
-                      <div key={idx} className="role-card-feature-row">
-                        <CheckCircle2 size={16} color="#f26522" style={{ flexShrink: 0 }} />
-                        <span>{feat}</span>
-                      </div>
-                    ))}
-                  </div>
+              {/* TARJETA DEL USUARIO SELECCIONADO */}
+              <div className="current-role-card">
+                <span className="card-top-badge">{rolActual.badge}</span>
+                <h3 className="card-role-title">
+                  <span>{rolActual.icon}</span>
+                  <span>{rolActual.label}</span>
+                </h3>
+                <div className="card-role-tagline">{rolActual.tagline}</div>
+                <p className="card-role-description">{rolActual.description}</p>
+
+                <div className="card-features-box">
+                  {rolActual.features.map((feat, idx) => (
+                    <div key={idx} className="card-feature-item">
+                      <CheckCircle2 size={16} color="#f26522" style={{ flexShrink: 0 }} />
+                      <span>{feat}</span>
+                    </div>
+                  ))}
                 </div>
 
+                {/* INDICADORES DE PUNTOS */}
+                <div className="dots-indicator-container">
+                  {rolesFiltrados.map((r, idx) => (
+                    <div
+                      key={r.key}
+                      className={`dot-indicator ${idx === activeRoleIndex ? "active" : ""}`}
+                    />
+                  ))}
+                </div>
+
+                {/* BOTÓN REGISTRARME */}
                 <button
                   type="button"
-                  className="role-select-trigger-btn"
+                  className="btn-login"
                   onClick={() => handleOpenRegisterModal(rolActual.key)}
                 >
                   <span>{rolActual.cta}</span>
-                  <ArrowRight size={18} />
+                  <ArrowRight size={20} style={{ marginLeft: "8px", verticalAlign: "middle" }} />
                 </button>
               </div>
+
+              {/* FLECHA SIGUIENTE */}
+              <button
+                type="button"
+                className="side-arrow-btn right"
+                onClick={() => handleStepRole(1)}
+                title="Siguiente usuario"
+              >
+                <ChevronRight size={24} />
+              </button>
             </div>
-          </div>
 
-          {/* GRID DE TARJETAS EN ESCRITORIO (>= 900px) */}
-          <div className="desktop-cards-container">
-            {rolesFiltrados.map((r) => {
-              const isActive = r.key === selectedRoleKey;
-              return (
-                <div
-                  key={r.key}
-                  className={`desktop-role-card ${isActive ? "active" : ""}`}
-                  onClick={() => handleOpenRegisterModal(r.key)}
-                >
-                  <div>
-                    <span className="role-badge-pill">{r.badge}</span>
-                    <h3 className="role-card-heading">
-                      <span>{r.icon}</span>
-                      <span>{r.label}</span>
-                    </h3>
-                    <div className="role-card-tagline">{r.tagline}</div>
-                    <p className="role-card-body">{r.description}</p>
+            {/* ENLACES INFERIORES */}
+            <div style={{ textAlign: 'center', fontSize: '0.9rem', marginTop: '6px' }}>
+              <span style={{ color: '#888' }}>¿Ya tienes una cuenta? </span>
+              <span 
+                onClick={() => navigate('/')} 
+                style={{ color: '#FF6600', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }}
+              >
+                Inicia sesión aquí
+              </span>
+            </div>
+          </>
+        )}
+      </div>
 
-                    <div className="role-card-features">
-                      {r.features.map((feat, idx) => (
-                        <div key={idx} className="role-card-feature-row">
-                          <CheckCircle2 size={16} color="#f26522" style={{ flexShrink: 0 }} />
-                          <span>{feat}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="role-select-trigger-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenRegisterModal(r.key);
-                    }}
-                  >
-                    <span>{r.cta}</span>
-                    <ArrowRight size={18} />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* ENLACE AL INICIO DE SESIÓN */}
-          <div style={{ zIndex: 10, marginTop: '10px', textAlign: 'center', fontSize: '0.95rem' }}>
-            <span style={{ color: '#888' }}>¿Ya tienes una cuenta registrada? </span>
-            <span 
-              onClick={() => navigate('/')} 
-              style={{ color: '#f26522', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }}
+      {/* ══════════════════════════════════════════════════════════════════════
+          VENTANA EMERGENTE (MODAL DE REGISTRO CON EL DISEÑO DEL LOGIN)
+      ══════════════════════════════════════════════════════════════════════ */}
+      {isModalOpen && (
+        <div 
+          className="register-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false);
+          }}
+        >
+          <div className="register-modal-card">
+            {/* BOTÓN CERRAR */}
+            <button
+              type="button"
+              className="modal-close-btn"
+              onClick={() => setIsModalOpen(false)}
+              title="Cerrar"
             >
-              Inicia sesión aquí
-            </span>
-          </div>
+              <X size={20} />
+            </button>
 
-          {/* ══════════════════════════════════════════════════════════════════════
-              VENTANA EMERGENTE (MODAL DE REGISTRO CON EL DISEÑO DEL LOGIN)
-          ══════════════════════════════════════════════════════════════════════ */}
-          {isModalOpen && (
-            <div 
-              className="register-modal-overlay"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) setIsModalOpen(false);
-              }}
-            >
-              <div className="register-modal-card">
-                {/* BOTÓN CERRAR */}
-                <button
-                  type="button"
-                  className="modal-close-btn"
-                  onClick={() => setIsModalOpen(false)}
-                  title="Cerrar"
-                >
-                  <X size={20} />
-                </button>
+            {/* ENCABEZADO DEL MODAL */}
+            <div className="modal-header-box">
+              <img 
+                src={backgroundSettings.appLogo || Logo4} 
+                alt="Agente Solutions" 
+                style={{ width: '140px', marginBottom: '8px', objectFit: 'contain' }} 
+              />
+              <h3 className="modal-title">
+                {rolActual.icon} {rolActual.label}
+              </h3>
+              <p className="modal-subtitle">
+                {rolActual.categoryLabel} • {rolActual.badge}
+              </p>
+            </div>
 
-                {/* ENCABEZADO DEL MODAL */}
-                <div className="modal-header-box">
-                  <img 
-                    src={backgroundSettings.appLogo || Logo4} 
-                    alt="Agente Solutions" 
-                    style={{ width: '150px', marginBottom: '10px', objectFit: 'contain' }} 
+            {/* FORMULARIO ESTILO LOGIN */}
+            <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+              {/* NOMBRE Y APELLIDOS */}
+              <div className="form-row-responsive">
+                <div className="input-group">
+                  <User size={20} strokeWidth={2.5} className="input-icon" />
+                  <input
+                    type="text"
+                    placeholder="NOMBRE(S)"
+                    className="custom-input"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                    style={{ paddingLeft: "55px" }}
                   />
-                  <h3 className="modal-title">
-                    {rolActual.icon} {rolActual.label}
-                  </h3>
-                  <p className="modal-subtitle">
-                    {rolActual.categoryLabel} • {rolActual.badge}
-                  </p>
                 </div>
+                <div className="input-group">
+                  <User size={20} strokeWidth={2.5} className="input-icon" />
+                  <input
+                    type="text"
+                    placeholder="APELLIDOS"
+                    className="custom-input"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                    style={{ paddingLeft: "55px" }}
+                  />
+                </div>
+              </div>
 
-                {/* FORMULARIO ESTILO LOGIN */}
-                <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-                  {/* NOMBRE Y APELLIDOS */}
-                  <div className="form-row-responsive">
-                    <div className="input-group">
-                      <User size={20} strokeWidth={2.5} className="input-icon" />
-                      <input
-                        type="text"
-                        placeholder="NOMBRE(S)"
-                        className="custom-input"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        required
-                        style={{ paddingLeft: "55px" }}
-                      />
-                    </div>
-                    <div className="input-group">
-                      <User size={20} strokeWidth={2.5} className="input-icon" />
-                      <input
-                        type="text"
-                        placeholder="APELLIDOS"
-                        className="custom-input"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        required
-                        style={{ paddingLeft: "55px" }}
-                      />
-                    </div>
-                  </div>
+              {/* CORREO Y TELÉFONO */}
+              <div className="form-row-responsive">
+                <div className="input-group">
+                  <Mail size={20} strokeWidth={2.5} className="input-icon" />
+                  <input
+                    type="email"
+                    placeholder="CORREO ELECTRÓNICO"
+                    className="custom-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    style={{ paddingLeft: "55px" }}
+                  />
+                </div>
+                <div className="input-group">
+                  <Phone size={20} strokeWidth={2.5} className="input-icon" />
+                  <input
+                    type="tel"
+                    placeholder="TELÉFONO / WHATSAPP"
+                    className="custom-input"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    style={{ paddingLeft: "55px" }}
+                  />
+                </div>
+              </div>
 
-                  {/* CORREO Y TELÉFONO */}
-                  <div className="form-row-responsive">
-                    <div className="input-group">
-                      <Mail size={20} strokeWidth={2.5} className="input-icon" />
-                      <input
-                        type="email"
-                        placeholder="CORREO ELECTRÓNICO"
-                        className="custom-input"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        style={{ paddingLeft: "55px" }}
-                      />
-                    </div>
-                    <div className="input-group">
-                      <Phone size={20} strokeWidth={2.5} className="input-icon" />
-                      <input
-                        type="tel"
-                        placeholder="TELÉFONO / WHATSAPP"
-                        className="custom-input"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        required
-                        style={{ paddingLeft: "55px" }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* CONTRASEÑA Y CONFIRMACIÓN */}
-                  <div className="form-row-responsive">
-                    <div className="input-group">
-                      <Lock size={20} strokeWidth={2.5} className="input-icon" />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="CONTRASEÑA"
-                        className="custom-input"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        style={{ paddingLeft: "55px" }}
-                      />
-                      <button 
-                        type="button" 
-                        className="toggle-password-btn" 
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
-                      </button>
-                    </div>
-
-                    <div className="input-group">
-                      <Lock size={20} strokeWidth={2.5} className="input-icon" />
-                      <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="CONFIRMAR CONTRASEÑA"
-                        className="custom-input"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                        style={{ paddingLeft: "55px" }}
-                      />
-                      <button 
-                        type="button" 
-                        className="toggle-password-btn" 
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      >
-                        {showConfirmPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* CONDICIONAL: NOMBRE DE EMPRESA (EMPRESARIAL Y CONTRATISTA) */}
-                  {(rolActual.roleId === 4 || rolActual.roleId === 6) && (
-                    <div className="input-group">
-                      <Building2 size={20} strokeWidth={2.5} className="input-icon" />
-                      <input
-                        type="text"
-                        placeholder="NOMBRE DE TU EMPRESA / NEGOCIO"
-                        className="custom-input"
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        style={{ paddingLeft: "55px" }}
-                      />
-                    </div>
-                  )}
-
-                  {/* CONDICIONAL: CÓDIGO DE EMPRESA (CLIENTE, TÉCNICO AGENTE, ADMIN PROP) */}
-                  {(rolActual.roleId === 3 || rolActual.roleId === 2 || rolActual.roleId === 7) && (
-                    <div className="input-group">
-                      <Key size={20} strokeWidth={2.5} className="input-icon" />
-                      <input
-                        type="text"
-                        placeholder={rolActual.roleId === 7 ? "CÓDIGO DE EMPRESA (OBLIGATORIO)" : "CÓDIGO DE EMPRESA (OPCIONAL)"}
-                        className="custom-input"
-                        value={companyCode}
-                        onChange={(e) => setCompanyCode(e.target.value.toUpperCase())}
-                        style={{ paddingLeft: "55px" }}
-                      />
-                    </div>
-                  )}
-
-                  {/* CONDICIONAL: ESPECIALIDADES TÉCNICAS */}
-                  {(rolActual.roleId === 2 || rolActual.roleId === 8) && (
-                    <div className="modal-specialties-box">
-                      <div className="modal-specialties-title">
-                        <Wrench size={16} color="#f26522" />
-                        <span>ESPECIALIDADES DE SERVICIO:</span>
-                      </div>
-                      <div className="modal-specialties-grid">
-                        {ESPECIALIDADES_CATALOGO.map((spec) => {
-                          const isSelected = selectedSpecialties.includes(spec.name);
-                          return (
-                            <button
-                              key={spec.id}
-                              type="button"
-                              className={`modal-spec-chip ${isSelected ? "selected" : ""}`}
-                              onClick={() => toggleSpecialty(spec.name)}
-                            >
-                              <span>{spec.icon}</span>
-                              <span>{spec.name}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* RECAPTCHA */}
-                  <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0' }}>
-                    <ReCAPTCHA
-                      sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LfHnl4tAAAAAIosLgj18bnFZ4aqpQ0jBXpnJs_Q"}
-                      onChange={handleCaptchaChange}
-                      theme="dark"
-                      size="compact"
-                    />
-                  </div>
-
-                  {/* MENSAJES DE ERROR / ÉXITO */}
-                  {message && (
-                    <p className={`msg-box ${message.includes("Error") ? "error" : "success"}`}>
-                      {message}
-                    </p>
-                  )}
-
-                  {/* BOTONES DE ACCIÓN */}
-                  <button 
-                    type="submit" 
-                    className="btn-login" 
-                    disabled={isLoading}
-                    style={{ marginTop: '5px' }}
-                  >
-                    {isLoading ? "REGISTRANDO..." : "REGISTRAR"}
-                  </button>
-
+              {/* CONTRASEÑA Y CONFIRMACIÓN */}
+              <div className="form-row-responsive">
+                <div className="input-group">
+                  <Lock size={20} strokeWidth={2.5} className="input-icon" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="CONTRASEÑA"
+                    className="custom-input"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    style={{ paddingLeft: "55px" }}
+                  />
                   <button 
                     type="button" 
-                    className="btn-cancelar"
-                    onClick={() => setIsModalOpen(false)}
+                    className="toggle-password-btn" 
+                    onClick={() => setShowPassword(!showPassword)}
                   >
-                    CANCELAR
+                    {showPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
                   </button>
-                </form>
+                </div>
+
+                <div className="input-group">
+                  <Lock size={20} strokeWidth={2.5} className="input-icon" />
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="CONFIRMAR CONTRASEÑA"
+                    className="custom-input"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    style={{ paddingLeft: "55px" }}
+                  />
+                  <button 
+                    type="button" 
+                    className="toggle-password-btn" 
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </>
+
+              {/* CONDICIONAL: NOMBRE DE EMPRESA (EMPRESARIAL Y CONTRATISTA) */}
+              {(rolActual.roleId === 4 || rolActual.roleId === 6) && (
+                <div className="input-group">
+                  <Building2 size={20} strokeWidth={2.5} className="input-icon" />
+                  <input
+                    type="text"
+                    placeholder="NOMBRE DE TU EMPRESA / NEGOCIO"
+                    className="custom-input"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    style={{ paddingLeft: "55px" }}
+                  />
+                </div>
+              )}
+
+              {/* CONDICIONAL: CÓDIGO DE EMPRESA (CLIENTE, TÉCNICO AGENTE, ADMIN PROP) */}
+              {(rolActual.roleId === 3 || rolActual.roleId === 2 || rolActual.roleId === 7) && (
+                <div className="input-group">
+                  <Key size={20} strokeWidth={2.5} className="input-icon" />
+                  <input
+                    type="text"
+                    placeholder={rolActual.roleId === 7 ? "CÓDIGO DE EMPRESA (OBLIGATORIO)" : "CÓDIGO DE EMPRESA (OPCIONAL)"}
+                    className="custom-input"
+                    value={companyCode}
+                    onChange={(e) => setCompanyCode(e.target.value.toUpperCase())}
+                    style={{ paddingLeft: "55px" }}
+                  />
+                </div>
+              )}
+
+              {/* CONDICIONAL: ESPECIALIDADES TÉCNICAS */}
+              {(rolActual.roleId === 2 || rolActual.roleId === 8) && (
+                <div className="modal-specialties-box">
+                  <div className="modal-specialties-title">
+                    <Wrench size={16} color="#f26522" />
+                    <span>ESPECIALIDADES DE SERVICIO:</span>
+                  </div>
+                  <div className="modal-specialties-grid">
+                    {ESPECIALIDADES_CATALOGO.map((spec) => {
+                      const isSelected = selectedSpecialties.includes(spec.name);
+                      return (
+                        <button
+                          key={spec.id}
+                          type="button"
+                          className={`modal-spec-chip ${isSelected ? "selected" : ""}`}
+                          onClick={() => toggleSpecialty(spec.name)}
+                        >
+                          <span>{spec.icon}</span>
+                          <span>{spec.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* RECAPTCHA */}
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0' }}>
+                <ReCAPTCHA
+                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LfHnl4tAAAAAIosLgj18bnFZ4aqpQ0jBXpnJs_Q"}
+                  onChange={handleCaptchaChange}
+                  theme="dark"
+                  size="compact"
+                />
+              </div>
+
+              {/* MENSAJES DE ERROR / ÉXITO */}
+              {message && (
+                <p className={`msg-box ${message.includes("Error") ? "error" : "success"}`}>
+                  {message}
+                </p>
+              )}
+
+              {/* BOTONES DE ACCIÓN */}
+              <button 
+                type="submit" 
+                className="btn-login" 
+                disabled={isLoading}
+                style={{ marginTop: '4px' }}
+              >
+                {isLoading ? "REGISTRANDO..." : "REGISTRAR"}
+              </button>
+
+              <button 
+                type="button" 
+                className="btn-cancelar"
+                onClick={() => setIsModalOpen(false)}
+              >
+                CANCELAR
+              </button>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
