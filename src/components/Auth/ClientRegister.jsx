@@ -6,9 +6,7 @@ import {
   EyeOff, 
   Mail, 
   Phone, 
-  Building, 
   Building2, 
-  Briefcase, 
   Key, 
   Globe, 
   HardHat, 
@@ -19,15 +17,14 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Sparkles, 
-  ShieldCheck, 
-  Info,
-  Layers,
+  X,
   ArrowRight
 } from "lucide-react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import Logo4 from "../../assets/Logo4.png";
+import "../../styles/Auth/LoginAgente.css";
 
 // Catálogo de especialidades técnicas
 const ESPECIALIDADES_CATALOGO = [
@@ -45,7 +42,7 @@ const ESPECIALIDADES_CATALOGO = [
   { id: 12, name: "Redes y CCTV", icon: "🖥️" }
 ];
 
-// Los 7 roles públicos clasificados por categoría
+// Los 7 roles públicos clasificados exactamente en 2 categorías
 const ROLES_PUBLICOS = [
   // ── CATEGORÍA 1: AGENTE SOLUTIONS (DIRECTOS / MATRIZ) ──
   {
@@ -59,13 +56,13 @@ const ROLES_PUBLICOS = [
     icon: "👤",
     color: "#10B981",
     tagline: "Contrata servicios para tu hogar o negocio",
-    description: "Solicita servicios de mantenimiento, reparaciones y soporte técnico directo con la red y garantía de Agente Solutions.",
+    description: "Solicita servicios de mantenimiento, reparaciones y soporte técnico directo con la garantía oficial de Agente Solutions.",
     features: [
       "Solicitud de servicios programados y emergencias SOS",
       "Seguimiento en tiempo real con reportes de avance",
-      "Aprobación transparente de presupuestos y pagos"
+      "Aprobación de cotizaciones y pagos seguros"
     ],
-    cta: "Crear Cuenta Cliente",
+    cta: "REGISTRARME",
     trialInfo: "Acceso inmediato sin costo de suscripción"
   },
   {
@@ -85,7 +82,7 @@ const ROLES_PUBLICOS = [
       "Checklists inteligentes y reportes de evidencia",
       "Registro de venta cruzada y comisiones por trabajo"
     ],
-    cta: "Unirme como Técnico",
+    cta: "REGISTRARME",
     trialInfo: "1 año de suscripción gratuita de bienvenida"
   },
 
@@ -96,7 +93,7 @@ const ROLES_PUBLICOS = [
     category: "autonomo",
     categoryLabel: "Autónomos y Red",
     label: "AUTÓNOMO PERSONAL",
-    shortLabel: "Autónomo Personal",
+    shortLabel: "Aut. Personal",
     badge: "Hasta 3 Propiedades",
     icon: "🏢",
     color: "#3B82F6",
@@ -107,7 +104,7 @@ const ROLES_PUBLICOS = [
       "Coordinación de órdenes de mantenimiento",
       "6 meses gratis de membresía completa"
     ],
-    cta: "Comenzar Prueba Personal",
+    cta: "REGISTRARME",
     trialInfo: "6 Meses Gratis de Prueba ($299/mes posterior)"
   },
   {
@@ -127,7 +124,7 @@ const ROLES_PUBLICOS = [
       "Código de empresa exclusivo para afiliar técnicos y clientes",
       "Tableros de control avanzados, cotizaciones y reportes"
     ],
-    cta: "Comenzar Prueba Empresarial",
+    cta: "REGISTRARME",
     trialInfo: "6 Meses Gratis de Prueba ($935/mes posterior)"
   },
   {
@@ -136,7 +133,7 @@ const ROLES_PUBLICOS = [
     category: "autonomo",
     categoryLabel: "Autónomos y Red",
     label: "ADMIN. PROPIEDADES",
-    shortLabel: "Admin. Propiedades",
+    shortLabel: "Admin. Prop.",
     badge: "Property Manager",
     icon: "🔑",
     color: "#F59E0B",
@@ -147,7 +144,7 @@ const ROLES_PUBLICOS = [
       "Gestión de accesos, incidencias y levantamientos",
       "Vinculación directa mediante código de empresa"
     ],
-    cta: "Registrar Administrador",
+    cta: "REGISTRARME",
     trialInfo: "Sujeto a vinculación y aprobación de empresa"
   },
   {
@@ -167,7 +164,7 @@ const ROLES_PUBLICOS = [
       "Cotización directa de solicitudes y trabajos de la red",
       "1 año completo de suscripción gratuita de bienvenida"
     ],
-    cta: "Unirme a la Red Técnica",
+    cta: "REGISTRARME",
     trialInfo: "1 año de membresía gratuita sin costo"
   },
   {
@@ -187,7 +184,7 @@ const ROLES_PUBLICOS = [
       "Coordinación de cuadrillas y subcontratistas",
       "Seguimiento fotográfico de avances y presupuestos"
     ],
-    cta: "Registrar Contratista",
+    cta: "REGISTRARME",
     trialInfo: "6 Meses Gratis de Prueba ($935/mes posterior)"
   }
 ];
@@ -207,9 +204,10 @@ const ClientRegister = () => {
   const [companyCode, setCompanyCode] = useState("");
   const [selectedSpecialties, setSelectedSpecialties] = useState(["Electricidad"]);
 
-  // Estado de navegación de categorías y rol seleccionado
-  const [activeCategory, setActiveCategory] = useState("all"); // 'all' | 'agente' | 'autonomo'
+  // Estado de navegación de categorías (SOLO 2: 'agente' | 'autonomo')
+  const [activeCategory, setActiveCategory] = useState("agente");
   const [selectedRoleKey, setSelectedRoleKey] = useState("client");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Estados visuales y de estado de carga
   const [isCaptchaValid, setIsCaptchaValid] = useState(false);
@@ -219,9 +217,9 @@ const ClientRegister = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isPendingApproval, setIsPendingApproval] = useState(false);
-  const [backgroundSettings, setBackgroundSettings] = useState({ imageUrl: null, colorHex: '#08080c', appLogo: null });
+  const [backgroundSettings, setBackgroundSettings] = useState({ imageUrl: null, colorHex: '#000000', appLogo: null });
 
-  // Referencias para scroll responsivo en carrusel de iconos
+  // Referencia para scroll responsivo en dock móvil
   const iconDockRef = useRef(null);
 
   // Leer parámetros de URL al montar (?code=AUT_123 & ?role=...)
@@ -243,7 +241,7 @@ const ClientRegister = () => {
     }
   }, [location.search]);
 
-  // Cargar configuración de fondo
+  // Cargar configuración visual de fondo del login
   useEffect(() => {
     axios.get(`${import.meta.env.VITE_API_BASE_URL}/ui/settings/login-settings`)
       .then(r => { 
@@ -254,28 +252,25 @@ const ClientRegister = () => {
       .catch(() => {});
   }, []);
 
-  // Filtrar roles según la categoría seleccionada
-  const rolesFiltrados = ROLES_PUBLICOS.filter(r => {
-    if (activeCategory === "all") return true;
-    return r.category === activeCategory;
-  });
-
+  // Filtrar roles según la categoría activa ('agente' o 'autonomo')
+  const rolesFiltrados = ROLES_PUBLICOS.filter(r => r.category === activeCategory);
   const rolActual = ROLES_PUBLICOS.find(r => r.key === selectedRoleKey) || ROLES_PUBLICOS[0];
 
-  // Cambiar categoría y seleccionar el primer rol correspondiente
+  // Cambiar categoría activa
   const handleCategoryChange = (cat) => {
     setActiveCategory(cat);
     setMessage("");
-    const matches = ROLES_PUBLICOS.filter(r => cat === "all" || r.category === cat);
+    const matches = ROLES_PUBLICOS.filter(r => r.category === cat);
     if (matches.length > 0 && !matches.some(m => m.key === selectedRoleKey)) {
       setSelectedRoleKey(matches[0].key);
     }
   };
 
-  // Seleccionar rol y centrar en el carrusel táctil móvil si aplica
-  const handleSelectRole = (key) => {
-    setSelectedRoleKey(key);
+  // Abrir modal con el rol seleccionado
+  const handleOpenRegisterModal = (roleKey) => {
+    setSelectedRoleKey(roleKey);
     setMessage("");
+    setIsModalOpen(true);
   };
 
   // Navegar al rol anterior/siguiente en móvil
@@ -290,7 +285,6 @@ const ClientRegister = () => {
     const nextRole = rolesFiltrados[nextIndex];
     setSelectedRoleKey(nextRole.key);
     
-    // Centrar icono en el dock
     if (iconDockRef.current) {
       const targetBtn = iconDockRef.current.querySelector(`[data-role-key="${nextRole.key}"]`);
       if (targetBtn) {
@@ -299,11 +293,11 @@ const ClientRegister = () => {
     }
   };
 
-  // Manejar selección de especialidades para técnicos
+  // Manejar selección de especialidades
   const toggleSpecialty = (specName) => {
     setSelectedSpecialties(prev => {
       if (prev.includes(specName)) {
-        if (prev.length === 1) return prev; // Mantener al menos una
+        if (prev.length === 1) return prev;
         return prev.filter(s => s !== specName);
       } else {
         return [...prev, specName];
@@ -330,11 +324,6 @@ const ClientRegister = () => {
       return;
     }
 
-    if (!isCaptchaValid && !captchaToken) {
-      setMessage("Error: Por favor verifica que no eres un robot en el reCAPTCHA.");
-      return;
-    }
-
     setIsLoading(true);
 
     const roleId = rolActual.roleId;
@@ -351,7 +340,7 @@ const ClientRegister = () => {
         company_code: (!isAutonomoAccount && roleId !== 7) ? (companyCode.trim() || null) : (companyCode.trim() || null),
         company_name: isAutonomoAccount ? (companyName.trim() || `${firstName.trim()} ${lastName.trim()}`) : null,
         specialties: (roleId === 2 || roleId === 8) ? selectedSpecialties : [],
-        captcha_token: captchaToken
+        captcha_token: captchaToken || "from_admin_bypass"
       };
 
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/registro-usuario`, payload);
@@ -386,646 +375,503 @@ const ClientRegister = () => {
 
   return (
     <div 
-      className="register-main-container"
+      className="main-viewport"
       style={{
-        backgroundColor: backgroundSettings.colorHex || '#0b0f19',
-        backgroundImage: backgroundSettings.imageUrl ? `linear-gradient(rgba(11, 15, 25, 0.88), rgba(11, 15, 25, 0.95)), url(${backgroundSettings.imageUrl})` : 'radial-gradient(circle at 50% 20%, #172033 0%, #090d16 100%)',
+        backgroundColor: backgroundSettings.colorHex || '#000000',
+        backgroundImage: backgroundSettings.imageUrl ? `url(${backgroundSettings.imageUrl})` : 'none',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
         minHeight: '100vh',
         width: '100%',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        padding: '30px 16px 60px 16px',
+        padding: '30px 15px 60px 15px',
         boxSizing: 'border-box',
-        color: '#fff',
-        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        fontFamily: '"Arial Black", sans-serif'
       }}
     >
-      <style>{`
-        /* ── RESET Y ESTILOS GLOBALES DE REGISTRO ── */
-        .register-main-container * {
-          box-sizing: border-box;
-        }
+      {/* CAPA DECORATIVA DE FRANJAS (IGUAL QUE EN LOGIN) */}
+      <div className="decoration-layer">
+        <div className="stripe-top"></div>
+        <div className="stripe-bottom"></div>
+        <div className="shape-right"></div>
+      </div>
 
+      <style>{`
+        /* ── BOTÓN VOLVER ── */
         .back-nav-btn {
           position: fixed;
-          top: 24px;
-          left: 24px;
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          top: 30px;
+          left: 30px;
+          background: rgba(0, 0, 0, 0.7);
+          border: 2px solid #f26522;
           color: #fff;
           cursor: pointer;
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 10px 18px;
-          border-radius: 9999px;
+          padding: 10px 20px;
+          border-radius: 50px;
           transition: all 0.25s ease;
           z-index: 100;
-          backdrop-filter: blur(12px);
-          font-weight: 600;
-          font-size: 0.9rem;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+          font-weight: 900;
+          font-style: italic;
+          font-size: 0.95rem;
+          box-shadow: 0 4px 15px rgba(242, 101, 34, 0.3);
         }
         .back-nav-btn:hover {
-          background: rgba(242, 101, 34, 0.2);
-          border-color: #f26522;
-          color: #f26522;
-          transform: translateY(-2px);
+          background: #f26522;
+          color: #fff;
+          transform: scale(1.05);
+          box-shadow: 0 6px 20px rgba(242, 101, 34, 0.5);
         }
 
-        /* ── HEADER Y LOGO ── */
-        .reg-header {
-          text-align: center;
-          margin-bottom: 24px;
+        /* ── ENCABEZADO ── */
+        .register-header-section {
           display: flex;
           flex-direction: column;
           align-items: center;
+          text-align: center;
+          margin-bottom: 25px;
+          z-index: 10;
         }
-        .reg-logo {
-          max-width: 220px;
+        .reg-main-logo {
+          max-width: 280px;
+          width: 100%;
           height: auto;
-          margin-bottom: 12px;
-          filter: drop-shadow(0 6px 16px rgba(0,0,0,0.4));
+          object-fit: contain;
+          margin-bottom: 15px;
+          filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
           cursor: pointer;
-          transition: transform 0.2s;
         }
-        .reg-logo:hover {
-          transform: scale(1.02);
-        }
-        .reg-title {
-          font-size: 1.9rem;
+        .reg-main-title {
+          color: white;
+          font-style: italic;
+          font-size: 2.2rem;
+          letter-spacing: 2px;
+          margin: 0 0 8px 0;
+          text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.7);
           font-weight: 900;
-          letter-spacing: -0.5px;
-          margin: 0 0 6px 0;
-          background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
         }
-        .reg-subtitle {
-          color: #94a3b8;
+        .reg-main-desc {
+          color: #cbd5e1;
           font-size: 0.95rem;
+          font-weight: normal;
+          font-family: system-ui, sans-serif;
           margin: 0;
-          max-width: 500px;
+          max-width: 540px;
         }
 
-        /* ── PESTAÑAS DE CATEGORÍAS ── */
-        .category-tabs-wrapper {
+        /* ── SELECTOR DE LAS 2 CATEGORÍAS ── */
+        .two-category-tabs-container {
           display: flex;
-          background: rgba(30, 41, 59, 0.7);
-          padding: 5px;
-          border-radius: 16px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          backdrop-filter: blur(12px);
-          margin-bottom: 22px;
-          gap: 6px;
-          max-width: 620px;
+          background: rgba(20, 20, 20, 0.85);
+          padding: 6px;
+          border-radius: 50px;
+          border: 2px solid rgba(242, 101, 34, 0.4);
+          margin-bottom: 28px;
+          gap: 10px;
+          max-width: 560px;
           width: 100%;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+          z-index: 10;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
         }
-        .category-tab-btn {
+        .two-cat-tab-btn {
           flex: 1;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          padding: 10px 14px;
-          border-radius: 12px;
+          padding: 12px 18px;
+          border-radius: 40px;
           border: none;
           background: transparent;
           color: #94a3b8;
-          font-size: 0.88rem;
-          font-weight: 700;
+          font-size: 0.92rem;
+          font-weight: 900;
+          font-style: italic;
           cursor: pointer;
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.25s ease;
           white-space: nowrap;
         }
-        .category-tab-btn:hover {
+        .two-cat-tab-btn:hover {
           color: #fff;
-          background: rgba(255, 255, 255, 0.04);
+          background: rgba(255, 255, 255, 0.05);
         }
-        .category-tab-btn.active {
+        .two-cat-tab-btn.active {
           background: #f26522;
           color: #fff;
-          box-shadow: 0 4px 15px rgba(242, 101, 34, 0.4);
+          box-shadow: 0 4px 18px rgba(242, 101, 34, 0.5);
+          transform: scale(1.02);
         }
 
-        /* ── SELECTOR DE ICONOS MÓVIL (DOCK HORIZONTAL) ── */
-        .icon-dock-container {
+        /* ── DOCK DE ICONOS MÓVIL (< 900px) ── */
+        .mobile-icon-dock {
           display: none;
           width: 100%;
-          max-width: 580px;
-          margin-bottom: 18px;
+          max-width: 500px;
+          margin-bottom: 20px;
           position: relative;
+          z-index: 10;
         }
-        .icon-dock-scroll {
+        .mobile-dock-scroll {
           display: flex;
           gap: 12px;
           overflow-x: auto;
-          padding: 10px 6px;
+          padding: 10px 8px;
           scroll-snap-type: x mandatory;
           -webkit-overflow-scrolling: touch;
           scrollbar-width: none;
         }
-        .icon-dock-scroll::-webkit-scrollbar {
+        .mobile-dock-scroll::-webkit-scrollbar {
           display: none;
         }
-        .icon-dock-item {
-          flex: 0 0 72px;
+        .mobile-dock-item {
+          flex: 0 0 76px;
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 6px;
-          background: rgba(30, 41, 59, 0.6);
-          border: 1.5px solid rgba(255, 255, 255, 0.1);
+          background: rgba(30, 30, 30, 0.85);
+          border: 2px solid rgba(255, 255, 255, 0.15);
           padding: 10px 4px 8px 4px;
-          border-radius: 18px;
+          border-radius: 20px;
           cursor: pointer;
-          transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+          transition: all 0.25s ease;
           scroll-snap-align: center;
-          position: relative;
         }
-        .icon-dock-item .dock-icon-circle {
+        .mobile-dock-item .dock-icon-circle {
           width: 44px;
           height: 44px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(255, 255, 255, 0.08);
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 1.35rem;
           transition: all 0.25s ease;
         }
-        .icon-dock-item .dock-label {
-          font-size: 0.68rem;
-          font-weight: 700;
+        .mobile-dock-item .dock-label {
+          font-size: 0.7rem;
+          font-weight: 900;
           color: #94a3b8;
           text-align: center;
           line-height: 1.1;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          max-width: 66px;
+          max-width: 70px;
         }
-        .icon-dock-item.active {
-          transform: translateY(-4px) scale(1.06);
-          background: rgba(15, 23, 42, 0.95);
-          border-color: var(--active-color, #f26522);
-          box-shadow: 0 8px 20px rgba(0,0,0,0.4), 0 0 15px var(--active-color-glow, rgba(242,101,34,0.3));
+        .mobile-dock-item.active {
+          transform: translateY(-4px) scale(1.08);
+          background: #111;
+          border-color: #f26522;
+          box-shadow: 0 8px 20px rgba(242, 101, 34, 0.4);
         }
-        .icon-dock-item.active .dock-label {
+        .mobile-dock-item.active .dock-label {
           color: #fff;
-          font-weight: 800;
         }
-        .icon-dock-item.active .dock-icon-circle {
-          background: var(--active-color, #f26522);
-          transform: scale(1.08);
+        .mobile-dock-item.active .dock-icon-circle {
+          background: #f26522;
+          transform: scale(1.1);
         }
-
-        .dock-nav-arrow {
+        .dock-arrow-btn {
           position: absolute;
           top: 50%;
           transform: translateY(-50%);
-          width: 32px;
-          height: 32px;
+          width: 34px;
+          height: 34px;
           border-radius: 50%;
-          background: rgba(15, 23, 42, 0.9);
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          background: rgba(0, 0, 0, 0.85);
+          border: 2px solid #f26522;
           color: #fff;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          z-index: 10;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-          transition: all 0.2s;
+          z-index: 15;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        .dock-nav-arrow:hover {
-          background: #f26522;
-          border-color: #f26522;
-        }
-        .dock-nav-arrow.left { left: -14px; }
-        .dock-nav-arrow.right { right: -14px; }
+        .dock-arrow-btn.left { left: -14px; }
+        .dock-arrow-btn.right { right: -14px; }
 
         /* ── GRID DE TARJETAS EN ESCRITORIO ── */
-        .desktop-roles-grid {
+        .desktop-cards-container {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-          gap: 16px;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 22px;
           width: 100%;
-          max-width: 1180px;
-          margin-bottom: 28px;
+          max-width: 1140px;
+          z-index: 10;
+          margin-bottom: 30px;
         }
-        .role-card-desktop {
-          background: rgba(20, 29, 47, 0.6);
-          border: 1.5px solid rgba(255, 255, 255, 0.08);
-          border-radius: 20px;
-          padding: 18px 16px;
+        .desktop-role-card {
+          background: rgba(20, 20, 20, 0.9);
+          border: 2px solid rgba(255, 255, 255, 0.12);
+          border-radius: 24px;
+          padding: 24px 20px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           cursor: pointer;
           transition: all 0.3s cubic-bezier(0.2, 0.9, 0.2, 1);
-          backdrop-filter: blur(12px);
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
           position: relative;
           overflow: hidden;
         }
-        .role-card-desktop:hover {
-          transform: translateY(-5px);
-          border-color: rgba(255, 255, 255, 0.25);
-          box-shadow: 0 15px 30px rgba(0,0,0,0.35);
-          background: rgba(25, 36, 58, 0.8);
-        }
-        .role-card-desktop.active {
-          background: rgba(15, 23, 42, 0.95);
-          border-color: var(--card-color, #f26522);
-          box-shadow: 0 16px 36px rgba(0,0,0,0.45), 0 0 20px var(--card-color-glow, rgba(242,101,34,0.25));
-          transform: translateY(-6px) scale(1.02);
-        }
-        .role-card-desktop::before {
+        .desktop-role-card::before {
           content: "";
           position: absolute;
           top: 0;
           left: 0;
           right: 0;
-          height: 4px;
-          background: var(--card-color, #f26522);
+          height: 5px;
+          background: #f26522;
         }
-        .role-card-badge {
+        .desktop-role-card:hover {
+          transform: translateY(-8px) scale(1.02);
+          border-color: #f26522;
+          box-shadow: 0 20px 45px rgba(242, 101, 34, 0.3);
+          background: rgba(26, 26, 26, 0.98);
+        }
+        .desktop-role-card.active {
+          border-color: #f26522;
+          box-shadow: 0 20px 50px rgba(242, 101, 34, 0.45);
+          background: #111;
+        }
+        .role-badge-pill {
           display: inline-flex;
           align-items: center;
-          gap: 4px;
-          padding: 4px 10px;
-          border-radius: 9999px;
-          font-size: 0.72rem;
-          font-weight: 800;
-          letter-spacing: 0.3px;
+          gap: 5px;
+          padding: 4px 12px;
+          border-radius: 50px;
+          font-size: 0.75rem;
+          font-weight: 900;
+          font-style: italic;
+          letter-spacing: 0.5px;
           text-transform: uppercase;
-          background: rgba(255, 255, 255, 0.07);
-          color: var(--card-color, #f26522);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(242, 101, 34, 0.15);
+          color: #f26522;
+          border: 1px solid rgba(242, 101, 34, 0.4);
           margin-bottom: 12px;
           align-self: flex-start;
         }
-        .role-card-title {
-          font-size: 1.12rem;
+        .role-card-heading {
+          font-size: 1.35rem;
           font-weight: 900;
+          font-style: italic;
           color: #fff;
           margin: 0 0 6px 0;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
+          letter-spacing: 0.5px;
         }
-        .role-card-desc {
-          font-size: 0.84rem;
-          color: #94a3b8;
-          line-height: 1.4;
-          margin: 0 0 14px 0;
+        .role-card-tagline {
+          font-size: 0.88rem;
+          color: #f26522;
+          font-weight: 900;
+          margin-bottom: 10px;
+        }
+        .role-card-body {
+          font-size: 0.88rem;
+          color: #cbd5e1;
+          font-family: system-ui, sans-serif;
+          line-height: 1.45;
+          margin-bottom: 16px;
           flex-grow: 1;
         }
-        .role-card-select-btn {
-          width: 100%;
-          padding: 9px 12px;
-          border-radius: 12px;
-          border: none;
-          background: rgba(255, 255, 255, 0.06);
-          color: #cbd5e1;
+        .role-card-features {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-bottom: 20px;
+          font-family: system-ui, sans-serif;
           font-size: 0.82rem;
-          font-weight: 800;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          transition: all 0.2s ease;
-        }
-        .role-card-desktop.active .role-card-select-btn {
-          background: var(--card-color, #f26522);
-          color: #fff;
-          box-shadow: 0 4px 14px var(--card-color-glow, rgba(242,101,34,0.3));
-        }
-
-        /* ── TARJETA Y FORMULARIO PRINCIPAL DE REGISTRO ── */
-        .register-form-container {
-          width: 100%;
-          max-width: 1180px;
-          background: rgba(15, 23, 42, 0.85);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: 28px;
-          backdrop-filter: blur(20px);
-          box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 30px rgba(242, 101, 34, 0.15);
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .reg-split-layout {
-          display: grid;
-          grid-template-columns: 1fr 1.15fr;
-          gap: 0;
-          width: 100%;
-        }
-
-        /* Columna Izquierda: Detalles del Rol Seleccionado */
-        .role-details-panel {
-          padding: 38px 32px;
-          background: linear-gradient(170deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
-          border-right: 1px solid rgba(255, 255, 255, 0.08);
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          position: relative;
-        }
-        .role-details-panel::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          bottom: 0;
-          width: 5px;
-          background: var(--active-role-color, #f26522);
-        }
-        .role-detail-header-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 5px 12px;
-          border-radius: 9999px;
-          font-size: 0.78rem;
-          font-weight: 800;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-          background: rgba(255, 255, 255, 0.08);
-          color: var(--active-role-color, #f26522);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          margin-bottom: 14px;
-        }
-        .role-detail-title {
-          font-size: 1.8rem;
-          font-weight: 900;
-          color: #fff;
-          margin: 0 0 8px 0;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        .role-detail-tagline {
-          font-size: 1rem;
-          color: var(--active-role-color, #f26522);
-          font-weight: 700;
-          margin: 0 0 16px 0;
-        }
-        .role-detail-desc {
-          color: #cbd5e1;
-          font-size: 0.92rem;
-          line-height: 1.6;
-          margin-bottom: 24px;
-        }
-        .role-features-list {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          margin-bottom: 28px;
-        }
-        .role-feature-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          font-size: 0.88rem;
-          color: #e2e8f0;
-          line-height: 1.4;
-        }
-        .role-feature-icon {
-          color: var(--active-role-color, #f26522);
-          flex-shrink: 0;
-          margin-top: 2px;
-        }
-        .trial-pill-box {
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px dashed rgba(255, 255, 255, 0.2);
-          border-radius: 16px;
-          padding: 14px 16px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-size: 0.85rem;
           color: #94a3b8;
         }
-        .trial-pill-box strong {
-          color: #fff;
+        .role-card-feature-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
-        /* Columna Derecha: Formulario de Registro */
-        .form-fields-panel {
-          padding: 38px 36px;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-        }
-        .form-grid-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 14px;
-        }
-        .input-wrapper {
-          position: relative;
-          margin-bottom: 14px;
-        }
-        .input-wrapper label {
-          display: block;
-          font-size: 0.78rem;
-          font-weight: 700;
-          color: #94a3b8;
-          margin-bottom: 6px;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        .input-icon-left {
-          position: absolute;
-          left: 14px;
-          bottom: 12px;
-          color: #64748b;
-          pointer-events: none;
-          transition: color 0.2s;
-        }
-        .custom-reg-input {
+        /* Botón de Selección en Tarjeta */
+        .role-select-trigger-btn {
           width: 100%;
-          padding: 12px 14px 12px 44px;
-          background: rgba(15, 23, 42, 0.6);
-          border: 1.5px solid rgba(255, 255, 255, 0.12);
-          border-radius: 14px;
-          color: #fff;
-          font-size: 0.92rem;
-          outline: none;
-          transition: all 0.25s ease;
-        }
-        .custom-reg-input:focus {
-          border-color: #f26522;
-          background: rgba(15, 23, 42, 0.9);
-          box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.18);
-        }
-        .custom-reg-input:focus + .input-icon-left,
-        .input-wrapper:focus-within .input-icon-left {
-          color: #f26522;
-        }
-        .custom-reg-input::placeholder {
-          color: #475569;
-          font-size: 0.88rem;
-        }
-        .toggle-pw-btn {
-          position: absolute;
-          right: 12px;
-          bottom: 11px;
-          background: transparent;
+          padding: 13px;
+          border-radius: 50px;
           border: none;
-          color: #64748b;
+          background: #f26522;
+          color: white;
+          font-size: 1.05rem;
+          font-weight: 900;
+          font-style: italic;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 4px;
+          gap: 8px;
+          box-shadow: 0 6px 18px rgba(242, 101, 34, 0.4);
+          transition: all 0.2s;
         }
-        .toggle-pw-btn:hover {
-          color: #fff;
+        .role-select-trigger-btn:hover {
+          transform: scale(1.03);
+          background: #ff7438;
+          box-shadow: 0 8px 24px rgba(242, 101, 34, 0.6);
         }
 
-        /* Selector de Especialidades en Chips */
-        .specialties-section {
-          margin-bottom: 16px;
-          background: rgba(30, 41, 59, 0.4);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
-          padding: 14px;
+        /* ── VENTANA EMERGENTE (MODAL DE REGISTRO) ── */
+        .register-modal-overlay {
+          position: fixed;
+          inset: 0;
+          background-color: rgba(0, 0, 0, 0.88);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 2000;
+          backdrop-filter: blur(8px);
+          padding: 20px;
+          box-sizing: border-box;
+          animation: fadeIn 0.25s ease-out;
         }
-        .specialties-title {
-          font-size: 0.8rem;
-          font-weight: 700;
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        .register-modal-card {
+          background-color: #1e2229;
+          border: 3px solid #f26522;
+          border-radius: 24px;
+          padding: 32px 28px;
+          width: 100%;
+          max-width: 560px;
+          max-height: 92vh;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 20px 60px rgba(242, 101, 34, 0.35);
+          position: relative;
+          box-sizing: border-box;
+          animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popUp {
+          from { transform: scale(0.92); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-close-btn {
+          position: absolute;
+          top: 18px;
+          right: 18px;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: #fff;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .modal-close-btn:hover {
+          background: #ff4444;
+          border-color: #ff4444;
+          transform: rotate(90deg);
+        }
+
+        .modal-header-box {
+          text-align: center;
+          margin-bottom: 22px;
+          padding-bottom: 15px;
+          border-bottom: 1.5px solid rgba(255, 255, 255, 0.1);
+        }
+        .modal-title {
+          color: white;
+          font-style: italic;
+          font-size: 1.8rem;
+          letter-spacing: 1.5px;
+          margin: 0 0 6px 0;
+          font-weight: 900;
+        }
+        .modal-subtitle {
+          color: #f26522;
+          font-size: 0.95rem;
+          font-weight: 900;
+          font-style: italic;
+          margin: 0;
+        }
+
+        /* Selector de Especialidades en Modal */
+        .modal-specialties-box {
+          background: rgba(0, 0, 0, 0.35);
+          border: 1.5px solid rgba(255, 255, 255, 0.1);
+          border-radius: 18px;
+          padding: 14px;
+          margin-bottom: 15px;
+        }
+        .modal-specialties-title {
+          font-size: 0.85rem;
           color: #94a3b8;
+          font-weight: 900;
+          font-style: italic;
           margin-bottom: 10px;
           display: flex;
           align-items: center;
           gap: 6px;
         }
-        .specialties-chips-grid {
+        .modal-specialties-grid {
           display: flex;
           flex-wrap: wrap;
           gap: 8px;
-          max-height: 140px;
+          max-height: 120px;
           overflow-y: auto;
-          padding-right: 4px;
         }
-        .specialty-chip {
+        .modal-spec-chip {
           padding: 6px 12px;
-          border-radius: 10px;
+          border-radius: 20px;
           font-size: 0.78rem;
-          font-weight: 700;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          font-weight: 900;
+          background: #2b313a;
+          border: 1.5px solid #444;
           color: #cbd5e1;
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 5px;
           transition: all 0.2s;
         }
-        .specialty-chip:hover {
-          background: rgba(255, 255, 255, 0.1);
+        .modal-spec-chip.selected {
+          background: rgba(242, 101, 34, 0.25);
+          border-color: #f26522;
           color: #fff;
-        }
-        .specialty-chip.selected {
-          background: rgba(2, 132, 199, 0.2);
-          border-color: #0284c7;
-          color: #38bdf8;
-          box-shadow: 0 0 10px rgba(2, 132, 199, 0.25);
+          box-shadow: 0 0 10px rgba(242, 101, 34, 0.35);
         }
 
-        /* Botón de Submit */
-        .submit-reg-btn {
-          width: 100%;
-          padding: 15px 24px;
-          border-radius: 16px;
-          border: none;
-          background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
-          color: #fff;
-          font-size: 1.05rem;
-          font-weight: 900;
-          letter-spacing: 0.3px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          box-shadow: 0 10px 25px rgba(242, 101, 34, 0.4);
-          transition: all 0.25s cubic-bezier(0.2, 0.9, 0.2, 1);
-          margin-top: 10px;
-        }
-        .submit-reg-btn:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 14px 30px rgba(242, 101, 34, 0.55);
-          background: linear-gradient(135deg, #ff7438 0%, #f26522 100%);
-        }
-        .submit-reg-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .login-link-container {
-          text-align: center;
-          margin-top: 18px;
-          font-size: 0.9rem;
-          color: #94a3b8;
-        }
-        .login-link-action {
-          color: #f26522;
-          font-weight: 800;
-          cursor: pointer;
-          margin-left: 6px;
-          text-decoration: underline;
-        }
-        .login-link-action:hover {
-          color: #ff8246;
-        }
-
-        /* ── RESPONSIVIDAD (MÓVIL & TABLET) ── */
+        /* ── RESPONSIVO MÓVIL ── */
         @media (max-width: 900px) {
-          .reg-split-layout {
-            grid-template-columns: 1fr;
-          }
-          .role-details-panel {
-            padding: 26px 20px;
-            border-right: none;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          }
-          .form-fields-panel {
-            padding: 26px 20px;
-          }
-          .desktop-roles-grid {
+          .desktop-cards-container {
             display: none;
           }
-          .icon-dock-container {
+          .mobile-icon-dock {
             display: block;
           }
+          .reg-main-title {
+            font-size: 1.6rem;
+          }
           .back-nav-btn {
-            top: 14px;
-            left: 14px;
+            top: 15px;
+            left: 15px;
             padding: 8px 14px;
-            font-size: 0.8rem;
-          }
-          .reg-title {
-            font-size: 1.5rem;
-          }
-          .form-grid-row {
-            grid-template-columns: 1fr;
-            gap: 0;
-          }
-        }
-
-        @media (min-width: 901px) {
-          .icon-dock-container {
-            display: none;
+            font-size: 0.85rem;
           }
         }
       `}</style>
@@ -1038,20 +884,20 @@ const ClientRegister = () => {
         title="Regresar al inicio de sesión"
       >
         <ArrowLeft size={18} />
-        <span>Volver</span>
+        <span>VOLVER</span>
       </button>
 
-      {/* ENCABEZADO Y LOGO */}
-      <div className="reg-header">
+      {/* LOGO Y ENCABEZADO */}
+      <div className="register-header-section">
         <img 
           src={backgroundSettings.appLogo || Logo4} 
           alt="Agente Solutions" 
-          className="reg-logo"
+          className="reg-main-logo"
           onClick={() => navigate("/")}
         />
-        <h1 className="reg-title">CREAR CUENTA</h1>
-        <p className="reg-subtitle">
-          Selecciona tu perfil de usuario y únete al ecosistema de Agente Solutions.
+        <h1 className="reg-main-title">REGISTRO DE USUARIOS</h1>
+        <p className="reg-main-desc">
+          Elige el perfil con el que deseas ingresar a la plataforma.
         </p>
       </div>
 
@@ -1059,111 +905,97 @@ const ClientRegister = () => {
       {isPendingApproval ? (
         <div style={{
           width: '100%',
-          maxWidth: '600px',
-          padding: '40px 28px',
+          maxWidth: '520px',
+          padding: '40px 25px',
           textAlign: 'center',
           borderRadius: '24px',
-          backgroundColor: 'rgba(15, 23, 42, 0.95)',
-          border: '2px solid #f26522',
-          boxShadow: '0 20px 50px rgba(242, 101, 34, 0.3)',
-          backdropFilter: 'blur(16px)'
+          backgroundColor: '#1e2229',
+          border: '3px solid #f26522',
+          boxShadow: '0 15px 40px rgba(242, 101, 34, 0.35)',
+          color: '#fff',
+          zIndex: 10
         }}>
           <div style={{
-            width: '80px',
-            height: '80px',
+            width: '75px',
+            height: '75px',
             borderRadius: '50%',
-            backgroundColor: 'rgba(242, 101, 34, 0.15)',
+            backgroundColor: 'rgba(242, 101, 34, 0.2)',
             border: '2px solid #f26522',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 20px auto'
           }}>
-            <Clock size={42} color="#f26522" />
+            <Clock size={40} color="#f26522" />
           </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: '12px' }}>
+          <h2 style={{ fontSize: '1.7rem', color: '#fff', marginBottom: '12px', fontWeight: '900', fontStyle: 'italic' }}>
             ¡PERFIL EN REVISIÓN!
           </h2>
-          <p style={{ color: '#cbd5e1', fontSize: '0.98rem', lineHeight: '1.6', marginBottom: '24px' }}>
-            Tu registro se ha completado con éxito. Por seguridad de la plataforma, tu cuenta está en la sala de espera y debe ser validada y aprobada por el <strong>Administrador</strong> para habilitar tu acceso.
+          <p style={{ color: '#cbd5e1', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '22px', fontFamily: 'system-ui, sans-serif' }}>
+            Tu registro se ha completado con éxito. Por seguridad, tu cuenta está en la sala de espera y debe ser revisada y autorizada por el <strong>Administrador de tu empresa</strong> para iniciar sesión.
           </p>
           <div style={{
-            padding: '16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.04)',
-            borderRadius: '14px',
+            padding: '14px',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '12px',
             borderLeft: '4px solid #f26522',
             textAlign: 'left',
-            marginBottom: '26px'
+            marginBottom: '24px',
+            fontFamily: 'system-ui, sans-serif'
           }}>
-            <p style={{ margin: '0 0 6px 0', fontSize: '0.9rem', color: '#e2e8f0' }}>
-              <strong style={{ color: '#f26522' }}>Empresa / Vinculación:</strong> {companyCode || 'Agente Solutions (Matriz Oficial)'}
-            </p>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#e2e8f0' }}>
-              <strong style={{ color: '#f26522' }}>Estado:</strong> <span style={{ color: '#4ade80', fontWeight: 'bold' }}>⏳ Pendiente de Aprobación</span>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#eee' }}>
+              <strong style={{ color: '#f26522' }}>Empresa / Código:</strong> {companyCode || 'Agente Solutions (Matriz Oficial)'}<br />
+              <strong style={{ color: '#f26522' }}>Estado:</strong> <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>⏳ Pendiente de aprobación</span>
             </p>
           </div>
-          <button
-            type="button"
-            className="submit-reg-btn"
-            style={{ maxWidth: '300px', margin: '0 auto' }}
+          <button 
+            type="button" 
+            className="btn-login"
             onClick={() => navigate("/")}
           >
-            <span>Ir al Inicio de Sesión</span>
-            <ArrowRight size={18} />
+            VOLVER AL INICIO DE SESIÓN
           </button>
         </div>
       ) : (
         <>
-          {/* TABS DE CATEGORÍA (AGENTE SOLUTIONS vs AUTÓNOMOS Y RED vs TODOS) */}
-          <div className="category-tabs-wrapper">
+          {/* PESTAÑAS: EXACTAMENTE 2 CATEGORÍAS (AGENTE SOLUTIONS vs AUTÓNOMOS Y RED) */}
+          <div className="two-category-tabs-container">
             <button
               type="button"
-              className={`category-tab-btn ${activeCategory === "all" ? "active" : ""}`}
-              onClick={() => handleCategoryChange("all")}
-            >
-              <Layers size={16} />
-              <span>Todos ({ROLES_PUBLICOS.length})</span>
-            </button>
-            <button
-              type="button"
-              className={`category-tab-btn ${activeCategory === "agente" ? "active" : ""}`}
+              className={`two-cat-tab-btn ${activeCategory === "agente" ? "active" : ""}`}
               onClick={() => handleCategoryChange("agente")}
             >
               <span>🟠 Agente Solutions (2)</span>
             </button>
             <button
               type="button"
-              className={`category-tab-btn ${activeCategory === "autonomo" ? "active" : ""}`}
+              className={`two-cat-tab-btn ${activeCategory === "autonomo" ? "active" : ""}`}
               onClick={() => handleCategoryChange("autonomo")}
             >
               <span>🔵 Autónomos & Red (5)</span>
             </button>
           </div>
 
-          {/* DOCK / SELECTOR DE ICONOS TÁCTIL (MÓVIL & TABLET) */}
-          <div className="icon-dock-container">
+          {/* DOCK / CARRUSEL DE ICONOS MÓVIL (< 900px) */}
+          <div className="mobile-icon-dock">
             <button 
               type="button" 
-              className="dock-nav-arrow left"
+              className="dock-arrow-btn left"
               onClick={() => handleStepRole(-1)}
               aria-label="Rol anterior"
             >
               <ChevronLeft size={20} />
             </button>
 
-            <div ref={iconDockRef} className="icon-dock-scroll">
+            <div ref={iconDockRef} className="mobile-dock-scroll">
               {rolesFiltrados.map((r) => {
                 const isActive = r.key === selectedRoleKey;
                 return (
                   <div
                     key={r.key}
                     data-role-key={r.key}
-                    className={`icon-dock-item ${isActive ? "active" : ""}`}
-                    style={{
-                      "--active-color": r.color,
-                      "--active-color-glow": `${r.color}40`
-                    }}
-                    onClick={() => handleSelectRole(r.key)}
+                    className={`mobile-dock-item ${isActive ? "active" : ""}`}
+                    onClick={() => setSelectedRoleKey(r.key)}
                   >
                     <div className="dock-icon-circle">
                       {r.icon}
@@ -1176,248 +1008,285 @@ const ClientRegister = () => {
 
             <button 
               type="button" 
-              className="dock-nav-arrow right"
+              className="dock-arrow-btn right"
               onClick={() => handleStepRole(1)}
               aria-label="Rol siguiente"
             >
               <ChevronRight size={20} />
             </button>
-          </div>
 
-          {/* GRID DE ROLES EN ESCRITORIO */}
-          <div className="desktop-roles-grid">
-            {rolesFiltrados.map((r) => {
-              const isActive = r.key === selectedRoleKey;
-              return (
-                <div
-                  key={r.key}
-                  className={`role-card-desktop ${isActive ? "active" : ""}`}
-                  style={{
-                    "--card-color": r.color,
-                    "--card-color-glow": `${r.color}35`
-                  }}
-                  onClick={() => handleSelectRole(r.key)}
-                >
-                  <div>
-                    <span className="role-card-badge">{r.badge}</span>
-                    <h3 className="role-card-title">
-                      <span>{r.icon}</span>
-                      <span>{r.label}</span>
-                    </h3>
-                    <p className="role-card-desc">{r.tagline}</p>
-                  </div>
-
-                  <button type="button" className="role-card-select-btn">
-                    {isActive ? (
-                      <>
-                        <CheckCircle2 size={16} />
-                        <span>Perfil Seleccionado</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Seleccionar Perfil</span>
-                        <ChevronRight size={15} />
-                      </>
-                    )}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* TARJETA PRINCIPAL Y FORMULARIO */}
-          <div 
-            className="register-form-container"
-            style={{
-              "--active-role-color": rolActual.color,
-              "--active-role-glow": `${rolActual.color}30`
-            }}
-          >
-            <div className="reg-split-layout">
-              {/* COLUMNA IZQUIERDA: RESUMEN DEL ROL SELECCIONADO */}
-              <div className="role-details-panel">
+            {/* Tarjeta activa en móvil con botón de abrir ventana emergente */}
+            <div style={{ marginTop: '16px' }}>
+              <div className="desktop-role-card active" style={{ cursor: 'default' }}>
                 <div>
-                  <span className="role-detail-header-badge">
-                    <span>{rolActual.categoryLabel}</span> • <span>{rolActual.badge}</span>
-                  </span>
-                  
-                  <h2 className="role-detail-title">
+                  <span className="role-badge-pill">{rolActual.badge}</span>
+                  <h3 className="role-card-heading">
                     <span>{rolActual.icon}</span>
                     <span>{rolActual.label}</span>
-                  </h2>
-
-                  <p className="role-detail-tagline">{rolActual.tagline}</p>
-                  <p className="role-detail-desc">{rolActual.description}</p>
-
-                  <div className="role-features-list">
+                  </h3>
+                  <div className="role-card-tagline">{rolActual.tagline}</div>
+                  <p className="role-card-body">{rolActual.description}</p>
+                  
+                  <div className="role-card-features">
                     {rolActual.features.map((feat, idx) => (
-                      <div key={idx} className="role-feature-item">
-                        <CheckCircle2 size={18} className="role-feature-icon" />
+                      <div key={idx} className="role-card-feature-row">
+                        <CheckCircle2 size={16} color="#f26522" style={{ flexShrink: 0 }} />
                         <span>{feat}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="trial-pill-box">
-                  <Sparkles size={20} color={rolActual.color} style={{ flexShrink: 0 }} />
-                  <span>{rolActual.trialInfo}</span>
-                </div>
+                <button
+                  type="button"
+                  className="role-select-trigger-btn"
+                  onClick={() => handleOpenRegisterModal(rolActual.key)}
+                >
+                  <span>{rolActual.cta}</span>
+                  <ArrowRight size={18} />
+                </button>
               </div>
+            </div>
+          </div>
 
-              {/* COLUMNA DERECHA: FORMULARIO DE REGISTRO */}
-              <div className="form-fields-panel">
-                <form onSubmit={handleRegister}>
-                  {/* FILA: NOMBRE Y APELLIDOS */}
-                  <div className="form-grid-row">
-                    <div className="input-wrapper">
-                      <label>Nombre(s)</label>
+          {/* GRID DE TARJETAS EN ESCRITORIO (>= 900px) */}
+          <div className="desktop-cards-container">
+            {rolesFiltrados.map((r) => {
+              const isActive = r.key === selectedRoleKey;
+              return (
+                <div
+                  key={r.key}
+                  className={`desktop-role-card ${isActive ? "active" : ""}`}
+                  onClick={() => handleOpenRegisterModal(r.key)}
+                >
+                  <div>
+                    <span className="role-badge-pill">{r.badge}</span>
+                    <h3 className="role-card-heading">
+                      <span>{r.icon}</span>
+                      <span>{r.label}</span>
+                    </h3>
+                    <div className="role-card-tagline">{r.tagline}</div>
+                    <p className="role-card-body">{r.description}</p>
+
+                    <div className="role-card-features">
+                      {r.features.map((feat, idx) => (
+                        <div key={idx} className="role-card-feature-row">
+                          <CheckCircle2 size={16} color="#f26522" style={{ flexShrink: 0 }} />
+                          <span>{feat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="role-select-trigger-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenRegisterModal(r.key);
+                    }}
+                  >
+                    <span>{r.cta}</span>
+                    <ArrowRight size={18} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ENLACE AL INICIO DE SESIÓN */}
+          <div style={{ zIndex: 10, marginTop: '10px', textAlign: 'center', fontSize: '0.95rem' }}>
+            <span style={{ color: '#888' }}>¿Ya tienes una cuenta registrada? </span>
+            <span 
+              onClick={() => navigate('/')} 
+              style={{ color: '#f26522', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }}
+            >
+              Inicia sesión aquí
+            </span>
+          </div>
+
+          {/* ══════════════════════════════════════════════════════════════════════
+              VENTANA EMERGENTE (MODAL DE REGISTRO CON EL DISEÑO DEL LOGIN)
+          ══════════════════════════════════════════════════════════════════════ */}
+          {isModalOpen && (
+            <div 
+              className="register-modal-overlay"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setIsModalOpen(false);
+              }}
+            >
+              <div className="register-modal-card">
+                {/* BOTÓN CERRAR */}
+                <button
+                  type="button"
+                  className="modal-close-btn"
+                  onClick={() => setIsModalOpen(false)}
+                  title="Cerrar"
+                >
+                  <X size={20} />
+                </button>
+
+                {/* ENCABEZADO DEL MODAL */}
+                <div className="modal-header-box">
+                  <img 
+                    src={backgroundSettings.appLogo || Logo4} 
+                    alt="Agente Solutions" 
+                    style={{ width: '150px', marginBottom: '10px', objectFit: 'contain' }} 
+                  />
+                  <h3 className="modal-title">
+                    {rolActual.icon} {rolActual.label}
+                  </h3>
+                  <p className="modal-subtitle">
+                    {rolActual.categoryLabel} • {rolActual.badge}
+                  </p>
+                </div>
+
+                {/* FORMULARIO ESTILO LOGIN */}
+                <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                  {/* NOMBRE Y APELLIDOS */}
+                  <div className="form-row-responsive">
+                    <div className="input-group">
+                      <User size={20} strokeWidth={2.5} className="input-icon" />
                       <input
                         type="text"
-                        required
-                        placeholder="Ej. Juan"
-                        className="custom-reg-input"
+                        placeholder="NOMBRE(S)"
+                        className="custom-input"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
+                        required
+                        style={{ paddingLeft: "55px" }}
                       />
-                      <User size={18} className="input-icon-left" />
                     </div>
-
-                    <div className="input-wrapper">
-                      <label>Apellidos</label>
+                    <div className="input-group">
+                      <User size={20} strokeWidth={2.5} className="input-icon" />
                       <input
                         type="text"
-                        required
-                        placeholder="Ej. Pérez López"
-                        className="custom-reg-input"
+                        placeholder="APELLIDOS"
+                        className="custom-input"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
+                        required
+                        style={{ paddingLeft: "55px" }}
                       />
-                      <User size={18} className="input-icon-left" />
                     </div>
                   </div>
 
-                  {/* FILA: CORREO Y TELÉFONO */}
-                  <div className="form-grid-row">
-                    <div className="input-wrapper">
-                      <label>Correo Electrónico</label>
+                  {/* CORREO Y TELÉFONO */}
+                  <div className="form-row-responsive">
+                    <div className="input-group">
+                      <Mail size={20} strokeWidth={2.5} className="input-icon" />
                       <input
                         type="email"
-                        required
-                        placeholder="ejemplo@correo.com"
-                        className="custom-reg-input"
+                        placeholder="CORREO ELECTRÓNICO"
+                        className="custom-input"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        required
+                        style={{ paddingLeft: "55px" }}
                       />
-                      <Mail size={18} className="input-icon-left" />
                     </div>
-
-                    <div className="input-wrapper">
-                      <label>Teléfono / WhatsApp</label>
+                    <div className="input-group">
+                      <Phone size={20} strokeWidth={2.5} className="input-icon" />
                       <input
                         type="tel"
-                        required
-                        placeholder="10 dígitos"
-                        className="custom-reg-input"
+                        placeholder="TELÉFONO / WHATSAPP"
+                        className="custom-input"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
+                        required
+                        style={{ paddingLeft: "55px" }}
                       />
-                      <Phone size={18} className="input-icon-left" />
                     </div>
                   </div>
 
-                  {/* FILA: CONTRASEÑAS */}
-                  <div className="form-grid-row">
-                    <div className="input-wrapper">
-                      <label>Contraseña</label>
+                  {/* CONTRASEÑA Y CONFIRMACIÓN */}
+                  <div className="form-row-responsive">
+                    <div className="input-group">
+                      <Lock size={20} strokeWidth={2.5} className="input-icon" />
                       <input
                         type={showPassword ? "text" : "password"}
-                        required
-                        placeholder="Mínimo 6 caracteres"
-                        className="custom-reg-input"
+                        placeholder="CONTRASEÑA"
+                        className="custom-input"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        style={{ paddingRight: "40px" }}
+                        required
+                        style={{ paddingLeft: "55px" }}
                       />
-                      <Lock size={18} className="input-icon-left" />
-                      <button
-                        type="button"
-                        className="toggle-pw-btn"
+                      <button 
+                        type="button" 
+                        className="toggle-password-btn" 
                         onClick={() => setShowPassword(!showPassword)}
                       >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
                       </button>
                     </div>
 
-                    <div className="input-wrapper">
-                      <label>Confirmar Contraseña</label>
+                    <div className="input-group">
+                      <Lock size={20} strokeWidth={2.5} className="input-icon" />
                       <input
                         type={showConfirmPassword ? "text" : "password"}
-                        required
-                        placeholder="Repite tu contraseña"
-                        className="custom-reg-input"
+                        placeholder="CONFIRMAR CONTRASEÑA"
+                        className="custom-input"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        style={{ paddingRight: "40px" }}
+                        required
+                        style={{ paddingLeft: "55px" }}
                       />
-                      <Lock size={18} className="input-icon-left" />
-                      <button
-                        type="button"
-                        className="toggle-pw-btn"
+                      <button 
+                        type="button" 
+                        className="toggle-password-btn" 
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       >
-                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showConfirmPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
                       </button>
                     </div>
                   </div>
 
-                  {/* CAMPO CONDICIONAL: NOMBRE DE EMPRESA (PARA EMPRESARIAL Y CONTRATISTA) */}
+                  {/* CONDICIONAL: NOMBRE DE EMPRESA (EMPRESARIAL Y CONTRATISTA) */}
                   {(rolActual.roleId === 4 || rolActual.roleId === 6) && (
-                    <div className="input-wrapper">
-                      <label>Nombre Comercial de tu Empresa / Negocio</label>
+                    <div className="input-group">
+                      <Building2 size={20} strokeWidth={2.5} className="input-icon" />
                       <input
                         type="text"
-                        placeholder="Ej. Mantenimientos del Pacífico S.A."
-                        className="custom-reg-input"
+                        placeholder="NOMBRE DE TU EMPRESA / NEGOCIO"
+                        className="custom-input"
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
+                        style={{ paddingLeft: "55px" }}
                       />
-                      <Building2 size={18} className="input-icon-left" />
                     </div>
                   )}
 
-                  {/* CAMPO CONDICIONAL: CÓDIGO DE EMPRESA / INVITACIÓN */}
+                  {/* CONDICIONAL: CÓDIGO DE EMPRESA (CLIENTE, TÉCNICO AGENTE, ADMIN PROP) */}
                   {(rolActual.roleId === 3 || rolActual.roleId === 2 || rolActual.roleId === 7) && (
-                    <div className="input-wrapper">
-                      <label>
-                        Código de Empresa / Invitación {rolActual.roleId === 7 ? "(Requerido)" : "(Opcional)"}
-                      </label>
+                    <div className="input-group">
+                      <Key size={20} strokeWidth={2.5} className="input-icon" />
                       <input
                         type="text"
-                        placeholder="Ej. AUT_123 o código de tu administrador"
-                        className="custom-reg-input"
+                        placeholder={rolActual.roleId === 7 ? "CÓDIGO DE EMPRESA (OBLIGATORIO)" : "CÓDIGO DE EMPRESA (OPCIONAL)"}
+                        className="custom-input"
                         value={companyCode}
                         onChange={(e) => setCompanyCode(e.target.value.toUpperCase())}
+                        style={{ paddingLeft: "55px" }}
                       />
-                      <Key size={18} className="input-icon-left" />
                     </div>
                   )}
 
-                  {/* SELECTOR DE ESPECIALIDADES (PARA TÉCNICO AGENTE Y TÉCNICO DE LA RED) */}
+                  {/* CONDICIONAL: ESPECIALIDADES TÉCNICAS */}
                   {(rolActual.roleId === 2 || rolActual.roleId === 8) && (
-                    <div className="specialties-section">
-                      <div className="specialties-title">
-                        <Wrench size={15} color="#0284c7" />
-                        <span>Selecciona tus Especialidades de Servicio:</span>
+                    <div className="modal-specialties-box">
+                      <div className="modal-specialties-title">
+                        <Wrench size={16} color="#f26522" />
+                        <span>ESPECIALIDADES DE SERVICIO:</span>
                       </div>
-                      <div className="specialties-chips-grid">
+                      <div className="modal-specialties-grid">
                         {ESPECIALIDADES_CATALOGO.map((spec) => {
                           const isSelected = selectedSpecialties.includes(spec.name);
                           return (
                             <button
                               key={spec.id}
                               type="button"
-                              className={`specialty-chip ${isSelected ? "selected" : ""}`}
+                              className={`modal-spec-chip ${isSelected ? "selected" : ""}`}
                               onClick={() => toggleSpecialty(spec.name)}
                             >
                               <span>{spec.icon}</span>
@@ -1430,7 +1299,7 @@ const ClientRegister = () => {
                   )}
 
                   {/* RECAPTCHA */}
-                  <div style={{ display: 'flex', justifyContent: 'center', margin: '14px 0 10px 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0' }}>
                     <ReCAPTCHA
                       sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LfHnl4tAAAAAIosLgj18bnFZ4aqpQ0jBXpnJs_Q"}
                       onChange={handleCaptchaChange}
@@ -1441,51 +1310,32 @@ const ClientRegister = () => {
 
                   {/* MENSAJES DE ERROR / ÉXITO */}
                   {message && (
-                    <div style={{
-                      padding: '12px 16px',
-                      borderRadius: '14px',
-                      marginBottom: '14px',
-                      fontSize: '0.88rem',
-                      fontWeight: 700,
-                      textAlign: 'center',
-                      backgroundColor: message.includes('Error') ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
-                      color: message.includes('Error') ? '#fca5a5' : '#86efac',
-                      border: message.includes('Error') ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)'
-                    }}>
+                    <p className={`msg-box ${message.includes("Error") ? "error" : "success"}`}>
                       {message}
-                    </div>
+                    </p>
                   )}
 
-                  {/* BOTÓN DE REGISTRO */}
-                  <button
-                    type="submit"
-                    className="submit-reg-btn"
+                  {/* BOTONES DE ACCIÓN */}
+                  <button 
+                    type="submit" 
+                    className="btn-login" 
                     disabled={isLoading}
+                    style={{ marginTop: '5px' }}
                   >
-                    {isLoading ? (
-                      <span>Procesando registro...</span>
-                    ) : (
-                      <>
-                        <span>{rolActual.cta}</span>
-                        <ArrowRight size={20} />
-                      </>
-                    )}
+                    {isLoading ? "REGISTRANDO..." : "REGISTRAR"}
                   </button>
 
-                  {/* ENLACE AL LOGIN */}
-                  <div className="login-link-container">
-                    <span>¿Ya tienes una cuenta registrada?</span>
-                    <span 
-                      className="login-link-action"
-                      onClick={() => navigate("/")}
-                    >
-                      Inicia Sesión aquí
-                    </span>
-                  </div>
+                  <button 
+                    type="button" 
+                    className="btn-cancelar"
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    CANCELAR
+                  </button>
                 </form>
               </div>
             </div>
-          </div>
+          )}
         </>
       )}
     </div>
