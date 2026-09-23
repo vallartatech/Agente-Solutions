@@ -76,10 +76,10 @@ const Cotizaciones = () => {
     const fetchCotizaciones = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
-        const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+        const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://agentesolutionsback-production.up.railway.app/api';
         const res = await axios.get(`${API_URL}/cotizaciones`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         if (Array.isArray(res.data)) {
           setCotizacionesData(res.data);
