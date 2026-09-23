@@ -633,24 +633,34 @@ const ClientRegister = () => {
 
         .modal-close-btn {
           position: absolute;
-          top: 18px;
-          right: 18px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: #fff;
-          width: 36px;
-          height: 36px;
+          top: 16px;
+          right: 16px;
+          background: #e53e3e;
+          border: 2px solid #ffffff;
+          color: #ffffff;
+          width: 38px;
+          height: 38px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          transition: all 0.2s;
+          z-index: 30;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+          transition: all 0.2s ease;
+          padding: 0;
+        }
+        .modal-close-btn svg {
+          width: 22px !important;
+          height: 22px !important;
+          stroke: #ffffff !important;
+          stroke-width: 3.5px !important;
+          display: block !important;
         }
         .modal-close-btn:hover {
-          background: #ff4444;
-          border-color: #ff4444;
-          transform: rotate(90deg);
+          background: #c53030;
+          transform: scale(1.1) rotate(90deg);
+          box-shadow: 0 6px 16px rgba(229, 62, 62, 0.5);
         }
 
         .modal-header-box {
@@ -903,9 +913,10 @@ const ClientRegister = () => {
               type="button"
               className="modal-close-btn"
               onClick={() => setIsModalOpen(false)}
-              title="Cerrar"
+              title="Cerrar ventana"
+              aria-label="Cerrar ventana"
             >
-              <X size={20} />
+              <X size={22} color="#ffffff" strokeWidth={3.5} />
             </button>
 
             {/* ENCABEZADO DEL MODAL */}
