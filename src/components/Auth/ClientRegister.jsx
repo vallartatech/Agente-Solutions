@@ -1073,14 +1073,25 @@ const ClientRegister = () => {
                 </div>
               )}
 
-              {/* RECAPTCHA */}
-              <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0' }}>
-                <ReCAPTCHA
-                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LfHnl4tAAAAAIosLgj18bnFZ4aqpQ0jBXpnJs_Q"}
-                  onChange={handleCaptchaChange}
-                  theme="dark"
-                  size="compact"
-                />
+              {/* RECAPTCHA ESTILIZADO HORIZONTAL */}
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', margin: '8px 0' }}>
+                <div style={{
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 18px rgba(0, 0, 0, 0.5)',
+                  border: '1.5px solid rgba(242, 101, 34, 0.4)',
+                  display: 'inline-flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  background: '#222'
+                }}>
+                  <ReCAPTCHA
+                    sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LfHnl4tAAAAAIosLgj18bnFZ4aqpQ0jBXpnJs_Q"}
+                    onChange={handleCaptchaChange}
+                    theme="dark"
+                    size="normal"
+                  />
+                </div>
               </div>
 
               {/* MENSAJES DE ERROR / ÉXITO */}
