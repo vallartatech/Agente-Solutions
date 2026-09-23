@@ -422,13 +422,13 @@ const ClientRegister = () => {
         /* ── SELECTOR DE LAS 2 CATEGORÍAS EN CAPSULA ── */
         .side-category-pills {
           display: flex;
-          background: rgba(30, 30, 30, 0.85);
+          background: rgba(25, 25, 25, 0.9);
           padding: 5px;
           border-radius: 50px;
-          border: 2px solid rgba(242, 101, 34, 0.5);
+          border: 1.5px solid rgba(255, 255, 255, 0.15);
           gap: 6px;
           width: 100%;
-          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
         }
         .side-cat-btn {
           flex: 1;
@@ -455,10 +455,10 @@ const ClientRegister = () => {
         .side-cat-btn.active {
           background: #f26522;
           color: #fff;
-          box-shadow: 0 4px 15px rgba(242, 101, 34, 0.5);
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
         }
 
-        /* ── CARRUSEL CON FLECHAS DE NAVEGACIÓN MEJORADAS ── */
+        /* ── CARRUSEL CON FLECHAS DE NAVEGACIÓN ULTRA VISIBLES ── */
         .role-carousel-wrapper {
           position: relative;
           width: 100%;
@@ -470,25 +470,32 @@ const ClientRegister = () => {
           position: absolute;
           top: 50%;
           transform: translateY(-50%);
-          width: 48px;
-          height: 48px;
+          width: 50px;
+          height: 50px;
           border-radius: 50%;
           background: #f26522;
-          border: 2.5px solid #ffffff;
+          border: 3px solid #ffffff;
           color: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           z-index: 25;
-          box-shadow: 0 0 20px rgba(242, 101, 34, 0.75), 0 6px 16px rgba(0, 0, 0, 0.6);
-          transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+          transition: all 0.2s ease;
+          padding: 0;
+        }
+        .side-arrow-btn svg {
+          width: 32px !important;
+          height: 32px !important;
+          stroke: #ffffff !important;
+          stroke-width: 3.5px !important;
+          display: block !important;
         }
         .side-arrow-btn:hover {
-          background: #ff7539;
-          transform: translateY(-50%) scale(1.18);
-          box-shadow: 0 0 30px rgba(242, 101, 34, 0.95), 0 8px 22px rgba(0, 0, 0, 0.8);
-          border-color: #ffffff;
+          background: #ff7438;
+          transform: translateY(-50%) scale(1.12);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8);
         }
         .side-arrow-btn:active {
           transform: translateY(-50%) scale(0.95);
@@ -496,14 +503,14 @@ const ClientRegister = () => {
         .side-arrow-btn.left { left: -24px; }
         .side-arrow-btn.right { right: -24px; }
 
-        /* ── TARJETA DEL USUARIO ACTUAL ── */
+        /* ── TARJETA DEL USUARIO ACTUAL (LIMPIA SIN RESPLANDOR NARANJA) ── */
         .current-role-card {
           width: 100%;
-          background: rgba(20, 20, 20, 0.95);
-          border: 2px solid #f26522;
+          background: #181b20;
+          border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 24px;
           padding: 24px 22px;
-          box-shadow: 0 15px 40px rgba(242, 101, 34, 0.35);
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
           display: flex;
           flex-direction: column;
           box-sizing: border-box;
@@ -811,7 +818,7 @@ const ClientRegister = () => {
                 title="Usuario anterior"
                 aria-label="Usuario anterior"
               >
-                <ChevronLeft size={28} strokeWidth={3.5} />
+                <ChevronLeft size={32} strokeWidth={3.5} color="#ffffff" />
               </button>
 
               {/* TARJETA DEL USUARIO SELECCIONADO */}
@@ -862,7 +869,7 @@ const ClientRegister = () => {
                 title="Siguiente usuario"
                 aria-label="Siguiente usuario"
               >
-                <ChevronRight size={28} strokeWidth={3.5} />
+                <ChevronRight size={32} strokeWidth={3.5} color="#ffffff" />
               </button>
             </div>
 
