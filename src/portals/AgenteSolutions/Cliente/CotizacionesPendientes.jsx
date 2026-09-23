@@ -328,13 +328,15 @@ const CotizacionesPendientes = () => {
   const cotizacionesNoSeleccionadas = cotizaciones.filter(c => !c.vencida && !c.recotizacionSolicitada && !selectedIds.includes(c.id));
   const totalSubtotal = cotizacionesSeleccionadas.reduce((acc, c) => acc + (Number(c.total) || 0), 0);
   
-  // Cálculo fiscal e IVA para pasarela
+  // Cálculo fiscal e IVA
   const ivaCalculado = totalSubtotal * 0.16;
-  const subConIva = totalSubtotal + ivaCalculado;
-  const comisionMP = totalSubtotal > 0 ? (subConIva * 0.0349 + 4) * 1.16 : 0;
+  const subConIva = Math.round((totalSubtotal + ivaCalculado) * 100) / 100;
+  const comisionMP = totalSubtotal > 0 ? Math.round(((subConIva * 0.0349 + 4) * 1.16) * 100) / 100 : 0;
   const totalConImpuestos = Math.round((subConIva + comisionMP) * 100) / 100;
 
-  const totalFinalPagar = metodoPago === 'mercadopago' ? totalConImpuestos : totalSubtotal;
+  // Si es efectivo: Solo Subtotal + IVA (sin comisión de Mercado Pago)
+  // Si es Mercado Pago: Subtotal + IVA + Comisión MP
+  const totalFinalPagar = metodoPago === 'mercadopago' ? totalConImpuestos : subConIva;
   const anticipoPagar = Math.round(totalFinalPagar * 0.60 * 100) / 100;
   const montoAPagarAhora = tipoMonto === 'advance' ? anticipoPagar : totalFinalPagar;
 
@@ -859,6 +861,44 @@ const CotizacionesPendientes = () => {
                   <Banknote size={26} color="#16a34a" style={{ margin: '0 auto 4px auto', display: 'block' }} />
                   <div style={{ fontWeight: '800', fontSize: '0.85rem', color: '#0f172a' }}>Efectivo / En Sitio</div>
                   <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>Pago contra entrega</div>
+                </div>
+              </div>
+
+              {/* Desglose de Comisión e Impuestos */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '10px 14px',
+                marginBottom: '16px',
+                fontSize: '0.8rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
+                  <span>Subtotal:</span>
+                  <span style={{ fontWeight: '700' }}>{formatCurrency(totalSubtotal)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
+                  <span>IVA (16%):</span>
+                  <span style={{ fontWeight: '700' }}>{formatCurrency(ivaCalculado)}</span>
+                </div>
+                {metodoPago === 'mercadopago' ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#009ee3', fontWeight: '700' }}>
+                    <span>💳 Comisión Pasarela (T. Oficial):</span>
+                    <span>+{formatCurrency(comisionMP)}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a', fontWeight: '700' }}>
+                    <span>💵 Pago en Efectivo:</span>
+                    <span>Exento de comisión MP ($0.00)</span>
+                  </div>
+                )}
+                <div style={{ height: '1px', background: '#e2e8f0', margin: '2px 0' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0f172a', fontWeight: '900', fontSize: '0.88rem' }}>
+                  <span>Total {metodoPago === 'efectivo' ? 'en Efectivo' : 'Mercado Pago'}:</span>
+                  <span>{formatCurrency(totalFinalPagar)}</span>
                 </div>
               </div>
 

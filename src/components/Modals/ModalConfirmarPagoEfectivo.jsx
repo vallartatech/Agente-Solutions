@@ -19,10 +19,39 @@ const ModalConfirmarPagoEfectivo = ({ isOpen, onClose, cotizacion, onPaymentConf
   const clientName = cotizacion.client_name || cotizacion.cliente || cotizacion.property?.client?.name || cotizacion.property?.client?.propietario || 'Cliente';
   const propertyName = cotizacion.property_name || cotizacion.propiedad || cotizacion.property?.nombre_propiedad || cotizacion.property?.address || 'Propiedad General';
   
-  // Total cotizado
-  const totalCotizado = parseFloat(
-    cotizacion.estimated_amount ?? cotizacion.price ?? cotizacion.total ?? cotizacion.monto ?? 0
-  );
+  // Calcular desglose exacto (Subtotal + 16% IVA, sin comisión de Mercado Pago)
+  let subtotalCalculado = 0;
+  try {
+    const rawConcept = cotizacion.concept || cotizacion.concepto;
+    const detalle = typeof rawConcept === 'string' ? JSON.parse(rawConcept) : rawConcept;
+    if (detalle && typeof detalle === 'object') {
+      const listado = detalle.conceptos || detalle.servicios || [];
+      if (Array.isArray(listado)) {
+        listado.forEach(c => subtotalCalculado += (parseFloat(c.precio_u || c.precio || 0) * parseFloat(c.cantidad || c.cant || 1)));
+      }
+      if (Array.isArray(detalle.materiales)) {
+        detalle.materiales.forEach(m => subtotalCalculado += (parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || m.cant || 1)));
+      }
+      if (Array.isArray(detalle.seccionesLote)) {
+        detalle.seccionesLote.forEach(sec => {
+          if (Array.isArray(sec.conceptos)) {
+            sec.conceptos.forEach(c => subtotalCalculado += (parseFloat(c.precio_u || c.precio || 0) * parseFloat(c.cantidad || c.cant || 1)));
+          }
+          if (Array.isArray(sec.materiales)) {
+            sec.materiales.forEach(m => subtotalCalculado += (parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || m.cant || 1)));
+          }
+        });
+      }
+    }
+  } catch(e) {}
+
+  const subtotalBase = subtotalCalculado > 0 
+    ? subtotalCalculado 
+    : parseFloat(cotizacion.estimated_amount ?? cotizacion.price ?? cotizacion.total ?? cotizacion.monto ?? 0);
+  
+  const ivaCalculado = Math.round(subtotalBase * 0.16 * 100) / 100;
+  // Total para pago en efectivo = Subtotal + IVA (sin comisión MP)
+  const totalCotizado = Math.round((subtotalBase + ivaCalculado) * 100) / 100;
 
   // Ya tiene anticipo previo?
   const yaTieneAnticipo = Boolean(
@@ -219,10 +248,21 @@ const ModalConfirmarPagoEfectivo = ({ isOpen, onClose, cotizacion, onPaymentConf
               <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Propiedad</div>
               <div style={{ fontSize: '0.92rem', fontWeight: '800', color: '#1e293b', marginTop: '2px' }}>{propertyName}</div>
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Total Cotizado</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#0f172a', marginTop: '2px' }}>
-                {formatCurrency(totalCotizado)}
+            <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid #e2e8f0', paddingTop: '10px', marginTop: '4px', flexWrap: 'wrap', gap: '8px' }}>
+              <div>
+                <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Desglose Fiscal (Efectivo)</div>
+                <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '2px' }}>
+                  Subtotal: <strong>{formatCurrency(subtotalBase)}</strong> + IVA (16%): <strong>{formatCurrency(ivaCalculado)}</strong>
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: '700', marginTop: '2px' }}>
+                  ✓ Exento de comisión de pasarela Mercado Pago ($0.00)
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Total en Efectivo</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#0f172a' }}>
+                  {formatCurrency(totalCotizado)}
+                </div>
               </div>
             </div>
           </div>

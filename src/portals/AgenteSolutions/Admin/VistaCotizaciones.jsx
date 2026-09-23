@@ -372,16 +372,45 @@ const VistaCotizaciones = () => {
       const detalle = typeof rawConcept === 'string' ? JSON.parse(rawConcept) : rawConcept;
       if (detalle && typeof detalle === 'object') {
         const listado = detalle.conceptos || detalle.servicios || [];
-        listado.forEach(c => subtotalItems += (parseFloat(c.precio_u || c.precio || 0) * parseFloat(c.cantidad || 1)));
-        if (detalle.materiales) {
-          detalle.materiales.forEach(m => subtotalItems += (parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || 1)));
+        if (Array.isArray(listado)) {
+          listado.forEach(c => subtotalItems += (parseFloat(c.precio_u || c.precio || 0) * parseFloat(c.cantidad || c.cant || 1)));
+        }
+        if (Array.isArray(detalle.materiales)) {
+          detalle.materiales.forEach(m => subtotalItems += (parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || m.cant || 1)));
+        }
+        if (Array.isArray(detalle.seccionesLote)) {
+          detalle.seccionesLote.forEach(sec => {
+            if (Array.isArray(sec.conceptos)) {
+              sec.conceptos.forEach(c => subtotalItems += (parseFloat(c.precio_u || c.precio || 0) * parseFloat(c.cantidad || c.cant || 1)));
+            }
+            if (Array.isArray(sec.materiales)) {
+              sec.materiales.forEach(m => subtotalItems += (parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || m.cant || 1)));
+            }
+          });
         }
       }
     } catch(e) {}
-    let base = subtotalItems > 0 ? subtotalItems : parseFloat(cot.total || 0);
+    let base = subtotalItems > 0 ? subtotalItems : parseFloat(cot.total || cot.estimated_amount || 0);
     if (base > 0) {
       const iva = base * 0.16;
       const subConIva = base + iva;
+      const esEfectivo = Boolean(
+        cot.cash_requested || 
+        cot.payment_scheme === 'cash' || 
+        cot.cash_amount_type || 
+        cot.cash_timing || 
+        cot.metodo_pago === 'efectivo' || 
+        cot.payment_method === 'cash' || 
+        String(cot.status || cot.estado || '').toLowerCase().includes('efectivo') || 
+        String(cot.status || cot.estado || '').toLowerCase().includes('anticipo pagado')
+      );
+
+      // Si es pago en efectivo, NO se cobra comisión de Mercado Pago, solo IVA
+      if (esEfectivo) {
+        return subConIva;
+      }
+
+      // Si es pago por Mercado Pago, se cobra la comisión oficial + IVA
       const comisionMP = (subConIva * 0.0349 + 4) * 1.16;
       return subConIva + comisionMP;
     }
@@ -1431,31 +1460,56 @@ const VistaCotizaciones = () => {
                     const detalle = typeof rawConcept === 'string' ? JSON.parse(rawConcept) : rawConcept;
                     if (detalle && typeof detalle === 'object') {
                       const listado = detalle.conceptos || detalle.servicios || [];
-                      listado.forEach(c => subtotalItems += (parseFloat(c.precio_u || c.precio || 0) * parseFloat(c.cantidad || 1)));
-                      if (detalle.materiales) {
-                        detalle.materiales.forEach(m => subtotalItems += (parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || 1)));
+                      if (Array.isArray(listado)) {
+                        listado.forEach(c => subtotalItems += (parseFloat(c.precio_u || c.precio || 0) * parseFloat(c.cantidad || c.cant || 1)));
+                      }
+                      if (Array.isArray(detalle.materiales)) {
+                        detalle.materiales.forEach(m => subtotalItems += (parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || m.cant || 1)));
+                      }
+                      if (Array.isArray(detalle.seccionesLote)) {
+                        detalle.seccionesLote.forEach(sec => {
+                          if (Array.isArray(sec.conceptos)) {
+                            sec.conceptos.forEach(c => subtotalItems += (parseFloat(c.precio_u || c.precio || 0) * parseFloat(c.cantidad || c.cant || 1)));
+                          }
+                          if (Array.isArray(sec.materiales)) {
+                            sec.materiales.forEach(m => subtotalItems += (parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || m.cant || 1)));
+                          }
+                        });
                       }
                     }
                   } catch(e) {}
                   
-                  const iva = subtotalItems * 0.16;
-                  const subtotalConIva = subtotalItems + iva;
-                  const esEfectivo = cotizacionSeleccionada.cash_requested || String(cotizacionSeleccionada.status || '').toLowerCase().includes('efectivo');
-                  const comisionMP = (subtotalConIva * 0.0349 + 4) * 1.16;
-                  const totalCalc = subtotalItems > 0 ? (subtotalConIva + comisionMP) : parseFloat(cotizacionSeleccionada.total || 0);
+                  const baseMonto = subtotalItems > 0 ? subtotalItems : parseFloat(cotizacionSeleccionada.total || cotizacionSeleccionada.estimated_amount || 0);
+                  const iva = baseMonto * 0.16;
+                  const subtotalConIva = baseMonto + iva;
+                  const esEfectivo = Boolean(
+                    cotizacionSeleccionada.cash_requested || 
+                    cotizacionSeleccionada.payment_scheme === 'cash' || 
+                    cotizacionSeleccionada.cash_amount_type || 
+                    cotizacionSeleccionada.cash_timing || 
+                    cotizacionSeleccionada.metodo_pago === 'efectivo' || 
+                    cotizacionSeleccionada.payment_method === 'cash' || 
+                    String(cotizacionSeleccionada.status || cotizacionSeleccionada.estado || '').toLowerCase().includes('efectivo') || 
+                    String(cotizacionSeleccionada.status || cotizacionSeleccionada.estado || '').toLowerCase().includes('anticipo pagado')
+                  );
+
+                  const comisionMP = esEfectivo ? 0 : ((subtotalConIva * 0.0349 + 4) * 1.16);
+                  const totalCalc = baseMonto > 0 
+                    ? (esEfectivo ? subtotalConIva : (subtotalConIva + comisionMP)) 
+                    : parseFloat(cotizacionSeleccionada.total || 0);
 
                   return (
                     <div className="modal-total-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', padding: '15px', background: '#f8fafc', borderTop: '2px solid #e2e8f0', marginTop: '20px' }}>
                       {esTecnico ? (
                         <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#1e293b' }}>
-                          TOTAL DEL TRABAJO: ${(subtotalItems > 0 ? subtotalItems : parseFloat(cotizacionSeleccionada.total || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          TOTAL DEL TRABAJO: ${(baseMonto > 0 ? baseMonto : parseFloat(cotizacionSeleccionada.total || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </h3>
-                      ) : subtotalItems > 0 ? (
+                      ) : baseMonto > 0 ? (
                         <>
                           {!esCliente && !esTecnico && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '300px', marginBottom: '8px', color: '#64748b' }}>
                               <span>Subtotal:</span>
-                              <span style={{ fontWeight: 'bold' }}>${subtotalItems.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              <span style={{ fontWeight: 'bold' }}>${baseMonto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                           )}
                           {!esCliente && !esTecnico && (
@@ -1464,12 +1518,20 @@ const VistaCotizaciones = () => {
                               <span style={{ fontWeight: 'bold' }}>${iva.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                           )}
-                          {!esCliente && !esTecnico && (
+                          {!esCliente && !esTecnico && !esEfectivo && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '300px', marginBottom: '12px', color: '#009ee3', alignItems: 'center' }}>
                               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <img src={mpLogo} alt="MP" style={{ height: '14px', objectFit: 'contain' }} /> Comisión (T. Oficial):
                               </span>
                               <span style={{ fontWeight: 'bold' }}>${comisionMP.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                          )}
+                          {!esCliente && !esTecnico && esEfectivo && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '300px', marginBottom: '12px', color: '#16a34a', alignItems: 'center', fontSize: '0.82rem' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '700' }}>
+                                💵 Pago en Efectivo:
+                              </span>
+                              <span style={{ fontWeight: 'bold' }}>Sin Comisión MP ($0.00)</span>
                             </div>
                           )}
                           <h3 style={{ margin: 0, paddingTop: '10px', borderTop: '2px solid #cbd5e1', width: '100%', maxWidth: '300px', textAlign: 'right', fontSize: '1.4rem' }}>

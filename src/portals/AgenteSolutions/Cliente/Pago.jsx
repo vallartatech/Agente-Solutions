@@ -40,16 +40,34 @@ const Pago = ({ cotizacion, onClose }) => {
   };
 
   const calcularMontoEfectivo = (cot) => {
-    return calcularMontoFinal(cot);
+    if (!cot) return 0;
+    let subtotalItems = 0;
+    try {
+      const rawConcept = cot.concept || cot.concepto;
+      const detalle = typeof rawConcept === 'string' ? JSON.parse(rawConcept) : rawConcept;
+      if (detalle && typeof detalle === 'object') {
+        const listado = detalle.conceptos || detalle.servicios || [];
+        listado.forEach(c => subtotalItems += (parseFloat(c.precio_u || c.precio || 0) * parseFloat(c.cantidad || 1)));
+        if (detalle.materiales) {
+          detalle.materiales.forEach(m => subtotalItems += (parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || 1)));
+        }
+      }
+    } catch(e) {}
+    let base = subtotalItems > 0 ? subtotalItems : parseFloat(cot.total || cot.estimated_amount || 0);
+    if (base > 0) {
+      const iva = base * 0.16;
+      return base + iva; // Solo Subtotal + IVA, exento de comisión MP
+    }
+    return 0;
   };
 
   const total    = Math.round(calcularMontoFinal(cotizacion) * 100) / 100;
   const anticipo = Math.round(total * 0.60 * 100) / 100;
   const restante = Math.round(total * 0.40 * 100) / 100;
 
-  const totalEfectivo = total;
-  const anticipoEfectivo = anticipo;
-  const restanteEfectivo = restante;
+  const totalEfectivo = Math.round(calcularMontoEfectivo(cotizacion) * 100) / 100;
+  const anticipoEfectivo = Math.round(totalEfectivo * 0.60 * 100) / 100;
+  const restanteEfectivo = Math.round(totalEfectivo * 0.40 * 100) / 100;
 
   const yaPayoAnticipo = cotizacion?.advance_paid === true;
   const fmt = (n) => `$${Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
