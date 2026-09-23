@@ -5,9 +5,12 @@ import {
   Clock, ShoppingBag, Sparkles, CheckSquare, Square, 
   CreditCard, ShieldCheck, Eye, CheckCircle2, AlertTriangle, 
   RefreshCw, AlertCircle, CalendarX, Lock, Trash2, Banknote,
-  X, Check, ChevronRight, ArrowRight, Loader2, Home, MapPin
+  X, Check, ChevronRight, ArrowRight, Loader2, Home, MapPin,
+  Navigation, Phone, FileText, Camera, UserCircle, Zap,
+  User, Wrench, ImageIcon
 } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Cliente/Cotizaciones.css';
+import '../../../styles/AgenteSolutions/Tecnico/TrabajoPropiedad.css';
 import mpLogo from '../../../assets/Mercado-Pago.png';
 
 const CotizacionesPendientes = () => {
@@ -16,6 +19,7 @@ const CotizacionesPendientes = () => {
   const [modalRecotizacionExito, setModalRecotizacionExito] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mensajeNotificacion, setMensajeNotificacion] = useState(null);
+  const [imagenExpandida, setImagenExpandida] = useState(null);
 
   // Estados para el Modal de Pago Integrado
   const [showPagoModal, setShowPagoModal] = useState(false);
@@ -115,14 +119,32 @@ const CotizacionesPendientes = () => {
       if (pendientesAPI.length > 0) {
         mapeadas = pendientesAPI.map(item => {
           const caducidad = calcularCaducidad(item.created_at || item.fecha, item.vencida);
+          const tipoFalla = item.tipo_falla || (item.concept ? parsearConcepto(item.concept) : `Servicio #${item.id}`);
+          const equipoNombre = item.equipo && item.equipo !== 'No especificado' ? item.equipo : 'otro';
+          
           return {
             id: item.id,
             quote_id: item.id,
-            titulo: item.propiedad_nombre ? `${item.propiedad_nombre} • ${item.concept ? parsearConcepto(item.concept) : `Cotización #${item.id}`}` : (item.concept ? parsearConcepto(item.concept) : `Cotización #${item.id}`),
+            titulo: `${item.propiedad_nombre || 'Mi Propiedad'} • ${tipoFalla} (${equipoNombre})`,
             propiedad_nombre: item.propiedad_nombre || 'Mi Propiedad',
-            propiedad_direccion: item.propiedad_direccion || '',
+            propiedad_direccion: item.propiedad_direccion || 'Dirección de la propiedad',
+            propiedad_curp: item.propiedad_curp || `WKF-ORD-#${item.id}`,
+            propiedad_coordenadas: item.propiedad_coordenadas || null,
+            propiedad_foto: item.propiedad_foto || item.foto_fachada || null,
+            tipo_falla: tipoFalla,
+            zona: item.zona || 'Área de la propiedad',
+            equipo: equipoNombre,
+            descripcion_problema: item.descripcion_problema || item.observations || parsearConcepto(item.concept),
+            evidencias: Array.isArray(item.evidencias) && item.evidencias.length > 0 ? item.evidencias : (item.evidence_photo_path ? [item.evidence_photo_path] : []),
+            problemas_lote: Array.isArray(item.problemas_lote) ? item.problemas_lote : [],
+            cliente_nombre: item.cliente_nombre || item.cliente || 'Pedro Koh',
+            cliente_telefono: item.cliente_telefono || 'No registrado',
+            cliente_tipo_propiedad: item.cliente_tipo_propiedad || 'CASA',
+            tecnico: item.tecnico || 'Pendiente de asignar',
+            tecnico_telefono: item.tecnico_telefono || null,
             folio: item.folio || `COT-${item.id}`,
             fecha: item.created_at ? new Date(item.created_at).toLocaleDateString('es-MX') : 'Reciente',
+            scheduled_at: item.scheduled_at || null,
             total: Number(item.total || item.total_amount || item.estimated_amount || item.monto || 0),
             estado: caducidad.vencida ? 'Caducada (> 15 días)' : (item.status || 'Pendiente'),
             descripcion: item.observations || parsearConcepto(item.concept),
@@ -130,8 +152,7 @@ const CotizacionesPendientes = () => {
             diasRestantes: caducidad.diasRestantes,
             conceptRaw: item.concept,
             work_order_id: item.work_order_id,
-            service_id: item.service_id,
-            evidence_photo_path: item.evidence_photo_path
+            service_id: item.service_id
           };
         });
       }
@@ -532,7 +553,7 @@ const CotizacionesPendientes = () => {
                         </div>
 
                         <div className="cart-card-title-info">
-                          <h4>{cot.titulo}</h4>
+                          <h4>{cot.propiedad_nombre} • {cot.tipo_falla}</h4>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
                             {esPendienteRecotizacion ? (
                               <span className="quote-status-label status-pending-requote">
@@ -577,7 +598,9 @@ const CotizacionesPendientes = () => {
                           {esPendienteRecotizacion ? <RefreshCw size={20} color="#d97706" /> : cot.vencida ? <CalendarX size={20} color="#dc2626" /> : <Clock size={20} />}
                         </div>
                         <div className="quote-card-details">
-                          <p className="quote-description">{cot.descripcion}</p>
+                          <p className="quote-description">
+                            <strong>Problema:</strong> {cot.descripcion_problema || cot.descripcion}
+                          </p>
                           
                           {/* Avisos de Estado */}
                           {esPendienteRecotizacion ? (
@@ -594,7 +617,8 @@ const CotizacionesPendientes = () => {
 
                           <div className="quote-meta-row">
                             <span className="quote-meta-pill">Folio: <strong>{cot.folio}</strong></span>
-                            <span className="quote-meta-pill">Propiedad: <strong>{cot.propiedad_nombre}</strong></span>
+                            <span className="quote-meta-pill">Zona: <strong>{cot.zona}</strong></span>
+                            <span className="quote-meta-pill">Equipo: <strong>{cot.equipo}</strong></span>
                             <span className="quote-meta-pill">Registro: {cot.fecha}</span>
                           </div>
                         </div>
@@ -630,7 +654,7 @@ const CotizacionesPendientes = () => {
                           setCotizacionSeleccionada(cot);
                         }}
                       >
-                        <Eye size={14} /> Ver desglose
+                        <Eye size={14} /> Ver desglose del problema
                       </button>
                     </div>
                   </div>
@@ -1035,95 +1059,252 @@ const CotizacionesPendientes = () => {
         </div>
       )}
 
-      {/* Modal de Detalle / Desglose de Cotización */}
+      {/* ══════════════════════════════════════════════════════════════════════
+          MODAL DE DETALLE Y DESGLOSE DEL PROBLEMA (ESTILO TABLERO DE SERVICIOS)
+      ══════════════════════════════════════════════════════════════════════ */}
       {cotizacionSeleccionada && (
-        <div className="modal-overlay" onClick={() => setCotizacionSeleccionada(null)}>
-          <div className="modal-content-wrapper" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-excel-view">
-              <header className={`modal-excel-header ${cotizacionSeleccionada.vencida ? 'h-rechazadas' : 'h-nuevas'}`}>
-                <div className="header-top-info">
-                  <span className={`badge-status ${cotizacionSeleccionada.vencida ? 'badge-expired' : ''}`}>
-                    {cotizacionSeleccionada.vencida ? 'CADUCADA (> 15 DÍAS)' : 'COTIZACIÓN VIGENTE'}
+        <div className="tp-modal-overlay" onClick={() => setCotizacionSeleccionada(null)} style={{ zIndex: 9999 }}>
+          <div 
+            className="tp-modal-content" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '820px', width: '95%', borderRadius: '24px', overflow: 'hidden', padding: 0 }}
+          >
+            {/* HERO DE LA PROPIEDAD CON IMAGEN DE FACHADA */}
+            <section 
+              className="tp-hero-section"
+              style={{
+                backgroundImage: cotizacionSeleccionada.propiedad_foto ? `url(${cotizacionSeleccionada.propiedad_foto})` : 'none',
+                backgroundColor: '#1e2229',
+                minHeight: '190px',
+                position: 'relative'
+              }}
+            >
+              <div className="tp-hero-overlay"></div>
+              <button 
+                className="tp-close-modal-btn" 
+                onClick={() => setCotizacionSeleccionada(null)}
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  background: 'rgba(0,0,0,0.65)',
+                  border: '1.5px solid rgba(255,255,255,0.4)',
+                  color: '#fff',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 30
+                }}
+              >
+                <X size={20} />
+              </button>
+
+              <div className="tp-hero-content" style={{ padding: '24px 28px', position: 'relative', zIndex: 10 }}>
+                <div className="tp-hero-text">
+                  <span className="tp-id-badge" style={{ backgroundColor: '#f26624', color: '#fff', fontWeight: '900', padding: '5px 12px', borderRadius: '8px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {cotizacionSeleccionada.propiedad_curp || cotizacionSeleccionada.folio}
                   </span>
-                  <button className="close-modal-btn" onClick={() => setCotizacionSeleccionada(null)}>&times;</button>
-                </div>
-                <h3>{cotizacionSeleccionada.titulo}</h3>
-              </header>
-
-              <div className="modal-excel-body">
-                {cotizacionSeleccionada.vencida ? (
-                  <div className="modal-expired-banner-alert">
-                    <AlertTriangle size={24} />
-                    <div>
-                      <strong>Cotización vencida (Límite 15 días de caducidad)</strong>
-                      <p>Esta cotización excedió el tiempo reglamentario. Para que puedas agregarla a la suma de tu cuenta y autorizar el pago, solicita una recotización al administrador.</p>
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="modal-detail-box">
-                  <h4>Detalles del servicio cotizado</h4>
-                  <p>{cotizacionSeleccionada.descripcion}</p>
-                  <div className="detail-summary-row">
-                    <div>
-                      <strong>Folio</strong>
-                      <p>{cotizacionSeleccionada.folio}</p>
-                    </div>
-                    <div>
-                      <strong>Propiedad</strong>
-                      <p>{cotizacionSeleccionada.propiedad_nombre}</p>
-                    </div>
-                    <div>
-                      <strong>Condición de vigencia</strong>
-                      <p>{cotizacionSeleccionada.vencida ? 'Expiró (> 15 días)' : `Válida (${cotizacionSeleccionada.diasRestantes} días restantes)`}</p>
-                    </div>
+                  <h1 className="tp-property-name" style={{ fontSize: '1.85rem', color: '#fff', margin: '8px 0 4px 0', fontWeight: '900' }}>
+                    {cotizacionSeleccionada.propiedad_nombre}
+                  </h1>
+                  <div className="tp-property-address" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#cbd5e1', fontSize: '0.88rem' }}>
+                    <MapPin size={16} color="#f26624" />
+                    <span>{cotizacionSeleccionada.propiedad_direccion}</span>
                   </div>
                 </div>
 
-                <div className="excel-table-container">
-                  <div className="excel-table-header">
-                    <span>CONCEPTO</span>
-                    <span>IMPORTE</span>
+                {cotizacionSeleccionada.propiedad_coordenadas && (
+                  <div className="tp-hero-actions" style={{ marginTop: '12px' }}>
+                    <button 
+                      className="tp-action-btn maps"
+                      onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${cotizacionSeleccionada.propiedad_coordenadas}`, '_blank')}
+                      style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', color: '#fff', padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: '800' }}
+                    >
+                      <Navigation size={14} />
+                      <span>GPS</span>
+                    </button>
                   </div>
-                  <div className="excel-row">
-                    <span>{cotizacionSeleccionada.titulo}</span>
-                    <span>{formatCurrency(cotizacionSeleccionada.total)}</span>
-                  </div>
-                </div>
+                )}
+              </div>
+            </section>
 
-                <div className="excel-advance-highlight">
-                  <span>Monto de la cotización:</span>
-                  <strong>{formatCurrency(cotizacionSeleccionada.total)} MXN</strong>
-                </div>
+            {/* SECCIÓN PRINCIPAL: TARJETAS DE CONTENIDO */}
+            <div style={{ padding: '24px', backgroundColor: '#f8fafc', maxHeight: '68vh', overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px' }}>
                 
-                <div className="modal-actions-row">
-                  {cotizacionSeleccionada.vencida ? (
-                    <button 
-                      className="btn-requote-final"
-                      onClick={(e) => {
-                        handleSolicitarRecotizacion(cotizacionSeleccionada, e);
-                        setCotizacionSeleccionada(null);
-                      }}
-                    >
-                      <RefreshCw size={16} style={{ marginRight: '6px' }} />
-                      Solicitar Recotización al Administrador
-                    </button>
-                  ) : (
-                    <button 
-                      className="btn-accept-final"
-                      onClick={() => {
-                        if (!selectedIds.includes(cotizacionSeleccionada.id)) {
-                          setSelectedIds(prev => [...prev, cotizacionSeleccionada.id]);
-                        }
-                        setCotizacionSeleccionada(null);
-                      }}
-                    >
-                      {selectedIds.includes(cotizacionSeleccionada.id) ? 'Mantener Seleccionado para Pago' : 'Seleccionar para Pagar Ahora'}
-                    </button>
-                  )}
+                {/* 1. TARJETA CONSISTE EN: */}
+                <div className="tp-card tp-work-description-card" style={{ margin: 0, background: '#fff', border: '1px solid #e2e8f0', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                  <div className="tp-card-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', borderBottom: '1.5px solid #f1f5f9', paddingBottom: '10px', color: '#f26624' }}>
+                    <FileText size={20} />
+                    <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '900', color: '#0f172a' }}>CONSISTE EN:</h3>
+                  </div>
+
+                  <div className="tp-work-description-v2">
+                    <div className="tp-description-grid" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div className="tp-desc-item" style={{ display: 'flex', alignItems: 'center', gap: '14px', background: '#ffffff', padding: '14px 16px', borderRadius: '14px', border: '1px solid #f1f5f9', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                        <div className="tp-desc-icon problem" style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <AlertTriangle size={20} />
+                        </div>
+                        <div className="tp-desc-text" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <label style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '1px', color: '#94a3b8', textTransform: 'uppercase' }}>TIPO DE FALLA / PROBLEMA</label>
+                          <strong style={{ fontSize: '1.05rem', color: '#0f172a', fontWeight: '800' }}>{cotizacionSeleccionada.tipo_falla}</strong>
+                        </div>
+                      </div>
+
+                      <div className="tp-desc-item" style={{ display: 'flex', alignItems: 'center', gap: '14px', background: '#ffffff', padding: '14px 16px', borderRadius: '14px', border: '1px solid #f1f5f9', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                        <div className="tp-desc-icon equipment" style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#fff7ed', color: '#f26624', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Zap size={20} />
+                        </div>
+                        <div className="tp-desc-text" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <label style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '1px', color: '#94a3b8', textTransform: 'uppercase' }}>EQUIPO O COMPONENTE AFECTADO</label>
+                          <strong style={{ fontSize: '1.05rem', color: '#0f172a', fontWeight: '800' }}>{cotizacionSeleccionada.equipo}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="tp-work-meta" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '14px', padding: '10px 12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                    <div className="tp-meta-item" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: '700', color: '#475569' }}>
+                      <Clock size={16} color="#f26624" />
+                      <span>Programado: {cotizacionSeleccionada.scheduled_at || cotizacionSeleccionada.fecha || 'Pendiente'}</span>
+                    </div>
+                    <div className="tp-meta-item" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: '700', color: '#475569' }}>
+                      <Wrench size={16} color="#f26624" />
+                      <span>Título: {cotizacionSeleccionada.tipo_falla} - {cotizacionSeleccionada.zona || 'General'}</span>
+                    </div>
+                  </div>
+
+                  {/* Descripción detallada */}
+                  <div style={{ marginTop: '12px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '1px', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Descripción del cliente</span>
+                    <p style={{ margin: 0, fontSize: '0.88rem', color: '#475569', lineHeight: '1.5', whiteSpace: 'pre-line', background: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+                      {cotizacionSeleccionada.descripcion_problema || cotizacionSeleccionada.descripcion || 'Sin descripción adicional registrada.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 2. TARJETA DATOS DEL CLIENTE Y COTIZACIÓN */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  
+                  {/* DATOS DEL CLIENTE */}
+                  <div className="tp-card tp-client-card" style={{ margin: 0, background: '#fff', border: '1px solid #e2e8f0', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                    <div className="tp-card-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', borderBottom: '1.5px solid #f1f5f9', paddingBottom: '10px', color: '#f26624' }}>
+                      <User size={20} />
+                      <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '900', color: '#0f172a' }}>DATOS DEL CLIENTE</h3>
+                    </div>
+                    <div className="tp-client-info" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.9rem', color: '#334155' }}>
+                      <p style={{ margin: 0 }}><strong>Nombre:</strong> {cotizacionSeleccionada.cliente_nombre}</p>
+                      <p style={{ margin: 0 }}><strong>Teléfono:</strong> {cotizacionSeleccionada.cliente_telefono || 'No registrado'}</p>
+                      <p style={{ margin: 0 }}><strong>Tipo:</strong> {cotizacionSeleccionada.cliente_tipo_propiedad || 'CASA'}</p>
+                    </div>
+                  </div>
+
+                  {/* FOTOS DE EVIDENCIAS */}
+                  <div className="tp-card tp-evidence-card" style={{ margin: 0, background: '#fff', border: '1px solid #e2e8f0', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                    <div className="tp-card-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', borderBottom: '1.5px solid #f1f5f9', paddingBottom: '10px', color: '#f26624' }}>
+                      <ImageIcon size={20} />
+                      <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '900', color: '#0f172a' }}>EVIDENCIAS REGISTRADAS</h3>
+                    </div>
+                    {cotizacionSeleccionada.evidencias && cotizacionSeleccionada.evidencias.length > 0 ? (
+                      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+                        {cotizacionSeleccionada.evidencias.map((foto, idx) => (
+                          <img 
+                            key={idx}
+                            src={foto}
+                            alt="Evidencia"
+                            onClick={() => setImagenExpandida(foto)}
+                            style={{ width: '75px', height: '75px', borderRadius: '12px', objectFit: 'cover', cursor: 'pointer', border: '1.5px solid #cbd5e1', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                        No se adjuntaron fotografías en este reporte.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* TARJETA DE COTIZACIÓN Y PRESUPUESTO */}
+                  <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '18px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1.5px solid #f1f5f9', paddingBottom: '10px' }}>
+                      <CreditCard size={20} color="#f26624" />
+                      <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '900', color: '#0f172a' }}>COTIZACIÓN Y PRESUPUESTO</h3>
+                    </div>
+
+                    {/* Bloque de Precio */}
+                    <div style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)', border: '1.5px solid #fed7aa', borderRadius: '14px', padding: '16px', textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#c2410c', textTransform: 'uppercase' }}>
+                        {cotizacionSeleccionada.vencida ? 'Presupuesto sujeto a recotización' : 'Importe Oficial Cotizado'}
+                      </span>
+                      <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#0f172a', margin: '4px 0' }}>
+                        {formatCurrency(cotizacionSeleccionada.total)} <span style={{ fontSize: '0.9rem', color: '#64748b' }}>MXN</span>
+                      </div>
+                      <span style={{ fontSize: '0.75rem', color: cotizacionSeleccionada.vencida ? '#dc2626' : '#16a34a', fontWeight: '800' }}>
+                        {cotizacionSeleccionada.vencida ? '⚠️ Caducada (> 15 días)' : `🟢 Vigente (${cotizacionSeleccionada.diasRestantes} días restantes)`}
+                      </span>
+                    </div>
+
+                    {/* Grid de Metadatos */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', display: 'block' }}>Folio</span>
+                        <strong style={{ fontSize: '0.85rem', color: '#0f172a' }}>{cotizacionSeleccionada.folio}</strong>
+                      </div>
+
+                      <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', display: 'block' }}>Fecha de Registro</span>
+                        <strong style={{ fontSize: '0.85rem', color: '#0f172a' }}>{cotizacionSeleccionada.fecha}</strong>
+                      </div>
+                    </div>
+
+                    {/* Botón de Acción en el Modal */}
+                    <div style={{ marginTop: 'auto', paddingTop: '6px' }}>
+                      {cotizacionSeleccionada.vencida ? (
+                        <button 
+                          className="btn-requote-final"
+                          style={{ width: '100%', padding: '14px', borderRadius: '14px', fontWeight: '900' }}
+                          onClick={(e) => {
+                            handleSolicitarRecotizacion(cotizacionSeleccionada, e);
+                            setCotizacionSeleccionada(null);
+                          }}
+                        >
+                          <RefreshCw size={16} style={{ marginRight: '6px' }} />
+                          Solicitar Recotización al Administrador
+                        </button>
+                      ) : (
+                        <button 
+                          className="btn-accept-final"
+                          style={{ width: '100%', padding: '14px', borderRadius: '14px', fontWeight: '900', background: '#f26624', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(242, 102, 36, 0.3)' }}
+                          onClick={() => {
+                            if (!selectedIds.includes(cotizacionSeleccionada.id)) {
+                              setSelectedIds(prev => [...prev, cotizacionSeleccionada.id]);
+                            }
+                            setCotizacionSeleccionada(null);
+                          }}
+                        >
+                          {selectedIds.includes(cotizacionSeleccionada.id) ? '✅ Mantener Seleccionado para Pago' : '➕ Seleccionar para Pagar Ahora'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Visor de Imagen Expandida */}
+      {imagenExpandida && (
+        <div className="zoom-overlay" onClick={() => setImagenExpandida(null)} style={{ zIndex: 100000 }}>
+          <button className="zoom-close-fixed" onClick={() => setImagenExpandida(null)}><X size={32} /></button>
+          <div className="zoom-content" onClick={e => e.stopPropagation()}>
+            <img src={imagenExpandida} className="image-zoomed" alt="Zoom" />
           </div>
         </div>
       )}
