@@ -458,7 +458,7 @@ const ClientRegister = () => {
           box-shadow: 0 4px 15px rgba(242, 101, 34, 0.5);
         }
 
-        /* ── CARRUSEL CON FLECHAS DE NAVEGACIÓN ── */
+        /* ── CARRUSEL CON FLECHAS DE NAVEGACIÓN MEJORADAS ── */
         .role-carousel-wrapper {
           position: relative;
           width: 100%;
@@ -470,26 +470,31 @@ const ClientRegister = () => {
           position: absolute;
           top: 50%;
           transform: translateY(-50%);
-          width: 44px;
-          height: 44px;
+          width: 48px;
+          height: 48px;
           border-radius: 50%;
-          background: rgba(0, 0, 0, 0.85);
-          border: 2px solid #f26522;
-          color: #fff;
+          background: #f26522;
+          border: 2.5px solid #ffffff;
+          color: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          z-index: 20;
-          box-shadow: 0 6px 18px rgba(242, 101, 34, 0.4);
-          transition: all 0.2s;
+          z-index: 25;
+          box-shadow: 0 0 20px rgba(242, 101, 34, 0.75), 0 6px 16px rgba(0, 0, 0, 0.6);
+          transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .side-arrow-btn:hover {
-          background: #f26522;
-          transform: translateY(-50%) scale(1.1);
+          background: #ff7539;
+          transform: translateY(-50%) scale(1.18);
+          box-shadow: 0 0 30px rgba(242, 101, 34, 0.95), 0 8px 22px rgba(0, 0, 0, 0.8);
+          border-color: #ffffff;
         }
-        .side-arrow-btn.left { left: -22px; }
-        .side-arrow-btn.right { right: -22px; }
+        .side-arrow-btn:active {
+          transform: translateY(-50%) scale(0.95);
+        }
+        .side-arrow-btn.left { left: -24px; }
+        .side-arrow-btn.right { right: -24px; }
 
         /* ── TARJETA DEL USUARIO ACTUAL ── */
         .current-role-card {
@@ -804,8 +809,9 @@ const ClientRegister = () => {
                 className="side-arrow-btn left"
                 onClick={() => handleStepRole(-1)}
                 title="Usuario anterior"
+                aria-label="Usuario anterior"
               >
-                <ChevronLeft size={24} />
+                <ChevronLeft size={28} strokeWidth={3.5} />
               </button>
 
               {/* TARJETA DEL USUARIO SELECCIONADO */}
@@ -854,8 +860,9 @@ const ClientRegister = () => {
                 className="side-arrow-btn right"
                 onClick={() => handleStepRole(1)}
                 title="Siguiente usuario"
+                aria-label="Siguiente usuario"
               >
-                <ChevronRight size={24} />
+                <ChevronRight size={28} strokeWidth={3.5} />
               </button>
             </div>
 
