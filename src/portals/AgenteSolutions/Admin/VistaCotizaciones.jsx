@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import CreateQuotationModal from "../../../components/Modals/CreateQuotationModal";
 import ModalCrearCotizacion from "../../../components/Shared/ModalCrearCotizacion";
+import ModalConfirmarPagoEfectivo from "../../../components/Modals/ModalConfirmarPagoEfectivo";
 import UniversalSearch from "../../../components/Shared/UniversalSearch";
 import Pago from "../Cliente/Pago";
 import mpLogo from "../../../assets/Mercado-Pago.png";
@@ -25,6 +26,8 @@ const VistaCotizaciones = () => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [cotizacionParaAsignar, setCotizacionParaAsignar] = useState(null);
   const [cotizacionParaEditarTecnico, setCotizacionParaEditarTecnico] = useState(null);
+  const [modalConfirmarEfectivoVisible, setModalConfirmarEfectivoVisible] = useState(false);
+  const [cotizacionEfectivoParaConfirmar, setCotizacionEfectivoParaConfirmar] = useState(null);
 
   const [carritoCotizaciones, setCarritoCotizaciones] = useState(() => {
     try {
@@ -1743,24 +1746,13 @@ const VistaCotizaciones = () => {
                             </button>
                           ) : !esTecnico ? (
                             <button
-                              onClick={async () => {
-                                if (!window.confirm(`¿Confirmas que ya recibiste el pago en efectivo del saldo restante por $${montoRestanteEf.toFixed(2)} MXN?`)) return;
-                                try {
-                                  setProcesando(true);
-                                  await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones/${cotizacionSeleccionada.id}/confirmar-efectivo-restante`);
-                                  cargarCotizaciones();
-                                  setCotizacionSeleccionada(null);
-                                  alert('¡Cobro del 40% en efectivo confirmado exitosamente!');
-                                } catch (e) {
-                                  alert('Error al confirmar el cobro en efectivo.');
-                                } finally {
-                                  setProcesando(false);
-                                }
+                              onClick={() => {
+                                setCotizacionEfectivoParaConfirmar(cotizacionSeleccionada);
+                                setModalConfirmarEfectivoVisible(true);
                               }}
-                              disabled={procesando}
                               style={{ background: '#16a34a', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', fontSize: '0.95rem' }}
                             >
-                              ✅ Confirmar Cobro 40% en Efectivo
+                              ✅ Confirmar Cobro Saldo en Efectivo
                             </button>
                           ) : null}
                         </div>
@@ -1799,24 +1791,13 @@ const VistaCotizaciones = () => {
                               <div style={{ fontWeight: 'bold', fontSize: '1.15rem', color: '#92400e' }}>${monto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                             </div>
                             <button
-                              onClick={async () => {
-                                if (!window.confirm('¿Confirmas que ya recibiste el pago en efectivo del cliente?')) return;
-                                try {
-                                  setProcesando(true);
-                                  await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones/${cotizacionSeleccionada.id}/confirmar-efectivo`);
-                                  cargarCotizaciones();
-                                  setCotizacionSeleccionada(null);
-                                  alert('¡Pago en efectivo confirmado exitosamente!');
-                                } catch (e) {
-                                  alert('Error al confirmar el pago en efectivo.');
-                                } finally {
-                                  setProcesando(false);
-                                }
+                              onClick={() => {
+                                setCotizacionEfectivoParaConfirmar(cotizacionSeleccionada);
+                                setModalConfirmarEfectivoVisible(true);
                               }}
-                              disabled={procesando}
                               style={{ background: '#16a34a', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem' }}
                             >
-                              ✅ Confirmar Recepción de Efectivo
+                              ✅ Confirmar Pago en Efectivo
                             </button>
                           </div>
                         </div>
@@ -2338,6 +2319,21 @@ const VistaCotizaciones = () => {
             </button>
           </div>
         </div>
+      )}
+      {modalConfirmarEfectivoVisible && cotizacionEfectivoParaConfirmar && (
+        <ModalConfirmarPagoEfectivo
+          isOpen={modalConfirmarEfectivoVisible}
+          cotizacion={cotizacionEfectivoParaConfirmar}
+          onClose={() => {
+            setModalConfirmarEfectivoVisible(false);
+            setCotizacionEfectivoParaConfirmar(null);
+          }}
+          onPaymentConfirmed={async (res) => {
+            alert(res?.message || '¡Pago en efectivo confirmado exitosamente!');
+            await cargarCotizaciones();
+            setCotizacionSeleccionada(null);
+          }}
+        />
       )}
     </div>
   );

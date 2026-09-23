@@ -8,6 +8,7 @@ import {
 import Header from '../../../components/Shared/Header';
 import ModalAsignarChecklist from '../../../components/Modals/ModalAsignarChecklist';
 import ModalCrearCotizacion from '../../../components/Shared/ModalCrearCotizacion';
+import ModalConfirmarPagoEfectivo from '../../../components/Modals/ModalConfirmarPagoEfectivo';
 import UniversalSearch from '../../../components/Shared/UniversalSearch';
 import '../../../styles/AgenteSolutions/Cliente/TableroScrum.css'; // Reutilizamos estilos
 
@@ -33,6 +34,8 @@ const VistaServiciosAdmin = () => {
   const [cotizacionesData, setCotizacionesData] = useState([]);
   const [filtroFecha, setFiltroFecha] = useState('todas');
   const [activeBatchTab, setActiveBatchTab] = useState(0);
+  const [modalConfirmarEfectivoVisible, setModalConfirmarEfectivoVisible] = useState(false);
+  const [cotizacionParaConfirmar, setCotizacionParaConfirmar] = useState(null);
   
   const columnasConfig = [
     { id: 'sos', titulo: 'SOS / PRIORITARIOS', color: '#e63946', icon: <AlertTriangle size={20} /> },
@@ -240,7 +243,7 @@ const VistaServiciosAdmin = () => {
   };
 
   const buscarCotizacionTarea = useCallback((targetTask) => {
-    if (!targetTask || !cotizacionesData || cotizacionesData.length === 0) return null;
+    if (!targetTask) return null;
     const targetIds = [];
     if (targetTask.dbId && !String(targetTask.dbId).startsWith('batch_')) targetIds.push(Number(targetTask.dbId));
     if (targetTask.id && !String(targetTask.id).startsWith('batch_')) targetIds.push(Number(targetTask.id));
@@ -257,15 +260,47 @@ const VistaServiciosAdmin = () => {
       });
     }
 
-    return cotizacionesData.find(q => {
-      const qWorkOrder = Number(q.work_order_id);
-      const qService = Number(q.service_id);
-      if (targetIds.includes(qWorkOrder) || targetIds.includes(qService)) return true;
-      if (q.related_service_ids && Array.isArray(q.related_service_ids)) {
-        if (q.related_service_ids.some(rid => targetIds.includes(Number(rid)))) return true;
-      }
-      return false;
-    });
+    if (cotizacionesData && cotizacionesData.length > 0) {
+      const found = cotizacionesData.find(q => {
+        const qWorkOrder = Number(q.work_order_id);
+        const qService = Number(q.service_id);
+        if (targetIds.includes(qWorkOrder) || targetIds.includes(qService)) return true;
+        if (q.related_service_ids && Array.isArray(q.related_service_ids)) {
+          if (q.related_service_ids.some(rid => targetIds.includes(Number(rid)))) return true;
+        }
+        return false;
+      });
+      if (found) return found;
+    }
+
+    if (targetTask.assigned_network_quote) {
+      return {
+        ...targetTask.assigned_network_quote,
+        id: `net_${targetTask.assigned_network_quote.id}`,
+        quoteId: `net_${targetTask.assigned_network_quote.id}`,
+        folio: `RED-${String(targetTask.assigned_network_quote.id).padStart(3, '0')}`,
+        is_network_quote: true,
+        cliente: targetTask.cliente,
+        propiedad: targetTask.propiedad,
+        estimated_amount: targetTask.assigned_network_quote.price
+      };
+    }
+
+    if (targetTask.network_quotes && targetTask.network_quotes.length > 0) {
+      const acceptedNq = targetTask.network_quotes.find(nq => nq.status === 'accepted') || targetTask.network_quotes[0];
+      return {
+        ...acceptedNq,
+        id: `net_${acceptedNq.id}`,
+        quoteId: `net_${acceptedNq.id}`,
+        folio: `RED-${String(acceptedNq.id).padStart(3, '0')}`,
+        is_network_quote: true,
+        cliente: targetTask.cliente,
+        propiedad: targetTask.propiedad,
+        estimated_amount: acceptedNq.price
+      };
+    }
+
+    return null;
   }, [cotizacionesData, tareaSeleccionada]);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -641,27 +676,54 @@ const VistaServiciosAdmin = () => {
                     <div><strong>Solicitado:</strong> {tarea.fechaSolicitud}</div>
                     {!tarea.isBatch && <div><strong>Solucionado:</strong> {tarea.fechaSolucion}</div>}
                   </div>
-                  <div className="card-status-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {tarea.estado === 'done' ? (
-                      <div className="status-pill-done">
-                        <CheckCircle2 size={12} /> <span>Finalizado</span>
-                      </div>
-                    ) : (
-                      <span className={`priority-tag ${tarea.prioridad.toLowerCase()}`}>
-                        {tarea.prioridad.toUpperCase()}
-                      </span>
-                    )}
-                    {(() => {
-                      const coti = buscarCotizacionTarea(tarea);
-                      if (!coti) return null;
-                      const badgeText = coti.created_by_role === 'Admin' ? 'CA' : 'CT';
-                      const bgColor = coti.created_by_role === 'Admin' ? '#1b8a5a' : '#333';
-                      return (
-                        <span style={{ background: bgColor, color: 'white', padding: '3px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 'bold' }} title={coti.created_by_role === 'Admin' ? 'Cotización realizada por el Admin' : 'Cotización realizada por el Técnico'}>
-                          {badgeText}
+                    <div className="card-status-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {tarea.estado === 'done' ? (
+                        <div className="status-pill-done">
+                          <CheckCircle2 size={12} /> <span>Finalizado</span>
+                        </div>
+                      ) : (
+                        <span className={`priority-tag ${tarea.prioridad.toLowerCase()}`}>
+                          {tarea.prioridad.toUpperCase()}
                         </span>
-                      );
-                    })()}
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {(() => {
+                        const coti = buscarCotizacionTarea(tarea);
+                        if (!coti) return null;
+                        const isCash = coti.cash_requested || coti.payment_scheme === 'cash' || String(coti.status || '').toLowerCase().includes('efectivo') || String(coti.status || '').toLowerCase().includes('anticipo pagado');
+                        if (!isCash) return null;
+                        const isPaid = coti.remaining_paid || coti.status === 'Pagado (Efectivo)';
+                        const isAdvance = coti.advance_paid || coti.status?.includes('Anticipo Pagado');
+                        return (
+                          <span style={{ 
+                            background: isPaid ? '#10b981' : (isAdvance ? '#059669' : '#d97706'), 
+                            color: 'white', 
+                            padding: '3px 8px', 
+                            borderRadius: '6px', 
+                            fontSize: '0.68rem', 
+                            fontWeight: '800',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px'
+                          }} title="Servicio solicitado para pagar en efectivo">
+                            💵 {isPaid ? 'Efectivo' : (isAdvance ? 'Anticipo 60%' : 'Pago Efectivo')}
+                          </span>
+                        );
+                      })()}
+                      {(() => {
+                        const coti = buscarCotizacionTarea(tarea);
+                        if (!coti) return null;
+                        const badgeText = coti.created_by_role === 'Admin' ? 'CA' : 'CT';
+                        const bgColor = coti.created_by_role === 'Admin' ? '#1b8a5a' : '#333';
+                        return (
+                          <span style={{ background: bgColor, color: 'white', padding: '3px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 'bold' }} title={coti.created_by_role === 'Admin' ? 'Cotización realizada por el Admin' : 'Cotización realizada por el Técnico'}>
+                            {badgeText}
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </button>
               </div>
@@ -1225,6 +1287,136 @@ const VistaServiciosAdmin = () => {
                             </div>
                           </div>
                         </>
+                      );
+                    })()}
+
+                    {/* BANNER SERVICIO SOLICITADO PARA PAGAR EN EFECTIVO */}
+                    {(() => {
+                      const cotizacionAsociada = buscarCotizacionTarea(activeTask);
+                      if (!cotizacionAsociada) return null;
+                      
+                      const esPagoEfectivo = cotizacionAsociada.cash_requested || 
+                        cotizacionAsociada.payment_scheme === 'cash' ||
+                        String(cotizacionAsociada.status || '').toLowerCase().includes('efectivo') ||
+                        String(cotizacionAsociada.status || '').toLowerCase().includes('anticipo pagado');
+
+                      if (!esPagoEfectivo) return null;
+
+                      const totalCot = parseFloat(cotizacionAsociada.estimated_amount || cotizacionAsociada.price || 0);
+                      const estaPagadoTotal = cotizacionAsociada.remaining_paid || cotizacionAsociada.status === 'Pagado (Efectivo)';
+                      const tieneAnticipo = cotizacionAsociada.advance_paid || cotizacionAsociada.status?.includes('Anticipo Pagado');
+                      const anticipoMonto = parseFloat(cotizacionAsociada.advance_amount || (totalCot * 0.60));
+                      const restanteMonto = parseFloat(cotizacionAsociada.remaining_amount || (tieneAnticipo ? Math.max(0, totalCot - anticipoMonto) : (totalCot * 0.40)));
+                      const esquemaTexto = cotizacionAsociada.cash_amount_type === 'advance' ? 'Anticipo del 60%' : (cotizacionAsociada.cash_amount_type === 'remaining' ? 'Saldo Restante (40%)' : 'Pago Total (100%)');
+                      const timingTexto = cotizacionAsociada.cash_timing === 'immediate' ? 'al inicio / visita del técnico' : 'al finalizar el trabajo';
+
+                      return (
+                        <div style={{
+                          margin: '16px 0',
+                          borderRadius: '14px',
+                          border: estaPagadoTotal ? '2px solid #10b981' : (tieneAnticipo ? '2px solid #059669' : '2px solid #f59e0b'),
+                          overflow: 'hidden',
+                          boxShadow: '0 4px 14px rgba(0,0,0,0.06)'
+                        }}>
+                          <div style={{
+                            background: estaPagadoTotal 
+                              ? 'linear-gradient(135deg, #059669, #047857)' 
+                              : (tieneAnticipo ? 'linear-gradient(135deg, #0d9488, #0f766e)' : 'linear-gradient(135deg, #d97706, #b45309)'),
+                            padding: '12px 18px',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: '8px'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <span style={{ fontSize: '1.4rem' }}>💵</span>
+                              <div>
+                                <div style={{ fontWeight: '800', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                                  SERVICIO SOLICITADO PARA PAGAR EN EFECTIVO
+                                </div>
+                                <div style={{ fontSize: '0.78rem', opacity: 0.95 }}>
+                                  Modalidad solicitada: <strong>{esquemaTexto}</strong> ({timingTexto})
+                                </div>
+                              </div>
+                            </div>
+
+                            <span style={{
+                              background: 'rgba(255,255,255,0.2)',
+                              padding: '4px 12px',
+                              borderRadius: '20px',
+                              fontWeight: '800',
+                              fontSize: '0.75rem',
+                              color: '#ffffff'
+                            }}>
+                              {estaPagadoTotal ? '✅ LIQUIDADO' : (tieneAnticipo ? '🟢 ANTICIPO COBRADO' : '⏳ PENDIENTE DE COBRO')}
+                            </span>
+                          </div>
+
+                          <div style={{
+                            background: estaPagadoTotal ? '#ecfdf5' : (tieneAnticipo ? '#f0fdfa' : '#fffbeb'),
+                            padding: '16px 18px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: '14px'
+                          }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>
+                                Total Cotizado del Servicio: <strong style={{ color: '#0f172a' }}>${totalCot.toFixed(2)} MXN</strong>
+                              </div>
+                              {estaPagadoTotal ? (
+                                <div style={{ color: '#065f46', fontWeight: '800', fontSize: '0.92rem' }}>
+                                  Pago completo en efectivo recibido y confirmado (${totalCot.toFixed(2)} MXN)
+                                </div>
+                              ) : tieneAnticipo ? (
+                                <div style={{ color: '#0f766e', fontWeight: '800', fontSize: '0.92rem' }}>
+                                  Anticipo de ${anticipoMonto.toFixed(2)} MXN registrado. <span style={{ color: '#c2410c' }}>Resta por cobrar al finalizar: ${restanteMonto.toFixed(2)} MXN</span>
+                                </div>
+                              ) : (
+                                <div style={{ color: '#92400e', fontWeight: '800', fontSize: '0.92rem' }}>
+                                  Monto solicitado en efectivo: <span style={{ fontSize: '1.1rem', color: '#b45309' }}>${(cotizacionAsociada.cash_amount_type === 'advance' ? anticipoMonto : totalCot).toFixed(2)} MXN</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {!estaPagadoTotal && (
+                              <button
+                                onClick={() => {
+                                  setCotizacionParaConfirmar({
+                                    ...cotizacionAsociada,
+                                    cliente: activeTask.cliente,
+                                    propiedad: activeTask.propiedad,
+                                    estimated_amount: totalCot
+                                  });
+                                  setModalConfirmarEfectivoVisible(true);
+                                }}
+                                style={{
+                                  background: tieneAnticipo ? '#0d9488' : '#16a34a',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '10px 18px',
+                                  borderRadius: '10px',
+                                  fontWeight: '800',
+                                  fontSize: '0.88rem',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+                                  transition: 'transform 0.15s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                              >
+                                <span>💵</span>
+                                <span>{tieneAnticipo ? `Confirmar Cobro Saldo Restante ($${restanteMonto.toFixed(2)})` : 'Confirmar Pago en Efectivo'}</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       );
                     })()}
 
@@ -2117,6 +2309,22 @@ const VistaServiciosAdmin = () => {
           onSuccess={() => {
             fetchCotizaciones();
             alert("Cotización gestionada con éxito");
+          }}
+        />
+      )}
+
+      {modalConfirmarEfectivoVisible && cotizacionParaConfirmar && (
+        <ModalConfirmarPagoEfectivo
+          isOpen={modalConfirmarEfectivoVisible}
+          cotizacion={cotizacionParaConfirmar}
+          onClose={() => {
+            setModalConfirmarEfectivoVisible(false);
+            setCotizacionParaConfirmar(null);
+          }}
+          onPaymentConfirmed={async (res) => {
+            alert(res?.message || '¡Pago en efectivo confirmado exitosamente!');
+            await fetchCotizaciones();
+            await fetchOrders();
           }}
         />
       )}
