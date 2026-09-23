@@ -252,7 +252,7 @@ const AppRoutes = () => {
       <Route path="/propiedad/:id" element={<MainLayoutCliente><VistaDetallePropiedadCliente /></MainLayoutCliente>} />
 
 
-      <Route path="/registro" element={<RegisteRoot />} />
+      <Route path="/registro" element={<RegistroCliente />} />
       <Route path="/imprimir-cotizacion" element={<VistaCotizacionPrint />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
