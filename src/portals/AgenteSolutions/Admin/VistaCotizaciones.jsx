@@ -394,25 +394,22 @@ const VistaCotizaciones = () => {
     if (base > 0) {
       const iva = base * 0.16;
       const subConIva = base + iva;
-      const esEfectivo = Boolean(
-        cot.cash_requested || 
-        cot.payment_scheme === 'cash' || 
-        cot.cash_amount_type || 
-        cot.cash_timing || 
-        cot.metodo_pago === 'efectivo' || 
-        cot.payment_method === 'cash' || 
-        String(cot.status || cot.estado || '').toLowerCase().includes('efectivo') || 
-        String(cot.status || cot.estado || '').toLowerCase().includes('anticipo pagado')
+      
+      const esPagadoMP = Boolean(
+        (cot.status === 'Pagado' || cot.payment_status === 'approved') &&
+        !cot.cash_confirmed &&
+        !cot.cash_requested &&
+        (cot.mp_payment_data || cot.metodo_pago === 'mercadopago' || cot.payment_method === 'mercadopago')
       );
 
-      // Si es pago en efectivo, NO se cobra comisión de Mercado Pago, solo IVA
-      if (esEfectivo) {
-        return subConIva;
+      // Si fue pagado a través de pasarela Mercado Pago, incluye su comisión
+      if (esPagadoMP) {
+        const comisionMP = (subConIva * 0.0349 + 4) * 1.16;
+        return subConIva + comisionMP;
       }
 
-      // Si es pago por Mercado Pago, se cobra la comisión oficial + IVA
-      const comisionMP = (subConIva * 0.0349 + 4) * 1.16;
-      return subConIva + comisionMP;
+      // Por defecto (efectivo, estándar, por pagar, etc.), el total es Subtotal + 16% IVA (sin comisión MP)
+      return subConIva;
     }
     return base;
   };
@@ -554,15 +551,27 @@ const VistaCotizaciones = () => {
         if (esCliente) {
           let subtotalBase = 0;
           (detalle.conceptos || detalle.servicios || []).forEach(c => {
-            subtotalBase += parseFloat(c.precio_u || c.precio || 0) * parseFloat(c.cantidad || 1);
+            subtotalBase += parseFloat(c.precio_u || c.precio || 0) * parseFloat(c.cantidad || c.cant || 1);
           });
           (detalle.materiales || []).forEach(m => {
-            subtotalBase += parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || 1);
+            subtotalBase += parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || m.cant || 1);
           });
+          if (detalle.seccionesLote) {
+            detalle.seccionesLote.forEach(sec => {
+              (sec.conceptos || []).forEach(c => subtotalBase += parseFloat(c.precio_u || c.precio || 0) * parseFloat(c.cantidad || c.cant || 1));
+              (sec.materiales || []).forEach(m => subtotalBase += parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || m.cant || 1));
+            });
+          }
           if (subtotalBase > 0) {
             const ivaCalc = subtotalBase * 0.16;
             const subtotalConIva = subtotalBase + ivaCalc;
-            const comisionMP = (subtotalConIva * 0.0349 + 4) * 1.16;
+            const esPagadoMP = Boolean(
+              (cotizacionSeleccionada?.status === 'Pagado' || cotizacionSeleccionada?.payment_status === 'approved') &&
+              !cotizacionSeleccionada?.cash_confirmed &&
+              !cotizacionSeleccionada?.cash_requested &&
+              (cotizacionSeleccionada?.mp_payment_data || cotizacionSeleccionada?.metodo_pago === 'mercadopago' || cotizacionSeleccionada?.payment_method === 'mercadopago')
+            );
+            const comisionMP = esPagadoMP ? ((subtotalConIva * 0.0349 + 4) * 1.16) : 0;
             const totalConTodo = subtotalConIva + comisionMP;
             priceFactor = totalConTodo / subtotalBase;
           }
@@ -1482,6 +1491,14 @@ const VistaCotizaciones = () => {
                   const baseMonto = subtotalItems > 0 ? subtotalItems : parseFloat(cotizacionSeleccionada.total || cotizacionSeleccionada.estimated_amount || 0);
                   const iva = baseMonto * 0.16;
                   const subtotalConIva = baseMonto + iva;
+
+                  const esPagadoMP = Boolean(
+                    (cotizacionSeleccionada.status === 'Pagado' || cotizacionSeleccionada.payment_status === 'approved') &&
+                    !cotizacionSeleccionada.cash_confirmed &&
+                    !cotizacionSeleccionada.cash_requested &&
+                    (cotizacionSeleccionada.mp_payment_data || cotizacionSeleccionada.metodo_pago === 'mercadopago' || cotizacionSeleccionada.payment_method === 'mercadopago')
+                  );
+
                   const esEfectivo = Boolean(
                     cotizacionSeleccionada.cash_requested || 
                     cotizacionSeleccionada.payment_scheme === 'cash' || 
@@ -1493,9 +1510,9 @@ const VistaCotizaciones = () => {
                     String(cotizacionSeleccionada.status || cotizacionSeleccionada.estado || '').toLowerCase().includes('anticipo pagado')
                   );
 
-                  const comisionMP = esEfectivo ? 0 : ((subtotalConIva * 0.0349 + 4) * 1.16);
+                  const comisionMP = esPagadoMP ? ((subtotalConIva * 0.0349 + 4) * 1.16) : 0;
                   const totalCalc = baseMonto > 0 
-                    ? (esEfectivo ? subtotalConIva : (subtotalConIva + comisionMP)) 
+                    ? (esPagadoMP ? (subtotalConIva + comisionMP) : subtotalConIva) 
                     : parseFloat(cotizacionSeleccionada.total || 0);
 
                   return (
@@ -1506,19 +1523,15 @@ const VistaCotizaciones = () => {
                         </h3>
                       ) : baseMonto > 0 ? (
                         <>
-                          {!esCliente && !esTecnico && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '300px', marginBottom: '8px', color: '#64748b' }}>
-                              <span>Subtotal:</span>
-                              <span style={{ fontWeight: 'bold' }}>${baseMonto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                            </div>
-                          )}
-                          {!esCliente && !esTecnico && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '300px', marginBottom: '8px', color: '#64748b' }}>
-                              <span>IVA (16%):</span>
-                              <span style={{ fontWeight: 'bold' }}>${iva.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                            </div>
-                          )}
-                          {!esCliente && !esTecnico && !esEfectivo && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '300px', marginBottom: '8px', color: '#64748b' }}>
+                            <span>Subtotal:</span>
+                            <span style={{ fontWeight: 'bold' }}>${baseMonto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '300px', marginBottom: '8px', color: '#64748b' }}>
+                            <span>IVA (16%):</span>
+                            <span style={{ fontWeight: 'bold' }}>${iva.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          {esPagadoMP && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '300px', marginBottom: '12px', color: '#009ee3', alignItems: 'center' }}>
                               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <img src={mpLogo} alt="MP" style={{ height: '14px', objectFit: 'contain' }} /> Comisión (T. Oficial):
@@ -1526,7 +1539,7 @@ const VistaCotizaciones = () => {
                               <span style={{ fontWeight: 'bold' }}>${comisionMP.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                           )}
-                          {!esCliente && !esTecnico && esEfectivo && (
+                          {esEfectivo && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '300px', marginBottom: '12px', color: '#16a34a', alignItems: 'center', fontSize: '0.82rem' }}>
                               <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '700' }}>
                                 💵 Pago en Efectivo:

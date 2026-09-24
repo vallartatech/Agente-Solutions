@@ -189,9 +189,14 @@ const VistaCotizacionPrint = () => {
   const subtotal = elementosTabla.reduce((acc, item) => acc + item.importe, 0);
   const iva = subtotal * IVA_RATE;
   const subtotalConIva = subtotal + iva;
-  const esEfectivo = cotizacion?.cash_requested || cotizacion?.payment_scheme === 'cash' || String(cotizacion?.status || '').toLowerCase().includes('efectivo') || String(cotizacion?.status || '').toLowerCase().includes('anticipo pagado');
-  const comisionMP = esEfectivo ? 0 : ((subtotalConIva * 0.0349 + 4) * 1.16);
-  const totalFinal = subtotalConIva + comisionMP;
+  const esPagadoMP = Boolean(
+    (cotizacion?.status === 'Pagado' || cotizacion?.payment_status === 'approved') &&
+    !cotizacion?.cash_confirmed &&
+    !cotizacion?.cash_requested &&
+    (cotizacion?.mp_payment_data || cotizacion?.metodo_pago === 'mercadopago' || cotizacion?.payment_method === 'mercadopago')
+  );
+  const comisionMP = esPagadoMP ? ((subtotalConIva * 0.0349 + 4) * 1.16) : 0;
+  const totalFinal = esPagadoMP ? (subtotalConIva + comisionMP) : subtotalConIva;
   const priceFactor = (!esAdmin && subtotal > 0) ? (totalFinal / subtotal) : 1;
 
   const formatearDinero = (cantidad) => {
@@ -320,7 +325,7 @@ const VistaCotizacionPrint = () => {
                   <td>{formatearDinero(iva)}</td>
                 </tr>
               )}
-              {esAdmin && !esEfectivo && (
+              {esAdmin && esPagadoMP && (
                 <tr className="totales">
                   <td colSpan="4" style={{ border: 'none' }}></td>
                   <td className="label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', border: 'none' }}>
@@ -328,15 +333,6 @@ const VistaCotizacionPrint = () => {
                     <span>COMISIÓN (T. Oficial)</span>
                   </td>
                   <td style={{ color: '#009ee3', fontWeight: '600' }}>{formatearDinero(comisionMP)}</td>
-                </tr>
-              )}
-              {esAdmin && esEfectivo && (
-                <tr className="totales">
-                  <td colSpan="4" style={{ border: 'none' }}></td>
-                  <td className="label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', border: 'none' }}>
-                    <span>💵 PAGO EN EFECTIVO</span>
-                  </td>
-                  <td style={{ color: '#16a34a', fontWeight: '600' }}>Exento Comisión MP ($0.00)</td>
                 </tr>
               )}
               <tr className="totales total-final">
