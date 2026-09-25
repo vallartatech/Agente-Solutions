@@ -4,7 +4,8 @@ import axios from 'axios';
 import { 
   ArrowLeft, Printer, Download, Save, 
   CheckCircle, Clock, Wrench, ShieldCheck,
-  CreditCard, FileText, UserCheck, Home, MapPin, Phone
+  CreditCard, FileText, UserCheck, Home, MapPin, Phone,
+  Lock, AlertTriangle, Sparkles, Check
 } from 'lucide-react';
 import "../../../styles/AgenteSolutions/Admin/VistaCotizacionPrint.css";
 import logo from "../../../assets/Logo3.png"; 
@@ -20,8 +21,9 @@ const VistaCotizacionPrint = () => {
   const [guardando, setGuardando] = useState(false);
   const [pdfGenerado, setPdfGenerado] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
   
-  // Fase seleccionada para el PDF: 'por_pagar' | 'pagado' | 'asignado'
+  // Fase seleccionada para el PDF: 'por_pagar' | 'pagado' | 'finalizado'
   const [faseActual, setFaseActual] = useState('por_pagar');
   const [escala, setEscala] = useState(1);
   const [notas, setNotas] = useState("");
@@ -35,14 +37,54 @@ const VistaCotizacionPrint = () => {
     } catch { return false; }
   })();
 
-  const detectarFaseReal = (cot) => {
-    if (!cot) return 'por_pagar';
-    const statusLower = String(cot.status || cot.estado || '').toLowerCase();
-    const hasTecnico = cot.tecnico && cot.tecnico !== 'Sin Técnico' && cot.tecnico !== 'Pendiente de asignar' && !cot.tecnico.toLowerCase().includes('sin técnico');
-    const isPaid = statusLower.includes('pagad') || cot.payment_status === 'approved' || cot.payment_status === 'Validado' || cot.advance_paid || cot.cash_confirmed;
+  // Mostrar mensaje toast
+  const mostrarToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(""), 4500);
+  };
 
-    if (hasTecnico) return 'asignado';
-    if (isPaid) return 'pagado';
+  // Validaciones de disponibilidad de fases según los datos reales en Base de Datos
+  const verificarDisponibilidadFases = (cot) => {
+    if (!cot) return { f1: true, f2: false, f3: false };
+
+    const statusLower = String(cot.status || cot.estado || '').toLowerCase();
+    
+    // Fase 1: Siempre disponible
+    const f1 = true;
+
+    // Fase 2: Solo si está pagada (MercadoPago aprobado o Efectivo confirmado o estado avanzado)
+    const isPaid = Boolean(
+      cot.payment_status === 'approved' ||
+      cot.payment_status === 'Validado' ||
+      cot.advance_paid == 1 ||
+      cot.cash_confirmed == 1 ||
+      statusLower.includes('pagad') ||
+      Boolean(cot.mp_payment_data) ||
+      ['en proceso', 'asignado', 'listo', 'finalizado', 'terminado'].includes(statusLower)
+    );
+    const f2 = isPaid;
+
+    // Fase 3: Solo si el trabajo fue marcado como finalizado por Técnico o Root
+    const isFinished = Boolean(
+      ['finalizado', 'terminado', 'completado', 'listo'].includes(statusLower) ||
+      cot.trabajo_finalizado == 1 ||
+      cot.has_final_report == true ||
+      Boolean(cot.final_report_id) ||
+      cot.work_order_status === 'Listo' ||
+      cot.work_order_status === 'Finalizado' ||
+      cot.service_status === 'Listo' ||
+      cot.service_status === 'Finalizado'
+    );
+    const f3 = isFinished;
+
+    return { f1, f2, f3 };
+  };
+
+  const detectarFaseMaximaDisponible = (cot) => {
+    if (!cot) return 'por_pagar';
+    const { f2, f3 } = verificarDisponibilidadFases(cot);
+    if (f3) return 'finalizado';
+    if (f2) return 'pagado';
     return 'por_pagar';
   };
 
@@ -65,31 +107,34 @@ const VistaCotizacionPrint = () => {
     texto += `\n`;
 
     if (fase === 'por_pagar') {
-      texto += `--- ESTADO: PENDIENTE POR PAGAR ---\n`;
+      texto += `--- FASE 1: COTIZACIÓN COMERCIAL (PENDIENTE DE PAGO) ---\n`;
       texto += `• Vigencia de precios: 15 días naturales a partir de la fecha de emisión.\n`;
-      texto += `• Garantía de mano de obra: 15 días naturales tras la entrega del servicio.\n`;
-      texto += `• La asignación del técnico especialista se realizará inmediatamente al confirmar el pago del anticipo/total.\n`;
+      texto += `• Garantía de mano de obra: 15 días naturales tras la entrega y conclusión del servicio.\n`;
+      texto += `• La asignación del técnico especialista y fecha de ejecución se programarán automáticamente al confirmarse el pago por Mercado Pago o en Efectivo.\n`;
     } else if (fase === 'pagado') {
-      texto += `--- ESTADO: PAGO CONFIRMADO ---\n`;
+      texto += `--- FASE 2: PAGO CONFIRMADO (TÉCNICO EN ASIGNACIÓN) ---\n`;
       if (cot.mp_payment_data?.mp_payment_id) {
         texto += `• N° Operación MercadoPago: #${cot.mp_payment_data.mp_payment_id}\n`;
+      } else if (cot.cash_confirmed) {
+        texto += `• Modalidad de Pago: Efectivo validado en sistema por administración.\n`;
       }
-      texto += `• Estatus de Asignación: En proceso de asignación de técnico por el área operativa.\n`;
-      texto += `• Los materiales y conceptos cotizados quedan reservados para su ejecución.\n`;
-    } else if (fase === 'asignado') {
-      texto += `--- ESTADO: SERVICIO ASIGNADO Y PROGRAMADO ---\n`;
-      texto += `• Técnico Responsable: ${cot.tecnico || 'Técnico Especialista'}\n`;
+      texto += `• Estatus Operativo: Pago acreditado. Personal y materiales en proceso de programación.\n`;
+      texto += `• Los conceptos y refacciones cotizadas quedan formalmente reservados para el servicio.\n`;
+    } else if (fase === 'finalizado') {
+      texto += `--- FASE 3: ACTA DE ENTREGA - TRABAJO FINALIZADO Y GARANTÍA ---\n`;
+      texto += `• Técnico Responsable: ${cot.tecnico && cot.tecnico !== 'Sin Técnico' ? cot.tecnico : 'Técnico Especialista Agente Solutions'}\n`;
       if (cot.tecnico_telefono) {
         texto += `• Teléfono de Contacto Técnico: ${cot.tecnico_telefono}\n`;
       }
-      if (cot.scheduled_at) {
-        texto += `• Fecha Programada de Visita/Servicio: ${cot.scheduled_at}\n`;
+      if (cot.scheduled_at || cot.fecha_finalizacion) {
+        texto += `• Fecha de Conclusión / Entrega: ${cot.fecha_finalizacion || cot.scheduled_at || new Date().toLocaleDateString('es-MX')}\n`;
       }
-      texto += `• Garantía oficial de satisfacción Agente Solutions activa.\n`;
+      texto += `• Garantía de Satisfacción: Activa por 15 días naturales a partir de la firma de conformidad.\n`;
+      texto += `• Conformidad del Cliente: El cliente manifiesta haber recibido los trabajos y materiales a entera satisfacción.\n`;
     }
 
     if (cot.observations && !texto.includes(cot.observations)) {
-      texto += `\nObservaciones adicionales:\n${cot.observations}\n`;
+      texto += `\nObservaciones adicionales del servicio:\n${cot.observations}\n`;
     }
 
     return texto;
@@ -116,7 +161,7 @@ const VistaCotizacionPrint = () => {
       const data = JSON.parse(datosGuardados);
       setCotizacion(data);
 
-      const faseInicial = detectarFaseReal(data);
+      const faseInicial = detectarFaseMaximaDisponible(data);
       setFaseActual(faseInicial);
       setNotas(generarTextoEspecificaciones(data, faseInicial));
 
@@ -179,9 +224,27 @@ const VistaCotizacionPrint = () => {
     }
   }, []);
 
-  const handleCambiarFase = (nuevaFase) => {
-    setFaseActual(nuevaFase);
-    setNotas(generarTextoEspecificaciones(cotizacion, nuevaFase));
+  const { f1: fase1Ok, f2: fase2Ok, f3: fase3Ok } = verificarDisponibilidadFases(cotizacion);
+
+  const handleSeleccionarFase = (faseDestino) => {
+    if (faseDestino === 'por_pagar') {
+      setFaseActual('por_pagar');
+      setNotas(generarTextoEspecificaciones(cotizacion, 'por_pagar'));
+    } else if (faseDestino === 'pagado') {
+      if (!fase2Ok) {
+        mostrarToast("🔒 Fase 2 Bloqueada: Se habilitará automáticamente en cuanto el cliente realice el pago por Mercado Pago o se valide en efectivo.");
+        return;
+      }
+      setFaseActual('pagado');
+      setNotas(generarTextoEspecificaciones(cotizacion, 'pagado'));
+    } else if (faseDestino === 'finalizado') {
+      if (!fase3Ok) {
+        mostrarToast("🔒 Fase 3 Bloqueada: Se habilitará cuando el Técnico o el Root marquen el trabajo como 'Finalizado' en el sistema.");
+        return;
+      }
+      setFaseActual('finalizado');
+      setNotas(generarTextoEspecificaciones(cotizacion, 'finalizado'));
+    }
   };
 
   const handleGenerarPDF = async () => {
@@ -212,26 +275,14 @@ const VistaCotizacionPrint = () => {
 
       setPdfUrl(respuesta.data.url);
       setPdfGenerado(true);
-      alert("¡PDF de cotización generado y guardado en el sistema con éxito!");
+      mostrarToast("¡PDF generado y guardado en el sistema con éxito!");
       
     } catch (error) {
       console.error("Error en el proceso:", error);
-      alert("Hubo un error al procesar el archivo.");
+      mostrarToast("Hubo un error al guardar el archivo en el sistema.");
     } finally {
       setGuardando(false);
     }
-  };
-
-  const handleDescargar = () => {
-    const elemento = document.getElementById('cotizacion-pdf');
-    const opciones = {
-      margin: 0,
-      filename: `cotizacion_${cotizacion.folio || cotizacion.id}_${faseActual}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-    html2pdf().set(opciones).from(elemento).save();
   };
 
   const handleImprimir = () => {
@@ -239,7 +290,7 @@ const VistaCotizacionPrint = () => {
   };
 
   if (!cotizacion) {
-    return <div style={{ padding: '50px', textAlign: 'center' }}>Cargando información de cotización...</div>;
+    return <div style={{ padding: '50px', textAlign: 'center', color: '#fff' }}>Cargando información de cotización...</div>;
   }
 
   // Cálculos de montos
@@ -247,7 +298,7 @@ const VistaCotizacionPrint = () => {
   const iva = subtotal * IVA_RATE;
   const subtotalConIva = subtotal + iva;
   const esPagadoMP = Boolean(
-    (cotizacion?.status === 'Pagado' || cotizacion?.payment_status === 'approved' || faseActual === 'pagado' || faseActual === 'asignado') &&
+    (cotizacion?.status === 'Pagado' || cotizacion?.payment_status === 'approved' || faseActual === 'pagado' || faseActual === 'finalizado') &&
     !cotizacion?.cash_confirmed &&
     !cotizacion?.cash_requested
   );
@@ -260,26 +311,52 @@ const VistaCotizacionPrint = () => {
   };
 
   return (
-    <div style={{ backgroundColor: '#0f172a', minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ backgroundColor: '#0b1329', minHeight: '100vh', padding: '20px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
       
+      {/* ─── TOAST NOTIFICATION ─── */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          zIndex: 9999,
+          background: '#1e293b',
+          color: '#f8fafc',
+          border: '1px solid #f59e0b',
+          padding: '12px 20px',
+          borderRadius: '10px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          maxWidth: '550px',
+          fontSize: '0.88rem',
+          fontWeight: '700'
+        }}>
+          <AlertTriangle size={20} color="#f59e0b" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* ─── PANEL DE CONTROL SUPERIOR (NO PRINT) ─── */}
-      <div className="no-print" style={{ marginBottom: '20px', width: '100%', maxWidth: '21cm', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div className="no-print" style={{ marginBottom: '22px', width: '100%', maxWidth: '21cm', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         
-        {/* Barra superior de navegación y botones */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '10px', background: '#1e293b', padding: '12px 18px', borderRadius: '12px', border: '1px solid #334155' }}>
+        {/* Barra superior de acciones */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', background: '#131e3a', padding: '14px 20px', borderRadius: '14px', border: '1px solid #22325a' }}>
           <button 
             onClick={() => navigate('/vista-cotizaciones')}
             style={{ 
               padding: '10px 18px', 
-              backgroundColor: '#334155', 
-              color: 'white', 
-              border: 'none', 
+              backgroundColor: '#1e293b', 
+              color: '#cbd5e1', 
+              border: '1px solid #334155', 
               borderRadius: '8px', 
               cursor: 'pointer', 
               fontWeight: '700', 
+              fontSize: '0.85rem',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '8px',
+              transition: 'all 0.2s ease'
             }}
           >
             <ArrowLeft size={16} /> REGRESAR
@@ -298,13 +375,14 @@ const VistaCotizacionPrint = () => {
                   borderRadius: '8px', 
                   cursor: 'pointer', 
                   fontWeight: '800', 
-                  boxShadow: '0 3px 10px rgba(16, 185, 129, 0.3)',
+                  fontSize: '0.85rem',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px'
                 }}
               >
-                <Save size={16} /> {guardando ? 'PREPARANDO...' : 'GUARDAR EN SISTEMA'}
+                <Save size={16} /> {guardando ? 'GUARDANDO...' : 'SUBIR ESPECIFICACIONES'}
               </button>
             ) : (
               <a 
@@ -318,6 +396,7 @@ const VistaCotizacionPrint = () => {
                   textDecoration: 'none', 
                   borderRadius: '8px', 
                   fontWeight: '800', 
+                  fontSize: '0.85rem',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px'
@@ -331,13 +410,14 @@ const VistaCotizacionPrint = () => {
               onClick={handleImprimir}
               style={{ 
                 padding: '10px 18px', 
-                background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', 
+                background: 'linear-gradient(135deg, #f26624 0%, #ea580c 100%)', 
                 color: 'white', 
                 border: 'none', 
                 borderRadius: '8px', 
                 cursor: 'pointer', 
                 fontWeight: '800', 
-                boxShadow: '0 3px 10px rgba(234, 88, 12, 0.3)',
+                fontSize: '0.85rem',
+                boxShadow: '0 4px 12px rgba(234, 88, 12, 0.3)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px'
@@ -348,74 +428,168 @@ const VistaCotizacionPrint = () => {
           </div>
         </div>
 
-        {/* Selector de Historial / Versiones del PDF por Fase */}
-        <div style={{ background: '#1e293b', padding: '14px 18px', borderRadius: '12px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            📜 HISTORIAL / FASES DEL DOCUMENTO PDF:
+        {/* ─── STEPPER BAR / HISTORIAL DE FASES DINÁMICAS CON CANDADOS ─── */}
+        <div style={{ background: '#131e3a', padding: '16px 20px', borderRadius: '14px', border: '1px solid #22325a' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              📜 HISTORIAL DE FASES DEL DOCUMENTO:
+            </span>
+            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600' }}>
+              * Solo se habilitan las fases alcanzadas en el ciclo del trabajo
+            </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '8px' }}>
-            <button
-              onClick={() => handleCambiarFase('por_pagar')}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '10px' }}>
+            
+            {/* Paso 1: Por Pagar */}
+            <div
+              onClick={() => handleSeleccionarFase('por_pagar')}
               style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
+                padding: '12px 14px',
+                borderRadius: '10px',
                 border: '2px solid',
                 borderColor: faseActual === 'por_pagar' ? '#f59e0b' : '#334155',
-                background: faseActual === 'por_pagar' ? 'rgba(245, 158, 11, 0.15)' : '#0f172a',
-                color: faseActual === 'por_pagar' ? '#fbbf24' : '#94a3b8',
-                fontWeight: '800',
-                fontSize: '0.82rem',
+                background: faseActual === 'por_pagar' ? 'rgba(245, 158, 11, 0.12)' : '#0f172a',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px'
+                justifyContent: 'space-between',
+                transition: 'all 0.2s ease'
               }}
             >
-              <Clock size={15} /> 1. POR PAGAR (Cotización)
-            </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: faseActual === 'por_pagar' ? '#f59e0b' : '#1e293b',
+                  color: faseActual === 'por_pagar' ? '#000' : '#cbd5e1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '900',
+                  fontSize: '0.85rem'
+                }}>
+                  1
+                </div>
+                <div>
+                  <div style={{ fontWeight: '800', fontSize: '0.82rem', color: faseActual === 'por_pagar' ? '#fbbf24' : '#e2e8f0' }}>
+                    POR PAGAR
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                    Cotización Comercial
+                  </div>
+                </div>
+              </div>
+              <span style={{ fontSize: '0.68rem', fontWeight: '800', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', padding: '2px 8px', borderRadius: '12px' }}>
+                {faseActual === 'por_pagar' ? 'ACTUAL' : 'LISTO'}
+              </span>
+            </div>
 
-            <button
-              onClick={() => handleCambiarFase('pagado')}
+            {/* Paso 2: Pagado (Técnico sin asignar) */}
+            <div
+              onClick={() => handleSeleccionarFase('pagado')}
               style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
+                padding: '12px 14px',
+                borderRadius: '10px',
                 border: '2px solid',
-                borderColor: faseActual === 'pagado' ? '#10b981' : '#334155',
-                background: faseActual === 'pagado' ? 'rgba(16, 185, 129, 0.15)' : '#0f172a',
-                color: faseActual === 'pagado' ? '#34d399' : '#94a3b8',
-                fontWeight: '800',
-                fontSize: '0.82rem',
-                cursor: 'pointer',
+                borderColor: faseActual === 'pagado' ? '#10b981' : (fase2Ok ? '#334155' : '#1e293b'),
+                background: faseActual === 'pagado' ? 'rgba(16, 185, 129, 0.12)' : (fase2Ok ? '#0f172a' : '#090f1d'),
+                cursor: fase2Ok ? 'pointer' : 'not-allowed',
+                opacity: fase2Ok ? 1 : 0.55,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px'
+                justifyContent: 'space-between',
+                transition: 'all 0.2s ease'
               }}
             >
-              <CreditCard size={15} /> 2. PAGADO (Técnico sin asignar)
-            </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: faseActual === 'pagado' ? '#10b981' : (fase2Ok ? '#1e293b' : '#111827'),
+                  color: faseActual === 'pagado' ? '#fff' : '#cbd5e1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '900',
+                  fontSize: '0.85rem'
+                }}>
+                  2
+                </div>
+                <div>
+                  <div style={{ fontWeight: '800', fontSize: '0.82rem', color: faseActual === 'pagado' ? '#34d399' : (fase2Ok ? '#e2e8f0' : '#64748b') }}>
+                    PAGADO
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                    Técnico en Asignación
+                  </div>
+                </div>
+              </div>
+              {fase2Ok ? (
+                <span style={{ fontSize: '0.68rem', fontWeight: '800', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '2px 8px', borderRadius: '12px' }}>
+                  {faseActual === 'pagado' ? 'ACTUAL' : 'HABILITADO'}
+                </span>
+              ) : (
+                <span style={{ fontSize: '0.68rem', fontWeight: '800', background: 'rgba(100, 116, 139, 0.2)', color: '#94a3b8', padding: '2px 8px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <Lock size={10} /> BLOQUEADO
+                </span>
+              )}
+            </div>
 
-            <button
-              onClick={() => handleCambiarFase('asignado')}
+            {/* Paso 3: Finalizado (Acta de Entrega / Garantía) */}
+            <div
+              onClick={() => handleSeleccionarFase('finalizado')}
               style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
+                padding: '12px 14px',
+                borderRadius: '10px',
                 border: '2px solid',
-                borderColor: faseActual === 'asignado' ? '#3b82f6' : '#334155',
-                background: faseActual === 'asignado' ? 'rgba(59, 130, 246, 0.15)' : '#0f172a',
-                color: faseActual === 'asignado' ? '#60a5fa' : '#94a3b8',
-                fontWeight: '800',
-                fontSize: '0.82rem',
-                cursor: 'pointer',
+                borderColor: faseActual === 'finalizado' ? '#3b82f6' : (fase3Ok ? '#334155' : '#1e293b'),
+                background: faseActual === 'finalizado' ? 'rgba(59, 130, 246, 0.12)' : (fase3Ok ? '#0f172a' : '#090f1d'),
+                cursor: fase3Ok ? 'pointer' : 'not-allowed',
+                opacity: fase3Ok ? 1 : 0.55,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px'
+                justifyContent: 'space-between',
+                transition: 'all 0.2s ease'
               }}
             >
-              <UserCheck size={15} /> 3. ASIGNADO (Versión Final)
-            </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: faseActual === 'finalizado' ? '#3b82f6' : (fase3Ok ? '#1e293b' : '#111827'),
+                  color: faseActual === 'finalizado' ? '#fff' : '#cbd5e1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '900',
+                  fontSize: '0.85rem'
+                }}>
+                  3
+                </div>
+                <div>
+                  <div style={{ fontWeight: '800', fontSize: '0.82rem', color: faseActual === 'finalizado' ? '#60a5fa' : (fase3Ok ? '#e2e8f0' : '#64748b') }}>
+                    FINALIZADO
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                    Acta y Garantía
+                  </div>
+                </div>
+              </div>
+              {fase3Ok ? (
+                <span style={{ fontSize: '0.68rem', fontWeight: '800', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '2px 8px', borderRadius: '12px' }}>
+                  {faseActual === 'finalizado' ? 'ACTUAL' : 'HABILITADO'}
+                </span>
+              ) : (
+                <span style={{ fontSize: '0.68rem', fontWeight: '800', background: 'rgba(100, 116, 139, 0.2)', color: '#94a3b8', padding: '2px 8px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <Lock size={10} /> BLOQUEADO
+                </span>
+              )}
+            </div>
+
           </div>
         </div>
       </div>
@@ -428,18 +602,18 @@ const VistaCotizacionPrint = () => {
             {/* Sello / Marca de Agua según Fase */}
             <div style={{ position: 'absolute', top: '15px', right: '25px', zIndex: 10 }}>
               {faseActual === 'por_pagar' && (
-                <div style={{ border: '2px solid #f59e0b', color: '#b45309', background: '#fffbeb', padding: '4px 10px', borderRadius: '6px', fontWeight: '900', fontSize: '11px', letterSpacing: '0.05em' }}>
+                <div style={{ border: '2px solid #f59e0b', color: '#b45309', background: '#fffbeb', padding: '5px 12px', borderRadius: '6px', fontWeight: '900', fontSize: '11px', letterSpacing: '0.04em' }}>
                   🟡 COTIZACIÓN PENDIENTE DE PAGO
                 </div>
               )}
               {faseActual === 'pagado' && (
-                <div style={{ border: '2px solid #10b981', color: '#047857', background: '#ecfdf5', padding: '4px 10px', borderRadius: '6px', fontWeight: '900', fontSize: '11px', letterSpacing: '0.05em' }}>
-                  🟢 PAGO VALIDADO / CONFIRMADO
+                <div style={{ border: '2px solid #10b981', color: '#047857', background: '#ecfdf5', padding: '5px 12px', borderRadius: '6px', fontWeight: '900', fontSize: '11px', letterSpacing: '0.04em' }}>
+                  🟢 PAGO CONFIRMADO - EN ASIGNACIÓN
                 </div>
               )}
-              {faseActual === 'asignado' && (
-                <div style={{ border: '2px solid #2563eb', color: '#1d4ed8', background: '#eff6ff', padding: '4px 10px', borderRadius: '6px', fontWeight: '900', fontSize: '11px', letterSpacing: '0.05em' }}>
-                  🔵 ORDEN DE TRABAJO ASIGNADA
+              {faseActual === 'finalizado' && (
+                <div style={{ border: '2px solid #2563eb', color: '#1d4ed8', background: '#eff6ff', padding: '5px 12px', borderRadius: '6px', fontWeight: '900', fontSize: '11px', letterSpacing: '0.04em' }}>
+                  🔵 ACTA DE ENTREGA - TRABAJO FINALIZADO
                 </div>
               )}
             </div>
@@ -491,7 +665,7 @@ const VistaCotizacionPrint = () => {
                     textAlign: 'left'
                   }}>
                     <div style={{ fontSize: '10px', fontWeight: '800', color: faseActual === 'por_pagar' ? '#c2410c' : (faseActual === 'pagado' ? '#047857' : '#1d4ed8'), textTransform: 'uppercase', marginBottom: '2px' }}>
-                      ESTADO DEL DOCUMENTO
+                      ESTADO DEL SERVICIO
                     </div>
                     
                     {faseActual === 'por_pagar' && (
@@ -503,16 +677,18 @@ const VistaCotizacionPrint = () => {
 
                     {faseActual === 'pagado' && (
                       <div>
-                        <div style={{ color: '#047857', fontWeight: '900', fontSize: '13px' }}>🟢 PAGADO</div>
+                        <div style={{ color: '#047857', fontWeight: '900', fontSize: '13px' }}>🟢 PAGO CONFIRMADO</div>
                         <div style={{ color: '#065f46', fontSize: '10px', marginTop: '2px' }}>Técnico: Sin asignar (En proceso)</div>
                       </div>
                     )}
 
-                    {faseActual === 'asignado' && (
+                    {faseActual === 'finalizado' && (
                       <div>
-                        <div style={{ color: '#1d4ed8', fontWeight: '900', fontSize: '13px' }}>🛠️ {cotizacion.tecnico ? cotizacion.tecnico.toUpperCase() : 'TÉCNICO ASIGNADO'}</div>
+                        <div style={{ color: '#1d4ed8', fontWeight: '900', fontSize: '13px' }}>
+                          🛠️ {cotizacion.tecnico && cotizacion.tecnico !== 'Sin Técnico' ? cotizacion.tecnico.toUpperCase() : 'TRABAJO FINALIZADO'}
+                        </div>
                         <div style={{ color: '#1e3a8a', fontSize: '10px', marginTop: '2px' }}>
-                          {cotizacion.scheduled_at ? `Visita: ${cotizacion.scheduled_at}` : 'Servicio programado activo'}
+                          {cotizacion.scheduled_at ? `Entrega: ${cotizacion.scheduled_at}` : 'Servicio concluido a satisfacción'}
                         </div>
                       </div>
                     )}
@@ -602,7 +778,7 @@ const VistaCotizacionPrint = () => {
                   ESPECIFICACIONES, COMENTARIOS Y TÉRMINOS
                 </h4>
                 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '700' }}>
-                  {faseActual === 'por_pagar' ? '🟡 Vigencia: 15 Días' : (faseActual === 'pagado' ? '🟢 Pago Aprobado' : '🔵 Técnico Asignado')}
+                  {faseActual === 'por_pagar' ? '🟡 Vigencia: 15 Días' : (faseActual === 'pagado' ? '🟢 Pago Validado' : '🔵 Trabajo Finalizado')}
                 </span>
               </div>
 
@@ -628,6 +804,25 @@ const VistaCotizacionPrint = () => {
                 }}
               />
             </div>
+
+            {/* Cuadros de Firmas / Conformidad (Fase 3: Finalizado) */}
+            {faseActual === 'finalizado' && (
+              <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', padding: '10px 0' }}>
+                <div style={{ textAlign: 'center', borderTop: '1px solid #94a3b8', paddingTop: '8px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a' }}>
+                    {cotizacion.tecnico && cotizacion.tecnico !== 'Sin Técnico' ? cotizacion.tecnico.toUpperCase() : 'TÉCNICO ESPECIALISTA'}
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#64748b' }}>Firma del Técnico Ejecutor</div>
+                </div>
+
+                <div style={{ textAlign: 'center', borderTop: '1px solid #94a3b8', paddingTop: '8px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a' }}>
+                    {(cotizacion.cliente || cotizacion.cliente_nombre || 'CLIENTE / PROPIETARIO').toUpperCase()}
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#64748b' }}>Firma de Conformidad y Entrega</div>
+                </div>
+              </div>
+            )}
 
             {/* Datos Fiscales y Pie de Página */}
             <div className="fiscales" style={{ marginTop: '16px', borderTop: '2px solid #e2e8f0', paddingTop: '10px', fontSize: '11px', color: '#64748b' }}>
