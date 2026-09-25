@@ -347,7 +347,7 @@ const VistaCotizacionPrint = () => {
       )}
 
       {/* ─── PANEL DE CONTROL SUPERIOR (NO PRINT) ─── */}
-      <div className="no-print" style={{ marginBottom: '22px', width: '100%', maxWidth: '21cm', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div className="no-print" style={{ marginBottom: '22px', width: '100%', maxWidth: '21.59cm', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         
         {/* Barra superior de acciones */}
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', background: '#131e3a', padding: '14px 20px', borderRadius: '14px', border: '1px solid #22325a' }}>
@@ -603,10 +603,10 @@ const VistaCotizacionPrint = () => {
         </div>
       </div>
 
-      {/* ─── HOJA IMPRIMIBLE DEL PDF ─── */}
+      {/* ─── HOJA IMPRIMIBLE DEL PDF (TAMAÑO CARTA: 21.59cm x 27.94cm) ─── */}
       <div style={{ width: '100%', overflow: 'hidden', display: 'flex', justifyContent: 'center', paddingBottom: '30px' }}>
-        <div style={{ transform: `scale(${escala})`, transformOrigin: 'top center', transition: 'transform 0.2s ease', width: '21cm' }}>
-          <div id="cotizacion-pdf" className="cotizacion-container printable-page-container" style={{ minWidth: '21cm', margin: '0 auto', background: '#ffffff', color: '#0f172a', position: 'relative' }}>
+        <div style={{ transform: `scale(${escala})`, transformOrigin: 'top center', transition: 'transform 0.2s ease', width: '21.59cm', maxWidth: '100%' }}>
+          <div id="cotizacion-pdf" className="cotizacion-container printable-page-container" style={{ width: '21.59cm', minHeight: '27.94cm', margin: '0 auto', background: '#ffffff', color: '#0f172a', position: 'relative' }}>
 
             {/* Cabecera Principal Reestructurada */}
             <div className="doc-header-grid" style={{

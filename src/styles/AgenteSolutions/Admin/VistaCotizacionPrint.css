@@ -1,345 +1,112 @@
+/* ========================================================
+   ESTILOS PARA VISTA E IMPRESIÓN DE COTIZACIÓN (TAMAÑO CARTA)
+   ======================================================== */
+
+@page {
+  size: letter portrait;
+  margin: 8mm 10mm;
+}
+
 body {
-  background: #f5f5f5;
+  background: #0b1329;
   margin: 0;
   padding: 0;
-  overflow-x: hidden; /* solo bloquea horizontal */
-  overflow-y: auto; 
-}
-.tt-container {
-  min-height: 100vh;
+  overflow-x: hidden;
   overflow-y: auto;
 }
 
-/* CONTENEDOR */
 .cotizacion-container {
   width: 100%;
   max-width: 1000px;
   margin: auto;
   background: white;
   padding: 20px;
-  font-family: Arial, sans-serif;
-  color: #000;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #0f172a;
   box-sizing: border-box;
   max-height: none; 
   overflow: visible;
 }
 
+/* HOJA PROPORCIONADA A CARTA (8.5 x 11 pulgadas = 21.59cm x 27.94cm) */
 .printable-page-container {
   background-color: white;
-  width: 21cm;
-  min-height: 29.7cm;
+  width: 21.59cm;
+  max-width: 100%;
+  min-height: 27.94cm;
   padding: 1.2cm 1.4cm !important;
-  box-shadow: 0 0 20px rgba(0,0,0,0.15);
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.35);
   box-sizing: border-box;
+  margin: 0 auto;
 }
 
-@media print {
-  .printable-page-container {
-    width: 100% !important;
-    min-height: auto !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-}
-
-/* HEADER */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap; /* 👈 clave responsive */
-  gap: 15px;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  flex-wrap: wrap;
+/* CABECERA EN GRID DE 3 COLUMNAS */
+.doc-header-grid {
+  display: grid;
+  grid-template-columns: 135px 1fr 245px;
+  gap: 16px;
+  align-items: stretch;
+  width: 100%;
 }
 
 .logo {
-  width: 120px;
+  max-width: 135px;
+  height: auto;
 }
 
-/* TEXTO */
-.info-cliente p {
-  margin: 0;
-  color: #ff4d00;
-  font-weight: bold;
-  font-size: 14px;
-}
-
-.info-cliente h2 {
-  margin: 5px 0;
-  font-size: 18px;
-}
-
-.info-cliente h3 {
-  margin: 5px 0;
-  font-size: 16px;
-}
-
-/* FECHA */
-.header-right {
-  width: 100%;
-  max-width: 250px;
-}
-
-.fecha-box {
-  background: #000;
-  color: white;
-  padding: 10px;
-  text-align: center;
-  width: 100%;
-}
-
-.fecha-box span {
-  font-size: 12px;
-  color: #ff4d00;
-}
-
-.fecha-box p {
-  margin: 5px 0 0;
-  font-size: 14px;
-}
-
-/* LINEA */
+/* LINEA SEPARADORA */
 .linea {
   height: 3px;
-  background: #ff4d00;
-  margin: 20px 0;
+  background: linear-gradient(90deg, #f26624 0%, #ea580c 100%);
+  margin: 14px 0;
 }
 
-/* TABLA RESPONSIVA */
+/* TABLA */
 .tabla-container {
   width: 100%;
-  overflow-x: auto; /* 👈 scroll en móvil */
+  overflow-x: auto;
 }
 
 .tabla {
   width: 100%;
   border-collapse: collapse;
-  min-width: 600px; /* 👈 evita que se rompa */
 }
 
 .tabla th {
-  background: #000;
-  color: white;
-  padding: 10px;
-  font-size: 13px;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
 }
 
 .tabla td {
-  border: 1px solid #ccc;
-  padding: 10px;
-  font-size: 13px;
-  vertical-align: top;
-}
-
-.tabla td:nth-child(1),
-.tabla td:nth-child(3),
-.tabla td:nth-child(4),
-.tabla td:nth-child(5),
-.tabla td:nth-child(6) {
-  text-align: center;
+  border: 1px solid #e2e8f0;
+  padding: 8px 10px;
+  font-size: 12px;
+  vertical-align: middle;
 }
 
 /* TOTALES */
 .totales .label {
-  font-weight: bold;
+  font-weight: 800;
   text-align: right;
 }
 
 .subtotal {
-  background: #ff4d00;
-  color: white;
-  font-weight: bold;
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 800;
 }
 
 .total-final td {
-  background: #000;
-  color: white;
-  font-weight: bold;
+  background: #0f172a !important;
+  color: white !important;
+  font-weight: 900;
 }
 
-/* NOTAS */
-.notas {
-  margin-top: 20px;
-}
-
-@media print {
-  .notas {
-    margin-top: 10px;
-  }
-}
-
-.notas ul {
-  padding-left: 18px;
-}
-
-.notas li {
-  margin-bottom: 6px;
-  font-size: 13px;
-}
-
-/* FISCALES */
-.fiscales {
-  margin-top: 20px;
-  border-top: 3px solid #ff4d00;
-  padding-top: 10px;
-}
-
-@media print {
-  .fiscales {
-    margin-top: 10px;
-    padding-top: 5px;
-  }
-}
-
-.fiscales h3 {
-  background: #ff4d00;
-  color: white;
-  display: inline-block;
-  padding: 5px 10px;
-  font-size: 14px;
-}
-
-.fiscales p {
-  margin: 4px 0;
-  font-size: 13px;
-}
-
-/* 📱 MOBILE */
-@media (max-width: 600px) {
-  .logo {
-    width: 90px;
-  }
-
-  .info-cliente h2 {
-    font-size: 16px;
-  }
-
-  .info-cliente h3 {
-    font-size: 14px;
-  }
-
-  .fecha-box {
-    font-size: 12px;
-  }
-
-  .tabla th,
-  .tabla td {
-    font-size: 12px;
-    padding: 8px;
-  }
-}
-
-/* 🖨️ PRINT */
-@media print {
-  body {
-    background: white !important;
-    visibility: hidden;
-  }
-  
-  .no-print {
-    display: none !important;
-  }
-
-  .cotizacion-container, .cotizacion-container * {
-    visibility: visible;
-  }
-
-  .cotizacion-container {
-    position: static !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    min-height: auto !important;
-  }
-
-  .tabla-container {
-    overflow: visible !important;
-  }
-}
-.tabla-container {
-  width: 100%;
-}
-
-/* DESKTOP */
-.tabla-header {
-  display: grid;
-  grid-template-columns: 60px 1fr 80px 80px 120px 120px;
-  background: #000;
-  color: white;
-  font-weight: bold;
-  padding: 10px;
-}
-
-.fila {
-  display: grid;
-  grid-template-columns: 60px 1fr 80px 80px 120px 120px;
-  border-bottom: 1px solid #ccc;
-  padding: 10px;
-}
-
-.fila div {
-  padding: 5px;
-}
-
-/* TOTALES */
-.totales-box {
-  margin-top: 10px;
-  text-align: right;
-}
-
-.totales-box div {
-  margin: 5px 0;
-}
-
-.totales-box .total {
-  background: #000;
-  color: white;
-  padding: 8px;
-  font-weight: bold;
-}
-
-/* 📱 MOBILE */
-@media (max-width: 768px) {
-
-  .tabla-header {
-    display: none; /* 👈 ocultamos encabezado */
-  }
-
-  .fila {
-    display: block;
-    border: 1px solid #ddd;
-    margin-bottom: 10px;
-    padding: 10px;
-  }
-
-  .fila div {
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid #eee;
-    padding: 6px 0;
-  }
-
-  .fila div::before {
-    content: attr(data-label);
-    font-weight: bold;
-    color: #ff4d00;
-  }
-
-  .totales-box {
-    text-align: left;
-  }
-
-}
-
-/* Estilos de Textarea de Especificaciones */
+/* TEXTAREA DE ESPECIFICACIONES */
 .notas-textarea {
   width: 100%;
   min-height: 160px;
@@ -349,27 +116,92 @@ body {
   font-size: 13px;
   line-height: 1.6;
   color: #1e293b;
-  padding: 14px 16px;
-  border-radius: 8px;
+  padding: 12px 14px;
+  border-radius: 6px;
   resize: none;
   overflow: hidden;
   box-sizing: border-box;
   outline: none;
+  display: block;
+  white-space: pre-wrap;
 }
 
+/* DATOS FISCALES */
+.fiscales {
+  margin-top: 16px;
+  border-top: 2px solid #e2e8f0;
+  padding-top: 10px;
+}
+
+/* ========================================================
+   🖨️ ESTILOS DE IMPRESIÓN NATIVOS (@media print)
+   ======================================================== */
 @media print {
+  @page {
+    size: letter portrait;
+    margin: 8mm 10mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .printable-page-container,
+  #cotizacion-pdf {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    visibility: visible !important;
+  }
+
+  .doc-header-grid {
+    display: grid !important;
+    grid-template-columns: 135px 1fr 245px !important;
+    gap: 16px !important;
+    align-items: stretch !important;
+    width: 100% !important;
+  }
+
+  .tabla-container {
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .tabla {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+
   .notas-textarea {
+    width: 100% !important;
     border: none !important;
     background-color: transparent !important;
-    padding: 0 !important;
-    font-size: 13px !important;
+    padding: 4px 0 !important;
+    font-size: 12.5px !important;
     line-height: 1.55 !important;
     color: #0f172a !important;
     overflow: visible !important;
     height: auto !important;
     resize: none !important;
   }
-  .no-print {
-    display: none !important;
+
+  .fiscales {
+    margin-top: 12px !important;
+    padding-top: 6px !important;
   }
 }
