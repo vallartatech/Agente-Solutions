@@ -140,13 +140,29 @@ const VistaCotizacionPrint = () => {
     return texto;
   };
 
-  // Auto-ajustar altura del textarea para que abarque todo el texto sin recortar ni mostrar scrollbars
+  // Auto-ajustar altura del textarea: llena TODO el espacio restante de la hoja
   useEffect(() => {
     if (textareaRef.current) {
+      const container = document.getElementById('cotizacion-pdf');
+      if (!container) return;
+
+      // Reset para medir correctamente
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.max(160, textareaRef.current.scrollHeight + 15)}px`;
+
+      // Altura mínima de una hoja carta en px (27.94cm ≈ 1056px a 96dpi)
+      const PAGE_HEIGHT_PX = 27.94 * (96 / 2.54); // ~1056px
+      const containerHeight = container.scrollHeight;
+      const textareaScrollHeight = textareaRef.current.scrollHeight;
+      const currentTextareaHeight = textareaRef.current.offsetHeight;
+
+      // Espacio que falta para llenar la hoja
+      const remainingSpace = PAGE_HEIGHT_PX - (containerHeight - currentTextareaHeight);
+
+      // Usar el mayor: el contenido real o el espacio restante de la hoja
+      const finalHeight = Math.max(160, textareaScrollHeight + 15, remainingSpace - 20);
+      textareaRef.current.style.height = `${finalHeight}px`;
     }
-  }, [notas, faseActual]);
+  }, [notas, faseActual, elementosTabla]);
 
   useEffect(() => {
     const datosGuardados = localStorage.getItem('cotizacion_para_imprimir');

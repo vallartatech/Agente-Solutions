@@ -41,6 +41,8 @@ body {
   margin: 0 auto;
   border: 1px solid #d1d5db;
   border-radius: 2px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* CABECERA EN GRID DE 3 COLUMNAS (DESKTOP) */
@@ -136,8 +138,15 @@ body {
 }
 
 /* TEXTAREA DE ESPECIFICACIONES */
+.notas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .notas-textarea {
   width: 100%;
+  flex: 1;
   min-height: 160px;
   border: 1px solid #cbd5e1;
   background-color: #f8fafc;
@@ -273,6 +282,24 @@ body {
     background: #ffffff !important;
     display: block !important;
     position: static !important;
+    overflow: visible !important;
+  }
+
+  .notas {
+    display: block !important;
+    flex: none !important;
+    page-break-inside: auto !important;
+  }
+
+  .notas-textarea {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: auto !important;
+    flex: none !important;
+  }
+
+  .fiscales {
+    page-break-inside: avoid !important;
   }
 
   .doc-header-grid {
