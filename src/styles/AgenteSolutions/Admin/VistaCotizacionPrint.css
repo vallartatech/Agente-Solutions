@@ -45,6 +45,30 @@ body {
   gap: 16px;
   align-items: stretch;
   width: 100%;
+  padding: 6px 0;
+}
+
+.doc-left-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.doc-center-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding-left: 12px;
+  border-left: 2px solid #f1f5f9;
+}
+
+.doc-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
 }
 
 .logo {
@@ -69,7 +93,7 @@ body {
 .tabla {
   width: 100%;
   border-collapse: collapse;
-  min-width: 500px;
+  min-width: 480px;
 }
 
 .tabla th {
@@ -142,11 +166,31 @@ body {
     min-height: auto;
     box-shadow: none;
     border-radius: 12px;
+    width: 100% !important;
   }
 
   .doc-header-grid {
-    grid-template-columns: 1fr;
-    gap: 14px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+
+  .doc-left-col {
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  .doc-center-col {
+    border-left: none !important;
+    padding-left: 0 !important;
+    border-top: 1px solid #f1f5f9 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .doc-right-col {
+    width: 100% !important;
   }
 
   .tabla {
@@ -176,23 +220,37 @@ body {
     width: 100% !important;
     height: auto !important;
     overflow: visible !important;
-    visibility: visible !important;
   }
 
   .no-print {
     display: none !important;
   }
 
-  .print-page-root,
-  .print-outer-wrapper,
-  .print-scale-wrapper {
-    background: #ffffff !important;
+  /* FORZAR VISIBILIDAD DE LA COTIZACIÓN */
+  .cotizacion-container,
+  .cotizacion-container *,
+  .printable-page-container,
+  .printable-page-container *,
+  #cotizacion-pdf,
+  #cotizacion-pdf * {
+    visibility: visible !important;
+  }
+
+  .print-page-root {
+    background: transparent !important;
     padding: 0 !important;
     margin: 0 !important;
     display: block !important;
     width: 100% !important;
+  }
+
+  .print-outer-wrapper,
+  .print-scale-wrapper {
+    width: 100% !important;
     max-width: 100% !important;
-    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
     overflow: visible !important;
     transform: none !important;
   }
@@ -209,7 +267,6 @@ body {
     background: #ffffff !important;
     display: block !important;
     position: static !important;
-    visibility: visible !important;
   }
 
   .doc-header-grid {
@@ -218,6 +275,32 @@ body {
     gap: 16px !important;
     align-items: stretch !important;
     width: 100% !important;
+  }
+
+  .doc-left-col {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+  }
+
+  .doc-center-col {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding-left: 12px !important;
+    border-left: 2px solid #f1f5f9 !important;
+    border-top: none !important;
+    border-bottom: none !important;
+  }
+
+  .doc-right-col {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    justify-content: center !important;
+    width: auto !important;
   }
 
   .tabla-container {

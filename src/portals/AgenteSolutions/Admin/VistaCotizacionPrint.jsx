@@ -594,24 +594,17 @@ const VistaCotizacionPrint = () => {
           <div id="cotizacion-pdf" className="cotizacion-container printable-page-container" style={{ margin: '0 auto', background: '#ffffff', color: '#0f172a', position: 'relative' }}>
 
             {/* Cabecera Principal Reestructurada */}
-            <div className="doc-header-grid" style={{
-              display: 'grid',
-              gridTemplateColumns: '135px 1fr 245px',
-              gap: '16px',
-              alignItems: 'stretch',
-              paddingTop: '6px',
-              paddingBottom: '6px'
-            }}>
+            <div className="doc-header-grid">
               {/* Columna 1: Logo */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
-                <img src={logo} alt="Agente Solutions Logo" className="logo" style={{ width: '100%', maxWidth: '135px', height: 'auto', objectFit: 'contain' }} />
-                <div style={{ fontSize: '10px', color: '#f26624', fontWeight: '800', marginTop: '6px', letterSpacing: '0.02em' }}>
+              <div className="doc-left-col">
+                <img src={logo} alt="Agente Solutions Logo" className="logo" />
+                <div style={{ fontSize: '10px', color: '#f26624', fontWeight: '800', marginTop: '4px', letterSpacing: '0.02em' }}>
                   RESOLVIENDO TUS NECESIDADES
                 </div>
               </div>
 
               {/* Columna 2: Datos de Atención y Propiedad */}
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '8px', paddingLeft: '8px', borderLeft: '2px solid #f1f5f9' }}>
+              <div className="doc-center-col">
                 <div>
                   <span style={{ color: '#f26624', fontWeight: '900', fontSize: '11px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                     ATENCIÓN A:
@@ -641,7 +634,7 @@ const VistaCotizacionPrint = () => {
               </div>
 
               {/* Columna 3: Sello + Folio + Estado del Servicio */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
+              <div className="doc-right-col">
                 
                 {/* Sello de Fase Integrado */}
                 <div style={{ 

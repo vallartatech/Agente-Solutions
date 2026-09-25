@@ -497,13 +497,11 @@
 }
 
 @media print {
-
-  body * {
-    visibility: hidden;
-  }
-
-  .printable-quote, .printable-quote * {
-    visibility: visible;
+  .printable-quote, .printable-quote *,
+  .cotizacion-container, .cotizacion-container *,
+  .printable-page-container, .printable-page-container *,
+  #cotizacion-pdf, #cotizacion-pdf * {
+    visibility: visible !important;
   }
 
   .printable-quote {

@@ -229,13 +229,11 @@
         padding: 0;
     }
 
-    /* Escondemos todo el sitio */
-    body * {
-        visibility: hidden;
-    }
-
-    /* Mostramos solo el área del reporte */
-    .reporte-content, .reporte-content * {
+    /* Escondemos elementos innecesarios y mostramos el reporte y la cotización */
+    .reporte-content, .reporte-content *, 
+    .cotizacion-container, .cotizacion-container *,
+    .printable-page-container, .printable-page-container *,
+    #cotizacion-pdf, #cotizacion-pdf * {
         visibility: visible !important;
     }
 
