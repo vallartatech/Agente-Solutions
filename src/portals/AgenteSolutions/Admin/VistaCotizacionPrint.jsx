@@ -320,7 +320,7 @@ const VistaCotizacionPrint = () => {
   };
 
   return (
-    <div style={{ backgroundColor: '#0b1329', minHeight: '100vh', padding: '20px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
+    <div className="print-page-root" style={{ backgroundColor: '#0b1329', minHeight: '100vh', padding: '20px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
       
       {/* ─── TOAST NOTIFICATION ─── */}
       {toastMessage && (
@@ -604,8 +604,8 @@ const VistaCotizacionPrint = () => {
       </div>
 
       {/* ─── HOJA IMPRIMIBLE DEL PDF (TAMAÑO CARTA: 21.59cm x 27.94cm) ─── */}
-      <div style={{ width: '100%', overflow: 'hidden', display: 'flex', justifyContent: 'center', paddingBottom: '30px' }}>
-        <div style={{ transform: `scale(${escala})`, transformOrigin: 'top center', transition: 'transform 0.2s ease', width: '21.59cm', maxWidth: '100%' }}>
+      <div className="print-outer-wrapper" style={{ width: '100%', overflow: 'hidden', display: 'flex', justifyContent: 'center', paddingBottom: '30px' }}>
+        <div className="print-scale-wrapper" style={{ transform: `scale(${escala})`, transformOrigin: 'top center', transition: 'transform 0.2s ease', width: '21.59cm', maxWidth: '100%' }}>
           <div id="cotizacion-pdf" className="cotizacion-container printable-page-container" style={{ width: '21.59cm', minHeight: '27.94cm', margin: '0 auto', background: '#ffffff', color: '#0f172a', position: 'relative' }}>
 
             {/* Cabecera Principal Reestructurada */}
