@@ -17,30 +17,28 @@ body {
 
 .cotizacion-container {
   width: 100%;
-  max-width: 1000px;
+  max-width: 21.59cm;
   margin: auto;
   background: white;
   padding: 20px;
   font-family: Arial, Helvetica, sans-serif;
   color: #0f172a;
   box-sizing: border-box;
-  max-height: none; 
-  overflow: visible;
 }
 
-/* HOJA PROPORCIONADA A CARTA (8.5 x 11 pulgadas = 21.59cm x 27.94cm) */
+/* CONTENEDOR DE HOJA IMPRIMIBLE (CARTA: 8.5 x 11 pulgadas = 21.59cm) */
 .printable-page-container {
-  background-color: white;
-  width: 21.59cm;
-  max-width: 100%;
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 21.59cm;
   min-height: 27.94cm;
-  padding: 1.2cm 1.4cm !important;
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.35);
+  padding: 1.2cm 1.4cm;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
   box-sizing: border-box;
   margin: 0 auto;
 }
 
-/* CABECERA EN GRID DE 3 COLUMNAS */
+/* CABECERA EN GRID DE 3 COLUMNAS (DESKTOP) */
 .doc-header-grid {
   display: grid;
   grid-template-columns: 135px 1fr 245px;
@@ -61,15 +59,17 @@ body {
   margin: 14px 0;
 }
 
-/* TABLA */
+/* TABLA RESPONSIVA */
 .tabla-container {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tabla {
   width: 100%;
   border-collapse: collapse;
+  min-width: 500px;
 }
 
 .tabla th {
@@ -134,6 +134,27 @@ body {
 }
 
 /* ========================================================
+   📱 AJUSTES RESPONSIVOS PARA MÓVIL (PANTALLAS PEQUEÑAS)
+   ======================================================== */
+@media screen and (max-width: 768px) {
+  .printable-page-container {
+    padding: 16px 14px !important;
+    min-height: auto;
+    box-shadow: none;
+    border-radius: 12px;
+  }
+
+  .doc-header-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .tabla {
+    min-width: 480px;
+  }
+}
+
+/* ========================================================
    🖨️ ESTILOS DE IMPRESIÓN NATIVOS (@media print)
    ======================================================== */
 @media print {
@@ -162,32 +183,18 @@ body {
     display: none !important;
   }
 
-  .print-page-root {
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: block !important;
-    width: 100% !important;
-    min-height: auto !important;
-    overflow: visible !important;
-  }
-
-  .print-outer-wrapper {
-    width: 100% !important;
-    overflow: visible !important;
-    display: block !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
+  .print-page-root,
+  .print-outer-wrapper,
   .print-scale-wrapper {
-    transform: none !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
     width: 100% !important;
     max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: block !important;
+    min-height: auto !important;
     overflow: visible !important;
+    transform: none !important;
   }
 
   .printable-page-container,
@@ -220,6 +227,7 @@ body {
 
   .tabla {
     width: 100% !important;
+    min-width: 100% !important;
     border-collapse: collapse !important;
   }
 
@@ -237,7 +245,7 @@ body {
   }
 
   .fiscales {
-    margin-top: 12px !important;
+    margin-top: 14px !important;
     padding-top: 6px !important;
   }
 }

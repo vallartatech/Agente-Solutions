@@ -26,7 +26,6 @@ const VistaCotizacionPrint = () => {
   
   // Fase seleccionada para el PDF: 'por_pagar' | 'pagado' | 'finalizado'
   const [faseActual, setFaseActual] = useState('por_pagar');
-  const [escala, setEscala] = useState(1);
   const [notas, setNotas] = useState("");
 
   // Detectar si quien genera el PDF es Admin o Cliente
@@ -140,20 +139,6 @@ const VistaCotizacionPrint = () => {
 
     return texto;
   };
-
-  useEffect(() => {
-    const handleResize = () => {
-      const screenWidth = window.innerWidth;
-      if (screenWidth < 840) {
-        setEscala(Math.max(0.3, (screenWidth - 40) / 794));
-      } else {
-        setEscala(1);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Auto-ajustar altura del textarea para que abarque todo el texto sin recortar ni mostrar scrollbars
   useEffect(() => {
@@ -604,9 +589,9 @@ const VistaCotizacionPrint = () => {
       </div>
 
       {/* ─── HOJA IMPRIMIBLE DEL PDF (TAMAÑO CARTA: 21.59cm x 27.94cm) ─── */}
-      <div className="print-outer-wrapper" style={{ width: '100%', overflow: 'hidden', display: 'flex', justifyContent: 'center', paddingBottom: '30px' }}>
-        <div className="print-scale-wrapper" style={{ transform: `scale(${escala})`, transformOrigin: 'top center', transition: 'transform 0.2s ease', width: '21.59cm', maxWidth: '100%' }}>
-          <div id="cotizacion-pdf" className="cotizacion-container printable-page-container" style={{ width: '21.59cm', minHeight: '27.94cm', margin: '0 auto', background: '#ffffff', color: '#0f172a', position: 'relative' }}>
+      <div className="print-outer-wrapper" style={{ width: '100%', display: 'flex', justifyContent: 'center', paddingBottom: '30px' }}>
+        <div className="print-scale-wrapper" style={{ width: '100%', maxWidth: '21.59cm', display: 'flex', justifyContent: 'center' }}>
+          <div id="cotizacion-pdf" className="cotizacion-container printable-page-container" style={{ margin: '0 auto', background: '#ffffff', color: '#0f172a', position: 'relative' }}>
 
             {/* Cabecera Principal Reestructurada */}
             <div className="doc-header-grid" style={{
