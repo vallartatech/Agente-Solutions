@@ -107,11 +107,11 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
             position: "absolute",
             top: "18px",
             right: "18px",
-            background: "#1e293b",
-            border: "1.5px solid #475569",
+            background: "rgba(255, 255, 255, 0.12)",
+            border: "1.5px solid rgba(255, 255, 255, 0.25)",
             borderRadius: "50%",
-            width: "40px",
-            height: "40px",
+            width: "38px",
+            height: "38px",
             color: "#ffffff",
             cursor: loading ? "not-allowed" : "pointer",
             display: "flex",
@@ -119,7 +119,8 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
             justifyContent: "center",
             transition: "all 0.2s ease",
             zIndex: 50,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.4)"
+            boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+            padding: 0
           }}
           onMouseOver={(e) => {
             if (!loading) {
@@ -129,13 +130,26 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
             }
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.background = "#1e293b";
-            e.currentTarget.style.borderColor = "#475569";
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
+            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
             e.currentTarget.style.transform = "scale(1)";
           }}
           title="Cerrar modal"
         >
-          <X size={22} color="#ffffff" strokeWidth={2.5} />
+          <svg 
+            width="18" 
+            height="18" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="#ffffff" 
+            strokeWidth="2.8" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            style={{ display: "block", pointerEvents: "none" }}
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
 
         {/* Ícono superior */}
