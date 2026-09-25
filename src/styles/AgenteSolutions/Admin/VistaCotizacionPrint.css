@@ -218,7 +218,7 @@ body {
 @media print {
   @page {
     size: letter portrait;
-    margin: 8mm 10mm;
+    margin: 0;
   }
 
   * {
@@ -232,7 +232,7 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
-    height: auto !important;
+    height: 100% !important;
     overflow: visible !important;
   }
 
@@ -256,6 +256,7 @@ body {
     margin: 0 !important;
     display: block !important;
     width: 100% !important;
+    height: 100% !important;
   }
 
   .print-outer-wrapper,
@@ -267,39 +268,54 @@ body {
     display: block !important;
     overflow: visible !important;
     transform: none !important;
+    height: 100% !important;
   }
 
+  /* HOJA: flex column para que textarea llene todo el espacio restante */
   .printable-page-container,
   #cotizacion-pdf {
     width: 100% !important;
     max-width: 100% !important;
-    min-height: auto !important;
+    min-height: 100vh !important;
     margin: 0 !important;
-    padding: 6mm 8mm !important;
+    padding: 10mm 12mm !important;
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
     background: #ffffff !important;
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
     position: static !important;
     overflow: visible !important;
   }
 
+  /* Sección de notas crece para llenar la hoja */
   .notas {
-    display: block !important;
-    flex: none !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
     page-break-inside: auto !important;
   }
 
   .notas-textarea {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    border: none !important;
+    background-color: transparent !important;
+    padding: 8px 0 !important;
+    font-size: 12.5px !important;
+    line-height: 1.55 !important;
+    color: #0f172a !important;
     overflow: visible !important;
-    height: auto !important;
-    min-height: auto !important;
-    flex: none !important;
+    resize: none !important;
+    min-height: 100px !important;
   }
 
   .fiscales {
+    margin-top: auto !important;
+    padding-top: 8px !important;
     page-break-inside: avoid !important;
+    flex-shrink: 0 !important;
   }
 
   .doc-header-grid {
@@ -308,6 +324,7 @@ body {
     gap: 16px !important;
     align-items: stretch !important;
     width: 100% !important;
+    flex-shrink: 0 !important;
   }
 
   .doc-left-col {
@@ -336,32 +353,19 @@ body {
     width: auto !important;
   }
 
+  .linea {
+    flex-shrink: 0 !important;
+  }
+
   .tabla-container {
     width: 100% !important;
     overflow: visible !important;
+    flex-shrink: 0 !important;
   }
 
   .tabla {
     width: 100% !important;
     min-width: 100% !important;
     border-collapse: collapse !important;
-  }
-
-  .notas-textarea {
-    width: 100% !important;
-    border: none !important;
-    background-color: transparent !important;
-    padding: 4px 0 !important;
-    font-size: 12.5px !important;
-    line-height: 1.55 !important;
-    color: #0f172a !important;
-    overflow: visible !important;
-    height: auto !important;
-    resize: none !important;
-  }
-
-  .fiscales {
-    margin-top: 14px !important;
-    padding-top: 6px !important;
   }
 }
