@@ -29,11 +29,6 @@ const limpiarDescripcion = (rawDesc) => {
 };
 
 
-const mockSolicitudes = [
-  { id: 1, titulo: "Mantenimiento de 5 Minisplits", lat: 21.0250, lng: -89.6300, presupuesto: "$2,000", estado: "Cotizando", cotizaciones: 3, fecha: "2026-08-11", lugar: "Casa 1", zona: "Col. Itzimná, Mérida", calle: "C. 30 x 7", cotizaciones_list: [], fotos: [] },
-  { id: 2, titulo: "Reparación de Fuga de Agua", lat: 21.0100, lng: -89.6200, presupuesto: "A convenir", estado: "Completado", cotizaciones: 1, fecha: "2026-08-09", lugar: "Casa 2", zona: "Col. San Lorenzo, Umán", calle: "C. 20 x 15", cotizaciones_list: [], fotos: [] }
-];
-
 const VistaRedAutonomo = () => {
   const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
@@ -50,22 +45,42 @@ const VistaRedAutonomo = () => {
 
   const fetchJobs = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos`);
+      const token = localStorage.getItem('agente_token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos?only_mine=1`, { headers });
+      
       if (res.data.success) {
-        const jobs = res.data.data.map(order => {
+        const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name) : '';
+
+        // Filtrar estrictamente solo las publicaciones creadas por este usuario autónomo
+        const rawFiltered = res.data.data.filter(order => {
+          if (!user) return false;
+          if (user.role_id === 0) return true; // SuperAdmin / Root puede ver todas
+
+          const matchesTenant = user.tenant_id && (
+            order.tenant_id == user.tenant_id || 
+            order.owner_tenant_id == user.tenant_id || 
+            order.property?.tenant_id == user.tenant_id
+          );
+          const matchesUser = (
+            order.owner_user_id == user.id || 
+            order.client_id == user.id || 
+            order.property?.client?.user_id == user.id || 
+            order.user_id == user.id
+          );
+          const matchesName = (
+            order.owner_name && userFullName && 
+            order.owner_name.toLowerCase().trim() === userFullName.toLowerCase().trim()
+          );
+
+          return matchesTenant || matchesUser || matchesName;
+        });
+
+        const jobs = rawFiltered.map(order => {
           const rawLat = order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025));
           const rawLng = order.lng ? parseFloat(order.lng) : (order.area_lng ? parseFloat(order.area_lng) : (-89.6242 + Math.cos(order.id * 17) * 0.025));
-          const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name) : '';
-          const displayOwner = (order.owner_name && order.owner_name !== 'Cliente de la Red' && order.owner_name !== 'Cliente Desconocido') ? order.owner_name : (userFullName || 'Cliente de la Red');
-
-          const isMyJob = Boolean(
-            user && (
-              user.role_id === 0 || // Superadmin / Root
-              (user.tenant_id && (order.tenant_id == user.tenant_id || order.owner_tenant_id == user.tenant_id || order.property?.tenant_id == user.tenant_id)) ||
-              (order.owner_user_id == user.id || order.client_id == user.id || order.property?.client?.user_id == user.id || order.user_id == user.id) ||
-              (displayOwner && userFullName && displayOwner.toLowerCase().trim() === userFullName.toLowerCase().trim())
-            )
-          );
+          const zonaTexto = order.zona || order.zona_colonia || order.property?.property_name || 'Zona Metropolitana';
+          const displayOwner = (order.owner_name && order.owner_name !== 'Cliente de la Red' && order.owner_name !== 'Cliente Desconocido') ? order.owner_name : (userFullName || 'Mi Solicitud');
 
           const fotos = [
             order.evidence_path,
@@ -90,14 +105,14 @@ const VistaRedAutonomo = () => {
             cotizaciones: order.network_quotes_count || 0,
             cotizaciones_list: order.network_quotes || [],
             cliente: displayOwner,
-            is_mine: isMyJob
+            is_mine: true
           };
         });
+
         setNetworkJobs(jobs);
       }
     } catch (e) {
-      console.error("Error fetching network jobs, falling back to mock", e);
-      if (networkJobs.length === 0) setNetworkJobs(mockSolicitudes);
+      console.error("Error fetching network jobs", e);
     }
   };
 
