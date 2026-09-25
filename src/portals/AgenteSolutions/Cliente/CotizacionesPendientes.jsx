@@ -121,6 +121,7 @@ const CotizacionesPendientes = () => {
           const caducidad = calcularCaducidad(item.created_at || item.fecha, item.vencida);
           const tipoFalla = item.tipo_falla || (item.concept ? parsearConcepto(item.concept) : `Servicio #${item.id}`);
           const equipoNombre = item.equipo && item.equipo !== 'No especificado' ? item.equipo : 'otro';
+          const esRecotizandoAPI = String(item.status || item.estado || '').toLowerCase().includes('recotiza') || item.recotizacion_solicitada || item.recotizacionSolicitada;
           
           return {
             id: item.id,
@@ -146,10 +147,11 @@ const CotizacionesPendientes = () => {
             fecha: item.created_at ? new Date(item.created_at).toLocaleDateString('es-MX') : 'Reciente',
             scheduled_at: item.scheduled_at || null,
             total: Number(item.total || item.total_amount || item.estimated_amount || item.monto || 0),
-            estado: caducidad.vencida ? 'Caducada (> 15 días)' : (item.status || 'Pendiente'),
+            estado: esRecotizandoAPI ? 'Pendiente de recotización' : (caducidad.vencida ? 'Caducada (> 15 días)' : (item.status || 'Pendiente')),
             descripcion: item.observations || parsearConcepto(item.concept),
             vencida: caducidad.vencida,
             diasRestantes: caducidad.diasRestantes,
+            recotizacionSolicitada: !!esRecotizandoAPI,
             conceptRaw: item.concept,
             work_order_id: item.work_order_id,
             service_id: item.service_id
@@ -163,15 +165,29 @@ const CotizacionesPendientes = () => {
       });
 
       guardadasLocales.forEach(item => {
-        const cad = calcularCaducidad(item.fecha, item.vencida);
-        const esRecotizando = item.estado === 'Pendiente de recotización' || item.recotizacionSolicitada;
-        mapa.set(String(item.id), {
-          ...item,
-          vencida: cad.vencida,
-          diasRestantes: cad.diasRestantes,
-          estado: esRecotizando ? 'Pendiente de recotización' : (cad.vencida ? 'Caducada (> 15 días)' : (item.estado || 'Pendiente de aprobación')),
-          recotizacionSolicitada: esRecotizando
-        });
+        const apiItem = mapa.get(String(item.id));
+        if (apiItem) {
+          const cadAPI = calcularCaducidad(apiItem.created_at || apiItem.fecha, apiItem.vencida);
+          const esRecotizando = String(apiItem.status || apiItem.estado || item.estado || '').toLowerCase().includes('recotiza') || apiItem.recotizacionSolicitada || (cadAPI.vencida && item.recotizacionSolicitada);
+          mapa.set(String(item.id), {
+            ...item,
+            ...apiItem,
+            vencida: cadAPI.vencida,
+            diasRestantes: cadAPI.diasRestantes,
+            estado: esRecotizando ? 'Pendiente de recotización' : (cadAPI.vencida ? 'Caducada (> 15 días)' : (apiItem.estado || 'Pendiente de aprobación')),
+            recotizacionSolicitada: !!esRecotizando
+          });
+        } else {
+          const cad = calcularCaducidad(item.fecha, item.vencida);
+          const esRecotizando = item.estado === 'Pendiente de recotización' || item.recotizacionSolicitada;
+          mapa.set(String(item.id), {
+            ...item,
+            vencida: cad.vencida,
+            diasRestantes: cad.diasRestantes,
+            estado: esRecotizando ? 'Pendiente de recotización' : (cad.vencida ? 'Caducada (> 15 días)' : (item.estado || 'Pendiente de aprobación')),
+            recotizacionSolicitada: !!esRecotizando
+          });
+        }
       });
 
       const listaFinal = Array.from(mapa.values());
