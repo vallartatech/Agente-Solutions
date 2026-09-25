@@ -26,16 +26,21 @@ body {
   box-sizing: border-box;
 }
 
-/* CONTENEDOR DE HOJA IMPRIMIBLE (CARTA: 8.5 x 11 pulgadas = 21.59cm) */
+/* CONTENEDOR DE HOJA IMPRIMIBLE (CARTA: 8.5 x 11 pulgadas = 21.59cm x 27.94cm) */
 .printable-page-container {
   background-color: #ffffff;
-  width: 100%;
-  max-width: 21.59cm;
+  width: 21.59cm;
+  max-width: 100%;
   min-height: 27.94cm;
-  padding: 1.2cm 1.4cm;
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
+  padding: 1.5cm 1.8cm;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.08),
+    0 8px 20px rgba(0,0,0,0.25),
+    0 20px 50px rgba(0,0,0,0.35);
   box-sizing: border-box;
   margin: 0 auto;
+  border: 1px solid #d1d5db;
+  border-radius: 2px;
 }
 
 /* CABECERA EN GRID DE 3 COLUMNAS (DESKTOP) */
@@ -261,9 +266,10 @@ body {
     max-width: 100% !important;
     min-height: auto !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 6mm 8mm !important;
     box-shadow: none !important;
     border: none !important;
+    border-radius: 0 !important;
     background: #ffffff !important;
     display: block !important;
     position: static !important;
