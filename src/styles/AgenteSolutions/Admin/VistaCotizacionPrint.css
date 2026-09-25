@@ -28,8 +28,9 @@ body {
   background-color: white;
   width: 21cm;
   min-height: 29.7cm;
-  padding: 1.5cm 2cm !important;
-  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  padding: 1.2cm 1.4cm !important;
+  box-shadow: 0 0 20px rgba(0,0,0,0.15);
+  box-sizing: border-box;
 }
 
 @media print {

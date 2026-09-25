@@ -599,101 +599,127 @@ const VistaCotizacionPrint = () => {
         <div style={{ transform: `scale(${escala})`, transformOrigin: 'top center', transition: 'transform 0.2s ease', width: '21cm' }}>
           <div id="cotizacion-pdf" className="cotizacion-container printable-page-container" style={{ minWidth: '21cm', margin: '0 auto', background: '#ffffff', color: '#0f172a', position: 'relative' }}>
 
-            {/* Sello / Marca de Agua según Fase */}
-            <div style={{ position: 'absolute', top: '15px', right: '25px', zIndex: 10 }}>
-              {faseActual === 'por_pagar' && (
-                <div style={{ border: '2px solid #f59e0b', color: '#b45309', background: '#fffbeb', padding: '5px 12px', borderRadius: '6px', fontWeight: '900', fontSize: '11px', letterSpacing: '0.04em' }}>
-                  🟡 COTIZACIÓN PENDIENTE DE PAGO
+            {/* Cabecera Principal Reestructurada */}
+            <div className="doc-header-grid" style={{
+              display: 'grid',
+              gridTemplateColumns: '135px 1fr 245px',
+              gap: '16px',
+              alignItems: 'stretch',
+              paddingTop: '6px',
+              paddingBottom: '6px'
+            }}>
+              {/* Columna 1: Logo */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
+                <img src={logo} alt="Agente Solutions Logo" className="logo" style={{ width: '100%', maxWidth: '135px', height: 'auto', objectFit: 'contain' }} />
+                <div style={{ fontSize: '10px', color: '#f26624', fontWeight: '800', marginTop: '6px', letterSpacing: '0.02em' }}>
+                  RESOLVIENDO TUS NECESIDADES
                 </div>
-              )}
-              {faseActual === 'pagado' && (
-                <div style={{ border: '2px solid #10b981', color: '#047857', background: '#ecfdf5', padding: '5px 12px', borderRadius: '6px', fontWeight: '900', fontSize: '11px', letterSpacing: '0.04em' }}>
-                  🟢 PAGO CONFIRMADO - EN ASIGNACIÓN
-                </div>
-              )}
-              {faseActual === 'finalizado' && (
-                <div style={{ border: '2px solid #2563eb', color: '#1d4ed8', background: '#eff6ff', padding: '5px 12px', borderRadius: '6px', fontWeight: '900', fontSize: '11px', letterSpacing: '0.04em' }}>
-                  🔵 ACTA DE ENTREGA - TRABAJO FINALIZADO
-                </div>
-              )}
-            </div>
+              </div>
 
-            {/* Cabecera Principal */}
-            <div className="header" style={{ marginTop: '10px' }}>
-              <div className="header-left">
-                <img src={logo} alt="Agente Solutions Logo" className="logo" style={{ maxWidth: '130px', height: 'auto' }} />
-                
-                <div className="info-cliente" style={{ paddingLeft: '10px' }}>
-                  <p style={{ margin: 0, color: '#f26624', fontWeight: '800', fontSize: '12px' }}>ATENCIÓN A:</p>
-                  <h2 style={{ margin: '2px 0 6px 0', fontSize: '18px', fontWeight: '900', color: '#0f172a' }}>
+              {/* Columna 2: Datos de Atención y Propiedad */}
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '8px', paddingLeft: '8px', borderLeft: '2px solid #f1f5f9' }}>
+                <div>
+                  <span style={{ color: '#f26624', fontWeight: '900', fontSize: '11px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    ATENCIÓN A:
+                  </span>
+                  <div style={{ margin: '1px 0 0 0', fontSize: '16px', fontWeight: '900', color: '#0f172a', lineHeight: '1.2' }}>
                     {(cotizacion.cliente || cotizacion.cliente_nombre || 'CLIENTE').toUpperCase()}
-                  </h2>
-                  
-                  <p style={{ margin: 0, color: '#f26624', fontWeight: '800', fontSize: '12px' }}>PROPIEDAD:</p>
-                  <h3 style={{ margin: '2px 0 6px 0', fontSize: '15px', fontWeight: '800', color: '#334155' }}>
-                    {(cotizacion.propiedad || cotizacion.propiedad_nombre || 'PROPIEDAD DE CLIENTE').toUpperCase()}
-                  </h3>
-
-                  <p style={{ margin: 0, color: '#f26624', fontWeight: '800', fontSize: '12px' }}>UBICACIÓN:</p>
-                  <h3 style={{ margin: '2px 0 0 0', fontSize: '13px', fontWeight: '700', color: '#64748b' }}>
-                    {(cotizacion.propiedad_direccion || cotizacion.ubicacion || 'MÉRIDA, YUCATÁN').toUpperCase()}
-                  </h3>
+                  </div>
                 </div>
 
-                {/* Cajas Dinámicas a la Derecha */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '220px', marginLeft: 'auto' }}>
+                <div>
+                  <span style={{ color: '#f26624', fontWeight: '900', fontSize: '11px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    PROPIEDAD:
+                  </span>
+                  <div style={{ margin: '1px 0 0 0', fontSize: '14px', fontWeight: '800', color: '#334155', lineHeight: '1.2' }}>
+                    {(cotizacion.propiedad || cotizacion.propiedad_nombre || 'PROPIEDAD DE CLIENTE').toUpperCase()}
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ color: '#f26624', fontWeight: '900', fontSize: '11px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    UBICACIÓN:
+                  </span>
+                  <div style={{ margin: '1px 0 0 0', fontSize: '11.5px', fontWeight: '700', color: '#64748b', lineHeight: '1.3' }}>
+                    {(cotizacion.propiedad_direccion || cotizacion.ubicacion || 'MÉRIDA, YUCATÁN').toUpperCase()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Columna 3: Sello + Folio + Estado del Servicio */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
+                
+                {/* Sello de Fase Integrado */}
+                <div style={{ 
+                  textAlign: 'center',
+                  padding: '6px 10px', 
+                  borderRadius: '6px', 
+                  fontWeight: '900', 
+                  fontSize: '11px', 
+                  letterSpacing: '0.04em',
+                  border: '1.5px solid',
+                  borderColor: faseActual === 'por_pagar' ? '#f59e0b' : (faseActual === 'pagado' ? '#10b981' : '#2563eb'),
+                  color: faseActual === 'por_pagar' ? '#b45309' : (faseActual === 'pagado' ? '#047857' : '#1d4ed8'),
+                  background: faseActual === 'por_pagar' ? '#fffbeb' : (faseActual === 'pagado' ? '#ecfdf5' : '#eff6ff')
+                }}>
+                  {faseActual === 'por_pagar' && '🟡 COTIZACIÓN PENDIENTE DE PAGO'}
+                  {faseActual === 'pagado' && '🟢 PAGO CONFIRMADO - EN ASIGNACIÓN'}
+                  {faseActual === 'finalizado' && '🔵 ACTA DE ENTREGA - FINALIZADO'}
+                </div>
+
+                {/* Caja Folio y Fecha */}
+                <div className="fecha-box" style={{ background: '#0f172a', padding: '8px 12px', borderRadius: '6px', borderLeft: '4px solid #f26624', textAlign: 'left' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                    <span style={{ fontSize: '10.5px', color: '#f26624', fontWeight: '800' }}>FOLIO</span>
+                    <span style={{ fontSize: '12px', color: '#fff', fontWeight: '900', fontFamily: 'monospace' }}>
+                      {cotizacion.folio || `COT-${cotizacion.id}`}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10.5px', color: '#94a3b8', fontWeight: '700' }}>FECHA DE EMISIÓN</span>
+                    <span style={{ fontSize: '11px', color: '#fff', fontWeight: '800' }}>
+                      {cotizacion.fecha || new Date().toLocaleDateString('es-MX')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Caja Estado del Servicio */}
+                <div style={{ 
+                  background: faseActual === 'por_pagar' ? '#fff7ed' : (faseActual === 'pagado' ? '#ecfdf5' : '#eff6ff'), 
+                  padding: '8px 12px', 
+                  borderRadius: '6px',
+                  border: '1px solid',
+                  borderColor: faseActual === 'por_pagar' ? '#fdba74' : (faseActual === 'pagado' ? '#6ee7b7' : '#93c5fd'),
+                  textAlign: 'left'
+                }}>
+                  <div style={{ fontSize: '9.5px', fontWeight: '800', color: faseActual === 'por_pagar' ? '#c2410c' : (faseActual === 'pagado' ? '#047857' : '#1d4ed8'), textTransform: 'uppercase', marginBottom: '2px' }}>
+                    ESTADO DEL SERVICIO
+                  </div>
                   
-                  {/* Caja 1: Folio y Fecha */}
-                  <div className="fecha-box" style={{ background: '#0f172a', padding: '10px 14px', borderRadius: '8px', borderLeft: '4px solid #f26624' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                      <span style={{ fontSize: '11px', color: '#f26624', fontWeight: '800' }}>FOLIO</span>
-                      <span style={{ fontSize: '12px', color: '#fff', fontWeight: '900', fontFamily: 'monospace' }}>{cotizacion.folio || `COT-${cotizacion.id}`}</span>
+                  {faseActual === 'por_pagar' && (
+                    <div>
+                      <div style={{ color: '#b45309', fontWeight: '900', fontSize: '12px' }}>🟡 PENDIENTE POR PAGAR</div>
+                      <div style={{ color: '#78350f', fontSize: '10px', marginTop: '1px' }}>Técnico: Pendiente de asignación</div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '700' }}>FECHA DE EMISIÓN</span>
-                      <span style={{ fontSize: '11px', color: '#fff', fontWeight: '800' }}>{cotizacion.fecha || new Date().toLocaleDateString('es-MX')}</span>
+                  )}
+
+                  {faseActual === 'pagado' && (
+                    <div>
+                      <div style={{ color: '#047857', fontWeight: '900', fontSize: '12px' }}>🟢 PAGO CONFIRMADO</div>
+                      <div style={{ color: '#065f46', fontSize: '10px', marginTop: '1px' }}>Técnico: Sin asignar (En proceso)</div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Caja 2: Estado Dinámico de la Cotización */}
-                  <div className="fecha-box" style={{ 
-                    background: faseActual === 'por_pagar' ? '#fff7ed' : (faseActual === 'pagado' ? '#ecfdf5' : '#eff6ff'), 
-                    padding: '10px 14px', 
-                    borderRadius: '8px',
-                    border: '1px solid',
-                    borderColor: faseActual === 'por_pagar' ? '#fdba74' : (faseActual === 'pagado' ? '#6ee7b7' : '#93c5fd'),
-                    textAlign: 'left'
-                  }}>
-                    <div style={{ fontSize: '10px', fontWeight: '800', color: faseActual === 'por_pagar' ? '#c2410c' : (faseActual === 'pagado' ? '#047857' : '#1d4ed8'), textTransform: 'uppercase', marginBottom: '2px' }}>
-                      ESTADO DEL SERVICIO
+                  {faseActual === 'finalizado' && (
+                    <div>
+                      <div style={{ color: '#1d4ed8', fontWeight: '900', fontSize: '12px' }}>
+                        🛠️ {cotizacion.tecnico && cotizacion.tecnico !== 'Sin Técnico' ? cotizacion.tecnico.toUpperCase() : 'TRABAJO FINALIZADO'}
+                      </div>
+                      <div style={{ color: '#1e3a8a', fontSize: '10px', marginTop: '1px' }}>
+                        {cotizacion.scheduled_at ? `Entrega: ${cotizacion.scheduled_at}` : 'Servicio concluido a satisfacción'}
+                      </div>
                     </div>
-                    
-                    {faseActual === 'por_pagar' && (
-                      <div>
-                        <div style={{ color: '#b45309', fontWeight: '900', fontSize: '13px' }}>🟡 PENDIENTE POR PAGAR</div>
-                        <div style={{ color: '#78350f', fontSize: '10px', marginTop: '2px' }}>Técnico: Pendiente de asignación</div>
-                      </div>
-                    )}
-
-                    {faseActual === 'pagado' && (
-                      <div>
-                        <div style={{ color: '#047857', fontWeight: '900', fontSize: '13px' }}>🟢 PAGO CONFIRMADO</div>
-                        <div style={{ color: '#065f46', fontSize: '10px', marginTop: '2px' }}>Técnico: Sin asignar (En proceso)</div>
-                      </div>
-                    )}
-
-                    {faseActual === 'finalizado' && (
-                      <div>
-                        <div style={{ color: '#1d4ed8', fontWeight: '900', fontSize: '13px' }}>
-                          🛠️ {cotizacion.tecnico && cotizacion.tecnico !== 'Sin Técnico' ? cotizacion.tecnico.toUpperCase() : 'TRABAJO FINALIZADO'}
-                        </div>
-                        <div style={{ color: '#1e3a8a', fontSize: '10px', marginTop: '2px' }}>
-                          {cotizacion.scheduled_at ? `Entrega: ${cotizacion.scheduled_at}` : 'Servicio concluido a satisfacción'}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
+                  )}
                 </div>
 
               </div>
