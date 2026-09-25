@@ -7,7 +7,7 @@ import ModalServicioAutonomo from './ModalServicioAutonomo';
 import ChatModal from '../../../components/Shared/ChatModal';
 import '../../../styles/Autonomos/VistaRedAutonomo.css';
 import '../../../styles/AgenteSolutions/Tecnico/MercadoTrabajos.css';
-import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X } from 'lucide-react';
+import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2 } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -136,6 +136,30 @@ const VistaRedAutonomo = () => {
     } catch (e) {
       console.error(e);
       alert("Hubo un error al aceptar la cotización. Intenta de nuevo.");
+    }
+  };
+
+  const handleDeleteJob = async (jobId) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar y cancelar esta publicación de la Red? Ya no será visible para los técnicos ni recibirá más cotizaciones.")) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('agente_token');
+      const res = await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${jobId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data?.success) {
+        alert("✅ Publicación eliminada y cancelada con éxito.");
+        setShowQuotesModal(false);
+        setSelectedJob(null);
+        fetchJobs();
+      } else {
+        alert(res.data?.message || "Hubo un error al eliminar.");
+      }
+    } catch (e) {
+      console.error("Error al eliminar publicación:", e);
+      alert("Hubo un error al eliminar la publicación de la Red.");
     }
   };
 
@@ -282,9 +306,34 @@ const VistaRedAutonomo = () => {
                   <span style={{ color: '#ea580c', fontWeight: '800' }}>
                     {job.cotizaciones} {job.cotizaciones === 1 ? 'oferta recibida' : 'ofertas recibidas'}
                   </span>
-                  <span style={{ color: '#ff6600', fontWeight: '700', cursor: 'pointer' }}>
-                    Ver ofertas →
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteJob(job.id);
+                      }}
+                      title="Eliminar publicación"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#94a3b8',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '4px',
+                        borderRadius: '6px',
+                        transition: 'color 0.2s'
+                      }}
+                      onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
+                      onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                    <span style={{ color: '#ff6600', fontWeight: '700', cursor: 'pointer' }}>
+                      Ver ofertas →
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -490,7 +539,40 @@ const VistaRedAutonomo = () => {
               </div>
             </div>
 
-            <div className="mercado-premium-footer">
+            <div className="mercado-premium-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '12px', flexWrap: 'wrap' }}>
+              <button 
+                type="button"
+                className="mercado-btn-delete-publication" 
+                onClick={() => handleDeleteJob(selectedJobForQuotes.id)}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  color: '#dc2626',
+                  border: '1.5px solid #fca5a5',
+                  padding: '10px 18px',
+                  borderRadius: '10px',
+                  fontWeight: '800',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 6px rgba(220, 38, 38, 0.1)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#dc2626';
+                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.borderColor = '#dc2626';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
+                  e.currentTarget.style.color = '#dc2626';
+                  e.currentTarget.style.borderColor = '#fca5a5';
+                }}
+              >
+                <Trash2 size={16} /> Cancelar / Eliminar Publicación
+              </button>
+
               <button className="mercado-btn-cancel" onClick={() => setShowQuotesModal(false)}>Cerrar</button>
             </div>
           </div>
