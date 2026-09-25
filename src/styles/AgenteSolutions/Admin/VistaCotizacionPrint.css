@@ -339,17 +339,21 @@ body {
 
 }
 
-/* Añade esto a tu archivo VistaCotizacionPrint.css */
+/* Estilos de Textarea de Especificaciones */
 .notas-textarea {
   width: 100%;
-  min-height: 120px;
-  border: 1px dashed #ccc;
-  background-color: #fafafa;
+  min-height: 160px;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
   font-family: inherit;
-  font-size: 0.9rem;
-  color: #333;
-  padding: 10px;
-  resize: vertical;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #1e293b;
+  padding: 14px 16px;
+  border-radius: 8px;
+  resize: none;
+  overflow: hidden;
+  box-sizing: border-box;
   outline: none;
 }
 
@@ -357,6 +361,12 @@ body {
   .notas-textarea {
     border: none !important;
     background-color: transparent !important;
+    padding: 0 !important;
+    font-size: 13px !important;
+    line-height: 1.55 !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+    height: auto !important;
     resize: none !important;
   }
   .no-print {

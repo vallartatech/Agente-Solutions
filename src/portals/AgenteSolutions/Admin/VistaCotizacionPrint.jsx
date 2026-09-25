@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
@@ -16,6 +16,7 @@ const IVA_RATE = 0.16;
 
 const VistaCotizacionPrint = () => {
   const navigate = useNavigate();
+  const textareaRef = useRef(null);
   const [cotizacion, setCotizacion] = useState(null);
   const [elementosTabla, setElementosTabla] = useState([]);
   const [guardando, setGuardando] = useState(false);
@@ -153,6 +154,14 @@ const VistaCotizacionPrint = () => {
     handleResize();
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Auto-ajustar altura del textarea para que abarque todo el texto sin recortar ni mostrar scrollbars
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.max(160, textareaRef.current.scrollHeight + 15)}px`;
+    }
+  }, [notas, faseActual]);
 
   useEffect(() => {
     const datosGuardados = localStorage.getItem('cotizacion_para_imprimir');
@@ -809,23 +818,31 @@ const VistaCotizacionPrint = () => {
               </div>
 
               <textarea 
+                ref={textareaRef}
                 className="notas-textarea"
                 value={notas}
-                onChange={(e) => setNotas(e.target.value)}
+                onChange={(e) => {
+                  setNotas(e.target.value);
+                  if (textareaRef.current) {
+                    textareaRef.current.style.height = 'auto';
+                    textareaRef.current.style.height = `${Math.max(160, textareaRef.current.scrollHeight + 15)}px`;
+                  }
+                }}
                 spellCheck="false"
                 placeholder="Escriba aquí los términos, especificaciones o condiciones de esta cotización..."
                 style={{ 
                   width: '100%', 
-                  minHeight: '110px', 
+                  minHeight: '160px', 
                   border: '1px solid #cbd5e1', 
                   borderRadius: '6px', 
-                  padding: '10px', 
-                  fontSize: '12px', 
-                  fontFamily: 'monospace',
-                  lineHeight: '1.45',
-                  color: '#334155',
+                  padding: '12px 14px', 
+                  fontSize: '13px', 
+                  fontFamily: 'inherit',
+                  lineHeight: '1.6',
+                  color: '#1e293b',
                   background: '#f8fafc',
-                  resize: 'vertical',
+                  resize: 'none',
+                  overflow: 'hidden',
                   boxSizing: 'border-box'
                 }}
               />
