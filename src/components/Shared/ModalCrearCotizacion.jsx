@@ -25,22 +25,75 @@ const ModalCrearCotizacion = ({
 
   useEffect(() => {
     if (cotizacionExistente) {
-      setModoConsulta(true); // Al abrir inicialmente, mostrar en modo consulta con opción a editar
-      if (cotizacionExistente.type === 'manual') {
-        const parsed = typeof cotizacionExistente.concept === 'string' 
+      // Para admin, abrir directamente en modo edición editable; para técnico con cotización existente, consulta inicial
+      setModoConsulta(!isAdmin);
+
+      let parsed = null;
+      try {
+        parsed = typeof cotizacionExistente.concept === 'string' 
           ? JSON.parse(cotizacionExistente.concept) 
           : cotizacionExistente.concept;
-        setFilasConceptos(parsed?.servicios?.map((s, i) => ({ id: i, desc: s.descripcion, cant: s.cantidad, precio: s.precio })) || []);
-        setFilasMateriales(parsed?.materiales?.map((m, i) => ({ id: i + 1000, desc: m.descripcion, cant: m.cantidad, precio: m.precio })) || []);
-        setObservacionesCotizacion(cotizacionExistente.observations || '');
-        setTabCotizacion('manual');
-      } else {
-        setTabCotizacion('archivo');
+      } catch (e) {
+        console.error("Error al parsear concepto de cotización:", e);
       }
+
+      let serviciosList = [];
+      let materialesList = [];
+
+      if (parsed) {
+        if (Array.isArray(parsed)) {
+          serviciosList = parsed;
+        } else if (Array.isArray(parsed.servicios)) {
+          serviciosList = parsed.servicios;
+        } else if (Array.isArray(parsed.conceptos)) {
+          serviciosList = parsed.conceptos;
+        } else if (Array.isArray(parsed.seccionesLote)) {
+          parsed.seccionesLote.forEach(sec => {
+            const arr = sec.conceptos || sec.servicios || [];
+            serviciosList = [...serviciosList, ...arr];
+            if (Array.isArray(sec.materiales)) {
+              materialesList = [...materialesList, ...sec.materiales];
+            }
+          });
+        }
+
+        if (Array.isArray(parsed.materiales)) {
+          materialesList = [...materialesList, ...parsed.materiales];
+        }
+      }
+
+      if (serviciosList && serviciosList.length > 0) {
+        setFilasConceptos(serviciosList.map((s, i) => ({
+          id: i + 1,
+          desc: s.descripcion || s.desc || s.concepto || s.name || s.nombre || '',
+          cant: Number(s.cantidad || s.cant || 1),
+          precio: s.precio !== undefined ? s.precio : (s.precio_u !== undefined ? s.precio_u : (s.costo_u !== undefined ? s.costo_u : ''))
+        })));
+      } else {
+        setFilasConceptos([{ id: Date.now(), desc: '', cant: 1, precio: '' }]);
+      }
+
+      if (materialesList && materialesList.length > 0) {
+        setFilasMateriales(materialesList.map((m, i) => ({
+          id: i + 1000,
+          desc: m.descripcion || m.desc || m.material || m.concepto || m.name || '',
+          cant: Number(m.cantidad || m.cant || 1),
+          precio: m.precio !== undefined ? m.precio : (m.precio_u !== undefined ? m.precio_u : (m.costo_u !== undefined ? m.costo_u : ''))
+        })));
+      } else {
+        setFilasMateriales([{ id: Date.now() + 1, desc: '', cant: 1, precio: '' }]);
+      }
+
+      setObservacionesCotizacion(cotizacionExistente.observations || cotizacionExistente.observaciones || '');
+      setTabCotizacion(cotizacionExistente.type === 'archivo' ? 'archivo' : 'manual');
     } else {
       setModoConsulta(false);
+      setFilasConceptos([{ id: Date.now(), desc: '', cant: 1, precio: '' }]);
+      setFilasMateriales([{ id: Date.now() + 1, desc: '', cant: 1, precio: '' }]);
+      setObservacionesCotizacion('');
+      setTabCotizacion('manual');
     }
-  }, [cotizacionExistente, isAdmin]);
+  }, [cotizacionExistente?.id, isAdmin]);
 
   const addFila = (setter) => setter(prev => [...prev, { id: Date.now(), desc: '', cant: 1, precio: '' }]);
   const removeFila = (setter, id) => setter(prev => prev.filter(f => f.id !== id));
@@ -49,8 +102,8 @@ const ModalCrearCotizacion = ({
   };
 
   const calcularTotal = () => {
-    const totalConceptos = filasConceptos.reduce((acc, f) => acc + (Number(f.cant) * Number(f.precio)), 0);
-    const totalMateriales = filasMateriales.reduce((acc, f) => acc + (Number(f.cant) * Number(f.precio)), 0);
+    const totalConceptos = filasConceptos.reduce((acc, f) => acc + (Number(f.cant || 0) * Number(f.precio || 0)), 0);
+    const totalMateriales = filasMateriales.reduce((acc, f) => acc + (Number(f.cant || 0) * Number(f.precio || 0)), 0);
     return totalConceptos + totalMateriales;
   };
 
@@ -60,10 +113,13 @@ const ModalCrearCotizacion = ({
       const formData = new FormData();
       formData.append('type', tabCotizacion);
       
-      if (workOrderId) {
-        formData.append('work_order_id', workOrderId);
-      } else if (serviceId) {
-        formData.append('service_id', serviceId);
+      const targetWorkOrderId = workOrderId || cotizacionExistente?.work_order_id;
+      const targetServiceId = serviceId || cotizacionExistente?.service_id;
+
+      if (targetWorkOrderId) {
+        formData.append('work_order_id', targetWorkOrderId);
+      } else if (targetServiceId) {
+        formData.append('service_id', targetServiceId);
       } else {
         alert("Falta ID de referencia para la cotización.");
         setEnviandoCotizacion(false);
@@ -71,29 +127,47 @@ const ModalCrearCotizacion = ({
       }
 
       if (tabCotizacion === 'manual') {
+        const validConceptos = filasConceptos.filter(f => (f.desc && f.desc.trim()) || Number(f.precio) > 0);
+        const validMateriales = filasMateriales.filter(f => (f.desc && f.desc.trim()) || Number(f.precio) > 0);
+
         const conceptData = {
-          servicios: filasConceptos.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio })),
-          materiales: filasMateriales.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio }))
+          servicios: validConceptos.length > 0 
+            ? validConceptos.map(f => ({ descripcion: f.desc, cantidad: Number(f.cant) || 1, precio: Number(f.precio) || 0 }))
+            : filasConceptos.map(f => ({ descripcion: f.desc, cantidad: Number(f.cant) || 1, precio: Number(f.precio) || 0 })),
+          materiales: validMateriales.length > 0 
+            ? validMateriales.map(f => ({ descripcion: f.desc, cantidad: Number(f.cant) || 1, precio: Number(f.precio) || 0 }))
+            : []
         };
         formData.append('concept', JSON.stringify(conceptData));
         formData.append('estimated_amount', calcularTotal());
-        formData.append('observations', observacionesCotizacion);
+        formData.append('observations', observacionesCotizacion || '');
         if (fotoEvidencia) {
           formData.append('evidence_photo', fotoEvidencia);
         }
       } else {
-        if (!archivoCotizacion) return alert("Por favor seleccione un archivo.");
-        formData.append('file', archivoCotizacion);
+        if (!archivoCotizacion && !cotizacionExistente?.file_path) {
+          setEnviandoCotizacion(false);
+          return alert("Por favor seleccione un archivo.");
+        }
+        if (archivoCotizacion) {
+          formData.append('file', archivoCotizacion);
+        }
       }
 
+      const token = localStorage.getItem('token') || localStorage.getItem('agente_token');
+      const authHeaders = {
+        'Content-Type': 'multipart/form-data',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      };
+
       let res;
-      if (cotizacionExistente && cotizacionExistente.id) {
+      if (cotizacionExistente && cotizacionExistente.id && !String(cotizacionExistente.id).startsWith('net_')) {
         res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones/${cotizacionExistente.id}/update`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: authHeaders
         });
       } else {
         res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: authHeaders
         });
       }
 
@@ -103,11 +177,11 @@ const ModalCrearCotizacion = ({
           setCotizacionEnviada(false);
           if (onSuccess) onSuccess(res.data);
           onClose();
-        }, 2000);
+        }, 1200);
       }
     } catch (error) {
       console.error("Error enviando cotización:", error);
-      const msg = error.response?.data?.error || error.message || "Error desconocido";
+      const msg = error.response?.data?.error || error.response?.data?.message || error.message || "Error desconocido";
       alert("Hubo un error al enviar la cotización: " + msg);
     } finally {
       setEnviandoCotizacion(false);
@@ -134,11 +208,32 @@ const ModalCrearCotizacion = ({
             </div>
             <button 
               onClick={onClose} 
-              style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', color: '#ffffff', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.25)'}
-              onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.15)'}
+              aria-label="Cerrar modal"
+              style={{ 
+                background: 'rgba(255,255,255,0.18)', 
+                border: '1px solid rgba(255,255,255,0.3)', 
+                color: '#ffffff', 
+                width: '38px', 
+                height: '38px', 
+                borderRadius: '10px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                cursor: 'pointer', 
+                flexShrink: 0, 
+                transition: 'all 0.2s ease',
+                outline: 'none'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = '#ef4444';
+                e.currentTarget.style.borderColor = '#ef4444';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.18)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
+              }}
             >
-              <X size={18} />
+              <X size={20} color="#ffffff" strokeWidth={2.5} />
             </button>
           </div>
 

@@ -203,12 +203,36 @@ const VistaServiciosAdmin = () => {
 
   const [rawOrders, setRawOrders] = useState([]);
 
-  const fetchOrders = useCallback(async (cotiList = cotizacionesData, techsList = tecnicos) => {
+  const cargarTodo = useCallback(async (silencioso = false) => {
+    if (!silencioso) setLoading(true);
+    try {
+      const [resOrders, resTechs, resCotis] = await Promise.all([
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/all`),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones`)
+      ]);
+
+      const ordersList = resOrders.data || [];
+      const techsList = resTechs.data || [];
+      const cotisList = resCotis.data || [];
+
+      setRawOrders(ordersList);
+      setTecnicos(techsList);
+      setCotizacionesData(cotisList);
+      setTareasData(transformarTareas(ordersList, cotisList, techsList));
+    } catch (error) {
+      console.error("Error cargando datos en VistaServiciosAdmin:", error);
+    } finally {
+      if (!silencioso) setLoading(false);
+    }
+  }, [transformarTareas]);
+
+  const fetchOrders = useCallback(async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/all`);
       const list = response.data || [];
       setRawOrders(list);
-      setTareasData(transformarTareas(list, cotiList, techsList));
+      setTareasData(prev => transformarTareas(list, cotizacionesData, tecnicos));
     } catch (error) {
       console.error("Error cargando todas las órdenes:", error);
     } finally {
@@ -216,31 +240,27 @@ const VistaServiciosAdmin = () => {
     }
   }, [transformarTareas, cotizacionesData, tecnicos]);
 
-  const fetchTecnicos = async () => {
+  const fetchTecnicos = useCallback(async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`);
       const tList = response.data || [];
       setTecnicos(tList);
-      if (rawOrders.length > 0) {
-        setTareasData(transformarTareas(rawOrders, cotizacionesData, tList));
-      }
+      setTareasData(prev => transformarTareas(rawOrders, cotizacionesData, tList));
     } catch (error) {
       console.error("Error cargando técnicos:", error);
     }
-  };
+  }, [transformarTareas, rawOrders, cotizacionesData]);
 
-  const fetchCotizaciones = async () => {
+  const fetchCotizaciones = useCallback(async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones`);
       const cList = response.data || [];
       setCotizacionesData(cList);
-      if (rawOrders.length > 0) {
-        setTareasData(transformarTareas(rawOrders, cList, tecnicos));
-      }
+      setTareasData(prev => transformarTareas(rawOrders, cList, tecnicos));
     } catch (error) {
       console.error("Error cargando cotizaciones:", error);
     }
-  };
+  }, [transformarTareas, rawOrders, tecnicos]);
 
   const buscarCotizacionTarea = useCallback((targetTask) => {
     if (!targetTask) return null;
@@ -317,8 +337,7 @@ const VistaServiciosAdmin = () => {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       alert("¡Servicios de prueba eliminados con éxito de la base de datos!");
-      await fetchOrders();
-      await fetchCotizaciones();
+      await cargarTodo();
     } catch (e) {
       console.error(e);
       alert("Error al limpiar los servicios: " + (e.response?.data?.message || e.message));
@@ -330,8 +349,7 @@ const VistaServiciosAdmin = () => {
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await fetchOrders();
-      await fetchCotizaciones();
+      await cargarTodo();
     } catch (e) {
       console.error(e);
     } finally {
@@ -340,17 +358,15 @@ const VistaServiciosAdmin = () => {
   };
 
   useEffect(() => {
-    fetchOrders();
-    fetchTecnicos();
-    fetchCotizaciones();
+    cargarTodo();
 
     // Auto-actualización silenciosa cada 60 segundos
     const interval = setInterval(() => {
-      fetchOrders();
+      cargarTodo(true);
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [fetchOrders]);
+  }, [cargarTodo]);
 
   // --- AUTO-OPEN MODAL IF jobId IN URL ---
   useEffect(() => {
