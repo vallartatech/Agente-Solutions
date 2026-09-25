@@ -56,24 +56,34 @@ const VistaRedAutonomo = () => {
         const rawFiltered = res.data.data.filter(order => {
           if (!user) return false;
           if (user.role_id === 0) return true; // SuperAdmin / Root puede ver todas
+          if (order.is_mine === true) return true;
 
-          const matchesTenant = user.tenant_id && (
+          const matchesTenant = Boolean(user.tenant_id && (
             order.tenant_id == user.tenant_id || 
             order.owner_tenant_id == user.tenant_id || 
             order.property?.tenant_id == user.tenant_id
-          );
-          const matchesUser = (
+          ));
+          const matchesUser = Boolean(
             order.owner_user_id == user.id || 
             order.client_id == user.id || 
             order.property?.client?.user_id == user.id || 
             order.user_id == user.id
           );
-          const matchesName = (
-            order.owner_name && userFullName && 
-            order.owner_name.toLowerCase().trim() === userFullName.toLowerCase().trim()
+          const matchesEmail = Boolean(
+            user.email && (
+              order.property?.client?.email?.toLowerCase() === user.email.toLowerCase() ||
+              order.client?.email?.toLowerCase() === user.email.toLowerCase()
+            )
+          );
+          const matchesName = Boolean(
+            order.owner_name && userFullName && (
+              order.owner_name.toLowerCase().trim() === userFullName.toLowerCase().trim() ||
+              order.owner_name.toLowerCase().includes(userFullName.toLowerCase()) ||
+              userFullName.toLowerCase().includes(order.owner_name.toLowerCase())
+            )
           );
 
-          return matchesTenant || matchesUser || matchesName;
+          return matchesTenant || matchesUser || matchesEmail || matchesName;
         });
 
         const jobs = rawFiltered.map(order => {
