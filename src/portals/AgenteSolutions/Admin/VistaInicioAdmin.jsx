@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Shared/Header'; 
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
+import ModalCompraEspacios from '../../../components/Shared/ModalCompraEspacios';
 
 const LiveCountdown = ({ targetDate, fallbackDays }) => {
   const [timeLeft, setTimeLeft] = useState('');
@@ -37,6 +38,7 @@ const VistaInicioAdmin = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [subInfo, setSubInfo] = useState(null);
+  const [mostrarModalCompraEspacios, setMostrarModalCompraEspacios] = useState(false);
 
   const isRoot     = user?.role_id === 0;
   const isEmpresa  = user?.role_id === 4;
@@ -167,10 +169,26 @@ const VistaInicioAdmin = () => {
               <LiveCountdown targetDate={subInfo.subscription_expires_at} fallbackDays={subInfo.days_remaining} />
             </div>
 
-            {isPersonal && (
-              <button onClick={() => navigate(`/activacion-cuenta?tenant_id=${subInfo.tenant?.id}&type=extra_property`)}
-                title="Adquiere cupo para +1 propiedad por $79.99 MXN"
-                style={{ padding: '10px 18px', borderRadius: '50px', border: '2px solid #FF6600', background: '#FF6600', color: '#FFFFFF', fontWeight: 900, cursor: 'pointer', fontSize: '0.86rem', boxShadow: '0 4px 15px rgba(255,102,0,0.5)', transition: 'all 0.2s' }}>
+            {isAutonomo && (
+              <button 
+                onClick={() => setMostrarModalCompraEspacios(true)}
+                title="Adquiere cupo para propiedades extras por $79.99 MXN c/u"
+                style={{ 
+                  padding: '10px 18px', 
+                  borderRadius: '50px', 
+                  border: '2px solid #FF6600', 
+                  background: 'linear-gradient(135deg, #FF6600 0%, #d94e00 100%)', 
+                  color: '#FFFFFF', 
+                  fontWeight: 900, 
+                  cursor: 'pointer', 
+                  fontSize: '0.86rem', 
+                  boxShadow: '0 4px 15px rgba(255,102,0,0.5)', 
+                  transition: 'all 0.2s',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
                 ➕ COMPRAR PROPIEDAD EXTRA ($79.99)
               </button>
             )}
@@ -207,6 +225,15 @@ const VistaInicioAdmin = () => {
       <footer className="footer-watermark">
         <img src="/logo-faded.png" alt="Watermark" className="watermark-img" />
       </footer>
+
+      {/* Modal Compra de Espacios para Autónomos (Personal y Empresarial) */}
+      <ModalCompraEspacios
+        isOpen={mostrarModalCompraEspacios}
+        onClose={() => setMostrarModalCompraEspacios(false)}
+        tenantId={subInfo?.tenant?.id || user?.tenant_id || 1}
+        userId={user?.id}
+        planName={isPersonal ? 'Personal' : (isEmpresa ? 'Empresarial' : 'Autónomo')}
+      />
     </div>
   );
 };
