@@ -55,9 +55,17 @@ const VistaRedAutonomo = () => {
         const jobs = res.data.data.map(order => {
           const rawLat = order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025));
           const rawLng = order.lng ? parseFloat(order.lng) : (order.area_lng ? parseFloat(order.area_lng) : (-89.6242 + Math.cos(order.id * 17) * 0.025));
-          const zonaTexto = order.zona || order.zona_colonia || order.property?.property_name || 'Zona Metropolitana';
-          const authUserName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name) : 'Pedro Pech Koh';
-          const displayOwner = (order.owner_name && order.owner_name !== 'Cliente de la Red' && order.owner_name !== 'Cliente Desconocido') ? order.owner_name : authUserName;
+          const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name) : '';
+          const displayOwner = (order.owner_name && order.owner_name !== 'Cliente de la Red' && order.owner_name !== 'Cliente Desconocido') ? order.owner_name : (userFullName || 'Cliente de la Red');
+
+          const isMyJob = Boolean(
+            user && (
+              user.role_id === 0 || // Superadmin / Root
+              (user.tenant_id && (order.tenant_id == user.tenant_id || order.owner_tenant_id == user.tenant_id || order.property?.tenant_id == user.tenant_id)) ||
+              (order.owner_user_id == user.id || order.client_id == user.id || order.property?.client?.user_id == user.id || order.user_id == user.id) ||
+              (displayOwner && userFullName && displayOwner.toLowerCase().trim() === userFullName.toLowerCase().trim())
+            )
+          );
 
           const fotos = [
             order.evidence_path,
@@ -81,7 +89,8 @@ const VistaRedAutonomo = () => {
             fotos: fotos,
             cotizaciones: order.network_quotes_count || 0,
             cotizaciones_list: order.network_quotes || [],
-            cliente: displayOwner
+            cliente: displayOwner,
+            is_mine: isMyJob
           };
         });
         setNetworkJobs(jobs);
@@ -307,29 +316,31 @@ const VistaRedAutonomo = () => {
                     {job.cotizaciones} {job.cotizaciones === 1 ? 'oferta recibida' : 'ofertas recibidas'}
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteJob(job.id);
-                      }}
-                      title="Eliminar publicación"
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#94a3b8',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '4px',
-                        borderRadius: '6px',
-                        transition: 'color 0.2s'
-                      }}
-                      onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
-                      onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    {job.is_mine && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteJob(job.id);
+                        }}
+                        title="Eliminar mi publicación"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#94a3b8',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '4px',
+                          borderRadius: '6px',
+                          transition: 'color 0.2s'
+                        }}
+                        onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
+                        onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                     <span style={{ color: '#ff6600', fontWeight: '700', cursor: 'pointer' }}>
                       Ver ofertas →
                     </span>
@@ -539,39 +550,41 @@ const VistaRedAutonomo = () => {
               </div>
             </div>
 
-            <div className="mercado-premium-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '12px', flexWrap: 'wrap' }}>
-              <button 
-                type="button"
-                className="mercado-btn-delete-publication" 
-                onClick={() => handleDeleteJob(selectedJobForQuotes.id)}
-                style={{
-                  background: 'rgba(239, 68, 68, 0.08)',
-                  color: '#dc2626',
-                  border: '1.5px solid #fca5a5',
-                  padding: '10px 18px',
-                  borderRadius: '10px',
-                  fontWeight: '800',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 2px 6px rgba(220, 38, 38, 0.1)'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#dc2626';
-                  e.currentTarget.style.color = '#ffffff';
-                  e.currentTarget.style.borderColor = '#dc2626';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
-                  e.currentTarget.style.color = '#dc2626';
-                  e.currentTarget.style.borderColor = '#fca5a5';
-                }}
-              >
-                <Trash2 size={16} /> Cancelar / Eliminar Publicación
-              </button>
+            <div className="mercado-premium-footer" style={{ display: 'flex', justifyContent: selectedJobForQuotes?.is_mine ? 'space-between' : 'flex-end', alignItems: 'center', width: '100%', gap: '12px', flexWrap: 'wrap' }}>
+              {selectedJobForQuotes?.is_mine && (
+                <button 
+                  type="button"
+                  className="mercado-btn-delete-publication" 
+                  onClick={() => handleDeleteJob(selectedJobForQuotes.id)}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    color: '#dc2626',
+                    border: '1.5px solid #fca5a5',
+                    padding: '10px 18px',
+                    borderRadius: '10px',
+                    fontWeight: '800',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 2px 6px rgba(220, 38, 38, 0.1)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#dc2626';
+                    e.currentTarget.style.color = '#ffffff';
+                    e.currentTarget.style.borderColor = '#dc2626';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
+                    e.currentTarget.style.color = '#dc2626';
+                    e.currentTarget.style.borderColor = '#fca5a5';
+                  }}
+                >
+                  <Trash2 size={16} /> Cancelar / Eliminar Publicación
+                </button>
+              )}
 
               <button className="mercado-btn-cancel" onClick={() => setShowQuotesModal(false)}>Cerrar</button>
             </div>
