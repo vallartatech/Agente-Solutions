@@ -100,29 +100,42 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
       >
         {/* Botón de Cerrar */}
         <button
+          type="button"
           onClick={onClose}
           disabled={loading}
           style={{
             position: "absolute",
             top: "18px",
             right: "18px",
-            background: "rgba(255, 255, 255, 0.08)",
-            border: "1px solid rgba(255, 255, 255, 0.15)",
+            background: "#1e293b",
+            border: "1.5px solid #475569",
             borderRadius: "50%",
-            width: "38px",
-            height: "38px",
-            color: "#fff",
+            width: "40px",
+            height: "40px",
+            color: "#ffffff",
             cursor: loading ? "not-allowed" : "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            transition: "all 0.2s"
+            transition: "all 0.2s ease",
+            zIndex: 50,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.4)"
           }}
-          onMouseOver={(e) => !loading && (e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)")}
-          onMouseOut={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)")}
+          onMouseOver={(e) => {
+            if (!loading) {
+              e.currentTarget.style.background = "#ef4444";
+              e.currentTarget.style.borderColor = "#ef4444";
+              e.currentTarget.style.transform = "scale(1.08)";
+            }
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = "#1e293b";
+            e.currentTarget.style.borderColor = "#475569";
+            e.currentTarget.style.transform = "scale(1)";
+          }}
           title="Cerrar modal"
         >
-          <X size={20} />
+          <X size={22} color="#ffffff" strokeWidth={2.5} />
         </button>
 
         {/* Ícono superior */}
