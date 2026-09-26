@@ -73,9 +73,13 @@ const MercadoTrabajos = () => {
           ].filter(Boolean);
 
           const rawLat = order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025));
-          const rawLng = order.lng ? parseFloat(order.lng) : (order.area_lng ? parseFloat(order.area_lng) : (-89.6242 + Math.cos(order.id * 17) * 0.025));
           const zonaTexto = order.zona || order.zona_colonia || order.property?.property_name || 'Zona Metropolitana';
-          const displayOwner = (order.owner_name && order.owner_name !== 'Cliente de la Red' && order.owner_name !== 'Cliente Desconocido') ? order.owner_name : (order.owner_name || 'Pedro Pech Koh');
+          const isGenericOwner = !order.owner_name || 
+            order.owner_name === 'Cliente de la Red' || 
+            order.owner_name === 'Cliente Desconocido' || 
+            order.owner_name === 'Cliente de Prueba';
+
+          const displayOwner = !isGenericOwner ? order.owner_name : 'Cliente de la Red';
 
           return {
             id: order.id,
@@ -100,7 +104,6 @@ const MercadoTrabajos = () => {
       }
     } catch (e) {
       console.error("Error fetching jobs", e);
-      if (networkJobs.length === 0) setNetworkJobs(mockJobs);
     }
   };
 
