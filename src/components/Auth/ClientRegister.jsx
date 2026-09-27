@@ -336,12 +336,15 @@ const ClientRegister = () => {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/registro-usuario`, payload);
 
       setIsLoading(false);
+      setIsModalOpen(false);
 
       if (res.data.status === 'pending_payment') {
         navigate(`/activacion-cuenta?tenant_id=${res.data.tenant_id}`);
-      } else if (res.data.status === 'pending_approval' || roleId === 2 || (roleId === 7 && companyCode.trim() !== '')) {
+      } else if (res.data.status === 'pending_approval' || roleId === 2 || roleId === 8 || (roleId === 7 && companyCode.trim() !== '')) {
         setIsPendingApproval(true);
-      } else if (roleId === 5 || roleId === 4 || roleId === 6 || roleId === 8) {
+        setMessage('⏳ ¡Registro completado con éxito! Tu perfil ha sido enviado a la Sala de Espera del Administrador para su activación. Redirigiendo al login...');
+        setTimeout(() => navigate('/'), 3500);
+      } else if (roleId === 5 || roleId === 4 || roleId === 6) {
         setMessage('🎉 ¡Registro exitoso con periodo gratuito de prueba! Redirigiendo al inicio de sesión...');
         setTimeout(() => navigate('/'), 2200);
       } else {
