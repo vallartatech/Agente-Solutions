@@ -53,7 +53,9 @@ const MercadoTrabajos = () => {
 
   const fetchJobs = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos`);
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos`, { headers });
       if (res.data.success) {
         const jobs = res.data.data.map(order => {
           let myQuote = null;
@@ -120,10 +122,11 @@ const MercadoTrabajos = () => {
       return;
     }
     try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${selectedJob.id}/cotizar`,
         { price: quotePrice, message: quoteMessage },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('agente_token')}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
         alert("✅ " + res.data.message);
