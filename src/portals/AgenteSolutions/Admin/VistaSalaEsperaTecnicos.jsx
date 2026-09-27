@@ -49,9 +49,31 @@ const VistaSalaEsperaTecnicos = () => {
     }
   };
 
-  const cleanPhone = (phone) => {
-    if (!phone) return '';
-    return phone.replace(/[^0-9]/g, '');
+  const getRolLabel = (roleId) => {
+    const r = parseInt(roleId, 10);
+    switch (r) {
+      case 8:
+        return '🌐 Técnico de la Red';
+      case 2:
+        return '🧑‍🔧 Técnico Especialista';
+      case 7:
+        return '🏢 Administrador de Propiedades';
+      case 6:
+        return '🏗️ Contratista';
+      case 4:
+        return '🏬 Autónomo Empresarial';
+      case 5:
+        return '🏢 Autónomo Personal';
+      case 3:
+        return '👤 Cliente';
+      default:
+        return '🛠️ Especialista Técnico';
+    }
+  };
+
+  const isTechnicianRole = (roleId) => {
+    const r = parseInt(roleId, 10);
+    return r === 2 || r === 8;
   };
 
   return (
@@ -133,10 +155,10 @@ const VistaSalaEsperaTecnicos = () => {
                     <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed #ddd' }}>
                       <strong style={{ fontSize: '0.78rem', color: '#FF6600', display: 'block', marginBottom: '4px' }}>📋 ROL SOLICITADO:</strong>
                       <span style={{ fontSize: '0.85rem', color: '#333', fontWeight: 'bold' }}>
-                        {tech.role_id === 8 ? '🌐 Técnico de la Red' : (tech.role_id === 2 ? '🧑‍🔧 Técnico Especialista' : (tech.role_id === 6 ? '🏗️ Contratista' : '🏢 Administrador de Propiedades'))}
+                        {getRolLabel(tech.role_id)}
                       </span>
                     </div>
-                    {(tech.role_id === 2 || tech.role_id === 8) && (
+                    {isTechnicianRole(tech.role_id) && (
                       <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed #ddd' }}>
                         <strong style={{ fontSize: '0.78rem', color: '#FF6600', display: 'block', marginBottom: '4px' }}>🛠️ ESPECIALIDADES:</strong>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
@@ -292,7 +314,7 @@ const VistaSalaEsperaTecnicos = () => {
                 <div>
                   <label style={{ fontSize: '0.8rem', color: '#888', display: 'block', marginBottom: '3px', fontWeight: 'bold' }}>ROL SOLICITADO</label>
                   <p style={{ margin: 0, color: '#E65100', fontWeight: 'bold', fontSize: '1rem' }}>
-                    {selectedTechDetails.role_id === 8 ? '🌐 Técnico de la Red' : (selectedTechDetails.role_id === 2 ? '🧑‍🔧 Técnico Especialista' : (selectedTechDetails.role_id === 6 ? '🏗️ Contratista' : '🏢 Administrador de Propiedades'))}
+                    {getRolLabel(selectedTechDetails.role_id)}
                   </p>
                 </div>
 
@@ -316,11 +338,11 @@ const VistaSalaEsperaTecnicos = () => {
                     <Building2 size={18} color="#FF6600" />
                     {selectedTechDetails.tenant
                       ? `${selectedTechDetails.tenant.name} (${selectedTechDetails.tenant.code})`
-                      : (selectedTechDetails.role_id === 8 ? 'Técnico Independiente (Red Abierta)' : 'Agente Solutions (Empresa Oficial)')}
+                      : (parseInt(selectedTechDetails.role_id, 10) === 8 ? 'Técnico Independiente (Red Abierta)' : 'Agente Solutions (Empresa Oficial)')}
                   </p>
                 </div>
 
-                {(selectedTechDetails.role_id === 2 || selectedTechDetails.role_id === 8) && (
+                {isTechnicianRole(selectedTechDetails.role_id) && (
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={{ fontSize: '0.8rem', color: '#FF6600', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>🛠️ ESPECIALIDADES SELECCIONADAS POR EL TÉCNICO</label>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
