@@ -75,6 +75,7 @@ const MercadoTrabajos = () => {
           ].filter(Boolean);
 
           const rawLat = order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025));
+          const rawLng = order.lng ? parseFloat(order.lng) : (order.area_lng ? parseFloat(order.area_lng) : (-89.6242 + Math.cos(order.id * 17) * 0.025));
           const zonaTexto = order.zona || order.zona_colonia || order.property?.property_name || 'Zona Metropolitana';
           const isGenericOwner = !order.owner_name || 
             order.owner_name === 'Cliente de la Red' || 
