@@ -6,6 +6,7 @@ import logoAgente from '../assets/Logo_simple.png';
 import Header from './Shared/Header';
 import { ChevronLeft, RefreshCw, Radio, ExternalLink } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+//hola 
 
 const containerStyle = {
   width: '100%',
