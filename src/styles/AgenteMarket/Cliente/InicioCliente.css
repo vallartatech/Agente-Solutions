@@ -1,0 +1,274 @@
+/* Contenedor principal de la cuadrícula */
+.cliente-grid-container {
+  display: grid;
+  /* Esto obliga a que se pongan en columnas de mínimo 300px */
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 40px;
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+/* Contenedor de la tarjeta (Perspectiva 3D) */
+.propiedad-flip-card {
+  background-color: transparent;
+  width: 100%;
+  height: 260px; /* Altura fija para que no se mueva el botón */
+  perspective: 1000px;
+}
+
+/* El cuerpo que gira */
+.propiedad-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+/* Girar al pasar el mouse */
+.propiedad-flip-card:hover .propiedad-flip-inner {
+  transform: rotateY(180deg);
+}
+
+/* Caras de la tarjeta */
+.propiedad-front, .propiedad-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 25px; /* Bordes redondeados como tu imagen */
+  overflow: hidden;
+}
+
+/* --- LADO FRONTAL (IMAGEN) --- */
+.propiedad-front {
+  background-color: #6b6b6b; /* Gris oscuro de fondo */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.propiedad-front img {
+  width: 92%; /* Deja un pequeño margen para que se vea el fondo gris */
+  height: 90%;
+  object-fit: cover;
+  border-radius: 20px;
+  border: 3px solid #f26624; /* Borde naranja pegado a la foto */
+}
+
+/* Botón VER MÁS */
+.btn-detalle-propiedad {
+  position: absolute;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%) translateZ(20px); /* translateZ evita que "baile" en el 3D */
+  background-color: #f26624;
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-weight: 900;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+/* --- LADO TRASERO (INFO) --- */
+.propiedad-back {
+  background-color: #bcbcbc; /* Gris claro para la info */
+  color: #333;
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 30px;
+  text-align: left;
+  border: 4px solid #f26624; /* El borde naranja de la info */
+  box-sizing: border-box;
+}
+
+.info-item {
+  margin: 8px 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.info-item span {
+  color: #555;
+  font-weight: 600;
+}
+
+/* Tarjetas vacías (Placeholders) */
+.placeholder-propiedad {
+  background-color: #6b6b6b;
+  border-radius: 25px;
+  height: 260px;
+  width: 100%;
+}
+
+/* Contenedor relativo para poder posicionar el botón de agregar */
+.inicio-cliente-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Cabecera interna de la vista para el botón + */
+.vista-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 50px;
+  margin-bottom: 10px;
+}
+
+.btn-add-property {
+  background-color: #bcbcbc; /* Gris claro como el de tu imagen */
+  color: #333;
+  border: none;
+  width: 60px;
+  height: 45px;
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.btn-add-property:hover {
+  background-color: #f26624; /* Cambia a tu naranja al pasar el mouse */
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Ajuste al grid para que no choque con el botón */
+.cliente-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 40px;
+  padding: 20px 50px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- ESTILOS DEL RESUMEN GLOBAL --- */
+.resumen-global-container {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  padding: 10px 50px 30px;
+  flex-wrap: wrap;
+}
+
+.resumen-card {
+  display: flex;
+  align-items: center;
+  padding: 15px 25px;
+  border-radius: 20px;
+  min-width: 140px;
+  gap: 12px;
+  position: relative;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.resumen-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.resumen-count {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.resumen-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.icon-resumen {
+  width: 24px;
+  height: 24px;
+}
+
+/* Colores por estado */
+.listos { background-color: #e6fcf5; color: #087f5b; }
+.proceso { background-color: #e7f5ff; color: #1971c2; }
+.pendientes { background-color: #fff9db; color: #f08c00; }
+
+/* Tarjetas de SOS y Cotizaciones (Estilo Botón) */
+.sos-global {
+  background-color: #fff5f5;
+  color: #fa5252;
+  border: 1px solid #ffc9c9;
+  cursor: pointer;
+}
+
+.cotizaciones-global {
+  background-color: #f3f0ff;
+  color: #7950f2;
+  border: 1px solid #d0bfff;
+  cursor: pointer;
+}
+
+/* Badges (los circulitos rojos/azules con el número) */
+.sos-badge-count, .cot-badge-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  color: white;
+  font-size: 11px;
+  font-weight: 900;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+.sos-badge-count { background-color: #fa5252; }
+.cot-badge-count { background-color: #4c6ef5; }
+
+/* Ajustes de Cabecera */
+.header-view-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 50px;
+}
+
+.main-title-view {
+  font-weight: 900;
+  font-size: 24px;
+  margin: 0;
+}
+
+/* Tu botón + mejorado */
+.btn-add-property {
+  background-color: #bcbcbc;
+  color: #333;
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-add-property:hover {
+  background-color: #f26624;
+  color: white;
+}

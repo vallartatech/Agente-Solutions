@@ -39,17 +39,18 @@ import VistaReportesGlobal from "./portals/AgenteSolutions/Admin/VistaReportesGl
 import ReporteTrabajoAdmin from "./portals/AgenteSolutions/Admin/ReporteTrabajo";
 import VistaGestionAutonomos from "./portals/AgenteSolutions/Admin/VistaGestionAutonomos";
 import VistaSalaEsperaTecnicos from "./portals/AgenteSolutions/Admin/VistaSalaEsperaTecnicos";
-import VistaCodigoAutonomo from "./portals/Autonomos/Admin/VistaCodigoAutonomo";
-import VistaApoyoAutonomo from "./portals/Autonomos/Admin/VistaApoyoAutonomo";
-import VistaPropiedadesAutonomo from "./portals/Autonomos/Admin/VistaPropiedades";
-import VistaDetallePropiedadAutonomo from "./portals/Autonomos/Admin/DetallePropiedad";
-import VistaRedAutonomo from "./portals/Autonomos/Admin/VistaRedAutonomo";
-import FavoritosAutonomo from "./portals/Autonomos/Admin/FavoritosAutonomo";
-import PerfilTecnicoRed from "./portals/Autonomos/Admin/PerfilTecnicoRed";
+import VistaCodigoAutonomo from "./portals/AgenteMarket/Admin/VistaCodigoAutonomo";
+import VistaApoyoAutonomo from "./portals/AgenteMarket/Admin/VistaApoyoAutonomo";
+import VistaPropiedadesAutonomo from "./portals/AgenteMarket/Admin/VistaPropiedades";
+import VistaDetallePropiedadAutonomo from "./portals/AgenteMarket/Admin/DetallePropiedad";
+import VistaRedAutonomo from "./portals/AgenteMarket/Admin/VistaRedAutonomo";
+import FavoritosAutonomo from "./portals/AgenteMarket/Admin/FavoritosAutonomo";
+import PerfilTecnicoRed from "./portals/AgenteMarket/Admin/PerfilTecnicoRed";
+import VistaInicioMarket from "./portals/AgenteMarket/Admin/VistaInicioMarket";
 
 /* ------RUTAS DE LA VISTA DEL TECNICO ------*/
 import VistaInicioTecnico from "./portals/AgenteSolutions/Tecnico/VistaInicioTecnico";
-import MercadoTrabajos from "./portals/AgenteSolutions/Tecnico/MercadoTrabajos";
+import MercadoTrabajos from "./portals/AgenteMarket/Tecnico/MercadoTrabajos";
 import TrabajosTecnico from "./portals/AgenteSolutions/Tecnico/TrabajosTecnico";
 import CheckList from "./portals/AgenteSolutions/Tecnico/Checklist";
 import DetalleTrabajo from "./portals/AgenteSolutions/Tecnico/DetalleTrabajo";

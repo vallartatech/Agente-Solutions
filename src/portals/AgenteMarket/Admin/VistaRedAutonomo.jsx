@@ -5,8 +5,8 @@ import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
 import ModalServicioAutonomo from './ModalServicioAutonomo';
 import ChatModal from '../../../components/Shared/ChatModal';
-import '../../../styles/Autonomos/VistaRedAutonomo.css';
-import '../../../styles/AgenteSolutions/Tecnico/MercadoTrabajos.css';
+import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
+import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2 } from 'lucide-react';
 
 const mapContainerStyle = {

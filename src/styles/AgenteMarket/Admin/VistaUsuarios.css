@@ -1,0 +1,584 @@
+/* =========================================
+   1. CONFIGURACIÓN GLOBAL Y RESET
+   ========================================= */
+.bg-light, .main-container { 
+    background-color: #ffffff; 
+    min-height: 100vh; 
+    font-family: 'Segoe UI', sans-serif; 
+    margin: 0;
+    position: relative;
+}
+
+.main-container {
+    overflow-x: auto;
+}
+
+.top-bar-orange { 
+    height: 8px; 
+    background: #ff8800; 
+    width: 100%; 
+}
+
+.top-bar-black { 
+    height: 40px; 
+    background: #1a1a1a; 
+    width: 100%; 
+    margin-bottom: 20px; 
+}
+
+.content-area {
+    padding: 15px;
+    max-width: 1400px;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* =========================================
+   2. FILTROS Y BUSCADOR
+   ========================================= */
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filter-item {
+    background: #e0e0e0;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #444; /* Added specific text color */
+    transition: all 0.2s ease;
+    margin: 0;
+    width: 100%;
+}
+
+.filter-item.active { 
+    border: 2px solid #ff8800; 
+    background: #fff; 
+    color: #ff8800;
+}
+
+.icon-box {
+    font-size: 1.2rem;
+    margin-right: 5px;
+}
+
+/* =========================================
+   3. TABLA CON SCROLL
+   ========================================= */
+.table-wrapper-scroll {
+    width: 100%;
+    max-width: 100%;
+    height: 500px;
+    overflow-y: auto;
+    overflow-x: auto;
+    display: block;
+    position: relative;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
+}
+
+.modern-table {
+    width: max-content;
+    min-width: 1200px;
+    border-collapse: collapse;
+}
+
+.modern-table th {
+    background: #1a1a1a;
+    color: white;
+    padding: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    white-space: nowrap;
+}
+
+.modern-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    color:black
+}
+
+/* Scroll personalizado */
+.table-wrapper-scroll::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.table-wrapper-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.table-wrapper-scroll::-webkit-scrollbar-thumb {
+    background: #ff8800;
+    border-radius: 10px;
+    border: 2px solid #f1f1f1;
+}
+
+.table-wrapper-scroll::-webkit-scrollbar-thumb:hover {
+    background: #e67a00;
+}
+
+/* =========================================
+   4. AVATAR Y FOTOS
+   ========================================= */
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto;
+}
+
+.perfil-photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* =========================================
+   5. ESTADOS Y BADGES
+   ========================================= */
+.user-row-blocked {
+    opacity: 0.7;
+    background-color: #fafafa;
+}
+
+.blocked-tag {
+    background: #ff4444;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+.clickable-name {
+    cursor: pointer;
+    color: #ff8800;
+    font-weight: 600;
+}
+
+.clickable-name:hover {
+    text-decoration: underline;
+}
+
+.badge-rol {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+
+.badge-rol.root {
+    background: #ffd700 !important;
+    color: #000000 !important;
+    border: 1px solid #e5c100;
+}
+
+.badge-rol.autonomo {
+    background: #1e3a8a !important;
+    color: #ffffff !important;
+    border: 1px solid #172554;
+}
+
+.badge-rol.admin {
+    background: #ff8800 !important;
+    color: #ffffff !important;
+    border: 1px solid #e67a00;
+}
+
+.badge-rol.tecnico {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border: 1px solid #0369a1;
+}
+
+.badge-rol.cliente {
+    background: #16a34a !important;
+    color: #ffffff !important;
+    border: 1px solid #15803d;
+}
+
+.select-rol-inline {
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 6px 14px;
+    border-radius: 20px;
+    outline: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.select-rol-inline:hover {
+    transform: scale(1.03);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.select-rol-inline option {
+    background-color: #1e293b;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 8px;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-on {
+    background-color: #4caf50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.status-off {
+    background-color: #ff4444;
+    box-shadow: 0 0 0 2px rgba(255, 68, 68, 0.2);
+}
+
+/* =========================================
+   6. BOTONES
+   ========================================= */
+.actions-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-table-oval {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ff8800;
+    color: white;
+    padding: 6px 16px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: bold;
+    border: none;
+    transition: 0.2s;
+    font-size: 0.8rem;
+}
+
+.btn-table-oval:hover {
+    background: #e67a00;
+    transform: scale(1.05);
+}
+
+.btn-table-oval.is-blocked {
+    background: #4caf50;
+}
+
+.btn-table-oval.is-unblocked {
+    background: #ff8800;
+}
+
+.btn-table-oval-small {
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-table-oval-small:hover {
+    background: #cc0000;
+    transform: scale(1.05);
+}
+
+/* =========================================
+   7. RESPONSIVE
+   ========================================= */
+@media (max-width: 768px) {
+    .filter-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+    
+    .filter-item {
+        font-size: 0.75rem;
+        padding: 8px 4px;
+    }
+    
+    .table-wrapper-scroll {
+        overflow-x: hidden;
+        height: auto;
+        box-shadow: none;
+        background: transparent;
+        border: none;
+    }
+
+    .modern-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        display: block;
+    }
+
+    .modern-table thead {
+        display: none;
+    }
+
+    .modern-table tbody,
+    .modern-table tr,
+    .modern-table td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .modern-table tr {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .modern-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0 !important;
+        border-bottom: 1px dashed #f1f5f9;
+        text-align: right !important;
+        font-size: 0.88rem;
+    }
+
+    .modern-table td:last-child {
+        border-bottom: none;
+    }
+
+    .modern-table td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        color: #64748b;
+        text-align: left;
+        margin-right: 15px;
+    }
+
+    .modern-table td[data-label="Foto"] {
+        justify-content: space-between;
+    }
+    
+    .avatar-circle {
+        margin: 0 !important;
+    }
+
+    .actions-cell {
+        justify-content: flex-end !important;
+        gap: 8px;
+    }
+
+    .btn-table-oval {
+        padding: 6px 14px;
+        font-size: 0.75rem;
+    }
+    
+    .btn-table-oval-small {
+        width: 30px;
+        height: 30px;
+        font-size: 0.85rem;
+    }
+}
+/* =========================================
+   CLASES FALTANTES
+   ========================================= */
+.icon-box {
+    font-size: 1.2rem;
+    margin-right: 5px;
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto;
+}
+
+.perfil-photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-row-blocked {
+    opacity: 0.7;
+    background-color: #fafafa;
+}
+
+.blocked-tag {
+    background: #ff4444;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+.clickable-name {
+    cursor: pointer;
+    color: #ff8800;
+    font-weight: 600;
+}
+
+.clickable-name:hover {
+    text-decoration: underline;
+}
+
+.badge-rol {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+
+.badge-rol.root {
+    background: #ffd700 !important;
+    color: #000000 !important;
+    border: 1px solid #e5c100;
+}
+
+.badge-rol.autonomo {
+    background: #1e3a8a !important;
+    color: #ffffff !important;
+    border: 1px solid #172554;
+}
+
+.badge-rol.admin {
+    background: #ff8800 !important;
+    color: #ffffff !important;
+    border: 1px solid #e67a00;
+}
+
+.badge-rol.tecnico {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border: 1px solid #0369a1;
+}
+
+.badge-rol.cliente {
+    background: #16a34a !important;
+    color: #ffffff !important;
+    border: 1px solid #15803d;
+}
+
+.select-rol-inline {
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 6px 14px;
+    border-radius: 20px;
+    outline: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.select-rol-inline:hover {
+    transform: scale(1.03);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.select-rol-inline option {
+    background-color: #1e293b;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 8px;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-on {
+    background-color: #4caf50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.status-off {
+    background-color: #ff4444;
+    box-shadow: 0 0 0 2px rgba(255, 68, 68, 0.2);
+}
+
+.btn-table-oval-small {
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-table-oval-small:hover {
+    background: #cc0000;
+    transform: scale(1.05);
+}
+
+.btn-table-oval.is-blocked {
+    background: #4caf50;
+}
+
+.btn-table-oval.is-unblocked {
+    background: #ff8800;
+}
+
+.oval-text {
+    display: inline;
+}
+

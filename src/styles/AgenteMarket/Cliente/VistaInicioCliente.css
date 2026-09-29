@@ -1,0 +1,68 @@
+/* Wrapper principal - sin header propio, se muestra dentro del MainLayoutCliente */
+.inicio-cliente-wrap {
+  padding: 20px 10px;
+  width: 100%;
+}
+
+/* Grid de tarjetas */
+.inicio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+/* Tarjeta individual */
+.inicio-card {
+  background: #6b6b6b;
+  border-radius: 20px;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+  border: 3px solid transparent;
+  min-height: 160px;
+}
+
+.inicio-card:hover {
+  transform: translateY(-5px);
+  background: #555;
+  border-color: #f26624;
+  box-shadow: 0 10px 25px rgba(242, 102, 36, 0.2);
+}
+
+.inicio-card-icon {
+  font-size: 2.5rem;
+}
+
+.inicio-card-title {
+  color: white;
+  font-weight: 900;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .inicio-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+  .inicio-card {
+    padding: 25px 15px;
+    min-height: 130px;
+  }
+  .inicio-card-icon {
+    font-size: 2rem;
+  }
+  .inicio-card-title {
+    font-size: 0.75rem;
+  }
+}

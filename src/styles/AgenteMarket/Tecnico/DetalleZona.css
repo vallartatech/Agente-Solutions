@@ -1,0 +1,460 @@
+.dz-body-wrapper {
+  padding: 10px 40px;
+  background-color: white;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Barra Superior */
+.dz-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.dz-user-section { display: flex; align-items: center; gap: 15px; }
+.dz-username { font-weight: 900; font-size: 20px; font-style: italic; }
+.dz-details-text { font-weight: 900; font-style: italic; margin-right: 50px; }
+.dz-system-icons { display: flex; gap: 10px; }
+
+.dz-divider { border: 2px solid #f26624; margin-bottom: 20px; }
+
+/* Botón Regreso Naranja */
+.dz-navigation-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.dz-btn-back-orange {
+  background-color: #f26624;
+  border: none;
+  width: 140px;
+  height: 55px;
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 5px 0px rgba(0,0,0,0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 150px;
+}
+
+.dz-section-title { font-weight: 900; font-style: italic; flex: 1; text-align: center; font-size: 18px; }
+
+/* Burbujas */
+.dz-bubbles-container {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.dz-info-pill {
+  background-color: #d1d1d1;
+  padding: 5px 20px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Card Gris Oscuro */
+.dz-main-card {
+  background-color: #636363;
+  border-radius: 40px;
+  padding: 25px 35px;
+  min-height: 400px;
+}
+
+.dz-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25px;
+}
+
+.dz-category-tag {
+  background-color: #d1d1d1;
+  padding: 8px 20px;
+  border-radius: 15px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Botones con profundidad */
+.dz-btn-plus {
+  background-color: #f26624;
+  border: none;
+  width: 110px;
+  height: 45px;
+  border-radius: 15px;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 5px 0px rgba(0,0,0,0.3);
+  margin-right: 15px;
+}
+
+.dz-btn-save {
+  background-color: #f26624;
+  border: none;
+  padding: 10px 45px;
+  border-radius: 15px;
+  color: white;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 18px;
+  box-shadow: 0 5px 0px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+.dz-date-tag { color: black; font-size: 12px; font-weight: 800; }
+
+/* Contenedor de Foto Principal */
+.dz-main-photo-container {
+  position: relative;
+  width: 220px;
+  height: 140px;
+  border-radius: 20px;
+  overflow: hidden;
+  background-color: rgba(255,255,255,0.1);
+  border: 2px solid rgba(242, 101, 34, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  flex-shrink: 0; /* Evita que se encoja en flex */
+}
+
+.dz-main-photo-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.dz-main-photo-container:hover img {
+  transform: scale(1.05);
+}
+
+.dz-change-photo-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  color: white;
+  font-size: 11px;
+  text-align: center;
+  padding: 15px 5px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Filas de la lista */
+.dz-item-row {
+  background-color: white;
+  border: 2px solid black;
+  border-radius: 35px;
+  padding: 8px 25px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dz-item-left { display: flex; align-items: center; gap: 15px; }
+
+.dz-thumb-box img {
+  width: 60px;
+  height: 35px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.dz-item-name { font-weight: 900; font-style: italic; font-size: 13px; color: #333; }
+
+.dz-item-right { display: flex; gap: 15px; cursor: pointer; }
+
+/* Contenedor de botones para asegurar alineación vertical */
+.dz-actions-group {
+  display: flex;
+  align-items: center; /* Alinea los centros de ambos botones */
+  gap: 15px; /* Espacio exacto entre + y GUARDAR */
+}
+
+/* Base común para botones con profundidad */
+.dz-btn-plus, 
+.dz-btn-save {
+  background-color: #f26624;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  /* Sombra sólida inferior (Efecto 3D) */
+  box-shadow: 0 6px 0px #ab4312; 
+  
+  /* Altura unificada para sincronía */
+  height: 50px; 
+  border-radius: 18px;
+  transition: all 0.1s ease;
+}
+
+/* Botón de Agregar (+) específico */
+.dz-btn-plus {
+  width: 110px;
+}
+
+/* Botón de Guardar específico */
+.dz-btn-save {
+  padding: 0 40px;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+/* Efecto de presión para ambos */
+.dz-btn-plus:active, 
+.dz-btn-save:active {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0px #ab4312;
+}
+
+/* Overlay con desenfoque de fondo */
+.custom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px); /* Efecto de desenfoque */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Tarjeta del modal */
+.custom-modal-card {
+  background: #e0e0e0;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 30px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  animation: modalIn 0.3s ease-out;
+}
+
+/* Cabecera con estilo */
+.modal-header-gradient {
+  background: #333; /* O un degradado */
+  padding: 20px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-content h2 {
+  color: white;
+  margin: 0;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
+  font-weight: 800;
+}
+
+.modal-close-btn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.modal-close-btn:hover {
+  background: #ff4757;
+}
+
+/* Cuerpo del modal */
+.modal-body {
+  padding: 40px 30px;
+}
+
+.input-container-modern label {
+  display: block;
+  font-weight: 900;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.input-container-modern input {
+  width: 100%;
+  padding: 15px 20px;
+  border-radius: 15px;
+  border: none;
+  background: #999;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+  outline: none;
+}
+
+.input-container-modern input::placeholder {
+  color: #ccc;
+}
+
+/* Footer y Botones */
+.modal-footer {
+  padding: 0 30px 30px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 2px solid #999;
+  padding: 12px 25px;
+  border-radius: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  color: #666;
+}
+
+.btn-confirm-grad {
+  background: linear-gradient(135deg, #ff7e5f, #feb47b); /* Degradado naranja */
+  background: #f05a28; /* Color sólido si prefieres el de tu app */
+  border: none;
+  padding: 12px 35px;
+  border-radius: 15px;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(240, 90, 40, 0.3);
+  transition: transform 0.2s;
+}
+
+.btn-confirm-grad:hover {
+  transform: translateY(-2px);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- RESPONSIVIDAD PARA CELULAR --- */
+@media (max-width: 768px) {
+  .dz-body-wrapper {
+    padding: 15px !important;
+  }
+
+  .dz-main-card {
+    padding: 20px 15px !important;
+    border-radius: 25px !important;
+  }
+
+  /* Burbujas y Botón de Regreso */
+  .dz-bubbles-container {
+    flex-direction: column-reverse !important;
+    gap: 15px !important;
+  }
+  .dz-bubbles-container > div {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+  .dz-btn-back-orange {
+    width: 100% !important;
+    justify-content: center !important;
+    margin-right: 0 !important;
+  }
+
+  /* Fila de controles (Categoria, Botones, Fecha) */
+  .dz-controls-row {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 15px;
+  }
+  
+  .dz-main-photo-container {
+    width: 100% !important;
+    height: 200px !important;
+    margin-bottom: 10px;
+    border-radius: 15px !important;
+  }
+  
+  .dz-change-photo-label {
+    font-size: 13px !important;
+    padding: 20px 5px 10px !important;
+  }
+  .dz-category-tag {
+    justify-content: center;
+    text-align: center;
+  }
+  .dz-actions-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px !important;
+  }
+  .dz-btn-plus, .dz-btn-save {
+    width: 100% !important;
+    margin-right: 0 !important;
+    padding: 12px 15px !important;
+    font-size: 14px !important;
+    height: 45px !important;
+  }
+  .dz-date-tag {
+    text-align: center;
+  }
+
+  /* Fila de la lista (Sub-habitaciones) */
+  .dz-item-row {
+    flex-direction: column;
+    align-items: center !important;
+    gap: 15px;
+    padding: 15px !important;
+    border-radius: 20px !important;
+  }
+  .dz-item-left {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    flex-direction: column;
+    gap: 10px !important;
+  }
+  .dz-item-right {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .dz-item-right button {
+    width: 100% !important;
+    justify-content: center !important;
+    margin-bottom: 10px;
+  }
+}

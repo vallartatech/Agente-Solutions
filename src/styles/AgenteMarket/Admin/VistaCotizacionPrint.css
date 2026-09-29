@@ -1,0 +1,371 @@
+/* ========================================================
+   ESTILOS PARA VISTA E IMPRESIÓN DE COTIZACIÓN (TAMAÑO CARTA)
+   ======================================================== */
+
+@page {
+  size: letter portrait;
+  margin: 8mm 10mm;
+}
+
+body {
+  background: #0b1329;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.cotizacion-container {
+  width: 100%;
+  max-width: 21.59cm;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #0f172a;
+  box-sizing: border-box;
+}
+
+/* CONTENEDOR DE HOJA IMPRIMIBLE (CARTA: 8.5 x 11 pulgadas = 21.59cm x 27.94cm) */
+.printable-page-container {
+  background-color: #ffffff;
+  width: 21.59cm;
+  max-width: 100%;
+  min-height: 27.94cm;
+  padding: 1.5cm 1.8cm;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.08),
+    0 8px 20px rgba(0,0,0,0.25),
+    0 20px 50px rgba(0,0,0,0.35);
+  box-sizing: border-box;
+  margin: 0 auto;
+  border: 1px solid #d1d5db;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* CABECERA EN GRID DE 3 COLUMNAS (DESKTOP) */
+.doc-header-grid {
+  display: grid;
+  grid-template-columns: 135px 1fr 245px;
+  gap: 16px;
+  align-items: stretch;
+  width: 100%;
+  padding: 6px 0;
+}
+
+.doc-left-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.doc-center-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding-left: 12px;
+  border-left: 2px solid #f1f5f9;
+}
+
+.doc-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+
+.logo {
+  max-width: 135px;
+  height: auto;
+}
+
+/* LINEA SEPARADORA */
+.linea {
+  height: 3px;
+  background: linear-gradient(90deg, #f26624 0%, #ea580c 100%);
+  margin: 14px 0;
+}
+
+/* TABLA RESPONSIVA */
+.tabla-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 480px;
+}
+
+.tabla th {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.tabla td {
+  border: 1px solid #e2e8f0;
+  padding: 8px 10px;
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+/* TOTALES */
+.totales .label {
+  font-weight: 800;
+  text-align: right;
+}
+
+.subtotal {
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.total-final td {
+  background: #0f172a !important;
+  color: white !important;
+  font-weight: 900;
+}
+
+/* TEXTAREA DE ESPECIFICACIONES */
+.notas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.notas-textarea {
+  width: 100%;
+  flex: 1;
+  min-height: 160px;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #1e293b;
+  padding: 12px 14px;
+  border-radius: 6px;
+  resize: none;
+  overflow: hidden;
+  box-sizing: border-box;
+  outline: none;
+  display: block;
+  white-space: pre-wrap;
+}
+
+/* DATOS FISCALES */
+.fiscales {
+  margin-top: 16px;
+  border-top: 2px solid #e2e8f0;
+  padding-top: 10px;
+}
+
+/* ========================================================
+   📱 AJUSTES RESPONSIVOS PARA MÓVIL (PANTALLAS PEQUEÑAS)
+   ======================================================== */
+@media screen and (max-width: 768px) {
+  .printable-page-container {
+    padding: 16px 14px !important;
+    min-height: auto;
+    box-shadow: none;
+    border-radius: 12px;
+    width: 100% !important;
+  }
+
+  .doc-header-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+
+  .doc-left-col {
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  .doc-center-col {
+    border-left: none !important;
+    padding-left: 0 !important;
+    border-top: 1px solid #f1f5f9 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .doc-right-col {
+    width: 100% !important;
+  }
+
+  .tabla {
+    min-width: 480px;
+  }
+}
+
+/* ========================================================
+   🖨️ ESTILOS DE IMPRESIÓN NATIVOS (@media print)
+   ======================================================== */
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 0;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: visible !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  /* FORZAR VISIBILIDAD DE LA COTIZACIÓN */
+  .cotizacion-container,
+  .cotizacion-container *,
+  .printable-page-container,
+  .printable-page-container *,
+  #cotizacion-pdf,
+  #cotizacion-pdf * {
+    visibility: visible !important;
+  }
+
+  .print-page-root {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .print-outer-wrapper,
+  .print-scale-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+    transform: none !important;
+    height: 100% !important;
+  }
+
+  /* HOJA: flex column para que textarea llene todo el espacio restante */
+  .printable-page-container,
+  #cotizacion-pdf {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 10mm 12mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: static !important;
+    overflow: visible !important;
+  }
+
+  /* Sección de notas crece para llenar la hoja */
+  .notas {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    page-break-inside: auto !important;
+  }
+
+  .notas-textarea {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    border: none !important;
+    background-color: transparent !important;
+    padding: 8px 0 !important;
+    font-size: 12.5px !important;
+    line-height: 1.55 !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+    resize: none !important;
+    min-height: 100px !important;
+  }
+
+  .fiscales {
+    margin-top: auto !important;
+    padding-top: 8px !important;
+    page-break-inside: avoid !important;
+    flex-shrink: 0 !important;
+  }
+
+  .doc-header-grid {
+    display: grid !important;
+    grid-template-columns: 135px 1fr 245px !important;
+    gap: 16px !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    flex-shrink: 0 !important;
+  }
+
+  .doc-left-col {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+  }
+
+  .doc-center-col {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding-left: 12px !important;
+    border-left: 2px solid #f1f5f9 !important;
+    border-top: none !important;
+    border-bottom: none !important;
+  }
+
+  .doc-right-col {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    justify-content: center !important;
+    width: auto !important;
+  }
+
+  .linea {
+    flex-shrink: 0 !important;
+  }
+
+  .tabla-container {
+    width: 100% !important;
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+  }
+
+  .tabla {
+    width: 100% !important;
+    min-width: 100% !important;
+    border-collapse: collapse !important;
+  }
+}

@@ -1,0 +1,333 @@
+/* =========================================
+   1. GLOBAL & LAYOUT
+   ========================================= */
+.productos-page-container {
+    background-color: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    color: #1e293b;
+}
+
+.top-strip-orange { 
+    height: 5px; 
+    background: #ff8800; 
+}
+
+.top-strip-black { 
+    height: 35px; 
+    background: #111827; 
+    margin-bottom: 0px; /* Reducido para subir el contenido */
+}
+
+/* Header Compacto */
+.header-products {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0px 20px; /* Padding vertical reducido */
+}
+
+.logo-main { 
+    height: 45px; /* Ligeramente más pequeño */
+    cursor: pointer; 
+}
+
+/* =========================================
+   2. FILTROS (TABS)
+   ========================================= */
+.categorias-nav-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 10px; /* Espacio reducido */
+   
+}
+
+.tab-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 24px;
+    min-width: 140px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 700;
+    color: #64748b;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-item:hover {
+    border-color: #cbd5e1;
+    background-color: #fcfcfc;
+}
+
+.tab-item.active {
+    background: white !important;
+    border: 2px solid #ff8800 !important;
+    color: #ff8800 !important;
+    box-shadow: 0 6px 15px rgba(255, 136, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* =========================================
+   3. BUSCADOR
+   ========================================= */
+.search-container-styled {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px; /* Espacio reducido */
+}
+.content-area {
+    margin-top: -10px; /* Esto jala todo el contenido hacia arriba */
+}
+
+.search-input-group {
+    position: relative;
+    width: 90%;
+
+}
+
+.search-field {
+    width: 100%;
+    padding: 12px 25px 12px 55px; 
+    border-radius: 50px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.search-field:focus {
+    border-color: #ff8800;
+    box-shadow: 0 4px 15px rgba(255, 136, 0, 0.1);
+}
+
+.search-icon-inside {
+    position: absolute;
+    left: 22px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+/* =========================================
+   4. TABLA Y SCROLL
+   ========================================= */
+.table-listing-card {
+    width: 92%;
+    max-width: 1200px;
+    margin: 0 auto 30px auto;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.table-scroll-container {
+   max-height: 400px; /* Bajamos un poco el alto para que siempre quepa en pantalla */
+    overflow-y: auto;  /* Forzamos el scroll vertical */
+    overflow-x: hidden;
+    position: relative;
+    background: white;
+}
+
+.table-products {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-header-dark th {
+   position: sticky;
+    top: 0;
+    background: #111827;
+    color: white;
+    z-index: 10;
+    padding: 15px 20px;
+}
+
+.product-row {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.product-row:hover {
+    background-color: #f8fafc;
+}
+
+.cell-padding { 
+    padding: 12px 20px; /* Celdas más compactas */
+    vertical-align: middle; 
+}
+
+.product-title { 
+    font-size: 1rem; 
+    font-weight: 700; 
+    color: #0f172a; 
+}
+
+.product-subtitle { 
+    font-size: 0.7rem; 
+    color: #94a3b8; 
+    text-transform: uppercase; 
+    margin-top: 2px; 
+}
+
+/* =========================================
+   5. COMPONENTES Y ACCIONES
+   ========================================= */
+.badge-stock {
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.75rem;
+}
+
+.actions-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-action-icon {
+    width: 44px; /* Un poco más compactos */
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.btn-location { 
+    background: #ff8800; 
+    color: white; 
+    box-shadow: 0 4px 10px rgba(255, 136, 0, 0.2); 
+}
+
+.btn-reports { 
+    background: #334155; 
+    color: white; 
+}
+
+.btn-action-icon:hover { 
+    transform: translateY(-2px); 
+    filter: brightness(1.1); 
+}
+
+/* Personalización del Scrollbar */
+.table-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.table-scroll-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb {
+    background: #ff8800; /* Color naranja de tu marca */
+    border-radius: 10px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #e67a00;
+}
+/* Contenedor que aplica el efecto de desvanecimiento a los lados */
+.categorias-scroll-wrapper {
+  width: 100%;
+  position: relative;
+  /* El degradado hace que los botones se vuelvan transparentes al llegar a las orillas */
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  margin-bottom: 10px;
+}
+
+.categorias-nav-tabs {
+  display: flex;
+  gap: 15px;
+  padding: 15px 40px; /* Padding lateral para que los botones no nazcan pegados al borde */
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* Movimiento suave en móviles */
+}
+
+/* Ocultar la barra de scroll visualmente */
+.categorias-nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.categorias-nav-tabs {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Estilo individual de los botones */
+.tab-item {
+  flex: 0 0 auto; /* Evita que el botón se haga pequeño */
+  white-space: nowrap; /* Evita que el texto salte de línea */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.tab-item.active {
+  border-color: #ff8800;
+  color: #ff8800;
+  box-shadow: 0 4px 12px rgba(255, 136, 0, 0.15);
+}/* 1. El envoltorio debe permitir el desbordamiento */
+.categorias-scroll-wrapper {
+  width: 100%;
+  overflow: hidden; /* Oculta lo que sobra del desvanecimiento */
+  padding: 20px 0;
+}
+
+/* 2. El contenedor de los botones es el que realmente desliza */
+.categorias-nav-tabs {
+  display: flex;
+  gap: 15px;
+  padding: 0 40px; /* Espacio para que el primer botón no pegue al borde */
+  
+  /* HABILITA EL DESLIZAMIENTO */
+  overflow-x: auto; 
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* Suavidad en móviles */
+  
+  /* OCULTA LA BARRA VISUAL (opcional para estética) */
+  scrollbar-width: none; /* Firefox */
+}
+
+.categorias-nav-tabs::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Brave */
+}
+
+/* 3. Los botones NO deben encogerse */
+.tab-item {
+  flex: 0 0 auto; /* OBLIGATORIO: 0 crecimiento, 0 encogimiento */
+  white-space: nowrap; /* Evita que el texto se rompa en dos líneas */
+  
+  /* Tus estilos existentes */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.2s;
+}

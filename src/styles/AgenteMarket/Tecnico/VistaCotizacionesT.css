@@ -1,0 +1,372 @@
+/* --- CONFIGURACIÓN GENERAL DE LA PÁGINA --- */
+.cotiz-page {
+  display: block; /* Cambiamos flex por block para permitir flujo natural */
+  min-height: 100vh;
+  width: 100%;
+  background-color: #f4f4f4;
+  overflow-y: auto; /* Aquí forzamos que aparezca la barra global */
+}
+
+.top-bar-orange { height: 8px; background-color: #FF6B00; }
+.top-bar-black { height: 40px; background-color: #1a1a1a; }
+
+/* --- HEADER --- */
+.cotiz-header-tecnico {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.header-central-title { 
+  font-weight: 800; 
+  font-style: italic; 
+  font-size: 1.4rem; 
+  margin: 0;
+}
+
+.back-btn-text { 
+  background: none; 
+  border: none; 
+  font-weight: bold; 
+  cursor: pointer; 
+  font-size: 1.1rem; 
+  display: flex;
+  align-items: center;
+}
+
+.btn-nueva-cotiz-orange {
+  background-color: #FF6B00;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.cotiz-main-content {
+  width: 100%;
+  padding: 20px;
+  /* Eliminamos cualquier height: 100% o overflow-y: scroll interno */
+}
+
+.btn-nueva-cotiz-orange:hover { background-color: #e65a00; }
+.cotiz-main-content::-webkit-scrollbar {
+  width: 12px;
+}
+.cotiz-main-content::-webkit-scrollbar-thumb {
+  background: #555; /* Color gris oscuro como tu foto */
+  border-radius: 10px;
+  border: 2px solid #f4f4f4; /* Crea el efecto de separación */
+}
+
+.cotiz-main-content::-webkit-scrollbar-track {
+  background: #2c2c2c;
+}
+/* --- SECCIÓN DE BÚSQUEDA Y TABS --- */
+.cotiz-main-content { flex: 1; /* Toma el espacio restante */
+  overflow-y: auto; /* Aquí aparece la barra de la imagen */
+  padding: 20px; }
+
+.search-section { margin-bottom: 20px; display: flex; justify-content: center; }
+
+.cotiz-input-field-search {
+  width: 100%;
+  max-width: 600px;
+  padding: 12px 25px;
+  border-radius: 30px;
+  border: 1px solid #ccc;
+  background-color: #e0e0e0;
+  text-align: center;
+  font-weight: bold;
+}
+
+.cotiz-tabs-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.cotiz-tab-btn {
+  padding: 10px 25px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  background: #e0e0e0;
+  cursor: pointer;
+  font-weight: bold;
+  color: #555;
+}
+
+.cotiz-tab-btn.active {
+  background: #fff;
+  border-color: #FF6B00;
+  color: #FF6B00;
+}
+
+/* --- TABLA DE DATOS --- */
+.cotiz-table-container {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.cotiz-data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cotiz-data-table thead { background: #1a1a1a; color: white; }
+
+.cotiz-data-table th, .cotiz-data-table td {
+  padding: 15px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+}
+
+.bold-folio { font-weight: bold; color: #888; }
+
+.btn-ver-tabla {
+  background-color: #FF6B00;
+  color: white;
+  border: none;
+  padding: 6px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* --- MODAL Y SISTEMA DE SCROLL (CORRECCIÓN CRÍTICA) --- */
+.modal-fixed-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 3000;
+  padding: 20px;
+}
+
+.scrollable-modal {
+  display: flex;
+  flex-direction: column; /* Organiza elementos en torre */
+  max-height: 85vh !important; /* Altura máxima para no salirse de la pantalla */
+  width: 95%;
+  max-width: 900px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden; /* Corta lo que sobra del modal */
+}
+
+.modal-header-dark {
+  background: #1a1a1a;
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+}
+
+.modal-body-content.scroll-area {
+  flex: 1; /* Ocupa todo el espacio dinámico */
+  overflow-y: auto !important; /* ACTIVA EL SCROLL VERTICAL */
+  padding: 25px;
+  background: #fdfdfd;
+}
+
+/* --- ESTILO DE LA BARRA DE SCROLL --- */
+.scroll-area::-webkit-scrollbar { width: 8px; }
+.scroll-area::-webkit-scrollbar-track { background: #f1f1f1; }
+.scroll-area::-webkit-scrollbar-thumb {
+  background: #666; /* Color del deslizador (gris) */
+  border-radius: 10px;
+  border: 3px solid #2c2c2c;
+}
+.scroll-area::-webkit-scrollbar-thumb:hover {
+  background: #FF6B00; /* Se pone naranja al pasar el mouse */
+}
+
+/* --- FOOTER FIJO ABAJO --- */
+.modal-footer-btns-fixed {
+  background: #1a1a1a;
+  padding: 15px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 4px solid #FF6B00;
+}
+
+/* --- TABLAS ESTILO EXCEL DENTRO DEL MODAL --- */
+.excel-table-wrapper { margin-bottom: 20px; overflow-x: auto; }
+
+.excel-style-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.excel-style-table th { background: #eee; padding: 10px; border: 1px solid #ddd; }
+.excel-style-table td { border: 1px solid #ddd; padding: 5px; }
+.excel-style-table input {
+  width: 100%; border: none; padding: 8px; background: transparent; outline: none;
+}
+
+.subtotal-cell { font-weight: bold; color: #333; text-align: center; }
+
+.section-title-excel {
+  font-size: 1rem; color: #555; margin-bottom: 10px; border-bottom: 2px solid #FF6B00;
+  display: inline-block; padding-right: 20px;
+}
+
+/* --- BOTONES DE ACCIÓN --- */
+.btn-add-row-excel {
+  margin-top: 10px; background: #eee; border: 1px dashed #bbb; padding: 8px 15px;
+  cursor: pointer; border-radius: 5px; font-weight: bold; color: rgba(74, 74, 74, 0.627);
+}
+
+.btn-del-row { background: none; border: none; cursor: pointer; font-size: 1.1rem; }
+
+.btn-send-to-admin {
+  background: #FF6B00; color: white; border: none; padding: 12px 25px;
+  border-radius: 8px; font-weight: bold; cursor: pointer;
+}
+
+.btn-close-simple {
+  background: transparent; color: white; border: 1px solid #666;
+  padding: 10px 20px; border-radius: 8px; cursor: pointer;
+}
+
+/* --- ESTADOS (BADGES) --- */
+.status-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+.status-badge.enviadas { background: #e9ecef; color: #495057; }
+.status-badge.aceptada { background: #d4edda; color: #155724; }
+.status-badge.rechazada { background: #f8d7da; color: #721c24; }
+
+/* --- COMENTARIOS --- */
+.comentario-box-admin {
+  margin-top: 20px; padding: 15px; background: #fff9f2; border-left: 5px solid #FF6B00;
+}
+.comentario-label { font-weight: bold; color: #FF6B00; font-size: 0.85rem; }
+.comentario-text { margin-top: 5px; font-style: italic; color: #444; }
+
+/* --- GRID DE HERRAMIENTAS --- */
+.tools-grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+.tool-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
+.tool-subtitle { font-size: 0.85rem; color: #888; margin-bottom: 10px; }
+.tool-input-group { display: flex; gap: 5px; margin-bottom: 8px; }
+.tool-qty { width: 50px; text-align: center; }
+/* Esto hace que el borde de las tablas internas sea un poco más discreto si quieres diferenciarlo */
+.internal-border {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #fafafa;
+    margin-bottom: 25px;
+}
+
+.internal-header th {
+    background-color: #f0f0f0 !important;
+    color: #666 !important;
+    font-size: 0.8rem;
+}
+
+/* El botón de eliminar alineado al centro */
+.btn-del-row {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+.total-label-box{
+color: black;
+}
+/* Asegurar que el modal de detalle no se salga de la pantalla y tenga scroll */
+.modal-detalle-extenso {
+  max-width: 700px !important;
+  max-height: 90vh !important; /* Altura máxima del 90% de la pantalla */
+}
+
+/* Estilo para las tablas de "Solo Lectura" dentro del detalle */
+.view-data-table-simple {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.view-data-table-simple th {
+  text-align: left;
+  border-bottom: 2px solid #eee;
+  color: #888;
+  padding: 8px;
+}
+
+.view-data-table-simple td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.section-title-view {
+  font-size: 0.9rem;
+  color: #FF6B00;
+  text-transform: uppercase;
+  margin-top: 20px;
+  border-left: 3px solid #FF6B00;
+  padding-left: 10px;
+}
+
+/* Badge de precio en el detalle */
+.monto-total-badge {
+  background: #1a1a1a;
+  color: #FF6B00;
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin: 10px 0;
+}
+
+/* Configuración del Scroll para que sea visible */
+.scroll-area {
+  flex: 1;
+  overflow-y: auto; /* Habilita el desplazamiento vertical */
+  padding: 20px;
+}
+
+/* Personalización de la barra de scroll (opcional para que se vea mejor) */
+.scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-area::-webkit-scrollbar-thumb {
+  background-color: #FF6B00;
+  border-radius: 10px;
+}
+.modal-box-card {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh; /* No deja que el modal se salga de la pantalla */
+  width: 90%;
+  max-width: 1000px;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.scroll-area {
+  flex: 1;
+  overflow-y: auto; /* Habilita el scroll interno en el modal */
+  padding: 20px;
+}
+
+/* Aplicamos el mismo estilo de barra al modal */
+.scroll-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 10px;
+}

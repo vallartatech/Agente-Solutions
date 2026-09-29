@@ -10,7 +10,7 @@ import {
   Home, Wrench, MessageSquare, Camera, ImageIcon, Image, Trash2, Plus,
   ChevronLeft, ArrowLeft, Loader2, Clock, Briefcase
 } from 'lucide-react';
-import '../../../styles/AgenteSolutions/Cliente/DetallePropiedad.css';
+import '../../../styles/AgenteMarket/Cliente/DetallePropiedad.css';
 
 const DetallePropiedad = () => {
   const { id: idParam } = useParams();

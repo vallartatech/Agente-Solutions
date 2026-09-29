@@ -5,7 +5,7 @@ import Swal from "sweetalert2";
 import UniversalSearch from "../../../components/Shared/UniversalSearch"; 
 import Header from "../../../components/Shared/Header"; 
 import ModalCompraEspacios from "../../../components/Shared/ModalCompraEspacios";
-import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
+import "../../../styles/AgenteMarket/Admin/VistaPropiedades.css";
 import { X, CheckCircle, User, AlertTriangle, ListChecks, Clock, CheckCircle2, LayoutDashboard, ChevronLeft } from "lucide-react";
 
 const TIPOS_PROPIEDAD = [

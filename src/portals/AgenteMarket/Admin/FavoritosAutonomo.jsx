@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Header from '../../../components/Shared/Header';
 import { Star, Trash2, MapPin, Phone } from 'lucide-react';
-import '../../../styles/Autonomos/FavoritosAutonomo.css';
+import '../../../styles/AgenteMarket/Admin/FavoritosAutonomo.css';
 
 const mockFavoritos = [
   { id: 1, nombre: "Juan Pérez", especialidad: "Aire Acondicionado", rating: 4.8, ubicacion: "Mérida, Norte", telefono: "999-123-4567" },

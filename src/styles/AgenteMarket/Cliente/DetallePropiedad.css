@@ -1,0 +1,1318 @@
+/* =============================================
+   CONTENEDOR BASE Y LAYOUT
+   ============================================= */
+.view-container {
+  padding: 20px 30px;
+  background-color: #fcfcfc;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  flex-shrink: 0; /* Evita que el contenedor se encoja y recorte el contenido */
+  min-height: max-content;
+}
+
+.main-layout-detail {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 30px;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  align-items: start;
+  box-sizing: border-box;
+  min-width: 0; /* Evita que el grid desborde */
+}
+
+.left-column,
+.right-column {
+  width: 100%;
+  min-width: 0; /* Permite que la columna se encoja más allá de su contenido fijo */
+}
+
+/* Permitir que los botones superiores hagan wrap por defecto si no caben en PC */
+.action-header-right {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) !important;
+  gap: 12px !important;
+  margin-bottom: 20px;
+}
+
+/* iPad horizontal / tablet grande (1050px) - columnas compactas */
+@media (max-width: 1050px) {
+  .main-layout-detail {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .action-header-right {
+    flex-wrap: wrap !important;
+    gap: 8px;
+  }
+  .btn-add-service-full {
+    font-size: 12px;
+    padding: 11px 8px;
+  }
+}
+
+/* iPad vertical / tablet mediana (950px) - apila en columna */
+@media (max-width: 950px) {
+  .main-layout-detail { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 20px;
+  }
+  .left-column, .right-column {
+    display: contents;
+  }
+  .sticky-card { position: static !important; }
+  
+  /* Reordenamiento de las secciones para móviles */
+  .property-id-header { order: 1; width: 100%; }
+  .hero-section-compact { order: 2; width: 100%; }
+  .action-header-right { order: 3; margin-top: 5px; width: 100%; flex-wrap: wrap !important; }
+  .sticky-card { order: 4; width: 100%; box-sizing: border-box; }
+  .historial-section { order: 5; width: 100%; box-sizing: border-box; }
+}
+
+@media (max-width: 600px) {
+  .view-container {
+    padding: 15px 12px;
+  }
+  
+  .hero-section-compact {
+    height: 220px;
+    border-radius: 18px;
+    margin-bottom: 15px;
+  }
+  
+  .info-card-premium {
+    padding: 18px;
+    border-radius: 20px;
+    margin-bottom: 15px;
+  }
+
+  .jira-stats-grid.quad {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .stat-box {
+    min-height: 90px;
+  }
+}
+
+/* =============================================
+   COLUMNA IZQUIERDA: HERO E INFO
+   ============================================= */
+.hero-section-compact {
+  width: 100%;
+  height: 420px;
+  border-radius: 25px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  margin-bottom: 25px;
+}
+
+.hero-img { width: 100%; height: 100%; object-fit: cover; }
+
+.info-card-premium {
+  background: white;
+  border-radius: 25px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+  border: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 25px;
+}
+
+.card-header-clean {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f8f8f8;
+  padding-bottom: 15px;
+}
+
+.header-title-flex {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-header-clean h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 0;
+  color: #333;
+}
+
+.icon-orange { color: #f26624; }
+
+.data-group-horizontal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.full-width { grid-column: span 2; }
+.data-label { font-size: 0.65rem; color: #aaa; font-weight: 800; text-transform: uppercase; }
+.data-value { font-size: 1rem; color: #222; font-weight: 700; }
+.data-value.highlight { color: #f26624; }
+
+/* =============================================
+   SECCIÓN DE HISTORIAL (TARJETAS)
+   ============================================= */
+.historial-trigger {
+  cursor: pointer;
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+}
+
+.historial-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 15px;
+  animation: fadeIn 0.4s ease;
+}
+
+.historial-card-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #eee;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.historial-card-item:hover {
+  transform: translateX(5px);
+  border-color: #f26624;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.h-card-date { font-size: 0.75rem; color: #f26624; font-weight: 800; }
+.h-card-title { margin: 4px 0; font-size: 1rem; color: #333; font-weight: 800; }
+.h-card-tech { font-size: 0.8rem; color: #777; }
+
+.h-card-right { display: flex; align-items: center; gap: 15px; }
+
+/* Stack de fotos (Efecto de encimadas) */
+.h-card-photos-stack {
+  display: flex;
+  position: relative;
+  width: 70px;
+  height: 45px;
+}
+
+.stack-img {
+  width: 45px;
+  height: 45px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 2px solid white;
+  position: absolute;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.img-0 { left: 0; z-index: 2; }
+.img-1 { left: 20px; z-index: 1; opacity: 0.8; }
+
+.view-icon { color: #ccc; transition: 0.3s; }
+.historial-card-item:hover .view-icon { color: #f26624; }
+
+/* =============================================
+   COLUMNA DERECHA: DASHBOARD
+   ============================================= */
+.sticky-card { position: sticky; top: 40px; }
+
+.jira-stats-grid.quad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+.stat-box {
+  min-height: 115px;
+  padding: 15px 5px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(0,0,0,0.05);
+  text-align: center;
+  transition: 0.3s;
+  word-break: keep-all; word-wrap: normal; /* Evita que las palabras se rompan a la mitad */ /* Permite que el texto se rompa y no desborde */
+}
+
+.stat-box:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+
+.stat-number { font-size: 1.5rem; font-weight: 900; line-height: 1; }
+.stat-label { font-size: 0.55rem; font-weight: 800; text-transform: uppercase; }
+
+/* Colores de Estados */
+.stat-box.sos-urgent-stat { background: #fff1f0; color: #cf1322; border-color: #ffa39e; cursor: pointer; }
+.stat-box.todo { background: #fff7e6; color: #d48806; border-color: #ffe58f; }
+.stat-box.in-progress { background: #deebff; color: #0747a6; border-color: #adc6ff; }
+.stat-box.done { background: #e3fcef; color: #006644; border-color: #b7eb8f; }
+
+/* Barra de Progreso */
+.sprint-footer {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 18px 20px;
+  border-radius: 18px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.sprint-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b !important;
+  margin-bottom: 12px;
+}
+
+.sprint-progress-meta span {
+  color: #1e293b !important;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.sprint-progress-meta span:last-child {
+  color: #f26624 !important;
+  font-weight: 800;
+}
+
+.sprint-progress-bar {
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.sprint-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f26624, #ff8c52);
+  border-radius: 10px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.quote-section-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f0f5ff;
+  color: #1d39c4;
+  padding: 15px 20px;
+  border-radius: 18px;
+  margin-bottom: 25px;
+  border: 1px solid #adc6ff;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.quote-badge-large { background: #1d39c4; color: white; padding: 2px 10px; border-radius: 10px; font-size: 0.75rem; font-weight: 900; }
+
+.btn-back-modern-orange {
+  width: 100%;
+  padding: 18px;
+  background: #f26624;
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(242, 102, 36, 0.3);
+  text-transform: uppercase;
+}
+
+/* =============================================
+   MODAL DE REPORTE DETALLADO
+   ============================================= */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Centrado por defecto en escritorio */
+  z-index: 1100;
+  backdrop-filter: blur(5px);
+  padding: 20px;
+  overflow-y: auto; /* Permite scroll si el modal es muy alto */
+}
+
+@media (max-width: 600px) {
+  .modal-overlay {
+    align-items: flex-start; /* Evita que el tope se corte en móviles */
+    padding: 10px;
+  }
+  
+  .modal-content {
+    margin-top: 20px; /* Margen superior en móvil */
+    margin-bottom: 20px;
+    max-height: none; /* Dejamos que crezca y use el scroll del overlay o el propio */
+    border-radius: 20px;
+  }
+
+  .modal-header h2 {
+    font-size: 1.4rem;
+  }
+}
+
+.modal-content {
+  background: #ffffff;
+  color: #333333;
+  width: 100%;
+  max-width: 600px;
+  border-radius: 24px;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.close-modal {
+  position: absolute;
+  top: 20px; right: 20px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 50%;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.modal-header { padding: 30px 30px 15px; border-bottom: 1px solid #f0f0f0; margin-bottom: 20px; }
+.modal-tag { background: #fff7ed; color: #f26624; font-size: 0.7rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; margin-bottom: 8px; display: inline-block; text-transform: uppercase; border: 1px solid #ffedd5; }
+.modal-header h2 { margin: 0; color: #1a202c; font-size: 1.8rem; font-weight: 800; }
+
+.modal-body { padding: 0 30px 30px; }
+.modal-meta-grid { display: flex; gap: 20px; margin-bottom: 25px; color: #666; font-size: 0.9rem; font-weight: 600; }
+.meta-item { display: flex; align-items: center; gap: 8px; }
+
+.modal-description p {
+  color: #555;
+  line-height: 1.6;
+  background: #fcfcfc;
+  padding: 15px;
+  border-radius: 15px;
+  border-left: 4px solid #f26624;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.gallery-img { width: 100%; height: 120px; object-fit: cover; border-radius: 15px; }
+
+.btn-modal-close {
+  background: #333;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+/* Estilos para el nuevo encabezado con ID sobre la imagen */
+.property-id-header {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: flex-start; /* Centramos el botón */
+}
+
+.btn-id-profile {
+  background: white;
+  border: 1px solid #E2E8F0;
+  padding: 10px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: #4A5568;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Sombra suave */
+}
+
+.btn-id-profile:hover {
+  border-color: var(--primary); /* Naranja al pasar mouse */
+  background: #FFF7ED;
+  transform: translateY(-2px); /* Efecto elevación */
+}
+
+.btn-id-profile strong {
+  color: var(--primary); /* El ID en naranja */
+  font-weight: 800;
+}
+
+/* Estilos para el botón Ver Más en el Tablero */
+.tablero-actions-small {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    text-align: right; /* Alineado a la derecha */
+}
+
+.btn-text-vermas {
+    background: none;
+    border: none;
+    color: var(--text-muted); /* Gris suave */
+    font-size: 12px;
+    font-family: var(--font-family);
+    cursor: pointer;
+    text-decoration: underline; /* Subrayado */
+    padding: 0;
+}
+
+.btn-text-vermas:hover {
+    color: var(--primary); /* Naranja al hover */
+}
+
+/* --- Estilos para el nuevo Modal de Perfil --- */
+.modal-content.profile-modal {
+    max-width: 450px; /* Un poco más estrecho que el de reportes */
+}
+
+.modal-header-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #E2E8F0;
+    padding-bottom: 15px;
+}
+
+.modal-header-profile h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.modal-header-profile p {
+    margin: 2px 0 0 0;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.modal-body.detailed-info {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.profile-data-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    color: var(--text-muted); /* Iconos grises */
+}
+
+.profile-data-group div {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.profile-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #A0AEC0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.profile-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-top: 2px;
+}
+
+.highlight-curp {
+    font-family: monospace; /* Tipografía monospace para el CURP */
+    background: #EDF2F7;
+    padding: 4px 8px;
+    border-radius: 6px;
+    letter-spacing: 1px;
+    color: #2D3748;
+}
+/* Contenedor para centrar el botón */
+.tablero-actions-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* El botón naranja estilizado */
+.btn-orange-small {
+    background-color: #FF6B00; /* El naranja de Agente Solutions */
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 25px; /* Bordes muy redondeados */
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(255, 107, 0, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-orange-small:hover {
+    background-color: #E66000; /* Un tono más oscuro al pasar el mouse */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(255, 107, 0, 0.3);
+}
+
+.btn-orange-small:active {
+    transform: translateY(0);
+}
+/* --- BOTÓN AGREGAR SERVICIO (SUPERIOR) --- */
+.action-header-right {
+  margin-bottom: 20px;
+}
+
+.btn-add-service-full {
+  width: 100%;
+  background-color: #FF6B00; /* Naranja Agente Solutions */
+  color: white;
+  border: none;
+  padding: 14px;
+  white-space: normal; /* Permite que el texto baje de línea si no cabe */
+  text-align: center;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.2);
+  text-transform: uppercase;
+}
+
+.btn-add-service-full:hover {
+  background-color: #E66000;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(255, 107, 0, 0.3);
+}
+
+/* --- BOTÓN VER TABLERO DETALLADO (CENTRADO) --- */
+.tablero-actions-center {
+  display: flex;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.btn-orange-small {
+  background-color: #FF6B00;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 25px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 8px rgba(255, 107, 0, 0.15);
+}
+
+.btn-orange-small:hover {
+  background-color: #E66000;
+  transform: scale(1.05);
+}
+
+/* --- ESTILOS DEL FORMULARIO EN EL MODAL --- */
+.service-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 10px 0;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: transparent;
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+.form-group select, 
+.form-group input, 
+.form-group textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #edf2f7;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: inherit;
+  transition: all 0.2s;
+  background-color: #f8fafc;
+  color: #2d3748;
+}
+
+.form-group select:focus, 
+.form-group input:focus, 
+.form-group textarea:focus {
+  outline: none;
+  border-color: #FF6B00;
+}
+
+.form-group textarea {
+  resize: none; /* Evita que el usuario deforme el modal */
+}
+
+/* --- ESTILOS PARA EL MODAL DE PERFIL (ID CLICKEABLE) --- */
+.property-id-header {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.btn-id-profile {
+  background: white;
+  border: 1px solid #E2E8F0;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.btn-id-profile:hover {
+  border-color: #FF6B00;
+  background: #FFF7ED;
+}
+
+.btn-id-profile strong {
+  color: #FF6B00;
+}
+
+/* --- DETALLES EXTRAS DEL MODAL --- */
+.highlight-curp {
+  background: #F7FAFC;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-weight: 600;
+  color: #2D3748;
+}
+/* Asegúrate de que los select tengan el mismo diseño */
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.form-group select:disabled {
+  background-color: #F7FAFC;
+  cursor: not-allowed;
+  color: #A0AEC0;
+}
+.gps-link {
+  color: #3182ce !important; /* Color azul de enlace */
+  text-decoration: underline;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.gps-link:hover {
+  color: #2b6cb0 !important;
+  cursor: pointer;
+}
+
+.icon-gray {
+  color: #718096;
+}
+
+/* --- FOTOS PREVIEW EN FORMULARIO --- */
+.fotos-preview-container {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.foto-preview-wrapper {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  border-radius: 15px;
+}
+
+.foto-preview-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 15px;
+  border: 2.5px solid #f26624;
+}
+
+.btn-add-foto-placeholder {
+  width: 90px;
+  height: 90px;
+  border: 2px dashed #cbd5e0;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: #f7fafc;
+  color: #718096;
+}
+
+.icon-gray {
+  color: #718096;
+}
+/* =============================================
+   RESPONSIVIDAD PARA TELÉFONOS CELULARES (Hasta 480px)
+   ============================================= */
+@media (max-width: 480px) {
+  /* Contenedor principal */
+  .view-container {
+    padding: 16px 14px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .main-layout-detail {
+    width: 100%;
+    gap: 14px;
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+    align-items: stretch;
+  }
+
+  .left-column,
+  .right-column {
+    width: 100%;
+  }
+
+  /* Sección hero */
+  .hero-section-compact {
+    height: 180px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+
+  /* Tarjeta de información */
+  .info-card-premium {
+    padding: 12px;
+    border-radius: 15px;
+    margin-bottom: 12px;
+  }
+
+  .card-header-clean {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+  }
+
+  .card-header-clean h3 {
+    font-size: 1rem;
+  }
+
+  .data-group-horizontal {
+    gap: 15px;
+  }
+
+  .data-label {
+    font-size: 0.6rem;
+  }
+
+  .data-value {
+    font-size: 0.9rem;
+  }
+
+  /* Historial */
+  .historial-card-item {
+    padding: 10px;
+    border-radius: 15px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .h-card-date {
+    font-size: 0.7rem;
+  }
+
+  .h-card-title {
+    font-size: 0.9rem;
+  }
+
+  .h-card-tech {
+    font-size: 0.75rem;
+  }
+
+  .h-card-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .h-card-photos-stack {
+    width: 60px;
+    height: 40px;
+  }
+
+  .stack-img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .img-0 {
+    left: 0;
+  }
+
+  .img-1 {
+    left: 15px;
+  }
+
+  /* Dashboard */
+  .jira-stats-grid.quad {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .stat-box {
+    min-height: 70px;
+    padding: 8px 4px;
+  }
+
+  .stat-number {
+    font-size: 1.1rem;
+  }
+
+  .stat-label {
+    font-size: 0.45rem;
+  }
+
+  .sprint-footer {
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+
+  .quote-section-link {
+    padding: 12px 15px;
+    margin-bottom: 20px;
+  }
+
+  .btn-back-modern-orange {
+    padding: 15px;
+    font-size: 0.9rem;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    padding: 10px;
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    width: 100%;
+    max-width: none;
+    max-height: 90vh;
+    border-radius: 20px 20px 0 0; /* Bottom sheet style */
+    margin: 0;
+  }
+
+  .close-modal {
+    top: 15px;
+    right: 15px;
+    padding: 6px;
+  }
+
+  .modal-header {
+    padding: 20px 20px 10px;
+  }
+
+  .modal-tag {
+    font-size: 0.65rem;
+    padding: 3px 10px;
+  }
+
+  .modal-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .modal-body {
+    padding: 0 20px 20px;
+  }
+
+  .modal-meta-grid {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .modal-description p {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+  }
+
+  .gallery-img {
+    height: 100px;
+  }
+
+  .btn-modal-close {
+    padding: 10px 25px;
+    font-size: 0.9rem;
+  }
+
+  /* Botones y acciones */
+  .btn-id-profile {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .btn-add-service-full {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .btn-orange-small {
+    padding: 6px 15px;
+    font-size: 12px;
+  }
+
+  /* Formulario */
+  .service-form {
+    gap: 15px;
+  }
+
+  .form-group label {
+    font-size: 11px;
+  }
+
+  .form-group select,
+  .form-group input,
+  .form-group textarea {
+    padding: 10px 12px;
+    font-size: 16px; /* Evita zoom en iOS */
+  }
+
+  /* Fotos preview */
+  .fotos-preview-container {
+    gap: 10px;
+  }
+
+  .foto-preview-wrapper,
+  .btn-add-foto-placeholder {
+    width: 80px;
+    height: 80px;
+  }
+
+  .foto-preview-wrapper img {
+    border-radius: 12px;
+  }
+
+  .btn-add-foto-placeholder {
+    border-radius: 12px;
+  }
+}
+
+/* =============================================
+   REGLA EXTRA PARA PANTALLAS MUY PEQUEÑAS (iPhone SE, etc.)
+   ============================================= */
+@media (max-width: 375px) {
+  .hero-section-compact { height: 160px; }
+  .modal-header h2 { font-size: 1.2rem; }
+  .property-id-header .btn-id-profile { font-size: 12px; padding: 8px 12px; }
+}
+
+/* =============================================
+   REGLA EXTRA PARA PANTALLAS MUY PEQUEÑAS (iPhone SE, etc.)
+   ============================================= */
+@media (max-width: 375px) {
+  .hero-section-compact { height: 160px; }
+  .modal-header h2 { font-size: 1.2rem; }
+  .property-id-header .btn-id-profile { font-size: 12px; padding: 8px 12px; }
+}
+
+/* =============================================
+   RESPONSIVIDAD PARA TABLETS (768px - 950px)
+   ============================================= */
+@media (max-width: 950px) and (min-width: 769px) {
+  .main-layout-detail {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .sticky-card {
+    position: static !important;
+  }
+
+  .hero-section-compact {
+    height: 300px;
+    margin-bottom: 20px;
+  }
+
+  .info-card-premium {
+    padding: 25px;
+    margin-bottom: 20px;
+  }
+
+  .jira-stats-grid.quad {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+
+  .stat-box {
+    min-height: 100px;
+    padding: 12px;
+  }
+
+  .historial-card-item {
+    padding: 15px;
+  }
+
+  .modal-content {
+    max-width: 500px;
+  }
+}
+
+/* =============================================
+   RESPONSIVIDAD PARA TABLETS PEQUEÑAS (481px - 768px)
+   ============================================= */
+@media (max-width: 768px) and (min-width: 481px) {
+  .view-container {
+    padding: 20px 15px;
+  }
+
+  .main-layout-detail {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .sticky-card {
+    position: static !important;
+  }
+
+  .hero-section-compact {
+    height: 250px;
+    margin-bottom: 20px;
+  }
+
+  .info-card-premium {
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .jira-stats-grid.quad {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .stat-box {
+    min-height: 90px;
+    padding: 10px;
+  }
+
+  .historial-card-item {
+    padding: 14px;
+  }
+
+  .modal-content {
+    max-width: 450px;
+    max-height: 80vh;
+  }
+
+  .modal-header {
+    padding: 25px 25px 10px;
+  }
+
+  .modal-body {
+    padding: 0 25px 25px;
+  }
+}
+
+/* =============================================
+   RESPONSIVIDAD PARA PANTALLAS GRANDES (1200px+)
+   ============================================= */
+@media (min-width: 1200px) {
+  .main-layout-detail {
+    max-width: 100%;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 40px;
+  }
+
+  .hero-section-compact {
+    height: 400px;
+  }
+
+  .info-card-premium {
+    padding: 35px;
+  }
+
+  .jira-stats-grid.quad {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+  }
+
+  .stat-box {
+    min-height: 130px;
+    padding: 20px 10px;
+  }
+
+  .stat-number {
+    font-size: 1.8rem;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+  }
+
+  .modal-content {
+    max-width: 700px;
+  }
+
+  .modal-header h2 {
+    font-size: 2rem;
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px;
+  }
+
+  .gallery-img {
+    height: 140px;
+  }
+}
+
+/* =============================================
+   RESPONSIVIDAD PARA PANTALLAS ULTRA GRANDES (1600px+)
+   ============================================= */
+@media (min-width: 1600px) {
+  .main-layout-detail {
+    max-width: 100%;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 50px;
+  }
+
+  .hero-section-compact {
+    height: 450px;
+  }
+
+  .info-card-premium {
+    padding: 40px;
+  }
+
+  .jira-stats-grid.quad {
+    gap: 20px;
+  }
+
+  .stat-box {
+    min-height: 140px;
+    padding: 25px 15px;
+  }
+
+  .stat-number {
+    font-size: 2rem;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+  }
+
+  .modal-content {
+    max-width: 800px;
+  }
+
+  .modal-header h2 {
+    font-size: 2.2rem;
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 25px;
+  }
+
+  .gallery-img {
+    height: 160px;
+  }
+}
+
+/* =============================================
+   RESPONSIVIDAD PARA PANTALLAS MUY ALTAS (Orientación vertical en tablets grandes)
+   ============================================= */
+@media (max-height: 600px) and (orientation: landscape) {
+  .hero-section-compact {
+    height: 200px;
+  }
+
+  .modal-content {
+    max-height: 70vh;
+  }
+
+  .jira-stats-grid.quad {
+    margin-bottom: 20px;
+  }
+
+  .sprint-footer {
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+}

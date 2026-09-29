@@ -1,0 +1,531 @@
+/* ReporteTrabajo.css - Optimizado para UNA SOLA HOJA */
+
+/* Estilos base para pantalla */
+.reporte-container {
+    padding: 10px;
+    background: #f5f5f5;
+    min-height: 100vh;
+}
+
+.print-actions {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.btn-print {
+    background: #ff8800;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Contenido del reporte */
+.reporte-content {
+    background: white;
+    max-width: 1000px; /* Reducido para mejor proporción */
+    width: 100%;
+    margin: 0 auto;
+    padding: 0; 
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+/* =========================================
+   ENCABEZADO COMPACTO
+   ========================================= */
+.reporte-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #eeeeee;
+    padding: 10px 20px; /* Padding reducido */
+    margin: 0;
+    margin-bottom: 15px; /* Espacio reducido */
+    border-bottom: 3px solid #ff8800;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.logo-reporte {
+    max-height: 60px; /* Un poco más grande para que se vea bien */
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.folio-box {
+    background: #333333;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.folio-label {
+    font-size: 0.55rem;
+    display: block;
+    text-transform: uppercase;
+    color: #cccccc;
+}
+
+.folio-number {
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+/* Padding lateral para el cuerpo del reporte */
+.reporte-title, .info-section, .firmas-section, .reporte-footer {
+    padding-left: 25px;
+    padding-right: 25px;
+}
+
+/* Título Compacto */
+.reporte-title {
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.reporte-title h2 {
+    color: #1a1a1a;
+    font-size: 1rem; /* Fuente más pequeña */
+    margin: 0 0 4px;
+    text-transform: uppercase;
+}
+
+.fecha-trabajo {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    color: #555;
+    font-size: 0.7rem;
+}
+
+/* Secciones de Información Compactas */
+.info-section {
+    margin-bottom: 12px; /* Espacio entre secciones reducido */
+}
+
+.info-section h3 {
+    background: #f8f8f8;
+    padding: 4px 10px;
+    margin: 0 0 6px;
+    color: #1a1a1a;
+    font-size: 0.75rem;
+    border-left: 4px solid #ff8800;
+}
+
+.info-grid-2cols {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px 20px;
+    padding: 0 5px;
+}
+
+.info-linea {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 0.7rem; /* Fuente reducida */
+    border-bottom: 1px dotted #eee;
+}
+
+.info-linea strong {
+    min-width: 80px;
+    color: #000 !important; /* Forzado a negro */
+    font-weight: bold;
+}
+
+/* Cuadros de texto compactos */
+.descripcion-box, .observaciones-box {
+    background: #fafafa;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #efefef;
+}
+
+.descripcion-box p, .observaciones-box p {
+    margin: 0;
+    line-height: 1.3;
+    font-size: 0.7rem;
+    color: #000 !important; /* Forzado a negro */
+}
+
+/* Tabla de Materiales */
+.materiales-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.65rem; /* Más pequeña para ahorrar altura */
+}
+
+.materiales-table th {
+    background: #333;
+    color: white;
+    padding: 5px;
+    text-align: left;
+}
+
+.materiales-table td {
+    padding: 4px 5px;
+    border-bottom: 1px solid #eee;
+    color: #000 !important; /* Forzado a negro */
+}
+
+.total-amount {
+    color: #ff8800;
+    font-weight: bold;
+}
+
+/* Firmas Ajustadas */
+.firmas-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px; /* Espacio superior reducido */
+    padding-top: 10px;
+}
+
+.firma-cliente, .firma-tecnico {
+    width: 35%;
+    text-align: center;
+}
+
+.linea-firma {
+    border-bottom: 1px solid #333;
+    margin-bottom: 4px;
+    height: 30px; /* Altura de firma reducida */
+}
+
+.firmas-section p {
+    font-size: 0.65rem;
+    margin: 0;
+    color: #333;
+}
+
+/* Footer Mínimo */
+.reporte-footer {
+    text-align: center;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+    font-size: 0.6rem;
+    color: #000 !important; /* Forzado a negro */
+}
+
+/* AJUSTES DE IMPRESIÓN PARA UNA HOJA */
+@media print {
+    @page {
+        size: auto;
+        margin: 0 !important; /* Forzado para todos los tamaños de papel */
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Escondemos elementos innecesarios y mostramos el reporte y la cotización */
+    .reporte-content, .reporte-content *, 
+    .cotizacion-container, .cotizacion-container *,
+    .printable-page-container, .printable-page-container *,
+    #cotizacion-pdf, #cotizacion-pdf * {
+        visibility: visible !important;
+    }
+
+    /* Posicionamos el reporte con un margen interno para que no toque los bordes físicos */
+    .reporte-content {
+        position: absolute;
+        left: 5mm;
+        right: 5mm;
+        top: 5mm;
+        width: calc(100% - 10mm) !important;
+        margin: 0 !important;
+        padding: 10mm !important;
+        box-shadow: none !important;
+        border: none !important;
+        display: block !important;
+        background: white !important;
+    }
+
+    .no-print, .print-actions {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* Forzar visibilidad de todo el texto y fondos */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    /* Asegurar que las imágenes se impriman */
+    img {
+        max-width: 100% !important;
+        height: auto !important;
+        display: block !important;
+    }
+}
+
+/* Estilos para el Modo Editor */
+.no-print {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-back, .btn-save {
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-back { background: #f26522; color: white; } /* Cambiado a naranja */
+.btn-save { background: #28a745; color: white; }
+
+.editable-span, .table-input, .editable-folio, .inline-input {
+    border: 1px solid transparent;
+    background: transparent;
+    width: 100%;
+    font-family: inherit;
+    font-size: inherit;
+    color: #000 !important; /* Forzado a negro para evitar texto blanco */
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s;
+}
+
+.editable-span:hover, .table-input:hover, .editable-folio:hover, .inline-input:hover {
+    border-color: #ddd;
+    background: #fff;
+}
+
+.editable-span:focus, .table-input:focus, .editable-folio:focus, .inline-input:focus {
+    border-color: #ff8800;
+    background: #fff;
+    outline: none;
+    box-shadow: 0 0 5px rgba(255,136,0,0.2);
+}
+
+.editable-folio {
+    color: white !important; /* El folio va sobre fondo oscuro, aquí sí blanco */
+    font-weight: bold;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.editable-textarea {
+    width: 100%;
+    min-height: 60px;
+    border: 1px solid transparent;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.7rem;
+    line-height: 1.3;
+    color: #000 !important; /* Forzado a negro */
+    padding: 5px;
+    resize: vertical;
+    border-radius: 4px;
+}
+
+.editable-textarea:hover { border-color: #eee; background: #fff; }
+.editable-textarea:focus { border-color: #ff8800; background: #fff; outline: none; }
+
+.btn-add-item {
+    float: right;
+    background: #ff8800;
+    color: white;
+    border: none;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-row-delete {
+    background: none;
+    border: none;
+    color: #cc0000;
+    cursor: pointer;
+    opacity: 0.5;
+}
+
+.btn-row-delete:hover { opacity: 1; }
+
+.table-input.center { text-align: center; }
+
+.imagen-item {
+    cursor: pointer;
+    transition: transform 0.2s;
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    background: #fff;
+    padding: 2px;
+}
+
+.btn-delete-photo {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #ff0000 !important; /* Rojo sólido e intenso */
+    color: #ffffff !important; /* Blanco puro para la X */
+    border: 2px solid white; /* Borde blanco para mayor contraste */
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s;
+    z-index: 100;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    padding: 0;
+}
+
+.imagen-item:hover .btn-delete-photo {
+    opacity: 1;
+}
+
+.btn-delete-photo svg {
+    display: block;
+    color: white !important;
+}
+
+.btn-delete-photo:hover {
+    background: red;
+    transform: scale(1.1);
+}
+
+.photo-zoom-hint {
+    position: absolute;
+    bottom: 25px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.imagen-item:hover .photo-zoom-hint {
+    opacity: 1;
+}
+
+.galeria-imagenes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.imagen-item img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+}
+
+.imagen-item p {
+    text-align: center;
+    font-size: 0.6rem;
+    margin: 4px 0 0;
+    color: #666;
+}
+
+.imagen-item:hover { transform: scale(1.02); }
+
+.imagen-item.hidden-print {
+    opacity: 0.3;
+    filter: grayscale(1);
+}
+
+.imagen-item.hidden-print::after {
+    content: "OCULTO";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.6rem;
+}
+
+/* Modal de Zoom */
+.image-zoom-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.zoom-modal-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.zoom-main-image {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    object-fit: contain;
+}
+
+.zoom-close-btn {
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 10px;
+    transition: transform 0.2s;
+}
+
+.zoom-close-btn:hover {
+    transform: scale(1.2);
+}
+
+.loading-report {
+    text-align: center;
+    padding: 50px;
+    font-weight: bold;
+    color: #ff8800;
+}

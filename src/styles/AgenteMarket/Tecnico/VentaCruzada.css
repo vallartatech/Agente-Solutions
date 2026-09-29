@@ -1,0 +1,306 @@
+/* ============================================================
+   ESTILOS REPARADOS PARA VENTA CRUZADA (vc-)
+   ============================================================ */
+
+/* 1. CONTENEDOR PRINCIPAL DEL CUERPO */
+.vc-body-content {
+  padding: 10px 40px; 
+  display: flex;
+  flex-direction: column;
+}
+
+/* 2. CONTROLES SUPERIORES (ID, ENVIAR y +) */
+.vc-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.btn-plus-orange-slim, 
+.btn-add-vc {
+  cursor: pointer !important; /* El !important asegura que gane a cualquier otro estilo */
+  pointer-events: auto !important; /* Asegura que el botón sea "tocable" */
+}
+.vc-actions { 
+ display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 10; 
+}
+
+/* 3. BOTÓN ENVIAR (Gris con letras negras) */
+.btn-enviar-vc {
+  background-color: #d1d1d1;
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  padding: 6px 25px;
+  font-weight: 900;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* 4. BOTÓN (+) COMPACTO */
+.btn-plus-orange-slim {
+  background-color: #f26624;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  width: 50px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+/* 5. TABLA Y GRID (Ajustado para ser más delgada) */
+.tt-table-container {
+  background-color: #636363;
+  border-radius: 35px;
+  padding: 15px 20px;
+  min-height: 400px;
+}
+
+/* Alineación exacta de columnas */
+.vc-grid-header, 
+.vc-grid-content {
+  display: grid;
+  grid-template-columns: 90px 130px 1fr 150px 50px; 
+  gap: 10px;
+  align-items: center;
+  padding: 0 20px;
+}
+
+/* 6. ENCABEZADOS (Píldoras grises) */
+.vc-grid-header {
+  margin-bottom: 10px;
+}
+
+.tt-header-pill {
+  background-color: #d1d1d1;
+  border-radius: 15px;
+  padding: 3px 8px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 900;
+  color: #000;
+}
+
+/* 7. FILAS ULTRA SLIM */
+.vc-row-card-slim {
+  background-color: #d1d1d1;
+  border-radius: 30px;
+  padding: 5px 0; /* Espaciado vertical mínimo */
+  margin-bottom: 10px;
+  box-shadow: 0 3px 0px #f26624; /* Sombra naranja más fina */
+  border: none;
+}
+
+.col-text {
+  font-weight: 900;
+  font-style: italic;
+  font-size: 12px;
+  text-align: center;
+  color: #000;
+}
+
+/* 8. BOTÓN ELIMINAR (Ajustado al borde derecho) */
+.col-trash {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-trash-vc {
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-trash-vc:hover {
+  color: #f26624;
+}
+
+/* 9. SCROLLBAR PERSONALIZADO */
+.tt-scrollable-rows {
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.tt-scrollable-rows::-webkit-scrollbar { width: 6px; }
+.tt-scrollable-rows::-webkit-scrollbar-thumb {
+  background: #f26624;
+  border-radius: 10px;
+}
+/* Contenedor de acciones (Enviar y +) */
+.vc-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Espacio entre el botón gris y el naranja */
+}
+
+/* Botón Enviar (Gris) */
+.btn-enviar-vc {
+  background-color: #d1d1d1;
+  color: black;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 25px;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  height: 38px; /* Altura fija para alinear con el + */
+  display: flex;
+  align-items: center;
+}
+
+/* Botón Naranja con el + */
+.btn-plus-orange-slim {
+  background-color: #f26624;
+  border: none;
+  border-radius: 12px;
+  width: 55px;  /* Ancho del botón */
+  height: 38px; /* Altura idéntica al botón ENVIAR */
+  cursor: pointer;
+  
+  /* Esto es vital para que el ícono NO desaparezca */
+  display: flex !important; 
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  
+  box-shadow: 0 4px 0px #b05520; /* Sombra profunda para efecto 3D */
+  transition: transform 0.1s ease;
+}
+
+.btn-plus-orange-slim:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0px #b05520;
+}
+
+/* Asegurar que el SVG de Lucide sea visible */
+.btn-plus-orange-slim svg {
+  display: block;
+  min-width: 24px;
+  min-height: 24px;
+}
+/* EL OVERLAY: Debe ser fixed para cubrir toda la ventana del navegador */
+.modal-overlay {
+ position: fixed; /* Importante: fixed para que cubra TODA la pantalla */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro traslúcido */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;/* Un número muy alto para que nada lo tape */
+}
+
+/* EL CONTENIDO: El cuadro gris del formulario */
+.modal-content {
+ background-color: white;
+  padding: 30px;
+  border-radius: 25px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  position: relative;
+  z-index: 10000;
+}
+
+/* Ajuste para los inputs dentro del modal */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.pill-input-vc {
+  background-color: #d1d1d1;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 20px;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 14px;
+  color: black;
+  width: 100%;
+  box-sizing: border-box; /* Para que el padding no lo ensanche */
+  outline: none;
+}
+
+/* La X de cerrar */
+/* Contenedor que separa el título de la X */
+.modal-header-row {
+  display: flex;
+  justify-content: space-between; /* Título a la izquierda, X a la derecha */
+  align-items: center;
+  width: 100%;
+  padding: 0 10px;
+  margin-bottom: 25px; /* Espacio antes del primer input */
+}
+
+.modal-main-title {
+  font-weight: 900;
+  font-size: 18px;
+  margin: 0;
+  color: #000;
+}
+
+/* Botón X más pequeño y estético */
+.modal-close-small {
+  position: absolute;
+  top: 10px;        /* Ajuste hacia arriba para que quede en la esquina */
+  right: 15px;      /* Alineado a la derecha */
+  
+  background-color: #f26624; /* Color naranja de tu diseño */
+  color: white;
+  border: none;
+  border-radius: 10px;
+  
+  /* Tamaño más pequeño y discreto */
+  width: 40px;      
+  height: 25px;     
+  
+  font-weight: 900;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 0px #b05520; /* Sombra para efecto 3D */
+  z-index: 10;
+}
+
+.modal-close-small:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0px #b05520;
+}
+.modal-overlay {
+  position: fixed;   /* Se posiciona respecto a la ventana, no al div padre */
+  top: 0;
+  left: 0;
+  width: 100vw;      /* Ocupa todo el ancho de la pantalla */
+  height: 100vh;     /* Ocupa todo el alto de la pantalla */
+  background-color: rgba(0, 0, 0, 0.7); /* Fondo oscuro */
+  
+  /* Centrado */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  /* Capas */
+  z-index: 9999;/* Por encima de TODO */
+}
+
+.btn-add-vc{
+  cursor: pointer;
+}

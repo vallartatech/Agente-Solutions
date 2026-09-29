@@ -1,0 +1,1392 @@
+/* Layout Base */
+.rep-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background: #f4f4f4;
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+
+/* Ajustes para cuando se ve dentro del Layout de Cliente */
+.rep-container.is-client-view {
+  display: block;
+  height: auto;
+  width: 100%;
+  overflow: visible;
+  background: transparent;
+  padding: 0;
+}
+
+.rep-container.is-client-view .rep-main-content {
+  padding: 0;
+  height: auto;
+  overflow: visible;
+  max-width: 100%;
+  font-size: 0.9rem;
+  display: block;
+}
+
+
+
+/* Sidebar Estático */
+.rep-sidebar {
+  width: 280px;
+  background: #1a1a1a;
+  color: white;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: 100vh; /* Aseguramos que mida exactamente la pantalla */
+  box-sizing: border-box; /* Para que el padding no desborde la caja */
+}
+
+.side-logo { width: 100%; cursor: pointer; margin-bottom: 25px; flex-shrink: 0; }
+
+/* 👇 AQUÍ ESTÁ LA MAGIA 👇 */
+.side-info {
+  flex-grow: 1; /* Toma todo el espacio sobrante del medio */
+  overflow-y: auto; /* Agrega scroll si la info es muy larga */
+  margin-bottom: 20px; /* Separación con el botón de abajo */
+  padding-right: 10px; /* Un respirito para el texto */
+  
+  /* Ocultamos la barra de scroll visualmente para que se vea limpio */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.side-info::-webkit-scrollbar {
+  display: none;
+}
+
+.id-badge { background: #ff8800; color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; }
+.side-info h2 { font-size: 1.3rem; margin: 15px 0; color: #ff8800; }
+.side-hr { border: 0; border-top: 1px solid #333; margin: 20px 0; }
+
+/* Clasificación UI */
+.rep-clasificacion { margin: 20px 0; background: #2a2a2a; padding: 15px; border-radius: 8px; }
+.rep-clasificacion label { display: block; font-size: 0.7rem; color: #888; margin-bottom: 8px; letter-spacing: 1px; }
+
+.tipo-tag { display: inline-block; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; width: 100%; text-align: center; }
+.casa-regular { background: #4a90e2; color: white; }
+.mansión { background: #f5a623; color: white; }
+.departamento { background: #50e3c2; color: #1a1a1a; }
+
+.extra-depto-info { border-top: 1px solid #444; padding-top: 10px; margin-top: 10px; }
+.extra-depto-info p { font-size: 0.8rem !important; margin: 3px 0 !important; color: #bbb !important; }
+
+.btn-regresar {
+  margin-top: auto; /* Empuja el botón al fondo */
+  flex-shrink: 0; /* Evita que el botón se aplaste */
+  background: transparent;
+  border: 1px solid #ff8800;
+  padding: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.btn-regresar:hover { background: #ff8800; color: white; }
+
+/* Contenido Principal con Scroll */
+.rep-main-content {
+  flex-grow: 1;
+  overflow-y: auto; /* PERMITE EL DESPLAZAMIENTO HACIA ABAJO */
+  padding: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.main-banner {
+  width: 100%;
+  height: 160px;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 20px;
+}
+.main-banner img { width: 100%; height: 100%; object-fit: cover; }
+.banner-text { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(transparent, rgba(0,0,0,0.8)); color: white; padding: 20px 30px; }
+
+/* Secciones y Tablas */
+.seccion-bloque { 
+  margin-bottom: 50px; 
+  background: white;
+  border-radius: 12px;
+  padding: 0; /* Let header and content handle padding */
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.seccion-header { 
+  background: #f8f9fa;
+  border-left: 8px solid #ff8800; 
+  padding: 20px 30px; 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.seccion-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #1a1a1a;
+  font-weight: 800;
+}
+
+.sec-foto-header {
+  width: 120px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.seccion-body {
+  padding: 30px;
+}
+
+.subseccion-caja { 
+  background: white; 
+  padding: 25px; 
+  border-radius: 8px; 
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+  margin-bottom: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.subseccion-contenido {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.subseccion-foto-wrapper {
+  flex: 0 0 200px;
+  max-width: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.subseccion-foto {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+}
+
+.subseccion-info {
+  flex: 1;
+}
+
+.sub-titulo { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  border-bottom: 1px solid #eee; 
+  padding-bottom: 10px; 
+  margin-bottom: 5px; 
+}
+
+.nota-tecnica { font-size: 0.85rem; color: #ff8800; font-weight: bold; }
+
+@media (max-width: 768px) {
+  .subseccion-contenido {
+    flex-direction: column;
+  }
+  .subseccion-foto-wrapper {
+    width: 100%;
+    max-width: 100%;
+    flex: none;
+  }
+}
+
+
+.tabla-inventario { width: 100%; border-collapse: collapse; }
+.tabla-inventario th { background: #f9f9f9; padding: 12px; text-align: left; font-size: 0.75rem; color: #888; border-bottom: 2px solid #eee; }
+.tabla-inventario td { padding: 12px; border-bottom: 1px solid #f1f1f1; font-size: 0.9rem; }
+.col-cant { font-weight: bold; color: #ff8800; text-align: center; background: #fff8f0; }
+.txt-center { text-align: center; }
+/* Botón Generar Cotización */
+.btn-cotizacion {
+  width: 100%;
+  background: #ff8800;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: background 0.3s ease;
+}
+
+.btn-cotizacion:hover {
+  background: #e67a00;
+}
+
+/* Modal Estilos (Reutilizando clases de levantamientos para consistencia) */
+.lev-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 2000;
+}
+
+.lev-modal-form {
+  background: white;
+  width: 500px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+}
+
+.lev-modal-header.orange {
+  background: #ff8800;
+  color: white;
+  padding: 15px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.lev-form-grid {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.full-width { grid-column: span 2; }
+
+.lev-field label {
+  display: block; font-size: 0.8rem; font-weight: bold; margin-bottom: 5px; color: #333;
+}
+
+.lev-field input, .lev-field textarea {
+  width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;
+}
+
+.lev-footer-form {
+  grid-column: span 2;
+  display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;
+}
+
+.lev-btn-cancel { background: #eee; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+.lev-btn-save.orange-btn { background: #ff8800; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+.close-x { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+/* Card del Modal */
+.cot-modal-card {
+  background: white;
+  width: 650px;
+  max-width: 95%;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+  animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Header */
+.cot-modal-header {
+  background: #1a1a1a;
+  color: white;
+  padding: 20px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-content { display: flex; align-items: center; gap: 15px; }
+.header-icon { font-size: 1.8rem; background: #ff8800; padding: 10px; border-radius: 12px; }
+.cot-modal-header h3 { margin: 0; font-size: 1.2rem; }
+.cot-modal-header p { margin: 2px 0 0; font-size: 0.8rem; color: #aaa; }
+
+/* Tabs */
+.cot-tabs-selector {
+  display: flex;
+  background: #f8f9fa;
+  padding: 5px;
+  margin: 20px 25px 0;
+  border-radius: 10px;
+  border: 1px solid #eee;
+}
+
+.cot-tabs-selector button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #666;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+.cot-tabs-selector button.active {
+  background: white;
+  color: #ff8800;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Form y Cuerpo */
+.cot-modal-body { padding: 25px; min-height: 300px; }
+.cot-form { display: flex; flex-direction: column; gap: 15px; }
+.cot-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.cot-field label { display: block; font-size: 0.85rem; font-weight: 700; color: #444; margin-bottom: 6px; }
+.cot-field input, .cot-field textarea {
+  width: 100%; padding: 12px; border: 1.5px solid #eee; border-radius: 8px; font-size: 0.95rem; outline: none;
+}
+.cot-field input:focus { border-color: #ff8800; }
+
+/* Dropzone (Carga de Archivo) */
+.cot-dropzone {
+  display: flex;
+  height: 250px;
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.cot-dropzone:hover { border-color: #ff8800; background: #fff9f2; }
+.dropzone-content { text-align: center; color: #777; }
+.upload-icon { font-size: 3rem; display: block; margin-bottom: 10px; }
+
+/* Preview */
+.cot-preview-box { border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
+.preview-header { 
+  background: #f8f9fa; padding: 10px 15px; display: flex; 
+  justify-content: space-between; align-items: center; font-size: 0.8rem;
+}
+.preview-header button { color: #d9534f; border: none; background: none; cursor: pointer; text-decoration: underline; }
+.preview-content { height: 250px; overflow-y: auto; background: #444; display: flex; justify-content: center; }
+.preview-content img { max-width: 100%; height: auto; }
+
+/* Footer */
+.cot-modal-footer {
+  padding: 20px 25px;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.btn-secundario { background: #e0e0e0; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+.btn-primario { background: #ff8800; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+/*Diseño de los datos del Reporte*/
+/* =========================================
+   DISEÑO DE LAS SECCIONES Y TABLAS
+   ========================================= */
+
+.reporte-flujo {
+  padding: 20px;
+  color: #333; /* Color base más oscuro para mejor lectura */
+}
+
+/* El bloque blanco principal de cada área */
+.seccion-bloque {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border-left: 6px solid #ff7f00;
+}
+
+
+.seccion-header h3 {
+  font-size: 1.4rem;
+  color: #1a1a1a;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sec-desc {
+  color: #666;
+  font-size: 0.95rem;
+  margin-bottom: 25px;
+}
+
+/* La caja gris clarito de cada subseccion (MANTENIDA POR COMPATIBILIDAD) */
+.subseccion-caja {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+/* =========================================
+   ESTILOS DE CUADRÍCULA (NUEVO)
+   ========================================= */
+.properties-grid {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    width: 100%;
+    margin: 20px auto;
+}
+
+.property-card {
+    background-color: #333333;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    height: 250px; 
+    width: calc(33.33% - 15px);
+    min-width: 250px;
+    max-width: 320px;
+    flex: 0 0 auto;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.property-card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.3);
+}
+
+.property-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.property-card:hover .property-image {
+    transform: scale(1.1);
+    filter: blur(2px) brightness(0.7);
+}
+
+.property-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6); 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    padding: 20px;
+    text-align: center;
+}
+
+.property-card:hover .property-overlay {
+    opacity: 1;
+}
+
+.property-title-overlay {
+    color: white;
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    text-transform: uppercase;
+}
+
+.btn-overlay {
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-overlay:hover {
+    background: #ff8800;
+    border-color: #ff8800;
+}
+
+@media (max-width: 768px) {
+    .property-card { width: calc(50% - 10px); }
+}
+
+@media (max-width: 600px) {
+    .property-card { width: 100%; max-width: none; }
+}
+
+/* ========================================= */
+
+.sub-titulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 10px;
+}
+
+.sub-titulo h4 {
+  margin: 0;
+  color: #2c3e50; /* Un gris/azul oscuro */
+  font-size: 1.05rem;
+}
+
+/* Estilo tipo "Píldora" para la nota */
+.nota-tecnica {
+  font-size: 0.85rem;
+  color: #d86c00;
+  font-weight: 600;
+  background: #fff3e0; /* Fondo naranjita claro */
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+
+/* =========================================
+   LA TABLA DE INVENTARIO
+   ========================================= */
+.tabla-inventario {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden; /* Para que los bordes redondeados se apliquen al header */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.tabla-inventario th {
+  background-color: #2c3e50; /* Cabecera oscura */
+  color: #ffffff;
+  text-align: left;
+  padding: 12px 15px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tabla-inventario th.txt-center {
+  text-align: center;
+}
+
+.tabla-inventario td {
+  padding: 8px 12px;
+  color: #444;
+  border-bottom: 1px solid #f1f1f1;
+  font-size: 0.8rem;
+}
+
+
+/* Efecto hover en las filas de la tabla */
+.tabla-inventario tbody tr:hover td {
+  background-color: #fcfcfc;
+}
+
+.tabla-inventario tr:last-child td {
+  border-bottom: none;
+}
+
+.tabla-inventario .bold {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* Resaltamos la cantidad en naranja y más grande */
+.tabla-inventario .col-cant {
+  text-align: center;
+  font-weight: bold;
+  color: #ff7f00; 
+  font-size: 1.05rem;
+}
+
+.no-activos-msg {
+  color: #999;
+  font-style: italic;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  padding: 10px 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 8px;
+}
+
+.cot-modal-card.wide {
+    width: 90%;
+    max-width: 1000px;
+    background: #f8f9fa;
+    color: #333;
+}
+
+.cot-section {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.cot-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cot-table th {
+    text-align: left;
+    color: #666;
+    font-size: 12px;
+    border-bottom: 2px solid #eee;
+    padding: 10px;
+}
+
+.cot-table input {
+    border: 1px solid #ddd;
+    padding: 5px;
+    border-radius: 4px;
+    width: 100%;
+}
+
+.btn-add {
+    background: transparent;
+    color: orange;
+    border: 2px dashed orange;
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.total-box {
+    border: 1px solid orange;
+    padding: 15px;
+    border-radius: 5px;
+    font-size: 20px;
+}
+/* =========================================
+   MODAL DE COTIZACIÓN - REDISEÑO PREMIUM
+   ========================================= */
+
+/* Overlay */
+.lev-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 20, 40, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(6px);
+}
+
+/* Card base */
+.cot-modal-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    overflow: hidden;
+    animation: modalSlideUp 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlideUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Card wide para las tablas dinámicas */
+.cot-modal-card.wide {
+    width: 95%;
+    max-width: 1000px;
+    background: #ffffff;
+}
+
+/* --- HEADER OSCURO --- */
+.cot-modal-header {
+    background: #1e293b;
+    padding: 18px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: none;
+}
+
+.cot-modal-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.cot-modal-header p {
+    margin: 3px 0 0;
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.header-icon {
+    font-size: 1.6rem;
+    background: #f26624;
+    padding: 10px;
+    border-radius: 12px;
+    line-height: 1;
+}
+
+/* Botón cerrar */
+.cot-close-btn {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #ffffff;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.cot-close-btn:hover {
+    background: rgba(255,255,255,0.22);
+}
+
+/* --- TABS SELECTOR --- */
+.cot-tabs-selector {
+    display: flex;
+    background: #f1f5f9;
+    padding: 0;
+    margin: 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.cot-tabs-selector button {
+    flex: 1;
+    padding: 13px 20px;
+    border: none;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: #64748b;
+    border-radius: 0;
+    transition: all 0.2s;
+}
+
+.cot-tabs-selector button:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.cot-tabs-selector button.active {
+    background: #ffffff;
+    color: #f26624;
+    border-bottom-color: #f26624;
+    box-shadow: none;
+}
+
+/* --- CUERPO DEL MODAL --- */
+.cot-modal-body {
+    padding: 24px;
+    min-height: 300px;
+}
+
+.cot-modal-body.dinamico {
+    padding: 20px 24px;
+    max-height: 65vh;
+    overflow-y: auto;
+    background: #f8fafc;
+}
+
+/* --- SECCIONES BLANCAS --- */
+.cot-section {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border: 1px solid #e2e8f0;
+}
+
+.cot-section.half {
+    flex: 1;
+}
+
+/* --- TÍTULO DE SECCIÓN --- */
+.coti-section-title {
+    color: #1e293b;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 0;
+}
+
+.coti-section-title::after {
+    content: '';
+    flex: 0 0 32px;
+    height: 3px;
+    background: #f26624;
+    border-radius: 10px;
+}
+
+/* --- TABLA DINÁMICA --- */
+.coti-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6px;
+    table-layout: fixed;
+}
+
+.coti-table th {
+    background: #f8fafc;
+    color: #1e293b;
+    padding: 10px 12px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+.coti-table th.txt-center { text-align: center; }
+
+.coti-table td {
+    padding: 8px 10px;
+    border: 1px solid #e2e8f0;
+    vertical-align: middle;
+    background: #ffffff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Celda del botón eliminar: ancho fijo y sin overflow */
+.coti-table td:last-child {
+    width: 42px;
+    min-width: 42px;
+    max-width: 42px;
+    padding: 6px;
+    text-align: center;
+    overflow: visible;
+    white-space: nowrap;
+}
+
+/* Anchos proporcionales de columnas */
+.coti-table th:nth-child(1),
+.coti-table td:nth-child(1) {
+    width: 40%;
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
+}
+
+.coti-table th:nth-child(2),
+.coti-table td:nth-child(2) {
+    width: 15%;
+    text-align: center;
+}
+
+.coti-table th:nth-child(3),
+.coti-table td:nth-child(3) {
+    width: 20%;
+    text-align: center;
+}
+
+.coti-table th:nth-child(4),
+.coti-table td:nth-child(4) {
+    width: 17%;
+    text-align: right;
+}
+
+.coti-table th:nth-child(5),
+.coti-table td:nth-child(5) {
+    width: 42px;
+    text-align: center;
+}
+
+/* --- INPUTS DENTRO DE TABLA (MODO CLARO) --- */
+.coti-table input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 2px solid #94a3b8;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1e293b;
+    background: #ffffff;
+    text-align: left;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.coti-table input[type="number"] {
+    text-align: center;
+}
+
+.coti-table input:focus {
+    outline: none;
+    border-color: #f26624;
+    box-shadow: 0 0 0 3px rgba(242, 102, 36, 0.1);
+}
+
+.subtotal-cell {
+    font-weight: 800;
+    color: #1e293b;
+    font-size: 0.9rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* --- BOTÓN AGREGAR FILA --- */
+.btn-add-row {
+    width: 100%;
+    padding: 11px;
+    background: #f8fafc;
+    color: #64748b;
+    border: 1.5px dashed #cbd5e1;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 12px 0 4px;
+    transition: all 0.2s;
+}
+
+.btn-add-row:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+    color: #1e293b;
+}
+
+/* --- BOTÓN ELIMINAR FILA --- */
+.btn-delete {
+    background: #fee2e2;
+    color: #ef4444;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-delete:hover {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+/* --- HERRAMIENTAS GRID --- */
+.cot-grid-tools {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 0;
+}
+
+/* Tool row: input + botón X en línea */
+.tool-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.tool-row input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    color: #1e293b;
+    background: #ffffff;
+    transition: border-color 0.2s;
+}
+
+.tool-row input:focus {
+    outline: none;
+    border-color: #f26624;
+    box-shadow: 0 0 0 3px rgba(242,102,36,0.1);
+}
+
+.btn-delete-small {
+    background: #fee2e2;
+    color: #ef4444;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-delete-small:hover {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.btn-add-tool {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: #1e293b;
+    color: #ffffff;
+    border: none;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-top: 4px;
+}
+
+.btn-add-tool:hover {
+    background: #0f172a;
+    transform: scale(1.05);
+}
+
+/* --- OBSERVACIONES --- */
+.cot-section.observations textarea,
+.cot-section textarea {
+    width: 100%;
+    height: 90px;
+    padding: 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: #1e293b;
+    resize: vertical;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.cot-section textarea:focus,
+.cot-section.observations textarea:focus {
+    outline: none;
+    border-color: #f26624;
+    box-shadow: 0 0 0 3px rgba(242,102,36,0.1);
+}
+
+/* --- FOOTER --- */
+.cot-modal-footer,
+.cot-modal-footer.dinamico {
+    padding: 16px 24px;
+    background: #f8fafc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e2e8f0;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+/* Caja de total */
+.total-box {
+    border: 2px solid #f26624;
+    padding: 10px 20px;
+    border-radius: 12px;
+    background: #fff7ed;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.total-label {
+    color: #64748b;
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.total-amount {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 900;
+}
+
+.actions,
+.footer-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Botón cancelar */
+.btn-secundario {
+    background: #ef4444;
+    color: #ffffff;
+    border: none;
+    padding: 11px 22px;
+    border-radius: 9px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secundario:hover,
+.btn-secundario.rounded:hover {
+    background: #dc2626;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.btn-secundario.rounded {
+    background: #ef4444;
+    color: #ffffff;
+    padding: 11px 22px;
+    border-radius: 9px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* Botón primario/guardar */
+.btn-primario {
+    background: #f26624;
+    color: #ffffff;
+    border: none;
+    padding: 11px 26px;
+    border-radius: 9px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(242,102,36,0.3);
+    transition: all 0.2s;
+}
+
+.btn-primario:hover,
+.btn-primario.orange-solid:hover {
+    background: #d5551d;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(242,102,36,0.4);
+}
+
+.btn-primario.orange-solid {
+    background: #f26624;
+    color: white;
+    padding: 11px 26px;
+    border-radius: 9px;
+    border: none;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* =========================================
+   MEDIA QUERIES
+   ========================================= */
+
+@media (max-width: 992px) {
+  .rep-container { flex-direction: column; height: auto; overflow-y: auto; width: 100%; }
+  .rep-sidebar { width: 100%; height: auto; padding: 20px; position: relative; }
+  .rep-main-content { width: 100%; padding: 10px; margin: 0; overflow-x: hidden; }
+  .main-banner { height: 200px; margin-bottom: 20px; border-radius: 8px; width: 100%; }
+  .main-banner img { object-fit: cover; object-position: center; }
+  .banner-text { padding: 15px; }
+  .banner-text h1 { font-size: 1.3rem; text-align: center; }
+  .seccion-bloque { padding: 15px 10px; margin-bottom: 15px; border-radius: 8px; }
+  .seccion-header h3 { font-size: 1.1rem; }
+  .subseccion-caja { padding: 12px; margin-bottom: 15px; }
+  .sub-titulo h4 { font-size: 0.95rem; }
+  .tabla-inventario { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #eee; }
+  .tabla-inventario th { padding: 8px 10px; font-size: 0.7rem; }
+  .tabla-inventario td { padding: 8px 10px; font-size: 0.75rem; }
+  .col-cant { font-size: 0.9rem !important; }
+  .nota-tecnica { font-size: 0.75rem; padding: 3px 10px; }
+  .btn-regresar { width: 100%; margin-top: 15px; }
+  .cot-modal-card.wide { width: 98%; }
+  .cot-grid-tools { flex-direction: column; }
+  .cot-modal-footer, .cot-modal-footer.dinamico { flex-direction: column; align-items: stretch; }
+  .actions, .footer-actions { flex-direction: column; }
+  .btn-primario, .btn-secundario { width: 100%; text-align: center; justify-content: center; }
+}
+
+@media (max-width: 640px) {
+  /* =============================================
+     TABLA DE COTIZACIÓN: LAYOUT TARJETA EN MÓVIL
+     Descripción arriba (ancho completo)
+     CANT. | PRECIO | SUBTOTAL | 🗑️ abajo en fila
+     ============================================= */
+
+  /* Ocultar cabeceras de tabla */
+  .coti-table thead {
+    display: none;
+  }
+
+  /* Cada fila se convierte en una tarjeta */
+  .coti-table tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+
+  /* Quitar bordes individuales de celdas */
+  .coti-table td {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    max-width: none !important;
+    white-space: normal !important;
+  }
+
+  /* ── Fila 1: DESCRIPCIÓN ocupa 100% ── */
+  .coti-table td:nth-child(1) {
+    width: 100% !important;
+    flex: 0 0 100%;
+    overflow: visible !important;
+  }
+
+  .coti-table td:nth-child(1) input {
+    width: 100% !important;
+    font-size: 0.95rem !important;
+    padding: 10px 12px !important;
+    border-radius: 8px !important;
+    border: 2px solid #94a3b8 !important;
+  }
+
+  /* ── Fila 2: CANT. | PRECIO | SUBTOTAL comparten la fila ── */
+  .coti-table td:nth-child(2),
+  .coti-table td:nth-child(3) {
+    flex: 1;
+    min-width: 60px;
+  }
+
+  .coti-table td:nth-child(2) input,
+  .coti-table td:nth-child(3) input {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 8px 6px !important;
+    border-radius: 7px !important;
+    border: 2px solid #94a3b8 !important;
+  }
+
+  /* Label sobre cada campo pequeño (usando atributo data) */
+  .coti-table td:nth-child(2)::before {
+    content: 'CANT.';
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .coti-table td:nth-child(3)::before {
+    content: 'PRECIO U.';
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  /* SUBTOTAL */
+  .coti-table td:nth-child(4) {
+    flex: 1;
+    min-width: 50px;
+    text-align: center !important;
+    width: auto !important;
+  }
+
+  .coti-table td:nth-child(4)::before {
+    content: 'SUBTOTAL';
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  /* Botón eliminar: al final, alineado al centro */
+  .coti-table td:nth-child(5),
+  .coti-table td:last-child {
+    flex: 0 0 auto;
+    width: auto !important;
+    min-width: auto !important;
+    max-width: none !important;
+    align-self: flex-end;
+    padding: 0 !important;
+  }
+
+  /* Botón eliminar más accesible en móvil */
+  .coti-table .btn-delete {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .rep-main-content { padding: 5px; }
+  .main-banner { height: 150px; }
+  .banner-text h1 { font-size: 1.1rem; }
+  .seccion-header { padding-left: 10px; margin-bottom: 15px; }
+  .cot-modal-card, .cot-modal-card.wide { width: 100%; border-radius: 0; max-width: none; }
+}
+
+
+

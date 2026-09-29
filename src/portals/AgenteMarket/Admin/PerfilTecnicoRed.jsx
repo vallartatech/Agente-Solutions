@@ -1,7 +1,7 @@
 import React from 'react';
 import Header from '../../../components/Shared/Header';
 import { Star, MapPin, Phone, CheckCircle, Shield, Award } from 'lucide-react';
-import '../../../styles/Autonomos/PerfilTecnicoRed.css';
+import '../../../styles/AgenteMarket/Admin/PerfilTecnicoRed.css';
 
 const PerfilTecnicoRed = () => {
   // En la vida real, sacarías el ID de los params y harías un fetch

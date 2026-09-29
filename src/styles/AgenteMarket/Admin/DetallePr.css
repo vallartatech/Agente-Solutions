@@ -1,0 +1,985 @@
+:root {
+  --bg-app: #f0f2f5;
+  --sidebar-dark: #1e293b;
+  --orange-agente: #f97316;
+  --blue-agente: #3b82f6;
+  --text-main: #334155;
+  --glass: rgba(255, 255, 255, 0.9);
+}
+
+.app-container {
+  display: flex;
+  background: var(--bg-app);
+  height: 100vh; /* Altura fija de la ventana */
+  font-family: 'Inter', sans-serif;
+  color: var(--text-main);
+  overflow: hidden; /* Evita scroll doble */
+}
+
+/* SIDEBAR FIJA */
+.sidebar {
+  width: 260px;
+  background: var(--sidebar-dark);
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  color: white;
+  flex-shrink: 0; /* No se encoge */
+}
+
+.logo-section { font-size: 1.4rem; font-weight: 800; }
+.logo-section span { color: var(--orange-agente); }
+
+.nav-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px;
+  border-radius: 10px; background: transparent; border: none;
+  color: #94a3b8; cursor: pointer; transition: 0.3s; width: 100%;
+}
+
+.nav-item.active, .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+.sos-nav { margin-top: auto; color: #f87171; }
+
+/* MAIN CONTENT CON SCROLL */
+.main-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto; /* PERMITE SUBIR Y BAJAR */
+  height: 100%;
+}
+
+/* DISEÑO DE SCROLLBAR PROFESIONAL */
+.main-content::-webkit-scrollbar { width: 8px; }
+.main-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.prop-info h1 { font-size: 1.8rem; font-weight: 800; }
+.prop-info h1 span { color: var(--orange-agente); }
+
+.user-badge {
+  background: white; padding: 8px 15px; border-radius: 50px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.avatar {
+  width: 35px; height: 35px; background: var(--orange-agente);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: bold;
+}
+
+/* DASHBOARD GRID */
+.dashboard-grid { display: grid; grid-template-columns: 380px 1fr; gap: 25px; }
+
+.glass-card {
+  background: var(--glass); border-radius: 20px; padding: 25px;
+  border: 1px solid white; box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  margin-bottom: 25px;
+}
+
+.card-header-ui { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.card-header-ui h2 { font-size: 1.1rem; font-weight: 700; }
+
+/* TABLA */
+.table-wrapper { overflow-x: auto; background: white; border-radius: 15px; }
+.modern-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+.modern-table th { padding: 12px; color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #f1f5f9; text-align: left; }
+.modern-table td { padding: 15px 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+
+/* STATUS & BUTTONS */
+.status-pill { padding: 5px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; }
+.status-pill.aceptada { background: #dcfce7; color: #16a34a; }
+.status-pill.rechazada { background: #fee2e2; color: #ef4444; }
+
+.btn-planificar {
+  background: #1e293b; color: white; border: none; padding: 8px 15px;
+  border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.75rem;
+  display: flex; align-items: center; gap: 5px;
+}
+
+.comentario-rechazo { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #64748b; font-style: italic; }
+
+/* KANBAN */
+.kanban-container-ui {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto; /* Permite scroll horizontal si la pantalla es chica */
+  padding-bottom: 10px;
+}
+.k-column {
+  flex: 1; /* Todas las columnas miden lo mismo */
+  min-width: 240px; /* Tamaño mínimo para que no se aplasten */
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 5px solid #cbd5e1; /* Color por defecto */
+}
+.k-header {
+  font-weight: 800;
+  font-size: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}.yellow-line { color: #b45309; border-bottom-color: #fbbf24; }
+.blue-line { color: #1e40af; border-bottom-color: #3b82f6; }
+.green-line { color: #166534; border-bottom-color: #22c55e; }
+
+.k-card {
+  background: white;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  border-left: 4px solid #3b82f6;
+}
+
+.k-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+.badge-prio { background: #fee2e2; color: #ef4444; padding: 3px 8px; border-radius: 5px; font-size: 0.65rem; font-weight: 800; }
+.date-text { font-size: 0.7rem; color: #94a3b8; display: flex; align-items: center; gap: 4px; }
+
+/* FORMS */
+.modern-form { display: flex; flex-direction: column; gap: 15px; }
+.input-group label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 5px; }
+.input-group select, .input-group input { width: 100%; padding: 12px; border-radius: 10px; border: 1.5px solid #e2e8f0; }
+.tag-input-wrapper { display: flex; gap: 5px; }
+.btn-add-tag { background: #1e293b; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; }
+.tags-container { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.tag { background: #e2e8f0; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem; }
+.btn-primary-ui { background: var(--orange-agente); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+
+/* MODALS */
+.modal-overlay-ui { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-card-ui { background: white; width: 450px; border-radius: 20px; overflow: hidden; }
+.modal-header-orange { background: var(--orange-agente); color: white; padding: 20px; display: flex; justify-content: space-between; }
+.modal-body { padding: 25px; }
+.info-row { margin-bottom: 15px; }
+.info-row span { font-size: 0.7rem; font-weight: 800; color: #94a3b8; display: block; }
+.info-row p { font-weight: 600; }
+.row-active { background: #fff7ed; }
+.btn-close-form { background: #f97316; color: white; border: none; padding: 5px 15px; border-radius: 50px; cursor: pointer; font-weight: bold; }
+.empty-state-card { background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 20px; padding: 40px; text-align: center; color: #94a3b8; }
+
+.icon-input { position: relative; }
+.input-icon-inner { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+.icon-input input { padding-left: 35px !important; }
+
+/* SOS Modal */
+.modal-header-sos { background: #ef4444; color: white; padding: 20px; display: flex; justify-content: space-between; }
+.btn-sos-confirm { background: #ef4444; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 800; cursor: pointer; margin-top: 10px; }
+.motivo-text { font-size: 0.8rem; color: #ef4444; font-style: italic; }
+/* Estilos para campos que vienen de la cotización */
+.read-only-group {
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 10px;
+}
+
+.read-only-input {
+  background: transparent !important;
+  border: none !important;
+  font-weight: 600;
+  color: #1e293b;
+  padding: 5px 0 !important;
+  cursor: default;
+}
+
+.form-divider {
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  margin: 20px 0;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Modal SOS Estilo */
+.modal-header-sos {
+  background: #dc2626;
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-sos-confirm {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 15px;
+  border-radius: 10px;
+  font-weight: bold;
+  width: 100%;
+  margin-top: 20px;
+  cursor: pointer;
+}
+.comment-cell {
+  font-size: 0.85rem;
+  color: #64748b;
+  max-width: 200px;
+}
+
+.clickable-card {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.clickable-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-left: 4px solid #f97316;
+}
+
+.k-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.edit-icon-hint {
+  color: #94a3b8;
+  opacity: 0;
+  transition: 0.2s;
+}
+
+.clickable-card:hover .edit-icon-hint {
+  opacity: 1;
+}
+/* Banner de Alerta */
+.sos-alert-banner {
+  background: linear-gradient(90deg, #ff4d4d, #ff8c00);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3);
+}
+
+.icon-pulse {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Columna SOS en Kanban */
+.sos-line { border-top-color: #ef4444; background: #fff1f2; }
+.yellow-line { border-top-color: #f59e0b; }
+.blue-line { border-top-color: #3b82f6; }
+.green-line { border-top-color: #10b981; }.red-text { color: #ff4d4d; font-weight: bold; }
+.card-sos-active {
+  border: 2px solid #ef4444;
+  border-left-width: 6px;
+}.badge-sos { background: #ff4d4d; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; }
+/* Responsive */
+@media (max-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr; /* Apila el formulario y el tablero en pantallas chicas */
+  }
+}
+/* Botón de envío SOS */
+.btn-sos-confirm {
+  background: #ff4d4d;
+  color: white;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+/* Estructura del Modal Excel */
+.excel-modal {
+    width: 90%;
+    max-width: 850px !important;
+    padding: 0 !important;
+    overflow: hidden;
+}
+
+.excel-container {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px;
+    border: 1px solid #e0e0e0;
+}
+
+.excel-table-header {
+    display: grid;
+    grid-template-columns: 2fr 80px 150px 120px 40px;
+    gap: 10px;
+    padding: 10px;
+    background: #334155;
+    color: white;
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: bold;
+    border-radius: 4px 4px 0 0;
+}
+
+.excel-row {
+    display: grid;
+    grid-template-columns: 2fr 80px 150px 120px 40px;
+    gap: 10px;
+    padding: 10px;
+    background: white;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+}
+
+.excel-row input, .excel-row textarea {
+    border: 1px solid transparent;
+    padding: 5px;
+    width: 100%;
+}
+
+.excel-row input:hover {
+    border: 1px solid #cbd5e1;
+    background: #f1f5f9;
+}
+
+.col-total {
+    font-weight: bold;
+    color: #1e293b;
+    text-align: right;
+}
+
+.btn-add-row {
+    margin-top: 10px;
+    background: transparent;
+    border: 1px dashed #64748b;
+    color: #64748b;
+    padding: 8px;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 4px;
+}
+
+.excel-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 20px;
+    padding: 15px;
+    background: #f1f5f9;
+    margin-top: 10px;
+}
+
+.total-label { font-weight: bold; color: #64748b; }
+.total-amount { font-size: 1.2rem; font-weight: 800; color: #ef4444; }
+
+.btn-send-quote {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 auto;
+}
+/* Layout Principal */
+.management-grid {
+  display: grid;
+  grid-template-columns: 1fr 400px; /* Historial a la izquierda, Formulario a la derecha */
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+/* Tablero Kanban Inferior */
+.kanban-section-full {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  color: #1e293b;
+}
+
+.kanban-container-ui {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding-bottom: 20px;
+}
+
+.k-column {
+  flex: 1;
+  min-width: 280px; /* Más ancho para que luzca mejor abajo */
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 20px;
+  min-height: 400px;
+  border-top: 6px solid #cbd5e1;
+}
+
+/* Colores de Columnas */
+.sos-line { border-top-color: #ef4444; background: #fff1f2; }
+.yellow-line { border-top-color: #f59e0b; background: #fefce8; }
+.blue-line { border-top-color: #3b82f6; background: #eff6ff; }
+.green-line { border-top-color: #10b981; background: #f0fdf4; }
+
+/* Tarjetas */
+.k-card {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  margin-bottom: 15px;
+  border-left: 5px solid #3b82f6;
+}
+
+.card-sos-active { border: 2px solid #ef4444; border-left-width: 8px; }
+
+/* Estados vacíos */
+.empty-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  border: 2px dashed #cbd5e1;
+  border-radius: 20px;
+  color: #94a3b8;
+  padding: 40px;
+  text-align: center;
+}
+
+.icon-ghost { margin-bottom: 15px; opacity: 0.3; }
+/* MODAL INVOICE MODERN */
+.invoice-modal {
+  width: 95%;
+  max-width: 800px !important;
+  border-radius: 24px !important;
+  background: #ffffff;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header-sos {
+  background: #ef4444; /* Color rojo SOS */
+  padding: 24px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+.header-info { display: flex; align-items: center; gap: 15px; }
+.header-info h3 { font-size: 1.3rem; font-weight: 800; margin: 0; }
+.header-info span { font-size: 0.8rem; opacity: 0.8; }
+
+.icon-circle-white {
+  background: rgba(255, 255, 255, 0.2);
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.btn-close-modal {
+  background: transparent; border: none; color: white; cursor: pointer;
+  opacity: 0.7; transition: 0.3s;
+}
+.btn-close-modal:hover { opacity: 1; transform: rotate(90deg); }
+
+/* CONTENEDOR TIPO FACTURA */
+.invoice-form { padding: 30px; }
+.invoice-container {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.invoice-table-header {
+  display: grid;
+  grid-template-columns: 2fr 80px 140px 120px 50px;
+  gap: 15px;
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.invoice-row {
+  display: grid;
+  grid-template-columns: 2fr 80px 140px 120px 50px;
+  gap: 15px;
+  padding: 15px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  align-items: center;
+  transition: 0.2s;
+}
+.invoice-row:hover { background: #fcfdfe; }
+
+.invoice-row input {
+  width: 100%;
+  border: 1px solid transparent;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.invoice-row input:focus {
+  border-color: #ef4444;
+  background: #fff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.input-currency {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-currency span { position: absolute; left: 10px; color: #64748b; font-weight: bold; }
+.input-currency input { padding-left: 25px !important; background: #f8fafc; }
+
+.col-total { font-weight: 800; color: #1e293b; text-align: right; }
+
+.btn-delete-row {
+  background: #fee2e2; color: #ef4444;
+  border: none; width: 32px; height: 32px;
+  border-radius: 8px; cursor: pointer;
+  transition: 0.3s;
+}
+.btn-delete-row:hover { background: #ef4444; color: white; }
+
+.btn-add-line {
+  margin: 15px 20px;
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  padding: 10px;
+  border-radius: 10px;
+  color: #64748b;
+  font-weight: 600;
+  cursor: pointer;
+  width: calc(100% - 40px);
+  transition: 0.3s;
+}
+.btn-add-line:hover { background: #f1f5f9; border-color: #64748b; }
+
+/* RESUMEN Y BOTONES */
+.invoice-summary {
+  background: #1e293b;
+  padding: 20px 30px;
+  color: white;
+}
+.summary-row { display: flex; justify-content: space-between; align-items: center; }
+.grand-total { font-size: 1.5rem; font-weight: 800; color: #f97316; }
+
+.invoice-actions-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.btn-cancel {
+  background: #f1f5f9; color: #64748b;
+  border: none; padding: 12px 25px;
+  border-radius: 12px; font-weight: bold; cursor: pointer;
+}
+
+.btn-send-invoice {
+  background: #ef4444; color: white;
+  border: none; padding: 12px 30px;
+  border-radius: 12px; font-weight: 800;
+  cursor: pointer; display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+}
+.btn-send-invoice:hover { transform: translateY(-2px); }
+/* ... (resto de estilos del modal invoice) ... */
+
+/* Ajuste de la columna de acciones para centrar el botón */
+.col-actions {
+  display: flex;
+  justify-content: center; /* Centra horizontalmente */
+  align-items: center;    /* Centra verticalmente */
+}
+
+/* Botón de eliminar redondeado y centrado */
+.btn-delete-row {
+  background: #fee2e2; /* Fondo rojo muy suave */
+  color: #ef4444;    /* Icono rojo SOS */
+  border: none;
+  
+  /* Botón circular/redondeado */
+  width: 36px; 
+  height: 36px;
+  border-radius: 50%; /* Hace el botón circular */
+  
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  /* Flexbox interno para centrar el icono Trash2 exactamente */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0; /* Importante quitar paddings para centrar */
+}
+
+/* Efecto hover profesional */
+.btn-delete-row:hover {
+  background: #ef4444; /* Fondo rojo SOS al pasar el mouse */
+  color: white;        /* Icono blanco al pasar el mouse */
+  transform: scale(1.1) rotate(5deg); /* Ligero aumento y rotación */
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Estilo para el icono dentro del botón (opcional, para asegurar centrado) */
+.icon-trash {
+  display: block; /* Quita espacios extra de línea */
+}
+
+/* ... (resto de estilos) ... *//* Estado en el Historial */
+.badge-waiting {
+  background: #fff7ed;
+  color: #c2410c;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid #fdba74;
+}
+
+/* Columna Por Autorizar */
+.orange-line { 
+  border-top-color: #f97316; 
+  background: #fff7ed; 
+}
+
+.orange-text { color: #c2410c; }
+
+/* Tarjeta esperando cliente */
+.card-waiting-client {
+  border-left: 5px solid #f97316;
+  opacity: 0.85;
+}
+
+.waiting-text {
+  font-size: 0.75rem;
+  color: #9a3412;
+  font-style: italic;
+  margin: 5px 0;
+}
+
+.badge-status-waiting {
+  background: #ffedd5;
+  color: #9a3412;
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+}
+/* Estatus Colores */
+.pill-aceptada { background: #dcfce7; color: #15803d; }
+.pill-rechazada { background: #fee2e2; color: #b91c1c; }
+.pill-enviada { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
+
+/* Estilo Columna Comentario */
+.comment-cell {
+  font-size: 0.85rem;
+  color: #64748b;
+  max-width: 200px;
+}
+
+.flex-comment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-gray { color: #94a3b8; }
+
+.badge-waiting-client {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #a16207;
+  background: #fef9c3;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.text-closed {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+.pill-asignado {
+  background-color: #e0f2fe;
+  color: #0369a1; /* Azul */
+  border: 1px solid #bae6fd;
+}
+
+.text-assigned {
+  color: #0369a1;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+/* --- ESTILOS PARA EL APARTADO DE HISTORIAL --- */
+.history-section-container {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.history-grid-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.history-log-card {
+    background: #ffffff;
+    padding: 1.2rem;
+    border-radius: 12px;
+    border: 1px solid #e0e4e8;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.history-log-card:hover {
+    box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+    transform: translateY(-2px);
+}
+
+.log-status {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #059669;
+    background: #ecfdf5;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.log-content h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #1f2937;
+}
+
+.log-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 0.4rem;
+}
+
+.btn-view-log {
+    background: #f3f4f6;
+    border: none;
+    padding: 0.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 0.5rem;
+}
+
+.btn-view-log:hover {
+    background: #e5e7eb;
+}
+
+/* Ajuste del Modal de Reporte para que combine */
+.modal-card-ui.report-modal {
+    width: 90%;
+    max-width: 500px;
+}
+
+.photo-grid-report {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 1rem;
+}
+
+.photo-item img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+/* --- ESTILOS PARA ACOMODAR EL SIDEBAR (Solución a image_2.png) --- */
+
+.sidebar-container {
+  width: 260px; /* Ancho fijo del sidebar */
+  background-color: #1a2234; /* Fondo oscuro del sidebar */
+  display: flex;
+  flex-direction: column; /* Apila elementos verticalmente */
+  height: 100vh; /* Altura completa de la ventana */
+  position: fixed; /* Mantiene el sidebar fijo a la izquierda */
+  left: 0;
+  top: 0;
+  border-right: 1px solid #2a3b55;
+  z-index: 100;
+  overflow-y: auto; /* Permite scroll si el menú es muy largo */
+}
+
+.sidebar-header {
+  padding: 30px 20px; /* Espacio alrededor del logo */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 1px solid #2a3b55; /* Línea separadora opcional */
+}
+
+.logo-brand {
+  font-size: 20px;
+  font-weight: bold;
+  color: white; /* AGENTE */
+  letter-spacing: 1px;
+}
+
+.logo-solutions {
+  color: #ff7e39; /* SOLUTIONS en naranja */
+  display: block; /* Mueve SOLUTIONS a la siguiente línea */
+  font-size: 18px;
+  margin-top: 2px;
+}
+
+.sidebar-nav {
+  padding: 20px 0; /* Espacio vertical para el menú */
+  flex-grow: 1; /* Ocupa el espacio restante */
+  display: flex;
+  flex-direction: column;
+  gap: 5px; /* Espacio entre botones del menú */
+}
+
+.nav-item {
+  background: none;
+  border: none;
+  color: #a0aec0; /* Color grisáceo para ítems inactivos */
+  padding: 12px 25px;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Espacio entre icono y texto */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 15px;
+}
+
+.nav-item span {
+  font-weight: 500;
+}
+
+.nav-item:hover {
+  background-color: #26314a; /* Fondo en hover */
+  color: white;
+}
+
+.nav-item.active {
+  color: #ff7e39; /* Color activo naranja */
+  background-color: #2d3748; /* Fondo activo */
+  border-left: 4px solid #ff7e39; /* Barra naranja a la izquierda */
+  padding-left: 21px; /* Ajuste de padding por el borde */
+}
+
+/* Ajuste del contenido principal para que no se superponga al sidebar fijo */
+.main-content {
+  margin-left: 260px; /* Mismo ancho que el sidebar */
+  padding: 30px;
+  background-color: #edf2f7; /* Color de fondo de la app */
+  min-height: 100vh;
+}
+/* ESTRUCTURA DASHBOARD Y SIDEBAR */
+.app-container { display: flex; min-height: 100vh; background-color: #f4f7fa; }
+
+.sidebar-container {
+  width: 260px; background-color: #1a2234; height: 100vh;
+  position: fixed; left: 0; top: 0; display: flex; flex-direction: column;
+  z-index: 100; border-right: 1px solid #2a3b55;
+}
+
+.sidebar-header { padding: 30px 20px; border-bottom: 1px solid #2a3b55; text-align: center; }
+
+.logo-brand { color: white; font-weight: bold; font-size: 20px; }
+.logo-solutions { color: #ff7e39; display: block; font-size: 16px; }
+
+.sidebar-nav { flex-grow: 1; padding: 20px 0; display: flex; flex-direction: column; gap: 5px; }
+
+.nav-item {
+  background: none; border: none; color: #a0aec0; padding: 12px 25px;
+  display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.3s;
+}
+
+.nav-item.active { color: #ff7e39; background: #2d3748; border-left: 4px solid #ff7e39; }
+
+.main-content { margin-left: 260px; flex-grow: 1; padding: 30px; }
+
+/* MODAL PERFIL PREMIUM */
+.modal-overlay-ui {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+
+.profile-modern { width: 90%; max-width: 480px; background: white; border-radius: 20px; overflow: hidden; }
+
+.modal-header-premium {
+  background: linear-gradient(135deg, #ff7e39 0%, #ff5a00 100%);
+  padding: 25px; color: white; display: flex; justify-content: space-between; align-items: center;
+}
+
+.info-grid { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 20px; background: #f8f9fc; }
+
+.info-item-card {
+  background: white; padding: 15px; border-radius: 12px;
+  display: flex; align-items: center; gap: 15px; border: 1px solid #e2e8f0;
+}
+
+.item-icon { color: #ff7e39; background: #fff5f0; padding: 10px; border-radius: 10px; }
+
+.item-details label { font-size: 11px; color: #718096; font-weight: 700; }
+
+.btn-gps-premium {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: #2d3748; color: white; padding: 15px; border-radius: 12px;
+  text-decoration: none; margin: 0 20px 20px; font-weight: 600;
+}
+
+.animate-slide-up { animation: slideUp 0.3s ease-out; }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

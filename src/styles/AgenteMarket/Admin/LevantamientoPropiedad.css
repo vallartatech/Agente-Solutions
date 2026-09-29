@@ -1,0 +1,119 @@
+/* RESET GLOBAL */
+body, html { margin: 0; padding: 0; overflow: hidden; height: 100%; font-family: 'Arial Black', sans-serif; }
+.tt-container { display: flex; height: 100vh; background-color: white; }
+
+/* SIDEBAR */
+.logo-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 60px; /* Espacio antes de los botones */
+}
+.tt-sidebar { 
+   width: 260px;
+  background-color: #6b6b6b;
+  padding: 40px 15px; /* Aumentamos el padding superior */
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+}
+.main-logo {
+   width: 180px; /* Tamaño controlado */
+  height: auto;
+  object-fit: contain;
+ }
+.tt-nav { 
+    display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.tt-nav-btn { background-color: #bcbcbc; border-radius: 25px; padding: 12px; border: none; color: white; font-weight: 900; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-transform: uppercase; }
+.tt-nav-btn.active { background-color: #f26624 !important; }
+
+/* HEADER */
+.tt-main { flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  overflow: hidden; 
+  background-color: white !important; /* Fuerza el fondo blanco */
+  background-image: none !important;}
+.tt-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 40px; }
+.header-left { display: flex; align-items: center; gap: 15px; }
+.header-name { font-style: italic; font-weight: 900; font-size: 24px; margin: 0; }
+.header-title-bold { font-style: italic; font-weight: 900; font-size: 24px; margin: 0; text-align: center; flex: 1; }
+.header-right { display: flex; gap: 15px; }
+.tt-orange-bar { height: 6px; background-color: #f26624; width: 100%; }
+
+/* BODY & SEARCH */
+.tt-body { padding: 10px 10%; /* Cambiamos 50px por 10% para que sea proporcional */
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  overflow: hidden; 
+  background: none !important;
+ }
+.tt-search-container { position: relative; width: 70%; margin: 10px auto; }
+.tt-search-input { width: 100%; background-color: #d1d1d1; height: 38px; border-radius: 30px; border: none; padding-left: 20px; box-shadow: inset 0 3px 3px rgba(0,0,0,0.2); }
+.search-icon-inside { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); }
+.filter-button {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Centra el icono */
+  background-color: #f26624; /* Color naranja original */
+  border: none;
+  cursor: pointer;
+  
+  /* Nuevo tamaño y forma cuadrada */
+  width: 40px; /* Ancho específico */
+  height: 40px; /* Altura específica, igual al ancho para hacerlo cuadrado */
+  border-radius: 6px; /* Bordes ligeramente redondeados, no redondos */
+  padding: 0; /* Sin espacio interno para mantener el tamaño */
+  box-sizing: border-box; /* Asegura que el tamaño sea exacto */
+}
+/* SECCION VISITAS */
+.tt-section-header { display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  
+  /* Agregamos esto para que no toque los bordes de la pantalla */
+  width: 950%;          /* Mismo ancho que la tabla */
+  max-width: 1000px;   /* Mismo límite que la tabla */
+  margin: 20px auto 10px auto; }
+.section-title-visitas { font-style: italic; font-weight: 900; font-size: 20px; margin: 0; }
+
+.section-title-visitas{
+  margin-left: 5%;     /* Dale un pequeño empujón a la derecha */
+    margin-bottom: 20px; /* Sepáralo de la tabla gris */
+    font-weight: bold;
+}
+/* TABLA GRIS */
+.tt-table-container-gray { background-color: #636363; 
+  background-color: #636363; 
+  border-radius: 35px; 
+  padding: 25px; 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  overflow: hidden;
+  
+  width: 90%; 
+  max-width: 1000px; 
+  margin: 0 auto 30px auto;}
+
+/* GRID SYSTEM 3 COLUMNAS */
+.tt-grid-header-levantamiento, .tt-grid-content-levantamiento { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 15px; align-items: center; text-align: center; }
+
+.tt-header-pill { background-color: #d1d1d1; border-radius: 20px; padding: 4px; font-size: 10px; font-weight: 900; }
+
+.tt-scrollable-area { overflow-y: auto; flex: 1; margin-top: 10px; padding-right: 5px; }
+
+/* FILAS BLANCAS CON BORDE NARANJA */
+.tt-row-card-white { width: 100%; background-color: white; border-radius: 30px; padding: 12px 0; margin-bottom: 15px; border: 4px solid #f26624; cursor: pointer; box-shadow: 0 4px 4px rgba(0,0,0,0.3); transition: transform 0.1s; }
+.tt-row-card-white:active { transform: scale(0.98); }
+
+.col-data-black { font-weight: 900; font-style: italic; font-size: 14px; color: black; }
+
+/* SCROLLBAR */
+.tt-scrollable-area::-webkit-scrollbar { width: 6px; }
+.tt-scrollable-area::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }

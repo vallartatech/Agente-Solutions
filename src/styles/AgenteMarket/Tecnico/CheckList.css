@@ -1,0 +1,286 @@
+/* --- BASE LAYOUT --- */
+.tt-container {
+  display: flex;
+  height: 100vh;
+  background-color: white;
+  font-family: 'Arial Black', sans-serif;
+  overflow: hidden;
+}
+
+.tt-sidebar {
+  width: 250px;
+  background-color: #636363;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+}
+
+.logo-section {
+  padding: 20px;
+  text-align: center;
+}
+
+.main-logo {
+  width: 100%;
+  max-width: 160px;
+  height: auto;
+}
+
+.tt-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 0 15px;
+}
+
+.tt-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 15px;
+  background-color: #d1d1d1;
+  font-weight: 900;
+  cursor: pointer;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.tt-nav-btn.active {
+  background-color: #f26624;
+  color: white;
+}
+
+/* --- MAIN CONTENT --- */
+.tt-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 40px;
+}
+
+.tt-header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  cursor: pointer;
+}
+
+.tt-back-circle {
+  width: 35px;
+  height: 35px;
+  border: 3px solid black;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tt-user-name, .tt-page-title {
+  font-style: italic;
+  font-weight: 900;
+  font-size: 26px;
+  margin: 0;
+}
+
+.tt-header-icons {
+  display: flex;
+  gap: 15px;
+}
+
+.tt-orange-bar {
+  height: 10px;
+  background-color: #f26624;
+}
+
+/* --- CHECKLIST BODY --- */
+.cl-body {
+  padding: 20px 50px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cl-tabs-container {
+  display: flex;
+  gap: 5px;
+  margin-left: 10px;
+}
+
+.cl-tab {
+  background-color: #d1d1d1; /* Gris claro cuando no está activa */
+  border: none;
+  padding: 10px 25px;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 15px 15px 0 0;
+  color: #333;
+  font-style: italic;
+}
+
+.cl-tab.active {
+  background-color: #636363; /* Mismo gris que la tarjeta principal */
+  color: white;
+  border-bottom: 6px solid #f26624; /* Línea naranja inferior */
+}
+
+.cl-main-card {
+  background-color: #636363;
+  border: 10px solid #d1d1d1;
+  border-radius: 0 30px 30px 30px; /* Esquina recta para unir con la pestaña */
+  padding: 25px;
+  flex: 1;
+  display: flex;
+  max-height: 480px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.cl-list-wrapper {
+  display: flex;
+  width: 100%;
+}
+
+.cl-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 20px;
+}
+
+.cl-item-row {
+  background-color: #555555;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  margin-bottom: 15px;
+  gap: 15px;
+}
+
+.cl-check-box {
+  background-color: #d1d1d1;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cl-native-check {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #f26624;
+}
+
+.cl-item-text {
+  color: white;
+  font-weight: 900;
+  font-style: italic;
+  text-align: center;
+  flex: 1;
+  font-size: 14px;
+}
+
+.cl-black-bar {
+  width: 14px;
+  background-color: black;
+  border-radius: 10px;
+  height: 95%;
+  align-self: center;
+}
+
+.cl-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+.cl-btn-siguiente {
+  background-color: #f26624;
+  color: white;
+  border: none;
+  padding: 12px 55px;
+  border-radius: 25px;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Scrollbar invisible */
+.cl-scroll-area::-webkit-scrollbar {
+  width: 0;
+}
+
+/* ... (manten todo el anterior y agrega/modifica esto) ... */
+
+.cl-item-row {
+  cursor: pointer; /* Indica que es clickeable */
+  transition: transform 0.1s ease, background-color 0.2s ease;
+}
+
+.cl-item-row:hover {
+  background-color: #5d5d5d;
+}
+
+.cl-item-row:active {
+  transform: scale(0.98); /* Efecto de presionado */
+}
+
+/* Estilo cuando el item está marcado */
+.item-checked {
+  border: 2px solid #f26624; /* Borde naranja cuando se selecciona */
+  background-color: #4a4a4a;
+}
+
+.item-checked .cl-item-text {
+  color: #f26624; /* Texto naranja o puedes dejarlo blanco */
+}
+
+/* Mejora del botón siguiente */
+.cl-btn-siguiente:hover {
+  background-color: #e0551d;
+  box-shadow: 0 8px 20px rgba(242, 102, 36, 0.5);
+}
+.cl-tabs-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: -10px; /* Para que la pestaña se una visualmente a la caja */
+  position: relative;
+  z-index: 10;
+}
+
+.cl-tab {
+  cursor: pointer; /* IMPORTANTE: Para que detecte el clic */
+  background-color: #d1d1d1;
+  border: none;
+  padding: 12px 30px;
+  font-weight: 900;
+  font-style: italic;
+  border-radius: 15px 15px 0 0;
+  transition: all 0.2s ease;
+}
+
+.cl-tab.active {
+  background-color: #636363;
+  color: white;
+  border-bottom: 6px solid #f26624; /* Línea naranja inferior del diseño */
+}
+
+.cl-item-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.item-checked {
+  border: 1px solid #f26624; /* Resaltar fila seleccionada */
+}

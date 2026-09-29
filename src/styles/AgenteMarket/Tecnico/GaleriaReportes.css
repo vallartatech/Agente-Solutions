@@ -1,0 +1,145 @@
+.galeria-body {
+  padding: 20px 40px;
+  position: relative;
+}
+
+.id-property-tag {
+  background-color: #D9D9D9;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 30px;
+  border-radius: 25px;
+  color: #000; /* Texto oscuro para que contraste con el fondo gris claro */
+}
+
+.id-property-tag span { font-size: 10px; font-weight: 900; }
+.id-property-tag strong { font-size: 14px; }
+
+/* Grid de la Galería */
+.gallery-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+  padding-right: 40px;
+}
+
+.gallery-card {
+  background-color: #707070;
+  border-radius: 30px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 280px;
+  max-width: 100%;
+}
+
+.card-image-container {
+  width: 100%;
+  height: 160px;
+  background-color: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.card-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-footer {
+  background-color: #D9D9D9;
+  width: 80%;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px;
+}
+
+.footer-title {
+  font-size: 10px;
+  font-weight: 900;
+  font-style: italic;
+}
+
+.btn-footer-ver {
+  background-color: #E68A4B;
+  border: none;
+  border-radius: 10px;
+  padding: 2px 20px;
+  font-size: 10px;
+  font-weight: bold;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* Botón Añadir (+) en Header */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.btn-add-photo {
+  background-color: #E68A4B;
+  border: none;
+  /* Mantenemos tu forma ovalada */
+  border-radius: 50% 20px 20px 50%; 
+  padding: 5px 25px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 4px rgba(0,0,0,0.2);
+  /* Añadimos un margen a la izquierda si lo sientes muy pegado */
+  margin-left: 0; 
+}
+
+/* Barra de scroll negra a la derecha */
+.side-scroll-bar {
+  position: fixed;
+  right: 20px;
+  top: 150px;
+  bottom: 20px;
+  width: 15px;
+  background-color: #000;
+  border-radius: 10px;
+}/* Asegúrate de que los botones tengan prioridad de clic */
+.btn-add-photo, .btn-footer-ver, .header-left {
+  cursor: pointer;
+  position: relative;
+  z-index: 20; /* Los pone por encima de cualquier capa de fondo */
+}
+
+/* Ajusta la barra lateral para que no tape los botones */
+.side-scroll-bar {
+  position: fixed;
+  right: 20px;
+  top: 150px; /* Empieza debajo del header */
+  bottom: 20px;
+  width: 15px;
+  background-color: #000;
+  border-radius: 10px;
+  z-index: 5; /* Prioridad baja para no estorbar */
+  pointer-events: none; /* ESTO ES CLAVE: hace que los clics pasen a través de ella */
+}
+/* Si en el JSX usas gallery-top-actions, asegúrate de que tenga esto: */
+.gallery-top-actions {
+  display: flex;
+  justify-content: flex-start; /* Esto lo manda a la izquierda */
+  padding: 10px 40px;         /* Alineado con el padding de .galeria-body */
+  width: 100%;
+}
+
+/* Y ajustamos el contenedor del botón que tenías como .header-right */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  justify-content: flex-start; /* Cambiar de ser necesario */
+}

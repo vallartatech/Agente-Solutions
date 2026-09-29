@@ -1,0 +1,156 @@
+.report-detail-body {
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.report-main-card {
+  background-color: #707070; /* Gris oscuro exterior */
+  width: 90%;
+  max-width: 1000px;
+  border-radius: 50px;
+  padding: 40px;
+}
+
+.report-inner-content {
+  background-color: #D9D9D9; /* Gris claro interior */
+  border-radius: 40px;
+  padding: 30px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-label {
+  text-align: right;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #000;
+  padding-right: 20px;
+}
+
+.report-flex-container {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.report-image-box {
+  background-color: #fff;
+  width: 45%;
+  height: 250px;
+  border-radius: 30px;
+  border: 3px solid #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.report-info-box {
+  background-color: #707070; /* El cuadro de info es gris oscuro */
+  width: 45%;
+  height: 250px;
+  border-radius: 30px;
+}
+
+.report-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.btn-guardar-reporte {
+  background-color: #E68A4B;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 60px;
+  font-size: 20px;
+  font-weight: 900;
+  font-style: italic;
+  color: #000;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+}
+
+.btn-guardar-reporte:hover {
+  transform: scale(1.05);
+}
+/* Estilos para el área de texto en el nuevo reporte */
+.report-textarea {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  padding: 20px;
+  color: white;
+  font-family: inherit;
+  font-size: 16px;
+  resize: none; /* Evita que el usuario deforme el cuadro */
+  outline: none;
+}
+
+.report-textarea::placeholder {
+  color: #ccc;
+  font-style: italic;
+}
+
+/* Efecto hover para el cuadro de imagen */
+.report-image-box:hover {
+  background-color: #f0f0f0;
+  transition: 0.3s;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+
+.upload-placeholder p {
+  margin-top: 10px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.report-image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 25px;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+  .report-detail-body {
+    padding: 10px;
+  }
+  .report-main-card {
+    width: 100%;
+    padding: 15px;
+    border-radius: 20px;
+  }
+  .report-inner-content {
+    padding: 15px;
+    border-radius: 15px;
+  }
+  .report-flex-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+  .report-image-box, .report-info-box {
+    width: 100%;
+    height: 200px;
+  }
+  .report-label {
+    text-align: center;
+    padding-right: 0;
+    font-size: 20px;
+  }
+}
