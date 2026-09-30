@@ -24,35 +24,56 @@
   padding: 24px 32px;
 }
 
-/* Background artwork layer on the right side */
+/* Background artwork layer with smooth dragging transform */
 .aiw-bg-art-layer {
   position: fixed;
   top: 0;
-  right: 0;
   bottom: 0;
-  width: 55%;
+  left: 0;
+  width: 65vw;
   background-size: cover;
-  background-position: right center;
+  background-position: center center;
   background-repeat: no-repeat;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.85;
+  opacity: 0.88;
+  transform: translate3d(35vw, 0, 0);
+  transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.85s ease;
+  will-change: transform;
 }
 
-/* Gradient overlay to smoothly transition the background artwork into dark charcoal on the left */
+/* When in Roles View: The sunset artwork physically drags/slides across to the LEFT side! */
+.aiw-roles-view-left .aiw-bg-art-layer {
+  transform: translate3d(-3vw, 0, 0);
+}
+
+/* Gradient overlay to smoothly transition the background into dark charcoal */
 .aiw-bg-fade-overlay {
   position: fixed;
   inset: 0;
   background: linear-gradient(
     90deg, 
     #0b0c10 0%, 
-    #0b0c10 40%, 
-    rgba(11, 12, 16, 0.82) 55%, 
-    rgba(11, 12, 16, 0.25) 75%, 
+    #0b0c10 35%, 
+    rgba(11, 12, 16, 0.85) 52%, 
+    rgba(11, 12, 16, 0.15) 75%, 
     transparent 100%
   );
   pointer-events: none;
   z-index: 0;
+  transition: background 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* In roles view: The fade is reversed so the RIGHT side is dark and the LEFT side has the dragged sunset artwork */
+.aiw-roles-view-left .aiw-bg-fade-overlay {
+  background: linear-gradient(
+    270deg, 
+    #0b0c10 0%, 
+    #0b0c10 35%, 
+    rgba(11, 12, 16, 0.85) 52%, 
+    rgba(11, 12, 16, 0.15) 75%, 
+    transparent 100%
+  );
 }
 
 /* Ambient subtle background glow */
@@ -66,6 +87,11 @@
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 0;
+  transition: all 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aiw-roles-view-left .aiw-ambient-glow {
+  left: 70%;
 }
 
 /* ==========================================================================
@@ -81,6 +107,12 @@
   justify-content: space-between;
   gap: 48px;
   min-height: calc(100vh - 48px);
+  transition: all 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Expanded state: when viewing roles, card goes to the left and carousel to the right */
+.aiw-page-container.aiw-roles-expanded {
+  gap: 32px;
 }
 
 /* LEFT HERO SECTION: Company Brand & Logo */
@@ -91,6 +123,18 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.aiw-page-container.aiw-roles-expanded .aiw-hero-left {
+  flex: 0;
+  max-width: 0;
+  opacity: 0;
+  padding: 0;
+  margin: 0;
+  transform: scale(0.85) translateX(-60px);
+  pointer-events: none;
 }
 
 .aiw-hero-logo-box {
@@ -115,13 +159,30 @@
   transform: scale(1.03);
 }
 
-/* RIGHT HERO SECTION: Login Card Container */
+/* RIGHT / CENTER HERO SECTION: Login Card Container */
 .aiw-hero-right {
   flex: 1.1;
   display: flex;
   justify-content: center;
   align-items: center;
   animation: aiwSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aiw-page-container.aiw-roles-expanded .aiw-hero-card-col {
+  flex: 1;
+  max-width: 600px;
+  justify-content: flex-start;
+}
+
+/* ROLES SHOWCASE COLUMN (When expanded) */
+.aiw-hero-roles-col {
+  flex: 1.1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: aiwRolesSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 10;
 }
 
 /* ==========================================================================
@@ -241,15 +302,15 @@
 }
 
 .aiw-sparkle-icon {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: rgba(242, 101, 34, 0.12);
-  border: 1px solid rgba(242, 101, 34, 0.35);
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.25) 0%, rgba(242, 101, 34, 0.08) 100%);
+  border: 1.5px solid rgba(242, 101, 34, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.2);
+  box-shadow: 0 0 18px rgba(242, 101, 34, 0.35);
 }
 
 .aiw-brand-logo-img {
@@ -260,18 +321,18 @@
 
 .aiw-brand-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: 2.5px;
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: 2px;
   color: #ffffff;
   text-transform: uppercase;
 }
 
 .aiw-brand-subtitle {
-  font-size: 0.6rem;
-  font-weight: 600;
+  font-size: 0.68rem;
+  font-weight: 700;
   letter-spacing: 1.6px;
-  color: #6c7280;
+  color: #94a3b8;
   margin-top: 3px;
   text-transform: uppercase;
 }
@@ -325,14 +386,14 @@
 .aiw-login-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
 }
 
 .aiw-input-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
 }
 
@@ -346,25 +407,25 @@
 .aiw-field-icon {
   position: absolute;
   left: 13px;
-  color: #5d6370;
+  color: #818ba0;
   pointer-events: none;
   transition: color 0.2s ease;
 }
 
 .aiw-input-field:focus-within .aiw-field-icon {
-  color: #f26522;
+  color: #ff7438;
 }
 
 .aiw-input {
   width: 100%;
-  background-color: #1b1c21;
-  border: 1px solid #2a2c34;
-  border-radius: 10px;
-  padding: 10px 36px 10px 38px;
-  color: #f3f4f6;
-  font-size: 0.82rem;
+  background-color: #1a1d26;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 12px 36px 12px 38px;
+  color: #ffffff;
+  font-size: 0.86rem;
   font-family: inherit;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.4px;
   outline: none;
   transition: all 0.25s ease;
@@ -375,24 +436,29 @@
 }
 
 .aiw-input::placeholder {
-  color: #555b68;
+  color: #8a94a6;
   font-weight: 500;
-  letter-spacing: 0.6px;
-  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  font-size: 0.8rem;
+}
+
+.aiw-input:hover {
+  border-color: rgba(255, 255, 255, 0.24);
+  background-color: #1e212c;
 }
 
 .aiw-input:focus {
-  background-color: #1e2027;
+  background-color: #202432;
   border-color: #f26522;
-  box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.15);
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.25), 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .aiw-eye-toggle {
   position: absolute;
-  right: 10px;
+  right: 12px;
   background: none;
   border: none;
-  color: #5d6370;
+  color: #818ba0;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -402,37 +468,37 @@
 }
 
 .aiw-eye-toggle:hover {
-  color: #f26522;
+  color: #ff7438;
 }
 
-/* Primary Submit Button */
+/* Primary Submit Button - Always Radiant & High-Impact */
 .aiw-btn-primary {
   width: 100%;
-  background-color: #21232a;
-  border: 1px solid #2f323d;
+  background: linear-gradient(135deg, #f26522 0%, #ff5722 50%, #f43f5e 100%);
+  border: none;
   color: #ffffff;
-  padding: 10px 16px;
-  border-radius: 10px;
+  padding: 13px 20px;
+  border-radius: 12px;
   font-family: 'Outfit', sans-serif;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 1px;
+  font-size: 0.88rem;
+  font-weight: 900;
+  letter-spacing: 0.9px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
-  margin-top: 2px;
+  box-shadow: 0 8px 24px rgba(242, 101, 34, 0.45);
+  margin-top: 4px;
 }
 
 .aiw-btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #f26522 0%, #ff7a3d 100%);
-  border-color: #ff7a3d;
-  box-shadow: 0 6px 20px rgba(242, 101, 34, 0.35);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #ff7438 0%, #ff6b3d 50%, #fb7185 100%);
+  box-shadow: 0 10px 30px rgba(242, 101, 34, 0.65);
+  transform: translateY(-2px);
 }
 
 .aiw-btn-primary:active:not(:disabled) {
@@ -948,6 +1014,539 @@
   border-color: #3f4452;
 }
 
+/* ==========================================================================
+   ROLE EXPLORER & SIDE TRIGGER ARROW
+   ========================================================================== */
+.aiw-side-arrow-trigger {
+  position: absolute;
+  right: -25px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #f26522;
+  border: 3.5px solid #ffffff;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(242, 101, 34, 0.75), 0 0 0 4px rgba(242, 101, 34, 0.25);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+  outline: none;
+  animation: aiwPulseArrow 2.4s infinite;
+}
+
+@keyframes aiwPulseArrow {
+  0%, 100% {
+    transform: translateY(-50%) scale(1);
+    box-shadow: 0 8px 24px rgba(242, 101, 34, 0.75), 0 0 0 3px rgba(242, 101, 34, 0.25);
+  }
+  50% {
+    transform: translateY(-50%) scale(1.12);
+    box-shadow: 0 10px 30px rgba(242, 101, 34, 0.95), 0 0 0 8px rgba(242, 101, 34, 0.35);
+  }
+}
+
+.aiw-side-arrow-trigger:hover {
+  background: #ff7438;
+  transform: translateY(-50%) scale(1.18);
+  box-shadow: 0 10px 32px rgba(242, 101, 34, 0.95), 0 0 0 8px rgba(242, 101, 34, 0.4);
+  animation-play-state: paused;
+}
+
+.aiw-side-arrow-trigger.active {
+  background: #181b20;
+  border-color: #f26522;
+  color: #f26522;
+  animation: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7), 0 0 0 3px rgba(242, 101, 34, 0.4);
+}
+
+.aiw-side-arrow-trigger.active:hover {
+  background: #232730;
+  color: #ffffff;
+}
+
+.aiw-side-arrow-tooltip {
+  position: absolute;
+  top: -36px;
+  right: -14px;
+  background: #181b20;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+}
+
+.aiw-side-arrow-trigger:hover .aiw-side-arrow-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Role selected indicator pill on the form */
+.aiw-role-selected-chip {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.16) 0%, rgba(242, 101, 34, 0.05) 100%);
+  border: 1.5px solid rgba(242, 101, 34, 0.45);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+  text-align: left;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.aiw-role-selected-chip:hover {
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.25) 0%, rgba(242, 101, 34, 0.1) 100%);
+  border-color: #ff7438;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.25);
+}
+
+.aiw-role-chip-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.aiw-role-chip-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #ff7438;
+  letter-spacing: 0.6px;
+  flex-shrink: 0;
+}
+
+.aiw-role-chip-name {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.aiw-role-chip-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #ff7438;
+  font-size: 0.78rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.aiw-highlight-roles-link {
+  color: #ff7438 !important;
+  font-weight: 800 !important;
+}
+
+.aiw-highlight-roles-link {
+  color: #f26522 !important;
+  font-weight: 700 !important;
+}
+
+/* ==========================================================================
+   ROLES SHOWCASE CAROUSEL & CARDS
+   ========================================================================== */
+.aiw-roles-card-box {
+  width: 100%;
+  max-width: 480px;
+  background: #15171c;
+  border: 1px solid #282b34;
+  border-radius: 24px;
+  padding: 24px 22px 18px 22px;
+  box-shadow: 0 30px 65px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.aiw-roles-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding-bottom: 10px;
+}
+
+.aiw-roles-header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.aiw-roles-eyebrow {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #f26522;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.aiw-roles-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.aiw-roles-close-btn {
+  background: #1f222a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aiw-roles-close-btn svg {
+  stroke: #ffffff;
+}
+
+.aiw-roles-close-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  transform: scale(1.08);
+}
+
+.aiw-roles-cat-pills {
+  display: flex;
+  background: #101216;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 4px;
+  width: 100%;
+}
+
+.aiw-roles-cat-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #8c93a3;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.aiw-roles-cat-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.aiw-roles-cat-btn.active {
+  background: #22252e;
+  color: #ffffff;
+  border-color: rgba(242, 101, 34, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+/* Carousel with sleek minimal outer arrows */
+.aiw-carousel-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.aiw-arrow-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #1c1e24;
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 25;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+  outline: none;
+}
+
+.aiw-arrow-btn svg {
+  stroke: #ffffff;
+  stroke-width: 2.5px;
+}
+
+.aiw-arrow-btn:hover {
+  background: #f26522;
+  border-color: #f26522;
+  color: #ffffff;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(242, 101, 34, 0.55);
+}
+
+.aiw-arrow-btn.left { left: -22px; }
+.aiw-arrow-btn.right { right: -22px; }
+
+.aiw-role-showcase-card {
+  width: 100%;
+  background: #181a20;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 20px 22px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  will-change: transform, opacity;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  transition: border-color 0.3s ease;
+}
+
+.aiw-role-showcase-card:hover {
+  border-color: rgba(242, 101, 34, 0.35);
+}
+
+/* Slide Next Animation (from right to left) */
+.aiw-role-showcase-card.slide-next {
+  animation: aiwSlideRoleNext 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Slide Prev Animation (from left to right) */
+.aiw-role-showcase-card.slide-prev {
+  animation: aiwSlideRolePrev 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes aiwSlideRoleNext {
+  0% {
+    opacity: 0;
+    transform: translateX(40px) scale(0.96);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes aiwSlideRolePrev {
+  0% {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.96);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.aiw-rcard-top {
+  display: flex;
+  margin-bottom: 8px;
+  animation: aiwFadeItem 0.3s 0.05s ease both;
+}
+
+.aiw-rcard-badge {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(242, 101, 34, 0.12);
+  color: #f26522;
+  border: 1px solid rgba(242, 101, 34, 0.3);
+}
+
+.aiw-rcard-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.6px;
+  margin-bottom: 4px;
+  animation: aiwFadeItem 0.3s 0.08s ease both;
+}
+
+.aiw-rcard-tagline {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f26522;
+  margin-bottom: 8px;
+  animation: aiwFadeItem 0.3s 0.11s ease both;
+}
+
+.aiw-rcard-desc {
+  font-size: 0.82rem;
+  color: #c5cbd6;
+  line-height: 1.45;
+  margin-bottom: 12px;
+  animation: aiwFadeItem 0.3s 0.14s ease both;
+}
+
+.aiw-rcard-features-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.aiw-rcard-feat-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: #9aa1b0;
+  line-height: 1.35;
+  animation: aiwFadeItem 0.35s ease both;
+}
+
+.aiw-rcard-feat-item:nth-child(1) { animation-delay: 0.16s; }
+.aiw-rcard-feat-item:nth-child(2) { animation-delay: 0.20s; }
+.aiw-rcard-feat-item:nth-child(3) { animation-delay: 0.24s; }
+
+.aiw-feat-bullet-line {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f26522;
+  flex-shrink: 0;
+  margin-top: 5px;
+  box-shadow: 0 0 8px rgba(242, 101, 34, 0.7);
+}
+
+.aiw-feat-check-icon {
+  color: #f26522;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.aiw-rcard-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.aiw-rcard-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  padding: 0;
+}
+
+.aiw-rcard-dot.active {
+  width: 22px;
+  border-radius: 10px;
+  background: #f26522;
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.5);
+}
+
+.aiw-rcard-cta-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #f26522 0%, #ff7438 100%);
+  border: none;
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 20px rgba(242, 101, 34, 0.35);
+}
+
+.aiw-rcard-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(242, 101, 34, 0.55);
+  background: linear-gradient(135deg, #ff7438 0%, #ff8c57 100%);
+}
+
+.aiw-rcard-trial-info {
+  font-size: 0.68rem;
+  color: #64748b;
+  text-align: center;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+.aiw-roles-bottom-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.aiw-roles-back-link {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.74rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.aiw-roles-back-link:hover {
+  color: #f26522;
+  text-decoration: underline;
+}
+
+@keyframes aiwRolesSlideIn {
+  from { opacity: 0; transform: translateX(40px) scale(0.96); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
 /* Animations */
 @keyframes aiwFadeIn {
   from { opacity: 0; }
@@ -960,7 +1559,7 @@
 }
 
 /* ==========================================================================
-   RESPONSIVE DESIGN
+   RESPONSIVE DESIGN (MOBILE APP EXPERIENCE)
    ========================================================================== */
 @media (max-width: 1080px) {
   .aiw-page-container {
@@ -968,6 +1567,22 @@
     justify-content: center;
     gap: 28px;
     padding: 20px 0;
+  }
+
+  .aiw-page-container.aiw-roles-expanded {
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .aiw-page-container.aiw-roles-expanded .aiw-hero-card-col {
+    max-width: 100%;
+    justify-content: center;
+  }
+
+  .aiw-hero-roles-col {
+    width: 100%;
+    max-width: 480px;
   }
 
   .aiw-hero-left {
@@ -980,6 +1595,7 @@
 
   .aiw-bg-art-layer {
     width: 100%;
+    transform: none !important;
     opacity: 0.35;
   }
 
@@ -989,13 +1605,89 @@
 }
 
 @media (max-width: 820px) {
-  .aiw-hero-left {
+  .aiw-viewport {
+    padding: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    background-color: #0b0c10;
+  }
+
+  .aiw-bg-art-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100vh;
+    width: 100vw;
+    opacity: 1;
+    background-position: center center;
+    background-size: cover;
+    transform: none !important;
+  }
+
+  .aiw-bg-fade-overlay {
+    display: none !important;
+  }
+
+  .aiw-ambient-glow {
     display: none;
   }
 
+  .aiw-page-container {
+    padding: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0;
+    width: 100%;
+    margin: 0;
+  }
+
+  .aiw-hero-left {
+    display: flex;
+    padding: 24px 20px 10px 20px;
+    margin: 0 auto;
+    z-index: 2;
+  }
+
+  .aiw-hero-logo-img {
+    max-width: 190px;
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.8));
+  }
+
+  .aiw-hero-right {
+    width: 100%;
+    margin-top: auto;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .aiw-card-wrapper {
+    max-width: 100%;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
   .aiw-card {
-    min-height: 540px;
-    max-width: 440px;
+    min-height: auto;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 28px 28px 0 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 2px solid rgba(242, 101, 34, 0.5);
+    border-bottom: none;
+    background: #13151b;
+    box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.9);
+    margin-bottom: 0;
   }
 
   .aiw-overlay-container {
@@ -1019,33 +1711,345 @@
   }
 
   .aiw-form-side {
-    padding: 26px 22px 18px 22px;
+    padding: 24px 20px 28px 20px;
+    background: #13151b;
+    border-radius: 28px 28px 0 0;
+  }
+
+  .aiw-brand {
+    margin-bottom: 12px;
+  }
+
+  .aiw-brand-title {
+    font-size: 1.3rem;
+    letter-spacing: 2px;
+  }
+
+  .aiw-brand-subtitle {
+    font-size: 0.68rem;
+    letter-spacing: 1.4px;
+    color: #94a3b8;
+  }
+
+  .aiw-input {
+    padding: 12px 14px 12px 38px;
+    font-size: 0.86rem;
+    border-radius: 12px;
+    background-color: #1a1d26;
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+  }
+
+  .aiw-input-no-icon {
+    padding-left: 14px;
+  }
+
+  .aiw-input::placeholder {
+    color: #8a94a6;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+
+  .aiw-btn-primary {
+    padding: 13px 18px;
+    font-size: 0.88rem;
+    border-radius: 12px;
+    margin-top: 4px;
+  }
+
+  .aiw-social-row {
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .aiw-social-btn {
+    height: 40px;
+    border-radius: 10px;
+    background-color: #1a1c22;
+    border-color: #2b2e38;
+  }
+
+  .aiw-btn-capsule {
+    padding: 11px 14px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+  }
+
+  /* Hide floating arrow on mobile devices as the role pill inside the form handles this */
+  .aiw-side-arrow-trigger {
+    display: none !important;
+  }
+
+  .aiw-hero-roles-col {
+    width: 100%;
+    max-width: 100%;
+    padding: 16px;
+  }
+
+  .aiw-roles-card-box {
+    width: 100%;
+    max-width: 100%;
+    padding: 22px 18px 16px 18px;
+    border-radius: 24px;
+  }
+
+  .aiw-arrow-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .aiw-arrow-btn.left { left: -12px; }
+  .aiw-arrow-btn.right { right: -12px; }
+
+  .aiw-footer-bar {
+    padding-top: 14px;
+    margin-top: 12px;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .aiw-footer-link {
+    font-size: 0.8rem;
   }
 }
 
 @media (max-width: 480px) {
-  .aiw-viewport {
-    padding: 12px 10px;
-  }
-
-  .aiw-card {
-    border-radius: 18px;
-  }
-
   .aiw-form-side {
-    padding: 22px 16px 14px 16px;
+    padding: 22px 16px 22px 16px;
   }
 
   .aiw-brand-title {
-    font-size: 1.15rem;
-    letter-spacing: 2px;
+    font-size: 1.22rem;
   }
 
-  .aiw-btn-primary {
-    font-size: 0.8rem;
+  .aiw-input-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
-  .aiw-social-btn {
-    height: 34px;
+  .aiw-roles-card-box {
+    padding: 18px 14px 14px 14px;
+  }
+
+  .aiw-role-showcase-card {
+    padding: 16px 14px;
+  }
+
+  .aiw-rcard-title {
+    font-size: 1.2rem;
+  }
+}
+
+/* ==========================================================================
+   WELCOME / ONBOARDING INTRO SCREEN
+   ========================================================================== */
+.aiw-welcome-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 36px 24px 44px 24px;
+  background: rgba(11, 12, 16, 0.22);
+  backdrop-filter: none;
+  animation: aiwFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+}
+
+.aiw-welcome-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  z-index: 2;
+}
+
+.aiw-welcome-logo-small {
+  height: 38px;
+  max-width: 170px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.8));
+}
+
+.aiw-welcome-skip-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.aiw-welcome-skip-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.aiw-welcome-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 480px;
+  margin: auto;
+  padding: 20px 10px;
+  gap: 16px;
+  animation: aiwSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 2;
+}
+
+.aiw-welcome-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.25) 0%, rgba(242, 101, 34, 0.08) 100%);
+  border: 1.5px solid rgba(242, 101, 34, 0.55);
+  padding: 6px 16px;
+  border-radius: 24px;
+  color: #ff7438;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  box-shadow: 0 0 16px rgba(242, 101, 34, 0.3);
+}
+
+.aiw-welcome-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.35rem;
+  font-weight: 900;
+  line-height: 1.12;
+  color: #ffffff;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.9);
+}
+
+.aiw-welcome-desc {
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: #cbd5e1;
+  font-weight: 500;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
+  max-width: 420px;
+}
+
+.aiw-welcome-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.aiw-welcome-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aiw-welcome-dot.active {
+  width: 26px;
+  background: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
+}
+
+.aiw-welcome-footer {
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  z-index: 2;
+}
+
+.aiw-welcome-continue-btn {
+  width: 100%;
+  background: #ffffff;
+  color: #0b0c10;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.96rem;
+  font-weight: 800;
+  padding: 15px 26px;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 255, 255, 0.25);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aiw-welcome-continue-btn:hover {
+  transform: translateY(-2px);
+  background: #f8fafc;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.75), 0 0 28px rgba(255, 255, 255, 0.45);
+}
+
+.aiw-welcome-continue-btn:active {
+  transform: translateY(0);
+}
+
+/* Card Back to Welcome Button */
+.aiw-card-back-btn {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.aiw-card-back-btn:hover {
+  background: rgba(242, 101, 34, 0.2);
+  border-color: #f26522;
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+/* Transitions between Welcome and Auth */
+.aiw-welcome-active .aiw-page-container {
+  display: none !important;
+}
+
+.aiw-show-auth-page {
+  animation: aiwSheetSlideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes aiwSheetSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

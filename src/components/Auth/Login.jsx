@@ -10,15 +10,185 @@ import {
   EyeOff,
   Clock,
   ArrowRight,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
   Globe,
   Building2,
   KeyRound,
   User,
   Phone,
-  Sparkles
+  Sparkles,
+  X
 } from "lucide-react";
 import Logo4 from "../../assets/Logo4.png";
 import LoginArtwork from "../../assets/Atardecer.png";
+
+// Catálogo de roles públicos clasificados en 2 categorías
+const ROLES_PUBLICOS = [
+  // ── CATEGORÍA 1: AGENTE SOLUTIONS (DIRECTOS / MATRIZ) ──
+  {
+    key: "client",
+    roleId: 3,
+    category: "agente",
+    categoryLabel: "Agente Solutions (2)",
+    label: "CLIENTE",
+    shortLabel: "Cliente",
+    badge: "MATRIZ OFICIAL",
+    icon: "👤",
+    color: "#f26522",
+    tagline: "Contrata servicios para tu hogar o negocio",
+    description: "Solicita servicios de mantenimiento, reparaciones y soporte técnico directo con la garantía oficial de Agente Solutions.",
+    features: [
+      "Solicitud de servicios programados y emergencias SOS",
+      "Seguimiento en tiempo real con reportes de avance",
+      "Aprobación de cotizaciones y pagos seguros"
+    ],
+    cta: "REGISTRARME COMO CLIENTE",
+    trialInfo: "Acceso inmediato sin costo de suscripción"
+  },
+  {
+    key: "technician",
+    roleId: 2,
+    category: "agente",
+    categoryLabel: "Agente Solutions (2)",
+    label: "TÉCNICO AGENTE",
+    shortLabel: "Técnico Agente",
+    badge: "TÉCNICO INTERNO",
+    icon: "🛠️",
+    color: "#0284c7",
+    tagline: "Presta servicios oficiales en Agente Solutions",
+    description: "Forma parte del equipo técnico oficial asignado a las órdenes de trabajo y levantamientos de la matriz Agente Solutions.",
+    features: [
+      "Recepción de órdenes de trabajo directas",
+      "Checklists inteligentes y reportes de evidencia",
+      "Registro de venta cruzada y comisiones por trabajo"
+    ],
+    cta: "REGISTRARME COMO TÉCNICO",
+    trialInfo: "1 año de suscripción gratuita de bienvenida"
+  },
+
+  // ── CATEGORÍA 2: AUTÓNOMOS & RED (5) ──
+  {
+    key: "market_client_personal",
+    roleId: 4,
+    category: "autonomo",
+    categoryLabel: "Autónomos & Red (5)",
+    label: "CLIENTE PARTICULAR",
+    shortLabel: "Cliente Red",
+    badge: "PROPIETARIO / RED",
+    icon: "🏡",
+    color: "#3b82f6",
+    tagline: "Publica necesidades y recibe cotizaciones tipo Uber",
+    description: "Ideal para propietarios que desean cotizaciones competitivas en tiempo real de técnicos y contratistas calificados de la red.",
+    features: [
+      "Publicación de problemas al mapa en vivo de la red",
+      "Recepción de ofertas y chat directo con técnicos",
+      "Opción de delegar administración a gestores inmobiliarios"
+    ],
+    cta: "REGISTRARME COMO CLIENTE RED",
+    trialInfo: "6 Meses Gratis de Prueba ($299/mes posterior)"
+  },
+  {
+    key: "market_property_manager",
+    roleId: 5,
+    category: "autonomo",
+    categoryLabel: "Autónomos & Red (5)",
+    label: "GESTOR INMOBILIARIO",
+    shortLabel: "Gestor Inmuebles",
+    badge: "ADMINISTRADOR PRO",
+    icon: "🏢",
+    color: "#8b5cf6",
+    tagline: "Administración integral de inmuebles y cuadrillas",
+    description: "Para gestores de inmuebles, condominios y administradores que manejan múltiples propiedades (propias y delegadas) y equipos de trabajo.",
+    features: [
+      "Gestión de propiedades propias y delegadas por clientes",
+      "Coordinación de técnicos internos y publicación a la red",
+      "Tableros de control avanzados, cotizaciones y reportes"
+    ],
+    cta: "REGISTRARME COMO GESTOR",
+    trialInfo: "6 Meses Gratis de Prueba ($935/mes posterior)"
+  },
+  {
+    key: "market_tech_independent",
+    roleId: 6,
+    category: "autonomo",
+    categoryLabel: "Autónomos & Red (5)",
+    label: "TÉCNICO INDEPENDIENTE",
+    shortLabel: "Técnico Freelance",
+    badge: "MARKETPLACE ABIERTO",
+    icon: "🧑‍🔧",
+    color: "#ec4899",
+    tagline: "Gana trabajos en el mapa en vivo tipo Uber",
+    description: "Profesionales y especialistas independientes que ofrecen sus servicios en la red abierta y cotizan trabajos disponibles.",
+    features: [
+      "Acceso al mapa en vivo de trabajos disponibles",
+      "Perfil público con calificaciones e insignias ⭐",
+      "1 año completo de suscripción gratuita de bienvenida"
+    ],
+    cta: "REGISTRARME COMO INDEPENDIENTE",
+    trialInfo: "1 año de membresía gratuita sin costo"
+  },
+  {
+    key: "market_contractor",
+    roleId: 7,
+    category: "autonomo",
+    categoryLabel: "Autónomos & Red (5)",
+    label: "CONTRATISTA / LÍDER",
+    shortLabel: "Contratista",
+    badge: "LÍDER DE CUADRILLA",
+    icon: "🏗️",
+    color: "#0d9488",
+    tagline: "Maneja cuadrillas y asigna trabajos ganados",
+    description: "Contratistas y empresas con equipo de trabajo que cotizan en la red y asignan las órdenes ganadas a los miembros de su cuadrilla.",
+    features: [
+      "Gestión y vinculación de técnicos de cuadrilla",
+      "Cotiza en la red y asigna trabajos a tu equipo",
+      "Supervisión y control de ingresos de la cuadrilla"
+    ],
+    cta: "REGISTRARME COMO CONTRATISTA",
+    trialInfo: "6 Meses Gratis de Prueba ($935/mes posterior)"
+  },
+  {
+    key: "market_crew_member",
+    roleId: 8,
+    category: "autonomo",
+    categoryLabel: "Autónomos & Red (5)",
+    label: "TÉCNICO DE CUADRILLA",
+    shortLabel: "Técnico Cuadrilla",
+    badge: "EQUIPO & MODO DUAL",
+    icon: "👷",
+    color: "#f59e0b",
+    tagline: "Trabaja en equipo y por tu cuenta",
+    description: "Técnicos que forman parte del equipo de un contratista y cuentan con Modo Dual para realizar trabajos independientes.",
+    features: [
+      "Vinculación directa a la cuadrilla de tu contratista",
+      "Recepción de órdenes asignadas por tu líder de equipo",
+      "Modo Dual: Habilita tu acceso para cotizar por tu cuenta"
+    ],
+    cta: "REGISTRARME EN CUADRILLA",
+    trialInfo: "Sujeto a vinculación y aprobación del contratista"
+  }
+];
+
+const WELCOME_SLIDES = [
+  {
+    badge: "AGENTE SOLUTIONS PLATAFORMA",
+    title: "RESOLVIENDO TUS NECESIDADES",
+    subtitle: "Conecta con clientes, gestores inmobiliarios, contratistas y especialistas en tiempo real.",
+  },
+  {
+    badge: "GESTORÍA INMOBILIARIA & OBRAS",
+    title: "GESTIONA TODO EN UN SOLO LUGAR",
+    subtitle: "Publica inmuebles, cotiza servicios, supervisa cuadrillas y automatiza tus operaciones.",
+  },
+  {
+    badge: "MERCADO EN VIVO & CUADRILLAS",
+    title: "IMPULSA TU CRECIMIENTO",
+    subtitle: "Gana trabajos en el mapa en vivo, gestiona tus ingresos y únete a nuestra red profesional.",
+  }
+];
 
 const LoginAgente = () => {
   const [email, setEmail] = useState("");
@@ -28,8 +198,18 @@ const LoginAgente = () => {
   const navigate = useNavigate();
   const { user, loginGlobal } = useAuth();
 
+  // Welcome / Onboarding Intro Screen State
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [welcomeSlide, setWelcomeSlide] = useState(0);
+
   // Sliding Auth Panel State (false = Login, true = Register)
   const [isSignUp, setIsSignUp] = useState(false);
+
+  // Role Explorer State (when true, card slides to the left and role carousel appears on the right)
+  const [showRoleExplorer, setShowRoleExplorer] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("agente");
+  const [selectedRoleKey, setSelectedRoleKey] = useState("client");
+  const [slideDirection, setSlideDirection] = useState("next"); // 'next' | 'prev'
 
   // Registration Form States
   const [regFirstName, setRegFirstName] = useState("");
@@ -55,6 +235,42 @@ const LoginAgente = () => {
   // Variables para personalizar el Login
   const [backgroundSettings, setBackgroundSettings] = useState({ imageUrl: null, colorHex: '#0b0c10', appLogo: null });
   const [selectedTenant, setSelectedTenant] = useState(null);
+
+  // Filtrado de roles según la categoría activa
+  const rolesFiltrados = ROLES_PUBLICOS.filter(r => r.category === activeCategory);
+  const rolActual = ROLES_PUBLICOS.find(r => r.key === selectedRoleKey) || rolesFiltrados[0] || ROLES_PUBLICOS[0];
+
+  const handleCategoryChange = (cat) => {
+    setActiveCategory(cat);
+    setSlideDirection("next");
+    const matches = ROLES_PUBLICOS.filter(r => r.category === cat);
+    if (matches.length > 0 && !matches.some(m => m.key === selectedRoleKey)) {
+      setSelectedRoleKey(matches[0].key);
+    }
+  };
+
+  const handleStepRole = (direction) => {
+    setSlideDirection(direction > 0 ? "next" : "prev");
+    const currentIndex = rolesFiltrados.findIndex(r => r.key === selectedRoleKey);
+    if (currentIndex === -1) return;
+    let nextIndex = currentIndex + direction;
+    if (nextIndex < 0) nextIndex = rolesFiltrados.length - 1;
+    if (nextIndex >= rolesFiltrados.length) nextIndex = 0;
+    setSelectedRoleKey(rolesFiltrados[nextIndex].key);
+  };
+
+  const handleDotClick = (rKey, targetIndex) => {
+    const currentIndex = rolesFiltrados.findIndex(r => r.key === selectedRoleKey);
+    setSlideDirection(targetIndex >= currentIndex ? "next" : "prev");
+    setSelectedRoleKey(rKey);
+  };
+
+  const handleSelectRoleFromExplorer = (role) => {
+    setSelectedRoleKey(role.key);
+    setShowRoleExplorer(false);
+    setRegMessage(`✅ Rol seleccionado: ${role.label}`);
+    setTimeout(() => setRegMessage(""), 3000);
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem("agente_tenant_selected");
@@ -268,7 +484,7 @@ const LoginAgente = () => {
         email: regEmail.trim().toLowerCase(),
         phone_number: regPhone.trim(),
         password: regPassword,
-        role_id: 3,
+        role_id: rolActual?.roleId || 3,
         captcha_token: "from_admin_bypass"
       };
 
@@ -301,7 +517,7 @@ const LoginAgente = () => {
 
   return (
     <div
-      className="aiw-viewport"
+      className={`aiw-viewport ${showRoleExplorer ? "aiw-roles-view-left" : ""} ${showWelcome ? "aiw-welcome-active" : ""}`}
       style={{
         backgroundColor: backgroundSettings.colorHex || '#0b0c10'
       }}
@@ -319,10 +535,80 @@ const LoginAgente = () => {
       {/* Background ambient glow effect */}
       <div className="aiw-ambient-glow"></div>
 
-      {/* Main Split Layout Container */}
-      <div className="aiw-page-container">
+      {/* === ONBOARDING / WELCOME SCREEN (Shown before opening login/register) === */}
+      {showWelcome && (
+        <div className="aiw-welcome-screen">
+          {/* Top Bar */}
+          <div className="aiw-welcome-topbar">
+            <div className="aiw-welcome-brand-mini">
+              <img
+                src={backgroundSettings.appLogo || Logo4}
+                alt="Agente Solutions"
+                className="aiw-welcome-logo-small"
+              />
+            </div>
+            <button
+              type="button"
+              className="aiw-welcome-skip-btn"
+              onClick={() => setShowWelcome(false)}
+            >
+              Saltar
+            </button>
+          </div>
 
-        {/* LEFT HERO SECTION: Large Company Logo */}
+          {/* Hero Content */}
+          <div className="aiw-welcome-body">
+            <div className="aiw-welcome-badge">
+              <Sparkles size={14} className="aiw-welcome-badge-icon" />
+              <span>{WELCOME_SLIDES[welcomeSlide].badge}</span>
+            </div>
+
+            <h1 className="aiw-welcome-title">
+              {WELCOME_SLIDES[welcomeSlide].title}
+            </h1>
+
+            <p className="aiw-welcome-desc">
+              {WELCOME_SLIDES[welcomeSlide].subtitle}
+            </p>
+
+            {/* Pagination Indicator Dots */}
+            <div className="aiw-welcome-dots">
+              {WELCOME_SLIDES.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  className={`aiw-welcome-dot ${idx === welcomeSlide ? "active" : ""}`}
+                  onClick={() => setWelcomeSlide(idx)}
+                  aria-label={`Ir a slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom Action Button */}
+          <div className="aiw-welcome-footer">
+            <button
+              type="button"
+              className="aiw-welcome-continue-btn"
+              onClick={() => {
+                if (welcomeSlide < WELCOME_SLIDES.length - 1) {
+                  setWelcomeSlide(prev => prev + 1);
+                } else {
+                  setShowWelcome(false);
+                }
+              }}
+            >
+              <span>{welcomeSlide === WELCOME_SLIDES.length - 1 ? "Comenzar" : "Continuar"}</span>
+              <ArrowRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Split Layout Container */}
+      <div className={`aiw-page-container ${showRoleExplorer ? "aiw-roles-expanded" : ""} ${showWelcome ? "aiw-hide-auth-page" : "aiw-show-auth-page"}`}>
+
+        {/* LEFT HERO SECTION: Large Company Logo (hides smoothly when roles expand) */}
         <div className="aiw-hero-left">
           <div className="aiw-hero-logo-box">
             <img
@@ -333,14 +619,42 @@ const LoginAgente = () => {
           </div>
         </div>
 
-        {/* RIGHT HERO SECTION: Sliding Login / Register Card */}
-        <div className="aiw-hero-right">
+        {/* CENTER / LEFT (when expanded): Sliding Login / Register Card */}
+        <div className="aiw-hero-right aiw-hero-card-col">
           <div className="aiw-card-wrapper">
+
+            {/* Floating side arrow outside the card to toggle Role Explorer when on Register */}
+            {isSignUp && (
+              <button
+                type="button"
+                className={`aiw-side-arrow-trigger ${showRoleExplorer ? "active" : ""}`}
+                onClick={() => setShowRoleExplorer(prev => !prev)}
+                title={showRoleExplorer ? "Ocultar tipos de usuarios" : "Ver tipos de usuarios"}
+                aria-label="Explorar tipos de usuarios"
+              >
+                {showRoleExplorer ? <ChevronLeft size={26} strokeWidth={3} /> : <ChevronRight size={26} strokeWidth={3} />}
+                <span className="aiw-side-arrow-tooltip">
+                  {showRoleExplorer ? "Cerrar roles" : "Tipos de usuario"}
+                </span>
+              </button>
+            )}
+
             <div className={`aiw-card ${isSignUp ? "aiw-right-panel-active" : ""}`}>
 
               {/* === 1. SIGN IN FORM (LOGIN) === */}
               <div className="aiw-form-container aiw-sign-in-container">
                 <div className="aiw-form-side">
+
+                  {/* Back to Welcome Button on Mobile */}
+                  <button
+                    type="button"
+                    className="aiw-card-back-btn"
+                    onClick={() => setShowWelcome(true)}
+                    title="Volver al inicio"
+                    aria-label="Volver"
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
 
                   {/* Header Brand */}
                   <div className="aiw-brand">
@@ -516,7 +830,7 @@ const LoginAgente = () => {
                       <button
                         type="button"
                         className="aiw-btn-capsule"
-                        onClick={() => { setIsSignUp(true); setMensaje(""); }}
+                        onClick={() => { setIsSignUp(true); setShowRoleExplorer(false); setMensaje(""); }}
                       >
                         <span className="aiw-capsule-emoji">🦊</span>
                         <span className="aiw-capsule-text">REGISTRARME COMO CLIENTE</span>
@@ -543,7 +857,7 @@ const LoginAgente = () => {
                     <button
                       type="button"
                       className="aiw-footer-link"
-                      onClick={() => { setIsSignUp(true); setMensaje(""); }}
+                      onClick={() => { setIsSignUp(true); setShowRoleExplorer(false); setMensaje(""); }}
                     >
                       Crear Cuenta
                     </button>
@@ -558,6 +872,17 @@ const LoginAgente = () => {
               <div className="aiw-form-container aiw-sign-up-container">
                 <div className="aiw-form-side">
 
+                  {/* Back to Welcome Button on Mobile */}
+                  <button
+                    type="button"
+                    className="aiw-card-back-btn"
+                    onClick={() => setShowWelcome(true)}
+                    title="Volver al inicio"
+                    aria-label="Volver"
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
+
                   {/* Header Brand */}
                   <div className="aiw-brand">
                     <div className="aiw-brand-icon-wrapper">
@@ -568,6 +893,23 @@ const LoginAgente = () => {
                     <h1 className="aiw-brand-title">CREAR CUENTA</h1>
                     <span className="aiw-brand-subtitle">ÚNETE A AGENTE SOLUTIONS</span>
                   </div>
+
+                  {/* Role Selection Badge Indicator */}
+                  <button 
+                    type="button" 
+                    className="aiw-role-selected-chip" 
+                    onClick={() => setShowRoleExplorer(prev => !prev)}
+                    title="Cambiar tipo de cuenta"
+                  >
+                    <div className="aiw-role-chip-left">
+                      <span className="aiw-role-chip-label">ROL:</span>
+                      <strong className="aiw-role-chip-name">{rolActual.label}</strong>
+                    </div>
+                    <div className="aiw-role-chip-action">
+                      <span>{showRoleExplorer ? "Cerrar" : "Cambiar"}</span>
+                      {showRoleExplorer ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
+                    </div>
+                  </button>
 
                   <form className="aiw-login-form" onSubmit={handleRegisterSubmit}>
 
@@ -661,7 +1003,7 @@ const LoginAgente = () => {
 
                     {/* Submit Button */}
                     <button type="submit" className="aiw-btn-primary" disabled={isLoading}>
-                      <span>{isLoading ? "REGISTRANDO..." : "CREAR MI CUENTA"}</span>
+                      <span>{isLoading ? "REGISTRANDO..." : `REGISTRARME COMO ${rolActual.shortLabel.toUpperCase()}`}</span>
                       <div className="aiw-btn-arrow">
                         <ArrowRight size={18} />
                       </div>
@@ -679,16 +1021,16 @@ const LoginAgente = () => {
                   <div className="aiw-footer-bar">
                     <button
                       type="button"
-                      className="aiw-footer-link"
-                      onClick={() => navigate('/registro-cliente')}
+                      className="aiw-footer-link aiw-highlight-roles-link"
+                      onClick={() => setShowRoleExplorer(prev => !prev)}
                     >
-                      ¿Eres Autónomo / Empresa?
+                      ✨ {showRoleExplorer ? "Ocultar roles" : "Explorar todos los roles"}
                     </button>
                     <span className="aiw-footer-dot">•</span>
                     <button
                       type="button"
                       className="aiw-footer-link"
-                      onClick={() => { setIsSignUp(false); setRegMessage(""); }}
+                      onClick={() => { setIsSignUp(false); setShowRoleExplorer(false); setRegMessage(""); }}
                     >
                       Ya tengo cuenta
                     </button>
@@ -728,7 +1070,7 @@ const LoginAgente = () => {
                       <button
                         type="button"
                         className="aiw-overlay-btn"
-                        onClick={() => { setIsSignUp(false); setRegMessage(""); }}
+                        onClick={() => { setIsSignUp(false); setShowRoleExplorer(false); setRegMessage(""); }}
                       >
                         INICIAR SESIÓN
                       </button>
@@ -760,7 +1102,7 @@ const LoginAgente = () => {
                       <button
                         type="button"
                         className="aiw-overlay-btn"
-                        onClick={() => { setIsSignUp(true); setMensaje(""); }}
+                        onClick={() => { setIsSignUp(true); setShowRoleExplorer(false); setMensaje(""); }}
                       >
                         CREAR CUENTA
                       </button>
@@ -777,6 +1119,138 @@ const LoginAgente = () => {
             </div>
           </div>
         </div>
+
+        {/* RIGHT HERO SECTION (when expanded): Roles Showcase Carousel */}
+        {showRoleExplorer && (
+          <div className="aiw-hero-roles-col">
+            <div className="aiw-roles-card-box">
+
+              {/* Roles Header */}
+              <div className="aiw-roles-header">
+                <div className="aiw-roles-header-left">
+                  <span className="aiw-roles-eyebrow">REGISTRO MULTI-ROL</span>
+                  <h2 className="aiw-roles-title">TIPOS DE USUARIO</h2>
+                </div>
+                <button
+                  type="button"
+                  className="aiw-roles-close-btn"
+                  onClick={() => setShowRoleExplorer(false)}
+                  title="Cerrar panel de roles"
+                  aria-label="Cerrar panel de roles"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Category selector pills (clean, modern segment control) */}
+              <div className="aiw-roles-cat-pills">
+                <button
+                  type="button"
+                  className={`aiw-roles-cat-btn ${activeCategory === "agente" ? "active" : ""}`}
+                  onClick={() => handleCategoryChange("agente")}
+                >
+                  Agente Solutions (2)
+                </button>
+                <button
+                  type="button"
+                  className={`aiw-roles-cat-btn ${activeCategory === "autonomo" ? "active" : ""}`}
+                  onClick={() => handleCategoryChange("autonomo")}
+                >
+                  Autónomos & Red (5)
+                </button>
+              </div>
+
+              {/* Carousel container with refined side navigation arrows */}
+              <div className="aiw-carousel-wrapper">
+                
+                {/* Left navigation arrow */}
+                <button
+                  type="button"
+                  className="aiw-arrow-btn left"
+                  onClick={() => handleStepRole(-1)}
+                  aria-label="Rol anterior"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+
+                {/* Active Role Showcase Card with Directional Slide Animations */}
+                <div 
+                  className={`aiw-role-showcase-card ${slideDirection === "prev" ? "slide-prev" : "slide-next"}`} 
+                  key={rolActual.key}
+                >
+                  
+                  <div className="aiw-rcard-top">
+                    <span className="aiw-rcard-badge">{rolActual.badge}</span>
+                  </div>
+
+                  <h3 className="aiw-rcard-title">{rolActual.label}</h3>
+
+                  <p className="aiw-rcard-tagline">{rolActual.tagline}</p>
+                  <p className="aiw-rcard-desc">{rolActual.description}</p>
+
+                  <div className="aiw-rcard-features-box">
+                    {rolActual.features.map((feat, index) => (
+                      <div key={index} className="aiw-rcard-feat-item">
+                        <span className="aiw-feat-bullet-line"></span>
+                        <span>{feat}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Dots pagination with directional transition */}
+                  <div className="aiw-rcard-dots">
+                    {rolesFiltrados.map((r, i) => (
+                      <button
+                        key={r.key}
+                        type="button"
+                        className={`aiw-rcard-dot ${r.key === selectedRoleKey ? "active" : ""}`}
+                        onClick={() => handleDotClick(r.key, i)}
+                        aria-label={`Ver ${r.label}`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Select Role Button */}
+                  <button
+                    type="button"
+                    className="aiw-rcard-cta-btn"
+                    onClick={() => handleSelectRoleFromExplorer(rolActual)}
+                  >
+                    <span>{rolActual.cta}</span>
+                    <ArrowRight size={17} />
+                  </button>
+
+                  <span className="aiw-rcard-trial-info">{rolActual.trialInfo}</span>
+
+                </div>
+
+                {/* Right navigation arrow */}
+                <button
+                  type="button"
+                  className="aiw-arrow-btn right"
+                  onClick={() => handleStepRole(1)}
+                  aria-label="Siguiente rol"
+                >
+                  <ChevronRight size={22} />
+                </button>
+
+              </div>
+
+              {/* Bottom helper */}
+              <div className="aiw-roles-bottom-footer">
+                <button
+                  type="button"
+                  className="aiw-roles-back-link"
+                  onClick={() => setShowRoleExplorer(false)}
+                >
+                  <ArrowLeft size={14} style={{ marginRight: 6 }} />
+                  Volver al formulario de registro
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
 
       </div>
 
