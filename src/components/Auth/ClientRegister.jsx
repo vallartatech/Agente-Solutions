@@ -86,106 +86,106 @@ const ROLES_PUBLICOS = [
     trialInfo: "1 año de suscripción gratuita de bienvenida"
   },
 
-  // ── CATEGORÍA 2: AUTÓNOMOS Y RED (MULTI-TENANT & RED) ──
+  // ── CATEGORÍA 2: AGENTE MARKET (RED Y MARKETPLACE) ──
   {
-    key: "owner_personal",
-    roleId: 5,
+    key: "market_client_personal",
+    roleId: 4,
     category: "autonomo",
-    categoryLabel: "Autónomos y Red",
-    label: "AUTÓNOMO PERSONAL",
-    shortLabel: "Aut. Personal",
-    badge: "Hasta 3 Propiedades",
-    icon: "🏢",
+    categoryLabel: "Agente Market (Red)",
+    label: "CLIENTE PARTICULAR",
+    shortLabel: "Cliente Red",
+    badge: "Propietario / Red",
+    icon: "🏡",
     color: "#3B82F6",
-    tagline: "Gestiona tu portafolio personal de inmuebles",
-    description: "Ideal para propietarios e inversionistas que gestionan hasta 3 propiedades y desean coordinar sus mantenimientos con orden.",
+    tagline: "Publica necesidades y recibe cotizaciones tipo Uber",
+    description: "Ideal para propietarios que desean cotizaciones competitivas en tiempo real de técnicos y contratistas calificados de la red.",
     features: [
-      "Control de hasta 3 inmuebles y zonas",
-      "Coordinación de órdenes de mantenimiento",
-      "6 meses gratis de membresía completa"
+      "Publicación de problemas al mapa en vivo de la red",
+      "Recepción de ofertas y chat directo con técnicos",
+      "Opción de delegar administración a gestores inmobiliarios"
     ],
     cta: "REGISTRARME",
     trialInfo: "6 Meses Gratis de Prueba ($299/mes posterior)"
   },
   {
-    key: "owner_business",
-    roleId: 4,
+    key: "market_property_manager",
+    roleId: 5,
     category: "autonomo",
-    categoryLabel: "Autónomos y Red",
-    label: "AUTÓNOMO EMPRESARIAL",
-    shortLabel: "Aut. Empresarial",
-    badge: "Hasta 30 Clientes",
-    icon: "🏬",
+    categoryLabel: "Agente Market (Red)",
+    label: "GESTOR INMOBILIARIO",
+    shortLabel: "Gestor Inmuebles",
+    badge: "Administrador Pro",
+    icon: "🏢",
     color: "#8B5CF6",
-    tagline: "Plataforma integral para empresas de servicio",
-    description: "Para empresas de mantenimiento, administradoras y gestores con cuadrilla propia que manejan hasta 30 clientes y técnicos.",
+    tagline: "Administración integral de inmuebles y cuadrillas",
+    description: "Para gestores de inmuebles, condominios y administradores que manejan múltiples propiedades (propias y delegadas) y equipos de trabajo.",
     features: [
-      "Gestión de hasta 30 clientes y propiedades ilimitadas",
-      "Código de empresa exclusivo para afiliar técnicos y clientes",
+      "Gestión de propiedades propias y delegadas por clientes",
+      "Coordinación de técnicos internos y publicación a la red",
       "Tableros de control avanzados, cotizaciones y reportes"
     ],
     cta: "REGISTRARME",
     trialInfo: "6 Meses Gratis de Prueba ($935/mes posterior)"
   },
   {
-    key: "admin_propiedades",
-    roleId: 7,
+    key: "market_tech_independent",
+    roleId: 6,
     category: "autonomo",
-    categoryLabel: "Autónomos y Red",
-    label: "ADMIN. PROPIEDADES",
-    shortLabel: "Admin. Prop.",
-    badge: "Property Manager",
-    icon: "🔑",
-    color: "#F59E0B",
-    tagline: "Gestión y administración de inmuebles",
-    description: "Property Managers y administradores de condominios o residenciales vinculados al equipo de una empresa o Autónomo.",
-    features: [
-      "Supervisión operativa de condominios y propiedades",
-      "Gestión de accesos, incidencias y levantamientos",
-      "Vinculación directa mediante código de empresa"
-    ],
-    cta: "REGISTRARME",
-    trialInfo: "Sujeto a vinculación y aprobación de empresa"
-  },
-  {
-    key: "tecnico_red",
-    roleId: 8,
-    category: "autonomo",
-    categoryLabel: "Autónomos y Red",
-    label: "TÉCNICO DE LA RED",
-    shortLabel: "Técnico de Red",
+    categoryLabel: "Agente Market (Red)",
+    label: "TÉCNICO INDEPENDIENTE",
+    shortLabel: "Técnico Freelance",
     badge: "Marketplace Abierto",
-    icon: "🌐",
+    icon: "🧑‍🔧",
     color: "#EC4899",
-    tagline: "Ofrece tus servicios en la red abierta",
-    description: "Especialistas y profesionales independientes que ofrecen sus servicios y habilidades en el marketplace abierto de trabajos.",
+    tagline: "Gana trabajos en el mapa en vivo tipo Uber",
+    description: "Profesionales y especialistas independientes que ofrecen sus servicios en la red abierta y cotizan trabajos disponibles.",
     features: [
-      "Presencia y perfil en el catálogo público de técnicos",
-      "Cotización directa de solicitudes y trabajos de la red",
+      "Acceso al mapa en vivo de trabajos disponibles",
+      "Perfil público con calificaciones e insignias de verificación ⭐",
       "1 año completo de suscripción gratuita de bienvenida"
     ],
     cta: "REGISTRARME",
     trialInfo: "1 año de membresía gratuita sin costo"
   },
   {
-    key: "contratista",
-    roleId: 6,
+    key: "market_contractor",
+    roleId: 7,
     category: "autonomo",
-    categoryLabel: "Autónomos y Red",
-    label: "CONTRATISTA",
+    categoryLabel: "Agente Market (Red)",
+    label: "CONTRATISTA / LÍDER",
     shortLabel: "Contratista",
-    badge: "Proyectos y Obras",
+    badge: "Líder de Cuadrilla",
     icon: "🏗️",
     color: "#0D9488",
-    tagline: "Empresas de obras, proyectos y remodelación",
-    description: "Empresas constructoras y contratistas dedicados a remodelaciones, proyectos integrales de obra y subcontratación técnica.",
+    tagline: "Maneja cuadrillas y asigna trabajos ganados",
+    description: "Contratistas y empresas con equipo de trabajo que cotizan en la red y asignan las órdenes ganadas a los miembros de su cuadrilla.",
     features: [
-      "Gestión de proyectos de obra y remodelación",
-      "Coordinación de cuadrillas y subcontratistas",
-      "Seguimiento fotográfico de avances y presupuestos"
+      "Gestión y vinculación de técnicos de cuadrilla",
+      "Cotiza en la red y asigna trabajos a cualquier técnico de tu equipo",
+      "Supervisión y control de ingresos de la cuadrilla"
     ],
     cta: "REGISTRARME",
     trialInfo: "6 Meses Gratis de Prueba ($935/mes posterior)"
+  },
+  {
+    key: "market_crew_member",
+    roleId: 8,
+    category: "autonomo",
+    categoryLabel: "Agente Market (Red)",
+    label: "TÉCNICO DE CUADRILLA",
+    shortLabel: "Técnico Cuadrilla",
+    badge: "Equipo & Modo Dual",
+    icon: "👷",
+    color: "#F59E0B",
+    tagline: "Trabaja en equipo y por tu cuenta",
+    description: "Técnicos que forman parte del equipo de un contratista y cuentan con Modo Dual para realizar trabajos independientes.",
+    features: [
+      "Vinculación directa a la cuadrilla de tu contratista",
+      "Recepción de órdenes asignadas por tu líder de equipo",
+      "Modo Dual: Habilita tu acceso para cotizar por tu cuenta"
+    ],
+    cta: "REGISTRARME",
+    trialInfo: "Sujeto a vinculación y aprobación del contratista"
   }
 ];
 
@@ -304,20 +304,21 @@ const ClientRegister = () => {
     e.preventDefault();
     setMessage("");
 
-    if (password.length < 6) {
-      setMessage("Error: La contraseña debe tener al menos 6 caracteres.");
+    if (password !== confirmPassword) {
+      setMessage("Error: Las contraseñas no coinciden.");
       return;
     }
 
-    if (password !== confirmPassword) {
-      setMessage("Error: Las contraseñas no coinciden.");
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+    if (!isLocalhost && !isCaptchaValid && !captchaToken) {
+      setMessage("Error: Por favor completa la verificación del reCAPTCHA.");
       return;
     }
 
     setIsLoading(true);
 
     const roleId = rolActual.roleId;
-    const isAutonomoAccount = (roleId === 5 || roleId === 4 || roleId === 6 || roleId === 8);
 
     try {
       const payload = {
@@ -327,10 +328,12 @@ const ClientRegister = () => {
         phone_number: phone.trim(),
         password: password,
         role_id: roleId,
-        company_code: (!isAutonomoAccount && roleId !== 7) ? (companyCode.trim() || null) : (companyCode.trim() || null),
-        company_name: isAutonomoAccount ? (companyName.trim() || `${firstName.trim()} ${lastName.trim()}`) : null,
-        specialties: (roleId === 2 || roleId === 8) ? selectedSpecialties : [],
-        captcha_token: captchaToken || "from_admin_bypass"
+        company_code: companyCode.trim() || null,
+        company_name: (roleId === 5 || roleId === 7)
+          ? (companyName.trim() || `${firstName.trim()} ${lastName.trim()}`)
+          : (roleId === 4 ? `${firstName.trim()} ${lastName.trim()}` : null),
+        specialties: [2, 6, 7, 8].includes(roleId) ? selectedSpecialties : [],
+        captcha_token: captchaToken || (isLocalhost ? "localhost_dev_token" : "")
       };
 
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/registro-usuario`, payload);
@@ -340,12 +343,15 @@ const ClientRegister = () => {
 
       if (res.data.status === 'pending_payment') {
         navigate(`/activacion-cuenta?tenant_id=${res.data.tenant_id}`);
-      } else if (res.data.status === 'pending_approval' || roleId === 2 || roleId === 8 || (roleId === 7 && companyCode.trim() !== '')) {
+      } else if (res.data.status === 'pending_approval' || roleId === 2 || roleId === 8) {
         setIsPendingApproval(true);
-        setMessage('⏳ ¡Registro completado con éxito! Tu perfil ha sido enviado a la Sala de Espera del Administrador para su activación. Redirigiendo al login...');
+        setMessage('⏳ ¡Registro completado con éxito! Tu perfil ha sido enviado a revisión para su activación. Redirigiendo al login...');
         setTimeout(() => navigate('/'), 3500);
-      } else if (roleId === 5 || roleId === 4 || roleId === 6) {
-        setMessage('🎉 ¡Registro exitoso con periodo gratuito de prueba! Redirigiendo al inicio de sesión...');
+      } else if (roleId === 6) {
+        setMessage('🎉 ¡Registro exitoso! Te hemos otorgado 1 AÑO GRATIS de bienvenida. Redirigiendo al inicio de sesión...');
+        setTimeout(() => navigate('/'), 2200);
+      } else if (roleId === 4 || roleId === 5 || roleId === 7) {
+        setMessage('🎉 ¡Registro exitoso con periodo gratuito de prueba activo! Redirigiendo al inicio de sesión...');
         setTimeout(() => navigate('/'), 2200);
       } else {
         setMessage('✨ ¡Cuenta registrada exitosamente! Redirigiendo al inicio de sesión...');
@@ -368,6 +374,7 @@ const ClientRegister = () => {
 
   const currentIndex = rolesFiltrados.findIndex(r => r.key === selectedRoleKey);
   const activeRoleIndex = currentIndex !== -1 ? currentIndex : 0;
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   return (
     <div 
@@ -945,6 +952,8 @@ const ClientRegister = () => {
                   <User size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type="text"
+                    name="first_name"
+                    autoComplete="given-name"
                     placeholder="NOMBRE(S)"
                     className="custom-input"
                     value={firstName}
@@ -957,6 +966,8 @@ const ClientRegister = () => {
                   <User size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type="text"
+                    name="last_name"
+                    autoComplete="family-name"
                     placeholder="APELLIDOS"
                     className="custom-input"
                     value={lastName}
@@ -967,13 +978,15 @@ const ClientRegister = () => {
                 </div>
               </div>
 
-              {/* CORREO Y TELÉFONO */}
+              {/* CORREO Y TELÉFONO PERSONAL */}
               <div className="form-row-responsive">
                 <div className="input-group">
                   <Mail size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type="email"
-                    placeholder="CORREO ELECTRÓNICO"
+                    name="email"
+                    autoComplete="email"
+                    placeholder="CORREO ELECTRÓNICO PERSONAL"
                     className="custom-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -985,6 +998,8 @@ const ClientRegister = () => {
                   <Phone size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type="tel"
+                    name="phone_number"
+                    autoComplete="tel"
                     placeholder="TELÉFONO / WHATSAPP"
                     className="custom-input"
                     value={phone}
@@ -1001,6 +1016,8 @@ const ClientRegister = () => {
                   <Lock size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type={showPassword ? "text" : "password"}
+                    name="password"
+                    autoComplete="new-password"
                     placeholder="CONTRASEÑA"
                     className="custom-input"
                     value={password}
@@ -1021,6 +1038,8 @@ const ClientRegister = () => {
                   <Lock size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    autoComplete="new-password"
                     placeholder="CONFIRMAR CONTRASEÑA"
                     className="custom-input"
                     value={confirmPassword}
@@ -1038,13 +1057,13 @@ const ClientRegister = () => {
                 </div>
               </div>
 
-              {/* CONDICIONAL: NOMBRE DE EMPRESA (EMPRESARIAL Y CONTRATISTA) */}
-              {(rolActual.roleId === 4 || rolActual.roleId === 6) && (
+              {/* CONDICIONAL: NOMBRE DE EMPRESA (GESTOR INMOBILIARIO 5 Y CONTRATISTA 7) */}
+              {(rolActual.roleId === 5 || rolActual.roleId === 7) && (
                 <div className="input-group">
                   <Building2 size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type="text"
-                    placeholder="NOMBRE DE TU EMPRESA / NEGOCIO"
+                    placeholder={rolActual.roleId === 5 ? "NOMBRE DE INMOBILIARIA / ADMINISTRADORA" : "NOMBRE DE EMPRESA / CONTRATISTA"}
                     className="custom-input"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
@@ -1053,13 +1072,37 @@ const ClientRegister = () => {
                 </div>
               )}
 
-              {/* CONDICIONAL: CÓDIGO DE EMPRESA (CLIENTE, TÉCNICO AGENTE, ADMIN PROP) */}
-              {(rolActual.roleId === 3 || rolActual.roleId === 2 || rolActual.roleId === 7) && (
+              {/* CONDICIONAL: CÓDIGO DE CUADRILLA PARA TÉCNICO DE CUADRILLA (ROL 8) */}
+              {rolActual.roleId === 8 && (
+                <div style={{ width: '100%' }}>
+                  <div className="input-group">
+                    <Key size={20} strokeWidth={2.5} className="input-icon" />
+                    <input
+                      type="text"
+                      placeholder="CÓDIGO DE CUADRILLA DE TU CONTRATISTA"
+                      className="custom-input"
+                      value={companyCode}
+                      onChange={(e) => setCompanyCode(e.target.value.toUpperCase())}
+                      style={{ paddingLeft: "55px" }}
+                    />
+                  </div>
+                  <p style={{ margin: '4px 0 0 10px', fontSize: '0.75rem', color: '#f59e0b', fontStyle: 'italic', fontFamily: 'system-ui, sans-serif' }}>
+                    * Ingresa el código proporcionado por tu contratista para unirte a su cuadrilla.
+                  </p>
+                </div>
+              )}
+
+              {/* CONDICIONAL: CÓDIGO DE EMPRESA OPCIONAL (CLIENTE 3, TÉCNICO AGENTE 2, GESTOR 5, CONTRATISTA 7) */}
+              {(rolActual.roleId === 3 || rolActual.roleId === 2 || rolActual.roleId === 5 || rolActual.roleId === 7) && (
                 <div className="input-group">
                   <Key size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type="text"
-                    placeholder={rolActual.roleId === 7 ? "CÓDIGO DE EMPRESA (OBLIGATORIO)" : "CÓDIGO DE EMPRESA (OPCIONAL)"}
+                    placeholder={
+                      (rolActual.roleId === 5 || rolActual.roleId === 7)
+                        ? "CÓDIGO PERSONALIZADO (OPCIONAL)"
+                        : "CÓDIGO DE EMPRESA (OPCIONAL)"
+                    }
                     className="custom-input"
                     value={companyCode}
                     onChange={(e) => setCompanyCode(e.target.value.toUpperCase())}
@@ -1068,8 +1111,8 @@ const ClientRegister = () => {
                 </div>
               )}
 
-              {/* CONDICIONAL: ESPECIALIDADES TÉCNICAS */}
-              {(rolActual.roleId === 2 || rolActual.roleId === 8) && (
+              {/* CONDICIONAL: ESPECIALIDADES TÉCNICAS (TÉCNICOS 2, 6, 8 Y CONTRATISTAS 7) */}
+              {[2, 6, 7, 8].includes(rolActual.roleId) && (
                 <div className="modal-specialties-box">
                   <div className="modal-specialties-title">
                     <Wrench size={16} color="#f26522" />
@@ -1095,24 +1138,45 @@ const ClientRegister = () => {
               )}
 
               {/* RECAPTCHA ESTILIZADO HORIZONTAL */}
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', margin: '8px 0' }}>
-                <div style={{
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  boxShadow: '0 4px 18px rgba(0, 0, 0, 0.5)',
-                  border: '1.5px solid rgba(242, 101, 34, 0.4)',
-                  display: 'inline-flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  background: '#222'
-                }}>
-                  <ReCAPTCHA
-                    sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LfHnl4tAAAAAIosLgj18bnFZ4aqpQ0jBXpnJs_Q"}
-                    onChange={handleCaptchaChange}
-                    theme="dark"
-                    size="normal"
-                  />
-                </div>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', margin: '6px 0' }}>
+                {isLocalhost ? (
+                  <div style={{
+                    width: '100%',
+                    background: 'rgba(34, 197, 94, 0.12)',
+                    border: '1.5px solid rgba(34, 197, 94, 0.4)',
+                    color: '#86efac',
+                    borderRadius: '14px',
+                    padding: '10px 14px',
+                    fontSize: '0.82rem',
+                    textAlign: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    fontFamily: 'system-ui, sans-serif'
+                  }}>
+                    <CheckCircle2 size={18} color="#22c55e" style={{ flexShrink: 0 }} />
+                    <span><strong>Modo Local:</strong> reCAPTCHA simulado activo para pruebas</span>
+                  </div>
+                ) : (
+                  <div style={{
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 18px rgba(0, 0, 0, 0.5)',
+                    border: '1.5px solid rgba(242, 101, 34, 0.4)',
+                    display: 'inline-flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    background: '#222'
+                  }}>
+                    <ReCAPTCHA
+                      sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LccVsstAAAAAMDX_aSNIi1Hj93EpCr6-4p9Q9Yk"}
+                      onChange={handleCaptchaChange}
+                      theme="dark"
+                      size="normal"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* MENSAJES DE ERROR / ÉXITO */}

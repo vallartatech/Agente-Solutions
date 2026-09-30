@@ -40,83 +40,90 @@ const VistaInicioAdmin = () => {
   const [subInfo, setSubInfo] = useState(null);
   const [mostrarModalCompraEspacios, setMostrarModalCompraEspacios] = useState(false);
 
-  const isRoot     = user?.role_id === 0;
-  const isEmpresa  = user?.role_id === 4;
-  const isPersonal = user?.role_id === 5;
-  const isAutonomo = isEmpresa || isPersonal;
+  const roleId = Number(user?.role_id);
+  const isRoot = roleId === 0;
+  const isClienteParticular = roleId === 4;
+  const isGestorInmobiliario = roleId === 5;
+  const isTecnicoIndependiente = roleId === 6;
+  const isContratista = roleId === 7;
+  const isTecnicoCuadrilla = roleId === 8;
+  const isMarketAccount = [4, 5, 6, 7, 8].includes(roleId);
 
   useEffect(() => {
-    if (isAutonomo || user?.role_id === 2) {
+    if (isMarketAccount || roleId === 2) {
       axios.get(`${import.meta.env.VITE_API_BASE_URL}/tenant/subscription-status`)
         .then(r => { if (r.data.success) setSubInfo(r.data); })
         .catch(() => {});
     }
-  }, [isAutonomo, user?.role_id]);
+  }, [isMarketAccount, roleId]);
 
-  let rolTexto = "ADMINISTRADOR";
+  let rolTexto = "CLIENTE PARTICULAR";
   if (isRoot) rolTexto = "ROOT / SUPERADMIN";
-  else if (isEmpresa) rolTexto = "EMPRESA / AUTÓNOMO EMPRESARIAL";
-  else if (isPersonal) rolTexto = "PROPIETARIO / AUTÓNOMO PERSONAL";
-  else if (user?.role_id === 2) rolTexto = "TÉCNICO / PROVEEDOR";
-  else if (user?.role_id === 7) rolTexto = "ADMINISTRADOR DE PROPIEDADES";
+  else if (isClienteParticular) rolTexto = "CLIENTE PARTICULAR";
+  else if (isGestorInmobiliario) rolTexto = "GESTOR INMOBILIARIO";
+  else if (isTecnicoIndependiente) rolTexto = "TÉCNICO INDEPENDIENTE";
+  else if (isContratista) rolTexto = "CONTRATISTA / LÍDER";
+  else if (isTecnicoCuadrilla) rolTexto = "TÉCNICO DE CUADRILLA";
 
-  const menuItems = [
-    { id: 1, title: isPersonal ? 'TÉCNICOS Y PROVEEDORES' : 'USUARIOS', icon: '👤', path: '/usuarios'}, 
-    { id: 2, title: 'PROPIEDADES', icon: '🏠',  path: '/propiedades' },
-    { id: 3, title: 'LEVANTAMIENTOS', icon: '📋', path: '/levantamientos' },
-    { id: 4, title: 'REPORTES', icon: '📸', path: '/reportes-globales' },
-    { id: 5, title: 'COTIZACIONES', icon: '🧾' , path: '/vista-cotizaciones'},
-    { id: 6, title: 'SERVICIOS', icon: '🔧', path: '/tablero-servicios' },
-    { id: 8, title: 'PRODUCTOS', icon: '📦', path: '/vista-producto' },
-    { id: 9, title: 'DASHBOARD', icon: '📊',  path: '/dashboard'},
-  ];
+  // ── CONFIGURACIÓN ESPECÍFICA DE BOTONES POR ROL ──
+  let menuItems = [];
 
-  if (user?.role_id !== 7) {
-    menuItems.push({ id: 10, title: 'PERSONALIZAR', icon: '🎨', path: '/customize-login' });
-  }
-
-  if (!isPersonal) {
-    menuItems.splice(6, 0, { id: 7, title: 'BODEGA', icon: '🏭', path: '/bodeguero' });
-  }
-
-  if (isRoot) {
-    menuItems.unshift({
-      id: 11,
-      title: 'AUTÓNOMOS Y CARTERA',
-      icon: '🏢',
-      path: '/gestion-autonomos'
-    });
-  }
-
-  if (isRoot || isAutonomo || user?.role_id === 1) {
-    menuItems.push({
-      id: 12,
-      title: 'SALA DE ESPERA',
-      icon: '⏳',
-      path: '/sala-espera-tecnicos'
-    });
-  }
-
-  if (isAutonomo) {
-    const codeDisplay = subInfo?.tenant?.code || (isPersonal ? 'AUT_P' : 'AUT_E');
-    menuItems.push({
-      id: 13,
-      title: `MI CÓDIGO (${codeDisplay})`,
-      icon: '📲',
-      path: '/mi-codigo-autonomo'
-    });
-    menuItems.push({
-      id: 14,
-      title: '¿NECESITAS AYUDA?',
-      icon: '🤝',
-      path: '/apoyo-autonomo'
-    });
-    menuItems.push({
-      id: 15,
-      title: 'MERCADO / RED',
-      icon: '🗺️',
-      path: '/red-autonomos'
-    });
+  if (isClienteParticular) {
+    // 🏡 ROL 4: CLIENTE PARTICULAR (8 BOTONES SELECCIONADOS)
+    menuItems = [
+      { id: 1, title: 'USUARIOS', icon: '👤', path: '/usuarios' },
+      { id: 2, title: 'PROPIEDADES', icon: '🏠', path: '/propiedades' },
+      { id: 3, title: 'LEVANTAMIENTOS', icon: '📋', path: '/levantamientos' },
+      { id: 4, title: 'REPORTES', icon: '📸', path: '/reportes-globales' },
+      { id: 5, title: 'COTIZACIONES', icon: '🧾', path: '/vista-cotizaciones' },
+      { id: 6, title: 'SERVICIOS', icon: '🔧', path: '/tablero-servicios' },
+      { id: 7, title: '¿NECESITAS AYUDA?', icon: '🤝', path: '/apoyo-autonomo' },
+      { id: 8, title: 'MERCADO / RED', icon: '🗺️', path: '/red-autonomos' },
+    ];
+  } else if (isGestorInmobiliario) {
+    // 🏢 ROL 5: GESTOR INMOBILIARIO (ADMIN PRO COMPLETO)
+    const codeDisplay = subInfo?.tenant?.code || 'AUT_E';
+    menuItems = [
+      { id: 1, title: 'USUARIOS', icon: '👤', path: '/usuarios' },
+      { id: 2, title: 'PROPIEDADES', icon: '🏠', path: '/propiedades' },
+      { id: 3, title: 'LEVANTAMIENTOS', icon: '📋', path: '/levantamientos' },
+      { id: 4, title: 'REPORTES', icon: '📸', path: '/reportes-globales' },
+      { id: 5, title: 'COTIZACIONES', icon: '🧾', path: '/vista-cotizaciones' },
+      { id: 6, title: 'SERVICIOS', icon: '🔧', path: '/tablero-servicios' },
+      { id: 7, title: 'BODEGA', icon: '🏭', path: '/bodeguero' },
+      { id: 8, title: 'PRODUCTOS', icon: '📦', path: '/vista-producto' },
+      { id: 9, title: 'DASHBOARD', icon: '📊', path: '/dashboard' },
+      { id: 10, title: 'PERSONALIZAR', icon: '🎨', path: '/customize-login' },
+      { id: 12, title: 'SALA DE ESPERA', icon: '⏳', path: '/sala-espera-tecnicos' },
+      { id: 13, title: `MI CÓDIGO (${codeDisplay})`, icon: '📲', path: '/mi-codigo-autonomo' },
+      { id: 14, title: '¿NECESITAS AYUDA?', icon: '🤝', path: '/apoyo-autonomo' },
+      { id: 15, title: 'MERCADO / RED', icon: '🗺️', path: '/red-autonomos' },
+    ];
+  } else if (isContratista) {
+    // 🏗️ ROL 7: CONTRATISTA / LÍDER
+    const codeDisplay = subInfo?.tenant?.code || 'AUT_C';
+    menuItems = [
+      { id: 1, title: 'MI CUADRILLA', icon: '👥', path: '/usuarios' },
+      { id: 2, title: 'COTIZACIONES RED', icon: '🧾', path: '/vista-cotizaciones' },
+      { id: 3, title: 'TRABAJOS Y ÓRDENES', icon: '🔧', path: '/tablero-servicios' },
+      { id: 4, title: 'REPORTES', icon: '📸', path: '/reportes-globales' },
+      { id: 5, title: 'MERCADO / RED', icon: '🗺️', path: '/red-autonomos' },
+      { id: 6, title: 'SALA DE ESPERA CUADRILLA', icon: '⏳', path: '/sala-espera-tecnicos' },
+      { id: 7, title: `CÓDIGO CUADRILLA (${codeDisplay})`, icon: '📲', path: '/mi-codigo-autonomo' },
+      { id: 8, title: '¿NECESITAS AYUDA?', icon: '🤝', path: '/apoyo-autonomo' },
+    ];
+  } else {
+    // DEFAULT
+    menuItems = [
+      { id: 1, title: 'USUARIOS', icon: '👤', path: '/usuarios' },
+      { id: 2, title: 'PROPIEDADES', icon: '🏠', path: '/propiedades' },
+      { id: 3, title: 'LEVANTAMIENTOS', icon: '📋', path: '/levantamientos' },
+      { id: 4, title: 'REPORTES', icon: '📸', path: '/reportes-globales' },
+      { id: 5, title: 'COTIZACIONES', icon: '🧾', path: '/vista-cotizaciones' },
+      { id: 6, title: 'SERVICIOS', icon: '🔧', path: '/tablero-servicios' },
+      { id: 14, title: '¿NECESITAS AYUDA?', icon: '🤝', path: '/apoyo-autonomo' },
+      { id: 15, title: 'MERCADO / RED', icon: '🗺️', path: '/red-autonomos' },
+    ];
   }
 
   return (
@@ -126,7 +133,8 @@ const VistaInicioAdmin = () => {
 
       <Header rolTexto={rolTexto} />
 
-      {(isAutonomo || user?.role_id === 2) && subInfo && (
+      {/* ── BANNER DE SUSCRIPCIÓN DINÁMICO SEGÚN ROL ── */}
+      {isMarketAccount && subInfo && (
         <div style={{
           maxWidth: '1150px', margin: '20px auto 10px auto', padding: '20px 26px',
           background: '#111827', border: '2px solid #FF6600',
@@ -135,26 +143,28 @@ const VistaInicioAdmin = () => {
         }}>
           <div>
             <span style={{ color: '#FF6600', fontWeight: 900, fontStyle: 'italic', fontSize: '1.08rem', display: 'block', marginBottom: '8px', letterSpacing: '0.6px' }}>
-              {user?.role_id === 2
-                ? '🛠️ TÉCNICO EXTERNO | 1 AÑO DE PRUEBA GRATIS ($99 MXN/mes tras prueba)'
-                : subInfo?.tenant?.membership_type === 'autonomo_fundador'
-                  ? '🌟 PLAN FUNDADOR | 6 MESES GRATIS ($659 MXN/mes tras prueba)'
-                  : isPersonal
-                    ? '👑 PLAN PERSONAL | 6 MESES GRATIS ($299 MXN/mes tras prueba)'
-                    : '🏢 PLAN EMPRESARIAL | 6 MESES GRATIS ($935 MXN/mes tras prueba)'}
+              {isClienteParticular
+                ? '🏡 PLAN PARTICULAR | 6 MESES GRATIS ($299 MXN/mes tras prueba)'
+                : isGestorInmobiliario
+                  ? '🏢 PLAN GESTOR INMOBILIARIO | 6 MESES GRATIS ($935 MXN/mes tras prueba)'
+                  : isContratista
+                    ? '🏗️ PLAN CONTRATISTA | 6 MESES GRATIS ($935 MXN/mes tras prueba)'
+                    : isTecnicoIndependiente
+                      ? '🧑‍🔧 PLAN TÉCNICO INDEPENDIENTE | 1 AÑO GRATIS ($99 MXN/mes tras prueba)'
+                      : '🌟 PERIODO DE PRUEBA ACTIVO'}
             </span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', color: '#F3F4F6', fontSize: '0.9rem', alignItems: 'center' }}>
               <span style={{ background: 'rgba(255,255,255,0.08)', padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.18)' }}>
                 📅 Vence: <strong style={{ color: '#FFFFFF' }}>{subInfo.subscription_expires_at ? new Date(subInfo.subscription_expires_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Indefinido'}</strong>
               </span>
-              {isAutonomo && (
+              {(isClienteParticular || isGestorInmobiliario) && (
                 <span style={{ background: 'rgba(255,255,255,0.08)', padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.18)' }}>
                   🏠 Propiedades: <strong style={{ color: (subInfo.properties_count >= (subInfo.max_properties + subInfo.extra_properties_count)) ? '#F87171' : '#4ADE80' }}>
-                    {subInfo.properties_count ?? 0} / {(subInfo.max_properties ?? 3) + (subInfo.extra_properties_count ?? 0)}
+                    {subInfo.properties_count ?? 0} / {(subInfo.max_properties ?? (isClienteParticular ? 3 : 30)) + (subInfo.extra_properties_count ?? 0)}
                   </strong>
                 </span>
               )}
-              {isEmpresa && (
+              {isGestorInmobiliario && (
                 <span style={{ background: 'rgba(255,255,255,0.08)', padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.18)' }}>
                   👥 Clientes: <strong style={{ color: (subInfo.clients_count >= (subInfo.max_clients ?? 30)) ? '#F87171' : '#4ADE80' }}>
                     {subInfo.clients_count ?? 0} / {subInfo.max_clients ?? 30}
@@ -169,7 +179,7 @@ const VistaInicioAdmin = () => {
               <LiveCountdown targetDate={subInfo.subscription_expires_at} fallbackDays={subInfo.days_remaining} />
             </div>
 
-            {isAutonomo && (
+            {(isClienteParticular || isGestorInmobiliario) && (
               <button 
                 onClick={() => setMostrarModalCompraEspacios(true)}
                 title="Adquiere cupo para propiedades extras por $79.99 MXN c/u"
@@ -193,8 +203,8 @@ const VistaInicioAdmin = () => {
               </button>
             )}
 
-            {(subInfo.days_remaining <= 45 || user?.role_id === 2) && (
-              <button onClick={() => navigate(`/activacion-cuenta?${user?.role_id === 2 ? `user_id=${user.id}&type=technician` : `tenant_id=${subInfo.tenant?.id}`}`)}
+            {subInfo.days_remaining <= 45 && (
+              <button onClick={() => navigate(`/activacion-cuenta?tenant_id=${subInfo.tenant?.id}`)}
                 style={{ padding: '10px 20px', borderRadius: '50px', border: 'none', background: '#3B82F6', color: '#FFFFFF', fontWeight: 900, cursor: 'pointer', fontSize: '0.86rem', boxShadow: '0 4px 15px rgba(59,130,246,0.5)' }}>
                 🔄 RENOVAR / ACTIVAR
               </button>
@@ -203,6 +213,7 @@ const VistaInicioAdmin = () => {
         </div>
       )}
 
+      {/* ── CUADRÍCULA DE BOTONES DEL MENÚ ── */}
       <div className="admin-grid">
         {menuItems.map((item) => (
           <div 
@@ -226,13 +237,13 @@ const VistaInicioAdmin = () => {
         <img src="/logo-faded.png" alt="Watermark" className="watermark-img" />
       </footer>
 
-      {/* Modal Compra de Espacios para Autónomos (Personal y Empresarial) */}
+      {/* Modal Compra de Espacios */}
       <ModalCompraEspacios
         isOpen={mostrarModalCompraEspacios}
         onClose={() => setMostrarModalCompraEspacios(false)}
         tenantId={subInfo?.tenant?.id || user?.tenant_id || 1}
         userId={user?.id}
-        planName={isPersonal ? 'Personal' : (isEmpresa ? 'Empresarial' : 'Autónomo')}
+        planName={isClienteParticular ? 'Personal' : (isGestorInmobiliario ? 'Empresarial' : 'Autónomo')}
       />
     </div>
   );

@@ -4,7 +4,6 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import UniversalSearch from "../../../components/Shared/UniversalSearch"; 
 import Header from "../../../components/Shared/Header"; 
-import ModalCompraEspacios from "../../../components/Shared/ModalCompraEspacios";
 import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
 import { X, CheckCircle, User, AlertTriangle, ListChecks, Clock, CheckCircle2, LayoutDashboard, ChevronLeft } from "lucide-react";
 
@@ -21,8 +20,6 @@ const VistaPropiedades = () => {
   const [cargando, setCargando] = useState(true);
   const [listaPropiedades, setListaPropiedades] = useState([]);
   const [propiedadesFiltradas, setPropiedadesFiltradas] = useState([]);
-  const [subInfo, setSubInfo] = useState(null);
-  const [mostrarModalCompraEspacios, setMostrarModalCompraEspacios] = useState(false);
   const [pestanaOrigen, setPestanaOrigen] = useState("AGENTE_SOLUTIONS");
 
   const [mostrarModalServicio, setMostrarModalServicio] = useState(false);
@@ -74,14 +71,6 @@ const VistaPropiedades = () => {
 
       setListaPropiedades(propsRes.data);
       setGlobalStats(statsRes.data);
-
-      if (user?.role_id === 4 || user?.role_id === 5) {
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/tenant/subscription-status`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-          .then(r => { if (r.data.success) setSubInfo(r.data); })
-          .catch(() => {});
-      }
     } catch (error) {
       console.error("Error al cargar datos:", error);
     } finally {
@@ -89,14 +78,7 @@ const VistaPropiedades = () => {
     }
   };
 
-  const maxAllowed = (subInfo?.max_properties ?? 3) + (subInfo?.extra_properties_count ?? 0);
-  const currentCount = subInfo?.properties_count ?? listaPropiedades.length;
-  const isPersonalOrAutonomo = user?.role_id === 5 || user?.role_id === 4;
-  const isLimitReached = isPersonalOrAutonomo && (currentCount >= maxAllowed);
-
   const isRootOrAgenteAdmin = user?.role_id === 1 || user?.role_id === 0 || (user?.role_id === 2 && (!user?.tenant_id || user?.tenant_id === 1));
-  const countAgenteSolutions = listaPropiedades.filter(p => !p.tenant_id || p.tenant_id === 1).length;
-  const countAutonomos = listaPropiedades.filter(p => p.tenant_id && p.tenant_id !== 1).length;
 
   // Lógica de filtrado manual combinando categoría y búsqueda del sidebar
   useEffect(() => {
@@ -872,13 +854,6 @@ const VistaPropiedades = () => {
           </div>
         </div>
       )}
-
-      <ModalCompraEspacios
-        isOpen={mostrarModalCompraEspacios}
-        onClose={() => setMostrarModalCompraEspacios(false)}
-        tenantId={subInfo?.tenant?.id || user?.tenant_id || 1}
-        userId={user?.id}
-      />
     </div>
   );
 };

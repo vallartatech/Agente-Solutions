@@ -79,14 +79,10 @@ const VistaUsuarios = () => {
   const obtenerUsuarios = async () => {
     try {
       const { data } = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios`);
-      const isPersonal = user?.role_id === 5;
-      const isEmpresa  = user?.role_id === 4;
       const formateados = data
         .filter(u => {
           if (isRoot) return true;
-          if (isPersonal) return u.role_id === 2; // Autónomo Personal solo ve Técnicos
-          if (isEmpresa) return u.role_id === 2 || u.role_id === 3; // Autónomo Empresa ve Clientes y Técnicos
-          if (user?.role_id === 1) return u.role_id !== 0 && u.role_id !== 4 && u.role_id !== 5;
+          if (user?.role_id === 1) return u.role_id !== 0;
           return true;
         })
         .map((u) => ({

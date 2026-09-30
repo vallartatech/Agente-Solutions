@@ -67,8 +67,10 @@ const LoginAgente = () => {
   useEffect(() => {
     if (user) {
       const role = Number(user.role_id);
-      if ([0, 1, 4, 5, 6, 7].includes(role)) navigate("/VistaRoot");
-      else if (role === 2 || role === 8) navigate("/VistaTecnico");
+      if (role === 0 || role === 1) navigate("/VistaRoot");
+      else if (role === 4 || role === 5 || role === 7) navigate("/VistaMarket");
+      else if (role === 2) navigate("/VistaTecnico");
+      else if (role === 6 || role === 8) navigate("/mercado-trabajos");
       else if (role === 3) navigate("/propiedades");
     }
   }, [user, navigate]);
@@ -131,32 +133,35 @@ const LoginAgente = () => {
       });
 
       setIsLoading(false);
+      // Redirecciones y mensajes personalizados según el rol
       const roleNum = Number(role_id);
       if (roleNum === 0) {
-        setMensaje(`¡Bienvenido ROOT ${first_name}! Entrando al panel...`);
-        setTimeout(() => navigate("/VistaRoot"), 800);
-      } else if (roleNum === 4 || roleNum === 5 || roleNum === 6) {
-        let typeLabel = 'AUTÓNOMO';
-        if (roleNum === 5) typeLabel = 'AUTÓNOMO PERSONAL';
-        if (roleNum === 4) typeLabel = 'AUTÓNOMO EMPRESARIAL';
-        if (roleNum === 6) typeLabel = 'CONTRATISTA';
-        setMensaje(`¡Bienvenido ${typeLabel} ${first_name}! Entrando a tu panel...`);
-        setTimeout(() => navigate("/VistaRoot"), 800);
+        setMensaje(`¡Bienvenido ROOT ${first_name}! Entrando al panel principal...`);
+        setTimeout(() => navigate("/VistaRoot"), 1000);
       } else if (roleNum === 1) {
         setMensaje(`¡Bienvenido ADMIN ${first_name}! Entrando al panel...`);
-        setTimeout(() => navigate("/VistaRoot"), 800);
+        setTimeout(() => navigate("/VistaRoot"), 1000);
       } else if (roleNum === 2) {
-        setMensaje(`¡Bienvenido TÉCNICO INTERNO ${first_name}! Abriendo panel...`);
-        setTimeout(() => navigate("/VistaTecnico"), 800);
-      } else if (roleNum === 8) {
-        setMensaje(`¡Bienvenido TÉCNICO DE LA RED ${first_name}! Abriendo panel...`);
-        setTimeout(() => navigate("/VistaTecnico"), 800);
+        setMensaje(`¡Bienvenido TÉCNICO INTERNO ${first_name}! Abriendo tu panel de trabajo...`);
+        setTimeout(() => navigate("/VistaTecnico"), 1000);
       } else if (roleNum === 3) {
         setMensaje(`¡Bienvenido CLIENTE ${first_name}! Abriendo tu portal...`);
-        setTimeout(() => navigate("/propiedades"), 800);
+        setTimeout(() => navigate("/propiedades"), 1000);
+      } else if (roleNum === 4) {
+        setMensaje(`¡Bienvenido CLIENTE PARTICULAR ${first_name}! Entrando a Agente Market...`);
+        setTimeout(() => navigate("/VistaMarket"), 1000);
+      } else if (roleNum === 5) {
+        setMensaje(`¡Bienvenido GESTOR INMOBILIARIO ${first_name}! Entrando al panel de gestión...`);
+        setTimeout(() => navigate("/VistaMarket"), 1000);
+      } else if (roleNum === 6) {
+        setMensaje(`¡Bienvenido TÉCNICO INDEPENDIENTE ${first_name}! Abriendo el Mercado de Trabajos...`);
+        setTimeout(() => navigate("/mercado-trabajos"), 1000);
       } else if (roleNum === 7) {
-        setMensaje(`¡Bienvenido ADMIN. DE PROPIEDADES ${first_name}! Entrando al panel...`);
-        setTimeout(() => navigate("/VistaRoot"), 800);
+        setMensaje(`¡Bienvenido CONTRATISTA ${first_name}! Entrando al panel de cuadrillas...`);
+        setTimeout(() => navigate("/VistaMarket"), 1000);
+      } else if (roleNum === 8) {
+        setMensaje(`¡Bienvenido TÉCNICO DE CUADRILLA ${first_name}! Abriendo el Mercado de Trabajos...`);
+        setTimeout(() => navigate("/mercado-trabajos"), 1000);
       } else {
         setMensaje(`Error: Tu usuario (Rol ${roleNum}) no tiene permisos válidos.`);
       }
