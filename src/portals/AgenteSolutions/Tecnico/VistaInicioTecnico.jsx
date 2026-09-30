@@ -1,15 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import '../../../styles/AgenteSolutions/Tecnico/VistaInicioTecnico.css';
-import { useAuth } from '../../../context/AuthContext';
-import { Settings, Home, Wrench, Search, Upload, Download } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 
 const VistaInicioTecnico = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const isIndependent = user?.role_id === 8;
 
   return (
     <div className="main-container">
@@ -17,8 +12,7 @@ const VistaInicioTecnico = () => {
       <div className="top-bar-black"></div>
 
       <div className="content-wrapper">
-        
-        <Header rolTexto="TÉCNICO" />
+        <Header rolTexto="TÉCNICO INTERNO" />
 
         <div className="search-container">
           <div className="search-bar">
@@ -34,21 +28,12 @@ const VistaInicioTecnico = () => {
             </div>
           </div>
 
-          {isIndependent ? (
-            <div className="menu-card">
-              <div className="card-inner" onClick={() => navigate('/mercado-trabajos')}>
-                <div className="icon-placeholder">🌍</div>
-                <span className="card-title">MERCADO / RED</span>
-              </div>
+          <div className="menu-card">
+            <div className="card-inner" onClick={() => navigate('/trabajos-asignados')}>
+              <div className="icon-placeholder">📋</div>
+              <span className="card-title">LEVANTAMIENTOS</span>
             </div>
-          ) : (
-            <div className="menu-card">
-              <div className="card-inner" onClick={() => navigate('/trabajos-asignados')}>
-                <div className="icon-placeholder">📋</div>
-                <span className="card-title">LEVANTAMIENTO</span>
-              </div>
-            </div>
-          )}
+          </div>
 
           <div className="menu-card">
             <div className="card-inner" onClick={() => navigate('/vista-cotizaciones')}>
@@ -56,8 +41,6 @@ const VistaInicioTecnico = () => {
               <span className="card-title">COTIZACIONES</span>
             </div>
           </div>
-
-
         </nav>
       </div>
     </div>
@@ -65,3 +48,4 @@ const VistaInicioTecnico = () => {
 };
 
 export default VistaInicioTecnico;
+

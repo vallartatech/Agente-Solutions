@@ -174,6 +174,7 @@ const AppRoutes = () => {
 
       <Route path="/VistaRoot" element={<VistaInicioAdmin />} />
       <Route path="/VistaAdmin" element={<VistaInicioAdmin />} />
+      <Route path="/VistaMarket" element={<VistaInicioMarket />} />
       <Route path="/VistaTecnico" element={<VistaInicioTecnico />} />
 
       <Route
