@@ -39,9 +39,9 @@ const Header = ({ rolTexto = "USUARIO", titulo }) => {
     if (!user) return;
     const role = Number(user.role_id);
     if (role === 0 || role === 1) navigate('/VistaRoot');
-    else if ([4, 5, 6, 7].includes(role)) navigate('/VistaMarket');
+    else if (role === 4 || role === 5 || role === 7) navigate('/VistaMarket');
     else if (role === 2) navigate('/VistaTecnico');
-    else if (role === 8) navigate('/mercado-trabajos');
+    else if (role === 6 || role === 8) navigate('/mercado-trabajos');
     else if (role === 3) navigate('/VistaInicioCliente');
     else navigate('/');
   };
@@ -88,7 +88,7 @@ const Header = ({ rolTexto = "USUARIO", titulo }) => {
       {/* SECCIÓN DERECHA: Notificaciones y Perfil */}
       <div className="user-controls" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
         
-        <NotificationBell />
+        {/* <NotificationBell /> */}
 
         <div style={{ position: "relative" }}>
           <button

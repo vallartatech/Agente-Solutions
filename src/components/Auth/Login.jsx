@@ -44,9 +44,9 @@ const LoginAgente = () => {
     if (user) {
       const role = Number(user.role_id);
       if (role === 0 || role === 1) navigate("/VistaRoot");
-      else if ([4, 5, 6, 7].includes(role)) navigate("/VistaMarket");
+      else if (role === 4 || role === 5 || role === 7) navigate("/VistaMarket");
       else if (role === 2) navigate("/VistaTecnico");
-      else if (role === 8) navigate("/mercado-trabajos");
+      else if (role === 6 || role === 8) navigate("/mercado-trabajos");
       else if (role === 3) navigate("/propiedades");
     }
   }, [user, navigate]);
@@ -127,16 +127,20 @@ const handleLogin = async (e) => {
       } else if (roleNum === 3) {
         setMensaje(`¡Bienvenido CLIENTE ${first_name}! Abriendo tu portal...`);
         setTimeout(() => navigate("/propiedades"), 1000);
-      } else if (roleNum === 4 || roleNum === 5 || roleNum === 6 || roleNum === 7) {
-        let typeLabel = 'AUTÓNOMO';
-        if (roleNum === 5) typeLabel = 'AUTÓNOMO PERSONAL';
-        if (roleNum === 4) typeLabel = 'AUTÓNOMO EMPRESARIAL';
-        if (roleNum === 6) typeLabel = 'CONTRATISTA';
-        if (roleNum === 7) typeLabel = 'ADMIN. DE PROPIEDADES';
-        setMensaje(`¡Bienvenido ${typeLabel} ${first_name}! Entrando a Agente Market...`);
+      } else if (roleNum === 4) {
+        setMensaje(`¡Bienvenido CLIENTE PARTICULAR ${first_name}! Entrando a Agente Market...`);
+        setTimeout(() => navigate("/VistaMarket"), 1000);
+      } else if (roleNum === 5) {
+        setMensaje(`¡Bienvenido GESTOR INMOBILIARIO ${first_name}! Entrando al panel de gestión...`);
+        setTimeout(() => navigate("/VistaMarket"), 1000);
+      } else if (roleNum === 6) {
+        setMensaje(`¡Bienvenido TÉCNICO INDEPENDIENTE ${first_name}! Abriendo el Mercado de Trabajos...`);
+        setTimeout(() => navigate("/mercado-trabajos"), 1000);
+      } else if (roleNum === 7) {
+        setMensaje(`¡Bienvenido CONTRATISTA ${first_name}! Entrando al panel de cuadrillas...`);
         setTimeout(() => navigate("/VistaMarket"), 1000);
       } else if (roleNum === 8) {
-        setMensaje(`¡Bienvenido TÉCNICO DE LA RED ${first_name}! Abriendo el Mercado de Trabajos...`);
+        setMensaje(`¡Bienvenido TÉCNICO DE CUADRILLA ${first_name}! Abriendo el Mercado de Trabajos...`);
         setTimeout(() => navigate("/mercado-trabajos"), 1000);
       } else {
         setMensaje(`Error: Tu usuario (Rol ${roleNum}) no tiene permisos válidos.`);

@@ -304,13 +304,15 @@ const ClientRegister = () => {
     e.preventDefault();
     setMessage("");
 
-    if (password.length < 6) {
-      setMessage("Error: La contraseña debe tener al menos 6 caracteres.");
+    if (password !== confirmPassword) {
+      setMessage("Error: Las contraseñas no coinciden.");
       return;
     }
 
-    if (password !== confirmPassword) {
-      setMessage("Error: Las contraseñas no coinciden.");
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+    if (!isLocalhost && !isCaptchaValid && !captchaToken) {
+      setMessage("Error: Por favor completa la verificación del reCAPTCHA.");
       return;
     }
 
@@ -331,7 +333,7 @@ const ClientRegister = () => {
           ? (companyName.trim() || `${firstName.trim()} ${lastName.trim()}`)
           : (roleId === 4 ? `${firstName.trim()} ${lastName.trim()}` : null),
         specialties: [2, 6, 7, 8].includes(roleId) ? selectedSpecialties : [],
-        captcha_token: captchaToken || "from_admin_bypass"
+        captcha_token: captchaToken || (isLocalhost ? "localhost_dev_token" : "")
       };
 
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/registro-usuario`, payload);
@@ -372,6 +374,7 @@ const ClientRegister = () => {
 
   const currentIndex = rolesFiltrados.findIndex(r => r.key === selectedRoleKey);
   const activeRoleIndex = currentIndex !== -1 ? currentIndex : 0;
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   return (
     <div 
@@ -949,6 +952,8 @@ const ClientRegister = () => {
                   <User size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type="text"
+                    name="first_name"
+                    autoComplete="given-name"
                     placeholder="NOMBRE(S)"
                     className="custom-input"
                     value={firstName}
@@ -961,6 +966,8 @@ const ClientRegister = () => {
                   <User size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type="text"
+                    name="last_name"
+                    autoComplete="family-name"
                     placeholder="APELLIDOS"
                     className="custom-input"
                     value={lastName}
@@ -977,6 +984,8 @@ const ClientRegister = () => {
                   <Mail size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type="email"
+                    name="email"
+                    autoComplete="email"
                     placeholder="CORREO ELECTRÓNICO PERSONAL"
                     className="custom-input"
                     value={email}
@@ -989,6 +998,8 @@ const ClientRegister = () => {
                   <Phone size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type="tel"
+                    name="phone_number"
+                    autoComplete="tel"
                     placeholder="TELÉFONO / WHATSAPP"
                     className="custom-input"
                     value={phone}
@@ -1005,6 +1016,8 @@ const ClientRegister = () => {
                   <Lock size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type={showPassword ? "text" : "password"}
+                    name="password"
+                    autoComplete="new-password"
                     placeholder="CONTRASEÑA"
                     className="custom-input"
                     value={password}
@@ -1025,6 +1038,8 @@ const ClientRegister = () => {
                   <Lock size={20} strokeWidth={2.5} className="input-icon" />
                   <input
                     type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    autoComplete="new-password"
                     placeholder="CONFIRMAR CONTRASEÑA"
                     className="custom-input"
                     value={confirmPassword}
@@ -1123,24 +1138,45 @@ const ClientRegister = () => {
               )}
 
               {/* RECAPTCHA ESTILIZADO HORIZONTAL */}
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', margin: '8px 0' }}>
-                <div style={{
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  boxShadow: '0 4px 18px rgba(0, 0, 0, 0.5)',
-                  border: '1.5px solid rgba(242, 101, 34, 0.4)',
-                  display: 'inline-flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  background: '#222'
-                }}>
-                  <ReCAPTCHA
-                    sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LfHnl4tAAAAAIosLgj18bnFZ4aqpQ0jBXpnJs_Q"}
-                    onChange={handleCaptchaChange}
-                    theme="dark"
-                    size="normal"
-                  />
-                </div>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', margin: '6px 0' }}>
+                {isLocalhost ? (
+                  <div style={{
+                    width: '100%',
+                    background: 'rgba(34, 197, 94, 0.12)',
+                    border: '1.5px solid rgba(34, 197, 94, 0.4)',
+                    color: '#86efac',
+                    borderRadius: '14px',
+                    padding: '10px 14px',
+                    fontSize: '0.82rem',
+                    textAlign: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    fontFamily: 'system-ui, sans-serif'
+                  }}>
+                    <CheckCircle2 size={18} color="#22c55e" style={{ flexShrink: 0 }} />
+                    <span><strong>Modo Local:</strong> reCAPTCHA simulado activo para pruebas</span>
+                  </div>
+                ) : (
+                  <div style={{
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 18px rgba(0, 0, 0, 0.5)',
+                    border: '1.5px solid rgba(242, 101, 34, 0.4)',
+                    display: 'inline-flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    background: '#222'
+                  }}>
+                    <ReCAPTCHA
+                      sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LccVsstAAAAAMDX_aSNIi1Hj93EpCr6-4p9Q9Yk"}
+                      onChange={handleCaptchaChange}
+                      theme="dark"
+                      size="normal"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* MENSAJES DE ERROR / ÉXITO */}
