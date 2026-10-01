@@ -236,6 +236,60 @@ const LoginAgente = () => {
   const [backgroundSettings, setBackgroundSettings] = useState({ imageUrl: null, colorHex: '#0b0c10', appLogo: null });
   const [selectedTenant, setSelectedTenant] = useState(null);
 
+  // Mobile Bottom Sheet Swipe / Collapse State
+  const [isSheetCollapsed, setIsSheetCollapsed] = useState(false);
+  const [touchStartY, setTouchStartY] = useState(null);
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+
+  // Swipe for 3D Coverflow Role Cards
+  const [cardTouchStartX, setCardTouchStartX] = useState(null);
+
+  const handleCardTouchStart = (e) => {
+    setCardTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleCardTouchEnd = (e) => {
+    if (cardTouchStartX === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const deltaX = touchEndX - cardTouchStartX;
+    if (deltaX > 35) {
+      handleStepRole(-1);
+    } else if (deltaX < -35) {
+      handleStepRole(1);
+    }
+    setCardTouchStartX(null);
+  };
+
+  const handleSheetTouchStart = (e) => {
+    if (window.innerWidth > 820) return;
+    // Don't intercept touches on interactive form controls
+    if (e.target.closest('input, textarea, select, button, a, .aiw-role-item, .aiw-category-btn')) return;
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleSheetTouchMove = (e) => {
+    if (!touchStartY || window.innerWidth > 820) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartY;
+    if (!isSheetCollapsed && deltaY > 0) {
+      setDragOffsetY(Math.min(deltaY, 320));
+    } else if (isSheetCollapsed && deltaY < 0) {
+      setDragOffsetY(Math.max(deltaY, -320));
+    }
+  };
+
+  const handleSheetTouchEnd = () => {
+    if (window.innerWidth > 820) return;
+    if (!isSheetCollapsed && dragOffsetY > 55) {
+      setIsSheetCollapsed(true);
+    } else if (isSheetCollapsed && dragOffsetY < -45) {
+      setIsSheetCollapsed(false);
+      setShowRoleExplorer(false);
+    }
+    setDragOffsetY(0);
+    setTouchStartY(null);
+  };
+
   // Filtrado de roles según la categoría activa
   const rolesFiltrados = ROLES_PUBLICOS.filter(r => r.category === activeCategory);
   const rolActual = ROLES_PUBLICOS.find(r => r.key === selectedRoleKey) || rolesFiltrados[0] || ROLES_PUBLICOS[0];
@@ -268,8 +322,31 @@ const LoginAgente = () => {
   const handleSelectRoleFromExplorer = (role) => {
     setSelectedRoleKey(role.key);
     setShowRoleExplorer(false);
+    setIsSheetCollapsed(false);
+    setIsSignUp(true);
     setRegMessage(`✅ Rol seleccionado: ${role.label}`);
     setTimeout(() => setRegMessage(""), 3000);
+  };
+
+  const handleTopBack = () => {
+    if (showRoleExplorer && !isSignUp) {
+      setShowRoleExplorer(false);
+      return;
+    }
+    if (isSignUp) {
+      // Si estamos en Registro, volver a Iniciar Sesión
+      setIsSignUp(false);
+      setShowRoleExplorer(false);
+      setIsSheetCollapsed(false);
+      setMensaje("");
+      setRegMessage("");
+    } else {
+      // Si estamos en Iniciar Sesión, volver a la pantalla de Bienvenida
+      setShowWelcome(true);
+      setShowRoleExplorer(false);
+      setIsSheetCollapsed(false);
+      setMensaje("");
+    }
   };
 
   useEffect(() => {
@@ -538,15 +615,8 @@ const LoginAgente = () => {
       {/* === ONBOARDING / WELCOME SCREEN (Shown before opening login/register) === */}
       {showWelcome && (
         <div className="aiw-welcome-screen">
-          {/* Top Bar */}
+          {/* Top Bar with Saltar button pinned to top right */}
           <div className="aiw-welcome-topbar">
-            <div className="aiw-welcome-brand-mini">
-              <img
-                src={backgroundSettings.appLogo || Logo4}
-                alt="Agente Solutions"
-                className="aiw-welcome-logo-small"
-              />
-            </div>
             <button
               type="button"
               className="aiw-welcome-skip-btn"
@@ -558,6 +628,15 @@ const LoginAgente = () => {
 
           {/* Hero Content */}
           <div className="aiw-welcome-body">
+            {/* Logo de la empresa centrado arriba del texto */}
+            <div className="aiw-welcome-brand-center">
+              <img
+                src={backgroundSettings.appLogo || Logo4}
+                alt="Agente Solutions"
+                className="aiw-welcome-logo-center"
+              />
+            </div>
+
             <div className="aiw-welcome-badge">
               <Sparkles size={14} className="aiw-welcome-badge-icon" />
               <span>{WELCOME_SLIDES[welcomeSlide].badge}</span>
@@ -605,10 +684,24 @@ const LoginAgente = () => {
         </div>
       )}
 
+      {/* Floating Back button at top-left outside of the card */}
+      {!showWelcome && (
+        <button
+          type="button"
+          className="aiw-top-back-btn"
+          onClick={handleTopBack}
+          title={isSignUp ? "Volver al inicio de sesión" : "Volver a la pantalla de bienvenida"}
+          aria-label="Volver"
+        >
+          <ArrowLeft size={19} strokeWidth={2.5} />
+          <span>Volver</span>
+        </button>
+      )}
+
       {/* Main Split Layout Container */}
       <div className={`aiw-page-container ${showRoleExplorer ? "aiw-roles-expanded" : ""} ${showWelcome ? "aiw-hide-auth-page" : "aiw-show-auth-page"}`}>
 
-        {/* LEFT HERO SECTION: Large Company Logo (hides smoothly when roles expand) */}
+        {/* LEFT HERO SECTION: Large Company Logo */}
         <div className="aiw-hero-left">
           <div className="aiw-hero-logo-box">
             <img
@@ -617,11 +710,178 @@ const LoginAgente = () => {
               className="aiw-hero-logo-img"
             />
           </div>
+
+          {/* MOBILE FLOATING ROLE CAROUSEL (Visible on mobile when sheet is collapsed on register) */}
+          {isSignUp && isSheetCollapsed && (
+            <div className="aiw-mobile-floating-carousel">
+              {/* Category selector buttons */}
+              <div className="aiw-mcarousel-cat-row">
+                <button
+                  type="button"
+                  className={`aiw-mcarousel-cat-btn ${activeCategory === "agente" ? "active" : ""}`}
+                  onClick={() => handleCategoryChange("agente")}
+                >
+                  Agente Solutions ({ROLES_PUBLICOS.filter(r => r.category === 'agente').length})
+                </button>
+                <button
+                  type="button"
+                  className={`aiw-mcarousel-cat-btn ${activeCategory === "autonomo" ? "active" : ""}`}
+                  onClick={() => handleCategoryChange("autonomo")}
+                >
+                  Autónomos & Red ({ROLES_PUBLICOS.filter(r => r.category === 'autonomo').length})
+                </button>
+              </div>
+
+              {/* 3D Coverflow Perspective Stage (Swipeable with finger) */}
+              <div className="aiw-mcarousel-track">
+                <div 
+                  className="aiw-coverflow-stage"
+                  onTouchStart={handleCardTouchStart}
+                  onTouchEnd={handleCardTouchEnd}
+                >
+                  {rolesFiltrados.map((r, i) => {
+                    const activeIndex = rolesFiltrados.findIndex(rf => rf.key === selectedRoleKey);
+                    const safeActiveIndex = activeIndex === -1 ? 0 : activeIndex;
+                    const diff = i - safeActiveIndex;
+                    const isCenter = diff === 0;
+
+                    let transform = "";
+                    let zIndex = 1;
+                    let opacity = 0;
+                    let pointerEvents = "none";
+
+                    if (isCenter) {
+                      transform = "translateX(0) scale(1) translateZ(0)";
+                      zIndex = 10;
+                      opacity = 1;
+                      pointerEvents = "auto";
+                    } else if (diff === -1) {
+                      transform = "translateX(-80px) scale(0.86) rotateY(12deg)";
+                      zIndex = 6;
+                      opacity = 0.65;
+                      pointerEvents = "auto";
+                    } else if (diff === 1) {
+                      transform = "translateX(80px) scale(0.86) rotateY(-12deg)";
+                      zIndex = 6;
+                      opacity = 0.65;
+                      pointerEvents = "auto";
+                    } else if (diff === -2) {
+                      transform = "translateX(-140px) scale(0.72) rotateY(20deg)";
+                      zIndex = 3;
+                      opacity = 0.3;
+                      pointerEvents = "auto";
+                    } else if (diff === 2) {
+                      transform = "translateX(140px) scale(0.72) rotateY(-20deg)";
+                      zIndex = 3;
+                      opacity = 0.3;
+                      pointerEvents = "auto";
+                    } else {
+                      transform = `translateX(${diff > 0 ? 170 : -170}px) scale(0.6)`;
+                      zIndex = 1;
+                      opacity = 0;
+                      pointerEvents = "none";
+                    }
+
+                    return (
+                      <div
+                        key={r.key}
+                        className={`aiw-coverflow-card ${isCenter ? "active-center" : "flanking"}`}
+                        style={{
+                          transform,
+                          zIndex,
+                          opacity,
+                          pointerEvents,
+                          borderColor: isCenter ? r.color : `${r.color}55`,
+                          boxShadow: isCenter
+                            ? `0 22px 50px rgba(0, 0, 0, 0.9), 0 0 28px ${r.color}35`
+                            : `0 10px 25px rgba(0, 0, 0, 0.6)`
+                        }}
+                        onClick={() => {
+                          if (!isCenter) {
+                            handleDotClick(r.key, i);
+                          } else {
+                            handleSelectRoleFromExplorer(r);
+                          }
+                        }}
+                      >
+                        {/* Top Header Badge */}
+                        <div className="aiw-cf-top-row">
+                          <span 
+                            className="aiw-cf-badge"
+                            style={{
+                              borderColor: `${r.color}66`,
+                              color: r.color,
+                              background: `${r.color}18`
+                            }}
+                          >
+                            {r.badge}
+                          </span>
+                          <span className="aiw-cf-category-tag">
+                            {r.category === 'agente' ? 'MATRIZ OFICIAL' : 'RED DE TRABAJO'}
+                          </span>
+                        </div>
+
+                        {/* Full Role Information */}
+                        <div className="aiw-cf-info">
+                          <h3 className="aiw-cf-title">{r.label}</h3>
+                          <p className="aiw-cf-tagline" style={{ color: r.color }}>{r.tagline}</p>
+                          <p className="aiw-cf-desc">{r.description}</p>
+                          
+                          <div className="aiw-cf-features">
+                            {r.features.map((feat, fIdx) => (
+                              <div key={fIdx} className="aiw-cf-feat-item">
+                                <span className="aiw-cf-bullet" style={{ color: r.color }}>•</span>
+                                <span>{feat}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          <span className="aiw-cf-trial-info">{r.trialInfo}</span>
+                        </div>
+
+                        {/* Bottom CTA Action Button */}
+                        <div className="aiw-cf-bottom-bar">
+                          <button
+                            type="button"
+                            className="aiw-cf-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectRoleFromExplorer(r);
+                            }}
+                            style={{ background: isCenter ? `linear-gradient(135deg, ${r.color}, #f26522)` : '#262934' }}
+                          >
+                            <span>{isCenter ? `REGISTRARME COMO ${r.shortLabel.toUpperCase()}` : `ELEGIR ${r.shortLabel.toUpperCase()}`}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* CENTER / LEFT (when expanded): Sliding Login / Register Card */}
         <div className="aiw-hero-right aiw-hero-card-col">
-          <div className="aiw-card-wrapper">
+          <div 
+            className={`aiw-card-wrapper ${isSheetCollapsed ? "aiw-sheet-collapsed" : "aiw-sheet-expanded"}`}
+            onTouchStart={handleSheetTouchStart}
+            onTouchMove={handleSheetTouchMove}
+            onTouchEnd={handleSheetTouchEnd}
+            style={
+              dragOffsetY !== 0
+                ? {
+                    transform: `translateY(${
+                      isSheetCollapsed
+                        ? `calc(100% - 62px + ${dragOffsetY}px)`
+                        : `${dragOffsetY}px`
+                    })`,
+                    transition: 'none'
+                  }
+                : undefined
+            }
+          >
 
             {/* Floating side arrow outside the card to toggle Role Explorer when on Register */}
             {isSignUp && (
@@ -641,20 +901,28 @@ const LoginAgente = () => {
 
             <div className={`aiw-card ${isSignUp ? "aiw-right-panel-active" : ""}`}>
 
+              {/* Mobile Drag Handle (Swipe line to hide/show sheet) */}
+              <div 
+                className="aiw-mobile-drag-handle"
+                onClick={() => {
+                  setIsSheetCollapsed(prev => {
+                    const next = !prev;
+                    if (!next) setShowRoleExplorer(false);
+                    return next;
+                  });
+                }}
+                title={isSheetCollapsed ? "Toca o desliza para abrir el registro" : "Desliza hacia abajo para ocultar"}
+                aria-label="Tirador táctil"
+              >
+                <div className="aiw-drag-pill"></div>
+                {isSheetCollapsed && (
+                  <span className="aiw-drag-peek-label">Toca para abrir formulario</span>
+                )}
+              </div>
+
               {/* === 1. SIGN IN FORM (LOGIN) === */}
               <div className="aiw-form-container aiw-sign-in-container">
                 <div className="aiw-form-side">
-
-                  {/* Back to Welcome Button on Mobile */}
-                  <button
-                    type="button"
-                    className="aiw-card-back-btn"
-                    onClick={() => setShowWelcome(true)}
-                    title="Volver al inicio"
-                    aria-label="Volver"
-                  >
-                    <ArrowLeft size={18} />
-                  </button>
 
                   {/* Header Brand */}
                   <div className="aiw-brand">
@@ -749,7 +1017,7 @@ const LoginAgente = () => {
                         <Mail size={18} className="aiw-field-icon" />
                         <input
                           type="text"
-                          placeholder="CORREO O CELULAR..."
+                          placeholder="Correo o celular..."
                           className="aiw-input"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
@@ -760,10 +1028,10 @@ const LoginAgente = () => {
 
                       {/* Password Field */}
                       <div className="aiw-input-field">
-                        <Lock size={18} className="aiw-field-icon" />
+                        <Lock size={16} className="aiw-field-icon" />
                         <input
                           type={showPassword ? "text" : "password"}
-                          placeholder="CONTRASEÑA..."
+                          placeholder="Contraseña..."
                           className="aiw-input"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
@@ -832,7 +1100,6 @@ const LoginAgente = () => {
                         className="aiw-btn-capsule"
                         onClick={() => { setIsSignUp(true); setShowRoleExplorer(false); setMensaje(""); }}
                       >
-                        <span className="aiw-capsule-emoji">🦊</span>
                         <span className="aiw-capsule-text">REGISTRARME COMO CLIENTE</span>
                       </button>
 
@@ -872,17 +1139,6 @@ const LoginAgente = () => {
               <div className="aiw-form-container aiw-sign-up-container">
                 <div className="aiw-form-side">
 
-                  {/* Back to Welcome Button on Mobile */}
-                  <button
-                    type="button"
-                    className="aiw-card-back-btn"
-                    onClick={() => setShowWelcome(true)}
-                    title="Volver al inicio"
-                    aria-label="Volver"
-                  >
-                    <ArrowLeft size={18} />
-                  </button>
-
                   {/* Header Brand */}
                   <div className="aiw-brand">
                     <div className="aiw-brand-icon-wrapper">
@@ -898,44 +1154,54 @@ const LoginAgente = () => {
                   <button 
                     type="button" 
                     className="aiw-role-selected-chip" 
-                    onClick={() => setShowRoleExplorer(prev => !prev)}
+                    onClick={() => {
+                      if (window.innerWidth <= 820) {
+                        setShowRoleExplorer(true);
+                        setIsSheetCollapsed(true);
+                      } else {
+                        setShowRoleExplorer(prev => !prev);
+                      }
+                    }}
                     title="Cambiar tipo de cuenta"
                   >
                     <div className="aiw-role-chip-left">
                       <span className="aiw-role-chip-label">ROL:</span>
+                      <span className="aiw-role-chip-emoji">{rolActual.icon}</span>
                       <strong className="aiw-role-chip-name">{rolActual.label}</strong>
+                      <span className="aiw-role-chip-subbadge" style={{ color: rolActual.color }}>{rolActual.badge}</span>
                     </div>
                     <div className="aiw-role-chip-action">
-                      <span>{showRoleExplorer ? "Cerrar" : "Cambiar"}</span>
-                      {showRoleExplorer ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
+                      <span>Cambiar</span>
+                      <ChevronRight size={13} />
                     </div>
                   </button>
 
                   <form className="aiw-login-form" onSubmit={handleRegisterSubmit}>
 
-                    {/* Names in 2 columns */}
-                    <div className="aiw-input-row">
-                      <div className="aiw-input-field">
-                        <User size={15} className="aiw-field-icon" />
-                        <input
-                          type="text"
-                          placeholder="NOMBRE..."
-                          className="aiw-input"
-                          value={regFirstName}
-                          onChange={(e) => setRegFirstName(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="aiw-input-field">
-                        <input
-                          type="text"
-                          placeholder="APELLIDO..."
-                          className="aiw-input aiw-input-no-icon"
-                          value={regLastName}
-                          onChange={(e) => setRegLastName(e.target.value)}
-                          required
-                        />
-                      </div>
+                    {/* Nombre */}
+                    <div className="aiw-input-field">
+                      <User size={15} className="aiw-field-icon" />
+                      <input
+                        type="text"
+                        placeholder="Nombre(s)"
+                        className="aiw-input"
+                        value={regFirstName}
+                        onChange={(e) => setRegFirstName(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    {/* Apellido */}
+                    <div className="aiw-input-field">
+                      <User size={15} className="aiw-field-icon" />
+                      <input
+                        type="text"
+                        placeholder="Apellido(s)"
+                        className="aiw-input"
+                        value={regLastName}
+                        onChange={(e) => setRegLastName(e.target.value)}
+                        required
+                      />
                     </div>
 
                     {/* Email Field */}
@@ -943,7 +1209,7 @@ const LoginAgente = () => {
                       <Mail size={15} className="aiw-field-icon" />
                       <input
                         type="email"
-                        placeholder="CORREO ELECTRÓNICO..."
+                        placeholder="Correo electrónico"
                         className="aiw-input"
                         value={regEmail}
                         onChange={(e) => setRegEmail(e.target.value)}
@@ -957,7 +1223,7 @@ const LoginAgente = () => {
                       <Phone size={15} className="aiw-field-icon" />
                       <input
                         type="tel"
-                        placeholder="TELÉFONO / CELULAR..."
+                        placeholder="Teléfono / Celular"
                         className="aiw-input"
                         value={regPhone}
                         onChange={(e) => setRegPhone(e.target.value)}
@@ -965,40 +1231,50 @@ const LoginAgente = () => {
                       />
                     </div>
 
-                    {/* Password Fields in 2 columns */}
-                    <div className="aiw-input-row">
-                      <div className="aiw-input-field">
-                        <Lock size={15} className="aiw-field-icon" />
-                        <input
-                          type={showRegPassword ? "text" : "password"}
-                          placeholder="CONTRASEÑA..."
-                          className="aiw-input"
-                          value={regPassword}
-                          onChange={(e) => setRegPassword(e.target.value)}
-                          required
-                          minLength={6}
-                        />
-                      </div>
-                      <div className="aiw-input-field">
-                        <input
-                          type={showRegPassword ? "text" : "password"}
-                          placeholder="CONFIRMAR..."
-                          className="aiw-input aiw-input-no-icon"
-                          value={regConfirmPassword}
-                          onChange={(e) => setRegConfirmPassword(e.target.value)}
-                          required
-                          minLength={6}
-                        />
-                        <button
-                          type="button"
-                          className="aiw-eye-toggle"
-                          onClick={() => setShowRegPassword(!showRegPassword)}
-                          tabIndex={-1}
-                          aria-label="Ver contraseña"
-                        >
-                          {showRegPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                      </div>
+                    {/* Password Field */}
+                    <div className="aiw-input-field">
+                      <Lock size={15} className="aiw-field-icon" />
+                      <input
+                        type={showRegPassword ? "text" : "password"}
+                        placeholder="Contraseña"
+                        className="aiw-input"
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        required
+                        minLength={6}
+                      />
+                      <button
+                        type="button"
+                        className="aiw-eye-toggle"
+                        onClick={() => setShowRegPassword(!showRegPassword)}
+                        tabIndex={-1}
+                        aria-label="Ver u ocultar contraseña"
+                      >
+                        {showRegPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+
+                    {/* Confirm Password Field */}
+                    <div className="aiw-input-field">
+                      <Lock size={15} className="aiw-field-icon" />
+                      <input
+                        type={showRegPassword ? "text" : "password"}
+                        placeholder="Confirmar contraseña"
+                        className="aiw-input"
+                        value={regConfirmPassword}
+                        onChange={(e) => setRegConfirmPassword(e.target.value)}
+                        required
+                        minLength={6}
+                      />
+                      <button
+                        type="button"
+                        className="aiw-eye-toggle"
+                        onClick={() => setShowRegPassword(!showRegPassword)}
+                        tabIndex={-1}
+                        aria-label="Ver u ocultar contraseña"
+                      >
+                        {showRegPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
                     </div>
 
                     {/* Submit Button */}
@@ -1022,9 +1298,16 @@ const LoginAgente = () => {
                     <button
                       type="button"
                       className="aiw-footer-link aiw-highlight-roles-link"
-                      onClick={() => setShowRoleExplorer(prev => !prev)}
+                      onClick={() => {
+                        if (window.innerWidth <= 820) {
+                          setShowRoleExplorer(true);
+                          setIsSheetCollapsed(true);
+                        } else {
+                          setShowRoleExplorer(prev => !prev);
+                        }
+                      }}
                     >
-                      ✨ {showRoleExplorer ? "Ocultar roles" : "Explorar todos los roles"}
+                      {showRoleExplorer ? "Ocultar roles" : "Explorar todos los roles"}
                     </button>
                     <span className="aiw-footer-dot">•</span>
                     <button
@@ -1060,9 +1343,6 @@ const LoginAgente = () => {
                     </div>
 
                     <div className="aiw-overlay-content-box">
-                      <div className="aiw-overlay-pill">
-                        <span>✨ Iniciar Sesión</span>
-                      </div>
                       <h2 className="aiw-overlay-title">¡Bienvenido de nuevo!</h2>
                       <p className="aiw-overlay-desc">
                         Para mantenerte conectado con tus servicios y operaciones, ingresa con tu cuenta.
@@ -1074,10 +1354,6 @@ const LoginAgente = () => {
                       >
                         INICIAR SESIÓN
                       </button>
-                    </div>
-
-                    <div className="aiw-overlay-bottom-hint">
-                      <span>Agente Solutions AI Platform</span>
                     </div>
                   </div>
 
@@ -1092,9 +1368,6 @@ const LoginAgente = () => {
                     </div>
 
                     <div className="aiw-overlay-content-box">
-                      <div className="aiw-overlay-pill">
-                        <span>🚀 Registro Rápido</span>
-                      </div>
                       <h2 className="aiw-overlay-title">¡Hola, bienvenido!</h2>
                       <p className="aiw-overlay-desc">
                         Únete hoy mismo a la plataforma y potencia tus servicios con automatización inteligente.
@@ -1106,10 +1379,6 @@ const LoginAgente = () => {
                       >
                         CREAR CUENTA
                       </button>
-                    </div>
-
-                    <div className="aiw-overlay-bottom-hint">
-                      <span>Agente Solutions AI Platform</span>
                     </div>
                   </div>
 
@@ -1191,7 +1460,7 @@ const LoginAgente = () => {
                   <div className="aiw-rcard-features-box">
                     {rolActual.features.map((feat, index) => (
                       <div key={index} className="aiw-rcard-feat-item">
-                        <span className="aiw-feat-bullet-line"></span>
+                        <CheckCircle2 size={16} className="aiw-feat-check-icon" />
                         <span>{feat}</span>
                       </div>
                     ))}
