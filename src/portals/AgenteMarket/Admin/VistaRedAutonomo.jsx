@@ -45,7 +45,7 @@ const VistaRedAutonomo = () => {
 
   const fetchJobs = async () => {
     try {
-      const token = localStorage.getItem('agente_token');
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos?only_mine=1`, { headers });
       
@@ -89,7 +89,11 @@ const VistaRedAutonomo = () => {
         const jobs = rawFiltered.map(order => {
           const rawLat = order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025));
           const rawLng = order.lng ? parseFloat(order.lng) : (order.area_lng ? parseFloat(order.area_lng) : (-89.6242 + Math.cos(order.id * 17) * 0.025));
-          const zonaTexto = order.zona || order.zona_colonia || order.property?.property_name || 'Zona Metropolitana';
+          const coloniaTexto = order.colonia_cercana || order.zona_colonia || order.zona || 'Mérida, Yucatán';
+          const tituloProblema = order.type 
+            ? `${order.type}${order.equipment ? ' - ' + order.equipment : ''}` 
+            : 'Problema / Servicio Solicitado';
+
           const isGenericOwner = !order.owner_name || 
             order.owner_name === 'Cliente de la Red' || 
             order.owner_name === 'Cliente Desconocido' || 
@@ -105,14 +109,17 @@ const VistaRedAutonomo = () => {
 
           return {
             id: order.id,
-            titulo: `${order.type || 'Mantenimiento'} - ${displayOwner}`,
+            titulo: tituloProblema,
+            tipo: order.type || 'Problema',
+            equipo: order.equipment || '',
             lat: rawLat,
             lng: rawLng,
             presupuesto: "A convenir",
             estado: order.status || 'Por Hacer',
             fecha: new Date(order.created_at).toLocaleDateString('es-MX'),
             lugar: order.property?.property_name || 'Lugar no especificado',
-            zona: zonaTexto,
+            zona: coloniaTexto,
+            colonia: coloniaTexto,
             calle: order.property?.address || 'Dirección no especificada',
             descripcion: limpiarDescripcion(order.description),
             foto: fotos[0] || null,
@@ -135,7 +142,7 @@ const VistaRedAutonomo = () => {
     fetchJobs();
     const interval = setInterval(fetchJobs, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   const handleRejectQuote = async (quoteId) => {
     if (!window.confirm("¿Estás seguro de que deseas rechazar esta cotización?")) return;

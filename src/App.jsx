@@ -224,6 +224,7 @@ const AppRoutes = () => {
       <Route path="/mis-favoritos" element={<FavoritosAutonomo />} />
       <Route path="/tecnico-perfil/:id" element={<PerfilTecnicoRed />} />
       <Route path="/mercado-trabajos" element={<MercadoTrabajos />} />
+      <Route path="/mercado_trabajos" element={<MercadoTrabajos />} />
 
 
       <Route path="/map" element={<Map />} />

@@ -134,13 +134,17 @@ const NotificationBell = () => {
       const titleLower = (notification.data?.title || notification.title || notification.titulo || '').toLowerCase();
 
       if (type === 'new_quote_message' || titleLower.includes('nuevo mensaje') || titleLower.includes('mensaje en la red')) {
-        if (user?.role_id === 8 || user?.role_id === 2) {
+        if ([2, 6, 8].includes(Number(user?.role_id))) {
           url = notification.data?.network_quote_id ? `/mercado-trabajos` : `/vista-cotizaciones`;
-        } else if (user?.role_id === 4) {
-          url = '/red-trabajos';
+        } else if ([3, 4, 5, 7].includes(Number(user?.role_id))) {
+          url = '/red-autonomos';
         } else {
           url = notification.data?.url || '/vista-cotizaciones';
         }
+      } else if (type === 'network_quote_received' || titleLower.includes('nueva cotización en la red') || titleLower.includes('cotización en la red')) {
+        url = '/red-autonomos';
+      } else if (type === 'network_quote_rejected' || type === 'network_quote_accepted') {
+        url = [2, 6, 8].includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
       } else if (type === 'technician_arrived') {
         url = (user?.role_id === 0 || user?.role_id === 1) ? (workOrderId ? `/tablero-servicios?jobId=${workOrderId}` : '/map') : (workOrderId ? `/trabajo-propiedad/work_order-${workOrderId}` : '/trabajos-tecnico');
       } else if (type === 'work_order_finished' || type === 'new_report') {

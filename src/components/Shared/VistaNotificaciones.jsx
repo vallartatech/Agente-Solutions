@@ -125,13 +125,17 @@ const VistaNotificaciones = () => {
                     const isCliente = user?.role_id === 3;
 
                     if (type === 'new_quote_message' || titleLower.includes('nuevo mensaje') || titleLower.includes('mensaje en la red')) {
-                      if (user?.role_id === 8 || user?.role_id === 2) {
+                      if ([2, 6, 8].includes(Number(user?.role_id))) {
                         url = n.data?.network_quote_id ? `/mercado-trabajos` : `/vista-cotizaciones`;
-                      } else if (user?.role_id === 4) {
-                        url = '/red-trabajos';
+                      } else if ([3, 4, 5, 7].includes(Number(user?.role_id))) {
+                        url = '/red-autonomos';
                       } else {
                         url = n.data?.url || '/vista-cotizaciones';
                       }
+                    } else if (type === 'network_quote_received' || titleLower.includes('nueva cotización en la red') || titleLower.includes('cotización en la red')) {
+                      url = '/red-autonomos';
+                    } else if (type === 'network_quote_rejected' || type === 'network_quote_accepted') {
+                      url = [2, 6, 8].includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
                     } else if (isCliente) {
                       if (type === 'recotizacion_lista' || type?.includes('quote') || type === 'new_quote' || type === 'quote_approved' || type === 'quote_rejected' || type === 'payment_received' || type === 'payment_validated') {
                         const qId = n.data?.quote_id || n.data?.cotizacion_id || n.quote_id;
