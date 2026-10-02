@@ -25,7 +25,9 @@ import {
   Send,
   CheckCircle,
   Search,
-  Award
+  Award,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -33,8 +35,16 @@ const MONTH_NAMES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
-const DAY_NAMES = [
+const DAY_NAMES_FULL = [
   'DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'
+];
+
+const DAY_NAMES_MINI = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+
+const HOURS_LIST = [
+  '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+  '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM',
+  '06:00 PM', '07:00 PM', '08:00 PM'
 ];
 
 const limpiarDescripcion = (rawDesc) => {
@@ -51,7 +61,8 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
 
   // Estados del Calendario
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [currentView, setCurrentView] = useState('month'); // 'month' | 'agenda'
+  const [miniCalDate, setMiniCalDate] = useState(new Date());
+  const [currentView, setCurrentView] = useState('month'); // 'month' | 'week' | 'agenda'
   const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'confirmed' | 'proposed' | 'network'
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -151,7 +162,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     return result;
   };
 
-  // Helper para estado de horarios
   const getJobScheduleStatus = (job, activeQuote) => {
     const quotes = job?.cotizaciones_list || [];
     const targetQuote = activeQuote || quotes.find(q => q.status === 'accepted' || q.is_assigned) || quotes[0];
@@ -175,20 +185,12 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
       (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
     );
 
-    const isPendingClientConfirm = Boolean(
-      job?.scheduled_at &&
-      !isScheduleConfirmed &&
-      !isRescheduleRequested
-    );
-
     return {
       isRescheduleRequested,
-      isScheduleConfirmed,
-      isPendingClientConfirm
+      isScheduleConfirmed
     };
   };
 
-  // Cargar trabajos de la red
   const fetchJobs = async () => {
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
@@ -233,15 +235,17 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
           const assignedTechName = acceptedQuote?.technicianName || (order.technician ? `${order.technician.first_name} ${order.technician.last_name || ''}`.trim() : null);
           const agreedPrice = acceptedQuote?.price ? parseFloat(acceptedQuote.price) : 0;
 
-          // Fecha para ubicar en el calendario
           let eventDateStr = order.scheduled_at || order.fecha_visita || order.due_date || order.created_at;
           let eventDate = new Date(eventDateStr);
           if (isNaN(eventDate.getTime())) eventDate = new Date();
 
           let timeFormatted = 'Por definir';
+          let hourIndex = 10; // Default 10 AM para week grid
           if (order.scheduled_at) {
             try {
-              timeFormatted = new Date(order.scheduled_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+              const d = new Date(order.scheduled_at);
+              timeFormatted = d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+              hourIndex = d.getHours();
             } catch {
               timeFormatted = '10:00 a.m.';
             }
@@ -249,7 +253,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
             timeFormatted = order.hora_visita;
           }
 
-          // Estado visual del evento para el calendario
           const sched = getJobScheduleStatus({ ...order, cotizaciones_list: groupedQuotes }, acceptedQuote);
           let statusType = 'network';
           let statusLabel = 'En Red / Cotizando';
@@ -290,10 +293,12 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
             scheduled_at: order.scheduled_at,
             hasNewTechMessage,
             lastTechMsg,
-            // Atributos de calendario
+            // Propiedades de calendario
             calendarDate: eventDate,
             dateKey: eventDate.toISOString().slice(0, 10),
             calendarTime: timeFormatted,
+            hourIndex,
+            dayOfWeek: eventDate.getDay(),
             statusType,
             statusLabel
           };
@@ -301,7 +306,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
 
         setNetworkJobs(jobs);
 
-        // Si tenemos un trabajo abierto en el modal de cotizaciones, actualizarlo en vivo
         if (selectedJobForQuotes) {
           const updated = jobs.find(j => j.id === selectedJobForQuotes.id);
           if (updated) {
@@ -330,7 +334,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
-  // Polling de alta frecuencia para chat en vivo
   useEffect(() => {
     if (!showQuotesModal || !activeChatQuote?.id) return;
 
@@ -361,7 +364,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     }
   }, [activeChatQuote?.chat_history]);
 
-  // Acciones sobre el trabajo / cotización
   const handleOpenQuotesModal = (job) => {
     setSelectedJobForQuotes(job);
     setActivePhoto(job.fotos?.[0] || job.foto || null);
@@ -401,7 +403,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
       }
     } catch (err) {
       console.error("Error enviando mensaje", err);
-      alert("No se pudo enviar el mensaje. Intenta de nuevo.");
+      alert("No se pudo enviar el mensaje.");
     } finally {
       setSendingClientChat(false);
     }
@@ -427,7 +429,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
       }
     } catch (e) {
       console.error("Error respondiendo visita", e);
-      alert("Hubo un error al responder.");
     }
   };
 
@@ -466,7 +467,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
       }
     } catch (e) {
       console.error(e);
-      alert("Hubo un error al rechazar la cotización.");
     }
   };
 
@@ -485,11 +485,10 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
       }
     } catch (e) {
       console.error(e);
-      alert("Error al eliminar la publicación.");
     }
   };
 
-  // Filtrado de eventos para el calendario
+  // Filtrado de eventos
   const filteredEvents = useMemo(() => {
     return networkJobs.filter(job => {
       const matchFilter = selectedFilter === 'all' || job.statusType === selectedFilter;
@@ -503,17 +502,35 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     });
   }, [networkJobs, selectedFilter, searchQuery]);
 
-  // Contadores para filtros
+  // Contadores
   const countConfirmed = networkJobs.filter(j => j.statusType === 'confirmed').length;
   const countProposed = networkJobs.filter(j => j.statusType === 'proposed').length;
   const countNetwork = networkJobs.filter(j => j.statusType === 'network').length;
 
-  // Navegación de mes
+  // Próxima cita destacada ("Up Next")
+  const upNextJob = useMemo(() => {
+    if (networkJobs.length === 0) return null;
+    const confirmed = networkJobs.filter(j => j.statusType === 'confirmed');
+    if (confirmed.length > 0) return confirmed[0];
+    const proposed = networkJobs.filter(j => j.statusType === 'proposed');
+    if (proposed.length > 0) return proposed[0];
+    return networkJobs[0];
+  }, [networkJobs]);
+
+  // Navegación de mes principal
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-  const handleToday = () => setCurrentDate(new Date());
+  const handleToday = () => {
+    const t = new Date();
+    setCurrentDate(t);
+    setMiniCalDate(t);
+  };
 
-  // Matriz de días del mes
+  // Navegación de mini calendario
+  const handleMiniPrev = () => setMiniCalDate(new Date(miniCalDate.getFullYear(), miniCalDate.getMonth() - 1, 1));
+  const handleMiniNext = () => setMiniCalDate(new Date(miniCalDate.getFullYear(), miniCalDate.getMonth() + 1, 1));
+
+  // Matriz de días del mes principal
   const monthMatrix = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -524,7 +541,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     const todayStr = new Date().toISOString().slice(0, 10);
     const cells = [];
 
-    // Días del mes anterior
     for (let i = firstDayOfMonth - 1; i >= 0; i--) {
       const dayNum = daysInPrevMonth - i;
       const prevDate = new Date(year, month - 1, dayNum);
@@ -538,7 +554,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
       });
     }
 
-    // Días del mes actual
     for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
       const thisDate = new Date(year, month, dayNum);
       const dateKey = thisDate.toISOString().slice(0, 10);
@@ -551,7 +566,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
       });
     }
 
-    // Días del mes siguiente
     const remaining = (7 - (cells.length % 7)) % 7;
     for (let i = 1; i <= remaining; i++) {
       const nextDate = new Date(year, month + 1, i);
@@ -568,7 +582,84 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     return cells;
   }, [currentDate, filteredEvents]);
 
-  // Agrupar para vista de Agenda
+  // Matriz de días del mini calendario
+  const miniCalMatrix = useMemo(() => {
+    const year = miniCalDate.getFullYear();
+    const month = miniCalDate.getMonth();
+
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const cells = [];
+
+    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+      const dayNum = daysInPrevMonth - i;
+      const d = new Date(year, month - 1, dayNum);
+      const dateKey = d.toISOString().slice(0, 10);
+      cells.push({
+        dayNum,
+        dateKey,
+        isCurrentMonth: false,
+        isToday: dateKey === todayStr,
+        hasEvents: networkJobs.some(j => j.dateKey === dateKey)
+      });
+    }
+
+    for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+      const d = new Date(year, month, dayNum);
+      const dateKey = d.toISOString().slice(0, 10);
+      cells.push({
+        dayNum,
+        dateKey,
+        isCurrentMonth: true,
+        isToday: dateKey === todayStr,
+        hasEvents: networkJobs.some(j => j.dateKey === dateKey)
+      });
+    }
+
+    const remaining = (7 - (cells.length % 7)) % 7;
+    for (let i = 1; i <= remaining; i++) {
+      const d = new Date(year, month + 1, i);
+      const dateKey = d.toISOString().slice(0, 10);
+      cells.push({
+        dayNum: i,
+        dateKey,
+        isCurrentMonth: false,
+        isToday: dateKey === todayStr,
+        hasEvents: networkJobs.some(j => j.dateKey === dateKey)
+      });
+    }
+
+    return cells;
+  }, [miniCalDate, networkJobs]);
+
+  // Días de la semana seleccionada para la Vista Semanal
+  const weekDaysList = useMemo(() => {
+    const curr = new Date(currentDate);
+    const dayOfWeek = curr.getDay(); // 0: Dom
+    const sunday = new Date(curr);
+    sunday.setDate(curr.getDate() - dayOfWeek);
+
+    const days = [];
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sunday);
+      d.setDate(sunday.getDate() + i);
+      const dateKey = d.toISOString().slice(0, 10);
+      days.push({
+        dayIndex: i,
+        dayName: DAY_NAMES_MINI[i],
+        dayNumber: d.getDate(),
+        dateKey,
+        isToday: dateKey === todayStr
+      });
+    }
+    return days;
+  }, [currentDate]);
+
+  // Agrupar eventos para la vista de Agenda
   const agendaGroupedEvents = useMemo(() => {
     const sorted = [...filteredEvents].sort((a, b) => a.calendarDate - b.calendarDate);
     const groups = {};
@@ -592,18 +683,18 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
         className="modal-calendario-window" 
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── ENCABEZADO DEL MODAL DE CALENDARIO ── */}
+        {/* ── ENCABEZADO DEL MODAL ── */}
         <div className="modal-cal-topbar">
           <div className="modal-cal-title-wrapper">
             <div className="modal-cal-icon-circle">
-              <CalendarIcon size={24} color="#FFFFFF" />
+              <CalendarIcon size={22} color="#FFFFFF" />
             </div>
             <div>
               <h2 className="modal-cal-title">
                 CALENDARIO DE <span style={{ color: '#FF6600' }}>VISITAS Y SERVICIOS</span>
               </h2>
               <span className="modal-cal-subtext">
-                Consulta tus fechas acordadas con los técnicos, citas programadas y solicitudes en red.
+                Gestión interactiva de citas coordinadas, servicios en red y cotizaciones con técnicos.
               </span>
             </div>
           </div>
@@ -613,238 +704,416 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
               className="btn-modal-quick-new"
               onClick={() => setShowNewServiceModal(true)}
             >
-              <PlusCircle size={18} />
+              <PlusCircle size={17} />
               <span>Publicar Servicio</span>
             </button>
             <button 
               className="btn-modal-close-window" 
               onClick={onClose} 
-              title="Cerrar ventana"
+              title="Cerrar ventana (Esc)"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
 
-        {/* ── CUERPO PRINCIPAL DEL SCHEDULER ── */}
+        {/* ── CUERPO PRINCIPAL CON 2 COLUMNAS (Estilo calendaroptions.com) ── */}
         <div className="modal-cal-content-body">
           
-          {/* Toolbar del Calendario */}
-          <div className="scheduler-toolbar-card">
-            <div className="cal-nav-group">
-              <button className="btn-cal-today" onClick={handleToday}>
-                Hoy
-              </button>
-
-              <div className="cal-arrows">
-                <button className="btn-cal-arrow" onClick={handlePrevMonth} title="Mes anterior">
-                  <ChevronLeft size={20} />
+          {/* COLUMNA IZQUIERDA: SCHEDULER & VISTAS */}
+          <div className="cal-main-col">
+            
+            {/* Toolbar Superior */}
+            <div className="scheduler-toolbar-card">
+              <div className="cal-nav-group">
+                <button className="btn-cal-today" onClick={handleToday}>
+                  Hoy
                 </button>
-                <button className="btn-cal-arrow" onClick={handleNextMonth} title="Mes siguiente">
-                  <ChevronRight size={20} />
-                </button>
-              </div>
 
-              <h3 className="cal-current-date-title">
-                <CalendarDays size={22} color="#FF6600" />
-                {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
-              </h3>
-            </div>
-
-            <div className="cal-controls-right">
-              <div className="cal-search-box">
-                <Search size={16} className="cal-search-icon" />
-                <input 
-                  type="text"
-                  placeholder="Buscar servicio o técnico..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button 
-                    onClick={() => setSearchQuery('')}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'absolute', right: '8px', color: '#94a3b8' }}
-                  >
-                    <X size={14} />
+                <div className="cal-arrows">
+                  <button className="btn-cal-arrow" onClick={handlePrevMonth} title="Mes anterior">
+                    <ChevronLeft size={18} />
                   </button>
-                )}
+                  <button className="btn-cal-arrow" onClick={handleNextMonth} title="Mes siguiente">
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+
+                <h3 className="cal-current-date-title">
+                  <CalendarDays size={20} color="#FF6600" />
+                  {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
+                </h3>
               </div>
 
-              <div className="cal-view-selector">
-                <button 
-                  className={`btn-view-tab ${currentView === 'month' ? 'active' : ''}`}
-                  onClick={() => setCurrentView('month')}
-                >
-                  Mes
-                </button>
-                <button 
-                  className={`btn-view-tab ${currentView === 'agenda' ? 'active' : ''}`}
-                  onClick={() => setCurrentView('agenda')}
-                >
-                  Agenda
-                </button>
+              <div className="cal-controls-right">
+                <div className="cal-search-box">
+                  <Search size={15} className="cal-search-icon" />
+                  <input 
+                    type="text"
+                    placeholder="Buscar servicio o técnico..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'absolute', right: '8px', color: '#94a3b8' }}
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="cal-view-selector">
+                  <button 
+                    className={`btn-view-tab ${currentView === 'month' ? 'active' : ''}`}
+                    onClick={() => setCurrentView('month')}
+                  >
+                    Mes
+                  </button>
+                  <button 
+                    className={`btn-view-tab ${currentView === 'week' ? 'active' : ''}`}
+                    onClick={() => setCurrentView('week')}
+                  >
+                    Semana
+                  </button>
+                  <button 
+                    className={`btn-view-tab ${currentView === 'agenda' ? 'active' : ''}`}
+                    onClick={() => setCurrentView('agenda')}
+                  >
+                    Agenda
+                  </button>
+                </div>
               </div>
+            </div>
+
+            {/* Barra de Filtros y Leyenda */}
+            <div className="scheduler-legend-bar">
+              <span style={{ color: '#94a3b8', fontWeight: 800 }}>Filtrar:</span>
+              <button 
+                className={`legend-item ${selectedFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter('all')}
+              >
+                Todos ({networkJobs.length})
+              </button>
+              <button 
+                className={`legend-item ${selectedFilter === 'confirmed' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'confirmed' ? 'all' : 'confirmed')}
+              >
+                <span className="legend-dot dot-confirmed"></span>
+                <span>Visitas Confirmadas {countConfirmed > 0 && `(${countConfirmed})`}</span>
+              </button>
+              <button 
+                className={`legend-item ${selectedFilter === 'proposed' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'proposed' ? 'all' : 'proposed')}
+              >
+                <span className="legend-dot dot-proposed"></span>
+                <span>Horarios Propuestos {countProposed > 0 && `(${countProposed})`}</span>
+              </button>
+              <button 
+                className={`legend-item ${selectedFilter === 'network' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'network' ? 'all' : 'network')}
+              >
+                <span className="legend-dot dot-network"></span>
+                <span>En Red / Cotizando {countNetwork > 0 && `(${countNetwork})`}</span>
+              </button>
+            </div>
+
+            {/* Contenedor del Calendario */}
+            <div className="scheduler-canvas-card">
+              {loading ? (
+                <div className="cal-loading-container">
+                  <div className="cal-spinner"></div>
+                  <p style={{ fontWeight: 700 }}>Cargando agenda de servicios...</p>
+                </div>
+              ) : currentView === 'month' ? (
+                /* ── VISTA MENSUAL ── */
+                <div className="cal-month-grid">
+                  <div className="cal-month-header-row">
+                    {DAY_NAMES_FULL.map((name, index) => (
+                      <div key={index} className="cal-header-cell">
+                        {name}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="cal-month-days-grid">
+                    {monthMatrix.map((cell, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`cal-day-cell ${!cell.isCurrentMonth ? 'other-month' : ''} ${cell.isToday ? 'is-today' : ''}`}
+                      >
+                        <div className="cal-day-header">
+                          <span className="cal-day-number">{cell.dayNumber}</span>
+                          {cell.events.length > 0 && (
+                            <span className="cal-day-count-badge">
+                              {cell.events.length}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="cal-events-list">
+                          {cell.events.map((job) => (
+                            <div 
+                              key={job.id}
+                              className={`cal-event-chip status-${job.statusType}`}
+                              onClick={() => handleOpenQuotesModal(job)}
+                              title={`${job.titulo} - Clic para ver cotizaciones`}
+                            >
+                              <div className="chip-time-row">
+                                <span className="chip-time-tag">
+                                  <Clock size={10} /> {job.calendarTime}
+                                </span>
+                              </div>
+                              <span className="chip-title">{job.titulo}</span>
+                              <span className="chip-tech">
+                                <User size={9} /> {job.assigned_tech_name || (job.cotizaciones > 0 ? `${job.cotizaciones} oferta(s)` : 'En espera')}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : currentView === 'week' ? (
+                /* ── VISTA SEMANAL CON HORAS (Estilo calendaroptions.com) ── */
+                <div className="cal-week-view-wrapper">
+                  <div className="cal-week-header-row">
+                    <div className="cal-header-cell" style={{ width: '60px' }}>HORA</div>
+                    {weekDaysList.map((d, i) => (
+                      <div key={i} className={`cal-week-day-header ${d.isToday ? 'is-today' : ''}`}>
+                        <div className="cal-week-day-name">{d.dayName}</div>
+                        <div className="cal-week-day-number">{d.dayNumber}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="cal-week-grid-body">
+                    {HOURS_LIST.map((hourLabel, hIdx) => {
+                      const hourNum = 8 + hIdx; // 8, 9, 10...
+                      return (
+                        <React.Fragment key={hIdx}>
+                          <div className="cal-week-time-label">{hourLabel}</div>
+                          {weekDaysList.map((d, dIdx) => {
+                            const matchingEvents = filteredEvents.filter(
+                              e => e.dateKey === d.dateKey && (e.hourIndex === hourNum || (!e.scheduled_at && hIdx === 2))
+                            );
+                            return (
+                              <div key={dIdx} className="cal-week-slot-cell">
+                                {matchingEvents.map(job => (
+                                  <div 
+                                    key={job.id}
+                                    className={`week-event-card status-${job.statusType}`}
+                                    onClick={() => handleOpenQuotesModal(job)}
+                                  >
+                                    <div style={{ fontWeight: 800, fontSize: '0.68rem', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                      <Clock size={10} /> {job.calendarTime}
+                                    </div>
+                                    <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {job.titulo}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                /* ── VISTA DE AGENDA REDISEÑADA (ESTILO MODERNO PRO) ── */
+                <div className="cal-agenda-view">
+                  {agendaGroupedEvents.length === 0 ? (
+                    <div className="cal-empty-state">
+                      <CalendarDays size={44} color="#64748b" />
+                      <h4>No hay servicios en esta fecha</h4>
+                      <p>Publica una solicitud para que los técnicos puedan enviarte cotizaciones y coordinar citas.</p>
+                    </div>
+                  ) : (
+                    agendaGroupedEvents.map((group, gIdx) => (
+                      <div key={gIdx} className="agenda-day-group">
+                        <div className="agenda-date-header">
+                          <CalendarDays size={18} color="#FF6600" />
+                          {group.dateStr}
+                        </div>
+
+                        <div className="agenda-cards-grid">
+                          {group.items.map((job) => (
+                            <div 
+                              key={job.id}
+                              className={`agenda-item-card status-${job.statusType}`}
+                              onClick={() => handleOpenQuotesModal(job)}
+                            >
+                              <div className="agenda-card-top">
+                                <h4 className="agenda-card-title">{job.titulo}</h4>
+                                <span className={`agenda-status-pill pill-${job.statusType}`}>
+                                  {job.statusLabel}
+                                </span>
+                              </div>
+
+                              <div className="agenda-card-info">
+                                <div className="agenda-info-row">
+                                  <Clock size={13} color="#ff6600" />
+                                  <strong>Horario:</strong> <span>{job.calendarTime}</span>
+                                </div>
+                                <div className="agenda-info-row">
+                                  <MapPin size={13} color="#94a3b8" />
+                                  <span>{job.zona}</span>
+                                </div>
+                                <div className="agenda-info-row">
+                                  <User size={13} color="#94a3b8" />
+                                  <span>{job.assigned_tech_name || (job.cotizaciones > 0 ? `${job.cotizaciones} técnico(s) postulado(s)` : 'En espera de técnicos')}</span>
+                                </div>
+                              </div>
+
+                              <div className="agenda-card-actions">
+                                <button 
+                                  className="btn-modal-action primary"
+                                  style={{ padding: '5px 12px', fontSize: '0.78rem' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenQuotesModal(job);
+                                  }}
+                                >
+                                  Ver Cotizaciones ({job.cotizaciones})
+                                  <ArrowRight size={13} />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Barra de Filtros y Leyenda */}
-          <div className="scheduler-legend-bar">
-            <span style={{ color: '#0f172a', fontWeight: 800 }}>Filtrar:</span>
-            <button 
-              className={`legend-item ${selectedFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setSelectedFilter('all')}
-            >
-              Todos ({networkJobs.length})
-            </button>
-            <button 
-              className={`legend-item ${selectedFilter === 'confirmed' ? 'active' : ''}`}
-              onClick={() => setSelectedFilter(selectedFilter === 'confirmed' ? 'all' : 'confirmed')}
-            >
-              <span className="legend-dot dot-confirmed"></span>
-              <span>Visitas Confirmadas {countConfirmed > 0 && `(${countConfirmed})`}</span>
-            </button>
-            <button 
-              className={`legend-item ${selectedFilter === 'proposed' ? 'active' : ''}`}
-              onClick={() => setSelectedFilter(selectedFilter === 'proposed' ? 'all' : 'proposed')}
-            >
-              <span className="legend-dot dot-proposed"></span>
-              <span>Horarios Propuestos {countProposed > 0 && `(${countProposed})`}</span>
-            </button>
-            <button 
-              className={`legend-item ${selectedFilter === 'network' ? 'active' : ''}`}
-              onClick={() => setSelectedFilter(selectedFilter === 'network' ? 'all' : 'network')}
-            >
-              <span className="legend-dot dot-network"></span>
-              <span>En Red / Cotizando {countNetwork > 0 && `(${countNetwork})`}</span>
-            </button>
-          </div>
-
-          {/* Cuadrícula del Calendario / Agenda */}
-          <div className="scheduler-canvas-card">
-            {loading ? (
-              <div className="cal-loading-container">
-                <div className="cal-spinner"></div>
-                <p style={{ fontWeight: 700 }}>Cargando calendario y citas...</p>
+          {/* COLUMNA DERECHA: SIDEBAR CON MINI CALENDARIO & UP NEXT */}
+          <div className="cal-sidebar-col">
+            
+            {/* 1. Mini Calendario */}
+            <div>
+              <div className="sidebar-section-title">
+                <span>📅 Calendario Rápido</span>
               </div>
-            ) : currentView === 'month' ? (
-              <div className="cal-month-grid">
-                {/* Encabezados de Días */}
-                <div className="cal-month-header-row">
-                  {DAY_NAMES.map((name, index) => (
-                    <div key={index} className="cal-header-cell">
-                      {name}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Celdas del Mes */}
-                <div className="cal-month-days-grid">
-                  {monthMatrix.map((cell, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`cal-day-cell ${!cell.isCurrentMonth ? 'other-month' : ''} ${cell.isToday ? 'is-today' : ''}`}
-                    >
-                      <div className="cal-day-header">
-                        <span className="cal-day-number">{cell.dayNumber}</span>
-                        {cell.events.length > 0 && (
-                          <span className="cal-day-count-badge">
-                            {cell.events.length} {cell.events.length === 1 ? 'servicio' : 'servicios'}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Lista de Trabajos en este Día */}
-                      <div className="cal-events-list">
-                        {cell.events.map((job) => (
-                          <div 
-                            key={job.id}
-                            className={`cal-event-chip status-${job.statusType}`}
-                            onClick={() => handleOpenQuotesModal(job)}
-                            title={`${job.titulo} - Clic para ver cotizaciones y detalles`}
-                          >
-                            <div className="chip-time-row">
-                              <span className="chip-time-tag">
-                                <Clock size={11} /> {job.calendarTime}
-                              </span>
-                            </div>
-                            <span className="chip-title">{job.titulo}</span>
-                            <span className="chip-tech">
-                              <User size={10} /> {job.assigned_tech_name || (job.cotizaciones > 0 ? `${job.cotizaciones} oferta(s)` : 'En espera')}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              /* Vista de Agenda */
-              <div className="cal-agenda-view">
-                {agendaGroupedEvents.length === 0 ? (
-                  <div className="cal-empty-state">
-                    <CalendarDays size={48} color="#cbd5e1" />
-                    <h4>No hay servicios en esta fecha</h4>
-                    <p>Publica una solicitud para que los técnicos puedan enviarte cotizaciones y coordinar citas.</p>
+              <div className="mini-cal-card">
+                <div className="mini-cal-nav">
+                  <span className="mini-cal-title">
+                    {MONTH_NAMES[miniCalDate.getMonth()]} {miniCalDate.getFullYear()}
+                  </span>
+                  <div className="mini-cal-arrows">
+                    <button className="mini-cal-arrow-btn" onClick={handleMiniPrev}>
+                      <ChevronLeft size={14} />
+                    </button>
+                    <button className="mini-cal-arrow-btn" onClick={handleMiniNext}>
+                      <ChevronRight size={14} />
+                    </button>
                   </div>
-                ) : (
-                  agendaGroupedEvents.map((group, gIdx) => (
-                    <div key={gIdx} className="agenda-day-group">
-                      <div className="agenda-date-header">
-                        <CalendarDays size={20} color="#FF6600" />
-                        {group.dateStr}
-                      </div>
+                </div>
 
-                      <div className="agenda-cards-grid">
-                        {group.items.map((job) => (
-                          <div 
-                            key={job.id}
-                            className={`agenda-item-card status-${job.statusType}`}
-                            onClick={() => handleOpenQuotesModal(job)}
-                          >
-                            <div className="agenda-card-top">
-                              <h4 className="agenda-card-title">{job.titulo}</h4>
-                              <span className={`agenda-status-pill pill-${job.statusType}`}>
-                                {job.statusLabel}
-                              </span>
-                            </div>
-
-                            <div className="agenda-card-info">
-                              <div className="agenda-info-row">
-                                <Clock size={14} color="#ff6600" />
-                                <strong>Horario:</strong> {job.calendarTime}
-                              </div>
-                              <div className="agenda-info-row">
-                                <MapPin size={14} color="#64748b" />
-                                <span>{job.zona}</span>
-                              </div>
-                              <div className="agenda-info-row">
-                                <User size={14} color="#64748b" />
-                                <span>{job.assigned_tech_name || (job.cotizaciones > 0 ? `${job.cotizaciones} oferta(s)` : 'Cotizando')}</span>
-                              </div>
-                            </div>
-
-                            <div className="agenda-card-actions">
-                              <button 
-                                className="btn-modal-action primary"
-                                style={{ padding: '6px 14px', fontSize: '0.8rem' }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenQuotesModal(job);
-                                }}
-                              >
-                                Ver Cotizaciones ({job.cotizaciones})
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                )}
+                <div className="mini-cal-grid">
+                  {DAY_NAMES_MINI.map((d, i) => (
+                    <div key={i} className="mini-cal-day-header">{d}</div>
+                  ))}
+                  {miniCalMatrix.map((cell, idx) => (
+                    <button
+                      key={idx}
+                      className={`mini-cal-day-btn ${!cell.isCurrentMonth ? 'other-month' : ''} ${cell.isToday ? 'is-today' : ''} ${cell.hasEvents ? 'has-events' : ''}`}
+                      onClick={() => {
+                        const target = new Date(cell.dateKey + 'T12:00:00');
+                        setCurrentDate(target);
+                        setMiniCalDate(target);
+                      }}
+                      title={cell.hasEvents ? 'Tiene servicios programados' : ''}
+                    >
+                      {cell.dayNum}
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
+            </div>
+
+            {/* 2. Tarjeta "Up Next / Próximo Servicio" (Estilo referencia) */}
+            <div>
+              <div className="sidebar-section-title">
+                <span>⚡ Próximo Servicio</span>
+              </div>
+              {upNextJob ? (
+                <div className="up-next-card">
+                  <div className="up-next-badge-row">
+                    <span className="up-next-pill">PRÓXIMA CITA</span>
+                    <span className="up-next-time-tag">
+                      <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} />
+                      {upNextJob.calendarTime}
+                    </span>
+                  </div>
+
+                  <h4 className="up-next-title">{upNextJob.titulo}</h4>
+
+                  <div className="up-next-details">
+                    <div>📍 {upNextJob.zona}</div>
+                    <div>🧑‍🔧 {upNextJob.assigned_tech_name || 'Técnico de la Red'}</div>
+                    <div style={{ color: '#4ade80', fontWeight: 800 }}>💰 {upNextJob.presupuesto}</div>
+                  </div>
+
+                  <button 
+                    className="btn-up-next-action"
+                    onClick={() => handleOpenQuotesModal(upNextJob)}
+                  >
+                    <MessageCircle size={15} />
+                    <span>Ver Cotizaciones / Chat ({upNextJob.cotizaciones})</span>
+                  </button>
+                </div>
+              ) : (
+                <div style={{ padding: '16px', background: '#161f30', borderRadius: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>
+                  No tienes servicios activos por el momento.
+                </div>
+              )}
+            </div>
+
+            {/* 3. Resumen Rápido de Actividad */}
+            <div>
+              <div className="sidebar-section-title">
+                <span>📋 Resumen de Citas ({networkJobs.length})</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {networkJobs.slice(0, 3).map((job) => (
+                  <div 
+                    key={job.id}
+                    style={{
+                      background: '#161f30',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      cursor: 'pointer',
+                      borderLeft: `3px solid ${job.statusType === 'confirmed' ? '#10b981' : (job.statusType === 'proposed' ? '#f59e0b' : '#3b82f6')}`,
+                      fontSize: '0.78rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '3px'
+                    }}
+                    onClick={() => handleOpenQuotesModal(job)}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '0.7rem' }}>
+                      <span>{job.calendarTime}</span>
+                      <span style={{ fontWeight: 800, color: job.statusType === 'confirmed' ? '#6ee7b7' : '#fcd34d' }}>
+                        {job.statusLabel}
+                      </span>
+                    </div>
+                    <div style={{ fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {job.titulo}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
+
         </div>
 
         {/* ─── MODAL RECICLADO: DETALLE DE PUBLICACIÓN Y COTIZACIONES (EXACTAMENTE IGUAL A VISTA RED) ─── */}
@@ -1005,7 +1274,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
-                {/* Panel Derecho: Lista de Cotizaciones O Chat Directo Embebido */}
+                {/* Panel Derecho: Lista de Cotizaciones O Chat Directo */}
                 <div className="mercado-premium-form" style={{ background: '#ffffff', overflowY: 'auto', padding: 0, display: 'flex', flexDirection: 'column' }}>
                   
                   {/* Vista 1: Lista de Cotizaciones */}
