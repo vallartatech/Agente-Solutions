@@ -559,8 +559,8 @@ const VistaRedAutonomo = () => {
                     ) : (job.scheduled_at || job.priority === 'Programado') ? (
                       <span className="mercado-urgency-badge scheduled">📅 Programado</span>
                     ) : null}
-                    <span className="mercado-job-badge badge-pending">
-                      {job.estado}
+                    <span className={`mercado-job-badge ${job.estado === 'Asignado' || job.estado === 'Terminado' ? 'badge-accepted' : 'badge-pending'}`}>
+                      {job.estado === 'Asignado' ? 'Asignado a Técnico' : job.estado}
                     </span>
                   </div>
                 </div>
@@ -568,6 +568,14 @@ const VistaRedAutonomo = () => {
                   <span style={{ color: '#ea580c', fontWeight: '700' }}><MapPin size={11} /> {job.zona}</span>
                   <span><Clock size={11} /> {job.fecha}</span>
                 </div>
+
+                {/* HORARIO DE VISITA PROGRAMADO */}
+                {job.scheduled_at && (
+                  <div style={{ fontSize: '11.5px', padding: '6px 10px', borderRadius: '8px', background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>📅</span>
+                    <span><strong>Visita:</strong> {new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                  </div>
+                )}
 
                 {/* ALERTA DE NUEVO MENSAJE DE TÉCNICO */}
                 {job.hasNewTechMessage && (

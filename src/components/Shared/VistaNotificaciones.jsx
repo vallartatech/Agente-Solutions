@@ -137,6 +137,8 @@ const VistaNotificaciones = () => {
                       url = '/red-autonomos';
                     } else if (type === 'network_quote_rejected' || type === 'network_quote_accepted') {
                       url = [2, 6, 8].includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
+                    } else if (type === 'work_order_scheduled' || titleLower.includes('visita de técnico') || titleLower.includes('visita programada')) {
+                      url = [2, 6, 8].includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
                     } else if (isCliente) {
                       if (type === 'recotizacion_lista' || type?.includes('quote') || type === 'new_quote' || type === 'quote_approved' || type === 'quote_rejected' || type === 'payment_received' || type === 'payment_validated') {
                         const qId = n.data?.quote_id || n.data?.cotizacion_id || n.quote_id;
