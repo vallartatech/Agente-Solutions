@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Home } from 'lucide-react'; // ✅ Importamos el ícono de la casita
+import { Home, Calendar } from 'lucide-react'; // ✅ Importamos íconos de casita y calendario
 import logo from '../../assets/Logo3.png'; 
 import NotificationBell from '../Shared/NotificationBell'; 
 import axios from 'axios';
@@ -49,11 +49,11 @@ const Header = ({ rolTexto = "USUARIO", titulo }) => {
   return (
     <header className="header-content">
       
-      {/* SECCIÓN IZQUIERDA: Logo y Casita */}
-      <div className="logo-section" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+      {/* SECCIÓN IZQUIERDA: Logo, Casita y Calendario */}
+      <div className="logo-section" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <img src={appLogo} alt="Logo" className="main-logo" style={{ objectFit: 'contain' }} />
         
-        {/* NUEVO BOTÓN DE INICIO (Solo ícono, grande y visible) */}
+        {/* BOTÓN DE INICIO (Casita) */}
         <button 
           onClick={irAlInicio}
           title="Ir al Inicio"
@@ -72,6 +72,27 @@ const Header = ({ rolTexto = "USUARIO", titulo }) => {
           onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
         >
           <Home size={34} strokeWidth={2.5} />
+        </button>
+
+        {/* BOTÓN DE CALENDARIO */}
+        <button 
+          onClick={() => navigate('/calendario-cliente')}
+          title="Calendario de Trabajos y Citas"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '5px',
+            color: '#FF6600',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'transform 0.2s ease-in-out'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
+          onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <Calendar size={32} strokeWidth={2.5} />
         </button>
       </div>
 

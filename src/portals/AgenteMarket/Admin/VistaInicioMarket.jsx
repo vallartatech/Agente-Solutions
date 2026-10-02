@@ -175,10 +175,6 @@ const VistaInicioAdmin = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-            <div style={{ background: 'rgba(0,0,0,0.45)', border: `2px solid ${(subInfo.days_remaining <= 30) ? '#F87171' : '#4ADE80'}`, padding: '8px 18px', borderRadius: '50px', fontWeight: 'bold' }}>
-              <LiveCountdown targetDate={subInfo.subscription_expires_at} fallbackDays={subInfo.days_remaining} />
-            </div>
-
             {(isClienteParticular || isGestorInmobiliario) && (
               <button 
                 onClick={() => setMostrarModalCompraEspacios(true)}
