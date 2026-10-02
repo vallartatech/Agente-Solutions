@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow } from '@react-google-maps/api';
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
 import ModalServicioAutonomo from './ModalServicioAutonomo';
-import ChatModal from '../../../components/Shared/ChatModal';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
-import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2 } from 'lucide-react';
+import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft } from 'lucide-react';
 
 const mapContainerStyle = {
   width: '100%',
@@ -19,15 +18,22 @@ const defaultCenter = { lat: 21.0181, lng: -89.6242 }; // Mérida, Yucatán
 const limpiarDescripcion = (rawDesc) => {
   if (!rawDesc) return 'Sin descripción adicional';
   let clean = rawDesc;
-  // Quitar prefijo de lote tipo [LOTE-XXXX] (1/1)
   clean = clean.replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '');
-  // Quitar [EQUIPO AFECTADO]: otro o Otro
   clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*(otro|Otro|ninguno|Ninguno|n\/a|N\/A)\s*/gi, '');
-  // Si tiene un equipo válido, formatearlo limpio
   clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*/gi, ' - Equipo: ');
   return clean.trim() || rawDesc;
 };
 
+const formatTime = (dateStr) => {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+};
 
 const VistaRedAutonomo = () => {
   const { user } = useAuth();
@@ -42,6 +48,57 @@ const VistaRedAutonomo = () => {
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [networkJobs, setNetworkJobs] = useState([]);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+
+  // Client Chat Input State
+  const [clientChatInput, setClientChatInput] = useState('');
+  const [sendingClientChat, setSendingClientChat] = useState(false);
+  const chatEndRef = useRef(null);
+
+  // Agrupar cotizaciones por técnico para consolidar el chat y ofertas
+  const groupQuotesByTechnician = (quotesList) => {
+    if (!Array.isArray(quotesList)) return [];
+    const techMap = new Map();
+
+    quotesList.forEach(quote => {
+      const techId = quote.technician_id || quote.technician?.id;
+      if (!techId) return;
+
+      const existing = techMap.get(techId);
+      if (!existing) {
+        const msgs = quote.chat_history || [];
+        const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+        const hasNewTechMessage = lastMsg && (Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente');
+
+        techMap.set(techId, {
+          ...quote,
+          allQuotes: [quote],
+          lastMsg,
+          hasNewTechMessage,
+          technicianName: quote.technician?.first_name 
+            ? `${quote.technician.first_name} ${quote.technician.last_name || ''}`.trim()
+            : (quote.technician?.name || 'Técnico de la Red'),
+        });
+      } else {
+        existing.allQuotes.push(quote);
+        if (quote.id > existing.id || (quote.price > 0 && existing.price == 0)) {
+          existing.id = quote.id;
+          existing.price = quote.price;
+          existing.message = quote.message;
+          existing.status = quote.status;
+          existing.created_at = quote.created_at;
+        }
+        if (quote.chat_history && (!existing.chat_history || quote.chat_history.length > existing.chat_history.length)) {
+          existing.chat_history = quote.chat_history;
+        }
+        const msgs = existing.chat_history || [];
+        const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+        existing.lastMsg = lastMsg;
+        existing.hasNewTechMessage = lastMsg && (Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente');
+      }
+    });
+
+    return Array.from(techMap.values());
+  };
 
   const fetchJobs = async () => {
     try {
@@ -107,6 +164,10 @@ const VistaRedAutonomo = () => {
             order.property?.facade_photo_path
           ].filter(Boolean);
 
+          const groupedQuotes = groupQuotesByTechnician(order.network_quotes || []);
+          const hasNewTechMessage = groupedQuotes.some(q => q.hasNewTechMessage);
+          const lastTechMsg = groupedQuotes.find(q => q.hasNewTechMessage)?.lastMsg || null;
+
           return {
             id: order.id,
             titulo: tituloProblema,
@@ -124,14 +185,30 @@ const VistaRedAutonomo = () => {
             descripcion: limpiarDescripcion(order.description),
             foto: fotos[0] || null,
             fotos: fotos,
-            cotizaciones: order.network_quotes_count || 0,
-            cotizaciones_list: order.network_quotes || [],
+            cotizaciones: groupedQuotes.length,
+            cotizaciones_list: groupedQuotes,
             cliente: displayOwner,
-            is_mine: true
+            is_mine: true,
+            hasNewTechMessage,
+            lastTechMsg,
           };
         });
 
         setNetworkJobs(jobs);
+
+        // Si tenemos un trabajo seleccionado, actualizar en vivo
+        if (selectedJobForQuotes) {
+          const updated = jobs.find(j => j.id === selectedJobForQuotes.id);
+          if (updated) {
+            setSelectedJobForQuotes(updated);
+            if (activeChatQuote) {
+              const updatedActiveQuote = updated.cotizaciones_list.find(q => (q.technician_id || q.technician?.id) === (activeChatQuote.technician_id || activeChatQuote.technician?.id));
+              if (updatedActiveQuote) {
+                setActiveChatQuote(updatedActiveQuote);
+              }
+            }
+          }
+        }
       }
     } catch (e) {
       console.error("Error fetching network jobs", e);
@@ -140,22 +217,53 @@ const VistaRedAutonomo = () => {
 
   useEffect(() => {
     fetchJobs();
-    const interval = setInterval(fetchJobs, 5000);
+    const interval = setInterval(fetchJobs, 4000);
     return () => clearInterval(interval);
   }, [user]);
+
+  useEffect(() => {
+    if (activeChatQuote) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [activeChatQuote?.chat_history]);
+
+  const handleSendClientChat = async (e) => {
+    if (e) e.preventDefault();
+    if (!clientChatInput.trim() || sendingClientChat || !activeChatQuote) return;
+
+    const textToSend = clientChatInput.trim();
+    setClientChatInput('');
+    setSendingClientChat(true);
+
+    const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/network-quotes/${activeChatQuote.id}/chat`,
+        { message: textToSend },
+        { headers }
+      );
+      fetchJobs();
+    } catch (err) {
+      console.error("Error al enviar mensaje:", err);
+      alert("No se pudo enviar el mensaje. Intenta de nuevo.");
+    } finally {
+      setSendingClientChat(false);
+    }
+  };
 
   const handleRejectQuote = async (quoteId) => {
     if (!window.confirm("¿Estás seguro de que deseas rechazar esta cotización?")) return;
     
     try {
-      const token = localStorage.getItem('agente_token');
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quoteId}/reject`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
         alert("Cotización rechazada. El técnico ha sido notificado para mejorar su oferta.");
         fetchJobs();
-        setShowQuotesModal(false);
       }
     } catch (e) {
       console.error(e);
@@ -164,19 +272,20 @@ const VistaRedAutonomo = () => {
   };
 
   const handleAcceptQuote = async (quote) => {
-    const techName = quote.technician ? `${quote.technician.first_name} ${quote.technician.last_name}` : 'este técnico';
+    const techName = quote.technicianName || (quote.technician ? `${quote.technician.first_name} ${quote.technician.last_name}` : 'este técnico');
     if (!window.confirm(`¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
       return;
     }
 
     try {
-      const token = localStorage.getItem('agente_token');
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quote.id}/accept`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
         alert("🎉 " + res.data.message);
         setShowQuotesModal(false);
+        setActiveChatQuote(null);
         fetchJobs();
       }
     } catch (e) {
@@ -191,7 +300,7 @@ const VistaRedAutonomo = () => {
     }
 
     try {
-      const token = localStorage.getItem('agente_token');
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const res = await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${jobId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -199,6 +308,7 @@ const VistaRedAutonomo = () => {
         alert("✅ Publicación eliminada y cancelada con éxito.");
         setShowQuotesModal(false);
         setSelectedJob(null);
+        setActiveChatQuote(null);
         fetchJobs();
       } else {
         alert(res.data?.message || "Hubo un error al eliminar.");
@@ -217,6 +327,7 @@ const VistaRedAutonomo = () => {
   const openQuotesModal = (job) => {
     setSelectedJobForQuotes(job);
     setActivePhoto(job.fotos?.[0] || job.foto || null);
+    setActiveChatQuote(null);
     setShowQuotesModal(true);
   };
 
@@ -257,23 +368,24 @@ const VistaRedAutonomo = () => {
                       center={{ lat: job.lat, lng: job.lng }}
                       radius={550}
                       options={{
-                        fillColor: job.cotizaciones > 0 ? '#16a34a' : '#ff6600',
+                        fillColor: job.hasNewTechMessage ? '#2563eb' : (job.cotizaciones > 0 ? '#16a34a' : '#ff6600'),
                         fillOpacity: 0.16,
-                        strokeColor: job.cotizaciones > 0 ? '#15803d' : '#ea580c',
-                        strokeOpacity: 0.7,
+                        strokeColor: job.hasNewTechMessage ? '#1d4ed8' : (job.cotizaciones > 0 ? '#15803d' : '#ea580c'),
                         strokeWeight: 1.5,
                         clickable: true
                       }}
-                      onClick={() => setSelectedJob(job)}
+                      onClick={() => openQuotesModal(job)}
                     />
                     <Marker
                       position={{ lat: job.lat, lng: job.lng }}
-                      onClick={() => setSelectedJob(job)}
+                      onClick={() => openQuotesModal(job)}
                       title={`Zona: ${job.zona}`}
                       icon={{
-                        url: job.cotizaciones > 0 
-                          ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
-                          : 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png'
+                        url: job.hasNewTechMessage
+                          ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                          : (job.cotizaciones > 0 
+                            ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+                            : 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png')
                       }}
                     />
                   </React.Fragment>
@@ -305,10 +417,9 @@ const VistaRedAutonomo = () => {
           )}
         </div>
 
-        {/* ─── Sidebar / Bottom Drawer (Tipo Uber) ─── */}
+        {/* ─── Sidebar (Tipo Uber) ─── */}
         <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''}`}>
           <div className="mercado-sidebar-header">
-            {/* Grab handle for mobile touch / tap */}
             <div 
               className="mercado-mobile-drag-handle" 
               onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)} 
@@ -335,7 +446,7 @@ const VistaRedAutonomo = () => {
             {networkJobs.map(job => (
               <div
                 key={job.id}
-                className={`mercado-job-card ${selectedJob?.id === job.id ? 'active' : ''}`}
+                className={`mercado-job-card ${selectedJobForQuotes?.id === job.id ? 'active' : ''}`}
                 onClick={() => openQuotesModal(job)}
               >
                 <div className="mercado-job-card-top">
@@ -348,6 +459,15 @@ const VistaRedAutonomo = () => {
                   <span style={{ color: '#ea580c', fontWeight: '700' }}><MapPin size={11} /> {job.zona}</span>
                   <span><Clock size={11} /> {job.fecha}</span>
                 </div>
+
+                {/* ALERTA DE NUEVO MENSAJE DE TÉCNICO */}
+                {job.hasNewTechMessage && (
+                  <div className="red-publication-msg-alert">
+                    <span className="red-msg-dot-pulse" />
+                    <span>💬 <strong>Mensaje de técnico:</strong> "{job.lastTechMsg?.message}"</span>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #f1f5f9', fontSize: '12px' }}>
                   <span style={{ color: '#ea580c', fontWeight: '800' }}>
                     {job.cotizaciones} {job.cotizaciones === 1 ? 'oferta recibida' : 'ofertas recibidas'}
@@ -400,10 +520,10 @@ const VistaRedAutonomo = () => {
         />
       )}
 
-      {/* ─── MODAL DE DETALLE DE PUBLICACIÓN Y COTIZACIONES RECIBIDAS (DISEÑO PREMIUM UNIFICADO) ─── */}
+      {/* ─── MODAL DE DETALLE DE PUBLICACIÓN Y COTIZACIONES (DISEÑO PREMIUM UNIFICADO) ─── */}
       {showQuotesModal && selectedJobForQuotes && (
         <div className="mercado-modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowQuotesModal(false)}>
-          <div className="mercado-premium-modal">
+          <div className="mercado-premium-modal" style={{ maxWidth: '1080px' }}>
             <div className="mercado-premium-header">
               <h2>📋 Detalle de Publicación y Cotizaciones</h2>
               <span className="mercado-modal-close" onClick={() => setShowQuotesModal(false)}>×</span>
@@ -411,7 +531,7 @@ const VistaRedAutonomo = () => {
 
             <div className="mercado-premium-body">
               {/* Left panel: Info & Photo Gallery */}
-              <div className="mercado-premium-details">
+              <div className="mercado-premium-details" style={{ flex: '1.05' }}>
                 {activePhoto ? (
                   <div className="mercado-photo-gallery">
                     <div
@@ -447,9 +567,9 @@ const VistaRedAutonomo = () => {
                 )}
 
                 <div className="mercado-premium-text">
-                  <h3>{selectedJobForQuotes.titulo}</h3>
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '10px 0' }}>{selectedJobForQuotes.titulo}</h3>
                   <div className="mercado-premium-info-grid">
-                    <div className="mercado-info-item full-width" style={{ background: '#fff7ed', border: '1.5px solid #fed7aa' }}>
+                    <div className="mercado-info-item full-width" style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px 14px' }}>
                       <MapPin size={18} color="#ea580c" style={{ marginTop: '2px', flexShrink: 0 }} />
                       <div>
                         <strong style={{ color: '#ea580c' }}>Zona / Área de Cobertura</strong>
@@ -475,83 +595,99 @@ const VistaRedAutonomo = () => {
                 </div>
               </div>
 
-              {/* Right panel: Quotes list */}
-              <div className="mercado-premium-form" style={{ background: '#ffffff', overflowY: 'auto' }}>
-                <div style={{ marginBottom: '16px' }}>
-                  <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    📋 Cotizaciones de Técnicos
-                    <span style={{ fontSize: '12px', background: '#ff6600', color: '#ffffff', padding: '2px 8px', borderRadius: '12px' }}>
-                      {selectedJobForQuotes.cotizaciones_list?.length || 0}
-                    </span>
-                  </h4>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
-                    Revisa las propuestas de los técnicos. Puedes chatear con ellos o aceptar la mejor oferta.
-                  </p>
-                </div>
+              {/* Right panel: Quotes list OR Embedded Live Chat */}
+              <div className="mercado-premium-form" style={{ background: '#ffffff', overflowY: 'auto', padding: 0, display: 'flex', flexDirection: 'column' }}>
+                
+                {/* ─── VISTA 1: LISTA DE COTIZACIONES DE TÉCNICOS ─── */}
+                {!activeChatQuote && (
+                  <div style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
+                    <div style={{ marginBottom: '16px' }}>
+                      <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        📋 Cotizaciones de Técnicos
+                        <span style={{ fontSize: '12px', background: '#ff6600', color: '#ffffff', padding: '2px 8px', borderRadius: '12px' }}>
+                          {selectedJobForQuotes.cotizaciones_list?.length || 0}
+                        </span>
+                      </h4>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
+                        Revisa las propuestas de los técnicos. Puedes chatear con ellos o aceptar la mejor oferta.
+                      </p>
+                    </div>
 
-                {(!selectedJobForQuotes.cotizaciones_list || selectedJobForQuotes.cotizaciones_list.length === 0) ? (
-                  <div style={{ textAlign: 'center', color: '#64748b', padding: '40px 20px', background: '#fffaf5', borderRadius: '16px', border: '2px dashed #fed7aa', margin: '20px 0' }}>
-                    <div style={{ fontSize: '36px', marginBottom: '10px' }}>⏳</div>
-                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', fontSize: '15px', color: '#0f172a' }}>Aún no hay cotizaciones</p>
-                    <span style={{ fontSize: '13px', color: '#94a3b8' }}>Los técnicos de la red te notificarán en cuanto envíen su propuesta.</span>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {selectedJobForQuotes.cotizaciones_list.map((quote) => (
-                      <div key={quote.id} className="red-quote-card">
-                        <div className="red-quote-header">
-                          <div className="red-quote-tech">
-                            <div 
-                              className="red-quote-avatar" 
-                              onClick={() => {
-                                setSelectedTechnicianProfile(quote.technician);
-                                setShowTechModal(true);
-                              }}
-                              title="Ver perfil completo y especialidades del técnico"
-                            >
-                              {quote.technician?.first_name?.charAt(0) || 'T'}
+                    {(!selectedJobForQuotes.cotizaciones_list || selectedJobForQuotes.cotizaciones_list.length === 0) ? (
+                      <div style={{ textAlign: 'center', color: '#64748b', padding: '40px 20px', background: '#fffaf5', borderRadius: '16px', border: '2px dashed #fed7aa', margin: '20px 0' }}>
+                        <div style={{ fontSize: '36px', marginBottom: '10px' }}>⏳</div>
+                        <p style={{ margin: '0 0 6px 0', fontWeight: '700', fontSize: '15px', color: '#0f172a' }}>Aún no hay cotizaciones</p>
+                        <span style={{ fontSize: '13px', color: '#94a3b8' }}>Los técnicos de la red te notificarán en cuanto envíen su propuesta.</span>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        {selectedJobForQuotes.cotizaciones_list.map((quote) => (
+                          <div key={quote.id} className="red-quote-card">
+                            <div className="red-quote-header">
+                              <div className="red-quote-tech">
+                                <div 
+                                  className="red-quote-avatar" 
+                                  onClick={() => {
+                                    setSelectedTechnicianProfile(quote.technician);
+                                    setShowTechModal(true);
+                                  }}
+                                  title="Ver perfil completo y especialidades del técnico"
+                                >
+                                  {quote.technician?.first_name?.charAt(0) || 'T'}
+                                </div>
+                                <div>
+                                  <h4 
+                                    style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#0f172a', cursor: 'pointer' }}
+                                    onClick={() => {
+                                      setSelectedTechnicianProfile(quote.technician);
+                                      setShowTechModal(true);
+                                    }}
+                                  >
+                                    {quote.technicianName}
+                                  </h4>
+                                  <span className="red-quote-role">Técnico Verificado</span>
+                                </div>
+                              </div>
+                              <div className="red-quote-price" style={{ color: '#ea580c' }}>
+                                {quote.price > 0 ? `$${parseFloat(quote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Iniciado'}
+                              </div>
                             </div>
-                            <div>
-                              <h4 
-                                style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#0f172a', cursor: 'pointer' }}
-                                onClick={() => {
-                                  setSelectedTechnicianProfile(quote.technician);
-                                  setShowTechModal(true);
-                                }}
-                              >
-                                {quote.technician?.first_name} {quote.technician?.last_name}
-                              </h4>
-                              <span className="red-quote-role">Técnico Verificado</span>
+
+                            {quote.message && (
+                              <div className="red-quote-message">
+                                "{quote.message}"
+                              </div>
+                            )}
+
+                            {/* ALERTA DE MENSAJE DEL TÉCNICO EN LA TARJETA */}
+                            {quote.hasNewTechMessage && (
+                              <div className="red-quote-msg-alert">
+                                <span className="red-msg-dot-pulse" />
+                                <div>
+                                  <strong>Nuevo mensaje de {quote.technicianName}:</strong>
+                                  <div>"{quote.lastMsg.message}"</div>
+                                </div>
+                              </div>
+                            )}
+
+                            <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '12px' }}>
+                              📅 Última interacción: {new Date(quote.created_at).toLocaleString('es-MX')}
                             </div>
-                          </div>
-                          <div className="red-quote-price" style={{ color: '#ea580c' }}>
-                            ${parseFloat(quote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                          </div>
-                        </div>
 
-                        {quote.message && (
-                          <div className="red-quote-message">
-                            "{quote.message}"
-                          </div>
-                        )}
+                            <div className="red-quote-actions">
+                              {quote.status === 'rejected' ? (
+                                <div style={{ color: '#dc2626', fontWeight: '800', fontSize: '13px', padding: '6px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  ❌ Oferta Rechazada
+                                </div>
+                              ) : (
+                                <button 
+                                  className="red-btn-reject" 
+                                  onClick={() => handleRejectQuote(quote.id)}
+                                >
+                                  Rechazar
+                                </button>
+                              )}
 
-                        <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '12px' }}>
-                          📅 Recibida: {new Date(quote.created_at).toLocaleString('es-MX')}
-                        </div>
-
-                        <div className="red-quote-actions">
-                          {quote.status === 'rejected' ? (
-                            <div style={{ color: '#dc2626', fontWeight: '800', fontSize: '13px', padding: '6px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              ❌ Oferta Rechazada
-                            </div>
-                          ) : (
-                            <>
-                              <button 
-                                className="red-btn-reject" 
-                                onClick={() => handleRejectQuote(quote.id)}
-                              >
-                                Rechazar
-                              </button>
                               <div style={{ display: 'flex', gap: '8px' }}>
                                 <button 
                                   type="button"
@@ -560,30 +696,137 @@ const VistaRedAutonomo = () => {
                                     display: 'flex', 
                                     alignItems: 'center', 
                                     gap: '6px',
-                                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                                    background: quote.hasNewTechMessage ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'linear-gradient(135deg, #0284c7, #0369a1)',
                                     color: '#ffffff',
                                     border: 'none',
-                                    boxShadow: '0 3px 8px rgba(37, 99, 235, 0.25)'
+                                    fontWeight: '800',
+                                    boxShadow: '0 3px 8px rgba(2, 132, 199, 0.25)'
                                   }}
-                                  onClick={() => setActiveChatQuote({ ...quote, jobTitle: selectedJobForQuotes?.titulo })}
+                                  onClick={() => setActiveChatQuote(quote)}
                                 >
-                                  <MessageCircle size={15} /> Chat
+                                  <MessageCircle size={15} /> 
+                                  <span>Chat ({quote.chat_history?.length || 0})</span>
                                 </button>
-                                <button 
-                                  type="button"
-                                  className="red-btn-accept" 
-                                  onClick={() => handleAcceptQuote(quote)}
-                                >
-                                  ✓ Aceptar Oferta
-                                </button>
+
+                                {quote.status !== 'rejected' && quote.price > 0 && (
+                                  <button 
+                                    type="button"
+                                    className="red-btn-accept" 
+                                    onClick={() => handleAcceptQuote(quote)}
+                                  >
+                                    ✓ Aceptar Oferta
+                                  </button>
+                                )}
                               </div>
-                            </>
-                          )}
-                        </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
+
+                {/* ─── VISTA 2: CHAT DIRECTO EMBEBIDO CON EL TÉCNICO SELECCIONADO ─── */}
+                {activeChatQuote && (
+                  <div className="red-embedded-chat-wrap">
+                    {/* Header del Chat */}
+                    <div className="red-chat-top-header">
+                      <button className="back-btn" onClick={() => setActiveChatQuote(null)}>
+                        <ChevronLeft size={16} /> Ver todas las ofertas
+                      </button>
+                      <div style={{ textAlign: 'right' }}>
+                        <strong style={{ fontSize: '13px', color: '#0f172a', display: 'block' }}>
+                          {activeChatQuote.technicianName}
+                        </strong>
+                        <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '800' }}>
+                          {activeChatQuote.price > 0 ? `Oferta: $${parseFloat(activeChatQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Activo'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Alerta si el técnico envió un mensaje */}
+                    {activeChatQuote.hasNewTechMessage && (
+                      <div className="mercado-chat-alert-banner">
+                        <div className="mercado-chat-alert-icon">🔔</div>
+                        <div className="mercado-chat-alert-text">
+                          <strong>El Técnico te envió un mensaje:</strong>
+                          <span>"{activeChatQuote.lastMsg.message}"</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Stream de Mensajes */}
+                    <div className="mercado-chat-messages-container">
+                      {(!activeChatQuote.chat_history || activeChatQuote.chat_history.length === 0) ? (
+                        <div className="mercado-chat-empty-state">
+                          <div className="icon-wrap">
+                            <MessageCircle size={26} />
+                          </div>
+                          <p>Inicia la conversación</p>
+                          <span>Escribe a {activeChatQuote.technicianName} para acordar precio, horarios o dudas sobre el servicio.</span>
+                        </div>
+                      ) : (
+                        activeChatQuote.chat_history.map((msg, idx) => {
+                          const isClient = Number(msg.sender_id) === Number(user?.id) || msg.sender_role === 'Cliente' || msg.sender_role === 'Usuario';
+                          return (
+                            <div
+                              key={idx}
+                              className={`mercado-chat-bubble-row ${isClient ? 'sent' : 'received'}`}
+                            >
+                              <span className="mercado-chat-bubble-sender">
+                                {isClient ? 'Tú (Cliente)' : (msg.sender_name || 'Técnico')}
+                              </span>
+                              <div className="mercado-chat-bubble">
+                                {msg.message}
+                              </div>
+                              <span className="mercado-chat-bubble-time">
+                                {formatTime(msg.created_at)}
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
+                      <div ref={chatEndRef} />
+                    </div>
+
+                    {/* Quick Action Banner inside Chat */}
+                    {activeChatQuote.price > 0 && activeChatQuote.status !== 'rejected' && activeChatQuote.status !== 'accepted' && (
+                      <div style={{ padding: '8px 16px', background: '#f0fdf4', borderTop: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', color: '#166534', fontWeight: '700' }}>
+                          Propuesta de {activeChatQuote.technicianName}: ${parseFloat(activeChatQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </span>
+                        <button
+                          type="button"
+                          className="red-btn-accept"
+                          style={{ padding: '6px 14px', fontSize: '12px' }}
+                          onClick={() => handleAcceptQuote(activeChatQuote)}
+                        >
+                          ✓ Aceptar Esta Oferta
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Input Bar integrado */}
+                    <form onSubmit={handleSendClientChat} className="mercado-chat-input-bar">
+                      <input
+                        type="text"
+                        placeholder={`Escribe un mensaje a ${activeChatQuote.technicianName}...`}
+                        value={clientChatInput}
+                        onChange={(e) => setClientChatInput(e.target.value)}
+                        disabled={sendingClientChat}
+                      />
+                      <button
+                        type="submit"
+                        className="mercado-chat-send-btn"
+                        disabled={sendingClientChat || !clientChatInput.trim()}
+                      >
+                        <Send size={15} />
+                        <span>{sendingClientChat ? 'Enviando...' : 'Enviar'}</span>
+                      </button>
+                    </form>
+                  </div>
+                )}
+
               </div>
             </div>
 
@@ -710,23 +953,6 @@ const VistaRedAutonomo = () => {
             <img src={activePhoto} alt="Evidencia en tamaño completo" className="mercado-lightbox-img" />
           </div>
         </div>
-      )}
-
-      {/* ─── MODAL DE CHAT EN VIVO CON EL TÉCNICO ─── */}
-      {activeChatQuote && (
-        <ChatModal
-          quoteId={activeChatQuote.id}
-          isNetworkQuote={true}
-          jobTitle={activeChatQuote.jobTitle || 'Trabajo en la Red'}
-          otherPartyName={
-            activeChatQuote.technician?.first_name 
-              ? `${activeChatQuote.technician.first_name} ${activeChatQuote.technician.last_name || ''}`
-              : (activeChatQuote.technician?.name || 'Técnico de la Red')
-          }
-          otherPartyRole="Técnico de la Red"
-          initialMessages={activeChatQuote.chat_history || []}
-          onClose={() => setActiveChatQuote(null)}
-        />
       )}
     </div>
   );

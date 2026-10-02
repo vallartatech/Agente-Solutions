@@ -117,6 +117,7 @@ const VistaNotificaciones = () => {
                   const handleNavigate = (n) => {
                     let url = n.data?.url || n.url;
                     const type = n.data?.alert_type || n.data?.type || n.type || n.alert_type;
+                    const titleLower = (n.data?.title || n.title || n.titulo || '').toLowerCase();
 
                     console.log("Notificación clickeada:", n);
                     

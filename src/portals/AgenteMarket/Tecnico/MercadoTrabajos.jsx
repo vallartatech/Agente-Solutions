@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow } from '@react-google-maps/api';
 import Header from '../../../components/Shared/Header';
-import ChatModal from '../../../components/Shared/ChatModal';
-import { MapPin, DollarSign, Clock, Send, User, FileText, Maximize2, Image as ImageIcon, X, List, Map as MapIcon, MessageCircle } from 'lucide-react';
+import { MapPin, DollarSign, Clock, Send, User, FileText, Maximize2, Image as ImageIcon, X, List, Map as MapIcon, MessageCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -17,21 +16,22 @@ const defaultCenter = { lat: 21.0181, lng: -89.6242 };
 const limpiarDescripcion = (rawDesc) => {
   if (!rawDesc) return 'Sin descripción adicional';
   let clean = rawDesc;
-  // Quitar prefijo de lote tipo [LOTE-XXXX] (1/1)
   clean = clean.replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '');
-  // Quitar [EQUIPO AFECTADO]: otro o Otro
   clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*(otro|Otro|ninguno|Ninguno|n\/a|N\/A)\s*/gi, '');
-  // Si tiene un equipo válido, formatearlo limpio
   clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*/gi, ' - Equipo: ');
   return clean.trim() || rawDesc;
 };
 
-const darkMapStyles = [];
-
-const mockJobs = [
-  { id: 1, titulo: "Instalación de Ventilador de Techo", lat: 21.0250, lng: -89.6300, presupuesto: "$500", cliente: "María Gómez", descripcion: "Necesito instalar un ventilador nuevo en la sala.", fecha: "Hoy", lugar: "Casa 1", zona: "Col. Itzimná, Mérida", cotizaciones: 0, myQuote: null, myQuotesHistory: [], fotos: [] },
-  { id: 2, titulo: "Mantenimiento Minisplit 12000 BTU", lat: 21.0100, lng: -89.6200, presupuesto: "A convenir", cliente: "Roberto Carlos", descripcion: "El aire acondicionado tira agua y no enfría bien.", fecha: "Mañana", lugar: "Casa 2", zona: "Col. San Ramón Norte, Mérida", cotizaciones: 0, myQuote: null, myQuotesHistory: [], fotos: [] },
-];
+const formatTime = (dateStr) => {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+};
 
 const MercadoTrabajos = () => {
   const { isLoaded } = useJsApiLoader({
@@ -41,7 +41,6 @@ const MercadoTrabajos = () => {
 
   const [selectedJob, setSelectedJob] = useState(null);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
-  const [activeChatQuote, setActiveChatQuote] = useState(null);
   const [networkJobs, setNetworkJobs] = useState([]);
   const [quotePrice, setQuotePrice] = useState('');
   const [quoteMessage, setQuoteMessage] = useState('');
@@ -49,6 +48,12 @@ const MercadoTrabajos = () => {
   const [activePhoto, setActivePhoto] = useState(null);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  
+  // Embedded Chat State
+  const [chatInput, setChatInput] = useState('');
+  const [sendingChat, setSendingChat] = useState(false);
+  const chatEndRef = useRef(null);
+
   const { user: authUser } = useAuth();
 
   const fetchJobs = async () => {
@@ -81,6 +86,11 @@ const MercadoTrabajos = () => {
             ? `${order.type}${order.equipment ? ' - ' + order.equipment : ''}` 
             : 'Problema / Servicio Solicitado';
 
+          // Detectar último mensaje del cliente en el chat para alertas
+          const chatHistory = myQuote?.chat_history || [];
+          const lastMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1] : null;
+          const lastClientMsg = (lastMsg && (Number(lastMsg.sender_id) !== Number(authUser?.id) || lastMsg.sender_role === 'Cliente')) ? lastMsg : null;
+
           return {
             id: order.id,
             titulo: tituloProblema,
@@ -101,9 +111,18 @@ const MercadoTrabajos = () => {
             cotizaciones: order.network_quotes_count || 0,
             myQuote,
             myQuotesHistory,
+            lastClientMsg,
           };
         });
         setNetworkJobs(jobs);
+
+        // Si tenemos un trabajo seleccionado en el modal, actualizar su estado en vivo
+        if (selectedJob) {
+          const updated = jobs.find(j => j.id === selectedJob.id);
+          if (updated) {
+            setSelectedJob(updated);
+          }
+        }
       }
     } catch (e) {
       console.error("Error fetching jobs", e);
@@ -112,38 +131,55 @@ const MercadoTrabajos = () => {
 
   useEffect(() => {
     fetchJobs();
-    const interval = setInterval(fetchJobs, 5000);
+    const interval = setInterval(fetchJobs, 4000);
     return () => clearInterval(interval);
   }, [authUser]);
 
-  const handleAbrirChat = async (job) => {
-    if (!job) return;
+  useEffect(() => {
+    if (showQuoteModal && quoteStep === 1) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [selectedJob?.myQuote?.chat_history, showQuoteModal, quoteStep]);
+
+  const handleSendEmbeddedChat = async (e) => {
+    if (e) e.preventDefault();
+    if (!chatInput.trim() || sendingChat || !selectedJob) return;
+
+    const textToSend = chatInput.trim();
+    setChatInput('');
+    setSendingChat(true);
+
+    const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
     try {
-      if (job.myQuote) {
-        setActiveChatQuote({ 
-          ...job.myQuote, 
-          jobTitle: job.titulo, 
-          cliente: job.cliente || 'Cliente' 
-        });
-        return;
+      let quoteId = selectedJob.myQuote?.id;
+
+      // Si no existe cotización/chat previo, iniciamos la sesión
+      if (!quoteId) {
+        const initRes = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${selectedJob.id}/iniciar-chat`,
+          {},
+          { headers }
+        );
+        if (initRes.data?.success && initRes.data?.quote) {
+          quoteId = initRes.data.quote.id;
+        }
       }
-      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}/iniciar-chat`,
-        {},
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-      );
-      if (res.data?.success && res.data?.quote) {
-        setActiveChatQuote({ 
-          ...res.data.quote, 
-          jobTitle: job.titulo, 
-          cliente: job.cliente || 'Cliente' 
-        });
+
+      if (quoteId) {
+        await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quoteId}/chat`,
+          { message: textToSend },
+          { headers }
+        );
         fetchJobs();
       }
     } catch (err) {
-      console.error("Error al abrir chat:", err);
-      alert("No se pudo iniciar el chat con el cliente. Intenta nuevamente.");
+      console.error("Error al enviar mensaje:", err);
+      alert("No se pudo enviar el mensaje. Intenta de nuevo.");
+    } finally {
+      setSendingChat(false);
     }
   };
 
@@ -162,7 +198,7 @@ const MercadoTrabajos = () => {
       );
       if (res.data.success) {
         alert("✅ " + res.data.message);
-        setShowQuoteModal(false);
+        setQuoteStep(1);
         setQuotePrice('');
         setQuoteMessage('');
         fetchJobs();
@@ -187,6 +223,9 @@ const MercadoTrabajos = () => {
     if (status === 'accepted') return 'Aceptada';
     return 'Pendiente';
   };
+
+  const chatMessages = selectedJob?.myQuote?.chat_history || [];
+  const lastClientMsg = selectedJob?.lastClientMsg;
 
   return (
     <div className="mercado-container">
@@ -217,40 +256,41 @@ const MercadoTrabajos = () => {
                 mapContainerStyle={mapContainerStyle}
                 center={defaultCenter}
                 zoom={13}
-                options={{ styles: darkMapStyles, disableDefaultUI: false }}
+                options={{ disableDefaultUI: false }}
               >
                 {networkJobs.map(job => (
                   <React.Fragment key={job.id}>
-                    {/* Círculo de área / colonia de cobertura */}
                     <Circle
                       center={{ lat: job.lat, lng: job.lng }}
                       radius={550}
                       options={{
-                        fillColor: '#ff6600',
+                        fillColor: job.lastClientMsg ? '#2563eb' : '#ff6600',
                         fillOpacity: 0.16,
-                        strokeColor: '#ea580c',
+                        strokeColor: job.lastClientMsg ? '#1d4ed8' : '#ea580c',
                         strokeOpacity: 0.7,
                         strokeWeight: 1.5,
                         clickable: true
                       }}
-                      onClick={() => setSelectedJob(job)}
+                      onClick={() => openQuoteModalForJob(job)}
                     />
                     <Marker
                       position={{ lat: job.lat, lng: job.lng }}
-                      onClick={() => setSelectedJob(job)}
+                      onClick={() => openQuoteModalForJob(job)}
                       title={`Zona: ${job.zona}`}
                       icon={{
-                        url: job.myQuote
-                          ? (job.myQuote.status === 'rejected'
-                            ? 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
-                            : 'https://maps.google.com/mapfiles/ms/icons/green-dot.png')
-                          : 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png'
+                        url: job.lastClientMsg
+                          ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                          : (job.myQuote
+                            ? (job.myQuote.status === 'rejected'
+                              ? 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                              : 'https://maps.google.com/mapfiles/ms/icons/green-dot.png')
+                            : 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png')
                       }}
                     />
                   </React.Fragment>
                 ))}
 
-                {selectedJob && (
+                {selectedJob && !showQuoteModal && (
                   <InfoWindow
                     position={{ lat: selectedJob.lat, lng: selectedJob.lng }}
                     onCloseClick={() => setSelectedJob(null)}
@@ -260,16 +300,11 @@ const MercadoTrabajos = () => {
                       <p style={{ color: '#ea580c', fontWeight: '700', margin: '4px 0' }}>
                         <MapPin size={12} /> Zona: {selectedJob.zona}
                       </p>
-                      <div style={{ fontSize: '11px', color: '#64748b', background: '#fff7ed', padding: '5px 8px', borderRadius: '6px', border: '1px solid #fed7aa', margin: '6px 0', lineHeight: 1.3 }}>
-                        🔒 <strong>Área aproximada</strong><br/>Dirección exacta visible al ser asignado
-                      </div>
                       <button
                         className="mercado-btn-details"
                         onClick={() => openQuoteModalForJob(selectedJob)}
                       >
-                        {selectedJob.myQuote
-                          ? (selectedJob.myQuote.status === 'rejected' ? '⚠ Revisar Rechazo' : '📋 Ver mi Cotización')
-                          : '💼 Cotizar este trabajo'}
+                        {selectedJob.myQuote ? '📋 Ver Detalle y Chat' : '💼 Cotizar este trabajo'}
                       </button>
                     </div>
                   </InfoWindow>
@@ -281,10 +316,9 @@ const MercadoTrabajos = () => {
           )}
         </div>
 
-        {/* ─── Sidebar / Bottom Drawer (Tipo Uber) ─── */}
+        {/* ─── Sidebar (Tipo Uber) ─── */}
         <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''}`}>
           <div className="mercado-sidebar-header">
-            {/* Grab handle for mobile gesture / tap */}
             <div 
               className="mercado-mobile-drag-handle" 
               onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)} 
@@ -313,8 +347,8 @@ const MercadoTrabajos = () => {
                     <span>{job.zona}</span>
                   </div>
                   {job.myQuote ? (
-                    <span className={`mercado-job-badge ${job.myQuote.status === 'rejected' ? 'badge-rejected' : 'badge-pending'}`}>
-                      {job.myQuote.status === 'rejected' ? 'Rechazada' : (job.myQuote.price > 0 ? `$${parseFloat(job.myQuote.price).toLocaleString('es-MX')}` : 'Chat Activo')}
+                    <span className={`mercado-job-badge ${job.myQuote.status === 'rejected' ? 'badge-rejected' : (job.myQuote.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`}>
+                      {job.myQuote.status === 'rejected' ? 'Rechazada' : (job.myQuote.price > 0 ? `$${parseFloat(job.myQuote.price).toLocaleString('es-MX')}` : 'Chat Iniciado')}
                     </span>
                   ) : (
                     <span className="mercado-job-badge-disponible">Disponible</span>
@@ -324,6 +358,14 @@ const MercadoTrabajos = () => {
                 {/* 2. Problema Solicitado */}
                 <h4 className="mercado-job-card-title">{job.titulo}</h4>
                 <p className="mercado-job-card-desc">{job.descripcion}</p>
+
+                {/* 3. ALERTA DE MENSAJE DEL CLIENTE */}
+                {job.lastClientMsg && (
+                  <div className="mercado-job-msg-alert">
+                    <span className="mercado-msg-dot-pulse" />
+                    <span>💬 <strong>Mensaje del Cliente:</strong> "{job.lastClientMsg.message}"</span>
+                  </div>
+                )}
 
                 {/* Footer del Cuadrito */}
                 <div className="mercado-job-card-footer">
@@ -336,23 +378,24 @@ const MercadoTrabajos = () => {
         </div>
       </div>
 
-      {/* ─── Modal para Detalle y Cotización (Responsivo) ─── */}
+      {/* ─── MODAL PREMIUM 2 COLUMNAS (DETALLES + CHAT INTEGRADO) ─── */}
       {showQuoteModal && selectedJob && (
         <div className="mercado-modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowQuoteModal(false)}>
-          <div className="mercado-premium-modal">
+          <div className="mercado-premium-modal" style={{ maxWidth: '1080px' }}>
             
             {/* ══════════════════════════════════════════════════
-                PASO 1: DETALLES DEL TRABAJO
+                PASO 1: DETALLES DEL TRABAJO + CHAT DIRECTO EMBEBIDO
             ══════════════════════════════════════════════════ */}
             {quoteStep === 1 && (
               <>
                 <div className="mercado-premium-header">
-                  <h2>💼 Detalle del Trabajo</h2>
+                  <h2>💼 Detalle del Trabajo y Chat</h2>
                   <span className="mercado-modal-close" onClick={() => setShowQuoteModal(false)}>×</span>
                 </div>
 
                 <div className="mercado-premium-body">
-                  <div className="mercado-premium-details" style={{ width: '100%', borderRight: 'none' }}>
+                  {/* Columna Izquierda: Información, Fotos y Mi Oferta */}
+                  <div className="mercado-premium-details" style={{ flex: '1.05' }}>
                     {/* Galería de Fotos / Evidencias del Problema */}
                     {activePhoto ? (
                       <div className="mercado-photo-gallery">
@@ -405,80 +448,164 @@ const MercadoTrabajos = () => {
                       </div>
 
                       {/* 2. Problema Solicitado */}
-                      <div className="mercado-info-item full-width" style={{ marginTop: '12px', background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '14px', padding: '14px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                          <FileText size={18} color="#ea580c" />
-                          <strong style={{ color: '#0f172a', fontSize: '15px', fontWeight: '800' }}>
+                      <div className="mercado-info-item full-width" style={{ marginTop: '10px', background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '14px', padding: '12px 14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                          <FileText size={17} color="#ea580c" />
+                          <strong style={{ color: '#0f172a', fontSize: '14.5px', fontWeight: '800' }}>
                             {selectedJob.titulo}
                           </strong>
                         </div>
-                        <div style={{ fontSize: '13.5px', color: '#334155', lineHeight: '1.55', whiteSpace: 'pre-line', background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                        <div style={{ fontSize: '13px', color: '#334155', lineHeight: '1.5', whiteSpace: 'pre-line', background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
                           {selectedJob.descripcion}
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', fontSize: '11.5px', color: '#64748b' }}>
-                          <span><Clock size={11} style={{ verticalAlign: 'middle', marginRight: '4px' }} /> Publicado: {selectedJob.fecha}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', fontSize: '11px', color: '#64748b' }}>
+                          <span><Clock size={11} style={{ verticalAlign: 'middle', marginRight: '3px' }} /> Publicado: {selectedJob.fecha}</span>
                           <span style={{ fontWeight: '600', color: '#ea580c' }}>{selectedJob.cotizaciones} ofertas enviadas</span>
                         </div>
                       </div>
 
-                      {/* 3. Botón de Chat en Vivo con el Cliente */}
-                      <div style={{ marginTop: '14px' }}>
+                      {/* 3. Mi Oferta Actual Card */}
+                      <div style={{ marginTop: '12px', background: selectedJob.myQuote?.status === 'rejected' ? '#fff1f2' : (selectedJob.myQuote?.status === 'accepted' ? '#f0fdf4' : '#fff7ed'), border: `1.5px solid ${selectedJob.myQuote?.status === 'rejected' ? '#fecdd3' : (selectedJob.myQuote?.status === 'accepted' ? '#bbf7d0' : '#fed7aa')}`, borderRadius: '14px', padding: '14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: selectedJob.myQuote?.status === 'rejected' ? '#e11d48' : '#ea580c', letterSpacing: '0.5px' }}>
+                            📋 Mi Propuesta Económica
+                          </span>
+                          {selectedJob.myQuote && (
+                            <span className={`mercado-job-badge ${selectedJob.myQuote.status === 'rejected' ? 'badge-rejected' : (selectedJob.myQuote.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`}>
+                              {getStatusLabel(selectedJob.myQuote.status)}
+                            </span>
+                          )}
+                        </div>
+
+                        {selectedJob.myQuote && selectedJob.myQuote.price > 0 ? (
+                          <>
+                            <div style={{ fontSize: '22px', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.5px' }}>
+                              ${parseFloat(selectedJob.myQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                            </div>
+                            {selectedJob.myQuote.message && (
+                              <div style={{ fontSize: '12.5px', color: '#475569', fontStyle: 'italic', marginTop: '4px' }}>
+                                "{selectedJob.myQuote.message}"
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div style={{ fontSize: '13px', color: '#64748b' }}>
+                            Aún no has enviado una cotización económica a este trabajo.
+                          </div>
+                        )}
+
                         <button
                           type="button"
-                          onClick={() => handleAbrirChat(selectedJob)}
+                          onClick={() => setQuoteStep(2)}
                           style={{
                             width: '100%',
-                            padding: '13px 18px',
-                            background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                            marginTop: '10px',
+                            padding: '10px 14px',
+                            background: 'linear-gradient(135deg, #ff6600 0%, #ea580c 100%)',
                             color: '#ffffff',
                             border: 'none',
-                            borderRadius: '12px',
+                            borderRadius: '10px',
                             fontWeight: '800',
-                            fontSize: '14px',
+                            fontSize: '13px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '8px',
+                            gap: '6px',
                             cursor: 'pointer',
-                            boxShadow: '0 4px 14px rgba(2, 132, 199, 0.25)',
-                            transition: 'all 0.2s ease'
+                            boxShadow: '0 3px 10px rgba(234, 88, 12, 0.25)'
                           }}
                         >
-                          <MessageCircle size={18} />
-                          <span>💬 Chat con el Cliente</span>
+                          <DollarSign size={16} />
+                          <span>{selectedJob.myQuote && selectedJob.myQuote.price > 0 ? '✏️ Modificar Oferta' : '💼 Enviar Cotización'}</span>
                         </button>
                       </div>
 
-                      {/* Historial de mis Cotizaciones */}
-                      {selectedJob.myQuotesHistory && selectedJob.myQuotesHistory.length > 0 && (
-                        <div className="mq-history-section" style={{ marginTop: '14px' }}>
-                          <div className="mq-history-title">📋 Mi Oferta Actual</div>
-                          <div className="mq-history-list">
-                            {selectedJob.myQuotesHistory.map(q => (
-                              <div key={q.id} className={`mq-history-item ${q.status === 'rejected' ? 'is-rejected' : 'is-pending'}`}>
-                                <div className="mq-history-item-top">
-                                  <span className="mq-history-price">
-                                    {q.price > 0 ? `$${parseFloat(q.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Iniciado'}
-                                  </span>
-                                  <span className={`mq-history-status ${q.status}`}>{getStatusLabel(q.status)}</span>
-                                </div>
-                                {q.message && <div className="mq-history-message">"{q.message}"</div>}
-                                <div className="mq-history-date">{new Date(q.created_at).toLocaleString('es-MX')}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
+                  </div>
+
+                  {/* Columna Derecha: CHAT DIRECTO EMBEBIDO */}
+                  <div className="mercado-embedded-chat-panel">
+                    {/* Header del Chat */}
+                    <div className="mercado-chat-header">
+                      <div className="mercado-chat-header-title">
+                        <h3><MessageCircle size={18} color="#ea580c" /> Conversación con el Cliente</h3>
+                      </div>
+                      <div className="mercado-chat-online-badge">
+                        <span className="mercado-chat-online-dot" /> En línea
+                      </div>
+                    </div>
+
+                    {/* Alerta de Mensaje si el cliente escribió */}
+                    {lastClientMsg && (
+                      <div className="mercado-chat-alert-banner">
+                        <div className="mercado-chat-alert-icon">🔔</div>
+                        <div className="mercado-chat-alert-text">
+                          <strong>El Cliente te envió un mensaje:</strong>
+                          <span>"{lastClientMsg.message}"</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Stream de Mensajes */}
+                    <div className="mercado-chat-messages-container">
+                      {chatMessages.length === 0 ? (
+                        <div className="mercado-chat-empty-state">
+                          <div className="icon-wrap">
+                            <MessageCircle size={26} />
+                          </div>
+                          <p>Inicia el chat con el cliente</p>
+                          <span>Escribe aquí abajo para aclarar dudas, acordar detalles o confirmar cuándo puedes acudir.</span>
+                        </div>
+                      ) : (
+                        chatMessages.map((msg, idx) => {
+                          const isMe = Number(msg.sender_id) === Number(authUser?.id) || msg.sender_role === 'Técnico de la Red' || msg.sender_role === 'Técnico';
+                          return (
+                            <div
+                              key={idx}
+                              className={`mercado-chat-bubble-row ${isMe ? 'sent' : 'received'}`}
+                            >
+                              <span className="mercado-chat-bubble-sender">
+                                {isMe ? 'Tú (Técnico)' : (msg.sender_name || 'Cliente')}
+                              </span>
+                              <div className="mercado-chat-bubble">
+                                {msg.message}
+                              </div>
+                              <span className="mercado-chat-bubble-time">
+                                {formatTime(msg.created_at)}
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
+                      <div ref={chatEndRef} />
+                    </div>
+
+                    {/* Input Bar integrado */}
+                    <form onSubmit={handleSendEmbeddedChat} className="mercado-chat-input-bar">
+                      <input
+                        type="text"
+                        placeholder="Escribe un mensaje al cliente..."
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        disabled={sendingChat}
+                      />
+                      <button
+                        type="submit"
+                        className="mercado-chat-send-btn"
+                        disabled={sendingChat || !chatInput.trim()}
+                      >
+                        <Send size={15} />
+                        <span>{sendingChat ? 'Enviando...' : 'Enviar'}</span>
+                      </button>
+                    </form>
                   </div>
                 </div>
 
-                <div className="mercado-premium-footer">
-                  <button className="mercado-btn-cancel" onClick={() => setShowQuoteModal(false)}>Cerrar</button>
-                  <button className="mercado-premium-submit" onClick={() => setQuoteStep(2)}>
-                    <DollarSign size={17} />
-                    {selectedJob.myQuote && selectedJob.myQuote.price > 0 ? '✏️ Modificar Oferta' : '💼 Cotizar Trabajo'}
-                  </button>
+                <div className="mercado-premium-footer" style={{ justifyContent: 'space-between' }}>
+                  <button className="mercado-btn-cancel" onClick={() => setShowQuoteModal(false)}>Cerrar Ventana</button>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    💬 Escribe directamente en el chat o modifica tu cotización.
+                  </div>
                 </div>
               </>
             )}
@@ -489,12 +616,12 @@ const MercadoTrabajos = () => {
             {quoteStep === 2 && (
               <>
                 <div className="mercado-premium-header">
-                  <h2>💰 {selectedJob.myQuote ? 'Enviar Nueva Oferta' : 'Cotizar Trabajo'}</h2>
+                  <h2>💰 {selectedJob.myQuote && selectedJob.myQuote.price > 0 ? 'Modificar Oferta Económica' : 'Enviar Cotización'}</h2>
                   <span className="mercado-modal-close" onClick={() => setShowQuoteModal(false)}>×</span>
                 </div>
 
                 <div className="mercado-premium-body">
-                  <div className="mercado-premium-form" style={{ width: '100%' }}>
+                  <div className="mercado-premium-form" style={{ width: '100%', padding: '24px' }}>
                     {/* Resumen compacto del trabajo */}
                     <div className="mq-compact-summary">
                       <div className="mq-compact-title">{selectedJob.titulo}</div>
@@ -509,19 +636,21 @@ const MercadoTrabajos = () => {
                       <div className="mq-rejection-warning">
                         <span className="mq-rejection-icon">⚠️</span>
                         <div className="mq-rejection-text">
-                          <strong>Tu última oferta fue rechazada</strong>
-                          <p>Revisa las condiciones y envía una nueva propuesta competitiva.</p>
+                          <strong>Tu última oferta (${selectedJob.myQuote.price}) fue rechazada</strong>
+                          <p>Puedes mejorar tu precio o enviar un mensaje para llegar a un acuerdo con el cliente.</p>
                         </div>
                       </div>
                     )}
 
-                    <div className="mercado-form-group" style={{ marginTop: '14px' }}>
-                      <label>Propuesta Económica ($)</label>
+                    <div className="mercado-form-group" style={{ marginTop: '16px' }}>
+                      <label style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', marginBottom: '8px', display: 'block' }}>
+                        Propuesta Económica ($ MXN) *
+                      </label>
                       <div className="mercado-input-wrapper">
                         <DollarSign size={18} className="mercado-input-icon" />
                         <input
                           type="number"
-                          placeholder="Ej. 800"
+                          placeholder="Ej. 350"
                           className="mercado-premium-input"
                           value={quotePrice}
                           onChange={(e) => setQuotePrice(e.target.value)}
@@ -530,10 +659,12 @@ const MercadoTrabajos = () => {
                       </div>
                     </div>
 
-                    <div className="mercado-form-group">
-                      <label>Mensaje para el cliente</label>
+                    <div className="mercado-form-group" style={{ marginTop: '16px' }}>
+                      <label style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', marginBottom: '8px', display: 'block' }}>
+                        Mensaje para el cliente
+                      </label>
                       <textarea
-                        placeholder="Hola, tengo experiencia en esto. Puedo ir hoy mismo..."
+                        placeholder="Ej. Hola Pedro, puedo ir hoy a revisarlo por este precio..."
                         className="mercado-premium-textarea"
                         value={quoteMessage}
                         onChange={(e) => setQuoteMessage(e.target.value)}
@@ -545,11 +676,11 @@ const MercadoTrabajos = () => {
 
                 <div className="mercado-premium-footer">
                   <button className="mercado-btn-cancel" onClick={() => setQuoteStep(1)}>
-                    ← Volver al Detalle
+                    ← Volver al Chat y Detalle
                   </button>
                   <button className="mercado-premium-submit" onClick={handleEnviarCotizacion}>
                     <Send size={16} />
-                    {selectedJob.myQuote ? 'Enviar Nueva Oferta' : 'Enviar Cotización'}
+                    {selectedJob.myQuote && selectedJob.myQuote.price > 0 ? 'Actualizar Oferta' : 'Enviar Cotización'}
                   </button>
                 </div>
               </>
@@ -569,19 +700,6 @@ const MercadoTrabajos = () => {
             <img src={activePhoto} alt="Evidencia en tamaño completo" className="mercado-lightbox-img" />
           </div>
         </div>
-      )}
-
-      {/* ─── MODAL DE CHAT EN VIVO CON EL CLIENTE ─── */}
-      {activeChatQuote && (
-        <ChatModal
-          quoteId={activeChatQuote.id}
-          isNetworkQuote={true}
-          jobTitle={activeChatQuote.jobTitle || 'Trabajo en la Red'}
-          otherPartyName={activeChatQuote.cliente || selectedJob?.cliente || 'Cliente'}
-          otherPartyRole="Cliente / Autónomo"
-          initialMessages={activeChatQuote.chat_history || []}
-          onClose={() => setActiveChatQuote(null)}
-        />
       )}
     </div>
   );

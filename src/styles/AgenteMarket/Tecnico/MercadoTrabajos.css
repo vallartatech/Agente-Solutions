@@ -1191,4 +1191,288 @@
   gap: 4px;
 }
 
+/* =======================================================
+   EMBEDDED LIVE CHAT & MESSAGE ALERTS (PREMIUM UI)
+   ======================================================= */
+.mercado-embedded-chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  min-height: 480px;
+  max-height: 80vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.mercado-chat-header {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #fff7ed 100%);
+  border-bottom: 1.5px solid #ffedd5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.mercado-chat-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mercado-chat-header-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mercado-chat-online-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mercado-chat-online-dot {
+  width: 7px;
+  height: 7px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: livePulse 1.5s infinite;
+}
+
+/* New message alert banner */
+.mercado-chat-alert-banner {
+  background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
+  border-bottom: 1.5px solid #bfdbfe;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideDown 0.3s ease;
+  flex-shrink: 0;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.mercado-chat-alert-icon {
+  font-size: 18px;
+  animation: ringBell 2s infinite ease-in-out;
+}
+
+@keyframes ringBell {
+  0%, 100% { transform: rotate(0); }
+  10%, 30% { transform: rotate(-12deg); }
+  20%, 40% { transform: rotate(12deg); }
+}
+
+.mercado-chat-alert-text {
+  font-size: 12px;
+  color: #1e40af;
+  line-height: 1.35;
+}
+
+.mercado-chat-alert-text strong {
+  display: block;
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+/* Messages stream */
+.mercado-chat-messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #f8fafc;
+}
+
+.mercado-chat-empty-state {
+  margin: auto;
+  text-align: center;
+  padding: 30px 20px;
+  color: #64748b;
+  max-width: 320px;
+}
+
+.mercado-chat-empty-state .icon-wrap {
+  width: 52px;
+  height: 52px;
+  background: #fff7ed;
+  border: 1.5px solid #fed7aa;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  color: #ea580c;
+}
+
+.mercado-chat-empty-state p {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px;
+}
+
+.mercado-chat-empty-state span {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.4;
+  display: block;
+}
+
+/* Chat Bubbles */
+.mercado-chat-bubble-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 82%;
+}
+
+.mercado-chat-bubble-row.sent {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.mercado-chat-bubble-row.received {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.mercado-chat-bubble-sender {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 3px;
+  padding: 0 6px;
+}
+
+.mercado-chat-bubble {
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  word-break: break-word;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.mercado-chat-bubble-row.sent .mercado-chat-bubble {
+  background: linear-gradient(135deg, #ff6600 0%, #ea580c 100%);
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+
+.mercado-chat-bubble-row.received .mercado-chat-bubble {
+  background: #ffffff;
+  color: #1e293b;
+  border: 1.5px solid #e2e8f0;
+  border-bottom-left-radius: 4px;
+}
+
+.mercado-chat-bubble-time {
+  font-size: 10px;
+  margin-top: 3px;
+  padding: 0 6px;
+  color: #94a3b8;
+}
+
+/* Input Bar */
+.mercado-chat-input-bar {
+  padding: 12px 16px;
+  background: #ffffff;
+  border-top: 1.5px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.mercado-chat-input-bar input {
+  flex: 1;
+  padding: 11px 16px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.mercado-chat-input-bar input:focus {
+  background: #ffffff;
+  border-color: #ff6600;
+  box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.15);
+}
+
+.mercado-chat-send-btn {
+  padding: 11px 18px;
+  background: linear-gradient(135deg, #ff6600 0%, #ea580c 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.3);
+  flex-shrink: 0;
+}
+
+.mercado-chat-send-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(234, 88, 12, 0.4);
+}
+
+.mercado-chat-send-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Sidebar message alert badge on job cards */
+.mercado-job-msg-alert {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.3;
+}
+
+.mercado-msg-dot-pulse {
+  width: 7px;
+  height: 7px;
+  background: #2563eb;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: livePulse 1.2s infinite;
+}
+
 
