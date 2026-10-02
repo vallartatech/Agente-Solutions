@@ -48,6 +48,7 @@ const VistaRedAutonomo = () => {
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [networkJobs, setNetworkJobs] = useState([]);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('en_red'); // 'en_red' | 'aceptados'
 
   // Client Chat Input State
   const [clientChatInput, setClientChatInput] = useState('');
@@ -57,7 +58,7 @@ const VistaRedAutonomo = () => {
   // Helper para determinar el estado de la visita y re-coordinación
   const getJobScheduleStatus = (job, activeQuote) => {
     const quotes = job?.cotizaciones_list || [];
-    const targetQuote = activeQuote || quotes.find(q => q.status === 'accepted') || quotes[0];
+    const targetQuote = activeQuote || quotes.find(q => q.status === 'accepted' || q.is_assigned) || quotes[0];
     const msgs = targetQuote?.chat_history || [];
 
     const scheduleResponses = msgs.filter(m => m.is_schedule_response);
@@ -94,7 +95,7 @@ const VistaRedAutonomo = () => {
   };
 
   // Agrupar cotizaciones por técnico para consolidar el chat y ofertas
-  const groupQuotesByTechnician = (quotesList) => {
+  const groupQuotesByTechnician = (quotesList, order) => {
     if (!Array.isArray(quotesList)) return [];
     const techMap = new Map();
 
@@ -105,6 +106,11 @@ const VistaRedAutonomo = () => {
       const techName = quote.technician?.first_name 
         ? `${quote.technician.first_name} ${quote.technician.last_name || ''}`.trim()
         : (quote.technician?.name || 'Técnico de la Red');
+
+      const isThisQuoteAccepted = Boolean(
+        quote.status === 'accepted' || 
+        (order && (order.status === 'Asignado' || order.status === 'En Progreso' || order.status === 'Terminado') && Number(order.tecnico_id) === Number(techId))
+      );
 
       const existing = techMap.get(techId);
       if (!existing) {
@@ -118,6 +124,8 @@ const VistaRedAutonomo = () => {
 
         techMap.set(techId, {
           ...quote,
+          status: isThisQuoteAccepted ? 'accepted' : quote.status,
+          is_assigned: isThisQuoteAccepted,
           allQuotes: [quote],
           lastMsg,
           hasNewTechMessage,
@@ -126,11 +134,20 @@ const VistaRedAutonomo = () => {
         });
       } else {
         existing.allQuotes.push(quote);
+        if (isThisQuoteAccepted) {
+          existing.status = 'accepted';
+          existing.is_assigned = true;
+        }
         if (quote.id > existing.id || (quote.price > 0 && existing.price == 0)) {
           existing.id = quote.id;
-          existing.price = quote.price;
-          existing.message = quote.message;
-          existing.status = quote.status;
+          if (quote.price > 0) existing.price = quote.price;
+          if (quote.message) existing.message = quote.message;
+          if (quote.status === 'accepted' || existing.is_assigned) {
+            existing.status = 'accepted';
+            existing.is_assigned = true;
+          } else if (existing.status !== 'accepted') {
+            existing.status = quote.status;
+          }
           existing.created_at = quote.created_at;
         }
         if (quote.chat_history && (!existing.chat_history || quote.chat_history.length > existing.chat_history.length)) {
@@ -147,7 +164,14 @@ const VistaRedAutonomo = () => {
       }
     });
 
-    return Array.from(techMap.values());
+    const result = Array.from(techMap.values());
+    result.sort((a, b) => {
+      if (a.is_assigned || a.status === 'accepted') return -1;
+      if (b.is_assigned || b.status === 'accepted') return 1;
+      return b.id - a.id;
+    });
+
+    return result;
   };
 
   const fetchJobs = async () => {
@@ -214,9 +238,21 @@ const VistaRedAutonomo = () => {
             order.property?.facade_photo_path
           ].filter(Boolean);
 
-          const groupedQuotes = groupQuotesByTechnician(order.network_quotes || []);
+          const groupedQuotes = groupQuotesByTechnician(order.network_quotes || [], order);
           const hasNewTechMessage = groupedQuotes.some(q => q.hasNewTechMessage);
           const lastTechMsg = groupedQuotes.find(q => q.hasNewTechMessage)?.lastMsg || null;
+
+          const acceptedQuote = groupedQuotes.find(q => q.status === 'accepted' || q.is_assigned) || null;
+          const isAccepted = Boolean(
+            order.status === 'Asignado' ||
+            order.status === 'En Progreso' ||
+            order.status === 'Terminado' ||
+            acceptedQuote ||
+            order.tecnico_id
+          );
+
+          const assignedTechName = acceptedQuote?.technicianName || (order.technician ? `${order.technician.first_name} ${order.technician.last_name || ''}`.trim() : null);
+          const agreedPrice = acceptedQuote?.price ? parseFloat(acceptedQuote.price) : 0;
 
           return {
             id: order.id,
@@ -226,7 +262,10 @@ const VistaRedAutonomo = () => {
             lat: rawLat,
             lng: rawLng,
             presupuesto: "A convenir",
-            estado: order.status || 'Por Hacer',
+            estado: isAccepted ? (order.status === 'Terminado' ? 'Terminado' : 'Asignado') : (order.status || 'Por Hacer'),
+            is_accepted: isAccepted,
+            assigned_tech_name: assignedTechName,
+            agreed_price: agreedPrice,
             fecha: new Date(order.created_at).toLocaleDateString('es-MX'),
             lugar: order.property?.property_name || 'Lugar no especificado',
             zona: coloniaTexto,
@@ -425,6 +464,7 @@ const VistaRedAutonomo = () => {
       });
       if (res.data.success) {
         alert("🎉 " + res.data.message);
+        setActiveTab('aceptados');
         setShowQuotesModal(false);
         setActiveChatQuote(null);
         fetchJobs();
@@ -472,6 +512,10 @@ const VistaRedAutonomo = () => {
     setShowQuotesModal(true);
   };
 
+  const enRedJobs = networkJobs.filter(j => !j.is_accepted);
+  const aceptadosJobs = networkJobs.filter(j => j.is_accepted);
+  const displayedJobs = activeTab === 'en_red' ? enRedJobs : aceptadosJobs;
+
   return (
     <div className="mercado-container">
       <Header title="Red de Autónomos / Mis Publicaciones" />
@@ -485,7 +529,7 @@ const VistaRedAutonomo = () => {
           {mobileDrawerOpen ? (
             <><MapIcon size={16} /> Ver Mapa</>
           ) : (
-            <><List size={16} /> Ver Lista ({networkJobs.length})</>
+            <><List size={16} /> Ver Lista ({displayedJobs.length})</>
           )}
         </button>
 
@@ -495,7 +539,7 @@ const VistaRedAutonomo = () => {
             <>
               <div className="mercado-map-overlay-badge">
                 <span className="mercado-map-live-dot" />
-                {networkJobs.length} publicaciones activas
+                {activeTab === 'en_red' ? `${enRedJobs.length} en red` : `${aceptadosJobs.length} asignados`}
               </div>
               <GoogleMap
                 mapContainerStyle={mapContainerStyle}
@@ -503,15 +547,15 @@ const VistaRedAutonomo = () => {
                 zoom={13}
                 options={{ disableDefaultUI: false }}
               >
-                {networkJobs.map(job => (
+                {displayedJobs.map(job => (
                   <React.Fragment key={job.id}>
                     <Circle
                       center={{ lat: job.lat, lng: job.lng }}
                       radius={550}
                       options={{
-                        fillColor: job.hasNewTechMessage ? '#2563eb' : (job.cotizaciones > 0 ? '#16a34a' : '#ff6600'),
+                        fillColor: job.is_accepted ? '#16a34a' : (job.hasNewTechMessage ? '#2563eb' : (job.cotizaciones > 0 ? '#16a34a' : '#ff6600')),
                         fillOpacity: 0.16,
-                        strokeColor: job.hasNewTechMessage ? '#1d4ed8' : (job.cotizaciones > 0 ? '#15803d' : '#ea580c'),
+                        strokeColor: job.is_accepted ? '#15803d' : (job.hasNewTechMessage ? '#1d4ed8' : (job.cotizaciones > 0 ? '#15803d' : '#ea580c')),
                         strokeWeight: 1.5,
                         clickable: true
                       }}
@@ -520,13 +564,15 @@ const VistaRedAutonomo = () => {
                     <Marker
                       position={{ lat: job.lat, lng: job.lng }}
                       onClick={() => openQuotesModal(job)}
-                      title={`Zona: ${job.zona}`}
+                      title={job.is_accepted ? `Asignado: ${job.titulo}` : `Zona: ${job.zona}`}
                       icon={{
-                        url: job.hasNewTechMessage
-                          ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-                          : (job.cotizaciones > 0 
-                            ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
-                            : 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png')
+                        url: job.is_accepted
+                          ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+                          : (job.hasNewTechMessage
+                            ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                            : (job.cotizaciones > 0 
+                              ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+                              : 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png'))
                       }}
                     />
                   </React.Fragment>
@@ -539,14 +585,16 @@ const VistaRedAutonomo = () => {
                   >
                     <div className="mercado-info-window">
                       <h4>{selectedJob.titulo}</h4>
-                      <p style={{ margin: '4px 0', fontWeight: 'bold', color: '#ff6600' }}>{selectedJob.estado}</p>
+                      <p style={{ margin: '4px 0', fontWeight: 'bold', color: selectedJob.is_accepted ? '#16a34a' : '#ff6600' }}>
+                        {selectedJob.is_accepted ? '✓ Asignado a Técnico' : selectedJob.estado}
+                      </p>
                       <p style={{ color: '#ea580c', fontWeight: '700' }}><MapPin size={11} /> {selectedJob.zona}</p>
                       <p><Clock size={11} /> {selectedJob.fecha}</p>
                       <button 
                         className="mercado-btn-details"
                         onClick={() => openQuotesModal(selectedJob)}
                       >
-                        Ver {selectedJob.cotizaciones} {selectedJob.cotizaciones === 1 ? 'Cotización' : 'Cotizaciones'}
+                        {selectedJob.is_accepted ? 'Ver Detalle y Coordinación' : `Ver ${selectedJob.cotizaciones} ${selectedJob.cotizaciones === 1 ? 'Cotización' : 'Cotizaciones'}`}
                       </button>
                     </div>
                   </InfoWindow>
@@ -566,7 +614,7 @@ const VistaRedAutonomo = () => {
               onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)} 
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <p className="mercado-sidebar-title">🔴 En vivo</p>
+              <p className="mercado-sidebar-title">🔴 Panel Cliente</p>
               <button 
                 className="red-btn-publish"
                 onClick={() => setShowModal(true)}
@@ -575,16 +623,49 @@ const VistaRedAutonomo = () => {
               </button>
             </div>
             <h2 className="mercado-sidebar-subtitle">Mis Publicaciones</h2>
-            <p className="mercado-sidebar-desc">Tus reportes publicados en el mapa de la red</p>
+            <p className="mercado-sidebar-desc">Tus reportes en la red y servicios asignados</p>
+          </div>
+
+          {/* Selector de Pestañas (En Red vs Asignados) */}
+          <div className="mercado-sidebar-tabs">
+            <button
+              type="button"
+              className={`mercado-tab-btn ${activeTab === 'en_red' ? 'active' : ''}`}
+              onClick={() => setActiveTab('en_red')}
+            >
+              🌐 En Red
+              <span className="mercado-tab-badge">{enRedJobs.length}</span>
+            </button>
+            <button
+              type="button"
+              className={`mercado-tab-btn tab-accepted ${activeTab === 'aceptados' ? 'active' : ''}`}
+              onClick={() => setActiveTab('aceptados')}
+            >
+              ✓ Asignados
+              <span className="mercado-tab-badge">{aceptadosJobs.length}</span>
+            </button>
           </div>
 
           <div className="mercado-job-list">
-            {networkJobs.length === 0 && (
+            {displayedJobs.length === 0 && (
               <div style={{ color: '#64748b', textAlign: 'center', padding: '40px 20px', fontSize: '14px' }}>
-                No tienes publicaciones activas en la red. Haz clic en "Publicar Problema" para crear una.
+                {activeTab === 'en_red' ? (
+                  <>
+                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>🌐</div>
+                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#0f172a' }}>No tienes publicaciones abiertas en la red</p>
+                    <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>Haz clic en "Publicar Problema" para solicitar cotizaciones de técnicos.</span>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>✅</div>
+                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#0f172a' }}>No tienes trabajos asignados</p>
+                    <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>Cuando aceptes la cotización de un técnico, tu servicio aparecerá aquí para coordinar visita y chatear directamente.</span>
+                  </>
+                )}
               </div>
             )}
-            {networkJobs.map(job => (
+
+            {displayedJobs.map(job => (
               <div
                 key={job.id}
                 className={`mercado-job-card ${selectedJobForQuotes?.id === job.id ? 'active' : ''}`}
@@ -598,11 +679,24 @@ const VistaRedAutonomo = () => {
                     ) : (job.scheduled_at || job.priority === 'Programado') ? (
                       <span className="mercado-urgency-badge scheduled">📅 Programado</span>
                     ) : null}
-                    <span className={`mercado-job-badge ${job.estado === 'Asignado' || job.estado === 'Terminado' ? 'badge-accepted' : 'badge-pending'}`}>
-                      {job.estado === 'Asignado' ? 'Asignado a Técnico' : job.estado}
+                    <span className={`mercado-job-badge ${job.is_accepted ? 'badge-accepted' : 'badge-pending'}`}>
+                      {job.is_accepted ? 'Asignado a Técnico' : job.estado}
                     </span>
                   </div>
                 </div>
+
+                {job.is_accepted && job.assigned_tech_name && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '800', color: '#16a34a', margin: '4px 0 2px 0' }}>
+                    <User size={13} color="#16a34a" />
+                    <span>Técnico: {job.assigned_tech_name}</span>
+                    {job.agreed_price > 0 && (
+                      <span style={{ color: '#ea580c', marginLeft: 'auto' }}>
+                        ${job.agreed_price.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 <div className="mercado-job-meta">
                   <span style={{ color: '#ea580c', fontWeight: '700' }}><MapPin size={11} /> {job.zona}</span>
                   <span><Clock size={11} /> {job.fecha}</span>
@@ -644,11 +738,11 @@ const VistaRedAutonomo = () => {
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #f1f5f9', fontSize: '12px' }}>
-                  <span style={{ color: '#ea580c', fontWeight: '800' }}>
-                    {job.cotizaciones} {job.cotizaciones === 1 ? 'oferta recibida' : 'ofertas recibidas'}
+                  <span style={{ color: job.is_accepted ? '#16a34a' : '#ea580c', fontWeight: '800' }}>
+                    {job.is_accepted ? '✓ Asignación Activa' : `${job.cotizaciones} ${job.cotizaciones === 1 ? 'oferta recibida' : 'ofertas recibidas'}`}
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {job.is_mine && (
+                    {job.is_mine && !job.is_accepted && (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -673,8 +767,8 @@ const VistaRedAutonomo = () => {
                         <Trash2 size={15} />
                       </button>
                     )}
-                    <span style={{ color: '#ff6600', fontWeight: '700', cursor: 'pointer' }}>
-                      Ver ofertas →
+                    <span style={{ color: job.is_accepted ? '#16a34a' : '#ff6600', fontWeight: '700', cursor: 'pointer' }}>
+                      {job.is_accepted ? 'Ver coordinación →' : 'Ver ofertas →'}
                     </span>
                   </div>
                 </div>
@@ -951,106 +1045,138 @@ const VistaRedAutonomo = () => {
                       </div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        {selectedJobForQuotes.cotizaciones_list.map((quote) => (
-                          <div key={quote.id} className="red-quote-card">
-                            <div className="red-quote-header">
-                              <div className="red-quote-tech">
-                                <div 
-                                  className="red-quote-avatar" 
-                                  onClick={() => {
-                                    setSelectedTechnicianProfile(quote.technician);
-                                    setShowTechModal(true);
-                                  }}
-                                  title="Ver perfil completo y especialidades del técnico"
-                                >
-                                  {quote.technician?.first_name?.charAt(0) || 'T'}
-                                </div>
-                                <div>
-                                  <h4 
-                                    style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#0f172a', cursor: 'pointer' }}
+                        {selectedJobForQuotes.cotizaciones_list.map((quote) => {
+                          const isAcceptedQuote = Boolean(
+                            quote.status === 'accepted' || 
+                            quote.is_assigned || 
+                            (selectedJobForQuotes.is_accepted && Number(selectedJobForQuotes.tecnico_id) === Number(quote.technician_id || quote.technician?.id))
+                          );
+                          return (
+                            <div 
+                              key={quote.id} 
+                              className="red-quote-card"
+                              style={isAcceptedQuote ? { border: '2px solid #86efac', background: '#f0fdf4' } : {}}
+                            >
+                              <div className="red-quote-header">
+                                <div className="red-quote-tech">
+                                  <div 
+                                    className="red-quote-avatar" 
                                     onClick={() => {
                                       setSelectedTechnicianProfile(quote.technician);
                                       setShowTechModal(true);
                                     }}
+                                    style={isAcceptedQuote ? { background: 'linear-gradient(135deg, #16a34a, #15803d)' } : {}}
+                                    title="Ver perfil completo y especialidades del técnico"
                                   >
-                                    {quote.technicianName}
-                                  </h4>
-                                  <span className="red-quote-role">Técnico Verificado</span>
+                                    {quote.technician?.first_name?.charAt(0) || 'T'}
+                                  </div>
+                                  <div>
+                                    <h4 
+                                      style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#0f172a', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                      onClick={() => {
+                                        setSelectedTechnicianProfile(quote.technician);
+                                        setShowTechModal(true);
+                                      }}
+                                    >
+                                      {quote.technicianName}
+                                      {isAcceptedQuote && (
+                                        <span style={{ fontSize: '11px', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '10px', border: '1px solid #86efac' }}>
+                                          ✓ Asignado
+                                        </span>
+                                      )}
+                                    </h4>
+                                    <span className="red-quote-role">Técnico Verificado</span>
+                                  </div>
+                                </div>
+                                <div className="red-quote-price" style={{ color: isAcceptedQuote ? '#16a34a' : '#ea580c' }}>
+                                  {quote.price > 0 ? `$${parseFloat(quote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Iniciado'}
                                 </div>
                               </div>
-                              <div className="red-quote-price" style={{ color: '#ea580c' }}>
-                                {quote.price > 0 ? `$${parseFloat(quote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Iniciado'}
-                              </div>
-                            </div>
 
-                            {quote.message && (
-                              <div className="red-quote-message">
-                                "{quote.message}"
-                              </div>
-                            )}
-
-                            {/* ALERTA DE MENSAJE DEL TÉCNICO EN LA TARJETA */}
-                            {quote.hasNewTechMessage && (
-                              <div className="red-quote-msg-alert">
-                                <span className="red-msg-dot-pulse" />
-                                <div>
-                                  <strong>Mensaje de {quote.technicianName}:</strong>
-                                  <div>"{quote.displayAlertMsg}"</div>
+                              {quote.message && (
+                                <div className="red-quote-message">
+                                  "{quote.message}"
                                 </div>
-                              </div>
-                            )}
-
-                            <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '12px' }}>
-                              📅 Última interacción: {new Date(quote.created_at).toLocaleString('es-MX')}
-                            </div>
-
-                            <div className="red-quote-actions">
-                              {quote.status === 'rejected' ? (
-                                <div style={{ color: '#dc2626', fontWeight: '800', fontSize: '13px', padding: '6px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  ❌ Oferta Rechazada
-                                </div>
-                              ) : (
-                                <button 
-                                  className="red-btn-reject" 
-                                  onClick={() => handleRejectQuote(quote.id)}
-                                >
-                                  Rechazar
-                                </button>
                               )}
 
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                <button 
-                                  type="button"
-                                  className="red-btn-contact" 
-                                  style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: '6px',
-                                    background: quote.hasNewTechMessage ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'linear-gradient(135deg, #0284c7, #0369a1)',
-                                    color: '#ffffff',
-                                    border: 'none',
-                                    fontWeight: '800',
-                                    boxShadow: '0 3px 8px rgba(2, 132, 199, 0.25)'
-                                  }}
-                                  onClick={() => setActiveChatQuote(quote)}
-                                >
-                                  <MessageCircle size={15} /> 
-                                  <span>Chat ({quote.chat_history?.length || 0})</span>
-                                </button>
+                              {/* ALERTA DE MENSAJE DEL TÉCNICO EN LA TARJETA */}
+                              {quote.hasNewTechMessage && (
+                                <div className="red-quote-msg-alert">
+                                  <span className="red-msg-dot-pulse" />
+                                  <div>
+                                    <strong>Mensaje de {quote.technicianName}:</strong>
+                                    <div>"{quote.displayAlertMsg}"</div>
+                                  </div>
+                                </div>
+                              )}
 
-                                {quote.status !== 'rejected' && quote.price > 0 && (
+                              <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '12px' }}>
+                                📅 Última interacción: {new Date(quote.created_at).toLocaleString('es-MX')}
+                              </div>
+
+                              <div className="red-quote-actions">
+                                {isAcceptedQuote ? (
+                                  <div style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '6px 12px',
+                                    background: '#dcfce7',
+                                    border: '1.5px solid #86efac',
+                                    borderRadius: '8px',
+                                    color: '#15803d',
+                                    fontWeight: '800',
+                                    fontSize: '12px'
+                                  }}>
+                                    <CheckCircle size={14} /> Oferta Aceptada
+                                  </div>
+                                ) : quote.status === 'rejected' ? (
+                                  <div style={{ color: '#dc2626', fontWeight: '800', fontSize: '13px', padding: '6px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    ❌ Oferta Rechazada
+                                  </div>
+                                ) : !selectedJobForQuotes.is_accepted ? (
+                                  <button 
+                                    className="red-btn-reject" 
+                                    onClick={() => handleRejectQuote(quote.id)}
+                                  >
+                                    Rechazar
+                                  </button>
+                                ) : null}
+
+                                <div style={{ display: 'flex', gap: '8px' }}>
                                   <button 
                                     type="button"
-                                    className="red-btn-accept" 
-                                    onClick={() => handleAcceptQuote(quote)}
+                                    className="red-btn-contact" 
+                                    style={{ 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      gap: '6px',
+                                      background: quote.hasNewTechMessage ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : (isAcceptedQuote ? 'linear-gradient(135deg, #16a34a, #15803d)' : 'linear-gradient(135deg, #0284c7, #0369a1)'),
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      fontWeight: '800',
+                                      boxShadow: isAcceptedQuote ? '0 3px 8px rgba(22, 163, 74, 0.25)' : '0 3px 8px rgba(2, 132, 199, 0.25)'
+                                    }}
+                                    onClick={() => setActiveChatQuote(quote)}
                                   >
-                                    ✓ Aceptar Oferta
+                                    <MessageCircle size={15} /> 
+                                    <span>Chat ({quote.chat_history?.length || 0})</span>
                                   </button>
-                                )}
+
+                                  {!isAcceptedQuote && !selectedJobForQuotes.is_accepted && quote.status !== 'rejected' && quote.price > 0 && (
+                                    <button 
+                                      type="button"
+                                      className="red-btn-accept" 
+                                      onClick={() => handleAcceptQuote(quote)}
+                                    >
+                                      ✓ Aceptar Oferta
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1194,7 +1320,16 @@ const VistaRedAutonomo = () => {
                     </div>
 
                     {/* Quick Action Banner inside Chat */}
-                    {activeChatQuote.price > 0 && activeChatQuote.status !== 'rejected' && activeChatQuote.status !== 'accepted' && (
+                    {(activeChatQuote.status === 'accepted' || activeChatQuote.is_assigned || selectedJobForQuotes.is_accepted) ? (
+                      <div style={{ padding: '8px 16px', background: '#f0fdf4', borderTop: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', color: '#166534', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <CheckCircle size={14} color="#16a34a" /> Cotización Aceptada: ${parseFloat(activeChatQuote.price || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#15803d', fontWeight: '800', background: '#dcfce7', padding: '3px 8px', borderRadius: '6px' }}>
+                          Técnico Asignado
+                        </span>
+                      </div>
+                    ) : (activeChatQuote.price > 0 && activeChatQuote.status !== 'rejected' && (
                       <div style={{ padding: '8px 16px', background: '#f0fdf4', borderTop: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '12px', color: '#166534', fontWeight: '700' }}>
                           Propuesta de {activeChatQuote.technicianName}: ${parseFloat(activeChatQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
@@ -1208,7 +1343,7 @@ const VistaRedAutonomo = () => {
                           ✓ Aceptar Esta Oferta
                         </button>
                       </div>
-                    )}
+                    ))}
 
                     {/* Input Bar integrado */}
                     <form onSubmit={handleSendClientChat} className="mercado-chat-input-bar">
