@@ -1592,108 +1592,342 @@
   color: #16a34a;
 }
 
-/* Visit Scheduler Box */
-.mercado-visit-scheduler-box {
-  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-  border: 1.5px solid #86efac;
-  border-radius: 14px;
-  padding: 14px 16px;
-  margin-bottom: 14px;
-}
-
-.mercado-scheduler-header {
+/* Modal Header Tabs */
+.mercado-modal-header-tabs {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 12px;
+  gap: 4px;
 }
 
-.mercado-scheduler-header strong {
-  font-size: 13px;
-  color: #166534;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.mercado-scheduler-input-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.mercado-scheduler-input-row input[type="datetime-local"] {
-  flex: 1;
-  min-width: 180px;
-  padding: 9px 12px;
-  border: 1.5px solid #86efac;
-  border-radius: 10px;
-  font-size: 13px;
-  font-family: inherit;
-  color: #0f172a;
-  background: #ffffff;
-}
-
-.mercado-scheduler-save-btn {
-  padding: 9px 16px;
-  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-  color: #ffffff;
+.mercado-modal-header-tab {
+  padding: 7px 14px;
   border: none;
-  border-radius: 10px;
+  background: transparent;
+  border-radius: 9px;
+  font-size: 12px;
   font-weight: 800;
-  font-size: 12.5px;
+  color: #64748b;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s;
-  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
+  transition: all 0.2s ease;
+  font-family: inherit;
+  position: relative;
 }
 
-.mercado-scheduler-save-btn:hover {
+.mercado-modal-header-tab.active {
+  background: #ffffff;
+  color: #ea580c;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.mercado-tab-alert-dot {
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: livePulse 1.2s infinite;
+}
+
+/* Hero Scheduler Box (Prominent & Modern) */
+.mercado-hero-scheduler-box {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 2px solid #86efac;
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.12);
+}
+
+.mercado-hero-scheduler-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mercado-hero-scheduler-header strong {
+  font-size: 15px;
+  font-weight: 800;
+  color: #166534;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mercado-hero-scheduler-badge {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.mercado-hero-scheduler-status {
+  font-size: 13px;
+  font-weight: 700;
+  color: #15803d;
+  line-height: 1.4;
+}
+
+.mercado-hero-scheduler-input-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mercado-hero-scheduler-input {
+  flex: 1.2;
+  min-width: 200px;
+  padding: 11px 14px;
+  border: 2px solid #86efac;
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 700;
+  color: #0f172a;
+  background: #ffffff;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.mercado-hero-scheduler-input:focus {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+}
+
+.mercado-hero-scheduler-btn {
+  flex: 1;
+  min-width: 170px;
+  padding: 11px 18px;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+
+.mercado-hero-scheduler-btn:hover:not(:disabled) {
+  background: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.4);
+}
+
+.mercado-hero-scheduler-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Accepted Address Box (Spacious, Non-cramped) */
+.mercado-accepted-address-box {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.mercado-address-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mercado-address-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #166534;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mercado-maps-btn {
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.mercado-maps-btn:hover {
   background: #15803d;
   transform: translateY(-1px);
 }
 
-.mercado-client-contact-bar {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
+.mercado-address-text {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.4;
 }
 
-.mercado-contact-btn {
-  flex: 1;
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-size: 12px;
+.mercado-address-property-name {
+  font-size: 12.5px;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.mercado-contact-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.mercado-contact-action-btn {
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-size: 13px;
   font-weight: 800;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s;
+  box-sizing: border-box;
 }
 
-.mercado-contact-btn.whatsapp {
+.mercado-contact-action-btn.whatsapp {
   background: #25d366;
   color: #ffffff;
   border: none;
+  box-shadow: 0 3px 10px rgba(37, 211, 102, 0.3);
 }
 
-.mercado-contact-btn.whatsapp:hover {
+.mercado-contact-action-btn.whatsapp:hover {
   background: #1ebe5d;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(37, 211, 102, 0.4);
 }
 
-.mercado-contact-btn.call {
-  background: #ffffff;
-  color: #2563eb;
-  border: 1.5px solid #93c5fd;
-}
-
-.mercado-contact-btn.call:hover {
+.mercado-contact-action-btn.call {
   background: #eff6ff;
+  color: #2563eb;
+  border: 1.5px solid #bfdbfe;
 }
+
+.mercado-contact-action-btn.call:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  transform: translateY(-1px);
+}
+
+/* Accepted Price Box */
+.mercado-accepted-price-box {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mercado-accepted-price-label {
+  font-size: 13px;
+  color: #475569;
+  font-weight: 700;
+}
+
+.mercado-accepted-price-val {
+  font-size: 20px;
+  font-weight: 900;
+  color: #16a34a;
+}
+
+/* Open Chat Card Button */
+.mercado-open-chat-card-btn {
+  width: 100%;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #ff6600 0%, #ea580c 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(234, 88, 12, 0.25);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.mercado-open-chat-card-btn:hover {
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.35);
+}
+
+/* Problem Detail Box */
+.mercado-problem-detail-box {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mercado-problem-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.mercado-problem-detail-desc {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.55;
+  background: #f8fafc;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #f1f5f9;
+  white-space: pre-line;
+}
+
+.mercado-problem-detail-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  color: #64748b;
+  padding-top: 4px;
+}
+
 
 
