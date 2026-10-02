@@ -135,6 +135,70 @@ export const abrirEnGoogleMaps = (job) => {
   alert("No se encontraron coordenadas ni dirección para este trabajo.");
 };
 
+// Función para normalizar y resolver URLs de fotos locales o remotas
+export const resolveImageUrl = (path) => {
+  if (!path || typeof path !== 'string') return null;
+  const clean = path.trim();
+  if (clean === '' || clean === 'null' || clean === 'undefined') return null;
+  if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:image')) {
+    return clean;
+  }
+  const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+  const hostBase = apiBase.replace(/\/api\/?$/, '');
+  const cleanPath = clean.replace(/^\/?(storage\/)?/, '');
+  return `${hostBase}/storage/${cleanPath}`;
+};
+
+// Función para extraer y catalogar fotos del problema vs fachada de la propiedad
+export const extraerFotosDeTrabajo = (order) => {
+  if (!order) return { problemPhotos: [], facadePhoto: null, allPhotos: [] };
+
+  // 1. Evidencias del problema / equipo averiado
+  const rawEvidences = [
+    order.evidence_path,
+    order.evidence_path_2,
+    order.evidence_path_3,
+    order.evidence_photo,
+    order.evidence_photo_2,
+    order.foto_evidencia,
+    order.foto_evidencia_2
+  ].filter(Boolean);
+
+  const problemPhotos = rawEvidences.map(resolveImageUrl).filter(Boolean);
+
+  // 2. Foto de la fachada de la propiedad (registrada en el levantamiento / inmueble)
+  const rawFacade = 
+    order.property?.facade_photo_path ||
+    order.property?.facade_photo ||
+    order.property?.foto_fachada ||
+    order.property?.facade_photo_url ||
+    order.property?.property_photo ||
+    order.property?.facade_url ||
+    order.property_facade_photo_path ||
+    order.property_facade_photo ||
+    order.facade_photo_path ||
+    order.facade_photo ||
+    order.foto_fachada ||
+    null;
+
+  const facadePhoto = resolveImageUrl(rawFacade);
+
+  // 3. Catálogo combinado sin duplicados
+  const allPhotos = [];
+  problemPhotos.forEach(p => {
+    if (p && !allPhotos.includes(p)) allPhotos.push(p);
+  });
+  if (facadePhoto && !allPhotos.includes(facadePhoto)) {
+    allPhotos.push(facadePhoto);
+  }
+
+  return {
+    problemPhotos,
+    facadePhoto,
+    allPhotos
+  };
+};
+
 const MercadoTrabajos = () => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -185,11 +249,11 @@ const MercadoTrabajos = () => {
               myQuotesHistory = userQuotes;
             }
           }
-          const fotos = [
-            order.evidence_path,
-            order.evidence_path_2,
-            order.property?.facade_photo_path
-          ].filter(Boolean);
+
+          const photoData = extraerFotosDeTrabajo(order);
+          const fotos = photoData.allPhotos;
+          const facadePhoto = photoData.facadePhoto;
+          const problemPhotos = photoData.problemPhotos;
 
           const coordsObj = extraerCoordenadas(order);
           const hasRealCoords = Boolean(coordsObj);
@@ -239,8 +303,11 @@ const MercadoTrabajos = () => {
             calle: isAccepted ? fullAddress : 'Dirección protegida',
             full_address: fullAddress,
             descripcion: limpiarDescripcion(order.description),
-            foto: fotos[0] || null,
+            foto: problemPhotos[0] || facadePhoto || fotos[0] || null,
             fotos: fotos,
+            facade_photo: facadePhoto,
+            foto_fachada: facadePhoto,
+            problem_photos: problemPhotos,
             fecha: new Date(order.created_at).toLocaleDateString('es-MX'),
             cotizaciones: order.network_quotes_count || 0,
             priority: order.priority || 'Normal',
@@ -262,6 +329,11 @@ const MercadoTrabajos = () => {
           const lastMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1] : null;
           const lastClientMsg = (lastMsg && (Number(lastMsg.sender_id) !== Number(authUser?.id) || lastMsg.sender_role === 'Cliente')) ? lastMsg : null;
 
+          const photoData = extraerFotosDeTrabajo(order);
+          const fotos = photoData.allPhotos;
+          const facadePhoto = photoData.facadePhoto;
+          const problemPhotos = photoData.problemPhotos;
+
           const coordsObj = extraerCoordenadas(order);
           const hasRealCoords = Boolean(coordsObj);
           const rawLat = coordsObj ? coordsObj.lat : (order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025)));
@@ -275,6 +347,11 @@ const MercadoTrabajos = () => {
             coordenadas: coordsObj ? coordsObj.formatted : (order.coordinates || order.coordenadas || order.property?.coordinates || null),
             has_real_coords: hasRealCoords,
             property: order.property || null,
+            foto: problemPhotos[0] || facadePhoto || fotos[0] || null,
+            fotos: fotos,
+            facade_photo: facadePhoto,
+            foto_fachada: facadePhoto,
+            problem_photos: problemPhotos,
             is_accepted: true,
             zona: order.zone || order.zona || 'Mérida, Yucatán',
             calle: order.full_address || order.calle,
@@ -293,6 +370,9 @@ const MercadoTrabajos = () => {
               const mergedLat = existing.has_real_coords ? existing.lat : (job.has_real_coords ? job.lat : (existing.lat || job.lat));
               const mergedLng = existing.has_real_coords ? existing.lng : (job.has_real_coords ? job.lng : (existing.lng || job.lng));
               const mergedCoords = existing.coordinates || job.coordinates || existing.coordenadas || job.coordenadas;
+              const mergedFacade = existing.facade_photo || job.facade_photo || null;
+              const mergedProblemPhotos = (existing.problem_photos && existing.problem_photos.length > 0) ? existing.problem_photos : (job.problem_photos || []);
+              const mergedFotos = (existing.fotos && existing.fotos.length > 0) ? existing.fotos : (job.fotos || []);
 
               acceptedMap.set(job.id, {
                 ...job,
@@ -303,8 +383,11 @@ const MercadoTrabajos = () => {
                 coordenadas: mergedCoords,
                 has_real_coords: existing.has_real_coords || job.has_real_coords,
                 property: existing.property || job.property,
-                fotos: (job.fotos && job.fotos.length > 0) ? job.fotos : (existing.fotos || []),
-                foto: job.foto || existing.foto,
+                fotos: mergedFotos,
+                foto: existing.foto || job.foto || mergedFotos[0] || null,
+                facade_photo: mergedFacade,
+                foto_fachada: mergedFacade,
+                problem_photos: mergedProblemPhotos,
                 is_accepted: true,
                 myQuote: existing.myQuote || job.myQuote,
                 myQuotesHistory: job.myQuotesHistory || existing.myQuotesHistory || [],
@@ -890,13 +973,25 @@ const MercadoTrabajos = () => {
                         {/* Galería de Fotos */}
                         {activePhoto ? (
                           <div className="mercado-photo-gallery">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                              {activePhoto === selectedJob.facade_photo ? (
+                                <span className="mercado-gallery-type-badge facade">
+                                  🏡 Fachada del Inmueble (Registro del Levantamiento)
+                                </span>
+                              ) : (
+                                <span className="mercado-gallery-type-badge problem">
+                                  📸 Evidencia de Falla {selectedJob.problem_photos && selectedJob.problem_photos.length > 1 ? `(${selectedJob.problem_photos.indexOf(activePhoto) + 1} de ${selectedJob.problem_photos.length})` : ''}
+                                </span>
+                              )}
+                            </div>
+
                             <div
                               className="mercado-premium-image-wrapper"
                               onClick={() => setIsPhotoZoomed(true)}
                               title="Clic para ampliar imagen"
                               style={{ height: '200px' }}
                             >
-                              <img src={activePhoto} alt="Evidencia del problema" className="mercado-premium-image" />
+                              <img src={activePhoto} alt="Fotografía del servicio" className="mercado-premium-image" />
                               <div className="mercado-image-zoom-badge">
                                 <Maximize2 size={12} /> Clic para ampliar foto
                               </div>
@@ -904,22 +999,31 @@ const MercadoTrabajos = () => {
 
                             {selectedJob.fotos && selectedJob.fotos.length > 1 && (
                               <div className="mercado-thumbnails-row">
-                                {selectedJob.fotos.map((f, idx) => (
-                                  <div
-                                    key={idx}
-                                    className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
-                                    onClick={() => setActivePhoto(f)}
-                                  >
-                                    <img src={f} alt={`Evidencia ${idx + 1}`} />
-                                  </div>
-                                ))}
+                                {selectedJob.fotos.map((f, idx) => {
+                                  const isFacade = f === selectedJob.facade_photo;
+                                  const probIndex = selectedJob.problem_photos ? selectedJob.problem_photos.indexOf(f) : idx;
+                                  return (
+                                    <div key={idx} className="mercado-thumb-wrapper">
+                                      <div
+                                        className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
+                                        onClick={() => setActivePhoto(f)}
+                                        title={isFacade ? 'Ver Fachada de la Casa' : `Ver Evidencia ${probIndex + 1}`}
+                                      >
+                                        <img src={f} alt={isFacade ? 'Fachada' : `Evidencia ${probIndex + 1}`} />
+                                      </div>
+                                      <span className={`mercado-thumb-badge ${isFacade ? 'facade' : (activePhoto === f ? 'active' : '')}`}>
+                                        {isFacade ? '🏡 Fachada' : `📸 Falla ${probIndex >= 0 ? probIndex + 1 : idx + 1}`}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
                         ) : (
                           <div className="mercado-no-photo-placeholder" style={{ height: '140px' }}>
                             <ImageIcon size={32} color="#94a3b8" />
-                            <span>Sin fotografías de evidencia adjuntas</span>
+                            <span>Sin fotografías adjuntas</span>
                           </div>
                         )}
 
@@ -1077,13 +1181,33 @@ const MercadoTrabajos = () => {
                             </div>
                           )}
 
+                          {/* Ficha Visual de Fachada de la Propiedad (Levantamiento) */}
+                          {selectedJob.facade_photo ? (
+                            <div 
+                              className="mercado-facade-card-accepted"
+                              onClick={() => { setActivePhoto(selectedJob.facade_photo); setIsPhotoZoomed(true); }}
+                              title="Clic para ampliar y ver la fachada de la propiedad"
+                            >
+                              <img src={selectedJob.facade_photo} alt="Fachada del Inmueble" className="mercado-facade-card-img" />
+                              <div className="mercado-facade-card-info">
+                                <span className="mercado-facade-card-tag">🏡 Fachada del Inmueble</span>
+                                <span className="mercado-facade-card-text">{selectedJob.property_name || selectedJob.full_address}</span>
+                                <span className="mercado-facade-card-zoom">🔍 Clic para ampliar foto de fachada</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mercado-facade-card-empty">
+                              <span>🏡 Sin foto de fachada registrada en el levantamiento</span>
+                            </div>
+                          )}
+
                           {selectedJob.property_name && selectedJob.property_name !== selectedJob.full_address && (
-                            <div className="mercado-address-property-name">
+                            <div className="mercado-address-property-name" style={{ marginTop: '6px' }}>
                               Propiedad: {selectedJob.property_name}
                             </div>
                           )}
 
-                          <div style={{ fontSize: '12px', color: '#64748b' }}>
+                          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
                             Cliente: <strong style={{ color: '#0f172a' }}>{selectedJob.client_name}</strong>
                           </div>
 
@@ -1293,13 +1417,25 @@ const MercadoTrabajos = () => {
                       <div className="mercado-premium-details" style={{ flex: '0.95', gap: '14px' }}>
                         {activePhoto ? (
                           <div className="mercado-photo-gallery">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                              {activePhoto === selectedJob.facade_photo ? (
+                                <span className="mercado-gallery-type-badge facade">
+                                  🏡 Fachada del Inmueble (Registro del Levantamiento)
+                                </span>
+                              ) : (
+                                <span className="mercado-gallery-type-badge problem">
+                                  📸 Evidencia de Falla {selectedJob.problem_photos && selectedJob.problem_photos.length > 1 ? `(${selectedJob.problem_photos.indexOf(activePhoto) + 1} de ${selectedJob.problem_photos.length})` : ''}
+                                </span>
+                              )}
+                            </div>
+
                             <div
                               className="mercado-premium-image-wrapper"
                               onClick={() => setIsPhotoZoomed(true)}
                               title="Clic para ampliar imagen"
                               style={{ height: '200px' }}
                             >
-                              <img src={activePhoto} alt="Evidencia del problema" className="mercado-premium-image" />
+                              <img src={activePhoto} alt="Fotografía del problema" className="mercado-premium-image" />
                               <div className="mercado-image-zoom-badge">
                                 <Maximize2 size={12} /> Clic para ampliar foto
                               </div>
@@ -1307,22 +1443,31 @@ const MercadoTrabajos = () => {
 
                             {selectedJob.fotos && selectedJob.fotos.length > 1 && (
                               <div className="mercado-thumbnails-row">
-                                {selectedJob.fotos.map((f, idx) => (
-                                  <div
-                                    key={idx}
-                                    className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
-                                    onClick={() => setActivePhoto(f)}
-                                  >
-                                    <img src={f} alt={`Evidencia ${idx + 1}`} />
-                                  </div>
-                                ))}
+                                {selectedJob.fotos.map((f, idx) => {
+                                  const isFacade = f === selectedJob.facade_photo;
+                                  const probIndex = selectedJob.problem_photos ? selectedJob.problem_photos.indexOf(f) : idx;
+                                  return (
+                                    <div key={idx} className="mercado-thumb-wrapper">
+                                      <div
+                                        className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
+                                        onClick={() => setActivePhoto(f)}
+                                        title={isFacade ? 'Ver Fachada de la Casa' : `Ver Evidencia ${probIndex + 1}`}
+                                      >
+                                        <img src={f} alt={isFacade ? 'Fachada' : `Evidencia ${probIndex + 1}`} />
+                                      </div>
+                                      <span className={`mercado-thumb-badge ${isFacade ? 'facade' : (activePhoto === f ? 'active' : '')}`}>
+                                        {isFacade ? '🏡 Fachada' : `📸 Falla ${probIndex >= 0 ? probIndex + 1 : idx + 1}`}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
                         ) : (
                           <div className="mercado-no-photo-placeholder" style={{ height: '140px' }}>
                             <ImageIcon size={32} color="#94a3b8" />
-                            <span>Sin fotografías de evidencia adjuntas</span>
+                            <span>Sin fotografías adjuntas</span>
                           </div>
                         )}
 

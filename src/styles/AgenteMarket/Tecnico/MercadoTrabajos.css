@@ -1929,5 +1929,135 @@
   padding-top: 4px;
 }
 
+/* Facade Card in Accepted Job View */
+.mercado-facade-card-accepted {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 6px;
+}
+
+.mercado-facade-card-accepted:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+  transform: translateY(-1px);
+}
+
+.mercado-facade-card-img {
+  width: 68px;
+  height: 52px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #cbd5e1;
+  flex-shrink: 0;
+  background: #0f172a;
+}
+
+.mercado-facade-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mercado-facade-card-tag {
+  font-size: 11px;
+  font-weight: 800;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mercado-facade-card-text {
+  font-size: 11.5px;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mercado-facade-card-zoom {
+  font-size: 10.5px;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.mercado-facade-card-empty {
+  font-size: 11.5px;
+  color: #94a3b8;
+  font-style: italic;
+  background: #f8fafc;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+  margin-top: 6px;
+}
+
+/* Enhanced Thumbnail labels */
+.mercado-thumb-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mercado-thumb-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #475569;
+  white-space: nowrap;
+  border: 1px solid #e2e8f0;
+}
+
+.mercado-thumb-badge.facade {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.mercado-thumb-badge.active {
+  background: #ffedd5;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+
+/* Image header badge in gallery */
+.mercado-gallery-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+}
+
+.mercado-gallery-type-badge.facade {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.mercado-gallery-type-badge.problem {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+
+
 
 
