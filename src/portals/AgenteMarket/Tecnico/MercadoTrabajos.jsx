@@ -1216,24 +1216,91 @@ const MercadoTrabajos = () => {
             )}
 
             {/* ══════════════════════════════════════════════════
-                PASO 2: FORMULARIO DE COTIZACIÓN
+                PASO 2: FORMULARIO DE COTIZACIÓN (CON FOTOS Y DETALLE)
             ══════════════════════════════════════════════════ */}
             {quoteStep === 2 && (
               <>
                 <div className="mercado-premium-header">
-                  <h2>💰 {selectedJob.myQuote && selectedJob.myQuote.price > 0 ? 'Modificar Oferta Económica' : 'Enviar Cotización'}</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h2 style={{ margin: 0 }}>
+                      💰 {selectedJob.myQuote && selectedJob.myQuote.price > 0 ? 'Modificar Cotización' : 'Enviar Cotización de Trabajo'}
+                    </h2>
+                  </div>
                   <span className="mercado-modal-close" onClick={() => setShowQuoteModal(false)}>×</span>
                 </div>
 
                 <div className="mercado-premium-body">
-                  <div className="mercado-premium-form" style={{ width: '100%', padding: '24px' }}>
-                    {/* Resumen compacto del trabajo */}
-                    <div className="mq-compact-summary">
-                      <div className="mq-compact-title">{selectedJob.titulo}</div>
-                      <div className="mq-compact-meta">
-                        <span><MapPin size={13} color="#ea580c" /> {selectedJob.zona}</span>
-                        <span><User size={13} color="#3b82f6" /> {selectedJob.cliente}</span>
+                  {/* Columna Izquierda: Fotos de Evidencia y Detalle Completo del Problema */}
+                  <div className="mercado-premium-details" style={{ flex: '1', gap: '14px' }}>
+                    {activePhoto ? (
+                      <div className="mercado-photo-gallery">
+                        <div
+                          className="mercado-premium-image-wrapper"
+                          onClick={() => setIsPhotoZoomed(true)}
+                          title="Clic para ampliar imagen"
+                          style={{ height: '220px' }}
+                        >
+                          <img src={activePhoto} alt="Evidencia del problema" className="mercado-premium-image" />
+                          <div className="mercado-image-zoom-badge">
+                            <Maximize2 size={12} /> Clic para ampliar foto
+                          </div>
+                        </div>
+
+                        {selectedJob.fotos && selectedJob.fotos.length > 1 && (
+                          <div className="mercado-thumbnails-row">
+                            {selectedJob.fotos.map((f, idx) => (
+                              <div
+                                key={idx}
+                                className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
+                                onClick={() => setActivePhoto(f)}
+                              >
+                                <img src={f} alt={`Evidencia ${idx + 1}`} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
+                    ) : (
+                      <div className="mercado-no-photo-placeholder" style={{ height: '150px' }}>
+                        <ImageIcon size={34} color="#94a3b8" />
+                        <span>Sin fotografías de evidencia adjuntas</span>
+                      </div>
+                    )}
+
+                    {/* Detalle del Problema Solicitado */}
+                    <div className="mercado-problem-detail-box">
+                      <div className="mercado-problem-detail-header">
+                        <FileText size={17} color="#ea580c" />
+                        <span>{selectedJob.titulo}</span>
+                      </div>
+                      <div className="mercado-problem-detail-desc">
+                        {selectedJob.descripcion}
+                      </div>
+                      <div className="mercado-problem-detail-footer">
+                        <span><MapPin size={12} style={{ verticalAlign: 'middle', marginRight: '3px', color: '#ea580c' }} /> Zona: {selectedJob.zona}</span>
+                        <span><Clock size={12} style={{ verticalAlign: 'middle', marginRight: '3px' }} /> {selectedJob.fecha}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Columna Derecha: Formulario de Cotización */}
+                  <div className="mercado-premium-form" style={{ flex: '1.1', padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                    
+                    <div style={{ marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: '800', color: '#ea580c', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Propuesta de Servicio
+                        </span>
+                        {selectedJob.is_urgent && (
+                          <span className="mercado-urgency-badge urgent">⚡ Urgente (Hoy Mismo)</span>
+                        )}
+                      </div>
+                      <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>
+                        Ingresa tu Oferta Económica
+                      </h3>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#64748b' }}>
+                        Define el costo que cobrarás por solucionar este problema. El cliente revisará tu propuesta.
+                      </p>
                     </div>
 
                     {/* Alerta si fue rechazada */}
@@ -1247,7 +1314,7 @@ const MercadoTrabajos = () => {
                       </div>
                     )}
 
-                    <div className="mercado-form-group" style={{ marginTop: '16px' }}>
+                    <div className="mercado-form-group" style={{ marginTop: '10px' }}>
                       <label style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', marginBottom: '8px', display: 'block' }}>
                         Propuesta Económica ($ MXN) *
                       </label>
@@ -1260,20 +1327,22 @@ const MercadoTrabajos = () => {
                           value={quotePrice}
                           onChange={(e) => setQuotePrice(e.target.value)}
                           autoFocus
+                          style={{ fontSize: '16px', fontWeight: '700' }}
                         />
                       </div>
                     </div>
 
-                    <div className="mercado-form-group" style={{ marginTop: '16px' }}>
+                    <div className="mercado-form-group" style={{ marginTop: '14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <label style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', marginBottom: '8px', display: 'block' }}>
                         Mensaje para el cliente
                       </label>
                       <textarea
-                        placeholder="Ej. Hola Pedro, puedo ir hoy a revisarlo por este precio..."
+                        placeholder="Ej. Hola, cuento con las herramientas y refacciones necesarias. Puedo ir hoy mismo a revisarlo..."
                         className="mercado-premium-textarea"
                         value={quoteMessage}
                         onChange={(e) => setQuoteMessage(e.target.value)}
                         rows={4}
+                        style={{ flex: 1, minHeight: '100px' }}
                       />
                     </div>
                   </div>

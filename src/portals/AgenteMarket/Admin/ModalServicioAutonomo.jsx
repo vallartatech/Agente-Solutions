@@ -514,24 +514,31 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
               </button>
             </form>
 
-            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button 
-                type="button" 
-                onClick={() => handleSubmitBatch(false)} 
-                disabled={loadingSubmit || (!selectedPropertyId && carritoServicios.length === 0)} 
-                style={{ background: '#1e293b', color: 'white', width: '100%', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', fontSize: '1rem', cursor: loadingSubmit ? 'not-allowed' : 'pointer', opacity: loadingSubmit ? 0.6 : 1 }}
-              >
-                {loadingSubmit ? "ENVIANDO..." : `ENVIAR AL ADMINISTRADOR ${carritoServicios.length > 0 ? `(${carritoServicios.length})` : ''}`}
-              </button>
-
+            <div style={{ marginTop: '20px' }}>
               <button 
                 type="button" 
                 onClick={() => handleSubmitBatch(true)} 
                 disabled={loadingSubmit || (!selectedPropertyId && carritoServicios.length === 0)} 
-                style={{ background: '#F26522', color: 'white', width: '100%', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', fontSize: '1rem', cursor: loadingSubmit ? 'not-allowed' : 'pointer', opacity: loadingSubmit ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+                style={{ 
+                  background: 'linear-gradient(135deg, #ff6600 0%, #ea580c 100%)', 
+                  color: 'white', 
+                  width: '100%', 
+                  padding: '14px', 
+                  borderRadius: '12px', 
+                  border: 'none', 
+                  fontWeight: '800', 
+                  fontSize: '1rem', 
+                  cursor: loadingSubmit ? 'not-allowed' : 'pointer', 
+                  opacity: loadingSubmit ? 0.6 : 1, 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(234, 88, 12, 0.3)'
+                }}
               >
                 <Globe size={18} />
-                {loadingSubmit ? "PUBLICANDO..." : "PUBLICAR EN LA RED (TÉCNICOS)"}
+                {loadingSubmit ? "PUBLICANDO EN LA RED..." : `PUBLICAR EN LA RED (TÉCNICOS) ${carritoServicios.length > 0 ? `(${carritoServicios.length})` : ''}`}
               </button>
             </div>
 
