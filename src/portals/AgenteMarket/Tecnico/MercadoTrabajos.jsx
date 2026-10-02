@@ -34,6 +34,107 @@ const formatTime = (dateStr) => {
   }
 };
 
+// Función para extraer o detectar coordenadas precisas de un trabajo / propiedad
+export const extraerCoordenadas = (job) => {
+  if (!job) return null;
+
+  // 1. Campos de coordenadas directas como string (e.g. "20.987654, -89.654321")
+  const strCandidates = [
+    job.coordinates,
+    job.coordenadas,
+    job.propiedad_coordenadas,
+    job.property_coordinates,
+    job.property?.coordinates,
+    job.property?.coordenadas,
+    job.location_coordinates,
+    job.gps
+  ];
+
+  for (const str of strCandidates) {
+    if (typeof str === 'string' && str.trim() !== '' && str.trim() !== 'null' && str.trim() !== 'undefined') {
+      const parts = str.split(',').map(s => s.trim());
+      if (parts.length === 2) {
+        const lat = parseFloat(parts[0]);
+        const lng = parseFloat(parts[1]);
+        if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && (lat !== 0 || lng !== 0)) {
+          return { lat, lng, formatted: `${lat},${lng}` };
+        }
+      }
+    }
+  }
+
+  // 2. Pares de latitud / longitud directos o numéricos
+  const latCandidates = [
+    job.property?.lat,
+    job.property?.latitude,
+    job.property_latitude,
+    job.lat,
+    job.latitude,
+    job.area_lat
+  ];
+
+  const lngCandidates = [
+    job.property?.lng,
+    job.property?.longitude,
+    job.property_longitude,
+    job.lng,
+    job.longitude,
+    job.area_lng
+  ];
+
+  for (let i = 0; i < latCandidates.length; i++) {
+    const rawLat = latCandidates[i];
+    const rawLng = lngCandidates[i];
+    if (rawLat !== undefined && rawLat !== null && rawLng !== undefined && rawLng !== null) {
+      const lat = parseFloat(rawLat);
+      const lng = parseFloat(rawLng);
+      if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && (lat !== 0 || lng !== 0)) {
+        return { lat, lng, formatted: `${lat},${lng}` };
+      }
+    }
+  }
+
+  // 3. Revisar si la dirección en texto tiene coordenadas numéricas tipo "20.12345, -89.12345"
+  const textToCheck = [job.full_address, job.address, job.calle, job.property?.address];
+  for (const text of textToCheck) {
+    if (typeof text === 'string') {
+      const match = text.match(/(-?\d{1,3}\.\d{4,}),\s*(-?\d{1,3}\.\d{4,})/);
+      if (match) {
+        const lat = parseFloat(match[1]);
+        const lng = parseFloat(match[2]);
+        if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+          return { lat, lng, formatted: `${lat},${lng}` };
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
+// Función para abrir Google Maps priorizando coordenadas GPS exactas
+export const abrirEnGoogleMaps = (job) => {
+  if (!job) return;
+  const coords = extraerCoordenadas(job);
+
+  if (coords) {
+    // Abre el pin exacto por coordenadas GPS evitando discrepancias de nomenclatura de calles
+    const url = `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`;
+    window.open(url, '_blank');
+    return;
+  }
+
+  // Fallback si no hay coordenadas: usar la dirección en texto
+  const direccion = job.full_address || job.calle || job.property?.address || job.address || job.zona || job.lugar;
+  if (direccion && typeof direccion === 'string' && direccion.trim() !== '' && direccion.trim() !== 'null') {
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccion.trim())}`;
+    window.open(url, '_blank');
+    return;
+  }
+
+  alert("No se encontraron coordenadas ni dirección para este trabajo.");
+};
+
 const MercadoTrabajos = () => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -90,8 +191,10 @@ const MercadoTrabajos = () => {
             order.property?.facade_photo_path
           ].filter(Boolean);
 
-          const rawLat = order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025));
-          const rawLng = order.lng ? parseFloat(order.lng) : (order.area_lng ? parseFloat(order.area_lng) : (-89.6242 + Math.cos(order.id * 17) * 0.025));
+          const coordsObj = extraerCoordenadas(order);
+          const hasRealCoords = Boolean(coordsObj);
+          const rawLat = coordsObj ? coordsObj.lat : (order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025)));
+          const rawLng = coordsObj ? coordsObj.lng : (order.lng ? parseFloat(order.lng) : (order.area_lng ? parseFloat(order.area_lng) : (-89.6242 + Math.cos(order.id * 17) * 0.025)));
           const coloniaTexto = order.colonia_cercana || order.zona_colonia || order.zona || 'Mérida, Yucatán';
           const tituloProblema = order.type 
             ? `${order.type}${order.equipment ? ' - ' + order.equipment : ''}` 
@@ -121,6 +224,10 @@ const MercadoTrabajos = () => {
             equipo: order.equipment || '',
             lat: rawLat,
             lng: rawLng,
+            coordinates: coordsObj ? coordsObj.formatted : (order.coordinates || order.coordenadas || order.property?.coordinates || null),
+            coordenadas: coordsObj ? coordsObj.formatted : (order.coordinates || order.coordenadas || order.property?.coordinates || null),
+            has_real_coords: hasRealCoords,
+            property: order.property || null,
             presupuesto: "A convenir",
             cliente: clientName,
             client_name: clientName,
@@ -155,8 +262,19 @@ const MercadoTrabajos = () => {
           const lastMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1] : null;
           const lastClientMsg = (lastMsg && (Number(lastMsg.sender_id) !== Number(authUser?.id) || lastMsg.sender_role === 'Cliente')) ? lastMsg : null;
 
+          const coordsObj = extraerCoordenadas(order);
+          const hasRealCoords = Boolean(coordsObj);
+          const rawLat = coordsObj ? coordsObj.lat : (order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025)));
+          const rawLng = coordsObj ? coordsObj.lng : (order.lng ? parseFloat(order.lng) : (order.area_lng ? parseFloat(order.area_lng) : (-89.6242 + Math.cos(order.id * 17) * 0.025)));
+
           acceptedMap.set(order.id, {
             ...order,
+            lat: rawLat,
+            lng: rawLng,
+            coordinates: coordsObj ? coordsObj.formatted : (order.coordinates || order.coordenadas || order.property?.coordinates || null),
+            coordenadas: coordsObj ? coordsObj.formatted : (order.coordinates || order.coordenadas || order.property?.coordinates || null),
+            has_real_coords: hasRealCoords,
+            property: order.property || null,
             is_accepted: true,
             zona: order.zone || order.zona || 'Mérida, Yucatán',
             calle: order.full_address || order.calle,
@@ -172,9 +290,19 @@ const MercadoTrabajos = () => {
           if (job.is_accepted) {
             const existing = acceptedMap.get(job.id);
             if (existing) {
+              const mergedLat = existing.has_real_coords ? existing.lat : (job.has_real_coords ? job.lat : (existing.lat || job.lat));
+              const mergedLng = existing.has_real_coords ? existing.lng : (job.has_real_coords ? job.lng : (existing.lng || job.lng));
+              const mergedCoords = existing.coordinates || job.coordinates || existing.coordenadas || job.coordenadas;
+
               acceptedMap.set(job.id, {
                 ...job,
                 ...existing,
+                lat: mergedLat,
+                lng: mergedLng,
+                coordinates: mergedCoords,
+                coordenadas: mergedCoords,
+                has_real_coords: existing.has_real_coords || job.has_real_coords,
+                property: existing.property || job.property,
                 fotos: (job.fotos && job.fotos.length > 0) ? job.fotos : (existing.fotos || []),
                 foto: job.foto || existing.foto,
                 is_accepted: true,
@@ -931,8 +1059,9 @@ const MercadoTrabajos = () => {
                             </span>
                             <button
                               type="button"
-                              onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedJob.full_address)}`, '_blank')}
+                              onClick={() => abrirEnGoogleMaps(selectedJob)}
                               className="mercado-maps-btn"
+                              title={extraerCoordenadas(selectedJob) ? "Abrir ubicación exacta por coordenadas GPS" : "Abrir dirección en Google Maps"}
                             >
                               <ExternalLink size={12} /> Abrir Maps ↗
                             </button>
@@ -941,6 +1070,12 @@ const MercadoTrabajos = () => {
                           <div className="mercado-address-text">
                             {selectedJob.full_address}
                           </div>
+
+                          {extraerCoordenadas(selectedJob) && (
+                            <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: '600', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span>🛰️ GPS Detectado: {extraerCoordenadas(selectedJob).formatted}</span>
+                            </div>
+                          )}
 
                           {selectedJob.property_name && selectedJob.property_name !== selectedJob.full_address && (
                             <div className="mercado-address-property-name">
