@@ -1475,4 +1475,225 @@
   animation: livePulse 1.2s infinite;
 }
 
+/* ========================================
+   SIDEBAR TABS (DISPONIBLES / ACEPTADOS)
+   ======================================== */
+.mercado-sidebar-tabs {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 12px;
+  margin: 10px 16px 0;
+  gap: 4px;
+}
+
+.mercado-tab-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.mercado-tab-btn.active {
+  background: #ffffff;
+  color: #ea580c;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.mercado-tab-btn.active.tab-accepted {
+  color: #16a34a;
+}
+
+.mercado-tab-badge {
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10.5px;
+  font-weight: 800;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.mercado-tab-btn.active .mercado-tab-badge {
+  background: #ffedd5;
+  color: #ea580c;
+}
+
+.mercado-tab-btn.active.tab-accepted .mercado-tab-badge {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+/* ========================================
+   URGENCY & AVAILABILITY BADGES
+   ======================================== */
+.mercado-urgency-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.mercado-urgency-badge.urgent {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  animation: urgentGlow 2s infinite ease-in-out;
+}
+
+@keyframes urgentGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+  50% { box-shadow: 0 0 8px 1px rgba(220, 38, 38, 0.25); }
+}
+
+.mercado-urgency-badge.scheduled {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+/* ========================================
+   ACCEPTED JOB CARDS & MODALS
+   ======================================== */
+.mercado-accepted-card {
+  background: #ffffff;
+  border: 2px solid #bbf7d0;
+  border-radius: 18px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.06);
+}
+
+.mercado-accepted-card:hover {
+  border-color: #22c55e;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.18);
+}
+
+.mercado-accepted-price-tag {
+  font-size: 16px;
+  font-weight: 900;
+  color: #16a34a;
+}
+
+/* Visit Scheduler Box */
+.mercado-visit-scheduler-box {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1.5px solid #86efac;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.mercado-scheduler-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.mercado-scheduler-header strong {
+  font-size: 13px;
+  color: #166534;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mercado-scheduler-input-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mercado-scheduler-input-row input[type="datetime-local"] {
+  flex: 1;
+  min-width: 180px;
+  padding: 9px 12px;
+  border: 1.5px solid #86efac;
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.mercado-scheduler-save-btn {
+  padding: 9px 16px;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 12.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
+}
+
+.mercado-scheduler-save-btn:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+.mercado-client-contact-bar {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.mercado-contact-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mercado-contact-btn.whatsapp {
+  background: #25d366;
+  color: #ffffff;
+  border: none;
+}
+
+.mercado-contact-btn.whatsapp:hover {
+  background: #1ebe5d;
+}
+
+.mercado-contact-btn.call {
+  background: #ffffff;
+  color: #2563eb;
+  border: 1.5px solid #93c5fd;
+}
+
+.mercado-contact-btn.call:hover {
+  background: #eff6ff;
+}
+
 

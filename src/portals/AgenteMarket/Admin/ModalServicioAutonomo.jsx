@@ -166,7 +166,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
       return;
     }
     setCarritoServicios([...carritoServicios, { ...nuevoServicio }]);
-    setNuevoServicio({ tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', fotos: [] });
+    setNuevoServicio({ tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', urgencia: 'urgente', fechaProgramada: '', horarioPreferido: '', fotos: [] });
   };
 
   const handleSubmitBatch = async (publishToNetwork = false) => {
@@ -198,10 +198,20 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
         formData.append('zone', item.zona);
         formData.append('equipment', item.equipo || '');
         
+        let scheduleNote = '';
+        if (item.urgencia === 'programado' && item.fechaProgramada) {
+          formData.append('priority', 'Programado');
+          formData.append('scheduled_at', `${item.fechaProgramada} 12:00:00`);
+          scheduleNote = `\n\n[FECHA / HORARIO DESEADO]: ${item.fechaProgramada} - ${item.horarioPreferido || 'Tarde'}`;
+        } else {
+          formData.append('priority', 'Urgente');
+          scheduleNote = `\n\n[URGENCIA]: ⚡ Atención Urgente - Hoy Mismo`;
+        }
+
         const hasValidEquipo = item.equipo && item.equipo.toLowerCase() !== 'otro' && item.equipo.toLowerCase() !== 'ninguno';
         const descBase = hasValidEquipo 
-          ? `${item.descripcion}\n\n[EQUIPO AFECTADO]: ${item.equipo}`
-          : item.descripcion;
+          ? `${item.descripcion}\n\n[EQUIPO AFECTADO]: ${item.equipo}${scheduleNote}`
+          : `${item.descripcion}${scheduleNote}`;
         const descFinal = total > 1
           ? `[${loteId}] (${index + 1}/${total})\n${descBase}`
           : descBase;
@@ -232,7 +242,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
       alert(msg);
       
       setCarritoServicios([]);
-      setNuevoServicio({ tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', fotos: [] });
+      setNuevoServicio({ tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', urgencia: 'urgente', fechaProgramada: '', horarioPreferido: '', fotos: [] });
       if (onSuccess) onSuccess();
       if (onClose) onClose();
     } catch (error) {
@@ -381,6 +391,84 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                   style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
                   disabled={!selectedPropertyId}
                 />
+              </div>
+
+              {/* ⚡ DISPONIBILIDAD / HORARIO SOLICITADO */}
+              <div style={{ marginBottom: '18px', padding: '14px', background: '#fff7ed', borderRadius: '12px', border: '1.5px solid #fed7aa' }}>
+                <label style={{ fontWeight: '800', fontSize: '13px', color: '#ea580c', display: 'block', marginBottom: '8px' }}>
+                  ⏰ ¿Cuándo necesitas el servicio?
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setNuevoServicio({...nuevoServicio, urgencia: 'urgente', fechaProgramada: '', horarioPreferido: ''})}
+                    style={{
+                      padding: '10px 8px',
+                      borderRadius: '8px',
+                      border: nuevoServicio.urgencia === 'urgente' || !nuevoServicio.urgencia ? '2px solid #ea580c' : '1px solid #fed7aa',
+                      background: nuevoServicio.urgencia === 'urgente' || !nuevoServicio.urgencia ? '#ea580c' : '#ffffff',
+                      color: nuevoServicio.urgencia === 'urgente' || !nuevoServicio.urgencia ? '#ffffff' : '#334155',
+                      fontWeight: '800',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    ⚡ Urgente (Hoy mismo)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setNuevoServicio({...nuevoServicio, urgencia: 'programado', fechaProgramada: new Date(Date.now() + 86400000).toISOString().split('T')[0], horarioPreferido: 'Por la tarde (12pm - 5pm)'})}
+                    style={{
+                      padding: '10px 8px',
+                      borderRadius: '8px',
+                      border: nuevoServicio.urgencia === 'programado' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                      background: nuevoServicio.urgencia === 'programado' ? '#2563eb' : '#ffffff',
+                      color: nuevoServicio.urgencia === 'programado' ? '#ffffff' : '#334155',
+                      fontWeight: '800',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    📅 Programar Fecha
+                  </button>
+                </div>
+
+                {nuevoServicio.urgencia === 'programado' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #fed7aa' }}>
+                    <div>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>Fecha deseada:</span>
+                      <input
+                        type="date"
+                        value={nuevoServicio.fechaProgramada || ''}
+                        min={new Date().toISOString().split('T')[0]}
+                        onChange={(e) => setNuevoServicio({...nuevoServicio, fechaProgramada: e.target.value})}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>Horario preferido:</span>
+                      <select
+                        value={nuevoServicio.horarioPreferido || 'Por la tarde (12pm - 5pm)'}
+                        onChange={(e) => setNuevoServicio({...nuevoServicio, horarioPreferido: e.target.value})}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }}
+                      >
+                        <option value="Por la mañana (8am - 12pm)">Por la mañana (8:00 AM - 12:00 PM)</option>
+                        <option value="Por la tarde (12pm - 5pm)">Por la tarde (12:00 PM - 5:00 PM)</option>
+                        <option value="Por la noche (5pm - 8pm)">Por la noche (5:00 PM - 8:00 PM)</option>
+                        <option value="Cualquier hora">Cualquier horario disponible</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="form-group" style={{ marginBottom: '20px' }}>

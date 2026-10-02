@@ -200,6 +200,9 @@ const VistaRedAutonomo = () => {
             cotizaciones_list: groupedQuotes,
             cliente: displayOwner,
             is_mine: true,
+            priority: order.priority || 'Normal',
+            is_urgent: Boolean(order.is_urgent || order.priority === 'Urgente' || order.type === 'SOS'),
+            scheduled_at: order.scheduled_at,
             hasNewTechMessage,
             lastTechMsg,
           };
@@ -343,6 +346,30 @@ const VistaRedAutonomo = () => {
     } catch (e) {
       console.error(e);
       alert("Hubo un error al rechazar la cotización.");
+    }
+  };
+
+  const handleResponderVisita = async (action) => {
+    if (!selectedJobForQuotes?.id) return;
+    let msg = '';
+    if (action === 'reschedule') {
+      msg = prompt("Escribe una breve nota sobre qué horario te queda mejor:");
+      if (msg === null) return;
+    }
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${selectedJobForQuotes.id}/responder-visita-cliente`,
+        { action, message: msg },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        alert("✅ " + res.data.message);
+        fetchJobs();
+      }
+    } catch (e) {
+      console.error("Error respondiendo visita", e);
+      alert("Hubo un error al responder. Intenta de nuevo.");
     }
   };
 
@@ -526,9 +553,16 @@ const VistaRedAutonomo = () => {
               >
                 <div className="mercado-job-card-top">
                   <h4>{job.titulo}</h4>
-                  <span className="mercado-job-badge badge-pending">
-                    {job.estado}
-                  </span>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    {job.is_urgent ? (
+                      <span className="mercado-urgency-badge urgent">⚡ Urgente</span>
+                    ) : (job.scheduled_at || job.priority === 'Programado') ? (
+                      <span className="mercado-urgency-badge scheduled">📅 Programado</span>
+                    ) : null}
+                    <span className="mercado-job-badge badge-pending">
+                      {job.estado}
+                    </span>
+                  </div>
                 </div>
                 <div className="mercado-job-meta">
                   <span style={{ color: '#ea580c', fontWeight: '700' }}><MapPin size={11} /> {job.zona}</span>
@@ -666,6 +700,54 @@ const VistaRedAutonomo = () => {
                       <FileText size={14} className="mercado-icon-blue" />
                       <div><strong>Problema</strong><span>{selectedJobForQuotes.descripcion || 'Sin descripción adicional'}</span></div>
                     </div>
+
+                    {selectedJobForQuotes.scheduled_at && (
+                      <div className="mercado-info-item full-width" style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Clock size={16} color="#16a34a" />
+                          <strong style={{ color: '#166534', fontSize: '13px' }}>📅 Horario Propuesto de Visita</strong>
+                        </div>
+                        <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
+                          {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleResponderVisita('confirm')}
+                            style={{
+                              flex: 1,
+                              padding: '8px 12px',
+                              background: '#16a34a',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontWeight: '800',
+                              fontSize: '12px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✓ Confirmar Horario
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleResponderVisita('reschedule')}
+                            style={{
+                              flex: 1,
+                              padding: '8px 12px',
+                              background: '#ffffff',
+                              color: '#ea580c',
+                              border: '1.5px solid #fed7aa',
+                              borderRadius: '8px',
+                              fontWeight: '800',
+                              fontSize: '12px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            💬 Re-coordinar
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -687,6 +769,55 @@ const VistaRedAutonomo = () => {
                         Revisa las propuestas de los técnicos. Puedes chatear con ellos o aceptar la mejor oferta.
                       </p>
                     </div>
+
+                    {/* Banner de Horario Propuesto si ya hay fecha fijada */}
+                    {selectedJobForQuotes.scheduled_at && (
+                      <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#f0fdf4', borderRadius: '12px', border: '1.5px solid #86efac', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '18px' }}>📅</span>
+                          <div>
+                            <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Propuesto:</strong>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
+                              {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleResponderVisita('confirm')}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#16a34a',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontWeight: '800',
+                              fontSize: '11.5px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✓ Confirmar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleResponderVisita('reschedule')}
+                            style={{
+                              padding: '6px 10px',
+                              background: '#ffffff',
+                              color: '#ea580c',
+                              border: '1px solid #fed7aa',
+                              borderRadius: '6px',
+                              fontWeight: '700',
+                              fontSize: '11.5px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Re-coordinar
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {(!selectedJobForQuotes.cotizaciones_list || selectedJobForQuotes.cotizaciones_list.length === 0) ? (
                       <div style={{ textAlign: 'center', color: '#64748b', padding: '40px 20px', background: '#fffaf5', borderRadius: '16px', border: '2px dashed #fed7aa', margin: '20px 0' }}>
@@ -826,6 +957,55 @@ const VistaRedAutonomo = () => {
                         <div className="mercado-chat-alert-text">
                           <strong>El Técnico te envió un mensaje:</strong>
                           <span>"{activeChatQuote.displayAlertMsg || activeChatQuote.lastMsg?.message || activeChatQuote.message}"</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Banner de Horario Propuesto con Botones de Confirmación */}
+                    {selectedJobForQuotes.scheduled_at && (
+                      <div style={{ padding: '10px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '15px' }}>📅</span>
+                          <div>
+                            <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Propuesto:</strong>
+                            <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>
+                              {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleResponderVisita('confirm')}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#16a34a',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontWeight: '800',
+                              fontSize: '11.5px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✓ Confirmar Horario
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleResponderVisita('reschedule')}
+                            style={{
+                              padding: '6px 10px',
+                              background: '#ffffff',
+                              color: '#ea580c',
+                              border: '1px solid #fed7aa',
+                              borderRadius: '6px',
+                              fontWeight: '700',
+                              fontSize: '11.5px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Re-coordinar
+                          </button>
                         </div>
                       </div>
                     )}
