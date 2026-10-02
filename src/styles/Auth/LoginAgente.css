@@ -1129,17 +1129,17 @@
 /* Role selected indicator pill on the form */
 .aiw-role-selected-chip {
   width: 100%;
-  background: linear-gradient(135deg, rgba(242, 101, 34, 0.16) 0%, rgba(242, 101, 34, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.15) 0%, rgba(242, 101, 34, 0.04) 100%);
   border: 1.5px solid rgba(242, 101, 34, 0.45);
   border-radius: 12px;
-  padding: 7px 12px;
+  padding: 8px 14px;
   margin-bottom: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
   box-sizing: border-box;
   text-align: left;
@@ -1147,10 +1147,10 @@
 }
 
 .aiw-role-selected-chip:hover {
-  background: linear-gradient(135deg, rgba(242, 101, 34, 0.25) 0%, rgba(242, 101, 34, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.26) 0%, rgba(242, 101, 34, 0.08) 100%);
   border-color: #ff7438;
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.25);
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.35);
 }
 
 .aiw-role-chip-left {
@@ -1159,43 +1159,35 @@
   gap: 8px;
   min-width: 0;
   flex: 1;
-  overflow: hidden;
 }
 
 .aiw-role-chip-label {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 800;
   color: #ff7438;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.8px;
   flex-shrink: 0;
 }
 
 .aiw-role-chip-name {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 800;
   color: #ffffff;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-transform: uppercase;
 }
 
-.aiw-role-chip-emoji {
-  font-size: 1rem;
-  line-height: 1;
-}
-
-.aiw-role-chip-subbadge {
-  font-size: 0.64rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  white-space: nowrap;
+.aiw-role-chip-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #ffffff;
+  flex-shrink: 0;
 }
 
 .aiw-highlight-roles-link {
@@ -1204,34 +1196,32 @@
 }
 
 /* ==========================================================================
-   ROLES SHOWCASE CAROUSEL & CARDS
+   ROLES SHOWCASE CAROUSEL & CARDS (Floating 3D Coverflow Stage)
    ========================================================================== */
 .aiw-roles-card-box {
   width: 100%;
-  max-width: 480px;
-  background: rgba(18, 20, 26, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 24px;
-  padding: 18px 22px 14px 22px;
-  box-shadow: 
-    0 30px 70px rgba(0, 0, 0, 0.85),
-    0 0 40px rgba(242, 101, 34, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  max-width: 560px;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   position: relative;
   box-sizing: border-box;
+  overflow: visible;
 }
 
 .aiw-roles-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 10px;
 }
 
 .aiw-roles-header-left {
@@ -1240,56 +1230,35 @@
 }
 
 .aiw-roles-eyebrow {
-  font-size: 0.64rem;
+  font-size: 0.68rem;
   font-weight: 800;
   color: #ff7438;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.4px;
   text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(242, 101, 34, 0.4);
 }
 
 .aiw-roles-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.28rem;
+  font-size: 1.35rem;
   font-weight: 900;
   color: #ffffff;
   letter-spacing: 0.6px;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
 }
 
-.aiw-roles-close-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  color: #ffffff;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-.aiw-roles-close-btn svg {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
-}
-
-.aiw-roles-close-btn:hover {
-  background: #ef4444;
-  color: #ffffff;
-  border-color: #ef4444;
-  transform: scale(1.08);
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
-}
 
 .aiw-roles-cat-pills {
   display: flex;
-  background: rgba(10, 12, 16, 0.7);
-  padding: 4px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 5px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  gap: 6px;
   width: 100%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .aiw-roles-cat-btn {
@@ -1297,13 +1266,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
-  border-radius: 9px;
+  padding: 9px 14px;
+  border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.75);
   font-family: 'Outfit', sans-serif;
-  font-size: 0.78rem;
+  font-size: 0.80rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1311,189 +1280,157 @@
 
 .aiw-roles-cat-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .aiw-roles-cat-btn.active {
-  background: linear-gradient(135deg, rgba(242, 101, 34, 0.28) 0%, rgba(242, 101, 34, 0.12) 100%);
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
   color: #ffffff;
-  border-color: rgba(242, 101, 34, 0.55);
-  box-shadow: 0 4px 16px rgba(242, 101, 34, 0.25);
+  border-color: transparent;
+  font-weight: 800;
+  box-shadow: 0 4px 18px rgba(242, 101, 34, 0.55);
+  transform: scale(1.02);
 }
 
-/* Carousel with sleek minimal outer arrows */
+/* 3D Coverflow Desktop Carousel Track & Wrapper */
 .aiw-carousel-wrapper {
   position: relative;
   width: 100%;
   display: flex;
   align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+  margin: 4px 0;
 }
 
-.aiw-arrow-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: rgba(26, 29, 38, 0.9);
-  backdrop-filter: blur(8px);
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+.aiw-dcarousel-track {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  z-index: 25;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.65);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  padding: 0;
-  outline: none;
-}
-
-.aiw-arrow-btn svg {
-  stroke: #ffffff;
-  stroke-width: 2.5px;
-}
-
-.aiw-arrow-btn:hover {
-  background: #f26522;
-  border-color: #f26522;
-  color: #ffffff;
-  transform: translateY(-50%) scale(1.12);
-  box-shadow: 0 8px 24px rgba(242, 101, 34, 0.6);
-}
-
-.aiw-arrow-btn.left { left: -20px; }
-.aiw-arrow-btn.right { right: -20px; }
-
-.aiw-role-showcase-card {
   width: 100%;
-  background: linear-gradient(180deg, rgba(26, 29, 38, 0.82) 0%, rgba(17, 19, 25, 0.94) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 18px;
-  padding: 16px 20px;
-  box-sizing: border-box;
+  position: relative;
+  perspective: 1100px;
+  height: 435px;
+  overflow: visible;
+}
+
+.aiw-coverflow-desktop-stage {
+  position: relative;
+  width: 320px;
+  height: 430px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+
+/* Desktop Coverflow Card */
+.aiw-desktop-cf-card {
+  position: absolute;
+  width: 320px;
+  height: 425px;
+  border-radius: 22px;
+  background: linear-gradient(165deg, rgba(25, 28, 38, 0.95) 0%, rgba(13, 15, 22, 0.98) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid;
+  padding: 16px 18px 12px 18px;
   display: flex;
   flex-direction: column;
-  will-change: transform, opacity;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  transition: border-color 0.3s ease;
+  justify-content: space-between;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease, box-shadow 0.45s ease, filter 0.45s ease, border-color 0.45s ease;
+  box-sizing: border-box;
+  cursor: pointer;
+  user-select: none;
+  will-change: transform, opacity, filter;
 }
 
-.aiw-role-showcase-card:hover {
-  border-color: rgba(242, 101, 34, 0.45);
+.aiw-desktop-cf-card.active-center {
+  cursor: default;
 }
 
-/* Slide Next Animation (from right to left) */
-.aiw-role-showcase-card.slide-next {
-  animation: aiwSlideRoleNext 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Slide Prev Animation (from left to right) */
-.aiw-role-showcase-card.slide-prev {
-  animation: aiwSlideRolePrev 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes aiwSlideRoleNext {
-  0% {
-    opacity: 0;
-    transform: translateX(40px) scale(0.96);
-    filter: blur(4px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-@keyframes aiwSlideRolePrev {
-  0% {
-    opacity: 0;
-    transform: translateX(-40px) scale(0.96);
-    filter: blur(4px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-    filter: blur(0);
-  }
+.aiw-desktop-cf-card.flanking:hover {
+  filter: brightness(0.95) blur(0px) !important;
+  opacity: 0.85 !important;
+  transform: scale(0.88);
 }
 
 .aiw-rcard-top {
   display: flex;
-  margin-bottom: 6px;
-  animation: aiwFadeItem 0.3s 0.05s ease both;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
 }
 
 .aiw-rcard-badge {
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 800;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: 20px;
-  background: linear-gradient(135deg, rgba(242, 101, 34, 0.25) 0%, rgba(242, 101, 34, 0.08) 100%);
-  color: #ff7438;
-  border: 1.5px solid rgba(242, 101, 34, 0.55);
-  box-shadow: 0 0 12px rgba(242, 101, 34, 0.2);
+  border: 1.5px solid;
+}
+
+.aiw-cf-category-tag {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
 }
 
 .aiw-rcard-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 900;
   color: #ffffff;
   letter-spacing: 0.4px;
   margin-bottom: 2px;
-  animation: aiwFadeItem 0.3s 0.08s ease both;
 }
 
 .aiw-rcard-tagline {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: #ff8c57;
-  margin-bottom: 6px;
-  line-height: 1.35;
-  animation: aiwFadeItem 0.3s 0.11s ease both;
+  margin-bottom: 4px;
+  line-height: 1.3;
 }
 
 .aiw-rcard-desc {
-  font-size: 0.80rem;
+  font-size: 0.74rem;
   color: #cbd5e1;
-  line-height: 1.45;
-  margin-bottom: 10px;
-  animation: aiwFadeItem 0.3s 0.14s ease both;
+  line-height: 1.35;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .aiw-rcard-features-box {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  margin-bottom: 10px;
-  background: rgba(10, 12, 16, 0.4);
-  padding: 8px 12px;
-  border-radius: 12px;
+  gap: 5px;
+  margin-bottom: 6px;
+  background: rgba(10, 12, 16, 0.45);
+  padding: 7px 10px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .aiw-rcard-feat-item {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  font-size: 0.78rem;
+  gap: 6px;
+  font-size: 0.73rem;
   color: #e2e8f0;
-  line-height: 1.35;
-  animation: aiwFadeItem 0.35s ease both;
+  line-height: 1.3;
 }
 
-.aiw-rcard-feat-item:nth-child(1) { animation-delay: 0.16s; }
-.aiw-rcard-feat-item:nth-child(2) { animation-delay: 0.20s; }
-.aiw-rcard-feat-item:nth-child(3) { animation-delay: 0.24s; }
-
 .aiw-feat-check-icon {
-  color: #ff7438;
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -1502,8 +1439,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 5px;
+  margin-bottom: 6px;
 }
 
 .aiw-rcard-dot {
@@ -1518,9 +1455,7 @@
 }
 
 .aiw-rcard-dot.active {
-  width: 20px;
-  background: #f26522;
-  box-shadow: 0 0 10px rgba(242, 101, 34, 0.6);
+  width: 18px;
 }
 
 .aiw-rcard-cta-btn {
@@ -1528,25 +1463,24 @@
   background: linear-gradient(135deg, #f26522 0%, #ff5722 50%, #f43f5e 100%);
   border: none;
   color: #ffffff;
-  padding: 11px 18px;
-  border-radius: 12px;
+  padding: 9px 16px;
+  border-radius: 11px;
   font-family: 'Outfit', sans-serif;
-  font-size: 0.84rem;
+  font-size: 0.80rem;
   font-weight: 900;
   letter-spacing: 0.8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 6px 20px rgba(242, 101, 34, 0.45);
+  box-shadow: 0 4px 16px rgba(242, 101, 34, 0.45);
 }
 
 .aiw-rcard-cta-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(242, 101, 34, 0.65);
-  background: linear-gradient(135deg, #ff7438 0%, #ff6b3d 50%, #fb7185 100%);
+  box-shadow: 0 6px 20px rgba(242, 101, 34, 0.65);
 }
 
 .aiw-rcard-cta-btn:active {
@@ -1554,24 +1488,24 @@
 }
 
 .aiw-rcard-trial-info {
-  font-size: 0.70rem;
+  font-size: 0.66rem;
   color: #94a3b8;
   text-align: center;
-  margin-top: 5px;
+  margin-top: 4px;
   font-weight: 600;
 }
 
 .aiw-roles-bottom-footer {
   display: flex;
   justify-content: center;
-  padding-top: 4px;
+  padding-top: 2px;
 }
 
 .aiw-roles-back-link {
   background: none;
   border: none;
   color: #94a3b8;
-  font-size: 0.80rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -1658,13 +1592,23 @@
 
 @media (max-width: 820px) {
   .aiw-viewport {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden !important;
     padding: 0;
-    min-height: 100vh;
-    min-height: 100dvh;
+    margin: 0;
     display: flex;
     align-items: flex-end;
     justify-content: flex-end;
     background-color: #0b0c10;
+    touch-action: none;
   }
 
   .aiw-bg-art-layer {
@@ -1674,6 +1618,7 @@
     right: 0;
     bottom: 0;
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
     opacity: 1;
     background-position: center center;
@@ -1691,14 +1636,17 @@
 
   .aiw-page-container {
     padding: 0;
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden !important;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     gap: 0;
     width: 100%;
     margin: 0;
+    position: relative;
   }
 
   .aiw-page-container.aiw-roles-expanded .aiw-hero-left {
@@ -1716,8 +1664,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    height: calc(100vh - 65px);
     height: calc(100dvh - 65px);
+    max-height: calc(100dvh - 65px);
     padding: 14px 16px 0 16px;
     margin: 0 auto;
     z-index: 5;
@@ -1725,6 +1673,7 @@
     max-width: 100%;
     box-sizing: border-box;
     flex-shrink: 0;
+    overflow: hidden !important;
   }
 
   .aiw-hero-logo-box {
@@ -1983,14 +1932,36 @@
     pointer-events: auto;
     transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform;
+    overflow: visible;
   }
 
   .aiw-card-wrapper.aiw-sheet-collapsed {
     transform: translateY(calc(100% - 62px));
   }
 
+  .aiw-card-wrapper.aiw-sheet-collapsed .aiw-form-side {
+    visibility: hidden !important;
+    pointer-events: none !important;
+    user-select: none !important;
+    overflow: hidden !important;
+  }
+
+  .aiw-card-wrapper.aiw-sheet-collapsed .aiw-mobile-drag-handle {
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
   .aiw-card-wrapper.aiw-sheet-expanded {
     transform: translateY(0);
+  }
+
+  .aiw-card-wrapper.aiw-sheet-expanded .aiw-form-side {
+    visibility: visible;
+    pointer-events: auto;
+    max-height: calc(85dvh - 55px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
 
   .aiw-mobile-drag-handle {
@@ -2206,15 +2177,17 @@
   }
 
   .aiw-roles-card-box {
-    padding: 18px 14px 14px 14px;
+    padding: 14px 12px 10px 12px;
   }
 
-  .aiw-role-showcase-card {
-    padding: 16px 14px;
+  .aiw-desktop-cf-card {
+    width: 275px;
+    height: 390px;
+    padding: 14px 14px 10px 14px;
   }
 
   .aiw-rcard-title {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
   }
 }
 
