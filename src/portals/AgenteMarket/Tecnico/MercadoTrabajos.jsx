@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow } from '@react-google-maps/api';
 import Header from '../../../components/Shared/Header';
+import MaterialDateTimePicker, { formatDateTimeHuman } from '../../../components/Shared/MaterialDateTimePicker';
 import { MapPin, DollarSign, Clock, Send, User, FileText, Maximize2, Image as ImageIcon, X, List, Map as MapIcon, MessageCircle, AlertCircle, CheckCircle2, Phone, Calendar, ChevronLeft, ExternalLink } from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import { useAuth } from '../../../context/AuthContext';
@@ -61,6 +62,7 @@ const MercadoTrabajos = () => {
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleNotes, setScheduleNotes] = useState('');
   const [savingSchedule, setSavingSchedule] = useState(false);
+  const [showDatePickerModal, setShowDatePickerModal] = useState(false);
 
   const { user: authUser } = useAuth();
 
@@ -888,12 +890,19 @@ const MercadoTrabajos = () => {
                           )}
 
                           <div className="mercado-hero-scheduler-input-row">
-                            <input
-                              type="datetime-local"
-                              className="mercado-hero-scheduler-input"
-                              value={scheduleDate}
-                              onChange={(e) => setScheduleDate(e.target.value)}
-                            />
+                            <button
+                              type="button"
+                              className="mdtp-trigger-btn"
+                              onClick={() => setShowDatePickerModal(true)}
+                              title="Clic para seleccionar fecha y hora con el reloj dinámico"
+                            >
+                              <div className="mdtp-trigger-content">
+                                <span className="mdtp-trigger-icon"><Clock size={16} /></span>
+                                <span>{formatDateTimeHuman(scheduleDate)}</span>
+                              </div>
+                              <span style={{ fontSize: '12px', color: '#6200ee', fontWeight: '800' }}>Cambiar ▾</span>
+                            </button>
+
                             <button
                               type="button"
                               className="mercado-hero-scheduler-btn"
@@ -904,6 +913,14 @@ const MercadoTrabajos = () => {
                               <span>{savingSchedule ? 'Guardando...' : (isRescheduleRequested ? '📅 Proponer Nuevo Horario' : (selectedJob.scheduled_at ? '✏️ Modificar Horario' : '📅 Proponer Hora de Ida'))}</span>
                             </button>
                           </div>
+
+                          <MaterialDateTimePicker
+                            isOpen={showDatePickerModal}
+                            value={scheduleDate}
+                            onChange={(newVal) => setScheduleDate(newVal)}
+                            onClose={() => setShowDatePickerModal(false)}
+                            title="Programar Hora de Llegada"
+                          />
                         </div>
 
                         {/* 2. DIRECCIÓN EXACTA Y CONTACTO DIRECTO */}
