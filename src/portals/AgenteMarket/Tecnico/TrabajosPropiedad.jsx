@@ -445,12 +445,25 @@ const TrabajoPropiedad = () => {
   };
 
   const openInGoogleMaps = () => {
-    const coords = data?.coordenadas || data?.coordinates;
-    if (coords && typeof coords === 'string' && coords.trim() !== '' && coords.trim() !== 'null') {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coords.trim())}`, '_blank');
+    // 1. Detección profunda de coordenadas
+    const strCoords = data?.coordinates || data?.coordenadas || data?.property_coordinates || data?.property?.coordinates || data?.property?.coordenadas;
+    if (strCoords && typeof strCoords === 'string' && strCoords.trim() !== '' && strCoords.trim() !== 'null') {
+      const parts = strCoords.split(',').map(s => s.trim());
+      if (parts.length === 2 && !isNaN(parseFloat(parts[0])) && !isNaN(parseFloat(parts[1]))) {
+        window.open(`https://www.google.com/maps/search/?api=1&query=${parseFloat(parts[0])},${parseFloat(parts[1])}`, '_blank');
+        return;
+      }
+    }
+
+    const lat = data?.lat || data?.latitude || data?.property?.lat || data?.property?.latitude;
+    const lng = data?.lng || data?.longitude || data?.property?.lng || data?.property?.longitude;
+    if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${parseFloat(lat)},${parseFloat(lng)}`, '_blank');
       return;
     }
-    const dir = data?.address || data?.direccion;
+
+    // 2. Fallback a dirección
+    const dir = data?.address || data?.direccion || data?.full_address || data?.property?.address;
     if (dir && typeof dir === 'string' && dir.trim() !== '' && dir.trim() !== 'null') {
       window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dir.trim())}`, '_blank');
       return;
