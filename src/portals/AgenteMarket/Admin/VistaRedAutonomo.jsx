@@ -35,6 +35,113 @@ const formatTime = (dateStr) => {
   }
 };
 
+const calculateDiff = (dateStr) => {
+  if (!dateStr) return null;
+  try {
+    const target = new Date(dateStr).getTime();
+    if (isNaN(target)) return null;
+    const now = new Date().getTime();
+    const diff = target - now;
+
+    if (diff <= 0) {
+      if (diff > - (3 * 60 * 60 * 1000)) {
+        return { isNow: true, text: '¡En horario de visita o en camino!' };
+      }
+      return { isPast: true, text: 'Visita concluida' };
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    return { days, hours, minutes, seconds, diff };
+  } catch {
+    return null;
+  }
+};
+
+const CountdownVisita = ({ targetDate, isCompact = false }) => {
+  const [timeLeft, setTimeLeft] = useState(() => calculateDiff(targetDate));
+
+  useEffect(() => {
+    setTimeLeft(calculateDiff(targetDate));
+    const interval = setInterval(() => {
+      setTimeLeft(calculateDiff(targetDate));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [targetDate]);
+
+  if (!timeLeft) return null;
+
+  if (timeLeft.isNow) {
+    return (
+      <div className={`countdown-visita-box in-progress ${isCompact ? 'compact' : ''}`}>
+        <span className="countdown-pulse-dot" />
+        <span>⚡ {timeLeft.text}</span>
+      </div>
+    );
+  }
+
+  if (timeLeft.isPast) {
+    return (
+      <div className={`countdown-visita-box past ${isCompact ? 'compact' : ''}`}>
+        <span>⏱️ {timeLeft.text}</span>
+      </div>
+    );
+  }
+
+  if (isCompact) {
+    const formattedCompact = [
+      timeLeft.days > 0 ? `${timeLeft.days}d` : '',
+      `${timeLeft.hours}h`,
+      `${timeLeft.minutes}m`,
+      `${timeLeft.seconds}s`
+    ].filter(Boolean).join(' ');
+
+    return (
+      <div className="countdown-visita-compact">
+        <span>⏱️</span>
+        <span>El técnico llegará en: <strong>{formattedCompact}</strong></span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="countdown-visita-card">
+      <div className="countdown-card-header">
+        <div className="countdown-card-title">
+          <span className="countdown-pulse-icon">⏱️</span>
+          <span>El técnico llegará en:</span>
+        </div>
+        <span className="countdown-live-badge">EN VIVO</span>
+      </div>
+      <div className="countdown-digits-grid">
+        {timeLeft.days > 0 && (
+          <div className="countdown-digit-block">
+            <span className="digit-num">{timeLeft.days}</span>
+            <span className="digit-label">{timeLeft.days === 1 ? 'DÍA' : 'DÍAS'}</span>
+          </div>
+        )}
+        <div className="countdown-digit-block">
+          <span className="digit-num">{String(timeLeft.hours).padStart(2, '0')}</span>
+          <span className="digit-label">HORAS</span>
+        </div>
+        <span className="digit-separator">:</span>
+        <div className="countdown-digit-block">
+          <span className="digit-num">{String(timeLeft.minutes).padStart(2, '0')}</span>
+          <span className="digit-label">MIN</span>
+        </div>
+        <span className="digit-separator">:</span>
+        <div className="countdown-digit-block highlight">
+          <span className="digit-num">{String(timeLeft.seconds).padStart(2, '0')}</span>
+          <span className="digit-label">SEG</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const VistaRedAutonomo = () => {
   const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
@@ -715,9 +822,12 @@ const VistaRedAutonomo = () => {
                   }
                   if (sched.isScheduleConfirmed) {
                     return (
-                      <div style={{ fontSize: '11.5px', padding: '6px 10px', borderRadius: '8px', background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>✅</span>
-                        <span><strong>Visita Confirmada:</strong> {new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                      <div style={{ fontSize: '11.5px', padding: '6px 10px', borderRadius: '8px', background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', fontWeight: '700', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>✅</span>
+                          <span><strong>Visita Confirmada:</strong> {new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                        </div>
+                        <CountdownVisita targetDate={job.scheduled_at} isCompact={true} />
                       </div>
                     );
                   }
@@ -878,7 +988,7 @@ const VistaRedAutonomo = () => {
                       }
                       if (sched.isScheduleConfirmed) {
                         return (
-                          <div className="mercado-info-item full-width" style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div className="mercado-info-item full-width" style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <CheckCircle size={16} color="#16a34a" />
                               <strong style={{ color: '#166534', fontSize: '13px' }}>✅ Horario de Visita Confirmado</strong>
@@ -886,6 +996,7 @@ const VistaRedAutonomo = () => {
                             <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
                               {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
                             </div>
+                            <CountdownVisita targetDate={selectedJobForQuotes.scheduled_at} isCompact={true} />
                           </div>
                         );
                       }
@@ -955,7 +1066,7 @@ const VistaRedAutonomo = () => {
                         </span>
                       </h4>
                       <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
-                        Revisa las propuestas de los técnicos. Puedes chatear con ellos o aceptar la mejor oferta.
+                        Revisa las propuestas de los técnicos. Puedes chatear con ellos o coordinar los detalles del servicio.
                       </p>
                     </div>
 
@@ -977,14 +1088,17 @@ const VistaRedAutonomo = () => {
                       }
                       if (sched.isScheduleConfirmed) {
                         return (
-                          <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#f0fdf4', borderRadius: '12px', border: '1.5px solid #86efac', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '18px' }}>✅</span>
-                            <div>
-                              <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Confirmado:</strong>
-                              <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
-                                {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
-                              </span>
+                          <div style={{ marginBottom: '16px', padding: '14px 16px', background: '#f0fdf4', borderRadius: '14px', border: '1.5px solid #86efac', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '18px' }}>✅</span>
+                              <div>
+                                <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Confirmado:</strong>
+                                <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a' }}>
+                                  {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
+                                </span>
+                              </div>
                             </div>
+                            <CountdownVisita targetDate={selectedJobForQuotes.scheduled_at} />
                           </div>
                         );
                       }
@@ -1227,12 +1341,15 @@ const VistaRedAutonomo = () => {
                       }
                       if (sched.isScheduleConfirmed) {
                         return (
-                          <div style={{ padding: '10px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '15px' }}>✅</span>
-                            <div>
-                              <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Confirmado</strong>
-                              <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>{new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                          <div style={{ padding: '10px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '15px' }}>✅</span>
+                              <div>
+                                <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Confirmado</strong>
+                                <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>{new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                              </div>
                             </div>
+                            <CountdownVisita targetDate={selectedJobForQuotes.scheduled_at} isCompact={true} />
                           </div>
                         );
                       }
