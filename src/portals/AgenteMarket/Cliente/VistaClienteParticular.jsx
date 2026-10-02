@@ -11,6 +11,9 @@ import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
 import {
   Home,
   Calendar,
+  CalendarDays,
+  ChevronDown,
+  ChevronUp,
   User,
   MapPin,
   Navigation,
@@ -87,6 +90,7 @@ const VistaClienteParticular = () => {
   const [showModalRegistroPropiedad, setShowModalRegistroPropiedad] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
+  const [isPlanExpanded, setIsPlanExpanded] = useState(false); // Oculto por defecto
 
   const dropdownRef = useRef(null);
 
@@ -164,7 +168,10 @@ const VistaClienteParticular = () => {
     return 'CLIENTE PARTICULAR';
   }, [user]);
 
-  const userAvatar = user?.profile_picture || user?.cover_picture || user?.avatar_url || user?.foto || null;
+  const userAvatar = user?.profile_picture || user?.avatar_url || user?.foto || null;
+  const userInitial = user?.first_name 
+    ? user.first_name.charAt(0).toUpperCase() 
+    : (user?.name ? user.name.charAt(0).toUpperCase() : (user?.nombre ? user.nombre.charAt(0).toUpperCase() : 'P'));
 
   // Propiedades filtradas para el usuario actual si aplican
   const userPropiedades = useMemo(() => {
@@ -270,18 +277,10 @@ const VistaClienteParticular = () => {
         <nav className="vcp-header-nav">
           <button 
             className="vcp-nav-icon-btn" 
-            title="Inicio"
-            onClick={() => navigate('/VistaMarket')}
-          >
-            <Home size={19} />
-          </button>
-
-          <button 
-            className="vcp-nav-icon-btn" 
             title="Abrir Calendario"
             onClick={() => setShowModalCalendario(true)}
           >
-            <Calendar size={19} />
+            <CalendarDays size={20} color="#ffffff" strokeWidth={2.2} />
           </button>
 
           <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
@@ -322,7 +321,7 @@ const VistaClienteParticular = () => {
             {userAvatar ? (
               <img src={userAvatar} alt="Avatar" className="vcp-avatar-img" />
             ) : (
-              <User size={22} color="#0f172a" />
+              <div className="vcp-avatar-initial">{userInitial}</div>
             )}
           </button>
 
@@ -360,32 +359,61 @@ const VistaClienteParticular = () => {
 
         {/* ── LEFT HERO PROPERTY SHOWCASE ── */}
         <section className="vcp-hero-side">
-          {/* Top Floating Subscription Plan Card */}
-          <div className="vcp-plan-floating-badge">
-            <div className="vcp-plan-title">
-              ⭐ PLAN PARTICULAR | 6 MESES GRATIS ($299 MXN/mes tras prueba)
-            </div>
-
-            <div className="vcp-plan-info-row">
-              <span className="vcp-plan-pill">
-                📅 Vence: <strong>{subInfo?.subscription_expires_at ? new Date(subInfo.subscription_expires_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) : '180 días restantes'}</strong>
-              </span>
-
-              <span className="vcp-plan-pill">
-                🏠 Propiedades: <strong>{currentPropsCount} / {maxAllowed}</strong>
-              </span>
-            </div>
-
-            <div className="vcp-plan-action-row">
-              <SubscriptionCountdown targetDate={subInfo?.subscription_expires_at} />
-              
+          {/* Top Floating Subscription Plan Card (Oculto por defecto / Desplegable) */}
+          <div className={`vcp-plan-floating-badge ${isPlanExpanded ? 'is-expanded' : 'is-collapsed'}`}>
+            {!isPlanExpanded ? (
               <button 
-                className="vcp-plan-buy-btn"
-                onClick={() => setShowModalCompra(true)}
+                type="button" 
+                className="vcp-plan-pill-toggle-btn"
+                onClick={() => setIsPlanExpanded(true)}
+                title="Mostrar información del plan"
               >
-                <Plus size={14} /> COMPRAR PROPIEDAD EXTRA ($79.99)
+                <span className="vcp-plan-pill-text">PLAN PARTICULAR ({currentPropsCount}/{maxAllowed})</span>
+                <ChevronDown size={15} className="vcp-plan-chevron" />
               </button>
-            </div>
+            ) : (
+              <div className="vcp-plan-expanded-box">
+                <div 
+                  className="vcp-plan-header-row" 
+                  onClick={() => setIsPlanExpanded(false)}
+                  title="Ocultar información del plan"
+                >
+                  <div className="vcp-plan-title">
+                    PLAN PARTICULAR | 6 MESES GRATIS ($299 MXN/MES TRAS PRUEBA)
+                  </div>
+                  <button 
+                    type="button" 
+                    className="vcp-plan-close-btn"
+                    onClick={(e) => { e.stopPropagation(); setIsPlanExpanded(false); }}
+                    aria-label="Ocultar información del plan"
+                    title="Ocultar"
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+                </div>
+
+                <div className="vcp-plan-info-row">
+                  <span className="vcp-plan-pill">
+                    📅 Vence: <strong>{subInfo?.subscription_expires_at ? new Date(subInfo.subscription_expires_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) : '30 de marzo de 2027'}</strong>
+                  </span>
+
+                  <span className="vcp-plan-pill">
+                    🏠 Propiedades: <strong>{currentPropsCount} / {maxAllowed}</strong>
+                  </span>
+                </div>
+
+                <div className="vcp-plan-action-row">
+                  <SubscriptionCountdown targetDate={subInfo?.subscription_expires_at} />
+                  
+                  <button 
+                    className="vcp-plan-buy-btn"
+                    onClick={() => setShowModalCompra(true)}
+                  >
+                    <Plus size={14} /> COMPRAR PROPIEDAD EXTRA ($79.99)
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Bottom Left Property Title & Thumbnail Carousel */}
