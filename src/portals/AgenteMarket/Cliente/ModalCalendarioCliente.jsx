@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
+import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
+import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
+import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import '../../../styles/AgenteMarket/Cliente/CalendarioCliente.css';
 import {
   Calendar as CalendarIcon,
@@ -10,15 +12,20 @@ import {
   Clock,
   MapPin,
   User,
-  DollarSign,
+  Mail,
+  Phone,
   CalendarDays,
   PlusCircle,
-  ExternalLink,
-  MessageSquare,
-  Building,
-  Wrench,
+  MessageCircle,
+  Maximize2,
+  Image as ImageIcon,
+  FileText,
+  X,
+  Trash2,
+  Send,
+  CheckCircle,
   Search,
-  X
+  Award
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -30,185 +37,286 @@ const DAY_NAMES = [
   'DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'
 ];
 
+const limpiarDescripcion = (rawDesc) => {
+  if (!rawDesc) return 'Sin descripción adicional';
+  let clean = rawDesc;
+  clean = clean.replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '');
+  clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*(otro|Otro|ninguno|Ninguno|n\/a|N\/A)\s*/gi, '');
+  clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*/gi, ' - Equipo: ');
+  return clean.trim() || rawDesc;
+};
+
 const ModalCalendarioCliente = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
 
+  // Estados del Calendario
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState('month'); // 'month' | 'agenda'
-  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'confirmed' | 'proposed' | 'network' | 'progress'
+  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'confirmed' | 'proposed' | 'network'
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [jobsData, setJobsData] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [networkJobs, setNetworkJobs] = useState([]);
 
-  // Cerrar con tecla Escape
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        if (detailModalOpen) {
-          setDetailModalOpen(false);
-        } else if (isOpen) {
-          onClose();
+  // Estados del Modal Reciclado de Detalle de Publicación y Cotizaciones
+  const [showQuotesModal, setShowQuotesModal] = useState(false);
+  const [selectedJobForQuotes, setSelectedJobForQuotes] = useState(null);
+  const [activePhoto, setActivePhoto] = useState(null);
+  const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
+  const [activeChatQuote, setActiveChatQuote] = useState(null);
+  const [selectedTechnicianProfile, setSelectedTechnicianProfile] = useState(null);
+  const [showTechModal, setShowTechModal] = useState(false);
+  const [showNewServiceModal, setShowNewServiceModal] = useState(false);
+
+  // Estados de Chat de Cliente
+  const [clientChatInput, setClientChatInput] = useState('');
+  const [sendingClientChat, setSendingClientChat] = useState(false);
+  const chatEndRef = useRef(null);
+
+  // Helper para agrupar cotizaciones por técnico
+  const groupQuotesByTechnician = (quotesList, order) => {
+    const techMap = new Map();
+
+    quotesList.forEach(quote => {
+      const techId = quote.technician_id || quote.technician?.id;
+      if (!techId) return;
+
+      const techName = quote.technician?.first_name 
+        ? `${quote.technician.first_name} ${quote.technician.last_name || ''}`.trim()
+        : (quote.technician?.name || 'Técnico de la Red');
+
+      const isThisQuoteAccepted = Boolean(
+        quote.status === 'accepted' || 
+        (order && (order.status === 'Asignado' || order.status === 'En Progreso' || order.status === 'Terminado') && Number(order.tecnico_id) === Number(techId))
+      );
+
+      const existing = techMap.get(techId);
+      if (!existing) {
+        const msgs = quote.chat_history || [];
+        const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+        const hasNewTechMessage = Boolean(
+          (lastMsg && Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente') ||
+          (quote.message && quote.message.trim().length > 0)
+        );
+        const displayAlertMsg = lastMsg?.message || quote.message || '';
+
+        techMap.set(techId, {
+          ...quote,
+          status: isThisQuoteAccepted ? 'accepted' : quote.status,
+          is_assigned: isThisQuoteAccepted,
+          allQuotes: [quote],
+          lastMsg,
+          hasNewTechMessage,
+          displayAlertMsg,
+          technicianName: techName,
+        });
+      } else {
+        existing.allQuotes.push(quote);
+        if (isThisQuoteAccepted) {
+          existing.status = 'accepted';
+          existing.is_assigned = true;
         }
+        if (quote.id > existing.id || (quote.price > 0 && existing.price == 0)) {
+          existing.id = quote.id;
+          if (quote.price > 0) existing.price = quote.price;
+          if (quote.message) existing.message = quote.message;
+          if (quote.status === 'accepted' || existing.is_assigned) {
+            existing.status = 'accepted';
+            existing.is_assigned = true;
+          } else if (existing.status !== 'accepted') {
+            existing.status = quote.status;
+          }
+          existing.created_at = quote.created_at;
+        }
+        if (quote.chat_history && (!existing.chat_history || quote.chat_history.length > existing.chat_history.length)) {
+          existing.chat_history = quote.chat_history;
+        }
+        const msgs = existing.chat_history || [];
+        const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+        existing.lastMsg = lastMsg;
+        existing.hasNewTechMessage = Boolean(
+          (lastMsg && Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente') ||
+          (existing.message && existing.message.trim().length > 0)
+        );
+        existing.displayAlertMsg = lastMsg?.message || existing.message || '';
       }
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-    }
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, detailModalOpen, onClose]);
+    });
 
-  // Cargar trabajos y citas del cliente desde la API
-  const fetchClientJobs = async () => {
+    const result = Array.from(techMap.values());
+    result.sort((a, b) => {
+      if (a.is_assigned || a.status === 'accepted') return -1;
+      if (b.is_assigned || b.status === 'accepted') return 1;
+      return b.id - a.id;
+    });
+
+    return result;
+  };
+
+  // Helper para estado de horarios
+  const getJobScheduleStatus = (job, activeQuote) => {
+    const quotes = job?.cotizaciones_list || [];
+    const targetQuote = activeQuote || quotes.find(q => q.status === 'accepted' || q.is_assigned) || quotes[0];
+    const msgs = targetQuote?.chat_history || [];
+
+    const scheduleResponses = msgs.filter(m => m.is_schedule_response);
+    const lastScheduleResponse = scheduleResponses.length > 0 ? scheduleResponses[scheduleResponses.length - 1] : null;
+
+    const scheduleProposals = msgs.filter(m => m.is_schedule);
+    const lastScheduleProposal = scheduleProposals.length > 0 ? scheduleProposals[scheduleProposals.length - 1] : null;
+
+    const isRescheduleRequested = Boolean(
+      lastScheduleResponse &&
+      lastScheduleResponse.schedule_confirmed === false &&
+      (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
+    );
+
+    const isScheduleConfirmed = Boolean(
+      lastScheduleResponse &&
+      lastScheduleResponse.schedule_confirmed === true &&
+      (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
+    );
+
+    const isPendingClientConfirm = Boolean(
+      job?.scheduled_at &&
+      !isScheduleConfirmed &&
+      !isRescheduleRequested
+    );
+
+    return {
+      isRescheduleRequested,
+      isScheduleConfirmed,
+      isPendingClientConfirm
+    };
+  };
+
+  // Cargar trabajos de la red
+  const fetchJobs = async () => {
     try {
-      setLoading(true);
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos?only_mine=1`, { headers });
       
-      let rawOrders = [];
       if (res.data?.success && Array.isArray(res.data.data)) {
-        rawOrders = res.data.data;
-      }
+        const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name) : '';
 
-      // Procesar y normalizar cada orden como un evento del calendario
-      const parsedEvents = rawOrders.map(order => {
-        const quotes = order.network_quotes || [];
-        const acceptedQuote = quotes.find(q => q.status === 'accepted') || quotes[0] || null;
+        const jobs = res.data.data.map(order => {
+          const coloniaTexto = order.colonia_cercana || order.zona_colonia || order.zona || 'Mérida, Yucatán';
+          const tituloProblema = order.type 
+            ? `${order.type}${order.equipment ? ' - ' + order.equipment : ''}` 
+            : 'Problema / Servicio Solicitado';
 
-        // Determinar fecha clave para el calendario (scheduled_at > fecha_visita > due_date > created_at)
-        let eventDateStr = order.scheduled_at || order.fecha_visita || order.due_date || order.created_at;
-        let eventDate = new Date(eventDateStr);
-        if (isNaN(eventDate.getTime())) {
-          eventDate = new Date();
-        }
+          const isGenericOwner = !order.owner_name || 
+            order.owner_name === 'Cliente de la Red' || 
+            order.owner_name === 'Cliente Desconocido' || 
+            order.owner_name === 'Cliente de Prueba';
 
-        // Determinar hora formateada
-        let timeFormatted = 'Por definir';
-        if (order.scheduled_at) {
-          try {
-            timeFormatted = new Date(order.scheduled_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-          } catch {
-            timeFormatted = '10:00 AM';
-          }
-        } else if (order.hora_visita) {
-          timeFormatted = order.hora_visita;
-        } else if (order.time_slot) {
-          timeFormatted = order.time_slot;
-        }
+          const displayOwner = !isGenericOwner ? order.owner_name : (userFullName || 'Mi Solicitud');
 
-        // Determinar estado visual
-        let statusType = 'network'; // default
-        let statusLabel = 'En Red / Cotizando';
+          const fotos = [
+            order.evidence_path,
+            order.evidence_path_2,
+            order.property?.facade_photo_path
+          ].filter(Boolean);
 
-        if (order.status === 'Asignado' || acceptedQuote?.status === 'accepted' || order.status === 'En Progreso') {
+          const groupedQuotes = groupQuotesByTechnician(order.network_quotes || [], order);
+          const hasNewTechMessage = groupedQuotes.some(q => q.hasNewTechMessage);
+          const lastTechMsg = groupedQuotes.find(q => q.hasNewTechMessage)?.lastMsg || null;
+
+          const acceptedQuote = groupedQuotes.find(q => q.status === 'accepted' || q.is_assigned) || null;
+          const isAccepted = Boolean(
+            order.status === 'Asignado' ||
+            order.status === 'En Progreso' ||
+            order.status === 'Terminado' ||
+            acceptedQuote ||
+            order.tecnico_id
+          );
+
+          const assignedTechName = acceptedQuote?.technicianName || (order.technician ? `${order.technician.first_name} ${order.technician.last_name || ''}`.trim() : null);
+          const agreedPrice = acceptedQuote?.price ? parseFloat(acceptedQuote.price) : 0;
+
+          // Fecha para ubicar en el calendario
+          let eventDateStr = order.scheduled_at || order.fecha_visita || order.due_date || order.created_at;
+          let eventDate = new Date(eventDateStr);
+          if (isNaN(eventDate.getTime())) eventDate = new Date();
+
+          let timeFormatted = 'Por definir';
           if (order.scheduled_at) {
+            try {
+              timeFormatted = new Date(order.scheduled_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+            } catch {
+              timeFormatted = '10:00 a.m.';
+            }
+          } else if (order.hora_visita) {
+            timeFormatted = order.hora_visita;
+          }
+
+          // Estado visual del evento para el calendario
+          const sched = getJobScheduleStatus({ ...order, cotizaciones_list: groupedQuotes }, acceptedQuote);
+          let statusType = 'network';
+          let statusLabel = 'En Red / Cotizando';
+
+          if (sched.isScheduleConfirmed || isAccepted) {
             statusType = 'confirmed';
             statusLabel = 'Visita Confirmada';
-          } else {
-            statusType = 'progress';
-            statusLabel = 'Técnico Asignado';
+          } else if (order.scheduled_at) {
+            statusType = 'proposed';
+            statusLabel = 'Horario Propuesto';
+          } else if (order.type?.toLowerCase().includes('urgente') || order.type?.toLowerCase().includes('sos')) {
+            statusType = 'urgent';
+            statusLabel = 'Urgencia / SOS';
           }
-        } else if (order.scheduled_at) {
-          statusType = 'proposed';
-          statusLabel = 'Horario Propuesto';
-        } else if (order.type?.toLowerCase().includes('urgente') || order.type?.toLowerCase().includes('sos')) {
-          statusType = 'urgent';
-          statusLabel = 'Urgencia / SOS';
+
+          return {
+            id: order.id,
+            titulo: tituloProblema,
+            tipo: order.type || 'Problema',
+            equipo: order.equipment || '',
+            presupuesto: agreedPrice > 0 ? `$${agreedPrice.toFixed(2)}` : 'A convenir',
+            estado: isAccepted ? (order.status === 'Terminado' ? 'Terminado' : 'Asignado') : (order.status || 'Por Hacer'),
+            is_accepted: isAccepted,
+            assigned_tech_name: assignedTechName,
+            agreed_price: agreedPrice,
+            fecha: new Date(order.created_at).toLocaleDateString('es-MX'),
+            lugar: order.property?.name || order.property?.property_name || 'Lugar no especificado',
+            zona: coloniaTexto,
+            colonia: coloniaTexto,
+            calle: order.property?.address || 'Dirección no especificada',
+            descripcion: limpiarDescripcion(order.description),
+            foto: fotos[0] || null,
+            fotos: fotos,
+            cotizaciones: groupedQuotes.length,
+            cotizaciones_list: groupedQuotes,
+            cliente: displayOwner,
+            is_mine: true,
+            scheduled_at: order.scheduled_at,
+            hasNewTechMessage,
+            lastTechMsg,
+            // Atributos de calendario
+            calendarDate: eventDate,
+            dateKey: eventDate.toISOString().slice(0, 10),
+            calendarTime: timeFormatted,
+            statusType,
+            statusLabel
+          };
+        });
+
+        setNetworkJobs(jobs);
+
+        // Si tenemos un trabajo abierto en el modal de cotizaciones, actualizarlo en vivo
+        if (selectedJobForQuotes) {
+          const updated = jobs.find(j => j.id === selectedJobForQuotes.id);
+          if (updated) {
+            setSelectedJobForQuotes(updated);
+            if (activeChatQuote) {
+              const updatedActiveQuote = updated.cotizaciones_list.find(q => (q.technician_id || q.technician?.id) === (activeChatQuote.technician_id || activeChatQuote.technician?.id));
+              if (updatedActiveQuote) {
+                setActiveChatQuote(updatedActiveQuote);
+              }
+            }
+          }
         }
-
-        const techName = acceptedQuote?.technician?.first_name
-          ? `${acceptedQuote.technician.first_name} ${acceptedQuote.technician.last_name || ''}`.trim()
-          : (acceptedQuote?.technician?.name || order.technician?.name || 'Técnico de la Red');
-
-        return {
-          id: order.id,
-          title: order.type ? `${order.type}${order.equipment ? ' - ' + order.equipment : ''}` : 'Servicio Solicitado',
-          equipment: order.equipment || 'General',
-          description: order.description || 'Sin descripción adicional',
-          property: order.property?.name || order.colonia_cercana || order.zona || 'Mi Propiedad',
-          address: order.property?.address || order.colonia_cercana || 'Mérida, Yucatán',
-          date: eventDate,
-          dateKey: eventDate.toISOString().slice(0, 10), // 'YYYY-MM-DD'
-          time: timeFormatted,
-          statusType,
-          statusLabel,
-          techName,
-          techPhone: acceptedQuote?.technician?.phone || order.technician?.phone || 'No disponible',
-          price: acceptedQuote?.price ? `$${acceptedQuote.price} MXN` : 'Por cotizar',
-          rawOrder: order,
-          evidencePhoto: order.evidence_path || order.property?.facade_photo_path || null
-        };
-      });
-
-      // Si no tiene citas registradas aún, creamos un par de eventos demostrativos para que la experiencia sea visual e interactiva
-      if (parsedEvents.length === 0) {
-        const today = new Date();
-        const demoDate1 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 10, 30);
-        const demoDate2 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3, 16, 0);
-        const demoDate3 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 5, 11, 0);
-
-        parsedEvents.push(
-          {
-            id: 'demo-1',
-            title: 'Mantenimiento Preventivo Clima',
-            equipment: 'Minisplit Inverter 18k BTU',
-            description: 'Limpieza de serpentín, turbina y revisión de presiones de gas refrigerante.',
-            property: 'Casa Principal (Montebello)',
-            address: 'Calle 10 #120 x 23 y 25, Montebello',
-            date: demoDate1,
-            dateKey: demoDate1.toISOString().slice(0, 10),
-            time: '10:30 AM',
-            statusType: 'confirmed',
-            statusLabel: 'Visita Confirmada',
-            techName: 'Ing. Carlos Dzib (Técnico HVAC)',
-            techPhone: '999-123-4567',
-            price: '$650 MXN',
-            evidencePhoto: null
-          },
-          {
-            id: 'demo-2',
-            title: 'Revisión Filtración de Agua',
-            equipment: 'Tubería Principal Baño Máster',
-            description: 'Detección de fuga en conexión de agua caliente.',
-            property: 'Depto Altabrisa',
-            address: 'Av. República de Corea #200, Altabrisa',
-            date: demoDate2,
-            dateKey: demoDate2.toISOString().slice(0, 10),
-            time: '04:00 PM',
-            statusType: 'proposed',
-            statusLabel: 'Propuesta de Visita',
-            techName: 'Plomería Rodríguez',
-            techPhone: '999-987-6543',
-            price: '$450 MXN',
-            evidencePhoto: null
-          },
-          {
-            id: 'demo-3',
-            title: 'Instalación de Lámparas Led',
-            equipment: 'Iluminación Terraza',
-            description: 'Colocación de 4 arbotantes exteriores de alta eficiencia.',
-            property: 'Casa Principal (Montebello)',
-            address: 'Calle 10 #120 x 23 y 25, Montebello',
-            date: demoDate3,
-            dateKey: demoDate3.toISOString().slice(0, 10),
-            time: '11:00 AM',
-            statusType: 'network',
-            statusLabel: 'En Red / Cotizando',
-            techName: 'Por asignar',
-            techPhone: 'Pendiente',
-            price: '$350 MXN',
-            evidencePhoto: null
-          }
-        );
       }
-
-      setJobsData(parsedEvents);
-    } catch (err) {
-      console.error('Error fetching client calendar jobs:', err);
+    } catch (e) {
+      console.error("Error fetching jobs in modal calendar", e);
     } finally {
       setLoading(false);
     }
@@ -216,69 +324,213 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
-      fetchClientJobs();
+      fetchJobs();
+      const interval = setInterval(fetchJobs, 4000);
+      return () => clearInterval(interval);
     }
   }, [isOpen]);
 
-  // Filtrado de eventos por búsqueda y categoría
+  // Polling de alta frecuencia para chat en vivo
+  useEffect(() => {
+    if (!showQuotesModal || !activeChatQuote?.id) return;
+
+    const pollLiveChat = async () => {
+      try {
+        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${activeChatQuote.id}/chat`, { headers });
+        if (res.data?.success && res.data.chat_history) {
+          setActiveChatQuote(prev => {
+            if (!prev) return prev;
+            if (prev.chat_history?.length !== res.data.chat_history.length) {
+              return { ...prev, chat_history: res.data.chat_history };
+            }
+            return prev;
+          });
+        }
+      } catch (e) {}
+    };
+
+    const chatInterval = setInterval(pollLiveChat, 1500);
+    return () => clearInterval(chatInterval);
+  }, [showQuotesModal, activeChatQuote?.id]);
+
+  useEffect(() => {
+    if (activeChatQuote) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [activeChatQuote?.chat_history]);
+
+  // Acciones sobre el trabajo / cotización
+  const handleOpenQuotesModal = (job) => {
+    setSelectedJobForQuotes(job);
+    setActivePhoto(job.fotos?.[0] || job.foto || null);
+    setActiveChatQuote(null);
+    setShowQuotesModal(true);
+  };
+
+  const handleSendClientChat = async (e) => {
+    if (e) e.preventDefault();
+    if (!clientChatInput.trim() || sendingClientChat || !activeChatQuote) return;
+
+    const textToSend = clientChatInput.trim();
+    setClientChatInput('');
+    setSendingClientChat(true);
+
+    const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user.name || 'Tú (Cliente)')) : 'Tú (Cliente)';
+    const optimisticMessage = {
+      sender_id: user?.id,
+      sender_name: userFullName,
+      sender_role: 'Cliente',
+      message: textToSend,
+      created_at: new Date().toISOString()
+    };
+
+    setActiveChatQuote(prev => prev ? { ...prev, chat_history: [...(prev.chat_history || []), optimisticMessage] } : prev);
+
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/network-quotes/${activeChatQuote.id}/chat`,
+        { message: textToSend },
+        { headers }
+      );
+      if (res.data?.chat_history) {
+        setActiveChatQuote(prev => prev ? { ...prev, chat_history: res.data.chat_history } : prev);
+      }
+    } catch (err) {
+      console.error("Error enviando mensaje", err);
+      alert("No se pudo enviar el mensaje. Intenta de nuevo.");
+    } finally {
+      setSendingClientChat(false);
+    }
+  };
+
+  const handleResponderVisita = async (action) => {
+    if (!selectedJobForQuotes?.id) return;
+    let msg = '';
+    if (action === 'reschedule') {
+      msg = prompt("Escribe una breve nota sobre qué horario te queda mejor:");
+      if (msg === null) return;
+    }
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${selectedJobForQuotes.id}/responder-visita-cliente`,
+        { action, message: msg },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        alert("✅ " + res.data.message);
+        fetchJobs();
+      }
+    } catch (e) {
+      console.error("Error respondiendo visita", e);
+      alert("Hubo un error al responder.");
+    }
+  };
+
+  const handleAcceptQuote = async (quote) => {
+    const techName = quote.technicianName || 'este técnico';
+    if (!window.confirm(`¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
+      return;
+    }
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quote.id}/accept`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        alert("🎉 " + res.data.message);
+        setShowQuotesModal(false);
+        setActiveChatQuote(null);
+        fetchJobs();
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Hubo un error al aceptar la cotización.");
+    }
+  };
+
+  const handleRejectQuote = async (quoteId) => {
+    if (!window.confirm("¿Estás seguro de que deseas rechazar esta cotización?")) return;
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quoteId}/reject`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        alert("Cotización rechazada.");
+        fetchJobs();
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Hubo un error al rechazar la cotización.");
+    }
+  };
+
+  const handleDeleteJob = async (jobId) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar y cancelar esta publicación de la Red?")) return;
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const res = await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${jobId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data?.success) {
+        alert("✅ Publicación eliminada con éxito.");
+        setShowQuotesModal(false);
+        setActiveChatQuote(null);
+        fetchJobs();
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error al eliminar la publicación.");
+    }
+  };
+
+  // Filtrado de eventos para el calendario
   const filteredEvents = useMemo(() => {
-    return jobsData.filter(event => {
-      const matchFilter = selectedFilter === 'all' || event.statusType === selectedFilter;
-      const matchSearch = searchQuery.trim() === '' || 
-        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.property.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.techName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.equipment.toLowerCase().includes(searchQuery.toLowerCase());
+    return networkJobs.filter(job => {
+      const matchFilter = selectedFilter === 'all' || job.statusType === selectedFilter;
+      const matchSearch = searchQuery.trim() === '' ||
+        job.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.zona.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.lugar.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (job.assigned_tech_name && job.assigned_tech_name.toLowerCase().includes(searchQuery.toLowerCase()));
 
       return matchFilter && matchSearch;
     });
-  }, [jobsData, selectedFilter, searchQuery]);
+  }, [networkJobs, selectedFilter, searchQuery]);
 
-  // Navegación de Fechas
-  const handlePrev = () => {
-    if (currentView === 'month') {
-      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-    } else {
-      const newD = new Date(currentDate);
-      newD.setDate(newD.getDate() - 1);
-      setCurrentDate(newD);
-    }
-  };
+  // Contadores para filtros
+  const countConfirmed = networkJobs.filter(j => j.statusType === 'confirmed').length;
+  const countProposed = networkJobs.filter(j => j.statusType === 'proposed').length;
+  const countNetwork = networkJobs.filter(j => j.statusType === 'network').length;
 
-  const handleNext = () => {
-    if (currentView === 'month') {
-      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-    } else {
-      const newD = new Date(currentDate);
-      newD.setDate(newD.getDate() + 1);
-      setCurrentDate(newD);
-    }
-  };
+  // Navegación de mes
+  const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  const handleToday = () => setCurrentDate(new Date());
 
-  const handleToday = () => {
-    setCurrentDate(new Date());
-  };
-
-  // Generación de celdas del Mes
+  // Matriz de días del mes
   const monthMatrix = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0: Dom, 1: Lun...
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
-
     const todayStr = new Date().toISOString().slice(0, 10);
     const cells = [];
 
-    // Días del mes anterior para completar la primera semana
+    // Días del mes anterior
     for (let i = firstDayOfMonth - 1; i >= 0; i--) {
       const dayNum = daysInPrevMonth - i;
       const prevDate = new Date(year, month - 1, dayNum);
       const dateKey = prevDate.toISOString().slice(0, 10);
       cells.push({
         dayNumber: dayNum,
-        date: prevDate,
         dateKey,
         isCurrentMonth: false,
         isToday: dateKey === todayStr,
@@ -292,7 +544,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
       const dateKey = thisDate.toISOString().slice(0, 10);
       cells.push({
         dayNumber: dayNum,
-        date: thisDate,
         dateKey,
         isCurrentMonth: true,
         isToday: dateKey === todayStr,
@@ -300,14 +551,13 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
       });
     }
 
-    // Días del siguiente mes para completar las 35 o 42 celdas del grid
+    // Días del mes siguiente
     const remaining = (7 - (cells.length % 7)) % 7;
     for (let i = 1; i <= remaining; i++) {
       const nextDate = new Date(year, month + 1, i);
       const dateKey = nextDate.toISOString().slice(0, 10);
       cells.push({
         dayNumber: i,
-        date: nextDate,
         dateKey,
         isCurrentMonth: false,
         isToday: dateKey === todayStr,
@@ -318,14 +568,14 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     return cells;
   }, [currentDate, filteredEvents]);
 
-  // Agrupar eventos para la vista de Agenda
+  // Agrupar para vista de Agenda
   const agendaGroupedEvents = useMemo(() => {
-    const sorted = [...filteredEvents].sort((a, b) => a.date - b.date);
+    const sorted = [...filteredEvents].sort((a, b) => a.calendarDate - b.calendarDate);
     const groups = {};
     sorted.forEach(ev => {
       if (!groups[ev.dateKey]) {
         groups[ev.dateKey] = {
-          dateStr: ev.date.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+          dateStr: ev.calendarDate.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
           items: []
         };
       }
@@ -333,11 +583,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     });
     return Object.values(groups);
   }, [filteredEvents]);
-
-  const handleOpenDetailModal = (event) => {
-    setSelectedEvent(event);
-    setDetailModalOpen(true);
-  };
 
   if (!isOpen) return null;
 
@@ -347,11 +592,11 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
         className="modal-calendario-window" 
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── ENCABEZADO DEL MODAL ── */}
+        {/* ── ENCABEZADO DEL MODAL DE CALENDARIO ── */}
         <div className="modal-cal-topbar">
           <div className="modal-cal-title-wrapper">
             <div className="modal-cal-icon-circle">
-              <CalendarIcon size={22} color="#FFFFFF" />
+              <CalendarIcon size={24} color="#FFFFFF" />
             </div>
             <div>
               <h2 className="modal-cal-title">
@@ -363,38 +608,39 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button 
               className="btn-modal-quick-new"
-              onClick={() => {
-                onClose();
-                navigate('/red-autonomos');
-              }}
+              onClick={() => setShowNewServiceModal(true)}
             >
-              <PlusCircle size={17} />
+              <PlusCircle size={18} />
               <span>Publicar Servicio</span>
             </button>
-            <button className="btn-modal-close-window" onClick={onClose} title="Cerrar (Esc)">
+            <button 
+              className="btn-modal-close-window" 
+              onClick={onClose} 
+              title="Cerrar ventana"
+            >
               <X size={20} />
             </button>
           </div>
         </div>
 
-        {/* ── CUERPO DEL MODAL CON SCHEDULER ── */}
+        {/* ── CUERPO PRINCIPAL DEL SCHEDULER ── */}
         <div className="modal-cal-content-body">
-          {/* ── TOOLBAR PRINCIPAL (Estilo Telerik KendoReact) ── */}
+          
+          {/* Toolbar del Calendario */}
           <div className="scheduler-toolbar-card">
-            {/* Navegación y Fecha */}
             <div className="cal-nav-group">
               <button className="btn-cal-today" onClick={handleToday}>
                 Hoy
               </button>
 
               <div className="cal-arrows">
-                <button className="btn-cal-arrow" onClick={handlePrev} title="Mes anterior">
+                <button className="btn-cal-arrow" onClick={handlePrevMonth} title="Mes anterior">
                   <ChevronLeft size={20} />
                 </button>
-                <button className="btn-cal-arrow" onClick={handleNext} title="Mes siguiente">
+                <button className="btn-cal-arrow" onClick={handleNextMonth} title="Mes siguiente">
                   <ChevronRight size={20} />
                 </button>
               </div>
@@ -405,7 +651,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
               </h3>
             </div>
 
-            {/* Controles Derecha: Buscador & Switcher de Vistas */}
             <div className="cal-controls-right">
               <div className="cal-search-box">
                 <Search size={16} className="cal-search-icon" />
@@ -442,48 +687,48 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* ── BARRA DE LEYENDAS Y FILTROS RÁPIDOS ── */}
+          {/* Barra de Filtros y Leyenda */}
           <div className="scheduler-legend-bar">
             <span style={{ color: '#0f172a', fontWeight: 800 }}>Filtrar:</span>
             <button 
               className={`legend-item ${selectedFilter === 'all' ? 'active' : ''}`}
               onClick={() => setSelectedFilter('all')}
             >
-              Todos ({jobsData.length})
+              Todos ({networkJobs.length})
             </button>
             <button 
               className={`legend-item ${selectedFilter === 'confirmed' ? 'active' : ''}`}
               onClick={() => setSelectedFilter(selectedFilter === 'confirmed' ? 'all' : 'confirmed')}
             >
               <span className="legend-dot dot-confirmed"></span>
-              <span>Visitas Confirmadas</span>
+              <span>Visitas Confirmadas {countConfirmed > 0 && `(${countConfirmed})`}</span>
             </button>
             <button 
               className={`legend-item ${selectedFilter === 'proposed' ? 'active' : ''}`}
               onClick={() => setSelectedFilter(selectedFilter === 'proposed' ? 'all' : 'proposed')}
             >
               <span className="legend-dot dot-proposed"></span>
-              <span>Horarios Propuestos</span>
+              <span>Horarios Propuestos {countProposed > 0 && `(${countProposed})`}</span>
             </button>
             <button 
               className={`legend-item ${selectedFilter === 'network' ? 'active' : ''}`}
               onClick={() => setSelectedFilter(selectedFilter === 'network' ? 'all' : 'network')}
             >
               <span className="legend-dot dot-network"></span>
-              <span>En Red / Cotizando</span>
+              <span>En Red / Cotizando {countNetwork > 0 && `(${countNetwork})`}</span>
             </button>
           </div>
 
-          {/* ── CONTENIDO: GRID MENSUAL / AGENDA ── */}
+          {/* Cuadrícula del Calendario / Agenda */}
           <div className="scheduler-canvas-card">
             {loading ? (
               <div className="cal-loading-container">
                 <div className="cal-spinner"></div>
-                <p style={{ fontWeight: 700 }}>Cargando tu calendario de citas...</p>
+                <p style={{ fontWeight: 700 }}>Cargando calendario y citas...</p>
               </div>
             ) : currentView === 'month' ? (
               <div className="cal-month-grid">
-                {/* Encabezados de Días (Domingo a Sábado) */}
+                {/* Encabezados de Días */}
                 <div className="cal-month-header-row">
                   {DAY_NAMES.map((name, index) => (
                     <div key={index} className="cal-header-cell">
@@ -492,7 +737,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                   ))}
                 </div>
 
-                {/* Días del Mes */}
+                {/* Celdas del Mes */}
                 <div className="cal-month-days-grid">
                   {monthMatrix.map((cell, idx) => (
                     <div 
@@ -508,23 +753,23 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                         )}
                       </div>
 
-                      {/* Lista de Chips / Trabajos del Día */}
+                      {/* Lista de Trabajos en este Día */}
                       <div className="cal-events-list">
-                        {cell.events.map((event) => (
+                        {cell.events.map((job) => (
                           <div 
-                            key={event.id}
-                            className={`cal-event-chip status-${event.statusType}`}
-                            onClick={() => handleOpenDetailModal(event)}
-                            title={`${event.title} - ${event.time} (${event.statusLabel})`}
+                            key={job.id}
+                            className={`cal-event-chip status-${job.statusType}`}
+                            onClick={() => handleOpenQuotesModal(job)}
+                            title={`${job.titulo} - Clic para ver cotizaciones y detalles`}
                           >
                             <div className="chip-time-row">
                               <span className="chip-time-tag">
-                                <Clock size={11} /> {event.time}
+                                <Clock size={11} /> {job.calendarTime}
                               </span>
                             </div>
-                            <span className="chip-title">{event.title}</span>
+                            <span className="chip-title">{job.titulo}</span>
                             <span className="chip-tech">
-                              <User size={10} /> {event.techName}
+                              <User size={10} /> {job.assigned_tech_name || (job.cotizaciones > 0 ? `${job.cotizaciones} oferta(s)` : 'En espera')}
                             </span>
                           </div>
                         ))}
@@ -534,13 +779,13 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                 </div>
               </div>
             ) : (
-              /* ── VISTA DE AGENDA CRONOLÓGICA ── */
+              /* Vista de Agenda */
               <div className="cal-agenda-view">
                 {agendaGroupedEvents.length === 0 ? (
                   <div className="cal-empty-state">
                     <CalendarDays size={48} color="#cbd5e1" />
                     <h4>No hay servicios en esta fecha</h4>
-                    <p>Publica un nuevo trabajo en la red para coordinar citas con los técnicos calificados.</p>
+                    <p>Publica una solicitud para que los técnicos puedan enviarte cotizaciones y coordinar citas.</p>
                   </div>
                 ) : (
                   agendaGroupedEvents.map((group, gIdx) => (
@@ -551,35 +796,31 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                       </div>
 
                       <div className="agenda-cards-grid">
-                        {group.items.map((event) => (
+                        {group.items.map((job) => (
                           <div 
-                            key={event.id}
-                            className={`agenda-item-card status-${event.statusType}`}
-                            onClick={() => handleOpenDetailModal(event)}
+                            key={job.id}
+                            className={`agenda-item-card status-${job.statusType}`}
+                            onClick={() => handleOpenQuotesModal(job)}
                           >
                             <div className="agenda-card-top">
-                              <h4 className="agenda-card-title">{event.title}</h4>
-                              <span className={`agenda-status-pill pill-${event.statusType}`}>
-                                {event.statusLabel}
+                              <h4 className="agenda-card-title">{job.titulo}</h4>
+                              <span className={`agenda-status-pill pill-${job.statusType}`}>
+                                {job.statusLabel}
                               </span>
                             </div>
 
                             <div className="agenda-card-info">
                               <div className="agenda-info-row">
                                 <Clock size={14} color="#ff6600" />
-                                <strong>Horario:</strong> {event.time}
+                                <strong>Horario:</strong> {job.calendarTime}
                               </div>
                               <div className="agenda-info-row">
-                                <Building size={14} color="#64748b" />
-                                <span>{event.property}</span>
+                                <MapPin size={14} color="#64748b" />
+                                <span>{job.zona}</span>
                               </div>
                               <div className="agenda-info-row">
                                 <User size={14} color="#64748b" />
-                                <span>{event.techName}</span>
-                              </div>
-                              <div className="agenda-info-row">
-                                <DollarSign size={14} color="#10b981" />
-                                <span style={{ color: '#059669', fontWeight: 700 }}>{event.price}</span>
+                                <span>{job.assigned_tech_name || (job.cotizaciones > 0 ? `${job.cotizaciones} oferta(s)` : 'Cotizando')}</span>
                               </div>
                             </div>
 
@@ -589,10 +830,10 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                                 style={{ padding: '6px 14px', fontSize: '0.8rem' }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleOpenDetailModal(event);
+                                  handleOpenQuotesModal(job);
                                 }}
                               >
-                                Ver Detalle
+                                Ver Cotizaciones ({job.cotizaciones})
                               </button>
                             </div>
                           </div>
@@ -606,111 +847,696 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* ── SUB-MODAL DETALLE DE TRABAJO ESPECÍFICO ── */}
-        {detailModalOpen && selectedEvent && (
+        {/* ─── MODAL RECICLADO: DETALLE DE PUBLICACIÓN Y COTIZACIONES (EXACTAMENTE IGUAL A VISTA RED) ─── */}
+        {showQuotesModal && selectedJobForQuotes && (
           <div 
-            className="cal-modal-backdrop" 
-            style={{ zIndex: 100000, background: 'rgba(0,0,0,0.6)' }}
-            onClick={() => setDetailModalOpen(false)}
+            className="mercado-modal-overlay" 
+            style={{ zIndex: 100000 }}
+            onClick={(e) => e.target === e.currentTarget && setShowQuotesModal(false)}
           >
-            <div className="cal-modal-box" onClick={(e) => e.stopPropagation()}>
-              <div className="cal-modal-header">
-                <h3>
-                  <Wrench size={22} color="#FF6600" />
-                  Detalle del Servicio y Visita
-                </h3>
-                <button className="btn-close-modal" onClick={() => setDetailModalOpen(false)}>
-                  <X size={18} />
-                </button>
+            <div className="mercado-premium-modal" style={{ maxWidth: '1080px' }}>
+              <div className="mercado-premium-header">
+                <h2>📋 Detalle de Publicación y Cotizaciones</h2>
+                <span className="mercado-modal-close" onClick={() => setShowQuotesModal(false)}>×</span>
               </div>
 
-              <div className="cal-modal-body">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                  <span className={`agenda-status-pill pill-${selectedEvent.statusType}`} style={{ fontSize: '0.85rem', padding: '6px 14px' }}>
-                    {selectedEvent.statusLabel}
-                  </span>
-                  <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 600 }}>
-                    ID Trabajo: #{selectedEvent.id}
-                  </span>
-                </div>
+              <div className="mercado-premium-body">
+                {/* Panel Izquierdo: Galería de Fotos e Información del Problema */}
+                <div className="mercado-premium-details" style={{ flex: '1.05' }}>
+                  {activePhoto ? (
+                    <div className="mercado-photo-gallery">
+                      <div
+                        className="mercado-premium-image-wrapper"
+                        onClick={() => setIsPhotoZoomed(true)}
+                        title="Clic para ampliar imagen"
+                      >
+                        <img src={activePhoto} alt="Evidencia" className="mercado-premium-image" />
+                        <div className="mercado-image-zoom-badge">
+                          <Maximize2 size={12} /> Clic para ampliar foto
+                        </div>
+                      </div>
 
-                <div className="modal-section-card">
-                  <h4><Wrench size={16} /> {selectedEvent.title}</h4>
-                  <p style={{ margin: 0, color: '#334155', fontSize: '0.92rem' }}>
-                    {selectedEvent.description}
-                  </p>
-                </div>
-
-                <div className="modal-info-grid">
-                  <div className="modal-section-card">
-                    <h4><Clock size={16} /> Horario y Fecha</h4>
-                    <p style={{ margin: 0, fontWeight: 700, color: '#0f172a' }}>
-                      {selectedEvent.date.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                    </p>
-                    <span style={{ color: '#ff6600', fontWeight: 800, fontSize: '0.95rem' }}>
-                      ⏰ {selectedEvent.time}
-                    </span>
-                  </div>
-
-                  <div className="modal-section-card">
-                    <h4><MapPin size={16} /> Ubicación</h4>
-                    <p style={{ margin: 0, fontWeight: 700, color: '#0f172a' }}>
-                      {selectedEvent.property}
-                    </p>
-                    <span style={{ color: '#64748b', fontSize: '0.82rem' }}>
-                      {selectedEvent.address}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="modal-section-card">
-                  <h4><User size={16} /> Técnico Asignado / Contacto</h4>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                    <div>
-                      <strong style={{ fontSize: '0.95rem', color: '#0f172a', display: 'block' }}>{selectedEvent.techName}</strong>
-                      <span style={{ color: '#64748b', fontSize: '0.85rem' }}>📞 {selectedEvent.techPhone}</span>
+                      {selectedJobForQuotes.fotos && selectedJobForQuotes.fotos.length > 1 && (
+                        <div className="mercado-thumbnails-row">
+                          {selectedJobForQuotes.fotos.map((f, idx) => (
+                            <div
+                              key={idx}
+                              className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
+                              onClick={() => setActivePhoto(f)}
+                            >
+                              <img src={f} alt={`Evidencia ${idx + 1}`} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'block' }}>Presupuesto:</span>
-                      <strong style={{ color: '#059669', fontSize: '1.1rem' }}>{selectedEvent.price}</strong>
+                  ) : (
+                    <div className="mercado-no-photo-placeholder">
+                      <ImageIcon size={36} color="#94a3b8" />
+                      <span>Sin fotografías de evidencia</span>
+                    </div>
+                  )}
+
+                  <div className="mercado-premium-text">
+                    <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '10px 0' }}>
+                      {selectedJobForQuotes.titulo}
+                    </h3>
+                    <div className="mercado-premium-info-grid">
+                      <div className="mercado-info-item full-width" style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px 14px' }}>
+                        <MapPin size={18} color="#ea580c" style={{ marginTop: '2px', flexShrink: 0 }} />
+                        <div>
+                          <strong style={{ color: '#ea580c' }}>Zona / Área de Cobertura</strong>
+                          <span style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>{selectedJobForQuotes.zona}</span>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>
+                            📍 Dirección: {selectedJobForQuotes.calle}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mercado-info-item">
+                        <User size={14} className="mercado-icon-blue" />
+                        <div><strong>Publicado por</strong><span>{selectedJobForQuotes.cliente}</span></div>
+                      </div>
+                      <div className="mercado-info-item">
+                        <Clock size={14} className="mercado-icon-blue" />
+                        <div><strong>Fecha</strong><span>{selectedJobForQuotes.fecha}</span></div>
+                      </div>
+                      <div className="mercado-info-item full-width">
+                        <FileText size={14} className="mercado-icon-blue" />
+                        <div><strong>Problema</strong><span>{selectedJobForQuotes.descripcion || 'Sin descripción adicional'}</span></div>
+                      </div>
+
+                      {selectedJobForQuotes.scheduled_at && (() => {
+                        const sched = getJobScheduleStatus(selectedJobForQuotes, activeChatQuote);
+                        if (sched.isRescheduleRequested) {
+                          return (
+                            <div className="mercado-info-item full-width" style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Clock size={16} color="#ea580c" />
+                                <strong style={{ color: '#c2410c', fontSize: '13px' }}>⚠️ Solicitud de Re-coordinación Enviada</strong>
+                              </div>
+                              <div style={{ fontSize: '12.5px', color: '#7c2d12' }}>
+                                Has solicitado acordar otro horario. Esperando que el técnico proponga una nueva fecha y hora.
+                              </div>
+                            </div>
+                          );
+                        }
+                        if (sched.isScheduleConfirmed) {
+                          return (
+                            <div className="mercado-info-item full-width" style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <CheckCircle size={16} color="#16a34a" />
+                                <strong style={{ color: '#166534', fontSize: '13px' }}>✅ Horario de Visita Confirmado</strong>
+                              </div>
+                              <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
+                                {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="mercado-info-item full-width" style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Clock size={16} color="#2563eb" />
+                              <strong style={{ color: '#1e40af', fontSize: '13px' }}>📅 Horario Propuesto por el Técnico</strong>
+                            </div>
+                            <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
+                              {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleResponderVisita('confirm')}
+                                style={{
+                                  flex: 1,
+                                  padding: '8px 12px',
+                                  background: '#16a34a',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  fontWeight: '800',
+                                  fontSize: '12px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ✓ Confirmar Horario
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleResponderVisita('reschedule')}
+                                style={{
+                                  flex: 1,
+                                  padding: '8px 12px',
+                                  background: '#ffffff',
+                                  color: '#ea580c',
+                                  border: '1.5px solid #fed7aa',
+                                  borderRadius: '8px',
+                                  fontWeight: '800',
+                                  fontSize: '12px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                💬 Re-coordinar
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
 
-                {selectedEvent.evidencePhoto && (
-                  <div className="modal-section-card">
-                    <h4>📸 Evidencia de la Solicitud</h4>
-                    <img 
-                      src={selectedEvent.evidencePhoto} 
-                      alt="Evidencia" 
-                      style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', marginTop: '4px' }} 
-                    />
-                  </div>
+                {/* Panel Derecho: Lista de Cotizaciones O Chat Directo Embebido */}
+                <div className="mercado-premium-form" style={{ background: '#ffffff', overflowY: 'auto', padding: 0, display: 'flex', flexDirection: 'column' }}>
+                  
+                  {/* Vista 1: Lista de Cotizaciones */}
+                  {!activeChatQuote && (
+                    <div style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
+                      <div style={{ marginBottom: '16px' }}>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          📋 Cotizaciones de Técnicos
+                          <span style={{ fontSize: '12px', background: '#ff6600', color: '#ffffff', padding: '2px 8px', borderRadius: '12px' }}>
+                            {selectedJobForQuotes.cotizaciones_list?.length || 0}
+                          </span>
+                        </h4>
+                        <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
+                          Revisa las propuestas de los técnicos. Puedes chatear con ellos o coordinar los detalles del servicio.
+                        </p>
+                      </div>
+
+                      {/* Banner de Horario Propuesto */}
+                      {selectedJobForQuotes.scheduled_at && (() => {
+                        const sched = getJobScheduleStatus(selectedJobForQuotes);
+                        if (sched.isRescheduleRequested) {
+                          return (
+                            <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#fff7ed', borderRadius: '12px', border: '1.5px solid #fed7aa', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '18px' }}>⚠️</span>
+                              <div>
+                                <strong style={{ fontSize: '12px', color: '#c2410c', display: 'block' }}>Solicitud de Re-coordinación Enviada:</strong>
+                                <span style={{ fontSize: '12.5px', color: '#7c2d12' }}>
+                                  Esperando que el técnico proponga un nuevo horario.
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        if (sched.isScheduleConfirmed) {
+                          return (
+                            <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#f0fdf4', borderRadius: '12px', border: '1.5px solid #86efac', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '18px' }}>✅</span>
+                              <div>
+                                <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Confirmado:</strong>
+                                <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
+                                  {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#eff6ff', borderRadius: '12px', border: '1.5px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '18px' }}>📅</span>
+                              <div>
+                                <strong style={{ fontSize: '12px', color: '#1e40af', display: 'block' }}>Horario de Visita Propuesto:</strong>
+                                <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
+                                  {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
+                                </span>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleResponderVisita('confirm')}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: '#16a34a',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  fontWeight: '800',
+                                  fontSize: '11.5px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ✓ Confirmar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleResponderVisita('reschedule')}
+                                style={{
+                                  padding: '6px 10px',
+                                  background: '#ffffff',
+                                  color: '#ea580c',
+                                  border: '1px solid #fed7aa',
+                                  borderRadius: '6px',
+                                  fontWeight: '700',
+                                  fontSize: '11.5px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Re-coordinar
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {(!selectedJobForQuotes.cotizaciones_list || selectedJobForQuotes.cotizaciones_list.length === 0) ? (
+                        <div style={{ textAlign: 'center', color: '#64748b', padding: '40px 20px', background: '#fffaf5', borderRadius: '16px', border: '2px dashed #fed7aa', margin: '20px 0' }}>
+                          <div style={{ fontSize: '36px', marginBottom: '10px' }}>⏳</div>
+                          <p style={{ margin: '0 0 6px 0', fontWeight: '700', fontSize: '15px', color: '#0f172a' }}>Aún no hay cotizaciones</p>
+                          <span style={{ fontSize: '13px', color: '#94a3b8' }}>Los técnicos de la red te notificarán en cuanto envíen su propuesta.</span>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                          {selectedJobForQuotes.cotizaciones_list.map((quote) => {
+                            const isAcceptedQuote = Boolean(
+                              quote.status === 'accepted' || 
+                              quote.is_assigned || 
+                              (selectedJobForQuotes.is_accepted && Number(selectedJobForQuotes.tecnico_id) === Number(quote.technician_id || quote.technician?.id))
+                            );
+                            return (
+                              <div 
+                                key={quote.id} 
+                                className="red-quote-card"
+                                style={isAcceptedQuote ? { border: '2px solid #86efac', background: '#f0fdf4' } : {}}
+                              >
+                                <div className="red-quote-header">
+                                  <div className="red-quote-tech">
+                                    <div 
+                                      className="red-quote-avatar" 
+                                      onClick={() => {
+                                        setSelectedTechnicianProfile(quote.technician);
+                                        setShowTechModal(true);
+                                      }}
+                                      style={isAcceptedQuote ? { background: 'linear-gradient(135deg, #16a34a, #15803d)' } : {}}
+                                      title="Ver perfil completo del técnico"
+                                    >
+                                      {quote.technician?.first_name?.charAt(0) || 'T'}
+                                    </div>
+                                    <div>
+                                      <h4 
+                                        style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#0f172a', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                        onClick={() => {
+                                          setSelectedTechnicianProfile(quote.technician);
+                                          setShowTechModal(true);
+                                        }}
+                                      >
+                                        {quote.technicianName}
+                                        {isAcceptedQuote && (
+                                          <span style={{ fontSize: '11px', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '10px', border: '1px solid #86efac' }}>
+                                            ✓ Asignado
+                                          </span>
+                                        )}
+                                      </h4>
+                                      <span className="red-quote-role">Técnico Verificado</span>
+                                    </div>
+                                  </div>
+                                  <div className="red-quote-price" style={{ color: isAcceptedQuote ? '#16a34a' : '#ea580c' }}>
+                                    {quote.price > 0 ? `$${parseFloat(quote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Iniciado'}
+                                  </div>
+                                </div>
+
+                                {quote.message && (
+                                  <div className="red-quote-message">
+                                    "{quote.message}"
+                                  </div>
+                                )}
+
+                                {quote.hasNewTechMessage && (
+                                  <div className="red-quote-msg-alert">
+                                    <span className="red-msg-dot-pulse" />
+                                    <div>
+                                      <strong>Mensaje de {quote.technicianName}:</strong>
+                                      <div>"{quote.displayAlertMsg}"</div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '12px' }}>
+                                  📅 Última interacción: {new Date(quote.created_at).toLocaleString('es-MX')}
+                                </div>
+
+                                <div className="red-quote-actions">
+                                  {isAcceptedQuote ? (
+                                    <div style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      padding: '6px 12px',
+                                      background: '#dcfce7',
+                                      border: '1.5px solid #86efac',
+                                      borderRadius: '8px',
+                                      color: '#15803d',
+                                      fontWeight: '800',
+                                      fontSize: '12px'
+                                    }}>
+                                      <CheckCircle size={14} /> Oferta Aceptada
+                                    </div>
+                                  ) : quote.status === 'rejected' ? (
+                                    <div style={{ color: '#dc2626', fontWeight: '800', fontSize: '13px', padding: '6px 0' }}>
+                                      ❌ Oferta Rechazada
+                                    </div>
+                                  ) : !selectedJobForQuotes.is_accepted ? (
+                                    <button 
+                                      className="red-btn-reject" 
+                                      onClick={() => handleRejectQuote(quote.id)}
+                                    >
+                                      Rechazar
+                                    </button>
+                                  ) : null}
+
+                                  <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button 
+                                      type="button"
+                                      className="red-btn-contact" 
+                                      style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '6px',
+                                        background: quote.hasNewTechMessage ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : (isAcceptedQuote ? 'linear-gradient(135deg, #16a34a, #15803d)' : 'linear-gradient(135deg, #0284c7, #0369a1)'),
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        fontWeight: '800'
+                                      }}
+                                      onClick={() => setActiveChatQuote(quote)}
+                                    >
+                                      <MessageCircle size={15} /> 
+                                      <span>Chat ({quote.chat_history?.length || 0})</span>
+                                    </button>
+
+                                    {!isAcceptedQuote && !selectedJobForQuotes.is_accepted && quote.status !== 'rejected' && quote.price > 0 && (
+                                      <button 
+                                        type="button"
+                                        className="red-btn-accept" 
+                                        onClick={() => handleAcceptQuote(quote)}
+                                      >
+                                        ✓ Aceptar Oferta
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Vista 2: Chat Directo Embebido con el Técnico */}
+                  {activeChatQuote && (
+                    <div className="red-embedded-chat-wrap">
+                      <div className="red-chat-top-header">
+                        <button className="back-btn" onClick={() => setActiveChatQuote(null)}>
+                          <ChevronLeft size={16} /> Ver todas las ofertas
+                        </button>
+                        <div style={{ textAlign: 'right' }}>
+                          <strong style={{ fontSize: '13px', color: '#0f172a', display: 'block' }}>
+                            {activeChatQuote.technicianName}
+                          </strong>
+                          <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '800' }}>
+                            {activeChatQuote.price > 0 ? `Oferta: $${parseFloat(activeChatQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Activo'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Alerta de Mensaje */}
+                      {activeChatQuote.hasNewTechMessage && (
+                        <div className="mercado-chat-alert-banner">
+                          <div className="mercado-chat-alert-icon">🔔</div>
+                          <div className="mercado-chat-alert-text">
+                            <strong>El Técnico te envió un mensaje:</strong>
+                            <span>"{activeChatQuote.displayAlertMsg || activeChatQuote.lastMsg?.message || activeChatQuote.message}"</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Banner de Horario en el Chat */}
+                      {selectedJobForQuotes.scheduled_at && (() => {
+                        const sched = getJobScheduleStatus(selectedJobForQuotes, activeChatQuote);
+                        if (sched.isRescheduleRequested) {
+                          return (
+                            <div style={{ padding: '10px 16px', background: '#fff7ed', borderBottom: '1px solid #fed7aa', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '15px' }}>⚠️</span>
+                              <div>
+                                <strong style={{ fontSize: '12px', color: '#c2410c', display: 'block' }}>Solicitud de Re-coordinación Enviada</strong>
+                                <span style={{ fontSize: '12px', color: '#7c2d12' }}>Esperando que el técnico proponga un nuevo horario.</span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        if (sched.isScheduleConfirmed) {
+                          return (
+                            <div style={{ padding: '10px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '15px' }}>✅</span>
+                                <div>
+                                  <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Confirmado</strong>
+                                  <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>{new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div style={{ padding: '10px 16px', background: '#eff6ff', borderBottom: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '15px' }}>📅</span>
+                              <div>
+                                <strong style={{ fontSize: '12px', color: '#1e40af', display: 'block' }}>Horario de Visita Propuesto:</strong>
+                                <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>
+                                  {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
+                                </span>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleResponderVisita('confirm')}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: '#16a34a',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  fontWeight: '800',
+                                  fontSize: '11.5px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ✓ Confirmar Horario
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleResponderVisita('reschedule')}
+                                style={{
+                                  padding: '6px 10px',
+                                  background: '#ffffff',
+                                  color: '#ea580c',
+                                  border: '1px solid #fed7aa',
+                                  borderRadius: '6px',
+                                  fontWeight: '700',
+                                  fontSize: '11.5px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Re-coordinar
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Historial de Mensajes del Chat */}
+                      <div className="mercado-chat-messages-area">
+                        {(!activeChatQuote.chat_history || activeChatQuote.chat_history.length === 0) ? (
+                          <div style={{ textAlign: 'center', color: '#94a3b8', margin: 'auto', padding: '20px' }}>
+                            <MessageCircle size={32} color="#cbd5e1" style={{ marginBottom: '8px' }} />
+                            <p style={{ margin: 0, fontSize: '13px' }}>Inicia la conversación con <strong>{activeChatQuote.technicianName}</strong> para coordinar tu servicio.</p>
+                          </div>
+                        ) : (
+                          activeChatQuote.chat_history.map((msg, index) => {
+                            const isMe = Number(msg.sender_id) === Number(user?.id) || msg.sender_role === 'Cliente';
+                            return (
+                              <div
+                                key={index}
+                                className={`mercado-chat-bubble-row ${isMe ? 'me' : 'other'}`}
+                              >
+                                <div className={`mercado-chat-bubble ${isMe ? 'bubble-me' : 'bubble-other'}`}>
+                                  <div className="bubble-sender">{msg.sender_name || (isMe ? 'Tú' : activeChatQuote.technicianName)}</div>
+                                  <div className="bubble-text">{msg.message}</div>
+                                  <div className="bubble-time">
+                                    {msg.created_at ? new Date(msg.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                        <div ref={chatEndRef} />
+                      </div>
+
+                      {/* Input del Chat */}
+                      <form onSubmit={handleSendClientChat} className="mercado-chat-input-bar">
+                        <input
+                          type="text"
+                          placeholder={`Escribe un mensaje a ${activeChatQuote.technicianName}...`}
+                          value={clientChatInput}
+                          onChange={(e) => setClientChatInput(e.target.value)}
+                          disabled={sendingClientChat}
+                        />
+                        <button
+                          type="submit"
+                          className="mercado-chat-send-btn"
+                          disabled={sendingClientChat || !clientChatInput.trim()}
+                        >
+                          <Send size={15} />
+                          <span>{sendingClientChat ? 'Enviando...' : 'Enviar'}</span>
+                        </button>
+                      </form>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+
+              {/* Footer del Modal */}
+              <div className="mercado-premium-footer" style={{ display: 'flex', justifyContent: selectedJobForQuotes?.is_mine ? 'space-between' : 'flex-end', alignItems: 'center', width: '100%', gap: '12px', flexWrap: 'wrap' }}>
+                {selectedJobForQuotes?.is_mine && (
+                  <button 
+                    type="button"
+                    className="mercado-btn-delete-publication" 
+                    onClick={() => handleDeleteJob(selectedJobForQuotes.id)}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.08)',
+                      color: '#dc2626',
+                      border: '1.5px solid #fca5a5',
+                      padding: '10px 18px',
+                      borderRadius: '10px',
+                      fontWeight: '800',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Trash2 size={16} /> Cancelar / Eliminar Publicación
+                  </button>
                 )}
-              </div>
 
-              <div className="cal-modal-footer">
-                <button 
-                  className="btn-modal-action secondary"
-                  onClick={() => setDetailModalOpen(false)}
-                >
+                <button className="mercado-btn-cancel" onClick={() => setShowQuotesModal(false)}>
                   Cerrar
-                </button>
-                <button 
-                  className="btn-modal-action primary"
-                  onClick={() => {
-                    setDetailModalOpen(false);
-                    onClose();
-                    navigate('/red-autonomos');
-                  }}
-                >
-                  <MessageSquare size={16} />
-                  Ir a Chat / Ver en Red
                 </button>
               </div>
             </div>
           </div>
         )}
+
+        {/* ─── MODAL PARA VISUALIZAR FOTO EN PANTALLA COMPLETA ─── */}
+        {isPhotoZoomed && activePhoto && (
+          <div 
+            className="mercado-modal-overlay" 
+            style={{ zIndex: 110000, background: 'rgba(0,0,0,0.92)' }} 
+            onClick={() => setIsPhotoZoomed(false)}
+          >
+            <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img 
+                src={activePhoto} 
+                alt="Zoom Evidencia" 
+                style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.8)' }} 
+              />
+              <button 
+                onClick={() => setIsPhotoZoomed(false)} 
+                style={{ position: 'absolute', top: '-15px', right: '-15px', background: '#ff6600', color: '#fff', border: 'none', borderRadius: '50%', width: '36px', height: '36px', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ─── MODAL DEL PERFIL DEL TÉCNICO ─── */}
+        {showTechModal && selectedTechnicianProfile && (
+          <div 
+            className="mercado-modal-overlay" 
+            style={{ zIndex: 105000 }}
+            onClick={(e) => e.target === e.currentTarget && setShowTechModal(false)}
+          >
+            <div className="mercado-premium-modal" style={{ maxWidth: '480px' }}>
+              <div className="mercado-premium-header">
+                <h2>👤 Perfil del Técnico</h2>
+                <span className="mercado-modal-close" onClick={() => setShowTechModal(false)}>×</span>
+              </div>
+              <div className="mercado-premium-body" style={{ flexDirection: 'column', padding: '24px', background: '#ffffff' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                  <div style={{ 
+                    width: '68px', 
+                    height: '68px', 
+                    borderRadius: '50%', 
+                    background: 'linear-gradient(135deg, #ff6600, #ea580c)', 
+                    color: 'white', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    fontSize: '26px', 
+                    fontWeight: '800',
+                    boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)'
+                  }}>
+                    {selectedTechnicianProfile.first_name?.charAt(0) || 'T'}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>
+                      {selectedTechnicianProfile.first_name} {selectedTechnicianProfile.last_name}
+                    </h3>
+                    <span className="red-quote-role" style={{ background: '#fff7ed', padding: '4px 10px', borderRadius: '20px', border: '1px solid #fed7aa' }}>
+                      Técnico Verificado
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '14px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ marginBottom: '10px', fontSize: '13px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Mail size={15} color="#ea580c" />
+                    <strong>Correo:</strong> {selectedTechnicianProfile.email || 'No disponible'}
+                  </div>
+                  <div style={{ marginBottom: '10px', fontSize: '13px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Phone size={15} color="#ea580c" />
+                    <strong>Teléfono:</strong> {selectedTechnicianProfile.phone_number || 'No disponible'}
+                  </div>
+                </div>
+
+                <h4 style={{ margin: '0 0 12px 0', color: '#0f172a', fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Award size={16} color="#ea580c" /> Especialidades Verificadas
+                </h4>
+                {selectedTechnicianProfile.specialties && selectedTechnicianProfile.specialties.length > 0 ? (
+                  <div className="red-quote-specialties" style={{ marginTop: 0 }}>
+                    {selectedTechnicianProfile.specialties.map(spec => (
+                      <span key={spec.id} className="red-specialty-badge">
+                        ✓ {spec.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: '#94a3b8', fontStyle: 'italic', margin: 0, fontSize: '13px' }}>No ha registrado especialidades adicionales.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── MODAL PARA PUBLICAR NUEVO SERVICIO DESDE EL CALENDARIO ─── */}
+        {showNewServiceModal && (
+          <ModalServicioAutonomo 
+            onClose={() => setShowNewServiceModal(false)}
+            onSuccess={() => {
+              setShowNewServiceModal(false);
+              fetchJobs();
+            }}
+          />
+        )}
+
       </div>
     </div>
   );

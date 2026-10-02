@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 import Header from '../../../components/Shared/Header';
+import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
+import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
+import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import '../../../styles/AgenteMarket/Cliente/CalendarioCliente.css';
 import {
   Calendar as CalendarIcon,
@@ -11,20 +13,20 @@ import {
   Clock,
   MapPin,
   User,
+  Mail,
   Phone,
-  DollarSign,
-  AlertCircle,
-  CheckCircle2,
   CalendarDays,
-  ListFilter,
   PlusCircle,
-  ExternalLink,
-  MessageSquare,
-  Building,
-  Wrench,
-  Search,
+  MessageCircle,
+  Maximize2,
+  Image as ImageIcon,
+  FileText,
   X,
-  Sparkles
+  Trash2,
+  Send,
+  CheckCircle,
+  Search,
+  Award
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -33,247 +35,427 @@ const MONTH_NAMES = [
 ];
 
 const DAY_NAMES = [
-  'Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'
+  'DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'
 ];
+
+const limpiarDescripcion = (rawDesc) => {
+  if (!rawDesc) return 'Sin descripción adicional';
+  let clean = rawDesc;
+  clean = clean.replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '');
+  clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*(otro|Otro|ninguno|Ninguno|n\/a|N\/A)\s*/gi, '');
+  clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*/gi, ' - Equipo: ');
+  return clean.trim() || rawDesc;
+};
 
 const CalendarioCliente = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [currentView, setCurrentView] = useState('month'); // 'month' | 'week' | 'day' | 'agenda'
-  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'confirmed' | 'proposed' | 'network' | 'progress'
+  const [currentView, setCurrentView] = useState('month');
+  const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [jobsData, setJobsData] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [networkJobs, setNetworkJobs] = useState([]);
 
-  // Cargar trabajos y citas del cliente desde la API
-  const fetchClientJobs = async () => {
+  // Estados del modal reciclado de cotizaciones
+  const [showQuotesModal, setShowQuotesModal] = useState(false);
+  const [selectedJobForQuotes, setSelectedJobForQuotes] = useState(null);
+  const [activePhoto, setActivePhoto] = useState(null);
+  const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
+  const [activeChatQuote, setActiveChatQuote] = useState(null);
+  const [selectedTechnicianProfile, setSelectedTechnicianProfile] = useState(null);
+  const [showTechModal, setShowTechModal] = useState(false);
+  const [showNewServiceModal, setShowNewServiceModal] = useState(false);
+
+  // Chat
+  const [clientChatInput, setClientChatInput] = useState('');
+  const [sendingClientChat, setSendingClientChat] = useState(false);
+  const chatEndRef = useRef(null);
+
+  const groupQuotesByTechnician = (quotesList, order) => {
+    const techMap = new Map();
+    quotesList.forEach(quote => {
+      const techId = quote.technician_id || quote.technician?.id;
+      if (!techId) return;
+
+      const techName = quote.technician?.first_name 
+        ? `${quote.technician.first_name} ${quote.technician.last_name || ''}`.trim()
+        : (quote.technician?.name || 'Técnico de la Red');
+
+      const isThisQuoteAccepted = Boolean(
+        quote.status === 'accepted' || 
+        (order && (order.status === 'Asignado' || order.status === 'En Progreso' || order.status === 'Terminado') && Number(order.tecnico_id) === Number(techId))
+      );
+
+      const existing = techMap.get(techId);
+      if (!existing) {
+        const msgs = quote.chat_history || [];
+        const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+        const hasNewTechMessage = Boolean(
+          (lastMsg && Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente') ||
+          (quote.message && quote.message.trim().length > 0)
+        );
+        const displayAlertMsg = lastMsg?.message || quote.message || '';
+
+        techMap.set(techId, {
+          ...quote,
+          status: isThisQuoteAccepted ? 'accepted' : quote.status,
+          is_assigned: isThisQuoteAccepted,
+          allQuotes: [quote],
+          lastMsg,
+          hasNewTechMessage,
+          displayAlertMsg,
+          technicianName: techName,
+        });
+      } else {
+        existing.allQuotes.push(quote);
+        if (isThisQuoteAccepted) {
+          existing.status = 'accepted';
+          existing.is_assigned = true;
+        }
+        if (quote.id > existing.id || (quote.price > 0 && existing.price == 0)) {
+          existing.id = quote.id;
+          if (quote.price > 0) existing.price = quote.price;
+          if (quote.message) existing.message = quote.message;
+          if (quote.status === 'accepted' || existing.is_assigned) {
+            existing.status = 'accepted';
+            existing.is_assigned = true;
+          } else if (existing.status !== 'accepted') {
+            existing.status = quote.status;
+          }
+          existing.created_at = quote.created_at;
+        }
+        if (quote.chat_history && (!existing.chat_history || quote.chat_history.length > existing.chat_history.length)) {
+          existing.chat_history = quote.chat_history;
+        }
+        const msgs = existing.chat_history || [];
+        const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+        existing.lastMsg = lastMsg;
+        existing.hasNewTechMessage = Boolean(
+          (lastMsg && Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente') ||
+          (existing.message && existing.message.trim().length > 0)
+        );
+        existing.displayAlertMsg = lastMsg?.message || existing.message || '';
+      }
+    });
+
+    const result = Array.from(techMap.values());
+    result.sort((a, b) => {
+      if (a.is_assigned || a.status === 'accepted') return -1;
+      if (b.is_assigned || b.status === 'accepted') return 1;
+      return b.id - a.id;
+    });
+
+    return result;
+  };
+
+  const getJobScheduleStatus = (job, activeQuote) => {
+    const quotes = job?.cotizaciones_list || [];
+    const targetQuote = activeQuote || quotes.find(q => q.status === 'accepted' || q.is_assigned) || quotes[0];
+    const msgs = targetQuote?.chat_history || [];
+
+    const scheduleResponses = msgs.filter(m => m.is_schedule_response);
+    const lastScheduleResponse = scheduleResponses.length > 0 ? scheduleResponses[scheduleResponses.length - 1] : null;
+
+    const scheduleProposals = msgs.filter(m => m.is_schedule);
+    const lastScheduleProposal = scheduleProposals.length > 0 ? scheduleProposals[scheduleProposals.length - 1] : null;
+
+    const isRescheduleRequested = Boolean(
+      lastScheduleResponse &&
+      lastScheduleResponse.schedule_confirmed === false &&
+      (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
+    );
+
+    const isScheduleConfirmed = Boolean(
+      lastScheduleResponse &&
+      lastScheduleResponse.schedule_confirmed === true &&
+      (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
+    );
+
+    return {
+      isRescheduleRequested,
+      isScheduleConfirmed
+    };
+  };
+
+  const fetchJobs = async () => {
     try {
-      setLoading(true);
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos?only_mine=1`, { headers });
       
-      let rawOrders = [];
       if (res.data?.success && Array.isArray(res.data.data)) {
-        rawOrders = res.data.data;
-      }
+        const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name) : '';
 
-      // Procesar y normalizar cada orden como un evento del calendario
-      const parsedEvents = rawOrders.map(order => {
-        const quotes = order.network_quotes || [];
-        const acceptedQuote = quotes.find(q => q.status === 'accepted') || quotes[0] || null;
+        const jobs = res.data.data.map(order => {
+          const coloniaTexto = order.colonia_cercana || order.zona_colonia || order.zona || 'Mérida, Yucatán';
+          const tituloProblema = order.type 
+            ? `${order.type}${order.equipment ? ' - ' + order.equipment : ''}` 
+            : 'Problema / Servicio Solicitado';
 
-        // Determinar fecha clave para el calendario (scheduled_at > fecha_visita > due_date > created_at)
-        let eventDateStr = order.scheduled_at || order.fecha_visita || order.due_date || order.created_at;
-        let eventDate = new Date(eventDateStr);
-        if (isNaN(eventDate.getTime())) {
-          eventDate = new Date();
-        }
+          const isGenericOwner = !order.owner_name || 
+            order.owner_name === 'Cliente de la Red' || 
+            order.owner_name === 'Cliente Desconocido' || 
+            order.owner_name === 'Cliente de Prueba';
 
-        // Determinar hora formateada
-        let timeFormatted = 'Por definir';
-        if (order.scheduled_at) {
-          try {
-            timeFormatted = new Date(order.scheduled_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-          } catch {
-            timeFormatted = '10:00 AM';
-          }
-        } else if (order.hora_visita) {
-          timeFormatted = order.hora_visita;
-        } else if (order.time_slot) {
-          timeFormatted = order.time_slot;
-        }
+          const displayOwner = !isGenericOwner ? order.owner_name : (userFullName || 'Mi Solicitud');
 
-        // Determinar estado visual
-        let statusType = 'network'; // default
-        let statusLabel = 'En Red / Cotizando';
+          const fotos = [
+            order.evidence_path,
+            order.evidence_path_2,
+            order.property?.facade_photo_path
+          ].filter(Boolean);
 
-        if (order.status === 'Asignado' || acceptedQuote?.status === 'accepted' || order.status === 'En Progreso') {
+          const groupedQuotes = groupQuotesByTechnician(order.network_quotes || [], order);
+          const hasNewTechMessage = groupedQuotes.some(q => q.hasNewTechMessage);
+          const lastTechMsg = groupedQuotes.find(q => q.hasNewTechMessage)?.lastMsg || null;
+
+          const acceptedQuote = groupedQuotes.find(q => q.status === 'accepted' || q.is_assigned) || null;
+          const isAccepted = Boolean(
+            order.status === 'Asignado' ||
+            order.status === 'En Progreso' ||
+            order.status === 'Terminado' ||
+            acceptedQuote ||
+            order.tecnico_id
+          );
+
+          const assignedTechName = acceptedQuote?.technicianName || (order.technician ? `${order.technician.first_name} ${order.technician.last_name || ''}`.trim() : null);
+          const agreedPrice = acceptedQuote?.price ? parseFloat(acceptedQuote.price) : 0;
+
+          let eventDateStr = order.scheduled_at || order.fecha_visita || order.due_date || order.created_at;
+          let eventDate = new Date(eventDateStr);
+          if (isNaN(eventDate.getTime())) eventDate = new Date();
+
+          let timeFormatted = 'Por definir';
           if (order.scheduled_at) {
+            try {
+              timeFormatted = new Date(order.scheduled_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+            } catch {
+              timeFormatted = '10:00 a.m.';
+            }
+          } else if (order.hora_visita) {
+            timeFormatted = order.hora_visita;
+          }
+
+          const sched = getJobScheduleStatus({ ...order, cotizaciones_list: groupedQuotes }, acceptedQuote);
+          let statusType = 'network';
+          let statusLabel = 'En Red / Cotizando';
+
+          if (sched.isScheduleConfirmed || isAccepted) {
             statusType = 'confirmed';
             statusLabel = 'Visita Confirmada';
-          } else {
-            statusType = 'progress';
-            statusLabel = 'Técnico Asignado';
+          } else if (order.scheduled_at) {
+            statusType = 'proposed';
+            statusLabel = 'Horario Propuesto';
           }
-        } else if (order.scheduled_at) {
-          statusType = 'proposed';
-          statusLabel = 'Horario Propuesto';
-        } else if (order.type?.toLowerCase().includes('urgente') || order.type?.toLowerCase().includes('sos')) {
-          statusType = 'urgent';
-          statusLabel = 'Urgencia / SOS';
+
+          return {
+            id: order.id,
+            titulo: tituloProblema,
+            tipo: order.type || 'Problema',
+            equipo: order.equipment || '',
+            presupuesto: agreedPrice > 0 ? `$${agreedPrice.toFixed(2)}` : 'A convenir',
+            estado: isAccepted ? (order.status === 'Terminado' ? 'Terminado' : 'Asignado') : (order.status || 'Por Hacer'),
+            is_accepted: isAccepted,
+            assigned_tech_name: assignedTechName,
+            agreed_price: agreedPrice,
+            fecha: new Date(order.created_at).toLocaleDateString('es-MX'),
+            lugar: order.property?.name || order.property?.property_name || 'Lugar no especificado',
+            zona: coloniaTexto,
+            colonia: coloniaTexto,
+            calle: order.property?.address || 'Dirección no especificada',
+            descripcion: limpiarDescripcion(order.description),
+            foto: fotos[0] || null,
+            fotos: fotos,
+            cotizaciones: groupedQuotes.length,
+            cotizaciones_list: groupedQuotes,
+            cliente: displayOwner,
+            is_mine: true,
+            scheduled_at: order.scheduled_at,
+            hasNewTechMessage,
+            lastTechMsg,
+            calendarDate: eventDate,
+            dateKey: eventDate.toISOString().slice(0, 10),
+            calendarTime: timeFormatted,
+            statusType,
+            statusLabel
+          };
+        });
+
+        setNetworkJobs(jobs);
+
+        if (selectedJobForQuotes) {
+          const updated = jobs.find(j => j.id === selectedJobForQuotes.id);
+          if (updated) {
+            setSelectedJobForQuotes(updated);
+            if (activeChatQuote) {
+              const updatedActiveQuote = updated.cotizaciones_list.find(q => (q.technician_id || q.technician?.id) === (activeChatQuote.technician_id || activeChatQuote.technician?.id));
+              if (updatedActiveQuote) setActiveChatQuote(updatedActiveQuote);
+            }
+          }
         }
-
-        const techName = acceptedQuote?.technician?.first_name
-          ? `${acceptedQuote.technician.first_name} ${acceptedQuote.technician.last_name || ''}`.trim()
-          : (acceptedQuote?.technician?.name || order.technician?.name || 'Técnico de la Red');
-
-        return {
-          id: order.id,
-          title: order.type ? `${order.type}${order.equipment ? ' - ' + order.equipment : ''}` : 'Servicio Solicitado',
-          equipment: order.equipment || 'General',
-          description: order.description || 'Sin descripción adicional',
-          property: order.property?.name || order.colonia_cercana || order.zona || 'Mi Propiedad',
-          address: order.property?.address || order.colonia_cercana || 'Mérida, Yucatán',
-          date: eventDate,
-          dateKey: eventDate.toISOString().slice(0, 10), // 'YYYY-MM-DD'
-          time: timeFormatted,
-          statusType,
-          statusLabel,
-          techName,
-          techPhone: acceptedQuote?.technician?.phone || order.technician?.phone || 'No disponible',
-          price: acceptedQuote?.price ? `$${acceptedQuote.price} MXN` : 'Por cotizar',
-          rawOrder: order,
-          evidencePhoto: order.evidence_path || order.property?.facade_photo_path || null
-        };
-      });
-
-      // Si no tiene citas registradas aún, creamos un par de eventos demostrativos para que la experiencia sea visual e interactiva
-      if (parsedEvents.length === 0) {
-        const today = new Date();
-        const demoDate1 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 10, 30);
-        const demoDate2 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3, 16, 0);
-        const demoDate3 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 5, 11, 0);
-
-        parsedEvents.push(
-          {
-            id: 'demo-1',
-            title: 'Mantenimiento Preventivo Clima',
-            equipment: 'Minisplit Inverter 18k BTU',
-            description: 'Limpieza de serpentín, turbina y revisión de presiones de gas refrigerante.',
-            property: 'Casa Principal (Montebello)',
-            address: 'Calle 10 #120 x 23 y 25, Montebello',
-            date: demoDate1,
-            dateKey: demoDate1.toISOString().slice(0, 10),
-            time: '10:30 AM',
-            statusType: 'confirmed',
-            statusLabel: 'Visita Confirmada',
-            techName: 'Ing. Carlos Dzib (Técnico HVAC)',
-            techPhone: '999-123-4567',
-            price: '$650 MXN',
-            evidencePhoto: null
-          },
-          {
-            id: 'demo-2',
-            title: 'Revisión Filtración de Agua',
-            equipment: 'Tubería Principal Baño Máster',
-            description: 'Detección de fuga en conexión de agua caliente.',
-            property: 'Depto Altabrisa',
-            address: 'Av. República de Corea #200, Altabrisa',
-            date: demoDate2,
-            dateKey: demoDate2.toISOString().slice(0, 10),
-            time: '04:00 PM',
-            statusType: 'proposed',
-            statusLabel: 'Propuesta de Visita',
-            techName: 'Plomería Rodríguez',
-            techPhone: '999-987-6543',
-            price: '$450 MXN',
-            evidencePhoto: null
-          },
-          {
-            id: 'demo-3',
-            title: 'Instalación de Lámparas Led',
-            equipment: 'Iluminación Terraza',
-            description: 'Colocación de 4 arbotantes exteriores de alta eficiencia.',
-            property: 'Casa Principal (Montebello)',
-            address: 'Calle 10 #120 x 23 y 25, Montebello',
-            date: demoDate3,
-            dateKey: demoDate3.toISOString().slice(0, 10),
-            time: '11:00 AM',
-            statusType: 'network',
-            statusLabel: 'En Red / Cotizando',
-            techName: 'Por asignar',
-            techPhone: 'Pendiente',
-            price: '$350 MXN',
-            evidencePhoto: null
-          }
-        );
       }
-
-      setJobsData(parsedEvents);
-    } catch (err) {
-      console.error('Error fetching client calendar jobs:', err);
+    } catch (e) {
+      console.error("Error fetching jobs", e);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchClientJobs();
+    fetchJobs();
+    const interval = setInterval(fetchJobs, 4000);
+    return () => clearInterval(interval);
   }, []);
 
-  // Filtrado de eventos por búsqueda y categoría
-  const filteredEvents = useMemo(() => {
-    return jobsData.filter(event => {
-      const matchFilter = selectedFilter === 'all' || event.statusType === selectedFilter;
-      const matchSearch = searchQuery.trim() === '' || 
-        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.property.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.techName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.equipment.toLowerCase().includes(searchQuery.toLowerCase());
+  const handleOpenQuotesModal = (job) => {
+    setSelectedJobForQuotes(job);
+    setActivePhoto(job.fotos?.[0] || job.foto || null);
+    setActiveChatQuote(null);
+    setShowQuotesModal(true);
+  };
 
+  const handleSendClientChat = async (e) => {
+    if (e) e.preventDefault();
+    if (!clientChatInput.trim() || sendingClientChat || !activeChatQuote) return;
+
+    const textToSend = clientChatInput.trim();
+    setClientChatInput('');
+    setSendingClientChat(true);
+
+    const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user.name || 'Tú (Cliente)')) : 'Tú (Cliente)';
+    const optimisticMessage = {
+      sender_id: user?.id,
+      sender_name: userFullName,
+      sender_role: 'Cliente',
+      message: textToSend,
+      created_at: new Date().toISOString()
+    };
+
+    setActiveChatQuote(prev => prev ? { ...prev, chat_history: [...(prev.chat_history || []), optimisticMessage] } : prev);
+
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/network-quotes/${activeChatQuote.id}/chat`,
+        { message: textToSend },
+        { headers }
+      );
+      if (res.data?.chat_history) {
+        setActiveChatQuote(prev => prev ? { ...prev, chat_history: res.data.chat_history } : prev);
+      }
+    } catch (err) {
+      console.error("Error al enviar mensaje:", err);
+      alert("No se pudo enviar el mensaje.");
+    } finally {
+      setSendingClientChat(false);
+    }
+  };
+
+  const handleResponderVisita = async (action) => {
+    if (!selectedJobForQuotes?.id) return;
+    let msg = '';
+    if (action === 'reschedule') {
+      msg = prompt("Escribe una breve nota sobre qué horario te queda mejor:");
+      if (msg === null) return;
+    }
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${selectedJobForQuotes.id}/responder-visita-cliente`,
+        { action, message: msg },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        alert("✅ " + res.data.message);
+        fetchJobs();
+      }
+    } catch (e) {
+      console.error("Error respondiendo visita", e);
+    }
+  };
+
+  const handleAcceptQuote = async (quote) => {
+    const techName = quote.technicianName || 'este técnico';
+    if (!window.confirm(`¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}?`)) return;
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quote.id}/accept`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        alert("🎉 " + res.data.message);
+        setShowQuotesModal(false);
+        setActiveChatQuote(null);
+        fetchJobs();
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Hubo un error al aceptar la cotización.");
+    }
+  };
+
+  const handleRejectQuote = async (quoteId) => {
+    if (!window.confirm("¿Estás seguro de que deseas rechazar esta cotización?")) return;
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quoteId}/reject`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        alert("Cotización rechazada.");
+        fetchJobs();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDeleteJob = async (jobId) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar y cancelar esta publicación de la Red?")) return;
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const res = await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${jobId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data?.success) {
+        alert("✅ Publicación eliminada.");
+        setShowQuotesModal(false);
+        fetchJobs();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const filteredEvents = useMemo(() => {
+    return networkJobs.filter(job => {
+      const matchFilter = selectedFilter === 'all' || job.statusType === selectedFilter;
+      const matchSearch = searchQuery.trim() === '' ||
+        job.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.zona.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.lugar.toLowerCase().includes(searchQuery.toLowerCase());
       return matchFilter && matchSearch;
     });
-  }, [jobsData, selectedFilter, searchQuery]);
+  }, [networkJobs, selectedFilter, searchQuery]);
 
-  // Navegación de Fechas
-  const handlePrev = () => {
-    if (currentView === 'month') {
-      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-    } else if (currentView === 'week') {
-      const newD = new Date(currentDate);
-      newD.setDate(newD.getDate() - 7);
-      setCurrentDate(newD);
-    } else {
-      const newD = new Date(currentDate);
-      newD.setDate(newD.getDate() - 1);
-      setCurrentDate(newD);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentView === 'month') {
-      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-    } else if (currentView === 'week') {
-      const newD = new Date(currentDate);
-      newD.setDate(newD.getDate() + 7);
-      setCurrentDate(newD);
-    } else {
-      const newD = new Date(currentDate);
-      newD.setDate(newD.getDate() + 1);
-      setCurrentDate(newD);
-    }
-  };
-
-  const handleToday = () => {
-    setCurrentDate(new Date());
-  };
-
-  // Generación de celdas del Mes
   const monthMatrix = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0: Dom, 1: Lun...
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
-
     const todayStr = new Date().toISOString().slice(0, 10);
     const cells = [];
 
-    // Días del mes anterior para completar la primera semana
     for (let i = firstDayOfMonth - 1; i >= 0; i--) {
       const dayNum = daysInPrevMonth - i;
       const prevDate = new Date(year, month - 1, dayNum);
       const dateKey = prevDate.toISOString().slice(0, 10);
       cells.push({
         dayNumber: dayNum,
-        date: prevDate,
         dateKey,
         isCurrentMonth: false,
         isToday: dateKey === todayStr,
@@ -281,13 +463,11 @@ const CalendarioCliente = () => {
       });
     }
 
-    // Días del mes actual
     for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
       const thisDate = new Date(year, month, dayNum);
       const dateKey = thisDate.toISOString().slice(0, 10);
       cells.push({
         dayNumber: dayNum,
-        date: thisDate,
         dateKey,
         isCurrentMonth: true,
         isToday: dateKey === todayStr,
@@ -295,14 +475,12 @@ const CalendarioCliente = () => {
       });
     }
 
-    // Días del siguiente mes para completar las 35 o 42 celdas del grid
     const remaining = (7 - (cells.length % 7)) % 7;
     for (let i = 1; i <= remaining; i++) {
       const nextDate = new Date(year, month + 1, i);
       const dateKey = nextDate.toISOString().slice(0, 10);
       cells.push({
         dayNumber: i,
-        date: nextDate,
         dateKey,
         isCurrentMonth: false,
         isToday: dateKey === todayStr,
@@ -313,27 +491,6 @@ const CalendarioCliente = () => {
     return cells;
   }, [currentDate, filteredEvents]);
 
-  // Agrupar eventos para la vista de Agenda
-  const agendaGroupedEvents = useMemo(() => {
-    const sorted = [...filteredEvents].sort((a, b) => a.date - b.date);
-    const groups = {};
-    sorted.forEach(ev => {
-      if (!groups[ev.dateKey]) {
-        groups[ev.dateKey] = {
-          dateStr: ev.date.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
-          items: []
-        };
-      }
-      groups[ev.dateKey].items.push(ev);
-    });
-    return Object.values(groups);
-  }, [filteredEvents]);
-
-  const handleOpenEventModal = (event) => {
-    setSelectedEvent(event);
-    setModalOpen(true);
-  };
-
   return (
     <div className="calendario-page-container">
       <div className="top-bar-orange"></div>
@@ -342,7 +499,6 @@ const CalendarioCliente = () => {
       <Header rolTexto="CLIENTE PARTICULAR" titulo="CALENDARIO DE VISITAS Y SERVICIOS" />
 
       <main className="calendario-main-wrapper">
-        {/* ── BANNER HERO SUPERIOR ── */}
         <div className="cal-hero-header">
           <div className="cal-hero-title-group">
             <h2>
@@ -357,45 +513,34 @@ const CalendarioCliente = () => {
           <div className="cal-hero-actions">
             <button 
               className="btn-nueva-solicitud"
-              onClick={() => navigate('/red-autonomos')}
+              onClick={() => setShowNewServiceModal(true)}
             >
               <PlusCircle size={18} />
               Publicar Nuevo Servicio
             </button>
-            <button 
-              className="btn-ver-red"
-              onClick={() => navigate('/red-autonomos')}
-            >
-              <ExternalLink size={17} />
-              Ver Mercado / Red
-            </button>
           </div>
         </div>
 
-        {/* ── TOOLBAR PRINCIPAL (Estilo Telerik KendoReact) ── */}
+        {/* Toolbar */}
         <div className="scheduler-toolbar-card">
-          {/* Navegación y Fecha */}
           <div className="cal-nav-group">
-            <button className="btn-cal-today" onClick={handleToday}>
+            <button className="btn-cal-today" onClick={() => setCurrentDate(new Date())}>
               Hoy
             </button>
-
             <div className="cal-arrows">
-              <button className="btn-cal-arrow" onClick={handlePrev} title="Anterior">
+              <button className="btn-cal-arrow" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
                 <ChevronLeft size={20} />
               </button>
-              <button className="btn-cal-arrow" onClick={handleNext} title="Siguiente">
+              <button className="btn-cal-arrow" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>
                 <ChevronRight size={20} />
               </button>
             </div>
-
             <h3 className="cal-current-date-title">
               <CalendarDays size={22} color="#FF6600" />
               {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
             </h3>
           </div>
 
-          {/* Controles Derecha: Buscador & Switcher de Vistas */}
           <div className="cal-controls-right">
             <div className="cal-search-box">
               <Search size={16} className="cal-search-icon" />
@@ -405,296 +550,205 @@ const CalendarioCliente = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery('')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'absolute', right: '8px', color: '#94a3b8' }}
-                >
-                  <X size={14} />
-                </button>
-              )}
             </div>
 
             <div className="cal-view-selector">
-              <button 
-                className={`btn-view-tab ${currentView === 'month' ? 'active' : ''}`}
-                onClick={() => setCurrentView('month')}
-              >
+              <button className={`btn-view-tab ${currentView === 'month' ? 'active' : ''}`} onClick={() => setCurrentView('month')}>
                 Mes
               </button>
-              <button 
-                className={`btn-view-tab ${currentView === 'agenda' ? 'active' : ''}`}
-                onClick={() => setCurrentView('agenda')}
-              >
+              <button className={`btn-view-tab ${currentView === 'agenda' ? 'active' : ''}`} onClick={() => setCurrentView('agenda')}>
                 Agenda
               </button>
             </div>
           </div>
         </div>
 
-        {/* ── BARRA DE LEYENDAS Y FILTROS RÁPIDOS ── */}
+        {/* Filtros */}
         <div className="scheduler-legend-bar">
           <span style={{ color: '#0f172a', fontWeight: 800 }}>Filtrar:</span>
-          <button 
-            className={`legend-item ${selectedFilter === 'all' ? 'active' : ''}`}
-            onClick={() => setSelectedFilter('all')}
-          >
-            Todos ({jobsData.length})
+          <button className={`legend-item ${selectedFilter === 'all' ? 'active' : ''}`} onClick={() => setSelectedFilter('all')}>
+            Todos ({networkJobs.length})
           </button>
-          <button 
-            className={`legend-item ${selectedFilter === 'confirmed' ? 'active' : ''}`}
-            onClick={() => setSelectedFilter(selectedFilter === 'confirmed' ? 'all' : 'confirmed')}
-          >
+          <button className={`legend-item ${selectedFilter === 'confirmed' ? 'active' : ''}`} onClick={() => setSelectedFilter(selectedFilter === 'confirmed' ? 'all' : 'confirmed')}>
             <span className="legend-dot dot-confirmed"></span>
             <span>Visitas Confirmadas</span>
           </button>
-          <button 
-            className={`legend-item ${selectedFilter === 'proposed' ? 'active' : ''}`}
-            onClick={() => setSelectedFilter(selectedFilter === 'proposed' ? 'all' : 'proposed')}
-          >
+          <button className={`legend-item ${selectedFilter === 'proposed' ? 'active' : ''}`} onClick={() => setSelectedFilter(selectedFilter === 'proposed' ? 'all' : 'proposed')}>
             <span className="legend-dot dot-proposed"></span>
             <span>Horarios Propuestos</span>
           </button>
-          <button 
-            className={`legend-item ${selectedFilter === 'network' ? 'active' : ''}`}
-            onClick={() => setSelectedFilter(selectedFilter === 'network' ? 'all' : 'network')}
-          >
+          <button className={`legend-item ${selectedFilter === 'network' ? 'active' : ''}`} onClick={() => setSelectedFilter(selectedFilter === 'network' ? 'all' : 'network')}>
             <span className="legend-dot dot-network"></span>
             <span>En Red / Cotizando</span>
           </button>
         </div>
 
-        {/* ── CONTENIDO PRINCIPAL: GRID DEL CALENDARIO ── */}
+        {/* Grid de Mes */}
         <div className="scheduler-canvas-card">
           {loading ? (
             <div className="cal-loading-container">
               <div className="cal-spinner"></div>
-              <p style={{ fontWeight: 700 }}>Cargando tu calendario...</p>
+              <p style={{ fontWeight: 700 }}>Cargando calendario...</p>
             </div>
-          ) : currentView === 'month' ? (
+          ) : (
             <div className="cal-month-grid">
-              {/* Encabezados de Días (Domingo a Sábado) */}
               <div className="cal-month-header-row">
                 {DAY_NAMES.map((name, index) => (
-                  <div key={index} className="cal-header-cell">
-                    {name}
-                  </div>
+                  <div key={index} className="cal-header-cell">{name}</div>
                 ))}
               </div>
 
-              {/* Días del Mes */}
               <div className="cal-month-days-grid">
                 {monthMatrix.map((cell, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`cal-day-cell ${!cell.isCurrentMonth ? 'other-month' : ''} ${cell.isToday ? 'is-today' : ''}`}
-                  >
+                  <div key={idx} className={`cal-day-cell ${!cell.isCurrentMonth ? 'other-month' : ''} ${cell.isToday ? 'is-today' : ''}`}>
                     <div className="cal-day-header">
                       <span className="cal-day-number">{cell.dayNumber}</span>
                       {cell.events.length > 0 && (
-                        <span className="cal-day-count-badge">
-                          {cell.events.length} {cell.events.length === 1 ? 'servicio' : 'servicios'}
-                        </span>
+                        <span className="cal-day-count-badge">{cell.events.length}</span>
                       )}
                     </div>
-
-                    {/* Lista de Chips / Trabajos del Día */}
                     <div className="cal-events-list">
-                      {cell.events.map((event) => (
+                      {cell.events.map((job) => (
                         <div 
-                          key={event.id}
-                          className={`cal-event-chip status-${event.statusType}`}
-                          onClick={() => handleOpenEventModal(event)}
-                          title={`${event.title} - ${event.time} (${event.statusLabel})`}
+                          key={job.id} 
+                          className={`cal-event-chip status-${job.statusType}`}
+                          onClick={() => handleOpenQuotesModal(job)}
                         >
                           <div className="chip-time-row">
-                            <span className="chip-time-tag">
-                              <Clock size={11} /> {event.time}
-                            </span>
+                            <span className="chip-time-tag"><Clock size={11} /> {job.calendarTime}</span>
                           </div>
-                          <span className="chip-title">{event.title}</span>
-                          <span className="chip-tech">
-                            <User size={10} /> {event.techName}
-                          </span>
+                          <span className="chip-title">{job.titulo}</span>
+                          <span className="chip-tech"><User size={10} /> {job.assigned_tech_name || (job.cotizaciones > 0 ? `${job.cotizaciones} oferta(s)` : 'En espera')}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          ) : (
-            /* ── VISTA DE AGENDA CRONOLÓGICA ── */
-            <div className="cal-agenda-view">
-              {agendaGroupedEvents.length === 0 ? (
-                <div className="cal-empty-state">
-                  <CalendarDays size={48} color="#cbd5e1" />
-                  <h4>No hay servicios en esta fecha</h4>
-                  <p>Publica un nuevo trabajo en la red para coordinar citas con los técnicos calificados.</p>
-                </div>
-              ) : (
-                agendaGroupedEvents.map((group, gIdx) => (
-                  <div key={gIdx} className="agenda-day-group">
-                    <div className="agenda-date-header">
-                      <CalendarDays size={20} color="#FF6600" />
-                      {group.dateStr}
-                    </div>
-
-                    <div className="agenda-cards-grid">
-                      {group.items.map((event) => (
-                        <div 
-                          key={event.id}
-                          className={`agenda-item-card status-${event.statusType}`}
-                          onClick={() => handleOpenEventModal(event)}
-                        >
-                          <div className="agenda-card-top">
-                            <h4 className="agenda-card-title">{event.title}</h4>
-                            <span className={`agenda-status-pill pill-${event.statusType}`}>
-                              {event.statusLabel}
-                            </span>
-                          </div>
-
-                          <div className="agenda-card-info">
-                            <div className="agenda-info-row">
-                              <Clock size={14} color="#ff6600" />
-                              <strong>Horario:</strong> {event.time}
-                            </div>
-                            <div className="agenda-info-row">
-                              <Building size={14} color="#64748b" />
-                              <span>{event.property}</span>
-                            </div>
-                            <div className="agenda-info-row">
-                              <User size={14} color="#64748b" />
-                              <span>{event.techName}</span>
-                            </div>
-                            <div className="agenda-info-row">
-                              <DollarSign size={14} color="#10b981" />
-                              <span style={{ color: '#059669', fontWeight: 700 }}>{event.price}</span>
-                            </div>
-                          </div>
-
-                          <div className="agenda-card-actions">
-                            <button 
-                              className="btn-modal-action primary"
-                              style={{ padding: '6px 14px', fontSize: '0.8rem' }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenEventModal(event);
-                              }}
-                            >
-                              Ver Detalle
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              )}
             </div>
           )}
         </div>
       </main>
 
-      {/* ── MODAL DETALLE DE EVENTO / TRABAJO ── */}
-      {modalOpen && selectedEvent && (
-        <div className="cal-modal-backdrop" onClick={() => setModalOpen(false)}>
-          <div className="cal-modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="cal-modal-header">
-              <h3>
-                <Wrench size={22} color="#FF6600" />
-                Detalle del Servicio y Visita
-              </h3>
-              <button className="btn-close-modal" onClick={() => setModalOpen(false)}>
-                <X size={18} />
-              </button>
+      {/* Modal Reciclado de Cotizaciones */}
+      {showQuotesModal && selectedJobForQuotes && (
+        <div className="mercado-modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowQuotesModal(false)}>
+          <div className="mercado-premium-modal" style={{ maxWidth: '1080px' }}>
+            <div className="mercado-premium-header">
+              <h2>📋 Detalle de Publicación y Cotizaciones</h2>
+              <span className="mercado-modal-close" onClick={() => setShowQuotesModal(false)}>×</span>
             </div>
 
-            <div className="cal-modal-body">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                <span className={`agenda-status-pill pill-${selectedEvent.statusType}`} style={{ fontSize: '0.85rem', padding: '6px 14px' }}>
-                  {selectedEvent.statusLabel}
-                </span>
-                <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 600 }}>
-                  ID Trabajo: #{selectedEvent.id}
-                </span>
-              </div>
-
-              <div className="modal-section-card">
-                <h4><Wrench size={16} /> {selectedEvent.title}</h4>
-                <p style={{ margin: 0, color: '#334155', fontSize: '0.92rem' }}>
-                  {selectedEvent.description}
-                </p>
-              </div>
-
-              <div className="modal-info-grid">
-                <div className="modal-section-card">
-                  <h4><Clock size={16} /> Horario y Fecha</h4>
-                  <p style={{ margin: 0, fontWeight: 700, color: '#0f172a' }}>
-                    {selectedEvent.date.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                  </p>
-                  <span style={{ color: '#ff6600', fontWeight: 800, fontSize: '0.95rem' }}>
-                    ⏰ {selectedEvent.time}
-                  </span>
-                </div>
-
-                <div className="modal-section-card">
-                  <h4><MapPin size={16} /> Ubicación</h4>
-                  <p style={{ margin: 0, fontWeight: 700, color: '#0f172a' }}>
-                    {selectedEvent.property}
-                  </p>
-                  <span style={{ color: '#64748b', fontSize: '0.82rem' }}>
-                    {selectedEvent.address}
-                  </span>
-                </div>
-              </div>
-
-              <div className="modal-section-card">
-                <h4><User size={16} /> Técnico Asignado / Contacto</h4>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                  <div>
-                    <strong style={{ fontSize: '0.95rem', color: '#0f172a', display: 'block' }}>{selectedEvent.techName}</strong>
-                    <span style={{ color: '#64748b', fontSize: '0.85rem' }}>📞 {selectedEvent.techPhone}</span>
+            <div className="mercado-premium-body">
+              <div className="mercado-premium-details" style={{ flex: '1.05' }}>
+                {activePhoto ? (
+                  <div className="mercado-photo-gallery">
+                    <div className="mercado-premium-image-wrapper" onClick={() => setIsPhotoZoomed(true)}>
+                      <img src={activePhoto} alt="Evidencia" className="mercado-premium-image" />
+                      <div className="mercado-image-zoom-badge"><Maximize2 size={12} /> Clic para ampliar</div>
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'block' }}>Presupuesto:</span>
-                    <strong style={{ color: '#059669', fontSize: '1.1rem' }}>{selectedEvent.price}</strong>
+                ) : (
+                  <div className="mercado-no-photo-placeholder"><ImageIcon size={36} color="#94a3b8" /><span>Sin fotos</span></div>
+                )}
+                <div className="mercado-premium-text">
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', margin: '10px 0' }}>{selectedJobForQuotes.titulo}</h3>
+                  <div className="mercado-premium-info-grid">
+                    <div className="mercado-info-item full-width" style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px' }}>
+                      <MapPin size={18} color="#ea580c" />
+                      <div><strong>Zona / Dirección:</strong> <span>{selectedJobForQuotes.zona} - {selectedJobForQuotes.calle}</span></div>
+                    </div>
+                    <div className="mercado-info-item full-width">
+                      <FileText size={14} className="mercado-icon-blue" />
+                      <div><strong>Problema:</strong> <span>{selectedJobForQuotes.descripcion}</span></div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {selectedEvent.evidencePhoto && (
-                <div className="modal-section-card">
-                  <h4>📸 Evidencia de la Solicitud</h4>
-                  <img 
-                    src={selectedEvent.evidencePhoto} 
-                    alt="Evidencia" 
-                    style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', marginTop: '4px' }} 
-                  />
-                </div>
-              )}
+              <div className="mercado-premium-form" style={{ background: '#ffffff', overflowY: 'auto', padding: 0 }}>
+                {!activeChatQuote ? (
+                  <div style={{ padding: '20px' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '800' }}>
+                      Cotizaciones de Técnicos ({selectedJobForQuotes.cotizaciones_list?.length || 0})
+                    </h4>
+                    {selectedJobForQuotes.cotizaciones_list?.map((quote) => (
+                      <div key={quote.id} className="red-quote-card" style={{ marginBottom: '12px' }}>
+                        <div className="red-quote-header">
+                          <div className="red-quote-tech">
+                            <div className="red-quote-avatar">{quote.technicianName?.charAt(0) || 'T'}</div>
+                            <div>
+                              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '800' }}>{quote.technicianName}</h4>
+                              <span className="red-quote-role">Técnico Verificado</span>
+                            </div>
+                          </div>
+                          <div className="red-quote-price">${parseFloat(quote.price || 0).toFixed(2)}</div>
+                        </div>
+                        {quote.message && <div className="red-quote-message">"{quote.message}"</div>}
+                        <div className="red-quote-actions" style={{ marginTop: '10px' }}>
+                          <button type="button" className="red-btn-contact" onClick={() => setActiveChatQuote(quote)}>
+                            <MessageCircle size={15} /> Chat ({quote.chat_history?.length || 0})
+                          </button>
+                          {!selectedJobForQuotes.is_accepted && quote.price > 0 && (
+                            <button type="button" className="red-btn-accept" onClick={() => handleAcceptQuote(quote)}>
+                              ✓ Aceptar Oferta
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="red-embedded-chat-wrap">
+                    <div className="red-chat-top-header">
+                      <button className="back-btn" onClick={() => setActiveChatQuote(null)}>
+                        <ChevronLeft size={16} /> Volver a ofertas
+                      </button>
+                      <strong>{activeChatQuote.technicianName}</strong>
+                    </div>
+                    <div className="mercado-chat-messages-area">
+                      {activeChatQuote.chat_history?.map((msg, index) => {
+                        const isMe = Number(msg.sender_id) === Number(user?.id) || msg.sender_role === 'Cliente';
+                        return (
+                          <div key={index} className={`mercado-chat-bubble-row ${isMe ? 'me' : 'other'}`}>
+                            <div className={`mercado-chat-bubble ${isMe ? 'bubble-me' : 'bubble-other'}`}>
+                              <div className="bubble-text">{msg.message}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div ref={chatEndRef} />
+                    </div>
+                    <form onSubmit={handleSendClientChat} className="mercado-chat-input-bar">
+                      <input
+                        type="text"
+                        placeholder="Escribe un mensaje..."
+                        value={clientChatInput}
+                        onChange={(e) => setClientChatInput(e.target.value)}
+                      />
+                      <button type="submit" className="mercado-chat-send-btn"><Send size={15} /></button>
+                    </form>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="cal-modal-footer">
-              <button 
-                className="btn-modal-action secondary"
-                onClick={() => setModalOpen(false)}
-              >
-                Cerrar
-              </button>
-              <button 
-                className="btn-modal-action primary"
-                onClick={() => {
-                  setModalOpen(false);
-                  navigate('/red-autonomos');
-                }}
-              >
-                <MessageSquare size={16} />
-                Ir a Chat / Ver en Red
-              </button>
+            <div className="mercado-premium-footer" style={{ display: 'flex', justifyContent: 'flex-end', padding: '16px' }}>
+              <button className="mercado-btn-cancel" onClick={() => setShowQuotesModal(false)}>Cerrar</button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal Nuevo Servicio */}
+      {showNewServiceModal && (
+        <ModalServicioAutonomo 
+          onClose={() => setShowNewServiceModal(false)}
+          onSuccess={() => {
+            setShowNewServiceModal(false);
+            fetchJobs();
+          }}
+        />
       )}
     </div>
   );

@@ -1235,7 +1235,6 @@ const VistaRedAutonomo = () => {
                                 <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>{new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</span>
                               </div>
                             </div>
-                            <CountdownVisita targetDate={selectedJobForQuotes.scheduled_at} isCompact={true} />
                           </div>
                         );
                       }
