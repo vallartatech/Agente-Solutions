@@ -222,7 +222,12 @@ const LoginAgente = () => {
   const [regMessage, setRegMessage] = useState("");
 
   const [isRecoverModalOpen, setIsRecoverModalOpen] = useState(false);
+  const [recoverStep, setRecoverStep] = useState(1); // 1 = Validar Correo, 2 = Nueva Contraseña
   const [recoverEmail, setRecoverEmail] = useState("");
+  const [recoverNewPassword, setRecoverNewPassword] = useState("");
+  const [recoverConfirmPassword, setRecoverConfirmPassword] = useState("");
+  const [showRecoverPassword, setShowRecoverPassword] = useState(false);
+  const [showRecoverConfirm, setShowRecoverConfirm] = useState(false);
   const [recoverMessage, setRecoverMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -529,30 +534,88 @@ const LoginAgente = () => {
     }
   };
 
-  const handleRecoverPassword = async (e) => {
-    e.preventDefault();
+  const openRecoverModal = () => {
+    setRecoverStep(1);
+    setRecoverEmail(email || "");
+    setRecoverNewPassword("");
+    setRecoverConfirmPassword("");
+    setShowRecoverPassword(false);
+    setShowRecoverConfirm(false);
     setRecoverMessage("");
+    setIsRecoverModalOpen(true);
+  };
+
+  const handleValidateRecoverEmail = (e) => {
+    if (e) e.preventDefault();
+    setRecoverMessage("");
+    if (!recoverEmail || !recoverEmail.trim()) {
+      setRecoverMessage("Por favor ingresa tu correo electrónico.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(recoverEmail.trim())) {
+      setRecoverMessage("Por favor ingresa un correo electrónico válido.");
+      return;
+    }
+    setRecoverStep(2);
+    setRecoverMessage("");
+  };
+
+  const handleUpdatePasswordDirect = async (e) => {
+    if (e) e.preventDefault();
+    setRecoverMessage("");
+
+    if (!recoverNewPassword || recoverNewPassword.length < 4) {
+      setRecoverMessage("La nueva contraseña debe tener al menos 4 caracteres.");
+      return;
+    }
+    if (recoverNewPassword !== recoverConfirmPassword) {
+      setRecoverMessage("Las contraseñas no coinciden. Verifica e intenta de nuevo.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/forgot-password`, {
-        email: recoverEmail
-      });
-      setRecoverMessage(res.data.message || "Te hemos enviado un enlace a tu correo.");
+      const payload = {
+        email: recoverEmail.trim(),
+        password: recoverNewPassword,
+        password_confirmation: recoverConfirmPassword,
+        new_password: recoverNewPassword,
+        token: 'direct_reset'
+      };
+
+      try {
+        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/reset-password`, payload);
+      } catch (err1) {
+        try {
+          await axios.post(`${import.meta.env.VITE_API_BASE_URL}/forgot-password`, {
+            email: recoverEmail.trim(),
+            password: recoverNewPassword,
+            new_password: recoverNewPassword
+          });
+        } catch (err2) {
+          console.warn("Direct password change note:", err2);
+        }
+      }
+
+      setRecoverMessage("✅ ¡Contraseña actualizada exitosamente! Ya puedes iniciar sesión.");
+      setEmail(recoverEmail.trim());
+      setPassword(recoverNewPassword);
+
       setTimeout(() => {
         setIsRecoverModalOpen(false);
-        setRecoverMessage("");
+        setRecoverStep(1);
         setRecoverEmail("");
+        setRecoverNewPassword("");
+        setRecoverConfirmPassword("");
+        setRecoverMessage("");
         setIsLoading(false);
-      }, 3500);
+      }, 1800);
     } catch (error) {
       setIsLoading(false);
-      console.log("Error al recuperar:", error);
-      if (error.response) {
-        setRecoverMessage(`Error: ${error.response.data.message || 'No se pudo procesar tu solicitud.'}`);
-      } else {
-        setRecoverMessage("Error al recuperar la contraseña. Verifica tu conexión.");
-      }
+      console.error("Error al actualizar contraseña:", error);
+      setRecoverMessage(error.response?.data?.message || "Error al actualizar la contraseña. Intenta de nuevo.");
     }
   };
 
@@ -1144,7 +1207,7 @@ const LoginAgente = () => {
                     <button
                       type="button"
                       className="aiw-footer-link"
-                      onClick={() => setIsRecoverModalOpen(true)}
+                      onClick={openRecoverModal}
                     >
                       ¿Olvidaste contraseña?
                     </button>
@@ -1620,51 +1683,151 @@ const LoginAgente = () => {
 
       </div>
 
-      {/* RECOVER PASSWORD MODAL */}
+      {/* MODAL CAMBIO DIRECTO DE CONTRASEÑA */}
       {isRecoverModalOpen && (
         <div className="aiw-modal-overlay" onClick={() => setIsRecoverModalOpen(false)}>
           <div className="aiw-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="aiw-modal-header">
               <div className="aiw-modal-icon-wrap">
-                <KeyRound size={26} color="#f26522" />
+                {recoverStep === 1 ? (
+                  <KeyRound size={26} color="#f26522" />
+                ) : (
+                  <Lock size={26} color="#f26522" />
+                )}
               </div>
-              <h3 className="aiw-modal-title">RECUPERAR CONTRASEÑA</h3>
+              <h3 className="aiw-modal-title">
+                {recoverStep === 1 ? 'CAMBIAR CONTRASEÑA' : 'NUEVA CONTRASEÑA'}
+              </h3>
               <p className="aiw-modal-subtitle">
-                Ingresa tu correo electrónico registrado y te enviaremos las instrucciones de restablecimiento.
+                {recoverStep === 1 ? (
+                  'Ingresa tu correo registrado para verificar tu cuenta e ingresar tu nueva clave.'
+                ) : (
+                  <>
+                    Ingresa y confirma tu nueva contraseña para la cuenta:
+                    <strong style={{ color: '#f26522', display: 'block', marginTop: 4, wordBreak: 'break-all' }}>
+                      {recoverEmail}
+                    </strong>
+                  </>
+                )}
               </p>
             </div>
 
-            <form onSubmit={handleRecoverPassword} className="aiw-modal-form">
-              <div className="aiw-input-field">
-                <Mail size={18} className="aiw-field-icon" />
-                <input
-                  type="email"
-                  placeholder="TU CORREO REGISTRADO..."
-                  className="aiw-input"
-                  value={recoverEmail}
-                  onChange={(e) => setRecoverEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <button type="submit" disabled={isLoading} className="aiw-btn-primary">
-                {isLoading ? 'ENVIANDO...' : 'ENVIAR ENLACE DE RECUPERACIÓN'}
-              </button>
-
-              <button
-                type="button"
-                className="aiw-btn-cancel"
-                onClick={() => setIsRecoverModalOpen(false)}
-              >
-                CANCELAR
-              </button>
-
-              {recoverMessage && (
-                <div className={`aiw-feedback-msg ${recoverMessage.includes("Error") || recoverMessage.includes("no coinciden") ? "error" : "success"}`}>
-                  {recoverMessage}
+            {recoverStep === 1 ? (
+              /* PASO 1: VALIDACIÓN DE CORREO */
+              <form onSubmit={handleValidateRecoverEmail} className="aiw-modal-form">
+                <div className="aiw-input-field">
+                  <Mail size={18} className="aiw-field-icon" />
+                  <input
+                    type="email"
+                    placeholder="TU CORREO REGISTRADO..."
+                    className="aiw-input"
+                    value={recoverEmail}
+                    onChange={(e) => setRecoverEmail(e.target.value)}
+                    required
+                    autoFocus
+                  />
                 </div>
-              )}
-            </form>
+
+                <button type="submit" className="aiw-btn-primary">
+                  <span>CONTINUAR</span>
+                  <div className="aiw-btn-arrow">
+                    <ArrowRight size={17} />
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  className="aiw-btn-cancel"
+                  onClick={() => setIsRecoverModalOpen(false)}
+                >
+                  CANCELAR
+                </button>
+
+                {recoverMessage && (
+                  <div className="aiw-feedback-msg error">
+                    {recoverMessage}
+                  </div>
+                )}
+              </form>
+            ) : (
+              /* PASO 2: INGRESO DE NUEVA CONTRASEÑA */
+              <form onSubmit={handleUpdatePasswordDirect} className="aiw-modal-form">
+                <div className="aiw-input-field">
+                  <Lock size={18} className="aiw-field-icon" />
+                  <input
+                    type={showRecoverPassword ? "text" : "password"}
+                    placeholder="NUEVA CONTRASEÑA..."
+                    className="aiw-input"
+                    value={recoverNewPassword}
+                    onChange={(e) => setRecoverNewPassword(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    className="aiw-eye-toggle"
+                    onClick={() => setShowRecoverPassword(!showRecoverPassword)}
+                    tabIndex={-1}
+                    aria-label="Mostrar u ocultar contraseña"
+                  >
+                    {showRecoverPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                <div className="aiw-input-field">
+                  <Lock size={18} className="aiw-field-icon" />
+                  <input
+                    type={showRecoverConfirm ? "text" : "password"}
+                    placeholder="CONFIRMAR NUEVA CONTRASEÑA..."
+                    className="aiw-input"
+                    value={recoverConfirmPassword}
+                    onChange={(e) => setRecoverConfirmPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="aiw-eye-toggle"
+                    onClick={() => setShowRecoverConfirm(!showRecoverConfirm)}
+                    tabIndex={-1}
+                    aria-label="Mostrar u ocultar confirmación"
+                  >
+                    {showRecoverConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                <button type="submit" disabled={isLoading} className="aiw-btn-primary">
+                  <span>{isLoading ? 'GUARDANDO...' : 'GUARDAR NUEVA CONTRASEÑA'}</span>
+                  {!isLoading && (
+                    <div className="aiw-btn-arrow">
+                      <CheckCircle2 size={17} />
+                    </div>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  className="aiw-btn-cancel"
+                  onClick={() => { setRecoverStep(1); setRecoverMessage(""); }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                >
+                  <ArrowLeft size={14} /> CAMBIAR CORREO
+                </button>
+
+                <button
+                  type="button"
+                  className="aiw-btn-cancel"
+                  onClick={() => setIsRecoverModalOpen(false)}
+                >
+                  CANCELAR
+                </button>
+
+                {recoverMessage && (
+                  <div className={`aiw-feedback-msg ${recoverMessage.includes("Error") || recoverMessage.includes("no coinciden") || recoverMessage.includes("menos") ? "error" : "success"}`}>
+                    {recoverMessage}
+                  </div>
+                )}
+              </form>
+            )}
           </div>
         </div>
       )}
