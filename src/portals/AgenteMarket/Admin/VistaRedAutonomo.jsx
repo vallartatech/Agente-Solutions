@@ -54,6 +54,45 @@ const VistaRedAutonomo = () => {
   const [sendingClientChat, setSendingClientChat] = useState(false);
   const chatEndRef = useRef(null);
 
+  // Helper para determinar el estado de la visita y re-coordinación
+  const getJobScheduleStatus = (job, activeQuote) => {
+    const quotes = job?.cotizaciones_list || [];
+    const targetQuote = activeQuote || quotes.find(q => q.status === 'accepted') || quotes[0];
+    const msgs = targetQuote?.chat_history || [];
+
+    const scheduleResponses = msgs.filter(m => m.is_schedule_response);
+    const lastScheduleResponse = scheduleResponses.length > 0 ? scheduleResponses[scheduleResponses.length - 1] : null;
+
+    const scheduleProposals = msgs.filter(m => m.is_schedule);
+    const lastScheduleProposal = scheduleProposals.length > 0 ? scheduleProposals[scheduleProposals.length - 1] : null;
+
+    const isRescheduleRequested = Boolean(
+      lastScheduleResponse &&
+      lastScheduleResponse.schedule_confirmed === false &&
+      (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
+    );
+
+    const isScheduleConfirmed = Boolean(
+      lastScheduleResponse &&
+      lastScheduleResponse.schedule_confirmed === true &&
+      (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
+    );
+
+    const isPendingClientConfirm = Boolean(
+      job?.scheduled_at &&
+      !isScheduleConfirmed &&
+      !isRescheduleRequested
+    );
+
+    return {
+      isRescheduleRequested,
+      isScheduleConfirmed,
+      isPendingClientConfirm,
+      lastScheduleResponse,
+      lastScheduleProposal
+    };
+  };
+
   // Agrupar cotizaciones por técnico para consolidar el chat y ofertas
   const groupQuotesByTechnician = (quotesList) => {
     if (!Array.isArray(quotesList)) return [];
@@ -569,13 +608,32 @@ const VistaRedAutonomo = () => {
                   <span><Clock size={11} /> {job.fecha}</span>
                 </div>
 
-                {/* HORARIO DE VISITA PROGRAMADO */}
-                {job.scheduled_at && (
-                  <div style={{ fontSize: '11.5px', padding: '6px 10px', borderRadius: '8px', background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>📅</span>
-                    <span><strong>Visita:</strong> {new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                  </div>
-                )}
+                {/* HORARIO DE VISITA / ESTADO */}
+                {job.scheduled_at && (() => {
+                  const sched = getJobScheduleStatus(job);
+                  if (sched.isRescheduleRequested) {
+                    return (
+                      <div style={{ fontSize: '11.5px', padding: '6px 10px', borderRadius: '8px', background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>⚠️</span>
+                        <span><strong>Re-coordinación:</strong> Solicitaste cambio de horario</span>
+                      </div>
+                    );
+                  }
+                  if (sched.isScheduleConfirmed) {
+                    return (
+                      <div style={{ fontSize: '11.5px', padding: '6px 10px', borderRadius: '8px', background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>✅</span>
+                        <span><strong>Visita Confirmada:</strong> {new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div style={{ fontSize: '11.5px', padding: '6px 10px', borderRadius: '8px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>📅</span>
+                      <span><strong>Visita Propuesta:</strong> {new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })} (Por confirmar)</span>
+                    </div>
+                  );
+                })()}
 
                 {/* ALERTA DE NUEVO MENSAJE DE TÉCNICO */}
                 {job.hasNewTechMessage && (
@@ -709,53 +767,82 @@ const VistaRedAutonomo = () => {
                       <div><strong>Problema</strong><span>{selectedJobForQuotes.descripcion || 'Sin descripción adicional'}</span></div>
                     </div>
 
-                    {selectedJobForQuotes.scheduled_at && (
-                      <div className="mercado-info-item full-width" style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Clock size={16} color="#16a34a" />
-                          <strong style={{ color: '#166534', fontSize: '13px' }}>📅 Horario Propuesto de Visita</strong>
+                    {selectedJobForQuotes.scheduled_at && (() => {
+                      const sched = getJobScheduleStatus(selectedJobForQuotes, activeChatQuote);
+                      if (sched.isRescheduleRequested) {
+                        return (
+                          <div className="mercado-info-item full-width" style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Clock size={16} color="#ea580c" />
+                              <strong style={{ color: '#c2410c', fontSize: '13px' }}>⚠️ Solicitud de Re-coordinación Enviada</strong>
+                            </div>
+                            <div style={{ fontSize: '12.5px', color: '#7c2d12' }}>
+                              Has solicitado acordar otro horario. Esperando que el técnico proponga una nueva fecha y hora.
+                            </div>
+                          </div>
+                        );
+                      }
+                      if (sched.isScheduleConfirmed) {
+                        return (
+                          <div className="mercado-info-item full-width" style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <CheckCircle size={16} color="#16a34a" />
+                              <strong style={{ color: '#166534', fontSize: '13px' }}>✅ Horario de Visita Confirmado</strong>
+                            </div>
+                            <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
+                              {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="mercado-info-item full-width" style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Clock size={16} color="#2563eb" />
+                            <strong style={{ color: '#1e40af', fontSize: '13px' }}>📅 Horario Propuesto por el Técnico</strong>
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
+                            {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleResponderVisita('confirm')}
+                              style={{
+                                flex: 1,
+                                padding: '8px 12px',
+                                background: '#16a34a',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontWeight: '800',
+                                fontSize: '12px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              ✓ Confirmar Horario
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleResponderVisita('reschedule')}
+                              style={{
+                                flex: 1,
+                                padding: '8px 12px',
+                                background: '#ffffff',
+                                color: '#ea580c',
+                                border: '1.5px solid #fed7aa',
+                                borderRadius: '8px',
+                                fontWeight: '800',
+                                fontSize: '12px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              💬 Re-coordinar
+                            </button>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
-                          {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
-                        </div>
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleResponderVisita('confirm')}
-                            style={{
-                              flex: 1,
-                              padding: '8px 12px',
-                              background: '#16a34a',
-                              color: '#ffffff',
-                              border: 'none',
-                              borderRadius: '8px',
-                              fontWeight: '800',
-                              fontSize: '12px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            ✓ Confirmar Horario
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleResponderVisita('reschedule')}
-                            style={{
-                              flex: 1,
-                              padding: '8px 12px',
-                              background: '#ffffff',
-                              color: '#ea580c',
-                              border: '1.5px solid #fed7aa',
-                              borderRadius: '8px',
-                              fontWeight: '800',
-                              fontSize: '12px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            💬 Re-coordinar
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -779,53 +866,82 @@ const VistaRedAutonomo = () => {
                     </div>
 
                     {/* Banner de Horario Propuesto si ya hay fecha fijada */}
-                    {selectedJobForQuotes.scheduled_at && (
-                      <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#f0fdf4', borderRadius: '12px', border: '1.5px solid #86efac', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '18px' }}>📅</span>
-                          <div>
-                            <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Propuesto:</strong>
-                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
-                              {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
-                            </span>
+                    {selectedJobForQuotes.scheduled_at && (() => {
+                      const sched = getJobScheduleStatus(selectedJobForQuotes);
+                      if (sched.isRescheduleRequested) {
+                        return (
+                          <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#fff7ed', borderRadius: '12px', border: '1.5px solid #fed7aa', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '18px' }}>⚠️</span>
+                            <div>
+                              <strong style={{ fontSize: '12px', color: '#c2410c', display: 'block' }}>Solicitud de Re-coordinación Enviada:</strong>
+                              <span style={{ fontSize: '12.5px', color: '#7c2d12' }}>
+                                Esperando que el técnico proponga un nuevo horario.
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      if (sched.isScheduleConfirmed) {
+                        return (
+                          <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#f0fdf4', borderRadius: '12px', border: '1.5px solid #86efac', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '18px' }}>✅</span>
+                            <div>
+                              <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Confirmado:</strong>
+                              <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
+                                {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#eff6ff', borderRadius: '12px', border: '1.5px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '18px' }}>📅</span>
+                            <div>
+                              <strong style={{ fontSize: '12px', color: '#1e40af', display: 'block' }}>Horario de Visita Propuesto:</strong>
+                              <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
+                                {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleResponderVisita('confirm')}
+                              style={{
+                                padding: '6px 12px',
+                                background: '#16a34a',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontWeight: '800',
+                                fontSize: '11.5px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              ✓ Confirmar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleResponderVisita('reschedule')}
+                              style={{
+                                padding: '6px 10px',
+                                background: '#ffffff',
+                                color: '#ea580c',
+                                border: '1px solid #fed7aa',
+                                borderRadius: '6px',
+                                fontWeight: '700',
+                                fontSize: '11.5px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Re-coordinar
+                            </button>
                           </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleResponderVisita('confirm')}
-                            style={{
-                              padding: '6px 12px',
-                              background: '#16a34a',
-                              color: '#ffffff',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontWeight: '800',
-                              fontSize: '11.5px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            ✓ Confirmar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleResponderVisita('reschedule')}
-                            style={{
-                              padding: '6px 10px',
-                              background: '#ffffff',
-                              color: '#ea580c',
-                              border: '1px solid #fed7aa',
-                              borderRadius: '6px',
-                              fontWeight: '700',
-                              fontSize: '11.5px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Re-coordinar
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {(!selectedJobForQuotes.cotizaciones_list || selectedJobForQuotes.cotizaciones_list.length === 0) ? (
                       <div style={{ textAlign: 'center', color: '#64748b', padding: '40px 20px', background: '#fffaf5', borderRadius: '16px', border: '2px dashed #fed7aa', margin: '20px 0' }}>
@@ -970,53 +1086,78 @@ const VistaRedAutonomo = () => {
                     )}
 
                     {/* Banner de Horario Propuesto con Botones de Confirmación */}
-                    {selectedJobForQuotes.scheduled_at && (
-                      <div style={{ padding: '10px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '15px' }}>📅</span>
-                          <div>
-                            <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Propuesto:</strong>
-                            <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>
-                              {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
-                            </span>
+                    {selectedJobForQuotes.scheduled_at && (() => {
+                      const sched = getJobScheduleStatus(selectedJobForQuotes, activeChatQuote);
+                      if (sched.isRescheduleRequested) {
+                        return (
+                          <div style={{ padding: '10px 16px', background: '#fff7ed', borderBottom: '1px solid #fed7aa', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '15px' }}>⚠️</span>
+                            <div>
+                              <strong style={{ fontSize: '12px', color: '#c2410c', display: 'block' }}>Solicitud de Re-coordinación Enviada</strong>
+                              <span style={{ fontSize: '12px', color: '#7c2d12' }}>Esperando que el técnico proponga un nuevo horario.</span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      if (sched.isScheduleConfirmed) {
+                        return (
+                          <div style={{ padding: '10px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '15px' }}>✅</span>
+                            <div>
+                              <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Confirmado</strong>
+                              <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>{new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div style={{ padding: '10px 16px', background: '#eff6ff', borderBottom: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '15px' }}>📅</span>
+                            <div>
+                              <strong style={{ fontSize: '12px', color: '#1e40af', display: 'block' }}>Horario de Visita Propuesto:</strong>
+                              <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>
+                                {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleResponderVisita('confirm')}
+                              style={{
+                                padding: '6px 12px',
+                                background: '#16a34a',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontWeight: '800',
+                                fontSize: '11.5px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              ✓ Confirmar Horario
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleResponderVisita('reschedule')}
+                              style={{
+                                padding: '6px 10px',
+                                background: '#ffffff',
+                                color: '#ea580c',
+                                border: '1px solid #fed7aa',
+                                borderRadius: '6px',
+                                fontWeight: '700',
+                                fontSize: '11.5px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Re-coordinar
+                            </button>
                           </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleResponderVisita('confirm')}
-                            style={{
-                              padding: '6px 12px',
-                              background: '#16a34a',
-                              color: '#ffffff',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontWeight: '800',
-                              fontSize: '11.5px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            ✓ Confirmar Horario
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleResponderVisita('reschedule')}
-                            style={{
-                              padding: '6px 10px',
-                              background: '#ffffff',
-                              color: '#ea580c',
-                              border: '1px solid #fed7aa',
-                              borderRadius: '6px',
-                              fontWeight: '700',
-                              fontSize: '11.5px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Re-coordinar
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Stream de Mensajes */}
                     <div className="mercado-chat-messages-container">

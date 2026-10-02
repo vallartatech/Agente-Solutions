@@ -70,8 +70,8 @@ const MercadoTrabajos = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos`, { headers });
       if (res.data.success) {
-        // 1. Trabajos Disponibles en la Red
-        const jobs = (res.data.data || []).map(order => {
+        // 1. Trabajos de la Red
+        const rawJobs = (res.data.data || []).map(order => {
           let myQuote = null;
           let myQuotesHistory = [];
           if (authUser && order.network_quotes) {
@@ -100,6 +100,18 @@ const MercadoTrabajos = () => {
           const lastMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1] : null;
           const lastClientMsg = (lastMsg && (Number(lastMsg.sender_id) !== Number(authUser?.id) || lastMsg.sender_role === 'Cliente')) ? lastMsg : null;
 
+          const isAccepted = Boolean(
+            order.is_accepted ||
+            order.status === 'Asignado' ||
+            order.status === 'En Progreso' ||
+            (authUser && Number(order.tecnico_id) === Number(authUser.id)) ||
+            myQuote?.status === 'accepted'
+          );
+
+          const fullAddress = order.full_address || order.property?.address || 'Dirección confirmada';
+          const clientName = order.client_name || order.property?.client?.name || order.creator?.name || 'Cliente';
+          const clientPhone = order.client_phone || order.property?.client?.phone || order.property?.client?.phone_number || '';
+
           return {
             id: order.id,
             titulo: tituloProblema,
@@ -108,11 +120,15 @@ const MercadoTrabajos = () => {
             lat: rawLat,
             lng: rawLng,
             presupuesto: "A convenir",
-            cliente: order.creator?.name || 'Cliente de la Red',
+            cliente: clientName,
+            client_name: clientName,
+            client_phone: clientPhone,
             lugar: order.property?.property_name || 'Lugar no especificado',
+            property_name: order.property?.property_name || '',
             zona: coloniaTexto,
             colonia: coloniaTexto,
-            calle: order.property?.address || 'Dirección protegida',
+            calle: isAccepted ? fullAddress : 'Dirección protegida',
+            full_address: fullAddress,
             descripcion: limpiarDescripcion(order.description),
             foto: fotos[0] || null,
             fotos: fotos,
@@ -121,36 +137,72 @@ const MercadoTrabajos = () => {
             priority: order.priority || 'Normal',
             is_urgent: Boolean(order.is_urgent || order.priority === 'Urgente' || order.type === 'SOS'),
             scheduled_at: order.scheduled_at,
-            is_accepted: false,
+            agreed_price: myQuote?.price ? parseFloat(myQuote.price) : 0,
+            is_accepted: isAccepted,
             myQuote,
             myQuotesHistory,
             lastClientMsg,
           };
         });
-        setNetworkJobs(jobs);
 
         // 2. Trabajos Aceptados / Asignados para este Técnico
-        const accepted = (res.data.accepted_jobs || []).map(order => {
+        const acceptedMap = new Map();
+
+        (res.data.accepted_jobs || []).forEach(order => {
           const chatHistory = order.myQuote?.chat_history || [];
           const lastMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1] : null;
           const lastClientMsg = (lastMsg && (Number(lastMsg.sender_id) !== Number(authUser?.id) || lastMsg.sender_role === 'Cliente')) ? lastMsg : null;
 
-          return {
+          acceptedMap.set(order.id, {
             ...order,
             is_accepted: true,
-            zona: order.zone || 'Mérida, Yucatán',
-            calle: order.full_address,
+            zona: order.zone || order.zona || 'Mérida, Yucatán',
+            calle: order.full_address || order.calle,
             descripcion: limpiarDescripcion(order.description),
             fecha: new Date(order.created_at).toLocaleDateString('es-MX'),
             cotizaciones: 1,
             lastClientMsg,
-          };
+          });
         });
-        setAcceptedJobs(accepted);
 
-        // Si tenemos un trabajo seleccionado en el modal, actualizar su estado en vivo
+        // Unificar cualquier trabajo de rawJobs que tenga is_accepted === true
+        rawJobs.forEach(job => {
+          if (job.is_accepted) {
+            const existing = acceptedMap.get(job.id);
+            if (existing) {
+              acceptedMap.set(job.id, {
+                ...job,
+                ...existing,
+                fotos: (job.fotos && job.fotos.length > 0) ? job.fotos : (existing.fotos || []),
+                foto: job.foto || existing.foto,
+                is_accepted: true,
+                myQuote: existing.myQuote || job.myQuote,
+                myQuotesHistory: job.myQuotesHistory || existing.myQuotesHistory || [],
+                agreed_price: existing.agreed_price || job.agreed_price || 0,
+                full_address: existing.full_address || job.full_address,
+                calle: existing.calle || job.calle,
+                client_name: existing.client_name || job.client_name,
+                client_phone: existing.client_phone || job.client_phone,
+                scheduled_at: existing.scheduled_at || job.scheduled_at,
+              });
+            } else {
+              acceptedMap.set(job.id, {
+                ...job,
+                is_accepted: true,
+              });
+            }
+          }
+        });
+
+        const acceptedList = Array.from(acceptedMap.values());
+        const availableList = rawJobs.filter(j => !j.is_accepted && !acceptedMap.has(j.id));
+
+        setNetworkJobs(availableList);
+        setAcceptedJobs(acceptedList);
+
+        // Si tenemos un trabajo seleccionado en el modal, actualizar su estado en vivo dando prioridad a la lista aceptada
         if (selectedJob) {
-          const updated = [...jobs, ...accepted].find(j => j.id === selectedJob.id);
+          const updated = [...acceptedList, ...availableList].find(j => j.id === selectedJob.id);
           if (updated) {
             setSelectedJob(updated);
           }
@@ -339,12 +391,14 @@ const MercadoTrabajos = () => {
   };
 
   const openQuoteModalForJob = (job) => {
-    setSelectedJob(job);
-    setQuotePrice(job.myQuote && job.myQuote.price > 0 ? job.myQuote.price : '');
-    setQuoteMessage(job.myQuote ? job.myQuote.message : '');
-    setActivePhoto(job.fotos?.[0] || job.foto || null);
-    if (job.scheduled_at) {
-      const d = new Date(job.scheduled_at);
+    const isJobAccepted = Boolean(job.is_accepted || acceptedJobs.some(a => a.id === job.id) || job.myQuote?.status === 'accepted');
+    const targetJob = isJobAccepted ? (acceptedJobs.find(a => a.id === job.id) || { ...job, is_accepted: true }) : job;
+    setSelectedJob(targetJob);
+    setQuotePrice(targetJob.myQuote && targetJob.myQuote.price > 0 ? targetJob.myQuote.price : '');
+    setQuoteMessage(targetJob.myQuote ? targetJob.myQuote.message : '');
+    setActivePhoto(targetJob.fotos?.[0] || targetJob.foto || null);
+    if (targetJob.scheduled_at) {
+      const d = new Date(targetJob.scheduled_at);
       if (!isNaN(d.getTime())) {
         const localIso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
         setScheduleDate(localIso);
@@ -370,6 +424,35 @@ const MercadoTrabajos = () => {
 
   const chatMessages = selectedJob?.myQuote?.chat_history || [];
   const lastClientMsg = selectedJob?.lastClientMsg;
+
+  // Respuestas del cliente sobre la visita
+  const scheduleResponses = chatMessages.filter(m => m.is_schedule_response);
+  const lastScheduleResponse = scheduleResponses.length > 0 ? scheduleResponses[scheduleResponses.length - 1] : null;
+
+  // Propuestas de horario del técnico
+  const scheduleProposals = chatMessages.filter(m => m.is_schedule);
+  const lastScheduleProposal = scheduleProposals.length > 0 ? scheduleProposals[scheduleProposals.length - 1] : null;
+
+  // Determinar si el cliente solicitó re-coordinar
+  const isRescheduleRequested = Boolean(
+    lastScheduleResponse &&
+    lastScheduleResponse.schedule_confirmed === false &&
+    (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
+  );
+
+  // Determinar si el cliente confirmó el horario
+  const isScheduleConfirmed = Boolean(
+    lastScheduleResponse &&
+    lastScheduleResponse.schedule_confirmed === true &&
+    (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
+  );
+
+  // Determinar si el horario está propuesto y esperando confirmación del cliente
+  const isPendingClientConfirm = Boolean(
+    selectedJob?.scheduled_at &&
+    !isScheduleConfirmed &&
+    !isRescheduleRequested
+  );
 
   return (
     <div className="mercado-container">
@@ -735,7 +818,19 @@ const MercadoTrabajos = () => {
                             <strong>
                               <Clock size={18} color="#16a34a" /> Programar Hora de Llegada / Visita
                             </strong>
-                            {selectedJob.scheduled_at ? (
+                            {isRescheduleRequested ? (
+                              <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '3px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: '800' }}>
+                                ⚠️ Re-coordinación Solicitada
+                              </span>
+                            ) : isScheduleConfirmed ? (
+                              <span className="mercado-hero-scheduler-badge">
+                                ✓ Confirmada por el Cliente
+                              </span>
+                            ) : isPendingClientConfirm ? (
+                              <span style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '3px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: '800' }}>
+                                ⏳ Esperando Confirmación
+                              </span>
+                            ) : selectedJob.scheduled_at ? (
                               <span className="mercado-hero-scheduler-badge">
                                 ✓ Programada
                               </span>
@@ -746,13 +841,51 @@ const MercadoTrabajos = () => {
                             )}
                           </div>
 
-                          <div className="mercado-hero-scheduler-status">
-                            {selectedJob.scheduled_at ? (
-                              <>📅 Horario propuesto: <strong>{new Date(selectedJob.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}</strong></>
-                            ) : (
-                              <>⚠️ Selecciona cuándo acudirás al domicilio para que el cliente confirme el horario:</>
-                            )}
-                          </div>
+                          {/* Alerta de re-coordinación solicitada */}
+                          {isRescheduleRequested && lastScheduleResponse && (
+                            <div style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px 14px', marginBottom: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#c2410c', fontWeight: '800', fontSize: '13px' }}>
+                                <AlertCircle size={16} /> El cliente solicitó acordar otro horario:
+                              </div>
+                              <div style={{ margin: '6px 0 2px 0', fontSize: '13px', color: '#7c2d12', fontWeight: '600', fontStyle: 'italic', background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #ffedd5' }}>
+                                "{lastScheduleResponse.message.replace(/^⚠️\s*[^:]+:\s*/, '').replace(/^"|"$/g, '') || lastScheduleResponse.message}"
+                              </div>
+                              <div style={{ fontSize: '11.5px', color: '#ea580c', marginTop: '6px', fontWeight: '700' }}>
+                                👉 Selecciona abajo la nueva hora acordada con el cliente y haz clic en "Proponer Nuevo Horario":
+                              </div>
+                            </div>
+                          )}
+
+                          {isScheduleConfirmed && (
+                            <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '12px 14px', marginBottom: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#166534', fontWeight: '800', fontSize: '13px' }}>
+                                <CheckCircle2 size={16} /> Cita Confirmada por el Cliente
+                              </div>
+                              <div style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#0f172a', fontWeight: '800' }}>
+                                📅 {new Date(selectedJob.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
+                              </div>
+                            </div>
+                          )}
+
+                          {isPendingClientConfirm && (
+                            <div style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '12px', padding: '12px 14px', marginBottom: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1d4ed8', fontWeight: '800', fontSize: '13px' }}>
+                                <Clock size={16} /> Horario Propuesto Enviado al Cliente
+                              </div>
+                              <div style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#1e3a8a', fontWeight: '800' }}>
+                                📅 {new Date(selectedJob.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
+                              </div>
+                              <div style={{ fontSize: '11.5px', color: '#3b82f6', marginTop: '4px' }}>
+                                El cliente ha recibido la propuesta y te responderá confirmando o re-coordinando.
+                              </div>
+                            </div>
+                          )}
+
+                          {!selectedJob.scheduled_at && !isRescheduleRequested && (
+                            <div className="mercado-hero-scheduler-status">
+                              ⚠️ Selecciona cuándo acudirás al domicilio para que el cliente confirme el horario:
+                            </div>
+                          )}
 
                           <div className="mercado-hero-scheduler-input-row">
                             <input
@@ -768,7 +901,7 @@ const MercadoTrabajos = () => {
                               disabled={savingSchedule}
                             >
                               <Clock size={16} />
-                              <span>{savingSchedule ? 'Guardando...' : (selectedJob.scheduled_at ? '✏️ Modificar Hora' : '📅 Proponer Hora de Ida')}</span>
+                              <span>{savingSchedule ? 'Guardando...' : (isRescheduleRequested ? '📅 Proponer Nuevo Horario' : (selectedJob.scheduled_at ? '✏️ Modificar Horario' : '📅 Proponer Hora de Ida'))}</span>
                             </button>
                           </div>
                         </div>
