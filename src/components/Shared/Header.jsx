@@ -4,12 +4,14 @@ import { useAuth } from '../../context/AuthContext';
 import { Home, Calendar } from 'lucide-react'; // ✅ Importamos íconos de casita y calendario
 import logo from '../../assets/Logo3.png'; 
 import NotificationBell from '../Shared/NotificationBell'; 
+import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente'; // ✅ Modal de Calendario
 import axios from 'axios';
 
 const Header = ({ rolTexto = "USUARIO", titulo }) => {
   const { user, logoutGlobal } = useAuth();
   const navigate = useNavigate();
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [mostrarCalendario, setMostrarCalendario] = useState(false);
   const [appLogo, setAppLogo] = useState(logo);
 
   const fetchDynamicSettings = async () => {
@@ -74,10 +76,10 @@ const Header = ({ rolTexto = "USUARIO", titulo }) => {
           <Home size={34} strokeWidth={2.5} />
         </button>
 
-        {/* BOTÓN DE CALENDARIO */}
+        {/* BOTÓN DE CALENDARIO (Abre Modal Interactivo) */}
         <button 
-          onClick={() => navigate('/calendario-cliente')}
-          title="Calendario de Trabajos y Citas"
+          onClick={() => setMostrarCalendario(true)}
+          title="Ver Calendario de Visitas y Servicios"
           style={{
             background: 'none',
             border: 'none',
@@ -154,6 +156,12 @@ const Header = ({ rolTexto = "USUARIO", titulo }) => {
           )}
         </div>
       </div>
+
+      {/* MODAL GLOBAL DE CALENDARIO DE CLIENTE */}
+      <ModalCalendarioCliente 
+        isOpen={mostrarCalendario} 
+        onClose={() => setMostrarCalendario(false)} 
+      />
     </header>
   );
 };

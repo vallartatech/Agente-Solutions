@@ -446,21 +446,21 @@ const CalendarioCliente = () => {
             onClick={() => setSelectedFilter(selectedFilter === 'confirmed' ? 'all' : 'confirmed')}
           >
             <span className="legend-dot dot-confirmed"></span>
-            Visitas Confirmadas
+            <span>Visitas Confirmadas</span>
           </button>
           <button 
             className={`legend-item ${selectedFilter === 'proposed' ? 'active' : ''}`}
             onClick={() => setSelectedFilter(selectedFilter === 'proposed' ? 'all' : 'proposed')}
           >
             <span className="legend-dot dot-proposed"></span>
-            Horarios Propuestos
+            <span>Horarios Propuestos</span>
           </button>
           <button 
             className={`legend-item ${selectedFilter === 'network' ? 'active' : ''}`}
             onClick={() => setSelectedFilter(selectedFilter === 'network' ? 'all' : 'network')}
           >
             <span className="legend-dot dot-network"></span>
-            En Red / Cotizando
+            <span>En Red / Cotizando</span>
           </button>
         </div>
 
