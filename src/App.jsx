@@ -210,6 +210,9 @@ const AppRoutes = () => {
       <Route path="/mi-perfil" element={
         user?.role_id === 3 ? <MainLayoutCliente><Profile /></MainLayoutCliente> : <Profile />
       } />
+      <Route path="/profile" element={
+        user?.role_id === 3 ? <MainLayoutCliente><Profile /></MainLayoutCliente> : <Profile />
+      } />
 
 
       <Route path="/detalle-producto" element={<ProductoDetalleView />} />

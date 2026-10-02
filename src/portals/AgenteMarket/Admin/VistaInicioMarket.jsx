@@ -5,6 +5,7 @@ import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
 import ModalCompraEspacios from '../../../components/Shared/ModalCompraEspacios';
+import VistaClienteParticular from '../Cliente/VistaClienteParticular';
 
 const LiveCountdown = ({ targetDate, fallbackDays }) => {
   const [timeLeft, setTimeLeft] = useState('');
@@ -56,6 +57,11 @@ const VistaInicioAdmin = () => {
         .catch(() => {});
     }
   }, [isMarketAccount, roleId]);
+
+  // Si es Cliente Particular (rol 4), renderizamos la vista de vitrina de lujo
+  if (isClienteParticular) {
+    return <VistaClienteParticular />;
+  }
 
   let rolTexto = "CLIENTE PARTICULAR";
   if (isRoot) rolTexto = "ROOT / SUPERADMIN";

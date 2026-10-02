@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, loginGlobal, logoutGlobal, initialized }}>
+    <AuthContext.Provider value={{ user, loginGlobal, logoutGlobal, logout: logoutGlobal, initialized }}>
       {children}
     </AuthContext.Provider>
   );
