@@ -131,9 +131,47 @@ const MercadoTrabajos = () => {
 
   useEffect(() => {
     fetchJobs();
-    const interval = setInterval(fetchJobs, 4000);
+    const interval = setInterval(fetchJobs, 5000);
     return () => clearInterval(interval);
   }, [authUser]);
+
+  // Polling de alta frecuencia (1.5s) para chat en tiempo real cuando el modal está abierto
+  useEffect(() => {
+    if (!showQuoteModal || !selectedJob || quoteStep !== 1) return;
+
+    const pollLiveChat = async () => {
+      const quoteId = selectedJob.myQuote?.id;
+      if (!quoteId) return;
+
+      try {
+        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quoteId}/chat`, { headers });
+        if (res.data?.success && res.data.chat_history) {
+          setSelectedJob(prev => {
+            if (!prev || !prev.myQuote) return prev;
+            const currentLen = prev.myQuote.chat_history?.length || 0;
+            const newLen = res.data.chat_history.length;
+            if (currentLen !== newLen || JSON.stringify(prev.myQuote.chat_history) !== JSON.stringify(res.data.chat_history)) {
+              return {
+                ...prev,
+                myQuote: {
+                  ...prev.myQuote,
+                  chat_history: res.data.chat_history
+                }
+              };
+            }
+            return prev;
+          });
+        }
+      } catch (e) {
+        // silent polling
+      }
+    };
+
+    const liveInterval = setInterval(pollLiveChat, 1500);
+    return () => clearInterval(liveInterval);
+  }, [showQuoteModal, selectedJob?.myQuote?.id, quoteStep]);
 
   useEffect(() => {
     if (showQuoteModal && quoteStep === 1) {
@@ -148,6 +186,28 @@ const MercadoTrabajos = () => {
     const textToSend = chatInput.trim();
     setChatInput('');
     setSendingChat(true);
+
+    // Actualización optimista instantánea (0ms)
+    const myName = authUser ? (authUser.first_name ? `${authUser.first_name} ${authUser.last_name || ''}`.trim() : (authUser.name || 'Tú (Técnico)')) : 'Tú (Técnico)';
+    const optimisticMessage = {
+      sender_id: authUser?.id,
+      sender_name: myName,
+      sender_role: 'Técnico',
+      message: textToSend,
+      created_at: new Date().toISOString()
+    };
+
+    setSelectedJob(prev => {
+      if (!prev) return prev;
+      const currentQuote = prev.myQuote || { chat_history: [] };
+      return {
+        ...prev,
+        myQuote: {
+          ...currentQuote,
+          chat_history: [...(currentQuote.chat_history || []), optimisticMessage]
+        }
+      };
+    });
 
     const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -168,12 +228,23 @@ const MercadoTrabajos = () => {
       }
 
       if (quoteId) {
-        await axios.post(
+        const chatRes = await axios.post(
           `${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quoteId}/chat`,
           { message: textToSend },
           { headers }
         );
-        fetchJobs();
+        if (chatRes.data?.chat_history) {
+          setSelectedJob(prev => {
+            if (!prev || !prev.myQuote) return prev;
+            return {
+              ...prev,
+              myQuote: {
+                ...prev.myQuote,
+                chat_history: chatRes.data.chat_history
+              }
+            };
+          });
+        }
       }
     } catch (err) {
       console.error("Error al enviar mensaje:", err);

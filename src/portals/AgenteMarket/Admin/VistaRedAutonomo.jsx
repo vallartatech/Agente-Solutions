@@ -63,20 +63,27 @@ const VistaRedAutonomo = () => {
       const techId = quote.technician_id || quote.technician?.id;
       if (!techId) return;
 
+      const techName = quote.technician?.first_name 
+        ? `${quote.technician.first_name} ${quote.technician.last_name || ''}`.trim()
+        : (quote.technician?.name || 'Técnico de la Red');
+
       const existing = techMap.get(techId);
       if (!existing) {
         const msgs = quote.chat_history || [];
         const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
-        const hasNewTechMessage = lastMsg && (Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente');
+        const hasNewTechMessage = Boolean(
+          (lastMsg && Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente') ||
+          (quote.message && quote.message.trim().length > 0)
+        );
+        const displayAlertMsg = lastMsg?.message || quote.message || '';
 
         techMap.set(techId, {
           ...quote,
           allQuotes: [quote],
           lastMsg,
           hasNewTechMessage,
-          technicianName: quote.technician?.first_name 
-            ? `${quote.technician.first_name} ${quote.technician.last_name || ''}`.trim()
-            : (quote.technician?.name || 'Técnico de la Red'),
+          displayAlertMsg,
+          technicianName: techName,
         });
       } else {
         existing.allQuotes.push(quote);
@@ -93,7 +100,11 @@ const VistaRedAutonomo = () => {
         const msgs = existing.chat_history || [];
         const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
         existing.lastMsg = lastMsg;
-        existing.hasNewTechMessage = lastMsg && (Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente');
+        existing.hasNewTechMessage = Boolean(
+          (lastMsg && Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente') ||
+          (existing.message && existing.message.trim().length > 0)
+        );
+        existing.displayAlertMsg = lastMsg?.message || existing.message || '';
       }
     });
 
@@ -217,9 +228,47 @@ const VistaRedAutonomo = () => {
 
   useEffect(() => {
     fetchJobs();
-    const interval = setInterval(fetchJobs, 4000);
+    const interval = setInterval(fetchJobs, 5000);
     return () => clearInterval(interval);
   }, [user]);
+
+  // Polling de alta frecuencia (1.5s) para el modal de cotizaciones y chat en vivo
+  useEffect(() => {
+    if (!showQuotesModal) return;
+
+    const pollLiveQuotesAndChat = async () => {
+      // 1. Si está viendo el chat directo con un técnico, sincronizar su chat en tiempo real
+      if (activeChatQuote?.id) {
+        try {
+          const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${activeChatQuote.id}/chat`, { headers });
+          if (res.data?.success && res.data.chat_history) {
+            setActiveChatQuote(prev => {
+              if (!prev) return prev;
+              const currentLen = prev.chat_history?.length || 0;
+              const newLen = res.data.chat_history.length;
+              if (currentLen !== newLen || JSON.stringify(prev.chat_history) !== JSON.stringify(res.data.chat_history)) {
+                return {
+                  ...prev,
+                  chat_history: res.data.chat_history
+                };
+              }
+              return prev;
+            });
+          }
+        } catch (e) {
+          // silent polling
+        }
+      } else {
+        // 2. Si está en la lista de cotizaciones, refrescar cada 2.5s para detectar nuevas ofertas o mensajes
+        fetchJobs();
+      }
+    };
+
+    const liveInterval = setInterval(pollLiveQuotesAndChat, 1500);
+    return () => clearInterval(liveInterval);
+  }, [showQuotesModal, activeChatQuote?.id]);
 
   useEffect(() => {
     if (activeChatQuote) {
@@ -235,16 +284,42 @@ const VistaRedAutonomo = () => {
     setClientChatInput('');
     setSendingClientChat(true);
 
+    // Actualización optimista instantánea (0ms)
+    const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user.name || 'Tú (Cliente)')) : 'Tú (Cliente)';
+    const optimisticMessage = {
+      sender_id: user?.id,
+      sender_name: userFullName,
+      sender_role: 'Cliente',
+      message: textToSend,
+      created_at: new Date().toISOString()
+    };
+
+    setActiveChatQuote(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        chat_history: [...(prev.chat_history || []), optimisticMessage]
+      };
+    });
+
     const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     try {
-      await axios.post(
+      const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/network-quotes/${activeChatQuote.id}/chat`,
         { message: textToSend },
         { headers }
       );
-      fetchJobs();
+      if (res.data?.chat_history) {
+        setActiveChatQuote(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            chat_history: res.data.chat_history
+          };
+        });
+      }
     } catch (err) {
       console.error("Error al enviar mensaje:", err);
       alert("No se pudo enviar el mensaje. Intenta de nuevo.");
@@ -664,8 +739,8 @@ const VistaRedAutonomo = () => {
                               <div className="red-quote-msg-alert">
                                 <span className="red-msg-dot-pulse" />
                                 <div>
-                                  <strong>Nuevo mensaje de {quote.technicianName}:</strong>
-                                  <div>"{quote.lastMsg.message}"</div>
+                                  <strong>Mensaje de {quote.technicianName}:</strong>
+                                  <div>"{quote.displayAlertMsg}"</div>
                                 </div>
                               </div>
                             )}
@@ -750,7 +825,7 @@ const VistaRedAutonomo = () => {
                         <div className="mercado-chat-alert-icon">🔔</div>
                         <div className="mercado-chat-alert-text">
                           <strong>El Técnico te envió un mensaje:</strong>
-                          <span>"{activeChatQuote.lastMsg.message}"</span>
+                          <span>"{activeChatQuote.displayAlertMsg || activeChatQuote.lastMsg?.message || activeChatQuote.message}"</span>
                         </div>
                       </div>
                     )}
