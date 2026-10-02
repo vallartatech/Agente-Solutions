@@ -241,7 +241,6 @@ const LoginAgente = () => {
   const [touchStartY, setTouchStartY] = useState(null);
   const [dragOffsetY, setDragOffsetY] = useState(0);
 
-  // Swipe for 3D Coverflow Role Cards
   const [cardTouchStartX, setCardTouchStartX] = useState(null);
 
   const handleCardTouchStart = (e) => {
@@ -259,6 +258,25 @@ const LoginAgente = () => {
     }
     setCardTouchStartX(null);
   };
+
+  // Keyboard navigation for Role Explorer (Arrow Left / Right, Escape)
+  useEffect(() => {
+    if (!showRoleExplorer) return;
+    const handleRoleExplorerKeyDown = (e) => {
+      if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+        return;
+      }
+      if (e.key === 'ArrowLeft') {
+        handleStepRole(-1);
+      } else if (e.key === 'ArrowRight') {
+        handleStepRole(1);
+      } else if (e.key === 'Escape') {
+        setShowRoleExplorer(false);
+      }
+    };
+    window.addEventListener('keydown', handleRoleExplorerKeyDown);
+    return () => window.removeEventListener('keydown', handleRoleExplorerKeyDown);
+  }, [showRoleExplorer, activeCategory, selectedRoleKey]);
 
   const handleSheetTouchStart = (e) => {
     if (window.innerWidth > 820) return;
@@ -869,6 +887,12 @@ const LoginAgente = () => {
             onTouchStart={handleSheetTouchStart}
             onTouchMove={handleSheetTouchMove}
             onTouchEnd={handleSheetTouchEnd}
+            onClick={() => {
+              if (isSheetCollapsed) {
+                setIsSheetCollapsed(false);
+                setShowRoleExplorer(false);
+              }
+            }}
             style={
               dragOffsetY !== 0
                 ? {
@@ -888,7 +912,10 @@ const LoginAgente = () => {
               <button
                 type="button"
                 className={`aiw-side-arrow-trigger ${showRoleExplorer ? "active" : ""}`}
-                onClick={() => setShowRoleExplorer(prev => !prev)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowRoleExplorer(prev => !prev);
+                }}
                 title={showRoleExplorer ? "Ocultar tipos de usuarios" : "Ver tipos de usuarios"}
                 aria-label="Explorar tipos de usuarios"
               >
@@ -904,7 +931,8 @@ const LoginAgente = () => {
               {/* Mobile Drag Handle (Swipe line to hide/show sheet) */}
               <div 
                 className="aiw-mobile-drag-handle"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setIsSheetCollapsed(prev => {
                     const next = !prev;
                     if (!next) setShowRoleExplorer(false);
@@ -1166,9 +1194,7 @@ const LoginAgente = () => {
                   >
                     <div className="aiw-role-chip-left">
                       <span className="aiw-role-chip-label">ROL:</span>
-                      <span className="aiw-role-chip-emoji">{rolActual.icon}</span>
                       <strong className="aiw-role-chip-name">{rolActual.label}</strong>
-                      <span className="aiw-role-chip-subbadge" style={{ color: rolActual.color }}>{rolActual.badge}</span>
                     </div>
                     <div className="aiw-role-chip-action">
                       <span>Cambiar</span>
@@ -1400,15 +1426,6 @@ const LoginAgente = () => {
                   <span className="aiw-roles-eyebrow">REGISTRO MULTI-ROL</span>
                   <h2 className="aiw-roles-title">TIPOS DE USUARIO</h2>
                 </div>
-                <button
-                  type="button"
-                  className="aiw-roles-close-btn"
-                  onClick={() => setShowRoleExplorer(false)}
-                  title="Cerrar panel de roles"
-                  aria-label="Cerrar panel de roles"
-                >
-                  <X size={18} />
-                </button>
               </div>
 
               {/* Category selector pills (clean, modern segment control) */}
@@ -1429,79 +1446,159 @@ const LoginAgente = () => {
                 </button>
               </div>
 
-              {/* Carousel container with refined side navigation arrows */}
+              {/* 3D Coverflow Carousel container */}
               <div className="aiw-carousel-wrapper">
                 
-                {/* Left navigation arrow */}
-                <button
-                  type="button"
-                  className="aiw-arrow-btn left"
-                  onClick={() => handleStepRole(-1)}
-                  aria-label="Rol anterior"
-                >
-                  <ChevronLeft size={22} />
-                </button>
-
-                {/* Active Role Showcase Card with Directional Slide Animations */}
+                {/* 3D Coverflow Perspective Track Stage */}
                 <div 
-                  className={`aiw-role-showcase-card ${slideDirection === "prev" ? "slide-prev" : "slide-next"}`} 
-                  key={rolActual.key}
+                  className="aiw-dcarousel-track"
+                  onTouchStart={handleCardTouchStart}
+                  onTouchEnd={handleCardTouchEnd}
                 >
-                  
-                  <div className="aiw-rcard-top">
-                    <span className="aiw-rcard-badge">{rolActual.badge}</span>
+                  <div className="aiw-coverflow-desktop-stage">
+                    {rolesFiltrados.map((r, i) => {
+                      const activeIndex = rolesFiltrados.findIndex(rf => rf.key === selectedRoleKey);
+                      const safeActiveIndex = activeIndex === -1 ? 0 : activeIndex;
+                      const diff = i - safeActiveIndex;
+                      const isCenter = diff === 0;
+
+                      let transform = "";
+                      let zIndex = 1;
+                      let opacity = 0;
+                      let pointerEvents = "none";
+                      let filter = "none";
+
+                      if (isCenter) {
+                        transform = "translateX(0) scale(1) translateZ(0) rotateY(0deg)";
+                        zIndex = 10;
+                        opacity = 1;
+                        pointerEvents = "auto";
+                        filter = "none";
+                      } else if (diff === -1) {
+                        transform = "translateX(-130px) scale(0.86) translateZ(-40px) rotateY(16deg)";
+                        zIndex = 6;
+                        opacity = 0.65;
+                        pointerEvents = "auto";
+                        filter = "brightness(0.75) blur(0.3px)";
+                      } else if (diff === 1) {
+                        transform = "translateX(130px) scale(0.86) translateZ(-40px) rotateY(-16deg)";
+                        zIndex = 6;
+                        opacity = 0.65;
+                        pointerEvents = "auto";
+                        filter = "brightness(0.75) blur(0.3px)";
+                      } else if (diff === -2) {
+                        transform = "translateX(-210px) scale(0.72) translateZ(-90px) rotateY(26deg)";
+                        zIndex = 3;
+                        opacity = 0.25;
+                        pointerEvents = "auto";
+                        filter = "brightness(0.5) blur(1.5px)";
+                      } else if (diff === 2) {
+                        transform = "translateX(210px) scale(0.72) translateZ(-90px) rotateY(-26deg)";
+                        zIndex = 3;
+                        opacity = 0.25;
+                        pointerEvents = "auto";
+                        filter = "brightness(0.5) blur(1.5px)";
+                      } else {
+                        transform = `translateX(${diff > 0 ? 270 : -270}px) scale(0.55) translateZ(-130px)`;
+                        zIndex = 1;
+                        opacity = 0;
+                        pointerEvents = "none";
+                      }
+
+                      return (
+                        <div
+                          key={r.key}
+                          className={`aiw-coverflow-card aiw-desktop-cf-card ${isCenter ? "active-center" : "flanking"}`}
+                          style={{
+                            transform,
+                            zIndex,
+                            opacity,
+                            pointerEvents,
+                            filter,
+                            borderColor: isCenter ? r.color : `${r.color}55`,
+                            boxShadow: isCenter
+                              ? `0 24px 55px rgba(0, 0, 0, 0.9), 0 0 35px ${r.color}40`
+                              : `0 10px 25px rgba(0, 0, 0, 0.6)`
+                          }}
+                          onClick={() => {
+                            if (!isCenter) {
+                              handleDotClick(r.key, i);
+                            } else {
+                              handleSelectRoleFromExplorer(r);
+                            }
+                          }}
+                        >
+                          <div className="aiw-rcard-top">
+                            <span 
+                              className="aiw-rcard-badge"
+                              style={{
+                                borderColor: `${r.color}77`,
+                                color: r.color,
+                                background: `${r.color}1a`
+                              }}
+                            >
+                              {r.badge}
+                            </span>
+                            <span className="aiw-cf-category-tag">
+                              {r.category === 'agente' ? 'MATRIZ OFICIAL' : 'RED DE TRABAJO'}
+                            </span>
+                          </div>
+
+                          <h3 className="aiw-rcard-title">{r.label}</h3>
+
+                          <p className="aiw-rcard-tagline" style={{ color: r.color }}>{r.tagline}</p>
+                          <p className="aiw-rcard-desc">{r.description}</p>
+
+                          <div className="aiw-rcard-features-box">
+                            {r.features.map((feat, fIdx) => (
+                              <div key={fIdx} className="aiw-rcard-feat-item">
+                                <CheckCircle2 size={16} className="aiw-feat-check-icon" style={{ color: r.color }} />
+                                <span>{feat}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Dots pagination */}
+                          <div className="aiw-rcard-dots">
+                            {rolesFiltrados.map((item, dotIdx) => (
+                              <button
+                                key={item.key}
+                                type="button"
+                                className={`aiw-rcard-dot ${item.key === selectedRoleKey ? "active" : ""}`}
+                                style={item.key === selectedRoleKey ? { background: r.color, boxShadow: `0 0 10px ${r.color}99` } : {}}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDotClick(item.key, dotIdx);
+                                }}
+                                aria-label={`Ver ${item.label}`}
+                              />
+                            ))}
+                          </div>
+
+                          {/* Select Role Button */}
+                          <button
+                            type="button"
+                            className="aiw-rcard-cta-btn"
+                            style={{
+                              background: isCenter
+                                ? `linear-gradient(135deg, ${r.color} 0%, #f26522 60%, #e11d48 100%)`
+                                : undefined
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectRoleFromExplorer(r);
+                            }}
+                          >
+                            <span>{r.cta}</span>
+                            <ArrowRight size={17} />
+                          </button>
+
+                          <span className="aiw-rcard-trial-info">{r.trialInfo}</span>
+                        </div>
+                      );
+                    })}
                   </div>
-
-                  <h3 className="aiw-rcard-title">{rolActual.label}</h3>
-
-                  <p className="aiw-rcard-tagline">{rolActual.tagline}</p>
-                  <p className="aiw-rcard-desc">{rolActual.description}</p>
-
-                  <div className="aiw-rcard-features-box">
-                    {rolActual.features.map((feat, index) => (
-                      <div key={index} className="aiw-rcard-feat-item">
-                        <CheckCircle2 size={16} className="aiw-feat-check-icon" />
-                        <span>{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Dots pagination with directional transition */}
-                  <div className="aiw-rcard-dots">
-                    {rolesFiltrados.map((r, i) => (
-                      <button
-                        key={r.key}
-                        type="button"
-                        className={`aiw-rcard-dot ${r.key === selectedRoleKey ? "active" : ""}`}
-                        onClick={() => handleDotClick(r.key, i)}
-                        aria-label={`Ver ${r.label}`}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Select Role Button */}
-                  <button
-                    type="button"
-                    className="aiw-rcard-cta-btn"
-                    onClick={() => handleSelectRoleFromExplorer(rolActual)}
-                  >
-                    <span>{rolActual.cta}</span>
-                    <ArrowRight size={17} />
-                  </button>
-
-                  <span className="aiw-rcard-trial-info">{rolActual.trialInfo}</span>
-
                 </div>
-
-                {/* Right navigation arrow */}
-                <button
-                  type="button"
-                  className="aiw-arrow-btn right"
-                  onClick={() => handleStepRole(1)}
-                  aria-label="Siguiente rol"
-                >
-                  <ChevronRight size={22} />
-                </button>
 
               </div>
 
