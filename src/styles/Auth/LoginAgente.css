@@ -1045,6 +1045,46 @@
   border-color: #3f4452;
 }
 
+.aiw-recover-email-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(242, 101, 34, 0.08);
+  border: 1px solid rgba(242, 101, 34, 0.3);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+}
+
+.aiw-recover-email-chip-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiw-recover-change-btn {
+  background: none;
+  border: none;
+  color: #f26522;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 2px 4px;
+  transition: color 0.2s ease;
+}
+
+.aiw-recover-change-btn:hover {
+  color: #ff854d;
+}
+
 /* ==========================================================================
    ROLE EXPLORER & SIDE TRIGGER ARROW
    ========================================================================== */

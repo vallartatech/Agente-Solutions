@@ -222,7 +222,12 @@ const LoginAgente = () => {
   const [regMessage, setRegMessage] = useState("");
 
   const [isRecoverModalOpen, setIsRecoverModalOpen] = useState(false);
+  const [recoverStep, setRecoverStep] = useState(1);
   const [recoverEmail, setRecoverEmail] = useState("");
+  const [recoverNewPassword, setRecoverNewPassword] = useState("");
+  const [recoverConfirmPassword, setRecoverConfirmPassword] = useState("");
+  const [showRecoverPassword, setShowRecoverPassword] = useState(false);
+  const [showRecoverConfirm, setShowRecoverConfirm] = useState(false);
   const [recoverMessage, setRecoverMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -533,16 +538,19 @@ const LoginAgente = () => {
   };
 
   const openRecoverModal = () => {
-    setRecoverEmail(email || "");
+    setRecoverEmail(email ? email.trim() : "");
+    setRecoverNewPassword("");
+    setRecoverConfirmPassword("");
     setRecoverMessage("");
+    setRecoverStep(1);
     setIsRecoverModalOpen(true);
   };
 
-  const handleRecoverPassword = async (e) => {
+  const handleStep1Submit = (e) => {
     if (e) e.preventDefault();
     setRecoverMessage("");
     if (!recoverEmail || !recoverEmail.trim()) {
-      setRecoverMessage("Error: Por favor ingresa tu correo electrónico.");
+      setRecoverMessage("Error: Por favor ingresa tu correo registrado.");
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -550,18 +558,55 @@ const LoginAgente = () => {
       setRecoverMessage("Error: Por favor ingresa un correo electrónico válido.");
       return;
     }
+    setRecoverStep(2);
+  };
+
+  const handleRecoverPasswordSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setRecoverMessage("");
+
+    if (!recoverNewPassword || recoverNewPassword.length < 4) {
+      setRecoverMessage("Error: La contraseña debe tener al menos 4 caracteres.");
+      return;
+    }
+
+    if (recoverNewPassword !== recoverConfirmPassword) {
+      setRecoverMessage("Error: Las contraseñas no coinciden.");
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/forgot-password`, {
-        email: recoverEmail.trim()
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/reset-password`, {
+        email: recoverEmail.trim(),
+        password: recoverNewPassword,
+        password_confirmation: recoverConfirmPassword,
+        token: "direct_reset"
       });
+
       setIsLoading(false);
-      setRecoverMessage(`✅ ${res.data?.message || "Solicitud procesada con éxito."}`);
+      setRecoverMessage(`✅ ${res.data?.message || "¡Contraseña actualizada exitosamente!"}`);
+
+      // Auto completar los campos del login principal
+      setEmail(recoverEmail.trim());
+      setPassword(recoverNewPassword);
+      setMensaje("✨ ¡Contraseña actualizada con éxito! Ya puedes iniciar sesión.");
+
+      setTimeout(() => {
+        setIsRecoverModalOpen(false);
+        setRecoverStep(1);
+        setRecoverNewPassword("");
+        setRecoverConfirmPassword("");
+        setRecoverMessage("");
+      }, 1500);
+
     } catch (error) {
       setIsLoading(false);
-      console.error("Error al solicitar recuperación:", error);
-      const errMsg = error.response?.data?.message || error.response?.data?.error || "No encontramos ninguna cuenta con este correo electrónico.";
+      console.error("Error al restablecer contraseña:", error);
+      const errMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "No encontramos ninguna cuenta con este correo electrónico.";
       setRecoverMessage(`Error: ${errMsg}`);
     }
   };
@@ -1630,7 +1675,7 @@ const LoginAgente = () => {
 
       </div>
 
-      {/* MODAL RECUPERACIÓN DE CONTRASEÑA */}
+      {/* MODAL RECUPERACIÓN DE CONTRASEÑA DIRECTA */}
       {isRecoverModalOpen && (
         <div className="aiw-modal-overlay" onClick={() => setIsRecoverModalOpen(false)}>
           <div className="aiw-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -1638,49 +1683,144 @@ const LoginAgente = () => {
               <div className="aiw-modal-icon-wrap">
                 <KeyRound size={26} color="#f26522" />
               </div>
-              <h3 className="aiw-modal-title">RECUPERAR CONTRASEÑA</h3>
+              <h3 className="aiw-modal-title">
+                {recoverStep === 1 ? "RECUPERAR CONTRASEÑA" : "NUEVA CONTRASEÑA"}
+              </h3>
               <p className="aiw-modal-subtitle">
-                Ingresa tu correo registrado y te enviaremos las instrucciones y enlace para restablecer tu contraseña.
+                {recoverStep === 1
+                  ? "Ingresa tu correo registrado para restablecer tu contraseña."
+                  : "Ingresa tu nueva contraseña para actualizar tu cuenta."}
               </p>
             </div>
 
-            <form onSubmit={handleRecoverPassword} className="aiw-modal-form">
-              <div className="aiw-input-field">
-                <Mail size={18} className="aiw-field-icon" />
-                <input
-                  type="email"
-                  placeholder="TU CORREO REGISTRADO..."
-                  className="aiw-input"
-                  value={recoverEmail}
-                  onChange={(e) => setRecoverEmail(e.target.value)}
-                  required
-                  autoFocus
-                />
-              </div>
+            {recoverStep === 1 ? (
+              <form onSubmit={handleStep1Submit} className="aiw-modal-form">
+                <div className="aiw-input-field">
+                  <Mail size={18} className="aiw-field-icon" />
+                  <input
+                    type="email"
+                    placeholder="TU CORREO REGISTRADO..."
+                    className="aiw-input"
+                    value={recoverEmail}
+                    onChange={(e) => setRecoverEmail(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                </div>
 
-              <button type="submit" disabled={isLoading} className="aiw-btn-primary">
-                <span>{isLoading ? 'ENVIANDO...' : 'ENVIAR ENLACE'}</span>
-                {!isLoading && (
+                <button type="submit" disabled={isLoading} className="aiw-btn-primary">
+                  <span>CONTINUAR</span>
                   <div className="aiw-btn-arrow">
                     <ArrowRight size={17} />
                   </div>
+                </button>
+
+                <button
+                  type="button"
+                  className="aiw-btn-cancel"
+                  onClick={() => setIsRecoverModalOpen(false)}
+                >
+                  CANCELAR
+                </button>
+
+                {recoverMessage && (
+                  <div className={`aiw-feedback-msg ${recoverMessage.startsWith("Error") ? "error" : "success"}`}>
+                    {recoverMessage}
+                  </div>
                 )}
-              </button>
-
-              <button
-                type="button"
-                className="aiw-btn-cancel"
-                onClick={() => setIsRecoverModalOpen(false)}
-              >
-                CANCELAR
-              </button>
-
-              {recoverMessage && (
-                <div className={`aiw-feedback-msg ${recoverMessage.startsWith("Error") ? "error" : "success"}`}>
-                  {recoverMessage}
+              </form>
+            ) : (
+              <form onSubmit={handleRecoverPasswordSubmit} className="aiw-modal-form">
+                <div className="aiw-recover-email-chip">
+                  <div className="aiw-recover-email-chip-text" title={recoverEmail}>
+                    <Mail size={14} color="#f26522" />
+                    <span>{recoverEmail}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="aiw-recover-change-btn"
+                    onClick={() => {
+                      setRecoverStep(1);
+                      setRecoverMessage("");
+                    }}
+                  >
+                    Cambiar
+                  </button>
                 </div>
-              )}
-            </form>
+
+                <div className="aiw-input-field">
+                  <Lock size={16} className="aiw-field-icon" />
+                  <input
+                    type={showRecoverPassword ? "text" : "password"}
+                    placeholder="Nueva contraseña..."
+                    className="aiw-input"
+                    value={recoverNewPassword}
+                    onChange={(e) => setRecoverNewPassword(e.target.value)}
+                    required
+                    minLength={4}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    className="aiw-eye-toggle"
+                    onClick={() => setShowRecoverPassword(!showRecoverPassword)}
+                    tabIndex={-1}
+                    aria-label="Ver u ocultar contraseña"
+                  >
+                    {showRecoverPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                <div className="aiw-input-field">
+                  <Lock size={16} className="aiw-field-icon" />
+                  <input
+                    type={showRecoverConfirm ? "text" : "password"}
+                    placeholder="Confirmar nueva contraseña..."
+                    className="aiw-input"
+                    value={recoverConfirmPassword}
+                    onChange={(e) => setRecoverConfirmPassword(e.target.value)}
+                    required
+                    minLength={4}
+                  />
+                  <button
+                    type="button"
+                    className="aiw-eye-toggle"
+                    onClick={() => setShowRecoverConfirm(!showRecoverConfirm)}
+                    tabIndex={-1}
+                    aria-label="Ver u ocultar confirmación de contraseña"
+                  >
+                    {showRecoverConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                <button type="submit" disabled={isLoading} className="aiw-btn-primary">
+                  <span>{isLoading ? "ACTUALIZANDO..." : "GUARDAR CONTRASEÑA"}</span>
+                  {!isLoading && (
+                    <div className="aiw-btn-arrow">
+                      <ArrowRight size={17} />
+                    </div>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  className="aiw-btn-cancel"
+                  onClick={() => {
+                    setRecoverStep(1);
+                    setRecoverMessage("");
+                  }}
+                  disabled={isLoading}
+                >
+                  VOLVER
+                </button>
+
+                {recoverMessage && (
+                  <div className={`aiw-feedback-msg ${recoverMessage.startsWith("Error") ? "error" : "success"}`}>
+                    {recoverMessage}
+                  </div>
+                )}
+              </form>
+            )}
           </div>
         </div>
       )}
