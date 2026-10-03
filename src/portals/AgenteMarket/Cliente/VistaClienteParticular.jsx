@@ -241,19 +241,104 @@ const VistaClienteParticular = () => {
     }
   };
 
+// Helper para extraer y normalizar coordenadas GPS de una propiedad
+  const extractPropertyGps = (prop) => {
+    if (!prop) return null;
+
+  // 1. Strings con coordenadas separadas por coma
+  const strCandidates = [
+    prop.coordinates,
+    prop.coordenadas,
+    prop.ubicacion_gps,
+    prop.gps,
+    prop.location,
+    prop.coords
+  ];
+
+  for (const str of strCandidates) {
+    if (typeof str === 'string' && str.trim() !== '' && str.trim() !== 'null' && str.trim() !== 'undefined') {
+      const parts = str.split(',').map(s => s.trim());
+      if (parts.length === 2) {
+        const lat = parseFloat(parts[0]);
+        const lng = parseFloat(parts[1]);
+        if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && (lat !== 0 || lng !== 0)) {
+          return { lat, lng, formatted: `${lat.toFixed(6)}, ${lng.toFixed(6)}` };
+        }
+      }
+    }
+  }
+
+  // 2. Valores numéricos directos de latitud / longitud
+  const latCandidates = [
+    prop.lat,
+    prop.latitude,
+    prop.latitud,
+    prop.area_lat
+  ];
+  const lngCandidates = [
+    prop.lng,
+    prop.longitude,
+    prop.longitud,
+    prop.lon,
+    prop.area_lng
+  ];
+
+  for (let i = 0; i < latCandidates.length; i++) {
+    const rawLat = latCandidates[i];
+    const rawLng = lngCandidates[i];
+    if (rawLat !== undefined && rawLat !== null && rawLng !== undefined && rawLng !== null) {
+      const lat = parseFloat(rawLat);
+      const lng = parseFloat(rawLng);
+      if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && (lat !== 0 || lng !== 0)) {
+        return { lat, lng, formatted: `${lat.toFixed(6)}, ${lng.toFixed(6)}` };
+      }
+    }
+  }
+
+  // 3. Revisar si la dirección o algún campo de texto contiene coordenadas numéricas tipo "20.12345, -89.12345"
+  const textCandidates = [
+    prop.address,
+    prop.direccion,
+    prop.calle,
+    prop.curp,
+    prop.curp_inmueble,
+    prop.description,
+    prop.nombre_propiedad
+  ];
+
+  for (const text of textCandidates) {
+    if (typeof text === 'string') {
+      const match = text.match(/(-?\d{1,3}\.\d{4,}),\s*(-?\d{1,3}\.\d{4,})/);
+      if (match) {
+        const lat = parseFloat(match[1]);
+        const lng = parseFloat(match[2]);
+        if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+          return { lat, lng, formatted: `${lat.toFixed(6)}, ${lng.toFixed(6)}` };
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
   // Enlace a Google Maps
   const handleOpenMaps = () => {
-    const lat = activeProperty?.lat || activeProperty?.latitude;
-    const lng = activeProperty?.lng || activeProperty?.longitude;
-    const address = activeProperty?.address || activeProperty?.direccion;
+    const coords = extractPropertyGps(activeProperty);
 
-    if (lat && lng) {
-      window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
-    } else if (address) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
-    } else {
-      window.open(`https://www.google.com/maps`, '_blank');
+    if (coords) {
+      // Abre el pin exacto por coordenadas GPS en Google Maps evitando discrepancias de calles
+      window.open(`https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`, '_blank');
+      return;
     }
+
+    const address = activeProperty?.address || activeProperty?.direccion || activeProperty?.calle;
+    if (address && typeof address === 'string' && address.trim() !== '' && address.trim() !== 'null') {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address.trim())}`, '_blank');
+      return;
+    }
+
+    window.open(`https://www.google.com/maps`, '_blank');
   };
 
   // Límite de propiedades
@@ -532,8 +617,12 @@ const VistaClienteParticular = () => {
                 </div>
                 <div className="vcp-field-content">
                   <span className="vcp-field-label">UBICACIÓN GPS</span>
-                  <div className="vcp-gps-row" onClick={handleOpenMaps} title="Ver en Google Maps">
-                    <span>📍 Ver en Google Maps</span>
+                  <div className="vcp-gps-row" onClick={handleOpenMaps} title="Ver ubicación exacta en Google Maps">
+                    <span>
+                      {extractPropertyGps(activeProperty)
+                        ? `📍 ${extractPropertyGps(activeProperty).formatted}`
+                        : '📍 Ver en Google Maps'}
+                    </span>
                     <ExternalLink size={13} />
                   </div>
                 </div>
