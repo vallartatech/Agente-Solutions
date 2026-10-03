@@ -711,8 +711,9 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
               className="btn-modal-close-window" 
               onClick={onClose} 
               title="Cerrar ventana (Esc)"
+              aria-label="Cerrar ventana"
             >
-              <X size={18} />
+              <X size={20} color="#FFFFFF" strokeWidth={2.8} />
             </button>
           </div>
         </div>
@@ -1007,11 +1008,11 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                     {MONTH_NAMES[miniCalDate.getMonth()]} {miniCalDate.getFullYear()}
                   </span>
                   <div className="mini-cal-arrows">
-                    <button className="mini-cal-arrow-btn" onClick={handleMiniPrev}>
-                      <ChevronLeft size={14} />
+                    <button className="mini-cal-arrow-btn" onClick={handleMiniPrev} title="Mes anterior" aria-label="Mes anterior">
+                      <ChevronLeft size={16} color="#FFFFFF" strokeWidth={2.6} />
                     </button>
-                    <button className="mini-cal-arrow-btn" onClick={handleMiniNext}>
-                      <ChevronRight size={14} />
+                    <button className="mini-cal-arrow-btn" onClick={handleMiniNext} title="Mes siguiente" aria-label="Mes siguiente">
+                      <ChevronRight size={16} color="#FFFFFF" strokeWidth={2.6} />
                     </button>
                   </div>
                 </div>

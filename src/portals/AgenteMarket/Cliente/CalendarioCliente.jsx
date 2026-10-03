@@ -445,6 +445,9 @@ const CalendarioCliente = () => {
     return networkJobs[0];
   }, [networkJobs]);
 
+  const handleMiniPrev = () => setMiniCalDate(new Date(miniCalDate.getFullYear(), miniCalDate.getMonth() - 1, 1));
+  const handleMiniNext = () => setMiniCalDate(new Date(miniCalDate.getFullYear(), miniCalDate.getMonth() + 1, 1));
+
   const monthMatrix = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -695,6 +698,14 @@ const CalendarioCliente = () => {
               <div className="mini-cal-card">
                 <div className="mini-cal-nav">
                   <span className="mini-cal-title">{MONTH_NAMES[miniCalDate.getMonth()]} {miniCalDate.getFullYear()}</span>
+                  <div className="mini-cal-arrows">
+                    <button className="mini-cal-arrow-btn" onClick={handleMiniPrev} title="Mes anterior" aria-label="Mes anterior">
+                      <ChevronLeft size={16} color="#FFFFFF" strokeWidth={2.6} />
+                    </button>
+                    <button className="mini-cal-arrow-btn" onClick={handleMiniNext} title="Mes siguiente" aria-label="Mes siguiente">
+                      <ChevronRight size={16} color="#FFFFFF" strokeWidth={2.6} />
+                    </button>
+                  </div>
                 </div>
                 <div className="mini-cal-grid">
                   {DAY_NAMES_MINI.map((d, i) => (<div key={i} className="mini-cal-day-header">{d}</div>))}
