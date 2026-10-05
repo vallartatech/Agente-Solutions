@@ -1,22 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
-import { 
-  User, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Mail, 
-  Phone, 
-  Building2, 
-  Key, 
-  Globe, 
-  HardHat, 
-  Wrench, 
-  CheckCircle2, 
-  Clock, 
-  ArrowLeft, 
-  ChevronLeft, 
-  ChevronRight, 
-  Sparkles, 
+import {
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+  Mail,
+  Phone,
+  Building2,
+  Key,
+  Globe,
+  HardHat,
+  Wrench,
+  CheckCircle2,
+  Clock,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
   X,
   ArrowRight
 } from "lucide-react";
@@ -100,7 +100,7 @@ const ROLES_PUBLICOS = [
     tagline: "Publica necesidades y recibe cotizaciones tipo Uber",
     description: "Ideal para propietarios que desean cotizaciones competitivas en tiempo real de técnicos y contratistas calificados de la red.",
     features: [
-      "Publicación de problemas al mapa en vivo de la red",
+      "n de problemas al mapa en vivo de la red",
       "Recepción de ofertas y chat directo con técnicos",
       "Opción de delegar administración a gestores inmobiliarios"
     ],
@@ -241,12 +241,12 @@ const ClientRegister = () => {
   // Cargar configuración visual de fondo del login
   useEffect(() => {
     axios.get(`${import.meta.env.VITE_API_BASE_URL}/ui/settings/login-settings`)
-      .then(r => { 
+      .then(r => {
         if (r.data.success && r.data.settings) {
-          setBackgroundSettings(r.data.settings); 
+          setBackgroundSettings(r.data.settings);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Filtrar roles según la categoría activa ('agente' o 'autonomo')
@@ -274,7 +274,7 @@ const ClientRegister = () => {
   const handleStepRole = (direction) => {
     const currentIndex = rolesFiltrados.findIndex(r => r.key === selectedRoleKey);
     if (currentIndex === -1) return;
-    
+
     let nextIndex = currentIndex + direction;
     if (nextIndex < 0) nextIndex = rolesFiltrados.length - 1;
     if (nextIndex >= rolesFiltrados.length) nextIndex = 0;
@@ -377,7 +377,7 @@ const ClientRegister = () => {
   const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   return (
-    <div 
+    <div
       className="main-viewport"
       style={{
         backgroundColor: backgroundSettings.colorHex || '#000000',
@@ -398,9 +398,9 @@ const ClientRegister = () => {
       }}
     >
       {/* ── LOGO DE AGENTE SOLUTIONS EN LA MISMA POSICIÓN DEL LOGIN ── */}
-      <img 
-        src={backgroundSettings.appLogo || Logo4} 
-        alt="Agente Solutions" 
+      <img
+        src={backgroundSettings.appLogo || Logo4}
+        alt="Agente Solutions"
         className="logo-top-left"
         onClick={() => navigate('/')}
         style={{ cursor: 'pointer', objectFit: 'contain' }}
@@ -800,8 +800,8 @@ const ClientRegister = () => {
             <p style={{ color: '#cbd5e1', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '18px', fontFamily: 'system-ui, sans-serif' }}>
               Tu registro se ha completado. Tu cuenta debe ser autorizada por el <strong>Administrador</strong> para poder iniciar sesión.
             </p>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn-login"
               onClick={() => navigate('/')}
             >
@@ -896,8 +896,8 @@ const ClientRegister = () => {
             {/* ENLACES INFERIORES */}
             <div style={{ textAlign: 'center', fontSize: '0.9rem', marginTop: '6px' }}>
               <span style={{ color: '#888' }}>¿Ya tienes una cuenta? </span>
-              <span 
-                onClick={() => navigate('/')} 
+              <span
+                onClick={() => navigate('/')}
                 style={{ color: '#FF6600', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }}
               >
                 Inicia sesión aquí
@@ -911,7 +911,7 @@ const ClientRegister = () => {
           VENTANA EMERGENTE (MODAL DE REGISTRO CON EL DISEÑO DEL LOGIN)
       ══════════════════════════════════════════════════════════════════════ */}
       {isModalOpen && (
-        <div 
+        <div
           className="register-modal-overlay"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsModalOpen(false);
@@ -931,10 +931,10 @@ const ClientRegister = () => {
 
             {/* ENCABEZADO DEL MODAL */}
             <div className="modal-header-box">
-              <img 
-                src={backgroundSettings.appLogo || Logo4} 
-                alt="Agente Solutions" 
-                style={{ width: '140px', marginBottom: '8px', objectFit: 'contain' }} 
+              <img
+                src={backgroundSettings.appLogo || Logo4}
+                alt="Agente Solutions"
+                style={{ width: '140px', marginBottom: '8px', objectFit: 'contain' }}
               />
               <h3 className="modal-title">
                 {rolActual.icon} {rolActual.label}
@@ -1025,9 +1025,9 @@ const ClientRegister = () => {
                     required
                     style={{ paddingLeft: "55px" }}
                   />
-                  <button 
-                    type="button" 
-                    className="toggle-password-btn" 
+                  <button
+                    type="button"
+                    className="toggle-password-btn"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
@@ -1047,9 +1047,9 @@ const ClientRegister = () => {
                     required
                     style={{ paddingLeft: "55px" }}
                   />
-                  <button 
-                    type="button" 
-                    className="toggle-password-btn" 
+                  <button
+                    type="button"
+                    className="toggle-password-btn"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
@@ -1187,17 +1187,17 @@ const ClientRegister = () => {
               )}
 
               {/* BOTONES DE ACCIÓN */}
-              <button 
-                type="submit" 
-                className="btn-login" 
+              <button
+                type="submit"
+                className="btn-login"
                 disabled={isLoading}
                 style={{ marginTop: '4px' }}
               >
                 {isLoading ? "REGISTRANDO..." : "REGISTRAR"}
               </button>
 
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn-cancelar"
                 onClick={() => setIsModalOpen(false)}
               >

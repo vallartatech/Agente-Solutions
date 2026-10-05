@@ -142,16 +142,16 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  max-width: 440px;
+  max-width: 500px;
   animation: aiwFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .aiw-hero-logo-img {
   width: 100%;
-  max-width: 350px;
+  max-width: 420px;
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 18px 38px rgba(0, 0, 0, 0.65));
+  filter: drop-shadow(0 18px 38px rgba(0, 0, 0, 0.75));
   transition: transform 0.4s ease;
 }
 
@@ -647,7 +647,8 @@
 .aiw-footer-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding-top: 12px;
   margin-top: 12px;
@@ -2229,6 +2230,11 @@
   .aiw-rcard-title {
     font-size: 1.15rem;
   }
+
+  .aiw-welcome-logo-center {
+    height: 78px;
+    max-width: 260px;
+  }
 }
 
 /* ==========================================================================
@@ -2302,19 +2308,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 .aiw-welcome-logo-center {
-  height: 64px;
-  max-width: 240px;
+  height: 110px;
+  max-width: 360px;
+  width: auto;
   object-fit: contain;
-  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.9));
+  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.95));
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .aiw-welcome-logo-center:hover {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 
 .aiw-welcome-badge {

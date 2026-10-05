@@ -133,9 +133,6 @@ const VistaClienteParticular = () => {
           : (propsRes.value.data.data || []);
         
         setPropiedades(rawProps);
-        if (rawProps.length > 0 && !selectedPropId) {
-          setSelectedPropId(rawProps[0].id);
-        }
       }
 
       if (subRes.status === 'fulfilled' && subRes.value.data?.success) {
@@ -173,7 +170,36 @@ const VistaClienteParticular = () => {
     ? user.first_name.charAt(0).toUpperCase() 
     : (user?.name ? user.name.charAt(0).toUpperCase() : (user?.nombre ? user.nombre.charAt(0).toUpperCase() : 'P'));
 
-  // Propiedades filtradas para el usuario actual si aplican
+  // Estado para el orden personalizado de propiedades
+  const [customOrder, setCustomOrder] = useState(() => {
+    try {
+      const key = `agente_props_order_${user?.id || user?.email || 'client'}`;
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [draggedPropId, setDraggedPropId] = useState(null);
+  const [dragOverPropId, setDragOverPropId] = useState(null);
+  const hasSelectedInitRef = useRef(false);
+
+  // Cargar orden personalizado de propiedades desde localStorage cuando el usuario esté listo
+  useEffect(() => {
+    try {
+      const key = `agente_props_order_${user?.id || user?.email || 'client'}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setCustomOrder(parsed);
+      }
+    } catch (e) {
+      console.error("Error al cargar orden de propiedades:", e);
+    }
+  }, [user?.id, user?.email]);
+
+  // Propiedades filtradas para el usuario actual y ordenadas según el orden personalizado
   const userPropiedades = useMemo(() => {
     if (!propiedades || propiedades.length === 0) return [];
     
@@ -183,8 +209,19 @@ const VistaClienteParticular = () => {
       (user?.tenant_id && p.tenant_id === user.tenant_id)
     );
 
-    return forThisUser.length > 0 ? forThisUser : propiedades;
-  }, [propiedades, user]);
+    const baseList = forThisUser.length > 0 ? forThisUser : propiedades;
+
+    if (!customOrder || customOrder.length === 0) return baseList;
+
+    return [...baseList].sort((a, b) => {
+      const idxA = customOrder.indexOf(a.id);
+      const idxB = customOrder.indexOf(b.id);
+      if (idxA === -1 && idxB === -1) return 0;
+      if (idxA === -1) return 1;
+      if (idxB === -1) return -1;
+      return idxA - idxB;
+    });
+  }, [propiedades, user, customOrder]);
 
   const activeProperty = useMemo(() => {
     if (!userPropiedades || userPropiedades.length === 0) {
@@ -203,12 +240,74 @@ const VistaClienteParticular = () => {
     return found || userPropiedades[0];
   }, [userPropiedades, selectedPropId, userFullName]);
 
-  // Asegurar que si cambia la lista seleccionamos la primera propiedad válida
+  // Al entrar a la vista o cargar propiedades, la primera propiedad de la lista ordenada es la activa por defecto
   useEffect(() => {
-    if (userPropiedades.length > 0 && !userPropiedades.some(p => p.id === selectedPropId)) {
-      setSelectedPropId(userPropiedades[0].id);
+    if (userPropiedades.length > 0) {
+      if (!hasSelectedInitRef.current || !selectedPropId || !userPropiedades.some(p => p.id === selectedPropId)) {
+        setSelectedPropId(userPropiedades[0].id);
+        hasSelectedInitRef.current = true;
+      }
     }
   }, [userPropiedades, selectedPropId]);
+
+  // Handlers para Drag & Drop (Reordenamiento visual y persistente)
+  const handleDragStart = (e, propId) => {
+    setDraggedPropId(propId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(propId));
+  };
+
+  const handleDragOver = (e, propId) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverPropId !== propId) {
+      setDragOverPropId(propId);
+    }
+  };
+
+  const handleDragLeave = (e, propId) => {
+    if (dragOverPropId === propId) {
+      setDragOverPropId(null);
+    }
+  };
+
+  const handleDrop = (e, targetPropId) => {
+    e.preventDefault();
+    if (!draggedPropId || draggedPropId === targetPropId) {
+      setDraggedPropId(null);
+      setDragOverPropId(null);
+      return;
+    }
+
+    const currentIds = userPropiedades.map(p => p.id);
+    const sourceIndex = currentIds.indexOf(draggedPropId);
+    const targetIndex = currentIds.indexOf(targetPropId);
+
+    if (sourceIndex !== -1 && targetIndex !== -1) {
+      const newIds = [...currentIds];
+      const [moved] = newIds.splice(sourceIndex, 1);
+      newIds.splice(targetIndex, 0, moved);
+
+      setCustomOrder(newIds);
+      // La propiedad que se movió al primer lugar pasa a ser la activa de inmediato
+      setSelectedPropId(newIds[0]);
+
+      const storageKey = `agente_props_order_${user?.id || user?.email || 'client'}`;
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(newIds));
+      } catch (err) {
+        console.error("Error al guardar orden en localStorage:", err);
+      }
+    }
+
+    setDraggedPropId(null);
+    setDragOverPropId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedPropId(null);
+    setDragOverPropId(null);
+  };
 
   // Helper para resolver la URL de la imagen de la propiedad (Cloudinary / DB)
   const getPropImage = (p) => {
@@ -515,20 +614,38 @@ const VistaClienteParticular = () => {
               PROPIEDADES
             </div>
 
-            {/* Horizontal Thumbnails Carousel */}
+            {/* Horizontal Thumbnails Carousel con Reordenamiento Drag & Drop */}
             <div className="vcp-thumbs-track">
               {userPropiedades && userPropiedades.length > 0 ? (
-                userPropiedades.map((prop) => {
+                userPropiedades.map((prop, idx) => {
                   const isActive = prop.id === activeProperty?.id;
+                  const isDragging = prop.id === draggedPropId;
+                  const isDragOver = prop.id === dragOverPropId;
                   const thumbImg = getPropImage(prop);
                   return (
                     <div 
                       key={prop.id}
-                      className={`vcp-thumb-card ${isActive ? 'active' : ''}`}
+                      draggable={true}
+                      onDragStart={(e) => handleDragStart(e, prop.id)}
+                      onDragOver={(e) => handleDragOver(e, prop.id)}
+                      onDragLeave={(e) => handleDragLeave(e, prop.id)}
+                      onDrop={(e) => handleDrop(e, prop.id)}
+                      onDragEnd={handleDragEnd}
+                      className={`vcp-thumb-card ${isActive ? 'active' : ''} ${isDragging ? 'is-dragging' : ''} ${isDragOver ? 'is-drag-over' : ''}`}
                       onClick={() => setSelectedPropId(prop.id)}
-                      title={prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}
+                      title={`Arrastra para reordenar o haz clic para ver:\n${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
                     >
-                      <img src={thumbImg} alt={prop.nombre_propiedad || 'Propiedad'} className="vcp-thumb-img" />
+                      <img 
+                        src={thumbImg} 
+                        alt={prop.nombre_propiedad || 'Propiedad'} 
+                        className="vcp-thumb-img" 
+                        draggable={false}
+                      />
+                      {idx === 0 && (
+                        <div className="vcp-thumb-main-badge" title="Propiedad Principal / Por Defecto">
+                          ★
+                        </div>
+                      )}
                     </div>
                   );
                 })
@@ -537,7 +654,7 @@ const VistaClienteParticular = () => {
                   className="vcp-thumb-card active"
                   title="Propiedad de Demostración"
                 >
-                  <img src={defaultPropImg} alt="Propiedad" className="vcp-thumb-img" />
+                  <img src={defaultPropImg} alt="Propiedad" className="vcp-thumb-img" draggable={false} />
                 </div>
               )}
 

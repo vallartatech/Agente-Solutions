@@ -83,8 +83,12 @@ export const AuthProvider = ({ children }) => {
       (response) => response,
       (error) => {
         if (error.response && error.response.status === 401) {
-          logoutGlobal();
-          window.location.href = "/";
+          const url = error.config?.url || '';
+          // Si el 401 viene del login o rutas públicas, no forzar recarga de página para permitir mostrar el mensaje de error
+          if (!url.includes('/login') && !url.includes('/forgot-password') && !url.includes('/registro')) {
+            logoutGlobal();
+            window.location.href = "/";
+          }
         }
         return Promise.reject(error);
       }

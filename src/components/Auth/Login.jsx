@@ -27,94 +27,35 @@ import LoginArtwork from "../../assets/Atardecer.png";
 
 // Catálogo de roles públicos clasificados en 2 categorías
 const ROLES_PUBLICOS = [
-  // ── CATEGORÍA 1: AGENTE SOLUTIONS (DIRECTOS / MATRIZ) ──
-  {
-    key: "client",
-    roleId: 3,
-    category: "agente",
-    categoryLabel: "Agente Solutions (2)",
-    label: "CLIENTE",
-    shortLabel: "Cliente",
-    badge: "MATRIZ OFICIAL",
-    icon: "👤",
-    color: "#f26522",
-    tagline: "Contrata servicios para tu hogar o negocio",
-    description: "Solicita servicios de mantenimiento, reparaciones y soporte técnico directo con la garantía oficial de Agente Solutions.",
-    features: [
-      "Solicitud de servicios programados y emergencias SOS",
-      "Seguimiento en tiempo real con reportes de avance",
-      "Aprobación de cotizaciones y pagos seguros"
-    ],
-    cta: "REGISTRARME COMO CLIENTE",
-    trialInfo: "Acceso inmediato sin costo de suscripción"
-  },
-  {
-    key: "technician",
-    roleId: 2,
-    category: "agente",
-    categoryLabel: "Agente Solutions (2)",
-    label: "TÉCNICO AGENTE",
-    shortLabel: "Técnico Agente",
-    badge: "TÉCNICO INTERNO",
-    icon: "🛠️",
-    color: "#0284c7",
-    tagline: "Presta servicios oficiales en Agente Solutions",
-    description: "Forma parte del equipo técnico oficial asignado a las órdenes de trabajo y levantamientos de la matriz Agente Solutions.",
-    features: [
-      "Recepción de órdenes de trabajo directas",
-      "Checklists inteligentes y reportes de evidencia",
-      "Registro de venta cruzada y comisiones por trabajo"
-    ],
-    cta: "REGISTRARME COMO TÉCNICO",
-    trialInfo: "1 año de suscripción gratuita de bienvenida"
-  },
-
-  // ── CATEGORÍA 2: AUTÓNOMOS & RED (5) ──
+  // ── CATEGORÍA 1: CLIENTES (1) ──
   {
     key: "market_client_personal",
     roleId: 4,
-    category: "autonomo",
-    categoryLabel: "Autónomos & Red (5)",
+    category: "agente",
+    categoryLabel: "Clientes (1)",
     label: "CLIENTE PARTICULAR",
-    shortLabel: "Cliente Red",
+    shortLabel: "Cliente",
     badge: "PROPIETARIO / RED",
     icon: "🏡",
     color: "#3b82f6",
     tagline: "Publica necesidades y recibe cotizaciones tipo Uber",
     description: "Ideal para propietarios que desean cotizaciones competitivas en tiempo real de técnicos y contratistas calificados de la red.",
     features: [
-      "Publicación de problemas al mapa en vivo de la red",
-      "Recepción de ofertas y chat directo con técnicos",
-      "Opción de delegar administración a gestores inmobiliarios"
+      "Publica necesidades y obtén propuestas, cotizaciones y tiempo compromiso de cumplimiento.",
+      "Recepción de ofertas y chat directos con técnicos.",
+      "Opción de delegar administración a gestores administrativos.",
+      "Historial de trabajos, cotizaciones, conversaciones y reportes fotográficos en la nube."
     ],
-    cta: "REGISTRARME COMO CLIENTE RED",
+    cta: "REGISTRARME COMO CLIENTE",
     trialInfo: "6 Meses Gratis de Prueba ($299/mes posterior)"
   },
-  {
-    key: "market_property_manager",
-    roleId: 5,
-    category: "autonomo",
-    categoryLabel: "Autónomos & Red (5)",
-    label: "GESTOR INMOBILIARIO",
-    shortLabel: "Gestor Inmuebles",
-    badge: "ADMINISTRADOR PRO",
-    icon: "🏢",
-    color: "#8b5cf6",
-    tagline: "Administración integral de inmuebles y cuadrillas",
-    description: "Para gestores de inmuebles, condominios y administradores que manejan múltiples propiedades (propias y delegadas) y equipos de trabajo.",
-    features: [
-      "Gestión de propiedades propias y delegadas por clientes",
-      "Coordinación de técnicos internos y publicación a la red",
-      "Tableros de control avanzados, cotizaciones y reportes"
-    ],
-    cta: "REGISTRARME COMO GESTOR",
-    trialInfo: "6 Meses Gratis de Prueba ($935/mes posterior)"
-  },
+
+  // ── CATEGORÍA 2: PROVEEDORES (2) ──
   {
     key: "market_tech_independent",
     roleId: 6,
     category: "autonomo",
-    categoryLabel: "Autónomos & Red (5)",
+    categoryLabel: "Proveedores (2)",
     label: "TÉCNICO INDEPENDIENTE",
     shortLabel: "Técnico Freelance",
     badge: "MARKETPLACE ABIERTO",
@@ -134,7 +75,7 @@ const ROLES_PUBLICOS = [
     key: "market_contractor",
     roleId: 7,
     category: "autonomo",
-    categoryLabel: "Autónomos & Red (5)",
+    categoryLabel: "Proveedores (2)",
     label: "CONTRATISTA / LÍDER",
     shortLabel: "Contratista",
     badge: "LÍDER DE CUADRILLA",
@@ -149,39 +90,19 @@ const ROLES_PUBLICOS = [
     ],
     cta: "REGISTRARME COMO CONTRATISTA",
     trialInfo: "6 Meses Gratis de Prueba ($935/mes posterior)"
-  },
-  {
-    key: "market_crew_member",
-    roleId: 8,
-    category: "autonomo",
-    categoryLabel: "Autónomos & Red (5)",
-    label: "TÉCNICO DE CUADRILLA",
-    shortLabel: "Técnico Cuadrilla",
-    badge: "EQUIPO & MODO DUAL",
-    icon: "👷",
-    color: "#f59e0b",
-    tagline: "Trabaja en equipo y por tu cuenta",
-    description: "Técnicos que forman parte del equipo de un contratista y cuentan con Modo Dual para realizar trabajos independientes.",
-    features: [
-      "Vinculación directa a la cuadrilla de tu contratista",
-      "Recepción de órdenes asignadas por tu líder de equipo",
-      "Modo Dual: Habilita tu acceso para cotizar por tu cuenta"
-    ],
-    cta: "REGISTRARME EN CUADRILLA",
-    trialInfo: "Sujeto a vinculación y aprobación del contratista"
   }
 ];
 
 const WELCOME_SLIDES = [
   {
-    badge: "AGENTE SOLUTIONS PLATAFORMA",
-    title: "RESOLVIENDO TUS NECESIDADES",
+    badge: " PLATAFORMA",
+    title: "RESOLVIENDO TUS NECESIDADES EN MANTENIMIENTO",
     subtitle: "Conecta con clientes, gestores inmobiliarios, contratistas y especialistas en tiempo real.",
   },
   {
     badge: "GESTORÍA INMOBILIARIA & OBRAS",
-    title: "GESTIONA TODO EN UN SOLO LUGAR",
-    subtitle: "Publica inmuebles, cotiza servicios, supervisa cuadrillas y automatiza tus operaciones.",
+    title: "GESTIONA TODO EN UN SOLO LUGAR:",
+    subtitle: "Convierte en proveedor de nuestro ecosistema y ten acceso sin límites a toda nuestra cartera de clientes que solicita trabajos en una red de necesidades. Encuentra un espacio para trabajar de manera independiente donde el límite de ingreso lo ponés tu.",
   },
   {
     badge: "MERCADO EN VIVO & CUADRILLAS",
@@ -208,7 +129,7 @@ const LoginAgente = () => {
   // Role Explorer State (when true, card slides to the left and role carousel appears on the right)
   const [showRoleExplorer, setShowRoleExplorer] = useState(false);
   const [activeCategory, setActiveCategory] = useState("agente");
-  const [selectedRoleKey, setSelectedRoleKey] = useState("client");
+  const [selectedRoleKey, setSelectedRoleKey] = useState("market_client_personal");
   const [slideDirection, setSlideDirection] = useState("next"); // 'next' | 'prev'
 
   // Registration Form States
@@ -794,20 +715,20 @@ const LoginAgente = () => {
                   className={`aiw-mcarousel-cat-btn ${activeCategory === "agente" ? "active" : ""}`}
                   onClick={() => handleCategoryChange("agente")}
                 >
-                  Agente Solutions ({ROLES_PUBLICOS.filter(r => r.category === 'agente').length})
+                  Clientes ({ROLES_PUBLICOS.filter(r => r.category === 'agente').length})
                 </button>
                 <button
                   type="button"
                   className={`aiw-mcarousel-cat-btn ${activeCategory === "autonomo" ? "active" : ""}`}
                   onClick={() => handleCategoryChange("autonomo")}
                 >
-                  Autónomos & Red ({ROLES_PUBLICOS.filter(r => r.category === 'autonomo').length})
+                  Proveedores ({ROLES_PUBLICOS.filter(r => r.category === 'autonomo').length})
                 </button>
               </div>
 
               {/* 3D Coverflow Perspective Stage (Swipeable with finger) */}
               <div className="aiw-mcarousel-track">
-                <div 
+                <div
                   className="aiw-coverflow-stage"
                   onTouchStart={handleCardTouchStart}
                   onTouchEnd={handleCardTouchEnd}
@@ -879,7 +800,7 @@ const LoginAgente = () => {
                       >
                         {/* Top Header Badge */}
                         <div className="aiw-cf-top-row">
-                          <span 
+                          <span
                             className="aiw-cf-badge"
                             style={{
                               borderColor: `${r.color}66`,
@@ -899,7 +820,7 @@ const LoginAgente = () => {
                           <h3 className="aiw-cf-title">{r.label}</h3>
                           <p className="aiw-cf-tagline" style={{ color: r.color }}>{r.tagline}</p>
                           <p className="aiw-cf-desc">{r.description}</p>
-                          
+
                           <div className="aiw-cf-features">
                             {r.features.map((feat, fIdx) => (
                               <div key={fIdx} className="aiw-cf-feat-item">
@@ -937,7 +858,7 @@ const LoginAgente = () => {
 
         {/* CENTER / LEFT (when expanded): Sliding Login / Register Card */}
         <div className="aiw-hero-right aiw-hero-card-col">
-          <div 
+          <div
             className={`aiw-card-wrapper ${isSheetCollapsed ? "aiw-sheet-collapsed" : "aiw-sheet-expanded"}`}
             onTouchStart={handleSheetTouchStart}
             onTouchMove={handleSheetTouchMove}
@@ -951,13 +872,12 @@ const LoginAgente = () => {
             style={
               dragOffsetY !== 0
                 ? {
-                    transform: `translateY(${
-                      isSheetCollapsed
-                        ? `calc(100% - 62px + ${dragOffsetY}px)`
-                        : `${dragOffsetY}px`
+                  transform: `translateY(${isSheetCollapsed
+                    ? `calc(100% - 62px + ${dragOffsetY}px)`
+                    : `${dragOffsetY}px`
                     })`,
-                    transition: 'none'
-                  }
+                  transition: 'none'
+                }
                 : undefined
             }
           >
@@ -984,7 +904,7 @@ const LoginAgente = () => {
             <div className={`aiw-card ${isSignUp ? "aiw-right-panel-active" : ""}`}>
 
               {/* Mobile Drag Handle (Swipe line to hide/show sheet) */}
-              <div 
+              <div
                 className="aiw-mobile-drag-handle"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1019,7 +939,6 @@ const LoginAgente = () => {
                       )}
                     </div>
                     <h1 className="aiw-brand-title">AGENTE SOLUTIONS</h1>
-                    <span className="aiw-brand-subtitle">AI & AUTOMATION PLATFORM</span>
                   </div>
 
                   {/* Tenant badge if active */}
@@ -1201,18 +1120,8 @@ const LoginAgente = () => {
                       className="aiw-footer-link"
                       onClick={openRecoverModal}
                     >
-                      ¿Olvidaste contraseña?
+                      ¿Olvidaste tu contraseña?
                     </button>
-                    <span className="aiw-footer-dot">•</span>
-                    <button
-                      type="button"
-                      className="aiw-footer-link"
-                      onClick={() => { setIsSignUp(true); setShowRoleExplorer(false); setMensaje(""); }}
-                    >
-                      Crear Cuenta
-                    </button>
-                    <span className="aiw-footer-dot">•</span>
-                    <span className="aiw-footer-text">T&Cs</span>
                   </div>
 
                 </div>
@@ -1234,9 +1143,9 @@ const LoginAgente = () => {
                   </div>
 
                   {/* Role Selection Badge Indicator */}
-                  <button 
-                    type="button" 
-                    className="aiw-role-selected-chip" 
+                  <button
+                    type="button"
+                    className="aiw-role-selected-chip"
                     onClick={() => {
                       if (window.innerWidth <= 820) {
                         setShowRoleExplorer(true);
@@ -1479,7 +1388,7 @@ const LoginAgente = () => {
               <div className="aiw-roles-header">
                 <div className="aiw-roles-header-left">
                   <span className="aiw-roles-eyebrow">REGISTRO MULTI-ROL</span>
-                  <h2 className="aiw-roles-title">TIPOS DE USUARIO</h2>
+                  <h2 className="aiw-roles-title">TIPOS DE USUARIO AGENTE SOLUTIONS</h2>
                 </div>
               </div>
 
@@ -1490,22 +1399,22 @@ const LoginAgente = () => {
                   className={`aiw-roles-cat-btn ${activeCategory === "agente" ? "active" : ""}`}
                   onClick={() => handleCategoryChange("agente")}
                 >
-                  Agente Solutions (2)
+                  Clientes ({ROLES_PUBLICOS.filter(r => r.category === 'agente').length})
                 </button>
                 <button
                   type="button"
                   className={`aiw-roles-cat-btn ${activeCategory === "autonomo" ? "active" : ""}`}
                   onClick={() => handleCategoryChange("autonomo")}
                 >
-                  Autónomos & Red (5)
+                  Proveedores ({ROLES_PUBLICOS.filter(r => r.category === 'autonomo').length})
                 </button>
               </div>
 
               {/* 3D Coverflow Carousel container */}
               <div className="aiw-carousel-wrapper">
-                
+
                 {/* 3D Coverflow Perspective Track Stage */}
-                <div 
+                <div
                   className="aiw-dcarousel-track"
                   onTouchStart={handleCardTouchStart}
                   onTouchEnd={handleCardTouchEnd}
@@ -1584,7 +1493,7 @@ const LoginAgente = () => {
                           }}
                         >
                           <div className="aiw-rcard-top">
-                            <span 
+                            <span
                               className="aiw-rcard-badge"
                               style={{
                                 borderColor: `${r.color}77`,

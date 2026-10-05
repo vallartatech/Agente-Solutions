@@ -197,6 +197,14 @@
   overflow-y: auto;
   gap: 14px;
   border-right: 1px solid rgba(255, 255, 255, 0.12);
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / Edge */
+}
+
+.cal-main-col::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .cal-sidebar-col {
@@ -209,6 +217,14 @@
   flex-direction: column;
   gap: 18px;
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / Edge */
+}
+
+.cal-sidebar-col::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* ── TOOLBAR DEL SCHEDULER (LIQUID GLASS) ── */
@@ -530,13 +546,20 @@
   border-radius: 8px;
 }
 
-/* ── EVENT CHIPS DENTRO DEL MES (ESTILO TARJETAS DE COLOR SAAS) ── */
 .cal-events-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
   overflow-y: auto;
   max-height: 120px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.cal-events-list::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .cal-event-chip {
