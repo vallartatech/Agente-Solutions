@@ -229,6 +229,11 @@ const MercadoTrabajos = () => {
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
 
+  // Arrival Alert State
+  const [arrivalAlertSent, setArrivalAlertSent] = useState({});
+  const [sendingArrivalAlert, setSendingArrivalAlert] = useState(false);
+  const [arrivalAlertToast, setArrivalAlertToast] = useState(null);
+
   const { user: authUser } = useAuth();
 
   const fetchJobs = async () => {
@@ -250,10 +255,19 @@ const MercadoTrabajos = () => {
             }
           }
 
+          const isAccepted = Boolean(
+            order.is_accepted ||
+            order.status === 'Asignado' ||
+            order.status === 'En Progreso' ||
+            (authUser && Number(order.tecnico_id) === Number(authUser.id)) ||
+            myQuote?.status === 'accepted'
+          );
+
           const photoData = extraerFotosDeTrabajo(order);
-          const fotos = photoData.allPhotos;
           const facadePhoto = photoData.facadePhoto;
           const problemPhotos = photoData.problemPhotos;
+          // Si el trabajo no está aceptado, no incluir la foto de la fachada de la casa
+          const fotos = isAccepted ? photoData.allPhotos : problemPhotos;
 
           const coordsObj = extraerCoordenadas(order);
           const hasRealCoords = Boolean(coordsObj);
@@ -268,14 +282,6 @@ const MercadoTrabajos = () => {
           const chatHistory = myQuote?.chat_history || [];
           const lastMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1] : null;
           const lastClientMsg = (lastMsg && (Number(lastMsg.sender_id) !== Number(authUser?.id) || lastMsg.sender_role === 'Cliente')) ? lastMsg : null;
-
-          const isAccepted = Boolean(
-            order.is_accepted ||
-            order.status === 'Asignado' ||
-            order.status === 'En Progreso' ||
-            (authUser && Number(order.tecnico_id) === Number(authUser.id)) ||
-            myQuote?.status === 'accepted'
-          );
 
           const fullAddress = order.full_address || order.property?.address || 'Dirección confirmada';
           const clientName = order.client_name || order.property?.client?.name || order.creator?.name || 'Cliente';
@@ -303,10 +309,10 @@ const MercadoTrabajos = () => {
             calle: isAccepted ? fullAddress : 'Dirección protegida',
             full_address: fullAddress,
             descripcion: limpiarDescripcion(order.description),
-            foto: problemPhotos[0] || facadePhoto || fotos[0] || null,
+            foto: isAccepted ? (problemPhotos[0] || facadePhoto || null) : (problemPhotos[0] || null),
             fotos: fotos,
-            facade_photo: facadePhoto,
-            foto_fachada: facadePhoto,
+            facade_photo: isAccepted ? facadePhoto : null,
+            foto_fachada: isAccepted ? facadePhoto : null,
             problem_photos: problemPhotos,
             fecha: new Date(order.created_at).toLocaleDateString('es-MX'),
             cotizaciones: order.network_quotes_count || 0,
@@ -603,13 +609,50 @@ const MercadoTrabajos = () => {
     }
   };
 
+  const handleSendArrivalAlert = async (job) => {
+    if (!job) return;
+    setSendingArrivalAlert(true);
+
+    const cleanPhone = (job.client_phone || '').replace(/\D/g, '');
+    const alertMsg = `📍 [AVISO]: Hola ${job.client_name || ''}, te informo que me encuentro en el lugar / domicilio para realizar el servicio acordado en Agente Solutions.`;
+
+    // 1. Enviar mensaje automático al chat interno de la orden
+    const quoteId = job.myQuote?.id;
+    if (quoteId) {
+      try {
+        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quoteId}/chat`,
+          { message: alertMsg },
+          { headers }
+        );
+      } catch (err) {
+        console.error("Error enviando aviso al chat interno:", err);
+      }
+    }
+
+    // 2. Si tiene teléfono registrado, abrir WhatsApp con el mensaje pre-llenado (mientras se integra Meta)
+    if (cleanPhone) {
+      const waUrl = `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(alertMsg)}`;
+      window.open(waUrl, '_blank');
+    }
+
+    // 3. Marcar alerta como enviada con la hora actual
+    const nowTime = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    setArrivalAlertSent(prev => ({ ...prev, [job.id]: nowTime }));
+    setArrivalAlertToast(`🔔 ¡Aviso de llegada enviado al cliente! (${nowTime})`);
+    setTimeout(() => setArrivalAlertToast(null), 4500);
+    setSendingArrivalAlert(false);
+  };
+
   const openQuoteModalForJob = (job) => {
     const isJobAccepted = Boolean(job.is_accepted || acceptedJobs.some(a => a.id === job.id) || job.myQuote?.status === 'accepted');
     const targetJob = isJobAccepted ? (acceptedJobs.find(a => a.id === job.id) || { ...job, is_accepted: true }) : job;
     setSelectedJob(targetJob);
     setQuotePrice(targetJob.myQuote && targetJob.myQuote.price > 0 ? targetJob.myQuote.price : '');
     setQuoteMessage(targetJob.myQuote ? targetJob.myQuote.message : '');
-    setActivePhoto(targetJob.fotos?.[0] || targetJob.foto || null);
+    setActivePhoto(targetJob.problem_photos?.[0] || (isJobAccepted ? targetJob.facade_photo : null) || targetJob.fotos?.[0] || null);
     if (targetJob.scheduled_at) {
       const d = new Date(targetJob.scheduled_at);
       if (!isNaN(d.getTime())) {
@@ -1211,33 +1254,43 @@ const MercadoTrabajos = () => {
                             Cliente: <strong style={{ color: '#0f172a' }}>{selectedJob.client_name}</strong>
                           </div>
 
-                          {/* Botones de WhatsApp y Llamada amplios */}
+                          {/* Botones de Acción: Chat con el Cliente y Aviso de Llegada al Lugar */}
                           <div className="mercado-contact-actions-row">
-                            {selectedJob.client_phone ? (
-                              <>
-                                <a
-                                  href={`https://wa.me/52${selectedJob.client_phone.replace(/\D/g, '')}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="mercado-contact-action-btn whatsapp"
-                                >
-                                  <MessageCircle size={17} />
-                                  <span>WhatsApp ({selectedJob.client_phone})</span>
-                                </a>
-                                <a
-                                  href={`tel:${selectedJob.client_phone}`}
-                                  className="mercado-contact-action-btn call"
-                                >
-                                  <Phone size={16} />
-                                  <span>Llamar</span>
-                                </a>
-                              </>
-                            ) : (
-                              <div style={{ gridColumn: '1 / -1', fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>
-                                Teléfono directo no disponible. Utiliza el chat interno.
-                              </div>
-                            )}
+                            <button
+                              type="button"
+                              className="mercado-contact-action-btn chat-action"
+                              onClick={() => setActiveModalTab('chat')}
+                              title="Abrir chat directo con el cliente"
+                            >
+                              <MessageCircle size={17} />
+                              <span>Chat con el Cliente {chatMessages.length > 0 ? `(${chatMessages.length})` : ''}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              className={`mercado-contact-action-btn arrival-action ${arrivalAlertSent[selectedJob.id] ? 'sent' : ''}`}
+                              onClick={() => handleSendArrivalAlert(selectedJob)}
+                              disabled={sendingArrivalAlert}
+                              title="Enviar aviso al cliente informando que te encuentras en el domicilio"
+                            >
+                              <MapPin size={17} />
+                              <span>
+                                {sendingArrivalAlert 
+                                  ? 'Enviando aviso...' 
+                                  : (arrivalAlertSent[selectedJob.id] 
+                                      ? `✓ Aviso Enviado (${arrivalAlertSent[selectedJob.id]})` 
+                                      : 'Aviso: Me encuentro en el lugar')}
+                              </span>
+                            </button>
                           </div>
+
+                          {/* Banner de confirmación de aviso de llegada */}
+                          {arrivalAlertToast && (
+                            <div className="mercado-arrival-toast-banner">
+                              <CheckCircle2 size={16} color="#16a34a" />
+                              <span>{arrivalAlertToast}</span>
+                            </div>
+                          )}
                         </div>
 
                         {/* 3. MONTO ACORDADO GANADO */}
@@ -1413,20 +1466,14 @@ const MercadoTrabajos = () => {
                   ───────────────────────────────────────────────────────────── */}
                   {!selectedJob.is_accepted && activeModalTab === 'detalle' && (
                     <>
-                      {/* Columna Izquierda: Galería de Fotos y Problema Solicitado */}
+                      {/* Columna Izquierda: Galería de Fotos y Problema Solicitado (Sin fotos de fachada) */}
                       <div className="mercado-premium-details" style={{ flex: '0.95', gap: '14px' }}>
-                        {activePhoto ? (
+                        {selectedJob.problem_photos && selectedJob.problem_photos.length > 0 && activePhoto ? (
                           <div className="mercado-photo-gallery">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                              {activePhoto === selectedJob.facade_photo ? (
-                                <span className="mercado-gallery-type-badge facade">
-                                  🏡 Fachada del Inmueble (Registro del Levantamiento)
-                                </span>
-                              ) : (
-                                <span className="mercado-gallery-type-badge problem">
-                                  📸 Evidencia de Falla {selectedJob.problem_photos && selectedJob.problem_photos.length > 1 ? `(${selectedJob.problem_photos.indexOf(activePhoto) + 1} de ${selectedJob.problem_photos.length})` : ''}
-                                </span>
-                              )}
+                              <span className="mercado-gallery-type-badge problem">
+                                📸 Evidencia de Falla {selectedJob.problem_photos.length > 1 ? `(${selectedJob.problem_photos.indexOf(activePhoto) + 1} de ${selectedJob.problem_photos.length})` : ''}
+                              </span>
                             </div>
 
                             <div
@@ -1441,33 +1488,32 @@ const MercadoTrabajos = () => {
                               </div>
                             </div>
 
-                            {selectedJob.fotos && selectedJob.fotos.length > 1 && (
+                            {selectedJob.problem_photos.length > 1 && (
                               <div className="mercado-thumbnails-row">
-                                {selectedJob.fotos.map((f, idx) => {
-                                  const isFacade = f === selectedJob.facade_photo;
-                                  const probIndex = selectedJob.problem_photos ? selectedJob.problem_photos.indexOf(f) : idx;
-                                  return (
-                                    <div key={idx} className="mercado-thumb-wrapper">
-                                      <div
-                                        className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
-                                        onClick={() => setActivePhoto(f)}
-                                        title={isFacade ? 'Ver Fachada de la Casa' : `Ver Evidencia ${probIndex + 1}`}
-                                      >
-                                        <img src={f} alt={isFacade ? 'Fachada' : `Evidencia ${probIndex + 1}`} />
-                                      </div>
-                                      <span className={`mercado-thumb-badge ${isFacade ? 'facade' : (activePhoto === f ? 'active' : '')}`}>
-                                        {isFacade ? '🏡 Fachada' : `📸 Falla ${probIndex >= 0 ? probIndex + 1 : idx + 1}`}
-                                      </span>
+                                {selectedJob.problem_photos.map((f, idx) => (
+                                  <div key={idx} className="mercado-thumb-wrapper">
+                                    <div
+                                      className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
+                                      onClick={() => setActivePhoto(f)}
+                                      title={`Ver Evidencia ${idx + 1}`}
+                                    >
+                                      <img src={f} alt={`Evidencia ${idx + 1}`} />
                                     </div>
-                                  );
-                                })}
+                                    <span className={`mercado-thumb-badge ${activePhoto === f ? 'active' : ''}`}>
+                                      📸 Falla {idx + 1}
+                                    </span>
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </div>
                         ) : (
-                          <div className="mercado-no-photo-placeholder" style={{ height: '140px' }}>
+                          <div className="mercado-no-photo-placeholder" style={{ height: '170px' }}>
                             <ImageIcon size={32} color="#94a3b8" />
-                            <span>Sin fotografías adjuntas</span>
+                            <span style={{ fontWeight: '700', color: '#64748b' }}>Sin fotografías de falla adjuntas</span>
+                            <span style={{ fontSize: '11.5px', color: '#9a3412', marginTop: '4px', textAlign: 'center', maxWidth: '280px', lineHeight: '1.35' }}>
+                              🔒 La foto de fachada y dirección exacta se revelan al ser aceptada tu cotización.
+                            </span>
                           </div>
                         )}
 
