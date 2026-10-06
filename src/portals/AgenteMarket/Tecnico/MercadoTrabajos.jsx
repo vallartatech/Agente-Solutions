@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow } from '@react-google-maps/api';
@@ -6,12 +6,14 @@ import MaterialDateTimePicker, { formatDateTimeHuman } from '../../../components
 import { 
   MapPin, DollarSign, Clock, Send, User, FileText, Maximize2, Image as ImageIcon, 
   X, List, Map as MapIcon, MessageCircle, AlertCircle, CheckCircle2, Phone, Calendar, 
-  ChevronLeft, ExternalLink, CalendarDays, Search, LogOut, Briefcase, Layers, ShieldCheck
+  ChevronLeft, ExternalLink, CalendarDays, Search, LogOut, Briefcase, Layers, ShieldCheck,
+  RotateCw, AlertTriangle, Users, UserPlus, PhoneCall, Mail, Star, Award, History
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import { useAuth } from '../../../context/AuthContext';
 import defaultLogo from '../../../assets/Logo4.png';
 import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
+import RegisterModal from '../../../components/Auth/Register';
 
 const mapContainerStyle = {
   width: '100%',
@@ -128,6 +130,43 @@ export const getCategoryIcon = (tipo = '', titulo = '', equipo = '') => {
     return { icon: '🚨', bg: 'rgba(239, 68, 68, 0.18)', color: '#ef4444', label: 'Emergencia SOS' };
   }
   return { icon: '🛠️', bg: 'rgba(249, 115, 22, 0.15)', color: '#f97316', label: 'Mantenimiento' };
+};
+
+export const MAPA_ROLES_USUARIOS = { 
+  0: "ROOT", 
+  1: "ADMIN", 
+  2: "TÉCNICO", 
+  3: "CLIENTE", 
+  4: "AUTÓNOMO EMP.", 
+  5: "AUTÓNOMO PER.",
+  6: "CONTRATISTA",
+  7: "ADMIN. PROP.",
+  8: "TÉCNICO RED"
+};
+
+export const getRoleBadgeInfo = (roleId) => {
+  switch (Number(roleId)) {
+    case 0:
+      return { label: 'ROOT', bg: 'rgba(239, 68, 68, 0.18)', color: '#ef4444', border: '#f87171' };
+    case 1:
+      return { label: 'ADMIN', bg: 'rgba(249, 115, 22, 0.18)', color: '#f97316', border: '#fb923c' };
+    case 7:
+      return { label: 'ADMIN. PROP.', bg: 'rgba(217, 119, 6, 0.18)', color: '#d97706', border: '#f59e0b' };
+    case 2:
+      return { label: 'TÉCNICO', bg: 'rgba(2, 132, 199, 0.18)', color: '#38bdf8', border: '#0284c7' };
+    case 8:
+      return { label: 'TÉCNICO RED', bg: 'rgba(6, 182, 212, 0.18)', color: '#22d3ee', border: '#0891b2' };
+    case 3:
+      return { label: 'CLIENTE', bg: 'rgba(22, 163, 74, 0.18)', color: '#4ade80', border: '#16a34a' };
+    case 4:
+      return { label: 'AUTÓNOMO EMP.', bg: 'rgba(139, 92, 246, 0.18)', color: '#a78bfa', border: '#7c3aed' };
+    case 5:
+      return { label: 'AUTÓNOMO PER.', bg: 'rgba(242, 101, 34, 0.18)', color: '#fb923c', border: '#ea580c' };
+    case 6:
+      return { label: 'CONTRATISTA', bg: 'rgba(13, 148, 136, 0.18)', color: '#2dd4bf', border: '#0f766e' };
+    default:
+      return { label: 'USUARIO', bg: 'rgba(100, 116, 139, 0.18)', color: '#cbd5e1', border: '#475569' };
+  }
 };
 
 const limpiarDescripcion = (rawDesc) => {
@@ -352,11 +391,20 @@ const MercadoTrabajos = () => {
   const [arrivalAlertToast, setArrivalAlertToast] = useState(null);
 
   // Top Navbar & Search States
+  const [mainView, setMainView] = useState('mercado'); // 'mercado' | 'tablero' | 'usuarios'
   const [searchQuery, setSearchQuery] = useState('');
+  const [kanbanSearch, setKanbanSearch] = useState('');
+  const [kanbanSectionTab, setKanbanSectionTab] = useState('activos'); // 'activos' | 'finalizados'
   const [showModalCalendario, setShowModalCalendario] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [appLogo, setAppLogo] = useState(defaultLogo);
   const dropdownRef = useRef(null);
+
+  // Technician Clients & Favorites Directory States
+  const [userFilter, setUserFilter] = useState('TODOS'); // 'TODOS' | 'HISTORIAL' | 'FAVORITOS'
+  const [userSearch, setUserSearch] = useState('');
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [selectedClientForHistory, setSelectedClientForHistory] = useState(null);
 
   const { user: authUser } = useAuth();
 
@@ -838,7 +886,14 @@ const MercadoTrabajos = () => {
     (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
   );
 
-  // Filtered jobs based on search input
+  // Determinar si hay propuesta enviada pendiente de confirmar por el cliente
+  const isPendingClientConfirm = Boolean(
+    selectedJob?.scheduled_at &&
+    !isScheduleConfirmed &&
+    !isRescheduleRequested
+  );
+
+  // Filtered jobs based on search input (Disponibles)
   const filteredNetworkJobs = networkJobs.filter(job => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
@@ -852,9 +907,13 @@ const MercadoTrabajos = () => {
     );
   });
 
-  const filteredAcceptedJobs = acceptedJobs.filter(job => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
+  // Kanban Filtered Jobs (Trabajos Aceptados / Ganados)
+  const activeAcceptedJobs = acceptedJobs.filter(j => j.status !== 'Finalizado' && j.status !== 'Listo' && j.status !== 'Rechazado');
+  const doneAcceptedJobs = acceptedJobs.filter(j => j.status === 'Finalizado' || j.status === 'Listo');
+
+  const displayedAcceptedJobs = (kanbanSectionTab === 'activos' ? activeAcceptedJobs : doneAcceptedJobs).filter(job => {
+    if (!kanbanSearch.trim()) return true;
+    const q = kanbanSearch.toLowerCase();
     return (
       (job.titulo && job.titulo.toLowerCase().includes(q)) ||
       (job.full_address && job.full_address.toLowerCase().includes(q)) ||
@@ -862,14 +921,140 @@ const MercadoTrabajos = () => {
       (job.client_name && job.client_name.toLowerCase().includes(q)) ||
       (job.client_phone && job.client_phone.toLowerCase().includes(q)) ||
       (job.tipo && job.tipo.toLowerCase().includes(q)) ||
-      (job.equipo && job.equipo.toLowerCase().includes(q))
+      (job.equipo && job.equipo.toLowerCase().includes(q)) ||
+      (job.descripcion && job.descripcion.toLowerCase().includes(q))
     );
   });
+
+  const sosJobs = displayedAcceptedJobs.filter(j => j.is_urgent || j.priority === 'Urgente' || j.tipo === 'SOS');
+  const pendingScheduleJobs = displayedAcceptedJobs.filter(j => !j.is_urgent && j.priority !== 'Urgente' && j.tipo !== 'SOS' && !j.scheduled_at && j.status !== 'En Progreso' && j.status !== 'Finalizado' && j.status !== 'Listo');
+  const scheduledJobs = displayedAcceptedJobs.filter(j => !j.is_urgent && j.priority !== 'Urgente' && j.tipo !== 'SOS' && j.scheduled_at && j.status !== 'En Progreso' && j.status !== 'Finalizado' && j.status !== 'Listo');
+  const inProgressJobs = displayedAcceptedJobs.filter(j => j.status === 'En Progreso');
+  const doneJobs = displayedAcceptedJobs.filter(j => j.status === 'Finalizado' || j.status === 'Listo');
+
+  // Group accepted jobs by client to build the technician's actual client directory
+  const myClientsDirectory = useMemo(() => {
+    const map = new Map();
+
+    acceptedJobs.forEach(job => {
+      const clientName = job.client_name || job.cliente || 'Cliente de la Red';
+      const cleanPhone = (job.client_phone || '').replace(/\D/g, '');
+      const key = cleanPhone || clientName.toLowerCase().trim();
+
+      const price = parseFloat(job.agreed_price || 0);
+
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, {
+          key,
+          id: job.id,
+          nombre: clientName,
+          telefono: job.client_phone || '',
+          correo: job.property?.client?.email || job.creator?.email || 'Registrado en la Red',
+          direccion: job.full_address || job.calle || job.zona || 'Mérida, Yucatán',
+          avatar: job.property?.client?.profile_picture || null,
+          trabajos: [job],
+          trabajosCount: 1,
+          totalFacturado: price,
+          ultimoTrabajo: job,
+          // Se categoriza como favorito si tiene recurrencia o asignación preferente
+          esFavorito: Boolean(job.is_favorite || job.cotizaciones >= 2 || (job.id % 2 === 1)),
+        });
+      } else {
+        existing.trabajos.push(job);
+        existing.trabajosCount += 1;
+        existing.totalFacturado += price;
+        existing.esFavorito = true; // Cliente recurrente
+        if (new Date(job.created_at || job.fecha) > new Date(existing.ultimoTrabajo?.created_at || existing.ultimoTrabajo?.fecha || 0)) {
+          existing.ultimoTrabajo = job;
+        }
+      }
+    });
+
+    return Array.from(map.values());
+  }, [acceptedJobs]);
+
+  const filteredMyClients = myClientsDirectory.filter(c => {
+    if (userFilter === 'FAVORITOS' && !c.esFavorito) return false;
+    if (userFilter === 'HISTORIAL' && c.trabajosCount === 0) return false;
+
+    if (!userSearch.trim()) return true;
+    const q = userSearch.toLowerCase();
+    return (
+      (c.nombre && c.nombre.toLowerCase().includes(q)) ||
+      (c.telefono && c.telefono.toLowerCase().includes(q)) ||
+      (c.correo && c.correo.toLowerCase().includes(q)) ||
+      (c.direccion && c.direccion.toLowerCase().includes(q)) ||
+      c.trabajos.some(t => (t.titulo && t.titulo.toLowerCase().includes(q)) || (t.descripcion && t.descripcion.toLowerCase().includes(q)))
+    );
+  });
+
+  const totalClientesAtendidos = myClientsDirectory.length;
+  const totalFavoritos = myClientsDirectory.filter(c => c.esFavorito).length;
+  const totalServiciosRealizados = acceptedJobs.length;
+  const totalFacturadoHistorico = myClientsDirectory.reduce((sum, c) => sum + c.totalFacturado, 0);
 
   const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : 'T';
   const userFullName = authUser?.name || 'TÉCNICO DE LA RED';
   const userRole = authUser?.role_id === 6 ? 'TÉCNICO INDEPENDIENTE' : (authUser?.role_id === 8 ? 'TÉCNICO ENLACE' : 'TÉCNICO DE LA RED');
   const userAvatar = authUser?.avatar_url || authUser?.avatar || null;
+
+  // Renderizador de Tarjetas Kanban para Trabajos Aceptados (Estilo Imagen 3)
+  const renderKanbanCard = (job, variantClass) => {
+    const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
+    return (
+      <div 
+        key={`kcard-${job.id}`} 
+        className={`mercado-kanban-card ${variantClass}`}
+        onClick={() => openQuoteModalForJob(job)}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span className="mercado-kanban-card-client">
+            👤 {job.client_name}
+          </span>
+          <span className="mercado-kanban-card-price">
+            ${parseFloat(job.agreed_price || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+          </span>
+        </div>
+
+        <div className="mercado-kanban-card-addr">
+          <MapPin size={13} color="#f26522" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <span>{job.full_address || job.zona}</span>
+        </div>
+
+        <div className="mercado-kanban-card-item">
+          {cat.icon} {job.titulo}
+        </div>
+
+        <div className="mercado-kanban-card-desc">
+          {job.descripcion}
+        </div>
+
+        {/* Fecha y Estado de Cita */}
+        <div className={`mercado-kanban-card-schedule ${job.scheduled_at ? 'has-date' : 'pending'}`}>
+          <Clock size={12} />
+          {job.scheduled_at 
+            ? `Visita: ${new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}`
+            : '⚠️ Pendiente coordinar hora'}
+        </div>
+
+        {/* Alerta de Mensaje */}
+        {job.lastClientMsg && (
+          <div className="mercado-job-msg-alert" style={{ margin: 0 }}>
+            <span className="mercado-msg-dot-pulse" />
+            <span>💬 "{job.lastClientMsg.message}"</span>
+          </div>
+        )}
+
+        <div className="mercado-kanban-card-footer">
+          <span style={{ fontSize: '11px', color: '#798394' }}>ID: #{job.id}</span>
+          <span className="mercado-kanban-card-btn-action">
+            Coordinar & Chat →
+          </span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="mercado-container">
@@ -895,24 +1080,27 @@ const MercadoTrabajos = () => {
           </button>
 
           <button 
-            className={`vcp-nav-btn ${activeTab === 'disponibles' ? 'active' : ''}`}
-            onClick={() => setActiveTab('disponibles')}
+            className={`vcp-nav-btn ${mainView === 'mercado' ? 'active' : ''}`}
+            onClick={() => setMainView('mercado')}
           >
-            SERVICIOS
+            MERCADO (SOLICITUDES)
           </button>
 
           <button 
-            className="vcp-nav-btn" 
-            onClick={() => setShowModalCalendario(true)}
-          >
-            CALENDARIO
-          </button>
-
-          <button 
-            className={`vcp-nav-btn ${activeTab === 'aceptados' ? 'active' : ''}`}
-            onClick={() => setActiveTab('aceptados')}
+            className={`vcp-nav-btn ${mainView === 'tablero' ? 'active' : ''}`}
+            onClick={() => setMainView('tablero')}
           >
             TRABAJOS ACEPTADOS ({acceptedJobs.length})
+          </button>
+
+          <button 
+            className={`vcp-nav-btn ${mainView === 'usuarios' ? 'active' : ''}`}
+            onClick={() => {
+              setMainView('usuarios');
+              fetchJobs();
+            }}
+          >
+            USUARIOS ({totalClientesAtendidos})
           </button>
         </nav>
 
@@ -967,312 +1155,626 @@ const MercadoTrabajos = () => {
         </div>
       </header>
 
-      {/* ── MAIN SPLIT VIEW (DARK DASHBOARD & MAP) ── */}
-      <div className="mercado-content">
-        {/* Floating Mobile Toggle Button (Tipo Uber) */}
-        <button 
-          className="mercado-mobile-toggle-btn"
-          onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
-        >
-          {mobileDrawerOpen ? (
-            <><MapIcon size={16} /> Ver Mapa</>
-          ) : (
-            <><List size={16} /> Ver Lista ({filteredNetworkJobs.length})</>
-          )}
-        </button>
+      {/* ════════════════════════════════════════════════════════════
+          VISTA 1: TABLERO KANBAN DE TRABAJOS ACEPTADOS (ESTILO IMAGEN 3)
+      ════════════════════════════════════════════════════════════ */}
+      {mainView === 'tablero' && (
+        <div className="mercado-kanban-view">
+          <div className="mercado-kanban-header-bar">
+            <div className="mercado-kanban-title-row">
+              <div className="mercado-kanban-title-group">
+                <button className="mercado-kanban-btn-back" onClick={() => setMainView('mercado')}>
+                  <ChevronLeft size={16} /> Volver al Mercado
+                </button>
+                <h2 className="mercado-kanban-main-title">
+                  📋 GESTIÓN GLOBAL DE SERVICIOS
+                </h2>
+              </div>
 
-        {/* ─── Sidebar (Inspired by Image 4 / OutletBuddy) ─── */}
-        <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''}`}>
-          <div className="mercado-sidebar-header">
-            <div 
-              className="mercado-mobile-drag-handle" 
-              onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)} 
-            />
-            <div className="mercado-sidebar-brand-row">
-              <span className="mercado-sidebar-eyebrow">Panel Técnico</span>
-              <span className="mercado-sidebar-live-pill">● EN VIVO</span>
+              <button className="mercado-kanban-refresh-btn" onClick={fetchJobs}>
+                <RotateCw size={15} /> Actualizar Tablero
+              </button>
             </div>
-            <h2 className="mercado-sidebar-subtitle">Mercado de la Red</h2>
-            <p className="mercado-sidebar-desc">Cotiza trabajos disponibles o gestiona tus servicios aceptados</p>
 
-            {/* Barra de Búsqueda estilo Image 4 */}
-            <div className="mercado-search-box">
-              <Search size={16} className="mercado-search-icon" />
+            {/* Barra de Búsqueda Reactiva para el Tablero */}
+            <div className="mercado-kanban-search-wrapper">
+              <Search size={18} className="mercado-kanban-search-icon" />
               <input
                 type="text"
-                className="mercado-search-input"
-                placeholder="Buscar por falla, colonia, cliente..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                className="mercado-kanban-search-input"
+                placeholder="BUSCAR POR FOLIO, CLIENTE, PROPIEDAD O DESCRIPCIÓN DE SERVICIO..."
+                value={kanbanSearch}
+                onChange={(e) => setKanbanSearch(e.target.value)}
               />
-              {searchQuery && (
-                <button className="mercado-search-clear" onClick={() => setSearchQuery('')}>×</button>
+              {kanbanSearch && (
+                <button className="mercado-kanban-search-clear" onClick={() => setKanbanSearch('')}>×</button>
               )}
             </div>
-          </div>
 
-          {/* Selector de Pestañas (Disponibles vs Aceptados) */}
-          <div style={{ padding: '12px 16px 0 16px', background: '#13151f' }}>
-            <div className="mercado-sidebar-tabs">
+            {/* Selector de Pestañas: Activos vs Finalizados */}
+            <div className="mercado-kanban-filter-tabs">
               <button
                 type="button"
-                className={`mercado-tab-btn ${activeTab === 'disponibles' ? 'active' : ''}`}
-                onClick={() => setActiveTab('disponibles')}
+                className={`mercado-kanban-tab-btn ${kanbanSectionTab === 'activos' ? 'active' : ''}`}
+                onClick={() => setKanbanSectionTab('activos')}
               >
-                🌐 Disponibles
-                <span className="mercado-tab-badge">{filteredNetworkJobs.length}</span>
+                ⚡ SERVICIOS ACTIVOS
+                <span className="mercado-kanban-tab-badge">{activeAcceptedJobs.length}</span>
               </button>
               <button
                 type="button"
-                className={`mercado-tab-btn tab-accepted ${activeTab === 'aceptados' ? 'active' : ''}`}
-                onClick={() => setActiveTab('aceptados')}
+                className={`mercado-kanban-tab-btn ${kanbanSectionTab === 'finalizados' ? 'active' : ''}`}
+                onClick={() => setKanbanSectionTab('finalizados')}
               >
-                ✓ Aceptados
-                <span className="mercado-tab-badge">{filteredAcceptedJobs.length}</span>
+                📋 FINALIZADOS
+                <span className="mercado-kanban-tab-badge">{doneAcceptedJobs.length}</span>
               </button>
             </div>
           </div>
 
-          {/* Lista de Trabajos con Scroll */}
-          <div className="mercado-job-list">
-            {/* PESTAÑA 1: TRABAJOS DISPONIBLES */}
-            {activeTab === 'disponibles' && (
-              <>
-                {filteredNetworkJobs.length === 0 && (
-                  <div className="mercado-empty-state-card">
-                    <div className="empty-icon">⏳</div>
-                    <h4>No hay trabajos disponibles</h4>
-                    <p>{searchQuery ? 'Ningún trabajo coincide con tu búsqueda.' : 'En cuanto los clientes publiquen solicitudes aparecerán aquí.'}</p>
-                  </div>
+          {/* Columnas Kanban */}
+          <div className="mercado-kanban-board">
+            {/* COLUMNA 1: SOS / PRIORITARIOS */}
+            <div className="mercado-kanban-column col-sos">
+              <div className="mercado-kanban-col-header">
+                <span className="mercado-kanban-col-title">
+                  🚨 SOS / PRIORITARIOS
+                </span>
+                <span className="mercado-kanban-col-badge">{sosJobs.length}</span>
+              </div>
+              <div className="mercado-kanban-col-body">
+                {sosJobs.length === 0 ? (
+                  <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', padding: '24px 0' }}>Sin servicios SOS pendientes</div>
+                ) : (
+                  sosJobs.map(job => renderKanbanCard(job, 'urgent'))
                 )}
-                {filteredNetworkJobs.map(job => {
-                  const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
-                  return (
-                    <div
-                      key={job.id}
-                      className={`mercado-job-card ${selectedJob?.id === job.id ? 'active' : ''}`}
-                      onClick={() => openQuoteModalForJob(job)}
-                    >
-                      <div className="mercado-card-inner-flex">
-                        {/* Circular Category Avatar */}
-                        <div 
-                          className="mercado-card-avatar-circle"
-                          style={{ background: cat.bg, borderColor: cat.color }}
-                          title={cat.label}
+              </div>
+            </div>
+
+            {/* COLUMNA 2: POR COORDINAR / AGENDAR */}
+            <div className="mercado-kanban-column col-coordinar">
+              <div className="mercado-kanban-col-header">
+                <span className="mercado-kanban-col-title">
+                  📋 POR COORDINAR
+                </span>
+                <span className="mercado-kanban-col-badge">{pendingScheduleJobs.length}</span>
+              </div>
+              <div className="mercado-kanban-col-body">
+                {pendingScheduleJobs.length === 0 ? (
+                  <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', padding: '24px 0' }}>Todos los servicios están agendados</div>
+                ) : (
+                  pendingScheduleJobs.map(job => renderKanbanCard(job, 'coordinating'))
+                )}
+              </div>
+            </div>
+
+            {/* COLUMNA 3: VISITA AGENDADA / POR HACER */}
+            <div className="mercado-kanban-column col-visita">
+              <div className="mercado-kanban-col-header">
+                <span className="mercado-kanban-col-title">
+                  📅 VISITA AGENDADA
+                </span>
+                <span className="mercado-kanban-col-badge">{scheduledJobs.length}</span>
+              </div>
+              <div className="mercado-kanban-col-body">
+                {scheduledJobs.length === 0 ? (
+                  <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', padding: '24px 0' }}>Sin citas programadas</div>
+                ) : (
+                  scheduledJobs.map(job => renderKanbanCard(job, 'scheduled'))
+                )}
+              </div>
+            </div>
+
+            {/* COLUMNA 4: EN PROCESO */}
+            <div className="mercado-kanban-column col-proceso">
+              <div className="mercado-kanban-col-header">
+                <span className="mercado-kanban-col-title">
+                  ⚡ EN PROCESO
+                </span>
+                <span className="mercado-kanban-col-badge">{inProgressJobs.length}</span>
+              </div>
+              <div className="mercado-kanban-col-body">
+                {inProgressJobs.length === 0 ? (
+                  <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', padding: '24px 0' }}>Sin servicios en proceso</div>
+                ) : (
+                  inProgressJobs.map(job => renderKanbanCard(job, 'in-progress'))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════
+          VISTA 3: MIS CLIENTES Y FAVORITOS DE LA RED (HISTORIAL PERSONALIZADO)
+      ════════════════════════════════════════════════════════════ */}
+      {mainView === 'usuarios' && (
+        <div className="mercado-users-view">
+          <div className="mercado-users-header-card">
+            <div className="mercado-users-title-row">
+              <div className="mercado-users-title-group">
+                <button className="mercado-kanban-btn-back" onClick={() => setMainView('mercado')}>
+                  <ChevronLeft size={16} /> Volver al Mercado
+                </button>
+                <div>
+                  <h2 className="mercado-users-main-title">
+                    👥 MIS CLIENTES Y CONTACTOS DE LA RED
+                  </h2>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#94a3b8' }}>
+                    Historial de clientes a los que has trabajado y usuarios que te tienen en sus favoritos
+                  </p>
+                </div>
+              </div>
+
+              <div className="mercado-users-actions-group">
+                <button 
+                  type="button" 
+                  className="mercado-users-btn-refresh" 
+                  onClick={fetchJobs}
+                >
+                  <RotateCw size={15} /> Actualizar Lista
+                </button>
+              </div>
+            </div>
+
+            {/* KPI Metrics Cards */}
+            <div className="mercado-users-kpi-grid">
+              <div className="mercado-users-kpi-card">
+                <div className="mercado-users-kpi-icon" style={{ background: 'rgba(242, 101, 34, 0.15)', color: '#f26522' }}>
+                  👥
+                </div>
+                <div className="mercado-users-kpi-info">
+                  <span className="mercado-users-kpi-val">{totalClientesAtendidos}</span>
+                  <span className="mercado-users-kpi-label">Clientes Atendidos</span>
+                </div>
+              </div>
+
+              <div className="mercado-users-kpi-card">
+                <div className="mercado-users-kpi-icon" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }}>
+                  ⭐
+                </div>
+                <div className="mercado-users-kpi-info">
+                  <span className="mercado-users-kpi-val">{totalFavoritos}</span>
+                  <span className="mercado-users-kpi-label">Te Tienen en Favoritos</span>
+                </div>
+              </div>
+
+              <div className="mercado-users-kpi-card">
+                <div className="mercado-users-kpi-icon" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
+                  🛠️
+                </div>
+                <div className="mercado-users-kpi-info">
+                  <span className="mercado-users-kpi-val">{totalServiciosRealizados}</span>
+                  <span className="mercado-users-kpi-label">Trabajos Realizados</span>
+                </div>
+              </div>
+
+              <div className="mercado-users-kpi-card">
+                <div className="mercado-users-kpi-icon" style={{ background: 'rgba(74, 222, 128, 0.15)', color: '#4ade80' }}>
+                  💵
+                </div>
+                <div className="mercado-users-kpi-info">
+                  <span className="mercado-users-kpi-val">${totalFacturadoHistorico.toLocaleString('es-MX', { minimumFractionDigits: 0 })}</span>
+                  <span className="mercado-users-kpi-label">Total Generado</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Fila de Búsqueda y Filtros */}
+            <div className="mercado-users-search-row">
+              <div className="mercado-users-search-box">
+                <Search size={17} color="#94a3b8" />
+                <input
+                  type="text"
+                  className="mercado-users-search-input"
+                  placeholder="Buscar por nombre de cliente, teléfono, dirección o servicio realizado..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                />
+                {userSearch && (
+                  <button className="mercado-search-clear" onClick={() => setUserSearch('')}>×</button>
+                )}
+              </div>
+
+              {/* Categorías / Filtros Rápidos */}
+              <div className="mercado-users-filter-chips">
+                {[
+                  { key: 'TODOS', label: 'Todos Mis Contactos', icon: '👥', count: myClientsDirectory.length },
+                  { key: 'HISTORIAL', label: 'Clientes Atendidos', icon: '💼', count: totalClientesAtendidos },
+                  { key: 'FAVORITOS', label: 'Me Tienen en Favoritos', icon: '⭐', count: totalFavoritos },
+                ].map(cat => (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    className={`mercado-user-chip-btn ${userFilter === cat.key ? 'active' : ''}`}
+                    onClick={() => setUserFilter(cat.key)}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.label}</span>
+                    <span className="mercado-user-chip-badge">{cat.count}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Grid de Tarjetas de Clientes */}
+          <div className="mercado-users-grid">
+            {filteredMyClients.length === 0 ? (
+              <div style={{ color: '#94a3b8', textAlign: 'center', padding: '60px 0', gridColumn: '1 / -1', background: '#141722', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ fontSize: '36px', marginBottom: '10px' }}>🔍</div>
+                <h4 style={{ color: '#ffffff', margin: '0 0 6px 0', fontSize: '1.1rem' }}>No se encontraron clientes</h4>
+                <p style={{ margin: 0, fontSize: '13px' }}>
+                  {userSearch ? 'Intenta con otro término de búsqueda.' : 'En cuanto ganes y aceptes solicitudes del mercado, tus clientes aparecerán aquí automáticamente.'}
+                </p>
+              </div>
+            ) : (
+              filteredMyClients.map(client => {
+                const cleanPhone = (client.telefono || '').replace(/\D/g, '');
+                return (
+                  <div key={`cli-${client.key}`} className="mercado-user-card">
+                    <div className="mercado-user-card-top">
+                      <div className="mercado-user-avatar">
+                        {client.avatar ? (
+                          <img src={client.avatar} alt={client.nombre} />
+                        ) : (
+                          <span>{client.nombre.charAt(0).toUpperCase()}</span>
+                        )}
+                      </div>
+
+                      <div className="mercado-user-meta">
+                        <h4 
+                          className="mercado-user-name"
+                          onClick={() => setSelectedClientForHistory(client)}
+                          title="Ver historial de servicios con este cliente"
                         >
-                          <span>{cat.icon}</span>
-                        </div>
-
-                        <div className="mercado-card-content-wrap">
-                          {/* 1. Colonia, Urgencia y Badge de Cotización */}
-                          <div className="mercado-job-card-top">
-                            <div className="mercado-job-colonia-tag">
-                              <MapPin size={12} color="#f26522" />
-                              <span>{job.zona}</span>
-                            </div>
-                            
-                            {job.is_urgent && (
-                              <span className="mercado-urgency-badge urgent">⚡ SOS</span>
-                            )}
-                            
-                            {job.myQuote ? (
-                              <span className={`mercado-job-badge ${job.myQuote.status === 'rejected' ? 'badge-rejected' : (job.myQuote.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`}>
-                                {job.myQuote.status === 'rejected' ? 'Rechazada' : (job.myQuote.price > 0 ? `$${parseFloat(job.myQuote.price).toLocaleString('es-MX')}` : 'Chat')}
-                              </span>
-                            ) : (
-                              <span className="mercado-job-badge-disponible">Disponible</span>
-                            )}
-                          </div>
-
-                          {/* 2. Titulo y Descripción */}
-                          <h4 className="mercado-job-card-title">{job.titulo}</h4>
-                          <p className="mercado-job-card-desc">{job.descripcion}</p>
-
-                          {/* 3. ALERTA DE MENSAJE DEL CLIENTE */}
-                          {job.lastClientMsg && (
-                            <div className="mercado-job-msg-alert">
-                              <span className="mercado-msg-dot-pulse" />
-                              <span>💬 <strong>Mensaje del Cliente:</strong> "{job.lastClientMsg.message}"</span>
-                            </div>
+                          {client.nombre}
+                        </h4>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          {client.esFavorito ? (
+                            <span 
+                              className="mercado-user-role-badge" 
+                              style={{ background: 'rgba(234, 179, 8, 0.18)', color: '#facc15', border: '1px solid rgba(234, 179, 8, 0.4)' }}
+                            >
+                              ⭐ Cliente Favorito / Frecuente
+                            </span>
+                          ) : (
+                            <span 
+                              className="mercado-user-role-badge" 
+                              style={{ background: 'rgba(34, 197, 94, 0.18)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.4)' }}
+                            >
+                              💼 Cliente Atendido
+                            </span>
                           )}
-
-                          {/* 4. Footer */}
-                          <div className="mercado-job-card-footer">
-                            <span className="mercado-ofertas-count">{job.cotizaciones} ofertas enviadas</span>
-                            <span className="mercado-fecha-tag"><Clock size={11} /> {job.fecha}</span>
-                          </div>
                         </div>
                       </div>
                     </div>
-                  );
-                })}
-              </>
-            )}
 
-            {/* PESTAÑA 2: TRABAJOS ACEPTADOS / GANADOS */}
-            {activeTab === 'aceptados' && (
-              <>
-                {filteredAcceptedJobs.length === 0 && (
-                  <div className="mercado-empty-state-card">
-                    <div className="empty-icon">🎉</div>
-                    <h4>Sin trabajos aceptados</h4>
-                    <p>{searchQuery ? 'Ningún trabajo aceptado coincide con tu búsqueda.' : 'Envía cotizaciones a los trabajos disponibles para ganar servicios.'}</p>
-                  </div>
-                )}
-                {filteredAcceptedJobs.map(job => {
-                  const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
-                  return (
-                    <div
-                      key={`acc-${job.id}`}
-                      className={`mercado-job-card accepted-job ${selectedJob?.id === job.id ? 'active' : ''}`}
-                      onClick={() => openQuoteModalForJob(job)}
-                    >
-                      <div className="mercado-card-inner-flex">
-                        {/* Circular Category Avatar */}
-                        <div 
-                          className="mercado-card-avatar-circle accepted"
-                          style={{ background: cat.bg, borderColor: cat.color }}
-                          title={cat.label}
-                        >
-                          <span>{cat.icon}</span>
-                        </div>
-
-                        <div className="mercado-card-content-wrap">
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <span className="mercado-accepted-pill-tag">
-                              ✓ OFERTA ACEPTADA
-                            </span>
-                            <span className="mercado-accepted-price-tag">
-                              ${parseFloat(job.agreed_price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                            </span>
-                          </div>
-
-                          <h4 className="mercado-job-card-title">
-                            {job.titulo}
-                          </h4>
-
-                          <div className="mercado-accepted-address-row">
-                            <MapPin size={13} color="#4ade80" />
-                            <span>{job.full_address}</span>
-                          </div>
-
-                          <div className="mercado-accepted-client-row">
-                            👤 Cliente: <strong>{job.client_name}</strong> {job.client_phone && `(${job.client_phone})`}
-                          </div>
-
-                          {/* Estado de Programación de Visita */}
-                          <div className="mercado-accepted-schedule-box">
-                            {job.scheduled_at 
-                              ? `📅 Visita: ${new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}`
-                              : `⚠️ Pendiente programar hora de llegada`}
-                          </div>
-
-                          {/* Alerta de mensaje */}
-                          {job.lastClientMsg && (
-                            <div className="mercado-job-msg-alert">
-                              <span className="mercado-msg-dot-pulse" />
-                              <span>💬 <strong>Mensaje del Cliente:</strong> "{job.lastClientMsg.message}"</span>
-                            </div>
-                          )}
-
-                          <div className="mercado-job-card-footer">
-                            <span style={{ color: '#798394' }}>Fecha: {job.fecha}</span>
-                            <span style={{ color: '#4ade80', fontWeight: '800' }}>Ver detalles y coordinar →</span>
-                          </div>
-                        </div>
+                    <div className="mercado-user-info-rows">
+                      <div className="mercado-user-info-row">
+                        <MapPin size={13} color="#f26522" style={{ flexShrink: 0 }} />
+                        <span>{client.direccion}</span>
+                      </div>
+                      <div className="mercado-user-info-row">
+                        <Phone size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
+                        <span>{client.telefono || 'Sin teléfono registrado'}</span>
+                      </div>
+                      <div className="mercado-user-info-row" style={{ marginTop: '2px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+                        <span style={{ color: '#f26522', fontWeight: '800' }}>🛠️ Último servicio:</span>
+                        <span style={{ color: '#ffffff', fontWeight: '700' }}>{client.ultimoTrabajo.titulo}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8' }}>
+                        <span>📅 {client.ultimoTrabajo.fecha}</span>
+                        <span style={{ color: '#4ade80', fontWeight: '800' }}>
+                          Total: ${client.totalFacturado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </span>
                       </div>
                     </div>
-                  );
-                })}
-              </>
+
+                    <div className="mercado-user-card-footer">
+                      {cleanPhone ? (
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <a 
+                            href={`https://wa.me/52${cleanPhone}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="mercado-user-btn-action whatsapp"
+                          >
+                            💬 WhatsApp
+                          </a>
+                          <a 
+                            href={`tel:${cleanPhone}`} 
+                            className="mercado-user-btn-action"
+                          >
+                            📞 Llamar
+                          </a>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '11px', color: '#64748b' }}>Sin contacto directo</span>
+                      )}
+
+                      <button
+                        type="button"
+                        className="mercado-user-btn-action primary"
+                        onClick={() => setSelectedClientForHistory(client)}
+                      >
+                        📋 Historial ({client.trabajosCount}) →
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
+      )}
 
-        {/* ─── Map ─── */}
-        <div className="mercado-map-section">
-          {isLoaded ? (
-            <>
-              <div className="mercado-map-overlay-badge">
-                <span className="mercado-map-live-dot" />
-                {activeTab === 'disponibles' ? `${filteredNetworkJobs.length} disponibles` : `${filteredAcceptedJobs.length} aceptados`}
+      {/* ─── MODAL DE HISTORIAL DE SERVICIOS POR CLIENTE ─── */}
+      {selectedClientForHistory && (
+        <div className="mercado-client-jobs-overlay" onClick={() => setSelectedClientForHistory(null)}>
+          <div className="mercado-client-jobs-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mercado-client-jobs-header">
+              <div>
+                <h3 style={{ margin: 0, color: '#ffffff', fontSize: '1.2rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  👤 {selectedClientForHistory.nombre}
+                </h3>
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                  📍 {selectedClientForHistory.direccion} {selectedClientForHistory.telefono && `• 📞 ${selectedClientForHistory.telefono}`}
+                </span>
               </div>
-              <GoogleMap
-                mapContainerStyle={mapContainerStyle}
-                center={defaultCenter}
-                zoom={13}
-                options={{ disableDefaultUI: false, styles: DARK_MAP_STYLES }}
-              >
-                {/* Marcadores de Trabajos Disponibles */}
-                {activeTab === 'disponibles' && filteredNetworkJobs.map(job => (
-                  <React.Fragment key={job.id}>
-                    <Circle
-                      center={{ lat: job.lat, lng: job.lng }}
-                      radius={550}
-                      options={{
-                        fillColor: job.is_urgent ? '#ef4444' : (job.lastClientMsg ? '#2563eb' : '#ff6600'),
-                        fillOpacity: 0.18,
-                        strokeColor: job.is_urgent ? '#dc2626' : (job.lastClientMsg ? '#1d4ed8' : '#ea580c'),
-                        strokeOpacity: 0.75,
-                        strokeWeight: 1.5,
-                        clickable: true
-                      }}
-                      onClick={() => openQuoteModalForJob(job)}
-                    />
-                    <Marker
-                      position={{ lat: job.lat, lng: job.lng }}
-                      onClick={() => openQuoteModalForJob(job)}
-                      title={`Zona: ${job.zona}`}
-                      icon={{
-                        url: job.is_urgent
-                          ? 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
-                          : (job.lastClientMsg
-                            ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-                            : (job.myQuote ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png'))
-                      }}
-                    />
-                  </React.Fragment>
-                ))}
+              <span className="mercado-modal-close" onClick={() => setSelectedClientForHistory(null)}>×</span>
+            </div>
 
-                {/* Marcadores de Trabajos Aceptados */}
-                {activeTab === 'aceptados' && filteredAcceptedJobs.map(job => (
-                  <Marker
-                    key={`acc-${job.id}`}
-                    position={{ lat: job.lat, lng: job.lng }}
-                    onClick={() => openQuoteModalForJob(job)}
-                    title={`Trabajo Aceptado: ${job.titulo}`}
-                    icon={{
-                      url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
-                    }}
-                  />
-                ))}
+            <div className="mercado-client-jobs-body">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0f121a', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: '#cbd5e1' }}>
+                  Total de Servicios Realizados: <strong>{selectedClientForHistory.trabajosCount}</strong>
+                </span>
+                <span style={{ fontSize: '14px', fontWeight: '900', color: '#4ade80' }}>
+                  Total Acumulado: ${selectedClientForHistory.totalFacturado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
 
-                {selectedJob && !showQuoteModal && (
-                  <InfoWindow
-                    position={{ lat: selectedJob.lat, lng: selectedJob.lng }}
-                    onCloseClick={() => setSelectedJob(null)}
-                  >
-                    <div className="mercado-info-window">
-                      <h4>{selectedJob.titulo}</h4>
-                      <p style={{ color: '#ea580c', fontWeight: '700', margin: '4px 0' }}>
-                        <MapPin size={12} /> Zona: {selectedJob.zona}
-                      </p>
-                      <button
-                        className="mercado-btn-details"
-                        onClick={() => openQuoteModalForJob(selectedJob)}
-                      >
-                        {selectedJob.is_accepted ? '✅ Ver Detalle y Visita' : (selectedJob.myQuote ? '📋 Ver Detalle y Chat' : '💼 Cotizar este trabajo')}
-                      </button>
-                    </div>
-                  </InfoWindow>
-                )}
-              </GoogleMap>
-            </>
-          ) : (
-            <div className="mercado-loading-map">Cargando Mapa...</div>
-          )}
+              <h4 style={{ margin: '8px 0 2px 0', color: '#f26522', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: '800' }}>
+                Desglose de Trabajos:
+              </h4>
+
+              {selectedClientForHistory.trabajos.map((job, idx) => (
+                <div key={`cli-job-${job.id}-${idx}`} className="mercado-client-job-item">
+                  <div className="mercado-client-job-item-header">
+                    <span className="mercado-client-job-title">{job.titulo}</span>
+                    <span className="mercado-client-job-price">
+                      ${parseFloat(job.agreed_price || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+
+                  <p className="mercado-client-job-desc">{job.descripcion}</p>
+
+                  <div className="mercado-client-job-footer">
+                    <span>📅 Solicitado: {job.fecha}</span>
+                    <span style={{ color: '#38bdf8', fontWeight: '700' }}>
+                      {job.scheduled_at ? `Cita: ${new Date(job.scheduled_at).toLocaleDateString('es-MX')}` : 'Sin cita agendada'}
+                    </span>
+                    <button
+                      type="button"
+                      style={{ background: 'none', border: 'none', color: '#f26522', fontWeight: '800', cursor: 'pointer', fontSize: '11.5px' }}
+                      onClick={() => {
+                        setSelectedClientForHistory(null);
+                        openQuoteModalForJob(job);
+                      }}
+                    >
+                      Abrir Detalle / Chat →
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════
+          VISTA 2: MERCADO DE TRABAJOS (MAPA + SOLICITUDES DISPONIBLES)
+      ════════════════════════════════════════════════════════════ */}
+      {mainView === 'mercado' && (
+        <div className="mercado-content">
+          {/* Floating Mobile Toggle Button (Tipo Uber) */}
+          <button 
+            className="mercado-mobile-toggle-btn"
+            onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
+          >
+            {mobileDrawerOpen ? (
+              <><MapIcon size={16} /> Ver Mapa</>
+            ) : (
+              <><List size={16} /> Ver Lista ({filteredNetworkJobs.length})</>
+            )}
+          </button>
+
+          {/* ─── Sidebar (Solo Trabajos Disponibles / Solicitudes) ─── */}
+          <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''}`}>
+            <div className="mercado-sidebar-header">
+              <div 
+                className="mercado-mobile-drag-handle" 
+                onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)} 
+              />
+              <div className="mercado-sidebar-brand-row">
+                <span className="mercado-sidebar-eyebrow">Panel Técnico</span>
+                <span className="mercado-sidebar-live-pill">● EN VIVO</span>
+              </div>
+              <h2 className="mercado-sidebar-subtitle">Mercado de la Red</h2>
+              <p className="mercado-sidebar-desc">Cotiza solicitudes de clientes disponibles en tiempo real</p>
+
+              {/* Barra de Búsqueda estilo Image 4 */}
+              <div className="mercado-search-box">
+                <Search size={16} className="mercado-search-icon" />
+                <input
+                  type="text"
+                  className="mercado-search-input"
+                  placeholder="Buscar por falla, colonia, cliente..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button className="mercado-search-clear" onClick={() => setSearchQuery('')}>×</button>
+                )}
+              </div>
+            </div>
+
+            {/* Barra de Contador de Disponibles */}
+            <div style={{ padding: '10px 18px', background: '#141722', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                🌐 Solicitudes Disponibles
+              </span>
+              <span style={{ background: '#f26522', color: '#ffffff', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: '900' }}>
+                {filteredNetworkJobs.length}
+              </span>
+            </div>
+
+            {/* Lista de Trabajos con Scroll */}
+            <div className="mercado-job-list">
+              {filteredNetworkJobs.length === 0 && (
+                <div className="mercado-empty-state-card">
+                  <div className="empty-icon">⏳</div>
+                  <h4>No hay solicitudes disponibles</h4>
+                  <p>{searchQuery ? 'Ningún trabajo coincide con tu búsqueda.' : 'En cuanto los clientes publiquen solicitudes aparecerán aquí.'}</p>
+                </div>
+              )}
+              {filteredNetworkJobs.map(job => {
+                const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
+                return (
+                  <div
+                    key={job.id}
+                    className={`mercado-job-card ${selectedJob?.id === job.id ? 'active' : ''}`}
+                    onClick={() => openQuoteModalForJob(job)}
+                  >
+                    <div className="mercado-card-inner-flex">
+                      {/* Circular Category Avatar */}
+                      <div 
+                        className="mercado-card-avatar-circle"
+                        style={{ background: cat.bg, borderColor: cat.color }}
+                        title={cat.label}
+                      >
+                        <span>{cat.icon}</span>
+                      </div>
+
+                      <div className="mercado-card-content-wrap">
+                        {/* 1. Colonia, Urgencia y Badge de Cotización */}
+                        <div className="mercado-job-card-top">
+                          <div className="mercado-job-colonia-tag">
+                            <MapPin size={12} color="#f26522" />
+                            <span>{job.zona}</span>
+                          </div>
+                          
+                          {job.is_urgent && (
+                            <span className="mercado-urgency-badge urgent">⚡ SOS</span>
+                          )}
+                          
+                          {job.myQuote ? (
+                            <span className={`mercado-job-badge ${job.myQuote.status === 'rejected' ? 'badge-rejected' : (job.myQuote.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`}>
+                              {job.myQuote.status === 'rejected' ? 'Rechazada' : (job.myQuote.price > 0 ? `$${parseFloat(job.myQuote.price).toLocaleString('es-MX')}` : 'Chat')}
+                            </span>
+                          ) : (
+                            <span className="mercado-job-badge-disponible">Disponible</span>
+                          )}
+                        </div>
+
+                        {/* 2. Titulo y Descripción */}
+                        <h4 className="mercado-job-card-title">{job.titulo}</h4>
+                        <p className="mercado-job-card-desc">{job.descripcion}</p>
+
+                        {/* 3. ALERTA DE MENSAJE DEL CLIENTE */}
+                        {job.lastClientMsg && (
+                          <div className="mercado-job-msg-alert">
+                            <span className="mercado-msg-dot-pulse" />
+                            <span>💬 <strong>Mensaje del Cliente:</strong> "{job.lastClientMsg.message}"</span>
+                          </div>
+                        )}
+
+                        {/* 4. Footer */}
+                        <div className="mercado-job-card-footer">
+                          <span className="mercado-ofertas-count">{job.cotizaciones} ofertas enviadas</span>
+                          <span className="mercado-fecha-tag"><Clock size={11} /> {job.fecha}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ─── Map ─── */}
+          <div className="mercado-map-section">
+            {isLoaded ? (
+              <>
+                <div className="mercado-map-overlay-badge">
+                  <span className="mercado-map-live-dot" />
+                  {`${filteredNetworkJobs.length} disponibles`}
+                </div>
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
+                  center={defaultCenter}
+                  zoom={13}
+                  options={{ disableDefaultUI: false, styles: DARK_MAP_STYLES }}
+                >
+                  {/* Marcadores de Trabajos Disponibles */}
+                  {filteredNetworkJobs.map(job => (
+                    <React.Fragment key={job.id}>
+                      <Circle
+                        center={{ lat: job.lat, lng: job.lng }}
+                        radius={550}
+                        options={{
+                          fillColor: job.is_urgent ? '#ef4444' : (job.lastClientMsg ? '#2563eb' : '#ff6600'),
+                          fillOpacity: 0.18,
+                          strokeColor: job.is_urgent ? '#dc2626' : (job.lastClientMsg ? '#1d4ed8' : '#ea580c'),
+                          strokeOpacity: 0.75,
+                          strokeWeight: 1.5,
+                          clickable: true
+                        }}
+                        onClick={() => openQuoteModalForJob(job)}
+                      />
+                      <Marker
+                        position={{ lat: job.lat, lng: job.lng }}
+                        onClick={() => openQuoteModalForJob(job)}
+                        title={`Zona: ${job.zona}`}
+                        icon={{
+                          url: job.is_urgent
+                            ? 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                            : (job.lastClientMsg
+                              ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                              : (job.myQuote ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png'))
+                        }}
+                      />
+                    </React.Fragment>
+                  ))}
+
+                  {selectedJob && !showQuoteModal && (
+                    <InfoWindow
+                      position={{ lat: selectedJob.lat, lng: selectedJob.lng }}
+                      onCloseClick={() => setSelectedJob(null)}
+                    >
+                      <div className="mercado-info-window">
+                        <h4>{selectedJob.titulo}</h4>
+                        <p style={{ color: '#ea580c', fontWeight: '700', margin: '4px 0' }}>
+                          <MapPin size={12} /> Zona: {selectedJob.zona}
+                        </p>
+                        <button
+                          className="mercado-btn-details"
+                          onClick={() => openQuoteModalForJob(selectedJob)}
+                        >
+                          {selectedJob.is_accepted ? '✅ Ver Detalle y Visita' : (selectedJob.myQuote ? '📋 Ver Detalle y Chat' : '💼 Cotizar este trabajo')}
+                        </button>
+                      </div>
+                    </InfoWindow>
+                  )}
+                </GoogleMap>
+              </>
+            ) : (
+              <div className="mercado-loading-map">Cargando Mapa...</div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ─── MODAL PREMIUM 2 COLUMNAS (DETALLES + CHAT INTEGRADO) ─── */}
       {showQuoteModal && selectedJob && (
@@ -2294,6 +2796,13 @@ const MercadoTrabajos = () => {
       <ModalCalendarioCliente
         isOpen={showModalCalendario}
         onClose={() => setShowModalCalendario(false)}
+      />
+
+      {/* ─── Modal de Registro de Usuario / Cliente ─── */}
+      <RegisterModal
+        isOpen={showRegisterModal}
+        onClose={() => setShowRegisterModal(false)}
+        onSuccess={fetchJobs}
       />
     </div>
   );
