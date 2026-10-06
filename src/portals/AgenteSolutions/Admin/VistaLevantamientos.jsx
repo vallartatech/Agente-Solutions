@@ -1,26 +1,62 @@
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import "../../../styles/AgenteSolutions/Admin/VistaLevantamientos.css";
-import React, { useState, useEffect, useRef } from "react";
+import { 
+  ChevronLeft, 
+  User, 
+  LogOut, 
+  CalendarDays, 
+  Trash2, 
+  Lock, 
+  Unlock, 
+  UserPlus, 
+  Users, 
+  CheckCircle2, 
+  ClipboardList,
+  PlusCircle,
+  Clock,
+  MapPin,
+  Building,
+  UserCheck,
+  FileText,
+  X
+} from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
-import Header from "../../../components/Shared/Header";
-import UniversalSearch from "../../../components/Shared/UniversalSearch";
-import { Building, MapPin, User, UserCheck, FileText, X, ChevronLeft } from "lucide-react";
+import UniversalSearch from "../../../components/Shared/UniversalSearch"; 
+import ModalCalendarioCliente from "../../AgenteMarket/Cliente/ModalCalendarioCliente";
+import defaultLogo from "../../../assets/Logo4.png";
+import "../../../styles/AgenteSolutions/Admin/VistaLevantamientos.css";
 
 const VistaLevantamientos = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const location = useLocation();
+  const { user, logout, logoutGlobal } = useAuth();
   const isClient = user?.role_id === 3;
 
   const [tabActual, setTabActual] = useState("PENDIENTES");
   const [serviciosFiltrados, setServiciosFiltrados] = useState([]);
-
-  // ESTADOS PARA DATOS REALES
   const [servicios, setServicios] = useState([]);
   const [tecnicos, setTecnicos] = useState([]);
+  const [propiedades, setPropiedades] = useState([]);
   const [cargando, setCargando] = useState(true);
 
-  // ESTADOS PARA ASIGNACIÓN
+  // Estados para Header y Modal Calendario
+  const [showModalCalendario, setShowModalCalendario] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [appLogo, setAppLogo] = useState(defaultLogo);
+  const dropdownRef = useRef(null);
+
+  // ESTADOS PARA MODAL: SOLICITAR LEVANTAMIENTO
+  const [mostrarModalSolicitar, setMostrarModalSolicitar] = useState(false);
+  const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
+  const [formSolicitud, setFormSolicitud] = useState({
+    property_id: location.state?.selectedPropId || "",
+    supervisor_name: "",
+    priority: "Media",
+    description: "Solicitud de visita técnica para levantamiento de la propiedad."
+  });
+
+  // ESTADOS PARA MODAL: ASIGNACIÓN (ADMIN)
   const [mostrarAsignar, setMostrarAsignar] = useState(false);
   const [servicioSeleccionado, setServicioSeleccionado] = useState(null);
   const [datosAsignacion, setDatosAsignacion] = useState({
@@ -29,79 +65,191 @@ const VistaLevantamientos = () => {
     hora: "",
   });
 
-  const dateInputRef = useRef(null);
-  const timeInputRef = useRef(null);
-
-  // Estados para el Modal de Detalles de Propiedad
+  // Estados para Modal de Detalles de Propiedad
   const [modalDetalleVisible, setModalDetalleVisible] = useState(false);
   const [detallePropiedad, setDetallePropiedad] = useState(null);
 
-  const verDetallesPropiedad = (item) => {
-    setDetallePropiedad(item);
-    setModalDetalleVisible(true);
-  };
-
-  const abrirDatePicker = () => {
-    if (dateInputRef.current && dateInputRef.current.showPicker) {
-      dateInputRef.current.showPicker();
-    } else {
-      dateInputRef.current.click();
-    }
-  };
-
-  const abrirTimePicker = () => {
-    if (timeInputRef.current && timeInputRef.current.showPicker) {
-      timeInputRef.current.showPicker();
-    } else {
-      timeInputRef.current.click();
-    }
-  };
-
-  //Modales del Cliente
+  // Estados para Modal de Reagendar (Cliente)
   const [modalClientePaso, setModalClientePaso] = useState(0);
   const [motivoReprogramar, setMotivoReprogramar] = useState("");
   const [fechaSugerida, setFechaSugerida] = useState("");
 
-  // 1. CARGAR SERVICIOS Y TÉCNICOS AL INICIAR
+  // Cargar Logo de Personalización
   useEffect(() => {
-    const cargarDatos = async () => {
-      try {
-        // Solo cargamos los técnicos si NO es cliente (para ahorrar datos)
-        const peticiones = [axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios`)];
-        if (!isClient) {
-          peticiones.push(
-            axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`),
-          );
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/ui/settings/login-settings`)
+      .then(res => {
+        if (res.data?.logo_url) {
+          setAppLogo(res.data.logo_url);
+        } else if (res.data?.settings?.appLogo) {
+          setAppLogo(res.data.settings.appLogo);
         }
+      })
+      .catch(() => {});
+  }, []);
 
-        const respuestas = await Promise.all(peticiones);
-        setServicios(respuestas[0].data);
-
-        if (!isClient) {
-          setTecnicos(respuestas[1].data);
-        }
-      } catch (error) {
-        console.error("Error al cargar datos:", error);
-      } finally {
-        setCargando(false);
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setProfileDropdownOpen(false);
       }
     };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // CARGAR SERVICIOS, TÉCNICOS Y PROPIEDADES
+  const cargarDatos = async () => {
+    setCargando(true);
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const peticiones = [
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/propiedades`, { headers })
+      ];
+
+      if (!isClient) {
+        peticiones.push(axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`, { headers }));
+      }
+
+      const respuestas = await Promise.all(peticiones);
+      setServicios(respuestas[0].data || []);
+      setPropiedades(respuestas[1].data || []);
+
+      if (!isClient && respuestas[2]) {
+        setTecnicos(respuestas[2].data || []);
+      }
+    } catch (error) {
+      console.error("Error al cargar datos:", error);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  useEffect(() => {
     cargarDatos();
   }, [isClient]);
 
-  // El filtrado ahora lo maneja el UniversalSearch
-  const filtrados = serviciosFiltrados;
+  // Si se envió una propiedad seleccionada en la navegación, asignarla al formulario
+  useEffect(() => {
+    if (location.state?.selectedPropId) {
+      setFormSolicitud(prev => ({
+        ...prev,
+        property_id: location.state.selectedPropId
+      }));
+    }
+  }, [location.state]);
 
+  // Conteo de servicios
+  const pendientesCount = useMemo(() => {
+    return servicios.filter(s => s.status !== "Finalizado" && s.status !== "completed").length;
+  }, [servicios]);
 
+  const finalizadosCount = useMemo(() => {
+    return servicios.filter(s => s.status === "Finalizado" || s.status === "completed").length;
+  }, [servicios]);
+
+  // Nombres y roles de usuario para el header
+  const userFullName = useMemo(() => {
+    const parts = [user?.first_name, user?.last_name].filter(Boolean);
+    if (parts.length > 0) return parts.join(' ').toUpperCase();
+    if (user?.name) return user.name.toUpperCase();
+    if (user?.nombre) return user.nombre.toUpperCase();
+    return 'USUARIO';
+  }, [user]);
+
+  const userRoleLabel = useMemo(() => {
+    if (user?.role_id === 0) return "ROOT_MASTER";
+    if (user?.role_id === 1) return "ADMIN_GLOBAL";
+    if (user?.role_id === 4) return "AUT_EMPRESARIAL";
+    if (user?.role_id === 5) return "AUT_PERSONAL";
+    if (user?.role_id === 7) return "GESTOR_INMUEBLES";
+    if (user?.role_id === 2) return "TECNICO_OFICIAL";
+    if (user?.role_id === 3) return "MARKET_CLIENT_PERSONAL";
+    return "USUARIO";
+  }, [user]);
+
+  const userAvatar = user?.profile_picture || user?.avatar_url || user?.foto || null;
+  const userInitial = user?.first_name 
+    ? user.first_name.charAt(0).toUpperCase() 
+    : (user?.name ? user.name.charAt(0).toUpperCase() : (user?.nombre ? user.nombre.charAt(0).toUpperCase() : 'U'));
+
+  const handleCerrarSesion = () => {
+    if (logoutGlobal) logoutGlobal();
+    else if (logout) logout();
+    navigate("/", { replace: true });
+  };
+
+  const irAlInicio = () => {
+    if (!user) return navigate('/');
+    const role = Number(user.role_id);
+    if (role === 0 || role === 1) navigate('/VistaRoot');
+    else if (role === 4 || role === 5 || role === 7 || role === 3) navigate('/VistaMarket');
+    else if (role === 2) navigate('/VistaTecnico');
+    else if (role === 6 || role === 8) navigate('/mercado-trabajos');
+    else navigate('/');
+  };
+
+  // --- SOLICITAR LEVANTAMIENTO ---
+  const handleEnviarSolicitudLevantamiento = async (e) => {
+    e.preventDefault();
+    if (!formSolicitud.property_id) {
+      alert("Por favor selecciona una propiedad para solicitar el levantamiento.");
+      return;
+    }
+
+    setEnviandoSolicitud(true);
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const payload = {
+        property_id: formSolicitud.property_id,
+        title: "Levantamiento Inicial",
+        description: formSolicitud.description || "Solicitud de visita técnica para registro inicial de la propiedad.",
+        priority: formSolicitud.priority || "Media",
+        supervisor_name: formSolicitud.supervisor_name.trim() !== "" ? formSolicitud.supervisor_name : (userFullName || "El propietario"),
+      };
+
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/servicios`,
+        payload,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (res.data?.success || res.status === 200 || res.status === 201) {
+        alert("¡Levantamiento solicitado con éxito!");
+        setMostrarModalSolicitar(false);
+        setFormSolicitud({
+          property_id: "",
+          supervisor_name: "",
+          priority: "Media",
+          description: "Solicitud de visita técnica para levantamiento de la propiedad."
+        });
+        cargarDatos();
+      }
+    } catch (error) {
+      console.error("Error al solicitar levantamiento:", error);
+      alert(error.response?.data?.message || "Hubo un error al solicitar el levantamiento.");
+    } finally {
+      setEnviandoSolicitud(false);
+    }
+  };
+
+  // --- ASIGNACIÓN (ADMIN) ---
   const abrirAsignacion = (servicio) => {
     setServicioSeleccionado(servicio);
     setMostrarAsignar(true);
   };
 
-  // 3. ENVIAR ASIGNACIÓN A LARAVEL
   const manejarConfirmarAgenda = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const payload = {
         tecnico_id: datosAsignacion.tecnico_id,
         scheduled_start: `${datosAsignacion.fecha} ${datosAsignacion.hora}:00`,
@@ -110,43 +258,45 @@ const VistaLevantamientos = () => {
       const respuesta = await axios.put(
         `${import.meta.env.VITE_API_BASE_URL}/servicios/${servicioSeleccionado.id}/asignar`,
         payload,
+        { headers: { 'Authorization': `Bearer ${token}` } }
       );
 
       if (respuesta.data.success) {
         alert("¡Visita técnica programada con éxito!");
         setMostrarAsignar(false);
-
-        const { data } = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios`);
-        setServicios(data);
+        cargarDatos();
       }
     } catch (error) {
-      console.error("Error completo:", error.response);
-      alert("Error al asignar técnico. Revisa la consola.");
+      console.error("Error al asignar técnico:", error);
+      alert("Error al asignar técnico.");
     }
   };
 
-  /// Funciones para Solicitar reagendar cita
+  // --- DETALLES Y CLIENTE ---
+  const verDetallesPropiedad = (item) => {
+    setDetallePropiedad(item);
+    setModalDetalleVisible(true);
+  };
 
-  // --- LÓGICA DEL CLIENTE ---
   const abrirDetallesCliente = (servicio) => {
     setServicioSeleccionado(servicio);
-    setModalClientePaso(1); // Abre en la pantalla de confirmación
+    setModalClientePaso(1);
     setMotivoReprogramar("");
     setFechaSugerida("");
   };
 
   const confirmarCitaCliente = async () => {
     try {
-      // Aquí llamaremos a Laravel para cambiar el estatus a "Confirmado"
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const respuesta = await axios.put(
         `${import.meta.env.VITE_API_BASE_URL}/servicios/${servicioSeleccionado.id}/confirmar-cliente`,
+        {},
+        { headers: { 'Authorization': `Bearer ${token}` } }
       );
       if (respuesta.data.success) {
         alert("¡Cita confirmada! El técnico ha sido notificado.");
         setModalClientePaso(0);
-        // Recargar tabla
-        const { data } = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios`);
-        setServicios(data);
+        cargarDatos();
       }
     } catch (error) {
       alert("Error al confirmar la cita.");
@@ -156,7 +306,7 @@ const VistaLevantamientos = () => {
   const enviarReprogramacion = async (e) => {
     e.preventDefault();
     try {
-      // Enviamos la sugerencia al Admin
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const payload = {
         fecha_sugerida: fechaSugerida,
         motivo: motivoReprogramar,
@@ -164,13 +314,13 @@ const VistaLevantamientos = () => {
       const respuesta = await axios.put(
         `${import.meta.env.VITE_API_BASE_URL}/servicios/${servicioSeleccionado.id}/solicitar-reprogramacion`,
         payload,
+        { headers: { 'Authorization': `Bearer ${token}` } }
       );
 
       if (respuesta.data.success) {
         alert("Solicitud enviada. El administrador revisará tu nueva fecha.");
         setModalClientePaso(0);
-        const { data } = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios`);
-        setServicios(data);
+        cargarDatos();
       }
     } catch (error) {
       alert("Error al solicitar reprogramación.");
@@ -178,439 +328,620 @@ const VistaLevantamientos = () => {
   };
 
   return (
-    <div className="lev-main-page">
-      {!isClient && <Header titulo="LEVANTAMIENTOS" />}
-      
-      <main className="lev-container">
-        {/* BOTÓN REGRESAR */}
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-start', marginBottom: '15px' }}>
+    <div className="lev-root">
+      {/* ── TOP MASTER MENU NAVBAR ── */}
+      <header className="vcp-header lev-header-nav">
+        <div className="vcp-header-left">
+          <img 
+            src={appLogo} 
+            alt="Agente Solutions Logo" 
+            className="vcp-brand-logo"
+            onClick={irAlInicio} 
+            title="Ir al Inicio"
+          />
+        </div>
+
+        {/* Navigation Links */}
+        <nav className="vcp-header-nav">
           <button 
-            onClick={() => navigate(-1)} 
-            style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#F26522', color: 'white', padding: '8px 25px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
+            className="vcp-nav-icon-btn" 
+            title="Abrir Calendario"
+            onClick={() => setShowModalCalendario(true)}
           >
-            <ChevronLeft size={18} />
+            <CalendarDays size={20} color="#ffffff" strokeWidth={2.2} />
+          </button>
+
+          <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
+            USUARIOS
+          </button>
+          <button className="vcp-nav-btn" onClick={() => navigate('/propiedades')}>
+            PROPIEDADES
+          </button>
+          <button className="vcp-nav-btn active" onClick={() => navigate('/levantamientos')}>
+            LEVANTAMIENTO
+          </button>
+          <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
+            REPORTE
+          </button>
+          <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
+            COTIZACION
+          </button>
+          <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
+            SERVICIOS
+          </button>
+          <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
+            MERCADO / RED
+          </button>
+        </nav>
+
+        {/* User Profile on top right */}
+        <div className="vcp-header-right" ref={dropdownRef}>
+          <div className="vcp-user-info-text">
+            <span className="vcp-user-role-badge">{userRoleLabel}</span>
+            <span className="vcp-user-name">{userFullName}</span>
+          </div>
+
+          <button 
+            className="vcp-avatar-btn" 
+            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+            title="Opciones de perfil"
+            aria-label="Perfil"
+          >
+            {userAvatar ? (
+              <img src={userAvatar} alt="Avatar" className="vcp-avatar-img" />
+            ) : (
+              <div className="vcp-avatar-initial">{userInitial}</div>
+            )}
+          </button>
+
+          {profileDropdownOpen && (
+            <div className="vcp-profile-dropdown">
+              <button 
+                className="vcp-dropdown-item" 
+                onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
+              >
+                <User size={16} /> Mi Perfil
+              </button>
+              <button 
+                className="vcp-dropdown-item logout" 
+                onClick={() => { 
+                  setProfileDropdownOpen(false); 
+                  handleCerrarSesion();
+                }}
+              >
+                <LogOut size={16} /> Cerrar Sesión
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* ── MAIN CONTENT AREA ── */}
+      <main className="lev-main-container">
+        
+        {/* Top Action Bar */}
+        <div className="lev-action-bar">
+          <button 
+            type="button"
+            className="lev-btn-regresar" 
+            onClick={() => navigate(-1)} 
+            title="Volver a la vista anterior"
+          >
+            <ChevronLeft size={19} strokeWidth={2.8} />
             <span>REGRESAR</span>
           </button>
+
+          <div className="lev-page-title-badge">
+            <ClipboardList size={18} className="lev-title-icon" />
+            <span>DIRECTORIO DE LEVANTAMIENTOS</span>
+            <span className="lev-count-pill">{servicios.length}</span>
+          </div>
         </div>
 
-        <UniversalSearch 
-          data={servicios}
-          setFilteredData={setServiciosFiltrados}
-          placeholder="BUSCAR POR PROPIEDAD, ID O ESTADO..."
-          filtroActual={tabActual}
-          type="LEVANTAMIENTOS"
-        />
-
-        <div className="lev-tabs">
+        {/* ── BOTONES DE FILTRO Y SOLICITUD ── */}
+        <div className="lev-filter-grid">
           <button
-            className={`lev-tab ${tabActual === "PENDIENTES" ? "active" : ""}`}
+            type="button"
+            className={`lev-filter-pill ${tabActual === "PENDIENTES" ? "active" : ""}`}
             onClick={() => setTabActual("PENDIENTES")}
-            style={{ fontSize: 'clamp(0.65rem, 2vw, 0.9rem)' }}
+            title="Ver visitas técnicas pendientes"
           >
-            📋 <span style={{ display: 'inline-block', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis' }}>VISITAS PENDIENTES</span>
+            <Clock size={16} />
+            <span>VISITAS PENDIENTES ({pendientesCount})</span>
           </button>
+
           <button
-            className={`lev-tab ${tabActual === "REALIZADOS" ? "active" : ""}`}
+            type="button"
+            className={`lev-filter-pill ${tabActual === "REALIZADOS" ? "active-completed" : ""}`}
             onClick={() => setTabActual("REALIZADOS")}
-            style={{ fontSize: 'clamp(0.65rem, 2vw, 0.9rem)' }}
+            title="Ver levantamientos finalizados"
           >
-            ✅ <span style={{ display: 'inline-block', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis' }}>FINALIZADOS</span>
+            <CheckCircle2 size={16} />
+            <span>FINALIZADOS ({finalizadosCount})</span>
+          </button>
+
+          {/* BOTÓN SOLICITAR LEVANTAMIENTO */}
+          <button
+            type="button"
+            className="lev-filter-pill lev-action-pill-solicitar"
+            onClick={() => setMostrarModalSolicitar(true)}
+            title="Solicitar nuevo levantamiento para una propiedad"
+          >
+            <PlusCircle size={17} />
+            <span>SOLICITAR LEVANTAMIENTO</span>
           </button>
         </div>
 
-        <div className="lev-table-wrapper">
-          <table className="lev-table">
-            <thead>
-              <tr>
-                <th style={{ fontSize: 'clamp(0.6rem, 1.5vw, 0.85rem)' }}>ID</th>
-                <th style={{ fontSize: 'clamp(0.6rem, 1.5vw, 0.85rem)' }}>PROPIEDAD</th>
-                <th style={{ fontSize: 'clamp(0.6rem, 1.5vw, 0.85rem)' }}>PRIORIDAD</th>
-                {tabActual === "PENDIENTES" ? (
-                  <th style={{ fontSize: 'clamp(0.6rem, 1.5vw, 0.85rem)' }}>ESTADO</th>
-                ) : (
-                  <th style={{ fontSize: 'clamp(0.6rem, 1.5vw, 0.85rem)' }}>TEC.</th>
-                )}
-                <th style={{ fontSize: 'clamp(0.6rem, 1.5vw, 0.85rem)' }}>ACC.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cargando ? (
+        {/* ── UNIVERSAL SEARCH IN DARK GLASS ── */}
+        <div className="lev-search-wrapper">
+          <UniversalSearch 
+            data={servicios}
+            setFilteredData={setServiciosFiltrados}
+            placeholder="BUSCAR POR PROPIEDAD, ID O ESTADO..."
+            filtroActual={tabActual}
+            type="LEVANTAMIENTOS"
+          />
+        </div>
+
+        {/* ── LIQUID GLASS TABLE ── */}
+        <div className="lev-table-card">
+          <div className="lev-table-responsive-wrapper">
+            <table className="lev-modern-table">
+              <thead>
                 <tr>
-                  <td
-                    colSpan="5"
-                    style={{ textAlign: "center", padding: "20px" }}
-                  >
-                    Cargando levantamientos...
-                  </td>
+                  <th>ID</th>
+                  <th>PROPIEDAD</th>
+                  <th>PRIORIDAD</th>
+                  {tabActual === "PENDIENTES" ? <th>ESTADO</th> : <th>TÉCNICO</th>}
+                  <th>ACCIONES</th>
                 </tr>
-              ) : filtrados.length > 0 ? (
-                filtrados.map((s) => (
-                  <tr key={s.id}>
-                    <td data-label="ID" style={{ color: '#333', fontWeight: '900' }}>#{s.id || "0"}</td>
-                    <td data-label="PROPIEDAD" className="lev-bold">
-                      <span 
-                        onClick={() => verDetallesPropiedad(s)}
-                        style={{ cursor: 'pointer', color: '#F26522', textDecoration: 'underline' }}
-                      >
-                        {s.title === "Levantamiento Inicial" && s.cliente_nombre ? `Levantamiento de ${s.cliente_nombre}` : s.title}
-                      </span>
-                    </td>
-                    <td data-label="PRIORIDAD">
-                      <span
-                        className={`prio-${s.priority?.toLowerCase()}`}
-                        style={{ color: "#333" }}
-                      >
-                        {s.priority || "N/A"}
-                      </span>
-                    </td>
-                    <td data-label={tabActual === 'PENDIENTES' ? "ESTADO" : "TÉCNICO"}>
-                      {tabActual === 'PENDIENTES' ? (
-                      <span 
-                        className={s.assigned_to && s.status !== 'Reprogramación Solicitada' ? "status-assigned" : "status-pending"}
-                        style={{
-                          backgroundColor: s.status === 'Reprogramación Solicitada' ? '#FF9800' : 
-                                           s.status === 'Visita Confirmada' ? '#2196F3' : '',
-                          color: (s.status === 'Reprogramación Solicitada' || s.status === 'Visita Confirmada') ? 'white' : '',
-                          padding: '5px 12px',
-                          borderRadius: '20px',
-                          fontWeight: 'bold',
-                          fontSize: '0.85rem'
-                        }}
-                      >
-                        {s.status === 'Reprogramación Solicitada' ? "⏳ Pide Reprogramar" :
-                         s.status === 'Visita Confirmada' ? "✅ Confirmada" :
-                         s.assigned_to ? "📅 Programado" : "⚠️ Por Asignar"}
-                      </span>
-                    ) : s.tecnico_nombre} 
-                  </td>
-                    <td data-label="ACCIÓN">
-                      {tabActual === 'REALIZADOS' ? (
-                      <button 
-                        className="lev-btn-action btn-reporte"
-                        onClick={() => navigate(`/detalle-reporte/${s.id}`)}
-                      >
-                        👁️ Ver Reporte
-                      </button>
-                    ) : isClient ? (
-                        <button 
-                          className="lev-btn-action btn-assign" 
-                          style={{ 
-                            backgroundColor: s.status === 'Reprogramación Solicitada' ? '#FF9800' : 
-                                             s.status === 'Visita Confirmada' ? '#2196F3' :
-                                             s.assigned_to ? '#4CAF50' : '#888', 
-                            border: 'none', color: 'white' 
-                          }}
-                          onClick={() => {
-                            if (s.assigned_to && s.status !== 'Reprogramación Solicitada' && s.status !== 'Visita Confirmada') {
-                              abrirDetallesCliente(s);
-                            }
-                          }}
-                          disabled={!s.assigned_to || s.status === 'Reprogramación Solicitada' || s.status === 'Visita Confirmada'}
-                        >
-                          {s.status === 'Reprogramación Solicitada' ? '⏳ Reprogramando' :
-                           s.status === 'Visita Confirmada' ? '✅ Cita Confirmada' :
-                           s.assigned_to ? '👁️ Ver Detalles' : '⏳ En revisión'}
-                        </button>
-                    ) : (
-                        <button
-                          className="lev-btn-action btn-assign"
-                          onClick={() => abrirAsignacion(s)}
-                        >
-                          📅 Programar
-                        </button>
-                      )}
+              </thead>
+              <tbody>
+                {cargando ? (
+                  <tr>
+                    <td colSpan="5" className="lev-empty-state">
+                      <div className="vu-spinner" style={{ margin: '0 auto 10px auto' }}></div>
+                      <span>Cargando levantamientos...</span>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan="5"
-                    style={{
-                      padding: "40px",
-                      color: "#999",
-                      textAlign: "center",
-                    }}
-                  >
-                    {isClient
-                      ? "Aún no has solicitado ningún levantamiento."
-                      : "No hay servicios registrados."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                ) : serviciosFiltrados.length > 0 ? (
+                  serviciosFiltrados.map((s) => (
+                    <tr key={s.id}>
+                      {/* ID */}
+                      <td>
+                        <span className="lev-id-badge">#{s.id || "0"}</span>
+                      </td>
+
+                      {/* Propiedad */}
+                      <td className="lev-prop-cell" onClick={() => verDetallesPropiedad(s)}>
+                        <span className="lev-prop-name">
+                          {s.title === "Levantamiento Inicial" && s.cliente_nombre 
+                            ? `Levantamiento de ${s.cliente_nombre}` 
+                            : (s.propiedad_nombre || s.title)}
+                        </span>
+                        {s.direccion && <span className="lev-prop-client">{s.direccion}</span>}
+                      </td>
+
+                      {/* Prioridad */}
+                      <td>
+                        <span className={`lev-prio-badge lev-prio-${(s.priority || 'media').toLowerCase()}`}>
+                          {s.priority || "Media"}
+                        </span>
+                      </td>
+
+                      {/* Estado / Técnico */}
+                      <td>
+                        {tabActual === "PENDIENTES" ? (
+                          <span className={`lev-status-chip ${
+                            s.status === 'Reprogramación Solicitada' ? 'reschedule' :
+                            s.status === 'Visita Confirmada' ? 'confirmed' :
+                            s.assigned_to ? 'programmed' : 'pending'
+                          }`}>
+                            {s.status === 'Reprogramación Solicitada' ? 'Pide Reprogramar' :
+                             s.status === 'Visita Confirmada' ? 'Confirmada' :
+                             s.assigned_to ? 'Programado' : 'Por Asignar'}
+                          </span>
+                        ) : (
+                          <span style={{ fontWeight: '700', color: '#e2e8f0' }}>
+                            {s.tecnico_nombre || "Técnico Agente"}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Acciones */}
+                      <td>
+                        {tabActual === "REALIZADOS" ? (
+                          <button 
+                            type="button"
+                            className="lev-btn-table-action report"
+                            onClick={() => navigate(`/detalle-reporte/${s.id}`)}
+                          >
+                            <FileText size={14} />
+                            <span>Ver Reporte</span>
+                          </button>
+                        ) : isClient ? (
+                          <button 
+                            type="button"
+                            className="lev-btn-table-action view-details"
+                            onClick={() => {
+                              if (s.assigned_to && s.status !== 'Reprogramación Solicitada' && s.status !== 'Visita Confirmada') {
+                                abrirDetallesCliente(s);
+                              }
+                            }}
+                            disabled={!s.assigned_to || s.status === 'Reprogramación Solicitada' || s.status === 'Visita Confirmada'}
+                          >
+                            {s.status === 'Reprogramación Solicitada' ? 'Reprogramando' :
+                             s.status === 'Visita Confirmada' ? 'Cita Confirmada' :
+                             s.assigned_to ? 'Ver Cita' : 'En Revisión'}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="lev-btn-table-action schedule"
+                            onClick={() => abrirAsignacion(s)}
+                          >
+                            <CalendarDays size={14} />
+                            <span>Programar</span>
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="lev-empty-state">
+                      <ClipboardList size={36} className="lev-empty-icon" />
+                      <p className="lev-empty-title">
+                        {isClient ? "Aún no has solicitado ningún levantamiento" : "No hay servicios en esta sección"}
+                      </p>
+                      <p className="lev-empty-desc">
+                        Haz clic en "SOLICITAR LEVANTAMIENTO" para crear una nueva visita técnica.
+                      </p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
+
       </main>
 
-      {mostrarAsignar && !isClient && (
-        <div
-          className="lev-modal-overlay"
-          onClick={() => setMostrarAsignar(false)}
-        >
-          <div
-            className="lev-modal-form asignar-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="lev-modal-header orange">
-              <h3>AGENDAR VISITA TÉCNICA</h3>
-              <button
-                className="close-x"
-                onClick={() => setMostrarAsignar(false)}
+      {/* ── MODAL: SOLICITAR LEVANTAMIENTO ── */}
+      {mostrarModalSolicitar && (
+        <div className="lev-modal-overlay" onClick={() => setMostrarModalSolicitar(false)}>
+          <div className="lev-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="lev-modal-header">
+              <div className="lev-modal-title">
+                <PlusCircle size={22} color="#F26522" />
+                <span>SOLICITAR LEVANTAMIENTO TÉCNICO</span>
+              </div>
+              <button 
+                type="button" 
+                className="lev-modal-close" 
+                onClick={() => setMostrarModalSolicitar(false)}
+                title="Cerrar"
               >
-                &times;
+                <X size={18} />
               </button>
             </div>
 
-            <div className="lev-modal-body">
-              <p className="asignar-subtitle">
-                Servicio: <strong>{servicioSeleccionado?.title}</strong>
-              </p>
-              <form className="lev-form-grid" onSubmit={manejarConfirmarAgenda}>
-                <div className="lev-field full-width">
-                  <label>Seleccionar Técnico Responsable</label>
-                  <select
-                    className="lev-input-style"
-                    required
-                    value={datosAsignacion.tecnico_id}
-                    onChange={(e) =>
-                      setDatosAsignacion({
-                        ...datosAsignacion,
-                        tecnico_id: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Seleccione un técnico...</option>
-                    {tecnicos.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.first_name} {t.last_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <form onSubmit={handleEnviarSolicitudLevantamiento}>
+              <div className="lev-form-group">
+                <label className="lev-form-label">SELECCIONAR PROPIEDAD *</label>
+                <select
+                  className="lev-form-select"
+                  required
+                  value={formSolicitud.property_id}
+                  onChange={(e) => setFormSolicitud({ ...formSolicitud, property_id: e.target.value })}
+                >
+                  <option value="">-- Selecciona un inmueble --</option>
+                  {propiedades.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre_propiedad || p.property_name || `Propiedad #${p.id}`} {p.direccion ? `- ${p.direccion}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                <div className="lev-field">
-                  <label>Fecha de Visita</label>
-                  <div className="lev-input-wrapper">
-                    <input
-                      type="date"
-                      className="lev-input-style"
-                      required
-                      ref={dateInputRef}
-                      value={datosAsignacion.fecha}
-                      onChange={(e) =>
-                        setDatosAsignacion({
-                          ...datosAsignacion,
-                          fecha: e.target.value,
-                        })
-                      }
-                      onClick={abrirDatePicker}
-                    />
-                    <svg
-                      className="lev-input-icon"
-                      viewBox="0 0 24 24"
-                      onClick={abrirDatePicker}
-                    >
-                      <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z" />
-                    </svg>
-                  </div>
-                </div>
+              <div className="lev-form-group">
+                <label className="lev-form-label">SUPERVISOR / CONTACTO EN SITIO (OPCIONAL)</label>
+                <input
+                  type="text"
+                  className="lev-form-input"
+                  placeholder="Ej. Ing. Juan Pérez / Propietario"
+                  value={formSolicitud.supervisor_name}
+                  onChange={(e) => setFormSolicitud({ ...formSolicitud, supervisor_name: e.target.value })}
+                />
+              </div>
 
-                <div className="lev-field">
-                  <label>Horario Sugerido</label>
-                  <div className="lev-input-wrapper">
-                    <input
-                      type="time"
-                      className="lev-input-style"
-                      required
-                      ref={timeInputRef}
-                      value={datosAsignacion.hora}
-                      onChange={(e) =>
-                        setDatosAsignacion({
-                          ...datosAsignacion,
-                          hora: e.target.value,
-                        })
-                      }
-                      onClick={abrirTimePicker}
-                    />
-                    <svg
-                      className="lev-input-icon"
-                      viewBox="0 0 24 24"
-                      onClick={abrirTimePicker}
-                    >
-                      <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
-                    </svg>
-                  </div>
-                </div>
+              <div className="lev-form-group">
+                <label className="lev-form-label">PRIORIDAD DEL SERVICIO</label>
+                <select
+                  className="lev-form-select"
+                  value={formSolicitud.priority}
+                  onChange={(e) => setFormSolicitud({ ...formSolicitud, priority: e.target.value })}
+                >
+                  <option value="Baja">Baja</option>
+                  <option value="Media">Media (Estándar)</option>
+                  <option value="Alta">Alta (Urgente)</option>
+                </select>
+              </div>
 
-                <div className="lev-footer-form">
-                  <button
-                    type="button"
-                    className="lev-btn-cancel"
-                    onClick={() => setMostrarAsignar(false)}
-                  >
-                    CANCELAR
-                  </button>
-                  <button type="submit" className="lev-btn-save orange-btn">
-                    CONFIRMAR AGENDA
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div className="lev-form-group">
+                <label className="lev-form-label">NOTAS / INSTRUCCIONES ADICIONALES</label>
+                <textarea
+                  className="lev-form-textarea"
+                  rows={3}
+                  placeholder="Detalles sobre acceso, horarios preferidos o requerimientos..."
+                  value={formSolicitud.description}
+                  onChange={(e) => setFormSolicitud({ ...formSolicitud, description: e.target.value })}
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                className="lev-btn-submit-modal" 
+                disabled={enviandoSolicitud || propiedades.length === 0}
+              >
+                {enviandoSolicitud ? "ENVIANDO SOLICITUD..." : "CONFIRMAR Y SOLICITAR LEVANTAMIENTO"}
+              </button>
+            </form>
           </div>
         </div>
       )}
-      {modalClientePaso > 0 && isClient && (
-        <div className="lev-modal-overlay" onClick={() => setModalClientePaso(0)} style={{ zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div className="lev-modal-form asignar-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px', padding: '30px', textAlign: 'center' }}>
-            
-            {modalClientePaso === 1 && (
-              <>
-                <h2 style={{ color: '#F26522', marginBottom: '15px' }}>¡Visita Programada!</h2>
-                <div style={{ backgroundColor: '#f9f9f9', padding: '20px', borderRadius: '8px', marginBottom: '20px', textAlign: 'left' }}>
-                  <p style={{ fontSize: '1.1rem', color: '#333', marginBottom: '10px' }}>
-                    Enhorabuena, el técnico <strong>{servicioSeleccionado?.tecnico_nombre}</strong> te visitará:
-                  </p>
-                  <p style={{ fontSize: '1.2rem', color: '#4CAF50', fontWeight: 'bold', textAlign: 'center', padding: '10px 0' }}>
-                    📅 {servicioSeleccionado?.fecha_programada}
-                  </p>
-                </div>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <button onClick={confirmarCitaCliente} style={{ padding: '12px', borderRadius: '6px', border: 'none', backgroundColor: '#4CAF50', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>
-                    ✅ CONFIRMAR FECHA
-                  </button>
-                  <button onClick={() => setModalClientePaso(2)} style={{ padding: '12px', borderRadius: '6px', border: '1px solid #ccc', backgroundColor: 'white', color: '#555', cursor: 'pointer', fontSize: '0.9rem' }}>
-                    ¿Te surgió un inconveniente? Reprograma aquí
-                  </button>
-                </div>
-              </>
-            )}
 
-            {modalClientePaso === 2 && (
-              <form onSubmit={enviarReprogramacion} style={{ textAlign: 'left' }}>
-                <h2 style={{ color: '#333', marginBottom: '15px', textAlign: 'center' }}>Reprogramar Visita</h2>
-                <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '20px', textAlign: 'center' }}>
-                  Por favor, indícanos la nueva fecha y hora en la que deseas que se realice el levantamiento.
+      {/* ── MODAL: AGENDAR VISITA TÉCNICA (ADMIN) ── */}
+      {mostrarAsignar && !isClient && (
+        <div className="lev-modal-overlay" onClick={() => setMostrarAsignar(false)}>
+          <div className="lev-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="lev-modal-header">
+              <div className="lev-modal-title">
+                <CalendarDays size={22} color="#F26522" />
+                <span>AGENDAR VISITA TÉCNICA</span>
+              </div>
+              <button 
+                type="button" 
+                className="lev-modal-close" 
+                onClick={() => setMostrarAsignar(false)}
+                title="Cerrar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.9rem', color: '#cbd5e1', marginBottom: '16px' }}>
+              Servicio: <strong style={{ color: '#fff' }}>{servicioSeleccionado?.title}</strong>
+            </p>
+
+            <form onSubmit={manejarConfirmarAgenda}>
+              <div className="lev-form-group">
+                <label className="lev-form-label">TÉCNICO RESPONSABLE *</label>
+                <select
+                  className="lev-form-select"
+                  required
+                  value={datosAsignacion.tecnico_id}
+                  onChange={(e) => setDatosAsignacion({ ...datosAsignacion, tecnico_id: e.target.value })}
+                >
+                  <option value="">Seleccione un técnico...</option>
+                  {tecnicos.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.first_name} {t.last_name || ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="lev-form-group">
+                <label className="lev-form-label">FECHA DE VISITA *</label>
+                <input
+                  type="date"
+                  className="lev-form-input"
+                  required
+                  value={datosAsignacion.fecha}
+                  onChange={(e) => setDatosAsignacion({ ...datosAsignacion, fecha: e.target.value })}
+                />
+              </div>
+
+              <div className="lev-form-group">
+                <label className="lev-form-label">HORARIO SUGERIDO *</label>
+                <input
+                  type="time"
+                  className="lev-form-input"
+                  required
+                  value={datosAsignacion.hora}
+                  onChange={(e) => setDatosAsignacion({ ...datosAsignacion, hora: e.target.value })}
+                />
+              </div>
+
+              <button type="submit" className="lev-btn-submit-modal">
+                PROGRAMAR Y NOTIFICAR
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: CONFIRMAR / REAGENDAR VISITA (CLIENTE) ── */}
+      {modalClientePaso > 0 && servicioSeleccionado && (
+        <div className="lev-modal-overlay" onClick={() => setModalClientePaso(0)}>
+          <div className="lev-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="lev-modal-header">
+              <div className="lev-modal-title">
+                <CalendarDays size={22} color="#F26522" />
+                <span>{modalClientePaso === 1 ? "DETALLES DE VISITA TÉCNICA" : "SOLICITAR REPROGRAMACIÓN"}</span>
+              </div>
+              <button 
+                type="button" 
+                className="lev-modal-close" 
+                onClick={() => setModalClientePaso(0)}
+                title="Cerrar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {modalClientePaso === 1 ? (
+              <div>
+                <p style={{ fontSize: '0.9rem', color: '#cbd5e1', marginBottom: '14px' }}>
+                  Un técnico ha sido asignado para tu visita técnica:
                 </p>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
+                  <p style={{ margin: '0 0 6px 0', fontSize: '0.9rem' }}>
+                    <strong>Técnico:</strong> {servicioSeleccionado.tecnico_nombre || "Técnico Agente"}
+                  </p>
+                  <p style={{ margin: '0 0 6px 0', fontSize: '0.9rem' }}>
+                    <strong>Fecha & Hora:</strong> {servicioSeleccionado.scheduled_start || "Por definir"}
+                  </p>
+                  <p style={{ margin: 0, fontSize: '0.9rem' }}>
+                    <strong>Propiedad:</strong> {servicioSeleccionado.propiedad_nombre || servicioSeleccionado.direccion}
+                  </p>
+                </div>
 
-                <div className="lev-field full-width" style={{ marginBottom: '15px' }}>
-                  <label>Fecha y Hora sugerida *</label>
-                  <input 
-                    type="datetime-local" 
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <button 
+                    type="button" 
+                    className="lev-btn-submit-modal" 
+                    style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', marginTop: 0 }}
+                    onClick={confirmarCitaCliente}
+                  >
+                    CONFIRMAR CITA
+                  </button>
+                  <button 
+                    type="button" 
+                    className="lev-btn-submit-modal" 
+                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', marginTop: 0 }}
+                    onClick={() => setModalClientePaso(2)}
+                  >
+                    REAGENDAR
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={enviarReprogramacion}>
+                <div className="lev-form-group">
+                  <label className="lev-form-label">NUEVA FECHA Y HORA SUGERIDA *</label>
+                  <input
+                    type="datetime-local"
+                    className="lev-form-input"
                     required
                     value={fechaSugerida}
                     onChange={(e) => setFechaSugerida(e.target.value)}
-                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
                   />
                 </div>
 
-                <div className="lev-field full-width" style={{ marginBottom: '20px' }}>
-                  <label>Motivo del cambio o comentario (Opcional)</label>
-                  <textarea 
-                    rows="3"
+                <div className="lev-form-group">
+                  <label className="lev-form-label">MOTIVO DEL CAMBIO (OPCIONAL)</label>
+                  <textarea
+                    className="lev-form-textarea"
+                    rows={3}
+                    placeholder="Ej. Tuve una emergencia familiar o no estaré en ese horario..."
                     value={motivoReprogramar}
                     onChange={(e) => setMotivoReprogramar(e.target.value)}
-                    placeholder="Ej. Tuve una emergencia familiar..."
-                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc', resize: 'none' }}
                   />
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={() => setModalClientePaso(1)} style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #ccc', backgroundColor: 'white', cursor: 'pointer' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <button 
+                    type="button" 
+                    className="lev-btn-submit-modal" 
+                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', marginTop: 0 }}
+                    onClick={() => setModalClientePaso(1)}
+                  >
                     VOLVER
                   </button>
-                  <button type="submit" style={{ flex: 1, padding: '10px', borderRadius: '6px', border: 'none', backgroundColor: '#F26522', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>
+                  <button 
+                    type="submit" 
+                    className="lev-btn-submit-modal" 
+                    style={{ marginTop: 0 }}
+                  >
                     ENVIAR SOLICITUD
                   </button>
                 </div>
               </form>
             )}
-
           </div>
         </div>
       )}
 
-      {/* --- MODAL DE DETALLES DE PROPIEDAD --- */}
+      {/* ── MODAL: DETALLES DE PROPIEDAD ── */}
       {modalDetalleVisible && detallePropiedad && (
         <div className="lev-modal-overlay" onClick={() => setModalDetalleVisible(false)}>
-          <div className="modal-detalle-formal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Detalles de la Propiedad</h3>
-              <button className="close-modal" onClick={() => setModalDetalleVisible(false)}>
-                <X />
+          <div className="lev-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="lev-modal-header">
+              <div className="lev-modal-title">
+                <Building size={22} color="#F26522" />
+                <span>DETALLES DE LA PROPIEDAD</span>
+              </div>
+              <button 
+                type="button" 
+                className="lev-modal-close" 
+                onClick={() => setModalDetalleVisible(false)}
+                title="Cerrar"
+              >
+                <X size={18} />
               </button>
             </div>
 
-            <div className="modal-body-formal">
-              {detallePropiedad.foto_fachada && (
-                <div className="facade-photo-container">
-                  <img
-                    src={detallePropiedad.foto_fachada}
-                    alt="Fachada"
-                    className="facade-img"
-                    onError={(e) => { e.target.style.display = "none"; }}
-                  />
+            {detallePropiedad.foto_fachada && (
+              <div style={{ width: '100%', height: '200px', borderRadius: '14px', overflow: 'hidden', marginBottom: '16px' }}>
+                <img 
+                  src={detallePropiedad.foto_fachada} 
+                  alt="Fachada" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' }}>NOMBRE</span>
+                <p style={{ margin: '2px 0 0 0', fontWeight: '700', fontSize: '1rem', color: '#fff' }}>
+                  {detallePropiedad.propiedad_nombre || detallePropiedad.title}
+                </p>
+              </div>
+
+              <div>
+                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' }}>DIRECCIÓN</span>
+                <p style={{ margin: '2px 0 0 0', fontWeight: '600', fontSize: '0.9rem', color: '#cbd5e1' }}>
+                  {detallePropiedad.direccion || "No especificada"}
+                </p>
+              </div>
+
+              {detallePropiedad.cliente_nombre && (
+                <div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' }}>CLIENTE / PROPIETARIO</span>
+                  <p style={{ margin: '2px 0 0 0', fontWeight: '600', fontSize: '0.9rem', color: '#cbd5e1' }}>
+                    {detallePropiedad.cliente_nombre}
+                  </p>
                 </div>
               )}
 
-              <div className="info-grid-formal">
-                <div className="info-item-formal">
-                  <span className="icon-wrapper"><Building size={20} /></span>
-                  <div className="info-content">
-                    <label>Nombre Propiedad</label>
-                    <p>{detallePropiedad.propiedad_nombre}</p>
-                  </div>
+              {detallePropiedad.description && (
+                <div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' }}>NOTAS / INSTRUCCIONES</span>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: '#94a3b8', background: 'rgba(255,255,255,0.04)', padding: '10px', borderRadius: '8px' }}>
+                    {detallePropiedad.description}
+                  </p>
                 </div>
-
-                <div className="info-item-formal">
-                  <span className="icon-wrapper"><MapPin size={20} /></span>
-                  <div className="info-content">
-                    <label>Dirección Completa</label>
-                    <p>{detallePropiedad.direccion}</p>
-                  </div>
-                </div>
-
-                <div className="info-item-formal">
-                  <span className="icon-wrapper"><User size={20} /></span>
-                  <div className="info-content">
-                    <label>Dueño / Cliente</label>
-                    <p>{detallePropiedad.cliente_nombre}</p>
-                  </div>
-                </div>
-
-                {/* Supervisor e Instrucciones solo si existen (omitidos si es levantamiento inicial sin datos) */}
-                {detallePropiedad.supervisor_name && (
-                  <div className="info-item-formal">
-                    <span className="icon-wrapper"><UserCheck size={20} /></span>
-                    <div className="info-content">
-                      <label>Supervisor</label>
-                      <p>{detallePropiedad.supervisor_name}</p>
-                    </div>
-                  </div>
-                )}
-
-                {detallePropiedad.description && (
-                  <div className="info-item-formal full">
-                    <span className="icon-wrapper"><FileText size={20} /></span>
-                    <div className="info-content">
-                      <label>Instrucciones</label>
-                      <div className="desc-box-formal">
-                        {detallePropiedad.description}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
 
-            <div className="modal-footer-formal">
-              <button className="btn-close-formal" onClick={() => setModalDetalleVisible(false)}>
-                Cerrar
-              </button>
-            </div>
+            <button 
+              type="button" 
+              className="lev-btn-submit-modal" 
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', marginTop: '20px' }}
+              onClick={() => setModalDetalleVisible(false)}
+            >
+              CERRAR
+            </button>
           </div>
         </div>
+      )}
+
+      {/* ── MODAL: CALENDARIO ── */}
+      {showModalCalendario && (
+        <ModalCalendarioCliente onClose={() => setShowModalCalendario(false)} />
       )}
     </div>
   );

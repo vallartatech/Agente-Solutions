@@ -7,7 +7,6 @@ import ModalCalendarioCliente from './ModalCalendarioCliente';
 import ModalRegistroInmueble from './ModalRegistroInmueble';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
 
-// Icons
 import {
   Home,
   Calendar,
@@ -19,12 +18,16 @@ import {
   Navigation,
   Share2,
   AlertTriangle,
+  AlertCircle,
   ClipboardList,
   Plus,
   LogOut,
   Building2,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  LayoutDashboard,
+  Clock,
+  Lock
 } from 'lucide-react';
 
 import defaultPropImg from '../../../assets/propiedad_ejemplo.jpg';
@@ -239,6 +242,42 @@ const VistaClienteParticular = () => {
     const found = userPropiedades.find(p => p.id === selectedPropId);
     return found || userPropiedades[0];
   }, [userPropiedades, selectedPropId, userFullName]);
+
+  // Estados de Estadísticas para el Tablero de Control de la Propiedad
+  const [propertyStats, setPropertyStats] = useState({
+    sos: 0,
+    pendientes: 0,
+    proceso: 0,
+    listos: 0
+  });
+
+  useEffect(() => {
+    if (!activeProperty?.id) return;
+    let isMounted = true;
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem('agente_token');
+        const authHeader = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/propiedades/${activeProperty.id}/dashboard`, authHeader);
+        if (isMounted && res.data?.stats) {
+          setPropertyStats({
+            sos: Number(res.data.stats.sos || 0),
+            pendientes: Number(res.data.stats.pendientes || res.data.stats.todo || 0),
+            proceso: Number(res.data.stats.proceso || res.data.stats.in_progress || 0),
+            listos: Number(res.data.stats.listos || res.data.stats.done || 0)
+          });
+        }
+      } catch {
+        if (isMounted) {
+          setPropertyStats({ sos: 0, pendientes: 0, proceso: 0, listos: 0 });
+        }
+      }
+    };
+    fetchStats();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeProperty?.id]);
 
   // Al entrar a la vista o cargar propiedades, la primera propiedad de la lista ordenada es la activa por defecto
   useEffect(() => {
@@ -470,12 +509,6 @@ const VistaClienteParticular = () => {
           <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
             USUARIOS
           </button>
-          <button className="vcp-nav-btn active" onClick={() => navigate('/propiedades')}>
-            PROPIEDADES
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/levantamientos')}>
-            LEVANTAMIENTO
-          </button>
           <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
             REPORTE
           </button>
@@ -548,10 +581,11 @@ const VistaClienteParticular = () => {
             {!isPlanExpanded ? (
               <button 
                 type="button" 
-                className="vcp-plan-pill-toggle-btn"
+                className={`vcp-plan-pill-toggle-btn ${currentPropsCount >= maxAllowed ? 'is-limit-warning' : ''}`}
                 onClick={() => setIsPlanExpanded(true)}
-                title="Mostrar información del plan"
+                title="Mostrar información del plan y comprar espacios"
               >
+                {currentPropsCount >= maxAllowed && <Lock size={14} className="vcp-plan-lock-icon" />}
                 <span className="vcp-plan-pill-text">PLAN PARTICULAR ({currentPropsCount}/{maxAllowed})</span>
                 <ChevronDown size={15} className="vcp-plan-chevron" />
               </button>
@@ -584,16 +618,24 @@ const VistaClienteParticular = () => {
                   <span className="vcp-plan-pill">
                     🏠 Propiedades: <strong>{currentPropsCount} / {maxAllowed}</strong>
                   </span>
+
+                  {currentPropsCount >= maxAllowed && (
+                    <span className="vcp-plan-pill vcp-plan-pill-limit">
+                      <Lock size={11} /> LÍMITE ALCANZADO
+                    </span>
+                  )}
                 </div>
 
                 <div className="vcp-plan-action-row">
                   <SubscriptionCountdown targetDate={subInfo?.subscription_expires_at} />
                   
                   <button 
+                    type="button"
                     className="vcp-plan-buy-btn"
                     onClick={() => setShowModalCompra(true)}
+                    title="Comprar espacio de propiedad adicional por $79.99 c/u"
                   >
-                    <Plus size={14} /> COMPRAR PROPIEDAD EXTRA ($79.99)
+                    <Lock size={14} /> REQUIERE NUEVA PROPIEDAD: COMPRAR ESPACIO ($79.99 c/u)
                   </button>
                 </div>
               </div>
@@ -660,11 +702,23 @@ const VistaClienteParticular = () => {
 
               {/* Plus Add Property Tile */}
               <div 
-                className="vcp-thumb-add-tile"
-                title="Registrar / Agregar Propiedad"
-                onClick={() => setShowModalRegistroPropiedad(true)}
+                className={`vcp-thumb-add-tile ${currentPropsCount >= maxAllowed ? 'is-limit-reached' : ''}`}
+                title={currentPropsCount >= maxAllowed ? "Límite de propiedades alcanzado - Comprar espacio ($79.99 c/u)" : "Registrar / Agregar Propiedad"}
+                onClick={() => {
+                  if (currentPropsCount >= maxAllowed) {
+                    setShowModalCompra(true);
+                  } else {
+                    setShowModalRegistroPropiedad(true);
+                  }
+                }}
               >
-                <Plus size={28} />
+                {currentPropsCount >= maxAllowed ? (
+                  <div className="vcp-thumb-lock-wrap">
+                    <Lock size={20} color="#ff7438" />
+                  </div>
+                ) : (
+                  <Plus size={28} />
+                )}
               </div>
             </div>
           </div>
@@ -744,6 +798,80 @@ const VistaClienteParticular = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* ── TABLERO DE CONTROL WIDGET (LLENA EL ESPACIO EN BLANCO) ── */}
+          <div className="vcp-tablero-card">
+            <div className="vcp-tablero-header">
+              <div className="vcp-tablero-icon-wrap">
+                <LayoutDashboard size={18} />
+              </div>
+              <h3 className="vcp-tablero-title">Tablero de Control</h3>
+            </div>
+
+            <div className="vcp-tablero-grid">
+              {/* SOS */}
+              <div 
+                className="vcp-stat-box vcp-stat-sos"
+                onClick={() => navigate('/SOSView', { state: { propiedad: activeProperty } })}
+                title="Ver o Solicitar SOS"
+              >
+                <div className="vcp-stat-icon-wrapper">
+                  <AlertCircle size={20} className="vcp-stat-icon" />
+                </div>
+                <span className="vcp-stat-count">{propertyStats.sos}</span>
+                <span className="vcp-stat-label">SOS</span>
+              </div>
+
+              {/* POR HACER */}
+              <div 
+                className="vcp-stat-box vcp-stat-todo"
+                onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
+                title="Servicios Por Hacer"
+              >
+                <div className="vcp-stat-icon-wrapper">
+                  <ClipboardList size={20} className="vcp-stat-icon" />
+                </div>
+                <span className="vcp-stat-count">{propertyStats.pendientes}</span>
+                <span className="vcp-stat-label">POR HACER</span>
+              </div>
+
+              {/* PROCESO */}
+              <div 
+                className="vcp-stat-box vcp-stat-process"
+                onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
+                title="Servicios en Proceso"
+              >
+                <div className="vcp-stat-icon-wrapper">
+                  <Clock size={20} className="vcp-stat-icon" />
+                </div>
+                <span className="vcp-stat-count">{propertyStats.proceso}</span>
+                <span className="vcp-stat-label">PROCESO</span>
+              </div>
+
+              {/* LISTOS */}
+              <div 
+                className="vcp-stat-box vcp-stat-done"
+                onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
+                title="Servicios Concluidos / Listos"
+              >
+                <div className="vcp-stat-icon-wrapper">
+                  <CheckCircle2 size={20} className="vcp-stat-icon" />
+                </div>
+                <span className="vcp-stat-count">{propertyStats.listos}</span>
+                <span className="vcp-stat-label">LISTOS</span>
+              </div>
+            </div>
+
+            <div className="vcp-tablero-btn-wrap">
+              <button 
+                className="vcp-btn-tablero-detail"
+                onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
+                title="Ver Tablero Detallado de la Propiedad"
+              >
+                VER TABLERO DETALLADO
+              </button>
             </div>
           </div>
 

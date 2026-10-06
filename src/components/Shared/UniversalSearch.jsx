@@ -1,4 +1,5 @@
 import React from 'react';
+import { Search } from 'lucide-react';
 import '../../styles/Shared/UniversalSearch.css';
 
 const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, type }) => {
@@ -11,14 +12,16 @@ const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, typ
       let coincideFiltro = true;
       
       if (type === 'USUARIOS') {
-        if (filtroActual === "TODOS") {
+        if (filtroActual === "TODOS" || filtroActual === "TECNICOS") {
           coincideFiltro = true;
+        } else if (filtroActual === "ACTIVOS") {
+          coincideFiltro = !item.bloqueado;
+        } else if (filtroActual === "BLOQUEADOS") {
+          coincideFiltro = item.bloqueado === true;
         } else if (filtroActual === "AUTONOMOS") {
           coincideFiltro = item.role_id === 4 || item.role_id === 5 || item.role_id === 6 || (typeof item.rol === 'string' && item.rol.includes("AUTONOMO"));
         } else if (filtroActual === "ADMINS") {
           coincideFiltro = item.role_id === 1 || item.role_id === 7 || (typeof item.rol === 'string' && item.rol.includes("ADMIN"));
-        } else if (filtroActual === "TECNICOS") {
-          coincideFiltro = item.role_id === 2 || item.role_id === 8 || (typeof item.rol === 'string' && item.rol.includes("TECNICO"));
         } else if (filtroActual === "CLIENTES") {
           coincideFiltro = item.role_id === 3 || (typeof item.rol === 'string' && item.rol.includes("CLIENTE"));
         } else if (filtroActual === "ROOTS") {
@@ -31,7 +34,6 @@ const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, typ
         coincideFiltro = filtroActual === "TODAS" || item.tipo === filtroActual;
         
       } else if (type === 'COTIZACIONES') {
-        // ✅ A PRUEBA DE BALAS: Extraemos el estado, sea como sea que venga de la BD
         const estadoActual = String(item.estado || item.status || '').toLowerCase();
         
         if (filtroActual === 'Todas') {
@@ -42,19 +44,19 @@ const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, typ
                            estadoActual === 'procesada por admin' || 
                            estadoActual.includes('aceptad') || 
                            estadoActual.includes('validado') ||
-                           estadoActual.includes('anticipo') ||   // Anticipo Pagado (60%)
-                           estadoActual.includes('efectivo solic'); // Pago en Efectivo Solicitado
+                           estadoActual.includes('anticipo') ||
+                           estadoActual.includes('efectivo solic');
         } else if (filtroActual === 'Pagadas') {
           coincideFiltro = (estadoActual.includes('pagad') || estadoActual.includes('pago')) && 
-                           !estadoActual.includes('anticipo'); // Excluir "anticipo pagado" del grupo Pagadas
+                           !estadoActual.includes('anticipo');
         } else if (filtroActual === 'Rechazadas') {
-          coincideFiltro = estadoActual.includes('rechazad'); // Captura rechazado y rechazada
+          coincideFiltro = estadoActual.includes('rechazad');
         } else if (filtroActual === 'Recotizaciones') {
           coincideFiltro = estadoActual.includes('recotiza') || 
                            item.recotizacionSolicitada === true;
         }
       } else if (type === 'TECNICO_TABLERO') {
-        coincideFiltro = true; // El tablero ya está filtrado por técnico, la búsqueda es global sobre eso
+        coincideFiltro = true;
       } else if (type === 'LEVANTAMIENTOS') {
         if (filtroActual === "REALIZADOS") {
           coincideFiltro = item.status === "Finalizado" || item.status === "completed";
@@ -63,7 +65,6 @@ const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, typ
         }
       }
 
-      // Búsqueda por texto (Lupa)
       let coincideBusqueda = false;
       if (type === 'COTIZACIONES') {
         const searchFields = [
@@ -78,7 +79,6 @@ const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, typ
           item.total
         ];
 
-        // Incluir cualquier otro valor directo del objeto
         Object.keys(item).forEach(key => {
           const val = item[key];
           if (typeof val === 'string' || typeof val === 'number') {
@@ -110,7 +110,7 @@ const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, typ
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
-        {busqueda === "" && <span className="search-icon-inside">🔍</span>}
+        {busqueda === "" && <Search size={18} className="search-icon-inside" />}
       </div>
     </div>
   );
