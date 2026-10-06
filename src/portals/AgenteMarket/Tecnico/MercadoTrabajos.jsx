@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow } from '@react-google-maps/api';
-import Header from '../../../components/Shared/Header';
 import MaterialDateTimePicker, { formatDateTimeHuman } from '../../../components/Shared/MaterialDateTimePicker';
-import { MapPin, DollarSign, Clock, Send, User, FileText, Maximize2, Image as ImageIcon, X, List, Map as MapIcon, MessageCircle, AlertCircle, CheckCircle2, Phone, Calendar, ChevronLeft, ExternalLink } from 'lucide-react';
+import { 
+  MapPin, DollarSign, Clock, Send, User, FileText, Maximize2, Image as ImageIcon, 
+  X, List, Map as MapIcon, MessageCircle, AlertCircle, CheckCircle2, Phone, Calendar, 
+  ChevronLeft, ExternalLink, CalendarDays, Search, LogOut, Briefcase, Layers, ShieldCheck
+} from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import { useAuth } from '../../../context/AuthContext';
+import defaultLogo from '../../../assets/Logo4.png';
+import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
 
 const mapContainerStyle = {
   width: '100%',
@@ -13,6 +19,116 @@ const mapContainerStyle = {
 };
 
 const defaultCenter = { lat: 21.0181, lng: -89.6242 };
+
+export const DARK_MAP_STYLES = [
+  { elementType: "geometry", stylers: [{ color: "#141720" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#141720" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#8a96a8" }] },
+  {
+    featureType: "administrative.locality",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#f26522" }]
+  },
+  {
+    featureType: "poi",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#798394" }]
+  },
+  {
+    featureType: "poi.park",
+    elementType: "geometry",
+    stylers: [{ color: "#15221b" }]
+  },
+  {
+    featureType: "poi.park",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#4ade80" }]
+  },
+  {
+    featureType: "road",
+    elementType: "geometry",
+    stylers: [{ color: "#222734" }]
+  },
+  {
+    featureType: "road",
+    elementType: "geometry.stroke",
+    stylers: [{ color: "#181b24" }]
+  },
+  {
+    featureType: "road",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#cbd5e1" }]
+  },
+  {
+    featureType: "road.highway",
+    elementType: "geometry",
+    stylers: [{ color: "#313849" }]
+  },
+  {
+    featureType: "road.highway",
+    elementType: "geometry.stroke",
+    stylers: [{ color: "#1e232f" }]
+  },
+  {
+    featureType: "road.highway",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#f3f4f6" }]
+  },
+  {
+    featureType: "transit",
+    elementType: "geometry",
+    stylers: [{ color: "#1d2331" }]
+  },
+  {
+    featureType: "transit.station",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#cbd5e1" }]
+  },
+  {
+    featureType: "water",
+    elementType: "geometry",
+    stylers: [{ color: "#0b111a" }]
+  },
+  {
+    featureType: "water",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#38bdf8" }]
+  },
+  {
+    featureType: "water",
+    elementType: "labels.text.stroke",
+    stylers: [{ color: "#0b111a" }]
+  }
+];
+
+export const getCategoryIcon = (tipo = '', titulo = '', equipo = '') => {
+  const text = `${tipo} ${titulo} ${equipo}`.toLowerCase();
+  if (text.includes('aire') || text.includes('clima') || text.includes('aa') || text.includes('minisplit') || text.includes('hvac')) {
+    return { icon: '❄️', bg: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', label: 'Climatización' };
+  }
+  if (text.includes('plomer') || text.includes('agua') || text.includes('fuga') || text.includes('bomba') || text.includes('tuberia') || text.includes('tinaco')) {
+    return { icon: '🚰', bg: 'rgba(96, 165, 250, 0.15)', color: '#60a5fa', label: 'Plomería' };
+  }
+  if (text.includes('electr') || text.includes('luz') || text.includes('corto') || text.includes('cable') || text.includes('contacto') || text.includes('pastilla')) {
+    return { icon: '⚡', bg: 'rgba(250, 204, 21, 0.15)', color: '#facc15', label: 'Electricidad' };
+  }
+  if (text.includes('pint') || text.includes('impermeab') || text.includes('muro') || text.includes('pared')) {
+    return { icon: '🎨', bg: 'rgba(244, 114, 182, 0.15)', color: '#f472b6', label: 'Pintura' };
+  }
+  if (text.includes('cerraj') || text.includes('llave') || text.includes('chapa') || text.includes('puerta')) {
+    return { icon: '🔑', bg: 'rgba(251, 146, 60, 0.15)', color: '#fb923c', label: 'Cerrajería' };
+  }
+  if (text.includes('carpin') || text.includes('madera') || text.includes('closet') || text.includes('cocina')) {
+    return { icon: '🪚', bg: 'rgba(217, 119, 6, 0.15)', color: '#d97706', label: 'Carpintería' };
+  }
+  if (text.includes('jardin') || text.includes('pasto') || text.includes('poda') || text.includes('arbol')) {
+    return { icon: '🌿', bg: 'rgba(74, 222, 128, 0.15)', color: '#4ade80', label: 'Jardinería' };
+  }
+  if (text.includes('sos') || text.includes('urgent')) {
+    return { icon: '🚨', bg: 'rgba(239, 68, 68, 0.18)', color: '#ef4444', label: 'Emergencia SOS' };
+  }
+  return { icon: '🛠️', bg: 'rgba(249, 115, 22, 0.15)', color: '#f97316', label: 'Mantenimiento' };
+};
 
 const limpiarDescripcion = (rawDesc) => {
   if (!rawDesc) return 'Sin descripción adicional';
@@ -205,6 +321,7 @@ const MercadoTrabajos = () => {
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyDgyTj0X6kgGoMV8NxQGDp4-Nx0bxJd0Hw"
   });
 
+  const navigate = useNavigate();
   const [selectedJob, setSelectedJob] = useState(null);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [networkJobs, setNetworkJobs] = useState([]);
@@ -234,7 +351,25 @@ const MercadoTrabajos = () => {
   const [sendingArrivalAlert, setSendingArrivalAlert] = useState(false);
   const [arrivalAlertToast, setArrivalAlertToast] = useState(null);
 
+  // Top Navbar & Search States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showModalCalendario, setShowModalCalendario] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [appLogo, setAppLogo] = useState(defaultLogo);
+  const dropdownRef = useRef(null);
+
   const { user: authUser } = useAuth();
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchJobs = async () => {
     try {
@@ -703,17 +838,136 @@ const MercadoTrabajos = () => {
     (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
   );
 
-  // Determinar si el horario está propuesto y esperando confirmación del cliente
-  const isPendingClientConfirm = Boolean(
-    selectedJob?.scheduled_at &&
-    !isScheduleConfirmed &&
-    !isRescheduleRequested
-  );
+  // Filtered jobs based on search input
+  const filteredNetworkJobs = networkJobs.filter(job => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (job.titulo && job.titulo.toLowerCase().includes(q)) ||
+      (job.zona && job.zona.toLowerCase().includes(q)) ||
+      (job.descripcion && job.descripcion.toLowerCase().includes(q)) ||
+      (job.tipo && job.tipo.toLowerCase().includes(q)) ||
+      (job.equipo && job.equipo.toLowerCase().includes(q)) ||
+      (job.client_name && job.client_name.toLowerCase().includes(q))
+    );
+  });
+
+  const filteredAcceptedJobs = acceptedJobs.filter(job => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (job.titulo && job.titulo.toLowerCase().includes(q)) ||
+      (job.full_address && job.full_address.toLowerCase().includes(q)) ||
+      (job.zona && job.zona.toLowerCase().includes(q)) ||
+      (job.client_name && job.client_name.toLowerCase().includes(q)) ||
+      (job.client_phone && job.client_phone.toLowerCase().includes(q)) ||
+      (job.tipo && job.tipo.toLowerCase().includes(q)) ||
+      (job.equipo && job.equipo.toLowerCase().includes(q))
+    );
+  });
+
+  const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : 'T';
+  const userFullName = authUser?.name || 'TÉCNICO DE LA RED';
+  const userRole = authUser?.role_id === 6 ? 'TÉCNICO INDEPENDIENTE' : (authUser?.role_id === 8 ? 'TÉCNICO ENLACE' : 'TÉCNICO DE LA RED');
+  const userAvatar = authUser?.avatar_url || authUser?.avatar || null;
 
   return (
     <div className="mercado-container">
-      <Header title="Mercado de Trabajos" />
+      {/* ── TOP NAVIGATION BAR (REPLICA VISTA CLIENTE / IMAGE 1) ── */}
+      <header className="vcp-header">
+        <div className="vcp-header-left">
+          <img 
+            src={appLogo} 
+            alt="Agente Logo" 
+            className="vcp-brand-logo"
+            onClick={() => navigate('/mercado-trabajos')} 
+          />
+        </div>
 
+        {/* Center Nav Links */}
+        <nav className="vcp-header-nav">
+          <button 
+            className="vcp-nav-icon-btn" 
+            title="Abrir Calendario"
+            onClick={() => setShowModalCalendario(true)}
+          >
+            <CalendarDays size={20} color="#ffffff" strokeWidth={2.2} />
+          </button>
+
+          <button 
+            className={`vcp-nav-btn ${activeTab === 'disponibles' ? 'active' : ''}`}
+            onClick={() => setActiveTab('disponibles')}
+          >
+            SERVICIOS
+          </button>
+
+          <button 
+            className="vcp-nav-btn" 
+            onClick={() => setShowModalCalendario(true)}
+          >
+            CALENDARIO
+          </button>
+
+          <button 
+            className={`vcp-nav-btn ${activeTab === 'aceptados' ? 'active' : ''}`}
+            onClick={() => setActiveTab('aceptados')}
+          >
+            TRABAJOS ACEPTADOS ({acceptedJobs.length})
+          </button>
+        </nav>
+
+        {/* User profile dropdown section */}
+        <div className="vcp-header-right" ref={dropdownRef}>
+          <div className="vcp-user-info-text">
+            <span className="vcp-user-role-badge">{userRole}</span>
+            <span className="vcp-user-name">{userFullName}</span>
+          </div>
+
+          <button 
+            className="vcp-avatar-btn" 
+            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+            title="Opciones de perfil"
+          >
+            {userAvatar ? (
+              <img src={userAvatar} alt="Avatar" className="vcp-avatar-img" />
+            ) : (
+              <div className="vcp-avatar-initial">{userInitial}</div>
+            )}
+          </button>
+
+          {profileDropdownOpen && (
+            <div className="vcp-profile-dropdown">
+              <button 
+                className="vcp-dropdown-item" 
+                onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
+              >
+                <User size={16} /> Mi Perfil
+              </button>
+              <button 
+                className="vcp-dropdown-item" 
+                onClick={() => { setProfileDropdownOpen(false); setShowModalCalendario(true); }}
+              >
+                <Calendar size={16} /> Ver Calendario
+              </button>
+              <div className="vcp-dropdown-divider" />
+              <button 
+                className="vcp-dropdown-item logout" 
+                onClick={() => { 
+                  setProfileDropdownOpen(false); 
+                  localStorage.removeItem('agente_token');
+                  localStorage.removeItem('token');
+                  localStorage.removeItem('user');
+                  navigate('/', { replace: true }); 
+                }}
+              >
+                <LogOut size={16} /> Cerrar Sesión
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* ── MAIN SPLIT VIEW (DARK DASHBOARD & MAP) ── */}
       <div className="mercado-content">
         {/* Floating Mobile Toggle Button (Tipo Uber) */}
         <button 
@@ -723,9 +977,217 @@ const MercadoTrabajos = () => {
           {mobileDrawerOpen ? (
             <><MapIcon size={16} /> Ver Mapa</>
           ) : (
-            <><List size={16} /> Ver Lista ({networkJobs.length})</>
+            <><List size={16} /> Ver Lista ({filteredNetworkJobs.length})</>
           )}
         </button>
+
+        {/* ─── Sidebar (Inspired by Image 4 / OutletBuddy) ─── */}
+        <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''}`}>
+          <div className="mercado-sidebar-header">
+            <div 
+              className="mercado-mobile-drag-handle" 
+              onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)} 
+            />
+            <div className="mercado-sidebar-brand-row">
+              <span className="mercado-sidebar-eyebrow">Panel Técnico</span>
+              <span className="mercado-sidebar-live-pill">● EN VIVO</span>
+            </div>
+            <h2 className="mercado-sidebar-subtitle">Mercado de la Red</h2>
+            <p className="mercado-sidebar-desc">Cotiza trabajos disponibles o gestiona tus servicios aceptados</p>
+
+            {/* Barra de Búsqueda estilo Image 4 */}
+            <div className="mercado-search-box">
+              <Search size={16} className="mercado-search-icon" />
+              <input
+                type="text"
+                className="mercado-search-input"
+                placeholder="Buscar por falla, colonia, cliente..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button className="mercado-search-clear" onClick={() => setSearchQuery('')}>×</button>
+              )}
+            </div>
+          </div>
+
+          {/* Selector de Pestañas (Disponibles vs Aceptados) */}
+          <div style={{ padding: '12px 16px 0 16px', background: '#13151f' }}>
+            <div className="mercado-sidebar-tabs">
+              <button
+                type="button"
+                className={`mercado-tab-btn ${activeTab === 'disponibles' ? 'active' : ''}`}
+                onClick={() => setActiveTab('disponibles')}
+              >
+                🌐 Disponibles
+                <span className="mercado-tab-badge">{filteredNetworkJobs.length}</span>
+              </button>
+              <button
+                type="button"
+                className={`mercado-tab-btn tab-accepted ${activeTab === 'aceptados' ? 'active' : ''}`}
+                onClick={() => setActiveTab('aceptados')}
+              >
+                ✓ Aceptados
+                <span className="mercado-tab-badge">{filteredAcceptedJobs.length}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Lista de Trabajos con Scroll */}
+          <div className="mercado-job-list">
+            {/* PESTAÑA 1: TRABAJOS DISPONIBLES */}
+            {activeTab === 'disponibles' && (
+              <>
+                {filteredNetworkJobs.length === 0 && (
+                  <div className="mercado-empty-state-card">
+                    <div className="empty-icon">⏳</div>
+                    <h4>No hay trabajos disponibles</h4>
+                    <p>{searchQuery ? 'Ningún trabajo coincide con tu búsqueda.' : 'En cuanto los clientes publiquen solicitudes aparecerán aquí.'}</p>
+                  </div>
+                )}
+                {filteredNetworkJobs.map(job => {
+                  const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
+                  return (
+                    <div
+                      key={job.id}
+                      className={`mercado-job-card ${selectedJob?.id === job.id ? 'active' : ''}`}
+                      onClick={() => openQuoteModalForJob(job)}
+                    >
+                      <div className="mercado-card-inner-flex">
+                        {/* Circular Category Avatar */}
+                        <div 
+                          className="mercado-card-avatar-circle"
+                          style={{ background: cat.bg, borderColor: cat.color }}
+                          title={cat.label}
+                        >
+                          <span>{cat.icon}</span>
+                        </div>
+
+                        <div className="mercado-card-content-wrap">
+                          {/* 1. Colonia, Urgencia y Badge de Cotización */}
+                          <div className="mercado-job-card-top">
+                            <div className="mercado-job-colonia-tag">
+                              <MapPin size={12} color="#f26522" />
+                              <span>{job.zona}</span>
+                            </div>
+                            
+                            {job.is_urgent && (
+                              <span className="mercado-urgency-badge urgent">⚡ SOS</span>
+                            )}
+                            
+                            {job.myQuote ? (
+                              <span className={`mercado-job-badge ${job.myQuote.status === 'rejected' ? 'badge-rejected' : (job.myQuote.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`}>
+                                {job.myQuote.status === 'rejected' ? 'Rechazada' : (job.myQuote.price > 0 ? `$${parseFloat(job.myQuote.price).toLocaleString('es-MX')}` : 'Chat')}
+                              </span>
+                            ) : (
+                              <span className="mercado-job-badge-disponible">Disponible</span>
+                            )}
+                          </div>
+
+                          {/* 2. Titulo y Descripción */}
+                          <h4 className="mercado-job-card-title">{job.titulo}</h4>
+                          <p className="mercado-job-card-desc">{job.descripcion}</p>
+
+                          {/* 3. ALERTA DE MENSAJE DEL CLIENTE */}
+                          {job.lastClientMsg && (
+                            <div className="mercado-job-msg-alert">
+                              <span className="mercado-msg-dot-pulse" />
+                              <span>💬 <strong>Mensaje del Cliente:</strong> "{job.lastClientMsg.message}"</span>
+                            </div>
+                          )}
+
+                          {/* 4. Footer */}
+                          <div className="mercado-job-card-footer">
+                            <span className="mercado-ofertas-count">{job.cotizaciones} ofertas enviadas</span>
+                            <span className="mercado-fecha-tag"><Clock size={11} /> {job.fecha}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+
+            {/* PESTAÑA 2: TRABAJOS ACEPTADOS / GANADOS */}
+            {activeTab === 'aceptados' && (
+              <>
+                {filteredAcceptedJobs.length === 0 && (
+                  <div className="mercado-empty-state-card">
+                    <div className="empty-icon">🎉</div>
+                    <h4>Sin trabajos aceptados</h4>
+                    <p>{searchQuery ? 'Ningún trabajo aceptado coincide con tu búsqueda.' : 'Envía cotizaciones a los trabajos disponibles para ganar servicios.'}</p>
+                  </div>
+                )}
+                {filteredAcceptedJobs.map(job => {
+                  const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
+                  return (
+                    <div
+                      key={`acc-${job.id}`}
+                      className={`mercado-job-card accepted-job ${selectedJob?.id === job.id ? 'active' : ''}`}
+                      onClick={() => openQuoteModalForJob(job)}
+                    >
+                      <div className="mercado-card-inner-flex">
+                        {/* Circular Category Avatar */}
+                        <div 
+                          className="mercado-card-avatar-circle accepted"
+                          style={{ background: cat.bg, borderColor: cat.color }}
+                          title={cat.label}
+                        >
+                          <span>{cat.icon}</span>
+                        </div>
+
+                        <div className="mercado-card-content-wrap">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <span className="mercado-accepted-pill-tag">
+                              ✓ OFERTA ACEPTADA
+                            </span>
+                            <span className="mercado-accepted-price-tag">
+                              ${parseFloat(job.agreed_price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+
+                          <h4 className="mercado-job-card-title">
+                            {job.titulo}
+                          </h4>
+
+                          <div className="mercado-accepted-address-row">
+                            <MapPin size={13} color="#4ade80" />
+                            <span>{job.full_address}</span>
+                          </div>
+
+                          <div className="mercado-accepted-client-row">
+                            👤 Cliente: <strong>{job.client_name}</strong> {job.client_phone && `(${job.client_phone})`}
+                          </div>
+
+                          {/* Estado de Programación de Visita */}
+                          <div className="mercado-accepted-schedule-box">
+                            {job.scheduled_at 
+                              ? `📅 Visita: ${new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}`
+                              : `⚠️ Pendiente programar hora de llegada`}
+                          </div>
+
+                          {/* Alerta de mensaje */}
+                          {job.lastClientMsg && (
+                            <div className="mercado-job-msg-alert">
+                              <span className="mercado-msg-dot-pulse" />
+                              <span>💬 <strong>Mensaje del Cliente:</strong> "{job.lastClientMsg.message}"</span>
+                            </div>
+                          )}
+
+                          <div className="mercado-job-card-footer">
+                            <span style={{ color: '#798394' }}>Fecha: {job.fecha}</span>
+                            <span style={{ color: '#4ade80', fontWeight: '800' }}>Ver detalles y coordinar →</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        </div>
 
         {/* ─── Map ─── */}
         <div className="mercado-map-section">
@@ -733,25 +1195,25 @@ const MercadoTrabajos = () => {
             <>
               <div className="mercado-map-overlay-badge">
                 <span className="mercado-map-live-dot" />
-                {activeTab === 'disponibles' ? `${networkJobs.length} disponibles` : `${acceptedJobs.length} aceptados`}
+                {activeTab === 'disponibles' ? `${filteredNetworkJobs.length} disponibles` : `${filteredAcceptedJobs.length} aceptados`}
               </div>
               <GoogleMap
                 mapContainerStyle={mapContainerStyle}
                 center={defaultCenter}
                 zoom={13}
-                options={{ disableDefaultUI: false }}
+                options={{ disableDefaultUI: false, styles: DARK_MAP_STYLES }}
               >
                 {/* Marcadores de Trabajos Disponibles */}
-                {activeTab === 'disponibles' && networkJobs.map(job => (
+                {activeTab === 'disponibles' && filteredNetworkJobs.map(job => (
                   <React.Fragment key={job.id}>
                     <Circle
                       center={{ lat: job.lat, lng: job.lng }}
                       radius={550}
                       options={{
                         fillColor: job.is_urgent ? '#ef4444' : (job.lastClientMsg ? '#2563eb' : '#ff6600'),
-                        fillOpacity: 0.16,
+                        fillOpacity: 0.18,
                         strokeColor: job.is_urgent ? '#dc2626' : (job.lastClientMsg ? '#1d4ed8' : '#ea580c'),
-                        strokeOpacity: 0.7,
+                        strokeOpacity: 0.75,
                         strokeWeight: 1.5,
                         clickable: true
                       }}
@@ -773,7 +1235,7 @@ const MercadoTrabajos = () => {
                 ))}
 
                 {/* Marcadores de Trabajos Aceptados */}
-                {activeTab === 'aceptados' && acceptedJobs.map(job => (
+                {activeTab === 'aceptados' && filteredAcceptedJobs.map(job => (
                   <Marker
                     key={`acc-${job.id}`}
                     position={{ lat: job.lat, lng: job.lng }}
@@ -809,159 +1271,6 @@ const MercadoTrabajos = () => {
           ) : (
             <div className="mercado-loading-map">Cargando Mapa...</div>
           )}
-        </div>
-
-        {/* ─── Sidebar (Tipo Uber) ─── */}
-        <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''}`}>
-          <div className="mercado-sidebar-header">
-            <div 
-              className="mercado-mobile-drag-handle" 
-              onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)} 
-            />
-            <p className="mercado-sidebar-title">🔴 Panel Técnico</p>
-            <h2 className="mercado-sidebar-subtitle">Mercado de la Red</h2>
-            <p className="mercado-sidebar-desc">Cotiza trabajos o gestiona tus servicios aceptados</p>
-          </div>
-
-          {/* Selector de Pestañas (Disponibles vs Aceptados) */}
-          <div className="mercado-sidebar-tabs">
-            <button
-              type="button"
-              className={`mercado-tab-btn ${activeTab === 'disponibles' ? 'active' : ''}`}
-              onClick={() => setActiveTab('disponibles')}
-            >
-              🌐 Disponibles
-              <span className="mercado-tab-badge">{networkJobs.length}</span>
-            </button>
-            <button
-              type="button"
-              className={`mercado-tab-btn tab-accepted ${activeTab === 'aceptados' ? 'active' : ''}`}
-              onClick={() => setActiveTab('aceptados')}
-            >
-              ✓ Aceptados
-              <span className="mercado-tab-badge">{acceptedJobs.length}</span>
-            </button>
-          </div>
-
-          <div className="mercado-job-list">
-            {/* PESTAÑA 1: TRABAJOS DISPONIBLES */}
-            {activeTab === 'disponibles' && (
-              <>
-                {networkJobs.length === 0 && (
-                  <div style={{ color: '#64748b', textAlign: 'center', padding: '40px 20px', fontSize: '14px' }}>
-                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>⏳</div>
-                    No hay trabajos disponibles para cotizar en este momento.
-                  </div>
-                )}
-                {networkJobs.map(job => (
-                  <div
-                    key={job.id}
-                    className={`mercado-job-card ${selectedJob?.id === job.id ? 'active' : ''}`}
-                    onClick={() => openQuoteModalForJob(job)}
-                  >
-                    {/* 1. Colonia cercana, Urgencia y Badge de Estado */}
-                    <div className="mercado-job-card-top">
-                      <div className="mercado-job-colonia-tag">
-                        <MapPin size={13} color="#ea580c" />
-                        <span>{job.zona}</span>
-                      </div>
-                      
-                      {job.is_urgent && (
-                        <span className="mercado-urgency-badge urgent">⚡ Urgente</span>
-                      )}
-                      
-                      {job.myQuote ? (
-                        <span className={`mercado-job-badge ${job.myQuote.status === 'rejected' ? 'badge-rejected' : (job.myQuote.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`}>
-                          {job.myQuote.status === 'rejected' ? 'Rechazada' : (job.myQuote.price > 0 ? `$${parseFloat(job.myQuote.price).toLocaleString('es-MX')}` : 'Chat')}
-                        </span>
-                      ) : (
-                        <span className="mercado-job-badge-disponible">Disponible</span>
-                      )}
-                    </div>
-
-                    {/* 2. Problema Solicitado */}
-                    <h4 className="mercado-job-card-title">{job.titulo}</h4>
-                    <p className="mercado-job-card-desc">{job.descripcion}</p>
-
-                    {/* 3. ALERTA DE MENSAJE DEL CLIENTE */}
-                    {job.lastClientMsg && (
-                      <div className="mercado-job-msg-alert">
-                        <span className="mercado-msg-dot-pulse" />
-                        <span>💬 <strong>Mensaje del Cliente:</strong> "{job.lastClientMsg.message}"</span>
-                      </div>
-                    )}
-
-                    {/* Footer del Cuadrito */}
-                    <div className="mercado-job-card-footer">
-                      <span className="mercado-ofertas-count">{job.cotizaciones} ofertas enviadas</span>
-                      <span className="mercado-fecha-tag"><Clock size={11} /> {job.fecha}</span>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-
-            {/* PESTAÑA 2: TRABAJOS ACEPTADOS / GANADOS */}
-            {activeTab === 'aceptados' && (
-              <>
-                {acceptedJobs.length === 0 && (
-                  <div style={{ color: '#64748b', textAlign: 'center', padding: '40px 20px', fontSize: '14px' }}>
-                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎉</div>
-                    <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>Sin trabajos aceptados aún</strong>
-                    Envía cotizaciones a los trabajos disponibles para ganar servicios.
-                  </div>
-                )}
-                {acceptedJobs.map(job => (
-                  <div
-                    key={`acc-${job.id}`}
-                    className={`mercado-accepted-card ${selectedJob?.id === job.id ? 'active' : ''}`}
-                    onClick={() => openQuoteModalForJob(job)}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '800', background: '#dcfce7', color: '#16a34a', padding: '3px 8px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-                        ✓ OFERTA ACEPTADA
-                      </span>
-                      <span className="mercado-accepted-price-tag">
-                        ${parseFloat(job.agreed_price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-
-                    <h4 className="mercado-job-card-title" style={{ color: '#0f172a', marginBottom: '4px' }}>
-                      {job.titulo}
-                    </h4>
-
-                    <div style={{ fontSize: '12px', color: '#15803d', fontWeight: '700', marginBottom: '6px' }}>
-                      📍 {job.full_address}
-                    </div>
-
-                    <div style={{ fontSize: '12px', color: '#475569', marginBottom: '8px' }}>
-                      👤 Cliente: <strong>{job.client_name}</strong> {job.client_phone && `(${job.client_phone})`}
-                    </div>
-
-                    {/* Estado de Programación de Visita */}
-                    <div style={{ fontSize: '11.5px', padding: '6px 10px', borderRadius: '8px', background: job.scheduled_at ? '#eff6ff' : '#fff7ed', border: `1px solid ${job.scheduled_at ? '#bfdbfe' : '#fed7aa'}`, color: job.scheduled_at ? '#1d4ed8' : '#c2410c', fontWeight: '700', marginBottom: '8px' }}>
-                      {job.scheduled_at 
-                        ? `📅 Visita: ${new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}`
-                        : `⚠️ Pendiente programar hora de llegada`}
-                    </div>
-
-                    {/* Alerta de mensaje */}
-                    {job.lastClientMsg && (
-                      <div className="mercado-job-msg-alert">
-                        <span className="mercado-msg-dot-pulse" />
-                        <span>💬 <strong>Mensaje del Cliente:</strong> "{job.lastClientMsg.message}"</span>
-                      </div>
-                    )}
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #e2e8f0', fontSize: '11px', color: '#64748b' }}>
-                      <span>Fecha: {job.fecha}</span>
-                      <span style={{ color: '#16a34a', fontWeight: '800' }}>Ver detalles y coordinar →</span>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
         </div>
       </div>
 
@@ -1980,6 +2289,12 @@ const MercadoTrabajos = () => {
           </div>
         </div>
       )}
+
+      {/* ─── Modal de Calendario Interactivo ─── */}
+      <ModalCalendarioCliente
+        isOpen={showModalCalendario}
+        onClose={() => setShowModalCalendario(false)}
+      />
     </div>
   );
 };
