@@ -436,7 +436,8 @@ const MercadoTrabajos = () => {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedClientForHistory, setSelectedClientForHistory] = useState(null);
 
-  const { user: authUser, logoutGlobal } = useAuth();
+  const { user, logoutGlobal } = useAuth();
+  const authUser = user;
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -1443,8 +1444,8 @@ const MercadoTrabajos = () => {
                   <span>{userRole}</span>
                 </div>
                 <div className="vcp-dropdown-user-name">{userFullName}</div>
-                {user?.email && (
-                  <div className="vcp-dropdown-user-email">{user.email}</div>
+                {authUser?.email && (
+                  <div className="vcp-dropdown-user-email">{authUser.email}</div>
                 )}
               </div>
 
