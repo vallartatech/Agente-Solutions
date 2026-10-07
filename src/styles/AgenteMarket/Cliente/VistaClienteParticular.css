@@ -18,18 +18,25 @@
   box-sizing: border-box;
 }
 
-/* ── TOP NAVIGATION BAR ── */
+/* ── TOP NAVIGATION BAR (APPLE LIQUID GLASS TRANSLUCENT) ── */
 .vcp-header {
   height: 72px;
-  background: #14161d;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg,
+      rgba(20, 22, 29, 0.48) 0%,
+      rgba(15, 17, 23, 0.30) 100%);
+  backdrop-filter: blur(20px) saturate(180%) contrast(105%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) contrast(105%);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.22);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
   position: relative;
   z-index: 100;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.30),
+    inset 0 -1px 1.5px rgba(255, 255, 255, 0.12),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.28);
   flex-shrink: 0;
 }
 
@@ -56,7 +63,7 @@
 .vcp-header-nav {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -67,33 +74,38 @@
 
 .vcp-nav-btn {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   color: #cbd5e1;
   font-family: 'Outfit', sans-serif;
   font-size: 0.80rem;
   font-weight: 800;
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  padding: 7px 11px;
-  border-radius: 8px;
+  padding: 7px 14px;
+  border-radius: 12px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 
 .vcp-nav-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3);
 }
 
 .vcp-nav-btn.active {
-  color: #f26522;
-  background: rgba(242, 101, 34, 0.12);
-  border: 1px solid rgba(242, 101, 34, 0.3);
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.35) 0%, rgba(242, 101, 34, 0.15) 100%);
+  border: 1px solid rgba(242, 101, 34, 0.6);
+  box-shadow: 0 0 14px rgba(242, 101, 34, 0.4);
 }
 
 .vcp-nav-icon-btn {
@@ -275,22 +287,30 @@
   user-select: none;
 }
 
-/* Dropdown menu */
+/* Dropdown menu (Apple Liquid Glass) */
 .vcp-profile-dropdown {
   position: absolute;
-  top: 50px;
+  top: 54px;
   right: 0;
-  width: 180px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  padding: 6px;
+  width: 195px;
+  background: linear-gradient(145deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(255, 255, 255, 0.10) 100%),
+    rgba(15, 18, 26, 0.94);
+  backdrop-filter: blur(28px) saturate(190%) contrast(105%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%) contrast(105%);
+  border-radius: 16px;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.65),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.70);
+  padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   z-index: 120;
   animation: vcpFadeDrop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
 }
 
 @keyframes vcpFadeDrop {
@@ -308,12 +328,12 @@
 .vcp-dropdown-item {
   background: transparent;
   border: none;
-  color: #1e293b;
+  color: #ffffff;
   font-family: 'Outfit', sans-serif;
   font-size: 0.82rem;
   font-weight: 700;
   padding: 9px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -321,20 +341,21 @@
   transition: all 0.15s ease;
   text-align: left;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .vcp-dropdown-item:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
 }
 
 .vcp-dropdown-item.logout {
-  color: #ea580c;
+  color: #fca5a5;
 }
 
 .vcp-dropdown-item.logout:hover {
-  background: #fff7ed;
-  color: #c2410c;
+  background: rgba(239, 68, 68, 0.25);
+  color: #ffffff;
 }
 
 
@@ -413,23 +434,30 @@
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Collapsed Compact Pill Button */
+/* Collapsed Compact Pill Button (Apple Liquid Glass) */
 .vcp-plan-floating-badge.is-collapsed {
   display: inline-flex;
 }
 
 .vcp-plan-pill-toggle-btn {
-  background: #14161d;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1.5px solid rgba(255, 255, 255, 0.16);
-  border-radius: 25px;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.14) 0%,
+      rgba(255, 255, 255, 0.04) 50%,
+      rgba(255, 255, 255, 0.10) 100%),
+    rgba(15, 18, 26, 0.65);
+  backdrop-filter: blur(20px) saturate(180%) contrast(105%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) contrast(105%);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50px;
   padding: 8px 18px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.65),
+    inset 0 -1px 1.5px rgba(0, 0, 0, 0.20);
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   color: #ffffff;
   font-family: 'Outfit', sans-serif;
@@ -440,9 +468,15 @@
 }
 
 .vcp-plan-pill-toggle-btn.is-limit-warning {
-  background: #14161d;
-  border-color: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(255, 255, 255, 0.12) 100%),
+    rgba(15, 18, 26, 0.70);
+  border-color: rgba(255, 255, 255, 0.40);
+  box-shadow:
+    0 8px 26px rgba(0, 0, 0, 0.50),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.75);
   color: #ffffff;
 }
 
@@ -457,11 +491,13 @@
 }
 
 .vcp-plan-pill-toggle-btn:hover {
-  background: #1e222d;
-  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.75);
   color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.60),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.85);
 }
 
 .vcp-plan-chevron {
@@ -474,15 +510,21 @@
   transform: translateY(1px);
 }
 
-/* Expanded Full Box */
+/* Expanded Full Box (Liquid Glass) */
 .vcp-plan-floating-badge.is-expanded {
-  background: #14161d;
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1.5px solid rgba(255, 255, 255, 0.16);
-  border-radius: 16px;
-  padding: 12px 18px;
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.65);
+  background: linear-gradient(145deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(255, 255, 255, 0.10) 100%),
+    rgba(15, 18, 26, 0.90);
+  backdrop-filter: blur(28px) saturate(190%) contrast(105%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%) contrast(105%);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 20px;
+  padding: 14px 20px;
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.65),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.70);
   max-width: 580px;
 }
 
@@ -819,42 +861,51 @@
   object-fit: cover;
 }
 
-/* Plus / Lock Tile */
+/* Plus / Lock Tile (Apple Liquid Glass) */
 .vcp-thumb-add-tile {
   width: 80px;
   height: 64px;
   border-radius: 12px;
-  background: #14161d;
-  backdrop-filter: blur(12px);
-  border: 1.5px dashed rgba(255, 255, 255, 0.28);
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.14) 0%,
+      rgba(255, 255, 255, 0.04) 50%,
+      rgba(255, 255, 255, 0.10) 100%),
+    rgba(15, 18, 26, 0.65);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1.5px dashed rgba(255, 255, 255, 0.38);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
 }
 
 .vcp-thumb-add-tile:hover {
-  background: #1e222d;
-  border-color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.85);
   color: #ffffff;
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), inset 0 1.5px 2px rgba(255, 255, 255, 0.7);
 }
 
 .vcp-thumb-add-tile.is-limit-reached {
-  border: 1.5px dashed rgba(255, 255, 255, 0.35);
-  background: #14161d;
+  border: 1.5px dashed rgba(255, 255, 255, 0.38);
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0.03) 50%,
+      rgba(255, 255, 255, 0.08) 100%),
+    rgba(15, 18, 26, 0.65);
   color: #ffffff;
 }
 
 .vcp-thumb-add-tile.is-limit-reached:hover {
   border-color: rgba(255, 255, 255, 0.85);
-  background: #1e222d;
-  box-shadow: 0 0 16px rgba(255, 255, 255, 0.2), 0 8px 22px rgba(0, 0, 0, 0.7);
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), inset 0 1.5px 2px rgba(255, 255, 255, 0.7);
 }
 
 .vcp-thumb-lock-wrap {

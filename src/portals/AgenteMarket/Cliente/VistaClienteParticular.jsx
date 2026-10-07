@@ -496,6 +496,13 @@ const VistaClienteParticular = () => {
 
   return (
     <div className="vcp-root">
+      {/* Full-bleed Background Image Layer across entire viewport including navbar */}
+      <div 
+        className="vcp-hero-bg-layer" 
+        style={{ backgroundImage: `url("${heroBgImage}")` }}
+      />
+      <div className="vcp-hero-bg-overlay" />
+
       {/* ── TOP NAVIGATION BAR ── */}
       <header className="vcp-header">
         <div className="vcp-header-left">
@@ -593,13 +600,6 @@ const VistaClienteParticular = () => {
 
       {/* ── MAIN SPLIT VIEW CONTAINER ── */}
       <main className="vcp-body-layout">
-        {/* Full-bleed Background Image Layer across entire body */}
-        <div 
-          className="vcp-hero-bg-layer" 
-          style={{ backgroundImage: `url("${heroBgImage}")` }}
-        />
-        <div className="vcp-hero-bg-overlay" />
-
         {/* ── LEFT HERO PROPERTY SHOWCASE ── */}
         <section className="vcp-hero-side">
           {/* Top Floating Subscription Plan Card (Oculto por defecto / Desplegable) */}

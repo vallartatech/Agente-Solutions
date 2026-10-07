@@ -15,12 +15,16 @@ import {
   Sparkles,
   Building2,
   MapPin,
-  ExternalLink
+  ExternalLink,
+  CalendarDays,
+  Bell,
+  LogOut
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from "../../context/AuthContext";
-import logo from "../../assets/Logo3.png"; 
+import logo from "../../assets/Logo4.png"; 
 import defaultPropImg from "../../assets/propiedad_ejemplo.jpg";
+import ModalCalendarioCliente from "../../portals/AgenteMarket/Cliente/ModalCalendarioCliente";
 import "../../styles/Shared/Profile.css"; 
 
 const ESPECIALIDADES_CATALOGO = [
@@ -55,6 +59,20 @@ const Profile = () => {
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [showModalCalendario, setShowModalCalendario] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('propiedades');
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Propiedades del usuario para el carrusel de la derecha
   const [propiedades, setPropiedades] = useState([]);
@@ -316,9 +334,16 @@ const Profile = () => {
       />
       <div className="profile-liquid-bg-overlay" />
 
-      {/* Top Floating Action Bar */}
-      <header className="profile-liquid-topbar">
+      {/* Top Floating Action Bar (Full Liquid Glass Header) */}
+      <header className="profile-liquid-topbar" ref={dropdownRef}>
         <div className="profile-topbar-left">
+          <img 
+            src={logo} 
+            alt="Agente Solutions" 
+            className="profile-brand-logo"
+            onClick={() => navigate('/VistaMarket')} 
+          />
+
           <button 
             type="button"
             className="profile-glass-pill-btn" 
@@ -340,260 +365,418 @@ const Profile = () => {
           </button>
         </div>
 
+        {/* Center Nav Links */}
+        <nav className="profile-topbar-nav">
+          <button className="profile-nav-btn" onClick={() => navigate('/usuarios')}>
+            USUARIOS
+          </button>
+          <button className="profile-nav-btn" onClick={() => navigate('/reportes-globales')}>
+            REPORTE
+          </button>
+          <button className="profile-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
+            COTIZACION
+          </button>
+          <button className="profile-nav-btn" onClick={() => navigate('/tablero-servicios')}>
+            SERVICIOS
+          </button>
+          <button className="profile-nav-btn" onClick={() => navigate('/red-autonomos')}>
+            MERCADO / RED
+          </button>
+        </nav>
+
+        {/* Right Actions & User Profile */}
         <div className="profile-topbar-right">
-          <div className="profile-logo-glass-badge">
-            <img src={logo} alt="Agente Solutions" className="profile-top-logo" />
+          <div className="profile-topbar-actions-group">
+            {/* Botón Calendario */}
+            <button 
+              type="button"
+              className="profile-header-icon-btn" 
+              title="Abrir Calendario y Citas"
+              onClick={() => setShowModalCalendario(true)}
+            >
+              <CalendarDays size={18} color="#ffffff" strokeWidth={2} />
+            </button>
+
+            {/* Botón Notificaciones */}
+            <button 
+              type="button"
+              className="profile-header-icon-btn" 
+              title="Notificaciones"
+              onClick={() => navigate('/notificaciones')}
+            >
+              <Bell size={18} color="#ffffff" strokeWidth={2} />
+              <span className="profile-header-notif-dot" />
+            </button>
           </div>
+
+          <div className="profile-user-info-text">
+            <span className="profile-user-role-badge">
+              {obtenerNombreRol(user?.role_id)}
+            </span>
+            <span className="profile-user-name">{nombreCompleto}</span>
+          </div>
+
+          <button 
+            type="button"
+            className="profile-avatar-btn" 
+            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+            title="Opciones de sesión"
+          >
+            {user?.profile_picture ? (
+              <img src={user.profile_picture} alt="Avatar" className="profile-avatar-img" />
+            ) : (
+              <div className="profile-avatar-initial">
+                {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : 'U')}
+              </div>
+            )}
+          </button>
+
+          {profileDropdownOpen && (
+            <div className="profile-header-dropdown">
+              <button 
+                className="profile-dropdown-item" 
+                onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
+              >
+                <User size={16} /> Mi Perfil
+              </button>
+              <button 
+                className="profile-dropdown-item logout" 
+                onClick={() => { 
+                  setProfileDropdownOpen(false); 
+                  if (logoutGlobal) logoutGlobal(); 
+                  navigate('/', { replace: true }); 
+                }}
+              >
+                <LogOut size={16} /> Cerrar Sesión
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Main Split Layout: 3 Columns Architecture (Identidad Propia Izquierda | Datos Centro | Propiedades Derecha) */}
-      <main className="profile-three-col-viewport">
+      {/* ── YOUTUBE CHANNEL STYLE MAIN DASHBOARD ── */}
+      <main className="profile-yt-dashboard">
         
-        {/* ── COLUMNA 1: IDENTIDAD Y FOTO DE PERFIL (PROPIA A LA IZQUIERDA) ── */}
-        <section className="profile-col-identity">
-          <div className="profile-identity-card">
+        {/* ── 1. CANAL HEADER / PERFIL INFO (HORIZONTAL) ── */}
+        <section className="profile-yt-header-card">
+          <div className="profile-yt-header-main">
             
-            <div className="profile-identity-avatar-wrap" onClick={() => openPhotoMenu('profile_picture')} title="Cambiar foto de perfil">
+            {/* Avatar a la izquierda */}
+            <div 
+              className="profile-yt-avatar-wrap" 
+              onClick={() => openPhotoMenu('profile_picture')} 
+              title="Cambiar foto de perfil"
+            >
               {user?.profile_picture ? (
-                <img src={user.profile_picture} alt="Avatar" className="profile-identity-avatar-img" />
+                <img src={user.profile_picture} alt="Avatar" className="profile-yt-avatar-img" />
               ) : (
-                <div className="profile-identity-avatar-initial">
+                <div className="profile-yt-avatar-initial">
                   {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : '👤')}
                 </div>
               )}
-              <div className="profile-identity-avatar-hover">
-                <Camera size={24} color="#ffffff" />
-                <span>CAMBIAR FOTO</span>
+              <div className="profile-yt-avatar-hover">
+                <Camera size={22} color="#ffffff" />
+                <span>CAMBIAR</span>
               </div>
             </div>
 
             <input type="file" ref={cameraRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" capture="environment" />
             <input type="file" ref={galleryRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" />
 
-            <div className="profile-identity-info-box">
-              <h1 className="profile-identity-name">{nombreCompleto}</h1>
-              <div className="profile-identity-badges">
-                <span className="profile-identity-role-badge">
-                  <Shield size={11} /> {obtenerNombreRol(user?.role_id)}
-                </span>
-                <span className="profile-identity-status-badge">
-                  <Sparkles size={10} /> ACTIVO
-                </span>
+            {/* Datos del usuario a la derecha de la foto */}
+            <div className="profile-yt-info-col">
+              <div className="profile-yt-title-row">
+                <h1 className="profile-yt-name">{nombreCompleto}</h1>
+                <div className="profile-yt-badges-inline">
+                  <span className="profile-yt-role-badge">
+                    <Shield size={12} /> {obtenerNombreRol(user?.role_id)}
+                  </span>
+                  <span className="profile-yt-status-badge">
+                    <Sparkles size={11} /> ACTIVO
+                  </span>
+                </div>
               </div>
+
+              {/* Handle y metadatos */}
+              <div className="profile-yt-handle-row">
+                <span className="profile-yt-handle">@{user?.email ? user.email.split('@')[0] : 'usuario'}</span>
+                <span className="profile-yt-handle-dot">•</span>
+                <span className="profile-yt-meta-item">
+                  <Clock size={12} /> Miembro desde {formatearFecha(user?.created_at)}
+                </span>
+                {user?.birth_date && (
+                  <>
+                    <span className="profile-yt-handle-dot">•</span>
+                    <span className="profile-yt-meta-item">
+                      <Calendar size={12} /> {formatearFecha(user?.birth_date)}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Chips de contacto */}
+              <div className="profile-yt-chips-row">
+                <div className="profile-yt-chip" title={user?.email}>
+                  <Mail size={13} color="#FF8548" />
+                  <span>{user?.email || 'Sin correo'}</span>
+                </div>
+                <div className="profile-yt-chip">
+                  <Phone size={13} color="#FF8548" />
+                  <span>{user?.phone_number || 'Sin teléfono'}</span>
+                </div>
+              </div>
+
+              {/* Especialidades si es técnico */}
+              {(user?.role_id === 2 || user?.role_id === 8) && (() => {
+                const displaySpecs = (user?.specialties && user.specialties.length > 0)
+                  ? user.specialties
+                  : (selectedSpecialties.length > 0 ? selectedSpecialties : null);
+                return (
+                  <div className="profile-yt-specs-row">
+                    <span className="profile-yt-specs-label">🛠️ ESPECIALIDADES:</span>
+                    {displaySpecs ? (
+                      displaySpecs.map((s, idx) => {
+                        const specName = typeof s === 'string' ? s : s.name;
+                        const specObj = ESPECIALIDADES_CATALOGO.find(item => item.name === specName) || (typeof s === 'object' ? s : null);
+                        const icon = specObj ? (specObj.icon || '⚡') : '⚡';
+                        return (
+                          <span key={idx} className="profile-yt-spec-tag">
+                            {icon} {specName}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="profile-no-specs">Sin especialidades</span>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Fila de botones de acción */}
+              <div className="profile-yt-actions-row">
+                <button 
+                  type="button" 
+                  className="profile-yt-btn-primary" 
+                  onClick={openModal}
+                  title="Editar información de perfil"
+                >
+                  <Edit3 size={15} />
+                  <span>Personalizar datos</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  className="profile-yt-btn-secondary" 
+                  onClick={() => openPhotoMenu('cover_picture')}
+                  title="Cambiar imagen de portada"
+                >
+                  <Camera size={15} />
+                  <span>Cambiar Portada</span>
+                </button>
+
+                {user?.role_id !== 0 && (
+                  <button
+                    type="button"
+                    className="profile-yt-btn-danger"
+                    onClick={() => {
+                      setDeleteConfirmEmail('');
+                      setDeleteError('');
+                      setIsDeleteModalOpen(true);
+                    }}
+                    title="Eliminar mi cuenta"
+                  >
+                    <Trash2 size={13} />
+                    <span>Eliminar Cuenta</span>
+                  </button>
+                )}
+              </div>
+
             </div>
+          </div>
+        </section>
+
+        {/* ── 2. BARRA DE PESTAÑAS ESTILO YOUTUBE (Playlists / Propiedades) ── */}
+        <nav className="profile-yt-tabs-bar">
+          <div className="profile-yt-tabs-left">
+            <button 
+              type="button" 
+              className={`profile-yt-tab-btn ${activeTab === 'propiedades' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('propiedades')}
+            >
+              <Building2 size={15} />
+              <span>Mis Propiedades ({propiedades.length > 0 ? propiedades.length : 1})</span>
+              {activeTab === 'propiedades' && <div className="profile-yt-tab-indicator" />}
+            </button>
 
             <button 
               type="button" 
-              className="profile-identity-edit-btn" 
-              onClick={openModal}
-              title="Editar información de perfil"
+              className={`profile-yt-tab-btn ${activeTab === 'datos' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('datos')}
             >
-              <Edit3 size={15} />
-              <span>EDITAR DATOS</span>
+              <User size={15} />
+              <span>Datos Completos</span>
+              {activeTab === 'datos' && <div className="profile-yt-tab-indicator" />}
             </button>
-
-            {user?.role_id !== 0 && (
-              <div className="profile-identity-danger-zone">
-                <button
-                  type="button"
-                  className="profile-identity-delete-btn"
-                  onClick={() => {
-                    setDeleteConfirmEmail('');
-                    setDeleteError('');
-                    setIsDeleteModalOpen(true);
-                  }}
-                  title="Eliminar mi cuenta"
-                >
-                  <Trash2 size={12} />
-                  <span>Eliminar mi Cuenta</span>
-                </button>
-              </div>
-            )}
-
-          </div>
-        </section>
-
-        {/* ── COLUMNA 2: DATOS DEL USUARIO (CENTRO) ── */}
-        <section className="profile-col-data">
-          
-          <div className="profile-data-heading">
-            <span className="profile-heading-text">DATOS DEL USUARIO</span>
-            <div className="profile-heading-line" />
           </div>
 
-          <div className="profile-data-tiles-list">
-            <div className="profile-floating-tile">
-              <div className="profile-tile-icon-wrap">
-                <User size={15} />
-              </div>
-              <div className="profile-tile-content">
-                <span className="profile-tile-label">NOMBRE COMPLETO</span>
-                <span className="profile-tile-val">{nombreCompleto}</span>
-              </div>
-            </div>
-
-            <div className="profile-floating-tile is-accent">
-              <div className="profile-tile-icon-wrap is-accent">
-                <Shield size={15} />
-              </div>
-              <div className="profile-tile-content">
-                <span className="profile-tile-label">ROL EN SISTEMA</span>
-                <span className="profile-tile-val is-accent-text">{obtenerNombreRol(user?.role_id)}</span>
-              </div>
-            </div>
-
-            <div className="profile-floating-tile">
-              <div className="profile-tile-icon-wrap">
-                <Mail size={15} />
-              </div>
-              <div className="profile-tile-content">
-                <span className="profile-tile-label">CORREO ELECTRÓNICO</span>
-                <span className="profile-tile-val" title={user?.email}>{user?.email || 'No registrado'}</span>
-              </div>
-            </div>
-
-            <div className="profile-floating-tile">
-              <div className="profile-tile-icon-wrap">
-                <Phone size={15} />
-              </div>
-              <div className="profile-tile-content">
-                <span className="profile-tile-label">TELÉFONO</span>
-                <span className="profile-tile-val">{user?.phone_number || 'No registrado'}</span>
-              </div>
-            </div>
-
-            <div className="profile-floating-tile">
-              <div className="profile-tile-icon-wrap">
-                <Calendar size={15} />
-              </div>
-              <div className="profile-tile-content">
-                <span className="profile-tile-label">FECHA DE NACIMIENTO</span>
-                <span className="profile-tile-val">{formatearFecha(user?.birth_date)}</span>
-              </div>
-            </div>
-
-            <div className="profile-floating-tile">
-              <div className="profile-tile-icon-wrap">
-                <Clock size={15} />
-              </div>
-              <div className="profile-tile-content">
-                <span className="profile-tile-label">MIEMBRO DESDE</span>
-                <span className="profile-tile-val">{formatearFecha(user?.created_at)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Specialties for Technicians */}
-          {(user?.role_id === 2 || user?.role_id === 8) && (() => {
-            const displaySpecs = (user?.specialties && user.specialties.length > 0)
-              ? user.specialties
-              : (selectedSpecialties.length > 0 ? selectedSpecialties : null);
-            return (
-              <div className="profile-floating-specs-bar">
-                <span className="profile-specs-label">🛠️ ESPECIALIDADES:</span>
-                <div className="profile-specs-pills">
-                  {displaySpecs ? (
-                    displaySpecs.map((s, idx) => {
-                      const specName = typeof s === 'string' ? s : s.name;
-                      const specObj = ESPECIALIDADES_CATALOGO.find(item => item.name === specName) || (typeof s === 'object' ? s : null);
-                      const icon = specObj ? (specObj.icon || '⚡') : '⚡';
-                      return (
-                        <span key={idx} className="profile-spec-pill">
-                          {icon} {specName}
-                        </span>
-                      );
-                    })
-                  ) : (
-                    <span className="profile-no-specs">Sin especialidades</span>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
-        </section>
-
-        {/* ── COLUMNA 3: PROPIEDADES ASOCIADAS Y CARRUSEL (DERECHA) ── */}
-        <section className="profile-col-properties">
-          
-          {/* Header de Propiedades */}
-          <div className="profile-props-header-row">
-            <div className="profile-props-title-wrap">
-              <Building2 size={18} color="#FF6600" />
-              <h2 className="profile-props-title">MIS PROPIEDADES</h2>
-              <span className="profile-props-count-pill">
-                {propiedades.length || 1} {propiedades.length === 1 ? 'Propiedad' : 'Propiedades'}
-              </span>
-            </div>
-            
+          <div className="profile-yt-tabs-right">
             <button 
-              type="button"
-              className="profile-props-view-btn"
+              type="button" 
+              className="profile-yt-tab-action-btn"
               onClick={() => navigate('/VistaMarket')}
-              title="Ir al Portal de Propiedades"
+              title="Explorar propiedades en el mercado"
             >
-              <span>EXPLORAR</span>
+              <span>Explorar Mercado</span>
               <ExternalLink size={13} />
             </button>
           </div>
+        </nav>
 
-          {/* Big Featured Property Showcase Visual Card */}
-          <div 
-            className="profile-prop-featured-card"
-            style={{ backgroundImage: `url("${getPropImage(activeProperty)}")` }}
-          >
-            <div className="profile-prop-featured-overlay" />
-            
-            <div className="profile-prop-featured-info-pill">
-              <div className="profile-prop-featured-badge">
-                ★ PROPIEDAD SELECCIONADA
-              </div>
-              <h3 className="profile-prop-featured-name">
-                {activeProperty?.nombre_propiedad || activeProperty?.nombre || activeProperty?.alias || 'MI PROPIEDAD'}
-              </h3>
-              <div className="profile-prop-featured-address">
-                <MapPin size={13} color="#FF8548" />
-                <span>{activeProperty?.address || activeProperty?.direccion || 'Mérida, Yucatán'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Horizontal Thumbnails Carousel */}
-          <div className="profile-thumbs-container">
-            <span className="profile-thumbs-label">GALERÍA DE PROPIEDADES:</span>
-            <div className="profile-thumbs-scroll-track">
+        {/* ── 3. CONTENIDO PRINCIPAL (DONDE VAN LOS VIDEOS / PROPIEDADES) ── */}
+        <section className="profile-yt-content-grid-wrap">
+          
+          {activeTab === 'propiedades' && (
+            <div className="profile-yt-props-grid">
               {propiedades && propiedades.length > 0 ? (
                 propiedades.map((prop, idx) => {
-                  const isActive = prop.id === activeProperty?.id;
-                  const thumbImg = getPropImage(prop);
+                  const isSelected = prop.id === activeProperty?.id;
+                  const propImg = getPropImage(prop);
                   return (
-                    <div 
+                    <article 
                       key={prop.id}
-                      className={`profile-thumb-card ${isActive ? 'is-active' : ''}`}
+                      className={`profile-yt-prop-card ${isSelected ? 'is-selected' : ''}`}
                       onClick={() => setSelectedPropId(prop.id)}
-                      title={`Seleccionar para vista previa:\n${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
+                      title={`Seleccionar ${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
                     >
-                      <img 
-                        src={thumbImg} 
-                        alt={prop.nombre_propiedad || 'Propiedad'} 
-                        className="profile-thumb-img" 
-                      />
-                      {idx === 0 && (
-                        <div className="profile-thumb-star" title="Propiedad Principal">
-                          ★
+                      {/* Miniatura estilo video de YouTube */}
+                      <div className="profile-yt-thumb-wrap">
+                        <img src={propImg} alt={prop.nombre_propiedad || 'Propiedad'} className="profile-yt-thumb-img" />
+                        <div className="profile-yt-thumb-overlay" />
+                        
+                        <div className="profile-yt-thumb-badge-top">
+                          <Building2 size={11} color="#FF6600" />
+                          <span>MIS PROPIEDADES</span>
                         </div>
-                      )}
-                    </div>
+
+                        <div className="profile-yt-thumb-badge-bottom">
+                          {isSelected ? '★ ACTIVA' : `#${idx + 1}`}
+                        </div>
+                      </div>
+
+                      {/* Información debajo de la miniatura (como el título del video en YouTube) */}
+                      <div className="profile-yt-prop-meta">
+                        <div className="profile-yt-prop-header-line">
+                          <h4 className="profile-yt-prop-title">
+                            {prop.nombre_propiedad || prop.nombre || prop.alias || `PROPIEDAD #${prop.id}`}
+                          </h4>
+                        </div>
+
+                        <div className="profile-yt-prop-address-line">
+                          <MapPin size={12} color="#FF8548" />
+                          <span>{prop.address || prop.direccion || 'Calle 37 #sin numero x 4 y 6, Mérida, Yucatán'}</span>
+                        </div>
+
+                        <div className="profile-yt-prop-actions-line">
+                          <span className={`profile-yt-prop-status-tag ${isSelected ? 'is-selected' : ''}`}>
+                            {isSelected ? '▲ Propiedad Seleccionada' : 'Hacer clic para activar'}
+                          </span>
+                          <button 
+                            type="button" 
+                            className="profile-yt-prop-link-btn"
+                            onClick={(e) => { e.stopPropagation(); navigate('/VistaMarket'); }}
+                          >
+                            <span>Ver</span>
+                            <ExternalLink size={11} />
+                          </button>
+                        </div>
+                      </div>
+                    </article>
                   );
                 })
               ) : (
-                <div className="profile-thumb-card is-active">
-                  <img src={defaultPropImg} alt="Propiedad" className="profile-thumb-img" />
-                </div>
+                <article className="profile-yt-prop-card is-selected">
+                  <div className="profile-yt-thumb-wrap">
+                    <img src={defaultPropImg} alt="Casa" className="profile-yt-thumb-img" />
+                    <div className="profile-yt-thumb-overlay" />
+                    <div className="profile-yt-thumb-badge-top">
+                      <Building2 size={11} color="#FF6600" />
+                      <span>MIS PROPIEDADES</span>
+                    </div>
+                    <div className="profile-yt-thumb-badge-bottom">★ ACTIVA</div>
+                  </div>
+
+                  <div className="profile-yt-prop-meta">
+                    <div className="profile-yt-prop-header-line">
+                      <h4 className="profile-yt-prop-title">CASA DE MI INFANCIA</h4>
+                    </div>
+                    <div className="profile-yt-prop-address-line">
+                      <MapPin size={12} color="#FF8548" />
+                      <span>Calle 37 #sin numero x 4 y 6, Col. leandro valle, Mérida, Yucatán</span>
+                    </div>
+                    <div className="profile-yt-prop-actions-line">
+                      <span className="profile-yt-prop-status-tag is-selected">▲ Propiedad Seleccionada</span>
+                      <button type="button" className="profile-yt-prop-link-btn" onClick={() => navigate('/VistaMarket')}>
+                        <span>Ver</span>
+                        <ExternalLink size={11} />
+                      </button>
+                    </div>
+                  </div>
+                </article>
               )}
             </div>
-          </div>
+          )}
+
+          {activeTab === 'datos' && (
+            <div className="profile-yt-datos-grid">
+              <div className="profile-floating-tile">
+                <div className="profile-tile-icon-wrap"><User size={15} /></div>
+                <div className="profile-tile-content">
+                  <span className="profile-tile-label">NOMBRE COMPLETO</span>
+                  <span className="profile-tile-val">{nombreCompleto}</span>
+                </div>
+              </div>
+
+              <div className="profile-floating-tile is-accent">
+                <div className="profile-tile-icon-wrap is-accent"><Shield size={15} /></div>
+                <div className="profile-tile-content">
+                  <span className="profile-tile-label">ROL EN SISTEMA</span>
+                  <span className="profile-tile-val is-accent-text">{obtenerNombreRol(user?.role_id)}</span>
+                </div>
+              </div>
+
+              <div className="profile-floating-tile">
+                <div className="profile-tile-icon-wrap"><Mail size={15} /></div>
+                <div className="profile-tile-content">
+                  <span className="profile-tile-label">CORREO ELECTRÓNICO</span>
+                  <span className="profile-tile-val">{user?.email || 'No registrado'}</span>
+                </div>
+              </div>
+
+              <div className="profile-floating-tile">
+                <div className="profile-tile-icon-wrap"><Phone size={15} /></div>
+                <div className="profile-tile-content">
+                  <span className="profile-tile-label">TELÉFONO</span>
+                  <span className="profile-tile-val">{user?.phone_number || 'No registrado'}</span>
+                </div>
+              </div>
+
+              <div className="profile-floating-tile">
+                <div className="profile-tile-icon-wrap"><Calendar size={15} /></div>
+                <div className="profile-tile-content">
+                  <span className="profile-tile-label">FECHA DE NACIMIENTO</span>
+                  <span className="profile-tile-val">{formatearFecha(user?.birth_date)}</span>
+                </div>
+              </div>
+
+              <div className="profile-floating-tile">
+                <div className="profile-tile-icon-wrap"><Clock size={15} /></div>
+                <div className="profile-tile-content">
+                  <span className="profile-tile-label">MIEMBRO DESDE</span>
+                  <span className="profile-tile-val">{formatearFecha(user?.created_at)}</span>
+                </div>
+              </div>
+            </div>
+          )}
 
         </section>
 
@@ -753,6 +936,12 @@ const Profile = () => {
           </div>
         </div>
       )}
+
+      {/* ── MODAL: CALENDARIO CLIENTE ── */}
+      <ModalCalendarioCliente
+        isOpen={showModalCalendario}
+        onClose={() => setShowModalCalendario(false)}
+      />
 
     </div>
   );
