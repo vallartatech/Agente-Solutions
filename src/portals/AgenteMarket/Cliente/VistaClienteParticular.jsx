@@ -937,6 +937,15 @@ const VistaClienteParticular = () => {
               <AlertTriangle size={17} /> SOS
             </button>
 
+            {/* Solicitar Servicio Button */}
+            <button 
+              className="vcp-btn vcp-btn-service"
+              onClick={() => navigate('/tablero-servicios', { state: { selectedPropId: activeProperty?.id } })}
+              title="Crear o Solicitar un Nuevo Servicio"
+            >
+              <Plus size={17} /> SOLICITAR SERVICIO
+            </button>
+
             {/* Compartir Button */}
             <button 
               className="vcp-btn vcp-btn-share"
@@ -961,15 +970,6 @@ const VistaClienteParticular = () => {
               title="Ver Levantamientos y Planos de la Propiedad"
             >
               <ClipboardList size={17} /> VER LEVANTAMIENTO
-            </button>
-
-            {/* Agregar Servicio Button */}
-            <button 
-              className="vcp-btn vcp-btn-service"
-              onClick={() => navigate('/tablero-servicios', { state: { selectedPropId: activeProperty?.id } })}
-              title="Crear o Solicitar un Nuevo Servicio"
-            >
-              <Plus size={17} /> AGREGAR SERVICIO
             </button>
           </div>
         </aside>

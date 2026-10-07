@@ -8,7 +8,12 @@
 .vu-root {
   min-height: 100vh;
   width: 100%;
-  background: radial-gradient(circle at 50% 0%, #151a27 0%, #0b0f19 60%, #070a10 100%);
+  background-color: #0c101b;
+  background-image: 
+    radial-gradient(circle at 8% 8%, rgba(242, 101, 34, 0.16) 0%, transparent 42%),
+    radial-gradient(circle at 92% 12%, rgba(242, 101, 34, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 50% 98%, rgba(6, 182, 212, 0.14) 0%, transparent 55%),
+    radial-gradient(circle at 50% 30%, rgba(15, 23, 42, 0.6) 0%, transparent 100%);
   color: #f1f5f9;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   display: flex;
@@ -16,6 +21,18 @@
   position: relative;
   overflow-x: hidden;
   box-sizing: border-box;
+}
+
+/* Patrón de Micropuntos Tecnológico (Dot-Matrix Pattern) */
+.vu-root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1.2px, transparent 1.2px);
+  background-size: 26px 26px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.8;
 }
 
 /* ── HEADER MASTER BAR ── */
@@ -35,6 +52,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  position: relative;
+  z-index: 2;
   animation: vuFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -118,77 +137,157 @@
   box-shadow: 0 0 10px rgba(242, 101, 34, 0.5);
 }
 
-/* ── FILTER PILLS GRID (2 BOTONES) ── */
-.vu-filter-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+/* ── UNIFIED TOOLBAR: SEARCH + FILTER ICON + REGISTER ICON (SAME LINE) ── */
+.vu-toolbar-unified {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   width: 100%;
+}
+
+.vu-search-unified {
+  flex: 1;
+  min-width: 0;
+}
+
+.vu-search-unified .search-wrapper-full {
+  margin: 0;
+}
+
+.vu-search-unified .search-input-large {
+  background: rgba(18, 22, 34, 0.75) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+  border-radius: 16px !important;
+  padding: 13px 20px 13px 48px !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.4px !important;
+  text-transform: none !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.25s ease !important;
+}
+
+.vu-search-unified .search-input-large::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+}
+
+.vu-search-unified .search-input-large:focus {
+  border-color: #f26522 !important;
+  background: rgba(24, 29, 44, 0.92) !important;
+  box-shadow: 0 0 20px rgba(242, 101, 34, 0.35), 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+.vu-search-unified .search-icon-inside {
+  color: #f26522 !important;
+  left: 18px !important;
+}
+
+.vu-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .vu-filter-dropdown-wrapper {
   position: relative;
-  width: 100%;
 }
 
-.vu-filter-dropdown-wrapper .vu-filter-pill {
-  width: 100%;
-}
-
-.vu-filter-pill {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  padding: 13px 18px;
-  text-align: center;
-  cursor: pointer;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  font-size: 0.88rem;
-  letter-spacing: 0.5px;
-  color: #94a3b8;
+/* Icon Buttons (Apple Ultra Liquid Glass Style) */
+.vu-icon-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  cursor: pointer;
+  position: relative;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  user-select: none;
 }
 
-.vu-filter-pill:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(242, 101, 34, 0.5);
+/* Filter Icon Button */
+.vu-icon-btn-filter {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  color: #cbd5e1;
+}
+
+.vu-icon-btn-filter:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(242, 101, 34, 0.6);
   color: #ffffff;
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
 }
 
-.vu-filter-pill.active,
-.vu-filter-pill.open {
+.vu-icon-btn-filter.open,
+.vu-icon-btn-filter.filtered {
   background: linear-gradient(135deg, rgba(242, 101, 34, 0.95) 0%, rgba(234, 88, 12, 0.9) 100%);
   border-color: #ff7438;
   color: #ffffff;
-  box-shadow: 0 4px 20px rgba(242, 101, 34, 0.5), inset 0 1px 1.5px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 6px 20px rgba(242, 101, 34, 0.5), inset 0 1px 1.5px rgba(255, 255, 255, 0.4);
   transform: translateY(-2px);
 }
 
-.vu-filter-chevron {
-  transition: transform 0.2s ease;
-  margin-left: 4px;
+/* Indicator dot for active filter */
+.vu-filter-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f26522;
+  box-shadow: 0 0 8px #f26522;
 }
 
-.vu-filter-chevron.rotate {
-  transform: rotate(180deg);
+.vu-filter-indicator.green {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.vu-filter-indicator.red {
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
+
+/* Register Icon Button */
+.vu-icon-btn-register {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1.5px solid rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+}
+
+.vu-icon-btn-register:hover {
+  background: rgba(16, 185, 129, 0.3);
+  border-color: #10b981;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45);
+}
+
+.vu-icon-btn:active {
+  transform: translateY(0) scale(0.96);
 }
 
 /* Dropdown Menu for State Filters */
 .vu-filter-menu-dropdown {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0;
-  right: 0;
   background: rgba(18, 24, 38, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 16px;
@@ -201,6 +300,12 @@
   flex-direction: column;
   gap: 4px;
   animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vu-filter-menu-dropdown-right {
+  right: 0;
+  left: auto;
+  min-width: 220px;
 }
 
 @keyframes dropdownFadeIn {
@@ -269,84 +374,31 @@
   color: #f87171;
 }
 
-.vu-action-pill-register {
-  background: rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.35);
-  color: #6ee7b7;
-}
-
-.vu-action-pill-register:hover {
-  background: rgba(16, 185, 129, 0.25);
-  border-color: #10b981;
-  color: #ffffff;
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-}
-
 @media (max-width: 640px) {
-  .vu-filter-grid {
-    grid-template-columns: 1fr;
+  .vu-toolbar-unified {
+    gap: 8px;
   }
 }
 
-/* ── UNIVERSAL SEARCH IN DARK THEME ── */
-.vu-search-wrapper {
-  width: 100%;
-}
-
-.vu-search-wrapper .search-wrapper-full {
-  margin: 0;
-}
-
-.vu-search-wrapper .search-input-large {
-  background: rgba(18, 22, 34, 0.75) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.14) !important;
-  color: #ffffff !important;
-  border-radius: 16px !important;
-  padding: 13px 20px 13px 48px !important;
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-  font-size: 0.92rem !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.4px !important;
-  text-transform: none !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
-  transition: all 0.25s ease !important;
-}
-
-.vu-search-wrapper .search-input-large::placeholder {
-  color: #94a3b8 !important;
-  font-weight: 500 !important;
-  text-transform: none !important;
-}
-
-.vu-search-wrapper .search-input-large:focus {
-  border-color: #f26522 !important;
-  background: rgba(24, 29, 44, 0.92) !important;
-  box-shadow: 0 0 20px rgba(242, 101, 34, 0.35), 0 8px 24px rgba(0, 0, 0, 0.4) !important;
-}
-
-.vu-search-wrapper .search-icon-inside {
-  color: #f26522 !important;
-  left: 18px !important;
-}
-
-/* ── LIQUID GLASS USERS TABLE CARD ── */
+/* ── LIQUID GLASS USERS TABLE CARD (MOCKUP DESIGN) ── */
 .vu-table-card {
-  background: rgba(18, 22, 34, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  background: rgba(18, 23, 36, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
   overflow: hidden;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(190%) contrast(105%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%) contrast(105%);
   box-shadow: 
-    0 24px 60px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+    0 24px 60px rgba(0, 0, 0, 0.65),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.2),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 2;
 }
 
 .vu-table-responsive-wrapper {
   width: 100%;
-  max-height: 600px;
+  max-height: 640px;
   overflow-x: auto;
   overflow-y: auto;
   scrollbar-width: thin;
@@ -373,20 +425,20 @@
 
 .vu-modern-table {
   width: 100%;
-  min-width: 1000px;
+  min-width: 980px;
   border-collapse: collapse;
   text-align: left;
 }
 
 .vu-modern-table thead th {
-  background: rgba(13, 17, 26, 0.95);
-  color: #cbd5e1;
+  background: rgba(13, 17, 28, 0.95);
+  color: #94a3b8;
   font-family: 'Outfit', sans-serif;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 800;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.9px;
   text-transform: uppercase;
-  padding: 16px 20px;
+  padding: 18px 20px;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -396,190 +448,264 @@
 
 .vu-modern-table tbody tr {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.2s ease;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .vu-modern-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.035);
 }
 
 .vu-modern-table tbody tr.vu-row-blocked {
-  opacity: 0.6;
+  opacity: 0.65;
   background: rgba(239, 68, 68, 0.03);
 }
 
 .vu-modern-table td {
-  padding: 14px 20px;
+  padding: 16px 20px;
   vertical-align: middle;
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   color: #e2e8f0;
 }
 
-/* ── CELL SPECIFICS ── */
-.vu-avatar-box {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.06);
+/* ── 1. ID CELL ── */
+.vu-id-cell {
+  width: 90px;
+}
+
+.vu-id-code {
+  font-family: 'Plus Jakarta Sans', monospace;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+/* ── 2. NAME CELL ── */
+.vu-name-block {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  flex-direction: column;
+  gap: 3px;
 }
 
-.vu-avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.vu-avatar-fallback {
+.vu-user-name-title {
   font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  font-size: 1.15rem;
-  color: #f26522;
-}
-
-.vu-name-cell {
-  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #f8fafc;
+  transition: color 0.2s ease;
 }
 
 .vu-clickable-name {
   cursor: pointer;
 }
 
-.vu-clickable-name .vu-user-name-text {
-  color: #f8fafc;
-  font-weight: 800;
-  transition: color 0.2s ease;
-}
-
-.vu-clickable-name:hover .vu-user-name-text {
+.vu-clickable-name:hover .vu-user-name-title {
   color: #f26522;
-  text-decoration: underline;
 }
 
-.vu-user-name-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.vu-user-name-text {
-  font-size: 0.94rem;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.vu-user-phone {
-  font-size: 0.74rem;
-  color: #94a3b8;
-  font-family: monospace;
-}
-
-.vu-blocked-badge {
-  background: #ef4444;
-  color: #ffffff;
-  font-size: 0.64rem;
+.vu-blocked-tag {
+  font-size: 0.65rem;
   font-weight: 800;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
   padding: 2px 6px;
   border-radius: 6px;
   display: inline-block;
   width: fit-content;
-  margin-top: 2px;
 }
 
-.vu-email-cell {
-  font-family: monospace;
-  color: #94a3b8;
-  font-size: 0.82rem;
+/* ── 3. PHOTO CELL ── */
+.vu-avatar-wrap {
+  display: flex;
+  align-items: center;
 }
 
-.vu-select-role-wrapper {
-  display: inline-block;
+.vu-avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.vu-role-select {
-  padding: 6px 14px;
-  border-radius: 20px;
+.vu-avatar-circle.fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #f26522;
+}
+
+/* ── 4. STATUS CELL (MOCKUP BADGES) ── */
+.vu-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 16px;
+  border-radius: 30px;
   font-family: 'Outfit', sans-serif;
   font-size: 0.74rem;
   font-weight: 800;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  text-transform: capitalize;
+  user-select: none;
+}
+
+.vu-status-badge.online {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1.5px solid rgba(16, 185, 129, 0.55);
+  color: #34d399;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+.vu-status-badge.offline {
+  background: rgba(148, 163, 184, 0.14);
+  border: 1.5px solid rgba(148, 163, 184, 0.35);
+  color: #94a3b8;
+}
+
+/* ── 5. ROLE / EXPERTISE CELL ── */
+.vu-role-select-box {
+  display: inline-block;
+}
+
+.vu-role-select-mockup {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
   cursor: pointer;
   outline: none;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   transition: all 0.2s ease;
 }
 
-.vu-role-select:hover {
-  transform: scale(1.04);
-  filter: brightness(1.15);
+.vu-role-select-mockup:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(242, 101, 34, 0.5);
+  color: #ffffff;
 }
 
-.vu-role-badge {
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.74rem;
+.vu-role-select-mockup option {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.vu-role-pill-root {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  padding: 5px 12px;
+  border-radius: 12px;
+  font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.6px;
-  text-transform: uppercase;
-  display: inline-block;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
-.vu-status-pill {
+/* ── 6. CONTACT CELL ── */
+.vu-contact-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vu-contact-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-}
-
-.vu-status-pill.active {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  color: #6ee7b7;
-}
-
-.vu-status-pill.inactive {
-  background: rgba(148, 163, 184, 0.12);
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  font-size: 0.8rem;
   color: #94a3b8;
+  font-family: monospace;
 }
 
-.vu-status-pill.deleted {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #fca5a5;
+.vu-contact-item.phone {
+  color: #64748b;
+  font-size: 0.76rem;
 }
 
-.vu-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+.vu-contact-icon {
+  color: #f26522;
+  flex-shrink: 0;
 }
 
-.vu-dot.dot-on {
-  background: #10b981;
-  box-shadow: 0 0 8px #10b981;
+/* ── 7. RATING CELL ── */
+.vu-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: #f8fafc;
 }
 
-.vu-dot.dot-off {
-  background: #94a3b8;
+.vu-star-filled {
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6));
 }
 
-.vu-dot.dot-red {
-  background: #ef4444;
-  box-shadow: 0 0 8px #ef4444;
+/* ── 8. ACTION BUTTONS (MOCKUP ROUND ICONS) ── */
+.vu-mockup-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vu-mockup-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+}
+
+.vu-mockup-btn:hover {
+  transform: translateY(-2px);
+}
+
+.vu-mockup-btn.view:hover {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.6);
+  color: #38bdf8;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+}
+
+.vu-mockup-btn.lock:hover {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.6);
+  color: #fbbf24;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+}
+
+.vu-mockup-btn.unblock:hover {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.6);
+  color: #34d399;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+.vu-mockup-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #f87171;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+}
+
+.vu-mockup-btn:active {
+  transform: translateY(0) scale(0.94);
 }
 
 .vu-protected-chip {
@@ -595,77 +721,10 @@
   gap: 4px;
 }
 
-/* ── ACTION BUTTONS ── */
-.vu-action-btn-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.vu-action-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #f1f5f9;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.74rem;
-  font-weight: 800;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-}
-
-.vu-action-btn.block {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: rgba(245, 158, 11, 0.45);
-  color: #fde68a;
-}
-
-.vu-action-btn.block:hover {
-  background: #f59e0b;
-  border-color: #fbbf24;
-  color: #000000;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5);
-}
-
-.vu-action-btn.unblock {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.45);
-  color: #a7f3d0;
-}
-
-.vu-action-btn.unblock:hover {
-  background: #10b981;
-  border-color: #34d399;
-  color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.5);
-}
-
-.vu-action-btn.delete {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #fca5a5;
-  padding: 6px 9px;
-}
-
-.vu-action-btn.delete:hover {
-  background: #ef4444;
-  border-color: #f87171;
-  color: #ffffff;
-  transform: translateY(-1px) scale(1.05);
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.6);
-}
-
 /* ── LOADING & EMPTY STATES ── */
 .vu-loading-cell,
 .vu-empty-cell {
-  padding: 48px 20px !important;
+  padding: 56px 20px !important;
   text-align: center !important;
 }
 
@@ -679,8 +738,8 @@
 }
 
 .vu-spinner {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border: 3px solid rgba(242, 101, 34, 0.2);
   border-top-color: #f26522;
   border-radius: 50%;
@@ -695,24 +754,24 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .vu-empty-icon {
-  color: #64748b;
+  color: #475569;
   margin-bottom: 4px;
 }
 
 .vu-empty-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: #ffffff;
   margin: 0;
 }
 
 .vu-empty-desc {
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   color: #94a3b8;
   margin: 0;
 }
