@@ -211,14 +211,14 @@ const DetallePropiedad = () => {
             >
               <AlertCircle size={20} /> SOS
             </button>
+            <button className="btn-add-service-full" style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }} onClick={() => setMostrarModalServicio(true)}>
+              <PlusCircle size={20} /> SOLICITAR SERVICIO
+            </button>
             {data && !data.is_shared_with_me && (
               <button className="btn-add-service-full" style={{ flex: 1, backgroundColor: '#007bff', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }} onClick={() => setMostrarModalCompartir(true)}>
                 <User size={20} /> {usuariosCompartidos.length > 0 ? "COMPARTIENDO" : "COMPARTIR"}
               </button>
             )}
-            <button className="btn-add-service-full" style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }} onClick={() => setMostrarModalServicio(true)}>
-              <PlusCircle size={20} /> AGREGAR SERVICIO
-            </button>
             <button 
               className="btn-add-service-full" 
               style={{ flex: 1, backgroundColor: '#444', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }} 
