@@ -27,7 +27,11 @@ import {
   Search,
   Award,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  DollarSign,
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -56,14 +60,17 @@ const limpiarDescripcion = (rawDesc) => {
   return clean.trim() || rawDesc;
 };
 
-const ModalCalendarioCliente = ({ isOpen, onClose }) => {
+const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
   const { user } = useAuth();
+
+  // Roles de Técnico / Contratista / Admin
+  const isTechnician = Boolean(user && [0, 1, 2, 6, 8].includes(Number(user.role_id)));
 
   // Estados del Calendario
   const [currentDate, setCurrentDate] = useState(new Date());
   const [miniCalDate, setMiniCalDate] = useState(new Date());
   const [currentView, setCurrentView] = useState('month'); // 'month' | 'week' | 'agenda'
-  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'confirmed' | 'proposed' | 'network'
+  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'overdue' | 'today' | 'future' | 'uncoordinated' | 'confirmed' | 'proposed' | 'network'
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [networkJobs, setNetworkJobs] = useState([]);
@@ -191,119 +198,212 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     };
   };
 
+  const processOrderToEvent = (order, isAcceptedDirect = false) => {
+    const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name) : '';
+    
+    const coloniaTexto = order.colonia_cercana || order.zona_colonia || order.zona || order.zone || 'Mérida, Yucatán';
+    const tituloProblema = order.titulo || (order.type 
+      ? `${order.type}${order.equipment ? ' - ' + order.equipment : ''}` 
+      : 'Problema / Servicio Solicitado');
+
+    const fotos = (order.fotos && order.fotos.length > 0)
+      ? order.fotos 
+      : [order.evidence_path, order.evidence_path_2, order.property?.facade_photo_path, order.foto].filter(Boolean);
+
+    const groupedQuotes = order.cotizaciones_list || groupQuotesByTechnician(order.network_quotes || [], order);
+    const acceptedQuote = order.myQuote || groupedQuotes.find(q => q.status === 'accepted' || q.is_assigned) || null;
+
+    const isAccepted = Boolean(
+      isAcceptedDirect ||
+      order.is_accepted ||
+      order.status === 'Asignado' ||
+      order.status === 'En Progreso' ||
+      order.status === 'Terminado' ||
+      acceptedQuote ||
+      (order.tecnico_id && Number(order.tecnico_id) === Number(user?.id))
+    );
+
+    const isGenericOwner = !order.owner_name || 
+      order.owner_name === 'Cliente de la Red' || 
+      order.owner_name === 'Cliente Desconocido' || 
+      order.owner_name === 'Cliente de Prueba';
+
+    const clientName = order.client_name || (!isGenericOwner ? order.owner_name : (order.property?.client?.name || (isTechnician ? 'Cliente' : (userFullName || 'Mi Solicitud'))));
+    const assignedTechName = order.assigned_tech_name || acceptedQuote?.technicianName || (order.technician ? `${order.technician.first_name} ${order.technician.last_name || ''}`.trim() : null);
+    const agreedPrice = order.agreed_price ? parseFloat(order.agreed_price) : (acceptedQuote?.price ? parseFloat(acceptedQuote.price) : 0);
+
+    // Fecha y hora
+    const rawScheduledAt = order.scheduled_at || order.fecha_visita || null;
+    const hasScheduledDate = Boolean(rawScheduledAt);
+
+    let eventDate = rawScheduledAt ? new Date(rawScheduledAt) : (order.created_at ? new Date(order.created_at) : new Date());
+    if (isNaN(eventDate.getTime())) eventDate = new Date();
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    const todayDateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const dateKey = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
+    const isToday = dateKey === todayDateKey || (hasScheduledDate && eventDate >= todayStart && eventDate <= todayEnd);
+
+    let timeFormatted = 'Por coordinar';
+    let hourIndex = 10;
+    if (hasScheduledDate) {
+      try {
+        timeFormatted = eventDate.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        hourIndex = eventDate.getHours();
+      } catch {
+        timeFormatted = '10:00 a.m.';
+      }
+    } else if (order.hora_visita) {
+      timeFormatted = order.hora_visita;
+    }
+
+    const isCompleted = order.status === 'Terminado' || order.status === 'Listo' || order.status === 'Finalizado';
+
+    // Timing classification
+    let timingCategory = 'uncoordinated'; // 'overdue' | 'today' | 'future' | 'uncoordinated' | 'completed' | 'network'
+    let timingBadge = '⏳ Por Coordinar';
+    let timingRelative = 'Sin fecha agendada';
+    let statusType = 'uncoordinated';
+    let statusLabel = 'Horario Por Coordinar';
+
+    if (isCompleted) {
+      timingCategory = 'completed';
+      timingBadge = '✓ Finalizado';
+      timingRelative = 'Trabajo Concluido';
+      statusType = 'completed';
+      statusLabel = 'Trabajo Terminado';
+    } else if (!hasScheduledDate) {
+      if (!isAccepted && !isTechnician) {
+        timingCategory = 'network';
+        timingBadge = '🌐 En Red';
+        timingRelative = 'Cotizaciones abiertas';
+        statusType = 'network';
+        statusLabel = 'En Red / Cotizando';
+      } else {
+        timingCategory = 'uncoordinated';
+        timingBadge = '⏳ Por Coordinar';
+        timingRelative = 'Coordinación pendiente';
+        statusType = 'uncoordinated';
+        statusLabel = '⏳ Horario Por Coordinar';
+      }
+    } else if (eventDate < todayStart) {
+      const diffMs = todayStart.getTime() - eventDate.getTime();
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      const relStr = diffDays === 1 ? 'Ayer' : `Hace ${diffDays} días`;
+      timingCategory = 'overdue';
+      timingBadge = `🚨 Atrasado (${relStr})`;
+      timingRelative = `Atrasado ${diffDays === 1 ? 'desde ayer' : `hace ${diffDays} días`} (${timeFormatted})`;
+      statusType = 'overdue';
+      statusLabel = `⚠️ Cita Atrasada (${relStr})`;
+    } else if (isToday) {
+      timingCategory = 'today';
+      timingBadge = `⚡ Cita Hoy (${timeFormatted})`;
+      timingRelative = `Hoy a las ${timeFormatted}`;
+      statusType = 'today';
+      statusLabel = `⚡ Cita Programada para Hoy`;
+    } else {
+      // Future
+      const diffMs = eventDate.getTime() - todayEnd.getTime();
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      const relStr = diffDays === 1 ? 'Mañana' : `En ${diffDays} días`;
+      timingCategory = 'future';
+      timingBadge = `📅 ${relStr} (${timeFormatted})`;
+      timingRelative = `${diffDays === 1 ? 'Mañana' : `En ${diffDays} días`} (${timeFormatted})`;
+      statusType = 'future';
+      statusLabel = `📅 Cita Futura (${relStr})`;
+    }
+
+    const timingHumanFull = hasScheduledDate 
+      ? eventDate.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + `, ${timeFormatted}`
+      : 'Pendiente de coordinar horario';
+
+    const sched = getJobScheduleStatus({ ...order, cotizaciones_list: groupedQuotes }, acceptedQuote);
+    const hasNewTechMessage = groupedQuotes.some(q => q.hasNewTechMessage);
+    const lastTechMsg = groupedQuotes.find(q => q.hasNewTechMessage)?.lastMsg || null;
+
+    return {
+      ...order,
+      id: order.id,
+      titulo: tituloProblema,
+      tipo: order.type || 'Problema',
+      equipo: order.equipment || '',
+      presupuesto: agreedPrice > 0 ? `$${agreedPrice.toFixed(2)}` : 'A convenir',
+      estado: isAccepted ? (isCompleted ? 'Terminado' : 'Asignado') : (order.status || 'Por Hacer'),
+      is_accepted: isAccepted,
+      assigned_tech_name: assignedTechName,
+      agreed_price: agreedPrice,
+      fecha: new Date(order.created_at || Date.now()).toLocaleDateString('es-MX'),
+      lugar: order.property_name || order.property?.name || order.property?.property_name || 'Lugar no especificado',
+      zona: coloniaTexto,
+      colonia: coloniaTexto,
+      calle: order.full_address || order.property?.address || 'Dirección confirmada',
+      descripcion: limpiarDescripcion(order.description),
+      foto: fotos[0] || null,
+      fotos: fotos,
+      cotizaciones: groupedQuotes.length,
+      cotizaciones_list: groupedQuotes,
+      cliente: clientName,
+      client_name: clientName,
+      client_phone: order.client_phone || order.property?.client?.phone || '',
+      client_email: order.client_email || order.property?.client?.email || '',
+      is_mine: true,
+      scheduled_at: rawScheduledAt,
+      hasNewTechMessage,
+      lastTechMsg,
+      // Propiedades de calendario
+      calendarDate: eventDate,
+      dateKey,
+      calendarTime: timeFormatted,
+      hourIndex,
+      dayOfWeek: eventDate.getDay(),
+      timingCategory,
+      timingBadge,
+      timingRelative,
+      timingHumanFull,
+      statusType,
+      statusLabel,
+      isOverdue: timingCategory === 'overdue',
+      isToday: timingCategory === 'today',
+      isFuture: timingCategory === 'future',
+      isUncoordinated: timingCategory === 'uncoordinated',
+      isCompleted: timingCategory === 'completed',
+    };
+  };
+
   const fetchJobs = async () => {
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos?only_mine=1`, { headers });
+      const endpoint = isTechnician 
+        ? `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos`
+        : `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos?only_mine=1`;
+
+      const res = await axios.get(endpoint, { headers });
       
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name) : '';
+      if (res.data?.success) {
+        const rawAccepted = Array.isArray(res.data.accepted_jobs) ? res.data.accepted_jobs : [];
+        const rawData = Array.isArray(res.data.data) ? res.data.data : [];
 
-        const jobs = res.data.data.map(order => {
-          const coloniaTexto = order.colonia_cercana || order.zona_colonia || order.zona || 'Mérida, Yucatán';
-          const tituloProblema = order.type 
-            ? `${order.type}${order.equipment ? ' - ' + order.equipment : ''}` 
-            : 'Problema / Servicio Solicitado';
+        const jobMap = new Map();
 
-          const isGenericOwner = !order.owner_name || 
-            order.owner_name === 'Cliente de la Red' || 
-            order.owner_name === 'Cliente Desconocido' || 
-            order.owner_name === 'Cliente de Prueba';
-
-          const displayOwner = !isGenericOwner ? order.owner_name : (userFullName || 'Mi Solicitud');
-
-          const fotos = [
-            order.evidence_path,
-            order.evidence_path_2,
-            order.property?.facade_photo_path
-          ].filter(Boolean);
-
-          const groupedQuotes = groupQuotesByTechnician(order.network_quotes || [], order);
-          const hasNewTechMessage = groupedQuotes.some(q => q.hasNewTechMessage);
-          const lastTechMsg = groupedQuotes.find(q => q.hasNewTechMessage)?.lastMsg || null;
-
-          const acceptedQuote = groupedQuotes.find(q => q.status === 'accepted' || q.is_assigned) || null;
-          const isAccepted = Boolean(
-            order.status === 'Asignado' ||
-            order.status === 'En Progreso' ||
-            order.status === 'Terminado' ||
-            acceptedQuote ||
-            order.tecnico_id
-          );
-
-          const assignedTechName = acceptedQuote?.technicianName || (order.technician ? `${order.technician.first_name} ${order.technician.last_name || ''}`.trim() : null);
-          const agreedPrice = acceptedQuote?.price ? parseFloat(acceptedQuote.price) : 0;
-
-          let eventDateStr = order.scheduled_at || order.fecha_visita || order.due_date || order.created_at;
-          let eventDate = new Date(eventDateStr);
-          if (isNaN(eventDate.getTime())) eventDate = new Date();
-
-          let timeFormatted = 'Por definir';
-          let hourIndex = 10; // Default 10 AM para week grid
-          if (order.scheduled_at) {
-            try {
-              const d = new Date(order.scheduled_at);
-              timeFormatted = d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-              hourIndex = d.getHours();
-            } catch {
-              timeFormatted = '10:00 a.m.';
-            }
-          } else if (order.hora_visita) {
-            timeFormatted = order.hora_visita;
-          }
-
-          const sched = getJobScheduleStatus({ ...order, cotizaciones_list: groupedQuotes }, acceptedQuote);
-          let statusType = 'network';
-          let statusLabel = 'En Red / Cotizando';
-
-          if (sched.isScheduleConfirmed || isAccepted) {
-            statusType = 'confirmed';
-            statusLabel = 'Visita Confirmada';
-          } else if (order.scheduled_at) {
-            statusType = 'proposed';
-            statusLabel = 'Horario Propuesto';
-          } else if (order.type?.toLowerCase().includes('urgente') || order.type?.toLowerCase().includes('sos')) {
-            statusType = 'urgent';
-            statusLabel = 'Urgencia / SOS';
-          }
-
-          return {
-            id: order.id,
-            titulo: tituloProblema,
-            tipo: order.type || 'Problema',
-            equipo: order.equipment || '',
-            presupuesto: agreedPrice > 0 ? `$${agreedPrice.toFixed(2)}` : 'A convenir',
-            estado: isAccepted ? (order.status === 'Terminado' ? 'Terminado' : 'Asignado') : (order.status || 'Por Hacer'),
-            is_accepted: isAccepted,
-            assigned_tech_name: assignedTechName,
-            agreed_price: agreedPrice,
-            fecha: new Date(order.created_at).toLocaleDateString('es-MX'),
-            lugar: order.property?.name || order.property?.property_name || 'Lugar no especificado',
-            zona: coloniaTexto,
-            colonia: coloniaTexto,
-            calle: order.property?.address || 'Dirección no especificada',
-            descripcion: limpiarDescripcion(order.description),
-            foto: fotos[0] || null,
-            fotos: fotos,
-            cotizaciones: groupedQuotes.length,
-            cotizaciones_list: groupedQuotes,
-            cliente: displayOwner,
-            is_mine: true,
-            scheduled_at: order.scheduled_at,
-            hasNewTechMessage,
-            lastTechMsg,
-            // Propiedades de calendario
-            calendarDate: eventDate,
-            dateKey: eventDate.toISOString().slice(0, 10),
-            calendarTime: timeFormatted,
-            hourIndex,
-            dayOfWeek: eventDate.getDay(),
-            statusType,
-            statusLabel
-          };
+        // 1. Priorizar trabajos aceptados del técnico
+        rawAccepted.forEach(order => {
+          const processed = processOrderToEvent(order, true);
+          jobMap.set(processed.id, processed);
         });
 
+        // 2. Procesar solicitudes de la red o del cliente
+        rawData.forEach(order => {
+          if (!jobMap.has(order.id)) {
+            const processed = processOrderToEvent(order, false);
+            jobMap.set(processed.id, processed);
+          }
+        });
+
+        const jobs = Array.from(jobMap.values());
         setNetworkJobs(jobs);
 
         if (selectedJobForQuotes) {
@@ -371,6 +471,14 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     setShowQuotesModal(true);
   };
 
+  const handleEventClick = (job) => {
+    if (onSelectJob) {
+      onSelectJob(job);
+      return;
+    }
+    handleOpenQuotesModal(job);
+  };
+
   const handleSendClientChat = async (e) => {
     if (e) e.preventDefault();
     if (!clientChatInput.trim() || sendingClientChat || !activeChatQuote) return;
@@ -383,7 +491,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     const optimisticMessage = {
       sender_id: user?.id,
       sender_name: userFullName,
-      sender_role: 'Cliente',
+      sender_role: isTechnician ? 'Técnico' : 'Cliente',
       message: textToSend,
       created_at: new Date().toISOString()
     };
@@ -488,32 +596,61 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     }
   };
 
-  // Filtrado de eventos
+  // Filtrado de eventos con todos los criterios de tiempo y búsqueda
   const filteredEvents = useMemo(() => {
     return networkJobs.filter(job => {
-      const matchFilter = selectedFilter === 'all' || job.statusType === selectedFilter;
+      let matchFilter = false;
+      if (selectedFilter === 'all') {
+        matchFilter = true;
+      } else if (selectedFilter === 'overdue') {
+        matchFilter = job.timingCategory === 'overdue';
+      } else if (selectedFilter === 'today') {
+        matchFilter = job.timingCategory === 'today';
+      } else if (selectedFilter === 'future') {
+        matchFilter = job.timingCategory === 'future';
+      } else if (selectedFilter === 'uncoordinated') {
+        matchFilter = job.timingCategory === 'uncoordinated';
+      } else if (selectedFilter === 'completed') {
+        matchFilter = job.timingCategory === 'completed';
+      } else if (selectedFilter === 'confirmed') {
+        matchFilter = job.statusType === 'confirmed' || job.is_accepted;
+      } else if (selectedFilter === 'proposed') {
+        matchFilter = job.statusType === 'proposed' || Boolean(job.scheduled_at);
+      } else if (selectedFilter === 'network') {
+        matchFilter = job.statusType === 'network';
+      }
+
       const matchSearch = searchQuery.trim() === '' ||
         job.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
         job.zona.toLowerCase().includes(searchQuery.toLowerCase()) ||
         job.lugar.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (job.cliente && job.cliente.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (job.assigned_tech_name && job.assigned_tech_name.toLowerCase().includes(searchQuery.toLowerCase()));
 
       return matchFilter && matchSearch;
     });
   }, [networkJobs, selectedFilter, searchQuery]);
 
-  // Contadores
-  const countConfirmed = networkJobs.filter(j => j.statusType === 'confirmed').length;
-  const countProposed = networkJobs.filter(j => j.statusType === 'proposed').length;
+  // Contadores dinámicos
+  const countAll = networkJobs.length;
+  const countOverdue = networkJobs.filter(j => j.timingCategory === 'overdue').length;
+  const countToday = networkJobs.filter(j => j.timingCategory === 'today').length;
+  const countFuture = networkJobs.filter(j => j.timingCategory === 'future').length;
+  const countUncoordinated = networkJobs.filter(j => j.timingCategory === 'uncoordinated').length;
+  const countConfirmed = networkJobs.filter(j => j.statusType === 'confirmed' || j.is_accepted).length;
   const countNetwork = networkJobs.filter(j => j.statusType === 'network').length;
 
-  // Próxima cita destacada ("Up Next")
+  // Próxima cita destacada ("Up Next") - Prioriza atrasadas > hoy > futuras
   const upNextJob = useMemo(() => {
     if (networkJobs.length === 0) return null;
-    const confirmed = networkJobs.filter(j => j.statusType === 'confirmed');
-    if (confirmed.length > 0) return confirmed[0];
-    const proposed = networkJobs.filter(j => j.statusType === 'proposed');
-    if (proposed.length > 0) return proposed[0];
+    const overdue = networkJobs.filter(j => j.timingCategory === 'overdue');
+    if (overdue.length > 0) return overdue[0];
+    const today = networkJobs.filter(j => j.timingCategory === 'today');
+    if (today.length > 0) return today[0];
+    const future = networkJobs.filter(j => j.timingCategory === 'future').sort((a, b) => a.calendarDate - b.calendarDate);
+    if (future.length > 0) return future[0];
+    const accepted = networkJobs.filter(j => j.is_accepted);
+    if (accepted.length > 0) return accepted[0];
     return networkJobs[0];
   }, [networkJobs]);
 
@@ -538,13 +675,14 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     const firstDayOfMonth = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const cells = [];
 
     for (let i = firstDayOfMonth - 1; i >= 0; i--) {
       const dayNum = daysInPrevMonth - i;
       const prevDate = new Date(year, month - 1, dayNum);
-      const dateKey = prevDate.toISOString().slice(0, 10);
+      const dateKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`;
       cells.push({
         dayNumber: dayNum,
         dateKey,
@@ -556,7 +694,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
 
     for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
       const thisDate = new Date(year, month, dayNum);
-      const dateKey = thisDate.toISOString().slice(0, 10);
+      const dateKey = `${thisDate.getFullYear()}-${String(thisDate.getMonth() + 1).padStart(2, '0')}-${String(thisDate.getDate()).padStart(2, '0')}`;
       cells.push({
         dayNumber: dayNum,
         dateKey,
@@ -569,7 +707,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     const remaining = (7 - (cells.length % 7)) % 7;
     for (let i = 1; i <= remaining; i++) {
       const nextDate = new Date(year, month + 1, i);
-      const dateKey = nextDate.toISOString().slice(0, 10);
+      const dateKey = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
       cells.push({
         dayNumber: i,
         dateKey,
@@ -590,13 +728,14 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     const firstDayOfMonth = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const cells = [];
 
     for (let i = firstDayOfMonth - 1; i >= 0; i--) {
       const dayNum = daysInPrevMonth - i;
       const d = new Date(year, month - 1, dayNum);
-      const dateKey = d.toISOString().slice(0, 10);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       cells.push({
         dayNum,
         dateKey,
@@ -608,7 +747,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
 
     for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
       const d = new Date(year, month, dayNum);
-      const dateKey = d.toISOString().slice(0, 10);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       cells.push({
         dayNum,
         dateKey,
@@ -621,9 +760,9 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     const remaining = (7 - (cells.length % 7)) % 7;
     for (let i = 1; i <= remaining; i++) {
       const d = new Date(year, month + 1, i);
-      const dateKey = d.toISOString().slice(0, 10);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       cells.push({
-        dayNum: i,
+        dayNum,
         dateKey,
         isCurrentMonth: false,
         isToday: dateKey === todayStr,
@@ -642,12 +781,13 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
     sunday.setDate(curr.getDate() - dayOfWeek);
 
     const days = [];
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     for (let i = 0; i < 7; i++) {
       const d = new Date(sunday);
       d.setDate(sunday.getDate() + i);
-      const dateKey = d.toISOString().slice(0, 10);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       days.push({
         dayIndex: i,
         dayName: DAY_NAMES_MINI[i],
@@ -751,7 +891,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                   <Search size={15} className="cal-search-icon" />
                   <input 
                     type="text"
-                    placeholder="Buscar servicio o técnico..."
+                    placeholder="Buscar servicio o cliente..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -795,29 +935,54 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                 className={`legend-item ${selectedFilter === 'all' ? 'active' : ''}`}
                 onClick={() => setSelectedFilter('all')}
               >
-                Todos ({networkJobs.length})
+                Todos ({countAll})
               </button>
+
               <button 
-                className={`legend-item ${selectedFilter === 'confirmed' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'confirmed' ? 'all' : 'confirmed')}
+                className={`legend-item legend-overdue ${selectedFilter === 'overdue' ? 'active' : ''} ${countOverdue > 0 ? 'has-overdue' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'overdue' ? 'all' : 'overdue')}
+                title="Citas cuya fecha programada ya pasó y no han concluido"
               >
-                <span className="legend-dot dot-confirmed"></span>
-                <span>Visitas Confirmadas {countConfirmed > 0 && `(${countConfirmed})`}</span>
+                <span className="legend-dot dot-overdue"></span>
+                <span>🚨 Atrasados {countOverdue > 0 ? `(${countOverdue})` : '(0)'}</span>
               </button>
+
               <button 
-                className={`legend-item ${selectedFilter === 'proposed' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'proposed' ? 'all' : 'proposed')}
+                className={`legend-item legend-today ${selectedFilter === 'today' ? 'active' : ''} ${countToday > 0 ? 'has-today' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'today' ? 'all' : 'today')}
+                title="Citas programadas para el día de hoy"
               >
-                <span className="legend-dot dot-proposed"></span>
-                <span>Horarios Propuestos {countProposed > 0 && `(${countProposed})`}</span>
+                <span className="legend-dot dot-today"></span>
+                <span>⚡ Citas Hoy {countToday > 0 ? `(${countToday})` : '(0)'}</span>
               </button>
+
               <button 
-                className={`legend-item ${selectedFilter === 'network' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'network' ? 'all' : 'network')}
+                className={`legend-item legend-future ${selectedFilter === 'future' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'future' ? 'all' : 'future')}
+                title="Citas agendadas para días futuros"
               >
-                <span className="legend-dot dot-network"></span>
-                <span>En Red / Cotizando {countNetwork > 0 && `(${countNetwork})`}</span>
+                <span className="legend-dot dot-future"></span>
+                <span>📅 Próximos / Futuros {countFuture > 0 ? `(${countFuture})` : '(0)'}</span>
               </button>
+
+              <button 
+                className={`legend-item legend-uncoordinated ${selectedFilter === 'uncoordinated' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'uncoordinated' ? 'all' : 'uncoordinated')}
+                title="Trabajos asignados sin fecha definida"
+              >
+                <span className="legend-dot dot-uncoordinated"></span>
+                <span>⏳ Por Coordinar {countUncoordinated > 0 ? `(${countUncoordinated})` : '(0)'}</span>
+              </button>
+
+              {countNetwork > 0 && (
+                <button 
+                  className={`legend-item ${selectedFilter === 'network' ? 'active' : ''}`}
+                  onClick={() => setSelectedFilter(selectedFilter === 'network' ? 'all' : 'network')}
+                >
+                  <span className="legend-dot dot-network"></span>
+                  <span>🌐 En Red ({countNetwork})</span>
+                </button>
+              )}
             </div>
 
             {/* Contenedor del Calendario */}
@@ -857,19 +1022,24 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                           {cell.events.map((job) => (
                             <div 
                               key={job.id}
-                              className={`cal-event-chip status-${job.statusType}`}
-                              onClick={() => handleOpenQuotesModal(job)}
-                              title={`${job.titulo} - Clic para ver cotizaciones`}
+                              className={`cal-event-chip status-${job.statusType} timing-${job.timingCategory}`}
+                              onClick={() => handleEventClick(job)}
+                              title={`${job.titulo}\n${job.timingBadge}\nHorario: ${job.calendarTime}\nCliente: ${job.cliente}\nDirección: ${job.calle || job.zona}\n(Clic para abrir todos los detalles)`}
                             >
-                              <div className="chip-time-row">
-                                <span className="chip-time-tag">
-                                  <Clock size={10} /> {job.calendarTime}
+                              <div className="chip-compact-row">
+                                {job.timingCategory === 'overdue' && <span className="chip-mini-dot dot-overdue"></span>}
+                                {job.timingCategory === 'today' && <span className="chip-mini-dot dot-today"></span>}
+                                {job.timingCategory === 'future' && <span className="chip-mini-dot dot-future"></span>}
+                                {job.timingCategory === 'uncoordinated' && <span className="chip-mini-dot dot-uncoordinated"></span>}
+                                {job.timingCategory === 'completed' && <span className="chip-mini-dot dot-confirmed"></span>}
+
+                                <span className="chip-compact-time">
+                                  {job.calendarTime !== 'Por coordinar' ? job.calendarTime : '⏳'}
+                                </span>
+                                <span className="chip-compact-title">
+                                  {job.titulo}
                                 </span>
                               </div>
-                              <span className="chip-title">{job.titulo}</span>
-                              <span className="chip-tech">
-                                <User size={9} /> {job.assigned_tech_name || (job.cotizaciones > 0 ? `${job.cotizaciones} oferta(s)` : 'En espera')}
-                              </span>
                             </div>
                           ))}
                         </div>
@@ -905,11 +1075,12 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                                 {matchingEvents.map(job => (
                                   <div 
                                     key={job.id}
-                                    className={`week-event-card status-${job.statusType}`}
-                                    onClick={() => handleOpenQuotesModal(job)}
+                                    className={`week-event-card status-${job.statusType} timing-${job.timingCategory}`}
+                                    onClick={() => handleEventClick(job)}
                                   >
                                     <div style={{ fontWeight: 800, fontSize: '0.68rem', display: 'flex', alignItems: 'center', gap: '3px' }}>
                                       <Clock size={10} /> {job.calendarTime}
+                                      {job.timingCategory === 'overdue' && <span style={{ color: '#fca5a5' }}>[🚨 Atrasado]</span>}
                                     </div>
                                     <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                       {job.titulo}
@@ -945,41 +1116,50 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                           {group.items.map((job) => (
                             <div 
                               key={job.id}
-                              className={`agenda-item-card status-${job.statusType}`}
-                              onClick={() => handleOpenQuotesModal(job)}
+                              className={`agenda-item-card status-${job.statusType} timing-${job.timingCategory}`}
+                              onClick={() => handleEventClick(job)}
                             >
                               <div className="agenda-card-top">
-                                <h4 className="agenda-card-title">{job.titulo}</h4>
-                                <span className={`agenda-status-pill pill-${job.statusType}`}>
-                                  {job.statusLabel}
+                                <div>
+                                  <h4 className="agenda-card-title">{job.titulo}</h4>
+                                  <span className="agenda-card-subtitle">{job.equipo ? `Equipo: ${job.equipo}` : job.tipo}</span>
+                                </div>
+                                <span className={`agenda-status-pill pill-${job.statusType} pill-timing-${job.timingCategory}`}>
+                                  {job.timingBadge}
                                 </span>
                               </div>
 
                               <div className="agenda-card-info">
                                 <div className="agenda-info-row">
-                                  <Clock size={13} color="#ff6600" />
-                                  <strong>Horario:</strong> <span>{job.calendarTime}</span>
+                                  <Clock size={13} color={job.timingCategory === 'overdue' ? '#ef4444' : '#ff6600'} />
+                                  <strong>Horario:</strong> <span style={{ color: job.timingCategory === 'overdue' ? '#fca5a5' : '#ffffff', fontWeight: 700 }}>{job.calendarTime} ({job.timingRelative})</span>
                                 </div>
                                 <div className="agenda-info-row">
                                   <MapPin size={13} color="#94a3b8" />
-                                  <span>{job.zona}</span>
+                                  <span>{job.calle || job.zona}</span>
                                 </div>
                                 <div className="agenda-info-row">
                                   <User size={13} color="#94a3b8" />
-                                  <span>{job.assigned_tech_name || (job.cotizaciones > 0 ? `${job.cotizaciones} técnico(s) postulado(s)` : 'En espera de técnicos')}</span>
+                                  <span>Cliente: <strong>{job.cliente}</strong></span>
                                 </div>
+                                {job.agreed_price > 0 && (
+                                  <div className="agenda-info-row">
+                                    <DollarSign size={13} color="#4ade80" />
+                                    <strong style={{ color: '#4ade80' }}>Presupuesto:</strong> <span style={{ color: '#4ade80', fontWeight: 800 }}>${parseFloat(job.agreed_price).toFixed(2)} MXN</span>
+                                  </div>
+                                )}
                               </div>
 
                               <div className="agenda-card-actions">
                                 <button 
                                   className="btn-modal-action primary"
-                                  style={{ padding: '5px 12px', fontSize: '0.78rem' }}
+                                  style={{ padding: '6px 14px', fontSize: '0.8rem' }}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleOpenQuotesModal(job);
+                                    handleEventClick(job);
                                   }}
                                 >
-                                  Ver Cotizaciones ({job.cotizaciones})
+                                  <span>Abrir Trabajo / Coordinar</span>
                                   <ArrowRight size={13} />
                                 </button>
                               </div>
@@ -1039,15 +1219,17 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* 2. Tarjeta "Up Next / Próximo Servicio" (Estilo referencia) */}
+            {/* 2. Tarjeta "Up Next / Próximo Servicio" */}
             <div>
               <div className="sidebar-section-title">
                 <span>⚡ Próximo Servicio</span>
               </div>
               {upNextJob ? (
-                <div className="up-next-card">
+                <div className={`up-next-card ${upNextJob.timingCategory === 'overdue' ? 'is-overdue-alert' : ''}`}>
                   <div className="up-next-badge-row">
-                    <span className="up-next-pill">PRÓXIMA CITA</span>
+                    <span className={`up-next-pill ${upNextJob.timingCategory === 'overdue' ? 'pill-overdue-banner' : ''}`}>
+                      {upNextJob.timingCategory === 'overdue' ? '🚨 CITA ATRASADA' : (upNextJob.timingCategory === 'today' ? '⚡ CITA DE HOY' : 'PRÓXIMA CITA')}
+                    </span>
                     <span className="up-next-time-tag">
                       <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} />
                       {upNextJob.calendarTime}
@@ -1057,17 +1239,22 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                   <h4 className="up-next-title">{upNextJob.titulo}</h4>
 
                   <div className="up-next-details">
-                    <div>📍 {upNextJob.zona}</div>
-                    <div>🧑‍🔧 {upNextJob.assigned_tech_name || 'Técnico de la Red'}</div>
-                    <div style={{ color: '#4ade80', fontWeight: 800 }}>💰 {upNextJob.presupuesto}</div>
+                    <div>📍 {upNextJob.calle || upNextJob.zona}</div>
+                    <div>🧑‍💼 {upNextJob.cliente || upNextJob.assigned_tech_name || 'Cliente'}</div>
+                    <div style={{ color: upNextJob.timingCategory === 'overdue' ? '#fca5a5' : '#fdba74', fontWeight: 800, fontSize: '0.76rem' }}>
+                      📅 {upNextJob.timingHumanFull}
+                    </div>
+                    {upNextJob.agreed_price > 0 && (
+                      <div style={{ color: '#4ade80', fontWeight: 800 }}>💰 ${parseFloat(upNextJob.agreed_price).toFixed(2)} MXN</div>
+                    )}
                   </div>
 
                   <button 
                     className="btn-up-next-action"
-                    onClick={() => handleOpenQuotesModal(upNextJob)}
+                    onClick={() => handleEventClick(upNextJob)}
                   >
                     <MessageCircle size={15} />
-                    <span>Ver Cotizaciones / Chat ({upNextJob.cotizaciones})</span>
+                    <span>Abrir Trabajo / Coordinación</span>
                   </button>
                 </div>
               ) : (
@@ -1080,10 +1267,10 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
             {/* 3. Resumen Rápido de Actividad */}
             <div>
               <div className="sidebar-section-title">
-                <span>📋 Resumen de Citas ({networkJobs.length})</span>
+                <span>📋 Resumen de Citas ({countAll})</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {networkJobs.slice(0, 3).map((job) => (
+                {networkJobs.slice(0, 4).map((job) => (
                   <div 
                     key={job.id}
                     style={{
@@ -1091,22 +1278,25 @@ const ModalCalendarioCliente = ({ isOpen, onClose }) => {
                       borderRadius: '8px',
                       padding: '10px 12px',
                       cursor: 'pointer',
-                      borderLeft: `3px solid ${job.statusType === 'confirmed' ? '#10b981' : (job.statusType === 'proposed' ? '#f59e0b' : '#3b82f6')}`,
+                      borderLeft: `3.5px solid ${job.timingCategory === 'overdue' ? '#ef4444' : (job.timingCategory === 'today' ? '#ff6600' : (job.timingCategory === 'future' ? '#06b6d4' : '#f59e0b'))}`,
                       fontSize: '0.78rem',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '3px'
                     }}
-                    onClick={() => handleOpenQuotesModal(job)}
+                    onClick={() => handleEventClick(job)}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '0.7rem' }}>
                       <span>{job.calendarTime}</span>
-                      <span style={{ fontWeight: 800, color: job.statusType === 'confirmed' ? '#6ee7b7' : '#fcd34d' }}>
-                        {job.statusLabel}
+                      <span style={{ fontWeight: 800, color: job.timingCategory === 'overdue' ? '#fca5a5' : (job.timingCategory === 'today' ? '#fdba74' : '#6ee7b7') }}>
+                        {job.timingBadge}
                       </span>
                     </div>
                     <div style={{ fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {job.titulo}
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
+                      🧑‍💼 {job.cliente}
                     </div>
                   </div>
                 ))}

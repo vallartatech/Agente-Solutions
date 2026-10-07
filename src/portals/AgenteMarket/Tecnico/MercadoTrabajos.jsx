@@ -2796,6 +2796,14 @@ const MercadoTrabajos = () => {
       <ModalCalendarioCliente
         isOpen={showModalCalendario}
         onClose={() => setShowModalCalendario(false)}
+        onSelectJob={(job) => {
+          const fullJob = acceptedJobs.find(j => j.id === job.id) || networkJobs.find(j => j.id === job.id) || job;
+          setSelectedJob(fullJob);
+          setActiveModalTab('detalle');
+          setQuoteStep(1);
+          setShowQuoteModal(true);
+          setShowModalCalendario(false);
+        }}
       />
 
       {/* ─── Modal de Registro de Usuario / Cliente ─── */}
