@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { 
-  ChevronLeft, 
-  User, 
-  LogOut, 
-  CalendarDays, 
-  Search, 
-  Trash2, 
-  Lock, 
-  Unlock, 
-  UserPlus, 
-  Users, 
+import {
+  ChevronLeft,
+  User,
+  LogOut,
+  CalendarDays,
+  Search,
+  Trash2,
+  Lock,
+  Unlock,
+  UserPlus,
+  Users,
   CheckCircle2,
   Wrench,
   ChevronDown,
@@ -21,21 +21,25 @@ import {
   Star,
   Edit3,
   Mail,
-  MapPin
+  MapPin,
+  Shield,
+  Sparkles,
+  MousePointerClick
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
-import UniversalSearch from "../../../components/Shared/UniversalSearch"; 
+import UniversalSearch from "../../../components/Shared/UniversalSearch";
 import RegisterModal from "../../../components/Auth/Register";
 import ModalCalendarioCliente from "../../AgenteMarket/Cliente/ModalCalendarioCliente";
+import NotificationBell from "../../../components/Shared/NotificationBell";
 import defaultLogo from "../../../assets/Logo4.png";
 import "../../../styles/AgenteSolutions/Admin/VistaUsuarios.css";
 
-const MAPA_ROLES = { 
-  0: "ROOT", 
-  1: "ADMIN", 
-  2: "TECNICO", 
-  3: "CLIENTE", 
-  4: "AUTONOMO EMP.", 
+const MAPA_ROLES = {
+  0: "ROOT",
+  1: "ADMIN",
+  2: "TECNICO",
+  3: "CLIENTE",
+  4: "AUTONOMO EMP.",
   5: "AUTONOMO PER.",
   6: "CONTRATISTA",
   7: "ADMIN. PROP.",
@@ -80,6 +84,7 @@ const VistaUsuarios = () => {
   const [cargando, setCargando] = useState(true);
   const [listaUsuarios, setListaUsuarios] = useState([]);
   const [usuariosFiltrados, setUsuariosFiltrados] = useState([]);
+  const [selectedTecnicoId, setSelectedTecnicoId] = useState(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showModalCalendario, setShowModalCalendario] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -89,6 +94,23 @@ const VistaUsuarios = () => {
   const dropdownRef = useRef(null);
   const filterDropdownRef = useRef(null);
   const isRoot = user?.role_id === 0;
+
+  // Auto-seleccionar el primer técnico si no hay ninguno seleccionado o se filtró la lista
+  useEffect(() => {
+    if (usuariosFiltrados.length > 0) {
+      const exists = usuariosFiltrados.some(u => u.id === selectedTecnicoId);
+      if (!exists) {
+        setSelectedTecnicoId(usuariosFiltrados[0].id);
+      }
+    } else {
+      setSelectedTecnicoId(null);
+    }
+  }, [usuariosFiltrados]);
+
+  // Técnico actualmente seleccionado
+  const selectedTecnico = useMemo(() => {
+    return usuariosFiltrados.find(u => u.id === selectedTecnicoId) || listaUsuarios.find(u => u.id === selectedTecnicoId) || null;
+  }, [usuariosFiltrados, listaUsuarios, selectedTecnicoId]);
 
   // Cargar logo de personalización
   useEffect(() => {
@@ -100,7 +122,7 @@ const VistaUsuarios = () => {
           setAppLogo(res.data.settings.appLogo);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Cerrar dropdowns al hacer click fuera
@@ -153,10 +175,10 @@ const VistaUsuarios = () => {
     }
     try {
       await axios.put(`${import.meta.env.VITE_API_BASE_URL}/usuarios/${id}/rol`, {
-        role_id: Number(nuevoRolId) 
+        role_id: Number(nuevoRolId)
       });
       const nuevoRolStr = MAPA_ROLES[nuevoRolId];
-      setListaUsuarios(prev => prev.map(u => 
+      setListaUsuarios(prev => prev.map(u =>
         u.id === id ? { ...u, rol: nuevoRolStr, role_id: Number(nuevoRolId) } : u
       ));
       alert("¡Rol actualizado correctamente!");
@@ -172,8 +194,8 @@ const VistaUsuarios = () => {
 
     try {
       await axios.put(`${import.meta.env.VITE_API_BASE_URL}/usuarios/${id}/toggle-bloqueo`);
-      setListaUsuarios(prev => prev.map(u => u.id === id ? { 
-        ...u, bloqueado: !u.bloqueado, estado: !u.bloqueado ? 'Inactivo' : 'Activo' 
+      setListaUsuarios(prev => prev.map(u => u.id === id ? {
+        ...u, bloqueado: !u.bloqueado, estado: !u.bloqueado ? 'Inactivo' : 'Activo'
       } : u));
     } catch (error) {
       console.error("Error al procesar la solicitud:", error);
@@ -214,8 +236,8 @@ const VistaUsuarios = () => {
   }, [user]);
 
   const userAvatar = user?.profile_picture || user?.avatar_url || user?.foto || null;
-  const userInitial = user?.first_name 
-    ? user.first_name.charAt(0).toUpperCase() 
+  const userInitial = user?.first_name
+    ? user.first_name.charAt(0).toUpperCase()
     : (user?.name ? user.name.charAt(0).toUpperCase() : (user?.nombre ? user.nombre.charAt(0).toUpperCase() : 'U'));
 
   const totalTecnicos = listaUsuarios.length;
@@ -240,36 +262,25 @@ const VistaUsuarios = () => {
 
   return (
     <div className="vu-root">
-      {/* ── TOP NAVIGATION BAR (Matching Application Master Menu) ── */}
+      {/* ── TOP NAVIGATION BAR (Matching exact modules: USUARIOS, REPORTE, COTIZACION, SERVICIOS, MERCADO / RED) ── */}
       <header className="vcp-header vu-header">
         <div className="vcp-header-left">
-          <img 
-            src={appLogo} 
-            alt="Agente Solutions Logo" 
+          <img
+            src={appLogo}
+            alt="Agente Solutions Logo"
             className="vcp-brand-logo"
-            onClick={irAlInicio} 
+            onClick={irAlInicio}
             title="Ir al Inicio"
           />
         </div>
 
-        {/* Center Nav Links */}
+        {/* Center Nav Links: INICIO + 5 modules */}
         <nav className="vcp-header-nav">
-          <button 
-            className="vcp-nav-icon-btn" 
-            title="Abrir Calendario"
-            onClick={() => setShowModalCalendario(true)}
-          >
-            <CalendarDays size={20} color="#ffffff" strokeWidth={2.2} />
+          <button className="vcp-nav-btn" onClick={irAlInicio}>
+            INICIO
           </button>
-
           <button className="vcp-nav-btn active" onClick={() => navigate('/usuarios')}>
             USUARIOS
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/propiedades')}>
-            PROPIEDADES
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/levantamientos')}>
-            LEVANTAMIENTO
           </button>
           <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
             REPORTE
@@ -285,15 +296,23 @@ const VistaUsuarios = () => {
           </button>
         </nav>
 
-        {/* User profile section on top right */}
+        {/* User profile section on top right: Calendar + NotificationBell + Avatar */}
         <div className="vcp-header-right" ref={dropdownRef}>
-          <div className="vcp-user-info-text">
-            <span className="vcp-user-role-badge">{userRoleLabel}</span>
-            <span className="vcp-user-name">{userFullName}</span>
+          <div className="vcp-header-actions-group">
+            <button
+              type="button"
+              className="vcp-nav-icon-btn"
+              title="Abrir Calendario y Citas"
+              onClick={() => setShowModalCalendario(true)}
+            >
+              <CalendarDays size={18} color="#ffffff" strokeWidth={2.2} />
+            </button>
+
+            <NotificationBell />
           </div>
 
-          <button 
-            className="vcp-avatar-btn" 
+          <button
+            className="vcp-avatar-btn"
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
             title="Opciones de perfil"
             aria-label="Perfil"
@@ -307,16 +326,26 @@ const VistaUsuarios = () => {
 
           {profileDropdownOpen && (
             <div className="vcp-profile-dropdown">
-              <button 
-                className="vcp-dropdown-item" 
+              <div className="vcp-dropdown-user-header">
+                <div className="vcp-dropdown-role-pill">
+                  <Shield size={12} className="vcp-dropdown-role-icon" />
+                  <span>{userRoleLabel}</span>
+                </div>
+                <div className="vcp-dropdown-user-name">{userFullName}</div>
+              </div>
+
+              <div className="vcp-dropdown-divider" />
+
+              <button
+                className="vcp-dropdown-item"
                 onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
               >
                 <User size={16} /> Mi Perfil
               </button>
-              <button 
-                className="vcp-dropdown-item logout" 
-                onClick={() => { 
-                  setProfileDropdownOpen(false); 
+              <button
+                className="vcp-dropdown-item logout"
+                onClick={() => {
+                  setProfileDropdownOpen(false);
                   handleCerrarSesion();
                 }}
               >
@@ -329,19 +358,9 @@ const VistaUsuarios = () => {
 
       {/* ── MAIN CONTENT AREA ── */}
       <main className="vu-main-container">
-        
+
         {/* Top Action Header Bar */}
         <div className="vu-action-bar">
-          <button 
-            type="button"
-            className="vu-btn-regresar" 
-            onClick={() => navigate(-1)} 
-            title="Volver a la vista anterior"
-          >
-            <ChevronLeft size={19} strokeWidth={2.8} />
-            <span>REGRESAR</span>
-          </button>
-
           <div className="vu-page-title-badge">
             <Users size={18} className="vu-title-icon" />
             <span>DIRECTORIO DE TÉCNICOS</span>
@@ -353,9 +372,9 @@ const VistaUsuarios = () => {
         <div className="vu-toolbar-unified">
           {/* Buscador Universal que toma el espacio principal */}
           <div className="vu-search-unified">
-            <UniversalSearch 
+            <UniversalSearch
               type="USUARIOS"
-              data={listaUsuarios} 
+              data={listaUsuarios}
               setFilteredData={setUsuariosFiltrados}
               filtroActual={filtro}
               placeholder="BUSCAR TÉCNICO POR NOMBRE, CORREO O TELÉFONO..."
@@ -366,9 +385,9 @@ const VistaUsuarios = () => {
           <div className="vu-toolbar-actions">
             {/* 1. Botón Icono Filtro con Menú Desplegable */}
             <div className="vu-filter-dropdown-wrapper" ref={filterDropdownRef}>
-              <button 
+              <button
                 type="button"
-                className={`vu-icon-btn vu-icon-btn-filter ${filterDropdownOpen ? "open" : filtro !== "TODOS" ? "filtered" : ""}`} 
+                className={`vu-icon-btn vu-icon-btn-filter ${filterDropdownOpen ? "open" : filtro !== "TODOS" ? "filtered" : ""}`}
                 onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
                 title={`Filtrar técnicos (Estado actual: ${filtro})`}
               >
@@ -380,7 +399,7 @@ const VistaUsuarios = () => {
 
               {filterDropdownOpen && (
                 <div className="vu-filter-menu-dropdown vu-filter-menu-dropdown-right">
-                  <button 
+                  <button
                     type="button"
                     className={`vu-filter-menu-item ${filtro === "TODOS" ? "selected" : ""}`}
                     onClick={() => { setFiltro("TODOS"); setFilterDropdownOpen(false); }}
@@ -389,7 +408,7 @@ const VistaUsuarios = () => {
                     <span>Todos los Técnicos</span>
                     <span className="vu-menu-badge">{totalTecnicos}</span>
                   </button>
-                  <button 
+                  <button
                     type="button"
                     className={`vu-filter-menu-item ${filtro === "ACTIVOS" ? "selected-green" : ""}`}
                     onClick={() => { setFiltro("ACTIVOS"); setFilterDropdownOpen(false); }}
@@ -398,7 +417,7 @@ const VistaUsuarios = () => {
                     <span>Activos</span>
                     <span className="vu-menu-badge green">{activosCount}</span>
                   </button>
-                  <button 
+                  <button
                     type="button"
                     className={`vu-filter-menu-item ${filtro === "BLOQUEADOS" ? "selected-red" : ""}`}
                     onClick={() => { setFiltro("BLOQUEADOS"); setFilterDropdownOpen(false); }}
@@ -412,9 +431,9 @@ const VistaUsuarios = () => {
             </div>
 
             {/* 2. Botón Icono Registrar Técnico */}
-            <button 
+            <button
               type="button"
-              className="vu-icon-btn vu-icon-btn-register" 
+              className="vu-icon-btn vu-icon-btn-register"
               onClick={() => setShowRegisterModal(true)}
               title="Registrar nuevo técnico"
             >
@@ -424,10 +443,10 @@ const VistaUsuarios = () => {
         </div>
 
         {/* Register Modal */}
-        <RegisterModal 
-          isOpen={showRegisterModal} 
-          onClose={() => setShowRegisterModal(false)} 
-          onSuccess={obtenerUsuarios} 
+        <RegisterModal
+          isOpen={showRegisterModal}
+          onClose={() => setShowRegisterModal(false)}
+          onSuccess={obtenerUsuarios}
         />
 
         {/* Calendar Modal */}
@@ -435,176 +454,346 @@ const VistaUsuarios = () => {
           <ModalCalendarioCliente onClose={() => setShowModalCalendario(false)} />
         )}
 
-        {/* ── USERS LIQUID GLASS TABLE (MOCKUP DESIGN) ── */}
-        <div className="vu-table-card">
-          <div className="vu-table-responsive-wrapper">
-            <table className="vu-modern-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>NOMBRE</th>
-                  <th>FOTO</th>
-                  <th>ESTADO</th>
-                  <th>ESPECIALIDAD</th>
-                  <th>CONTACTO</th>
-                  <th>CALIFICACIÓN</th>
-                  <th>ACCIONES</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cargando ? (
-                  <tr>
-                    <td colSpan="8" className="vu-loading-cell">
-                      <div className="vu-loader-content">
-                        <div className="vu-spinner"></div>
-                        <span>Cargando directorio de técnicos...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : usuariosFiltrados.length > 0 ? (
-                  usuariosFiltrados.map((u) => (
-                    <tr key={u.id} className={u.bloqueado ? "vu-row-blocked" : ""}>
-                      
-                      {/* ID Formateado */}
-                      <td data-label="ID" className="vu-id-cell">
-                        <span className="vu-id-code">{String(u.id).padStart(5, '0')}</span>
-                      </td>
-
-                      {/* Nombre */}
-                      <td 
-                        data-label="Nombre"
-                        className="vu-name-cell vu-clickable-name"
-                        onClick={() => navigate("/detalle-tecnico", { state: { tecnico: u } })}
-                        title="Clic para ver detalle de perfil"
-                      >
-                        <div className="vu-name-block">
-                          <span className="vu-user-name-title">{u.nombre}</span>
-                          {u.bloqueado && <span className="vu-blocked-tag">Bloqueado</span>}
-                        </div>
-                      </td>
-
-                      {/* Foto / Avatar Redondo */}
-                      <td data-label="Foto" className="vu-photo-cell">
-                        <div className="vu-avatar-wrap">
-                          {u.profile_picture_url ? (
-                            <img src={u.profile_picture_url} alt={u.nombre} className="vu-avatar-circle" />
-                          ) : (
-                            <div className="vu-avatar-circle fallback">
-                              {u.nombre ? u.nombre.charAt(0).toUpperCase() : <User size={16} />}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Estado (Online/Offline Badge) */}
-                      <td data-label="Estado" className="vu-status-cell">
-                        <span className={`vu-status-badge ${u.bloqueado ? "offline" : "online"}`}>
-                          {u.bloqueado ? "Offline" : "Online"}
-                        </span>
-                      </td>
-
-                      {/* Especialidad / Rol */}
-                      <td data-label="Especialidad" className="vu-role-cell">
-                        {u.role_id === 0 ? (
-                          <span className="vu-role-pill-root">ROOT MASTER</span>
-                        ) : (
-                          <div className="vu-role-select-box">
-                            <select 
-                              className="vu-role-select-mockup"
-                              value={u.role_id}
-                              onChange={(e) => cambiarRol(u.id, parseInt(e.target.value), u.nombre)}
-                              title="Cambiar especialidad / rol"
-                            >
-                              {OPCIONES_ROLES.map((op) => (
-                                <option key={op.id} value={op.id} className="vu-select-option">
-                                  {op.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Contacto / Ubicación */}
-                      <td data-label="Contacto" className="vu-contact-cell">
-                        <div className="vu-contact-box">
-                          <span className="vu-contact-item" title={u.correo}>
-                            <Mail size={12} className="vu-contact-icon" /> {u.correo}
-                          </span>
-                          {u.telefono && (
-                            <span className="vu-contact-item phone" title={u.telefono}>
-                              <Phone size={12} className="vu-contact-icon" /> {u.telefono}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Calificación */}
-                      <td data-label="Calificación" className="vu-rating-cell">
-                        <div className="vu-rating-badge">
-                          <Star size={13} className="vu-star-filled" fill="#f59e0b" color="#f59e0b" />
-                          <span>4.9</span>
-                        </div>
-                      </td>
-
-                      {/* Acciones (Icon Buttons) */}
-                      <td data-label="Acciones" className="vu-actions-cell">
-                        {u.role_id === 0 ? (
-                          <span className="vu-protected-chip" title="Usuario con privilegios máximos">
-                            <Lock size={12} style={{ display: 'inline-block', marginRight: '4px', verticalAlign: 'middle' }} />
-                            Protegido
-                          </span>
-                        ) : (
-                          <div className="vu-mockup-actions">
-                            {/* Ver Detalle */}
-                            <button 
-                              type="button" 
-                              className="vu-mockup-btn view" 
-                              onClick={() => navigate("/detalle-tecnico", { state: { tecnico: u } })}
-                              title="Ver detalle del perfil"
-                            >
-                              <Eye size={15} />
-                            </button>
-
-                            {/* Bloquear / Desbloquear */}
-                            <button 
-                              type="button" 
-                              className={`vu-mockup-btn ${u.bloqueado ? "unblock" : "lock"}`} 
-                              onClick={() => toggleBloqueo(u.id, u.role_id, u.bloqueado)}
-                              title={u.bloqueado ? "Desbloquear técnico" : "Bloquear técnico"}
-                            >
-                              {u.bloqueado ? <Unlock size={15} /> : <Lock size={15} />}
-                            </button>
-
-                            {/* Eliminar */}
-                            <button 
-                              type="button" 
-                              className="vu-mockup-btn delete" 
-                              onClick={() => eliminarUsuario(u.id, u.role_id)}
-                              title="Eliminar técnico permanentemente"
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
-                        )}
-                      </td>
-
+        {/* ── CONTENT SPLIT: TABLE ON LEFT, VERTICAL PROFILE CARD ON RIGHT ── */}
+        <div className="vu-content-split">
+          
+          {/* Left Table Section */}
+          <div className="vu-table-section">
+            <div className="vu-table-card">
+              <div className="vu-table-responsive-wrapper">
+                <table className="vu-modern-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>NOMBRE</th>
+                      <th>FOTO</th>
+                      <th>ESTADO</th>
+                      <th>ESPECIALIDAD</th>
+                      <th>CONTACTO</th>
+                      <th>CALIFICACIÓN</th>
+                      <th>ACCIONES</th>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="8" className="vu-empty-cell">
-                      <div className="vu-empty-state">
-                        <Users size={36} className="vu-empty-icon" />
-                        <p className="vu-empty-title">No se encontraron usuarios</p>
-                        <p className="vu-empty-desc">Prueba cambiando el filtro o término de búsqueda.</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {cargando ? (
+                      <tr>
+                        <td colSpan="8" className="vu-loading-cell">
+                          <div className="vu-loader-content">
+                            <div className="vu-spinner"></div>
+                            <span>Cargando directorio de técnicos...</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : usuariosFiltrados.length > 0 ? (
+                      usuariosFiltrados.map((u) => {
+                        const isSelected = selectedTecnicoId === u.id;
+                        return (
+                          <tr
+                            key={u.id}
+                            className={`${u.bloqueado ? "vu-row-blocked" : ""} ${isSelected ? "vu-row-selected" : ""}`}
+                            onClick={() => setSelectedTecnicoId(u.id)}
+                          >
+                            {/* ID Formateado */}
+                            <td data-label="ID" className="vu-id-cell">
+                              <span className="vu-id-code">{String(u.id).padStart(5, '0')}</span>
+                            </td>
+
+                            {/* Nombre */}
+                            <td
+                              data-label="Nombre"
+                              className="vu-name-cell vu-clickable-name"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTecnicoId(u.id);
+                                navigate("/detalle-tecnico", { state: { tecnico: u } });
+                              }}
+                              title="Clic para ver detalle de perfil"
+                            >
+                              <div className="vu-name-block">
+                                <span className="vu-user-name-title">{u.nombre}</span>
+                                {u.bloqueado && <span className="vu-blocked-tag">Bloqueado</span>}
+                              </div>
+                            </td>
+
+                            {/* Foto / Avatar Redondo */}
+                            <td data-label="Foto" className="vu-photo-cell">
+                              <div className="vu-avatar-wrap">
+                                {u.profile_picture_url ? (
+                                  <img src={u.profile_picture_url} alt={u.nombre} className="vu-avatar-circle" />
+                                ) : (
+                                  <div className="vu-avatar-circle fallback">
+                                    {u.nombre ? u.nombre.charAt(0).toUpperCase() : <User size={16} />}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Estado (Online/Offline Badge) */}
+                            <td data-label="Estado" className="vu-status-cell">
+                              <span className={`vu-status-badge ${u.bloqueado ? "offline" : "online"}`}>
+                                {u.bloqueado ? "Offline" : "Online"}
+                              </span>
+                            </td>
+
+                            {/* Especialidad / Rol */}
+                            <td data-label="Especialidad" className="vu-role-cell" onClick={(e) => e.stopPropagation()}>
+                              {u.role_id === 0 ? (
+                                <span className="vu-role-pill-root">ROOT MASTER</span>
+                              ) : (
+                                <div className="vu-role-select-box">
+                                  <select
+                                    className="vu-role-select-mockup"
+                                    value={u.role_id}
+                                    onChange={(e) => cambiarRol(u.id, parseInt(e.target.value), u.nombre)}
+                                    title="Cambiar especialidad / rol"
+                                  >
+                                    {OPCIONES_ROLES.map((op) => (
+                                      <option key={op.id} value={op.id} className="vu-select-option">
+                                        {op.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Contacto / Ubicación */}
+                            <td data-label="Contacto" className="vu-contact-cell">
+                              <div className="vu-contact-box">
+                                <span className="vu-contact-item" title={u.correo}>
+                                  <Mail size={12} className="vu-contact-icon" /> {u.correo}
+                                </span>
+                                {u.telefono && (
+                                  <span className="vu-contact-item phone" title={u.telefono}>
+                                    <Phone size={12} className="vu-contact-icon" /> {u.telefono}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Calificación */}
+                            <td data-label="Calificación" className="vu-rating-cell">
+                              <div className="vu-rating-badge">
+                                <Star size={13} className="vu-star-filled" fill="#f59e0b" color="#f59e0b" />
+                                <span>4.9</span>
+                              </div>
+                            </td>
+
+                            {/* Acciones (Icon Buttons) */}
+                            <td data-label="Acciones" className="vu-actions-cell" onClick={(e) => e.stopPropagation()}>
+                              {u.role_id === 0 ? (
+                                <span className="vu-protected-chip" title="Usuario con privilegios máximos">
+                                  <Lock size={12} style={{ display: 'inline-block', marginRight: '4px', verticalAlign: 'middle' }} />
+                                  Protegido
+                                </span>
+                              ) : (
+                                <div className="vu-mockup-actions">
+                                  {/* Ver Detalle */}
+                                  <button
+                                    type="button"
+                                    className="vu-mockup-btn view"
+                                    onClick={() => navigate("/detalle-tecnico", { state: { tecnico: u } })}
+                                    title="Ver detalle del perfil"
+                                  >
+                                    <Eye size={15} />
+                                  </button>
+
+                                  {/* Bloquear / Desbloquear */}
+                                  <button
+                                    type="button"
+                                    className={`vu-mockup-btn ${u.bloqueado ? "unblock" : "lock"}`}
+                                    onClick={() => toggleBloqueo(u.id, u.role_id, u.bloqueado)}
+                                    title={u.bloqueado ? "Desbloquear técnico" : "Bloquear técnico"}
+                                  >
+                                    {u.bloqueado ? <Unlock size={15} /> : <Lock size={15} />}
+                                  </button>
+
+                                  {/* Eliminar */}
+                                  <button
+                                    type="button"
+                                    className="vu-mockup-btn delete"
+                                    onClick={() => eliminarUsuario(u.id, u.role_id)}
+                                    title="Eliminar técnico permanentemente"
+                                  >
+                                    <Trash2 size={15} />
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="8" className="vu-empty-cell">
+                          <div className="vu-empty-state">
+                            <Users size={36} className="vu-empty-icon" />
+                            <p className="vu-empty-title">No se encontraron usuarios</p>
+                            <p className="vu-empty-desc">Prueba cambiando el filtro o término de búsqueda.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
+
+          {/* Right Vertical Profile Card */}
+          <aside className="vu-profile-sidebar-wrap">
+            {selectedTecnico ? (
+              <div className="vu-sidebar-card">
+                {/* Banner Top Accent */}
+                <div className="vu-sidebar-top-accent" />
+
+                {/* Header with ID & Status */}
+                <div className="vu-sidebar-card-header">
+                  <div className="vu-sidebar-badge-id">
+                    <span>ID #{String(selectedTecnico.id).padStart(5, '0')}</span>
+                  </div>
+                  <span className={`vu-status-badge ${selectedTecnico.bloqueado ? "offline" : "online"}`}>
+                    <span className="vu-status-dot"></span>
+                    {selectedTecnico.bloqueado ? "Inactivo" : "Disponible"}
+                  </span>
+                </div>
+
+                {/* Profile Avatar & Primary Info */}
+                <div className="vu-sidebar-profile-main">
+                  <div className="vu-sidebar-avatar-wrap">
+                    {selectedTecnico.profile_picture_url ? (
+                      <img
+                        src={selectedTecnico.profile_picture_url}
+                        alt={selectedTecnico.nombre}
+                        className="vu-sidebar-avatar-img"
+                      />
+                    ) : (
+                      <div className="vu-sidebar-avatar-fallback">
+                        {selectedTecnico.nombre ? selectedTecnico.nombre.charAt(0).toUpperCase() : <User size={32} />}
+                      </div>
+                    )}
+                    <div className="vu-sidebar-avatar-badge" title="Técnico Verificado">
+                      <CheckCircle2 size={15} color="#ffffff" />
+                    </div>
+                  </div>
+
+                  <h3 className="vu-sidebar-name">{selectedTecnico.nombre}</h3>
+
+                  <div className="vu-sidebar-role-pill" style={getRoleStyle(selectedTecnico.role_id)}>
+                    {MAPA_ROLES[selectedTecnico.role_id] || "TÉCNICO"}
+                  </div>
+
+                  <div className="vu-sidebar-rating-row">
+                    <div className="vu-sidebar-stars">
+                      <Star size={14} fill="#f59e0b" color="#f59e0b" />
+                      <Star size={14} fill="#f59e0b" color="#f59e0b" />
+                      <Star size={14} fill="#f59e0b" color="#f59e0b" />
+                      <Star size={14} fill="#f59e0b" color="#f59e0b" />
+                      <Star size={14} fill="#f59e0b" color="#f59e0b" />
+                    </div>
+                    <span className="vu-sidebar-rating-num">4.9</span>
+                    <span className="vu-sidebar-rating-reviews">(38 reseñas)</span>
+                  </div>
+                </div>
+
+                {/* Details / Contact items */}
+                <div className="vu-sidebar-details-list">
+                  <div className="vu-sidebar-detail-item">
+                    <div className="vu-sidebar-detail-icon">
+                      <Mail size={15} />
+                    </div>
+                    <div className="vu-sidebar-detail-text">
+                      <label>CORREO ELECTRÓNICO</label>
+                      <span title={selectedTecnico.correo}>{selectedTecnico.correo}</span>
+                    </div>
+                  </div>
+
+                  <div className="vu-sidebar-detail-item">
+                    <div className="vu-sidebar-detail-icon">
+                      <Phone size={15} />
+                    </div>
+                    <div className="vu-sidebar-detail-text">
+                      <label>TELÉFONO DE CONTACTO</label>
+                      <span>{selectedTecnico.telefono || "No especificado"}</span>
+                    </div>
+                  </div>
+
+                  <div className="vu-sidebar-detail-item">
+                    <div className="vu-sidebar-detail-icon">
+                      <Shield size={15} />
+                    </div>
+                    <div className="vu-sidebar-detail-text">
+                      <label>ESTADO DE CUENTA</label>
+                      <span className={selectedTecnico.bloqueado ? "vu-text-danger" : "vu-text-success"}>
+                        {selectedTecnico.bloqueado ? "Acceso Restringido / Bloqueado" : "Cuenta Verificada & Activa"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions Bottom */}
+                <div className="vu-sidebar-actions">
+                  <button
+                    type="button"
+                    className="vu-sidebar-btn-primary"
+                    onClick={() => navigate("/detalle-tecnico", { state: { tecnico: selectedTecnico } })}
+                  >
+                    <Eye size={16} />
+                    <span>VER PERFIL COMPLETO</span>
+                  </button>
+
+                  {selectedTecnico.role_id !== 0 && (
+                    <div className="vu-sidebar-secondary-actions">
+                      <button
+                        type="button"
+                        className={`vu-sidebar-btn-sub ${selectedTecnico.bloqueado ? "unblock" : "lock"}`}
+                        onClick={() => toggleBloqueo(selectedTecnico.id, selectedTecnico.role_id, selectedTecnico.bloqueado)}
+                      >
+                        {selectedTecnico.bloqueado ? <Unlock size={14} /> : <Lock size={14} />}
+                        <span>{selectedTecnico.bloqueado ? "Desbloquear" : "Bloquear"}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="vu-sidebar-btn-sub delete"
+                        onClick={() => eliminarUsuario(selectedTecnico.id, selectedTecnico.role_id)}
+                      >
+                        <Trash2 size={14} />
+                        <span>Eliminar</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="vu-sidebar-card vu-sidebar-empty">
+                <div className="vu-sidebar-top-accent" />
+                <div className="vu-sidebar-empty-pill">
+                  <Sparkles size={12} className="vu-sidebar-pill-icon" />
+                  <span>VISTA PREVIA</span>
+                </div>
+
+                <div className="vu-sidebar-empty-orb">
+                  <div className="vu-sidebar-empty-orb-inner">
+                    <Users size={34} className="vu-sidebar-empty-icon" />
+                  </div>
+                  <div className="vu-sidebar-empty-orb-glow" />
+                </div>
+
+                <div className="vu-sidebar-empty-text-wrap">
+                  <h4>Ningún Técnico Seleccionado</h4>
+                  <p>Selecciona un técnico de la lista para ver su tarjeta de perfil y acciones rápidas.</p>
+                </div>
+
+                <div className="vu-sidebar-empty-hint">
+                  <MousePointerClick size={13} className="vu-hint-icon" />
+                  <span>Haz clic en una fila para activar</span>
+                </div>
+              </div>
+            )}
+          </aside>
+
         </div>
 
       </main>

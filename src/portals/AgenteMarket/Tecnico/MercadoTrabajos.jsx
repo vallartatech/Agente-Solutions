@@ -1423,11 +1423,6 @@ const MercadoTrabajos = () => {
 
         {/* User profile dropdown section */}
         <div className="vcp-header-right" ref={dropdownRef}>
-          <div className="vcp-user-info-text">
-            <span className="vcp-user-role-badge">{userRole}</span>
-            <span className="vcp-user-name">{userFullName}</span>
-          </div>
-
           <button 
             className="vcp-avatar-btn" 
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
@@ -1442,6 +1437,19 @@ const MercadoTrabajos = () => {
 
           {profileDropdownOpen && (
             <div className="vcp-profile-dropdown">
+              <div className="vcp-dropdown-user-header">
+                <div className="vcp-dropdown-role-pill">
+                  <ShieldCheck size={12} className="vcp-dropdown-role-icon" />
+                  <span>{userRole}</span>
+                </div>
+                <div className="vcp-dropdown-user-name">{userFullName}</div>
+                {user?.email && (
+                  <div className="vcp-dropdown-user-email">{user.email}</div>
+                )}
+              </div>
+
+              <div className="vcp-dropdown-divider" />
+
               <button 
                 className="vcp-dropdown-item" 
                 onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}

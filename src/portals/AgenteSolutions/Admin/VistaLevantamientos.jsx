@@ -19,11 +19,13 @@ import {
   Building,
   UserCheck,
   FileText,
-  X
+  X,
+  Shield
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 import UniversalSearch from "../../../components/Shared/UniversalSearch"; 
 import ModalCalendarioCliente from "../../AgenteMarket/Cliente/ModalCalendarioCliente";
+import NotificationBell from "../../../components/Shared/NotificationBell";
 import defaultLogo from "../../../assets/Logo4.png";
 import "../../../styles/AgenteSolutions/Admin/VistaLevantamientos.css";
 
@@ -341,24 +343,13 @@ const VistaLevantamientos = () => {
           />
         </div>
 
-        {/* Navigation Links */}
+        {/* Navigation Links: INICIO + 5 core modules */}
         <nav className="vcp-header-nav">
-          <button 
-            className="vcp-nav-icon-btn" 
-            title="Abrir Calendario"
-            onClick={() => setShowModalCalendario(true)}
-          >
-            <CalendarDays size={20} color="#ffffff" strokeWidth={2.2} />
+          <button className="vcp-nav-btn" onClick={irAlInicio}>
+            INICIO
           </button>
-
           <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
             USUARIOS
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/propiedades')}>
-            PROPIEDADES
-          </button>
-          <button className="vcp-nav-btn active" onClick={() => navigate('/levantamientos')}>
-            LEVANTAMIENTO
           </button>
           <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
             REPORTE
@@ -374,11 +365,19 @@ const VistaLevantamientos = () => {
           </button>
         </nav>
 
-        {/* User Profile on top right */}
+        {/* User Profile on top right: Calendar + NotificationBell + Avatar */}
         <div className="vcp-header-right" ref={dropdownRef}>
-          <div className="vcp-user-info-text">
-            <span className="vcp-user-role-badge">{userRoleLabel}</span>
-            <span className="vcp-user-name">{userFullName}</span>
+          <div className="vcp-header-actions-group">
+            <button 
+              type="button"
+              className="vcp-nav-icon-btn" 
+              title="Abrir Calendario y Citas"
+              onClick={() => setShowModalCalendario(true)}
+            >
+              <CalendarDays size={18} color="#ffffff" strokeWidth={2.2} />
+            </button>
+
+            <NotificationBell />
           </div>
 
           <button 
@@ -396,6 +395,19 @@ const VistaLevantamientos = () => {
 
           {profileDropdownOpen && (
             <div className="vcp-profile-dropdown">
+              <div className="vcp-dropdown-user-header">
+                <div className="vcp-dropdown-role-pill">
+                  <Shield size={12} className="vcp-dropdown-role-icon" />
+                  <span>{userRoleLabel}</span>
+                </div>
+                <div className="vcp-dropdown-user-name">{userFullName}</div>
+                {user?.email && (
+                  <div className="vcp-dropdown-user-email">{user.email}</div>
+                )}
+              </div>
+
+              <div className="vcp-dropdown-divider" />
+
               <button 
                 className="vcp-dropdown-item" 
                 onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}

@@ -1,23 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Home, Calendar } from 'lucide-react'; // ✅ Importamos íconos de casita y calendario
-import logo from '../../assets/Logo3.png'; 
-import NotificationBell from '../Shared/NotificationBell'; 
-import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente'; // ✅ Modal de Calendario
+import { CalendarDays, Shield, User, LogOut } from 'lucide-react'; 
+import logo from '../../assets/Logo4.png'; 
+import NotificationBell from './NotificationBell';
+import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
 import axios from 'axios';
+import '../../styles/Shared/Header.css';
 
-const Header = ({ rolTexto = "USUARIO", titulo }) => {
-  const { user, logoutGlobal } = useAuth();
+const MAPA_ROLES = {
+  0: "ROOT_MASTER",
+  1: "ADMIN_GLOBAL",
+  2: "TECNICO_OFICIAL",
+  3: "MARKET_CLIENT_PERSONAL",
+  4: "AUT_EMPRESARIAL",
+  5: "AUT_PERSONAL",
+  6: "CONTRATISTA",
+  7: "GESTOR_INMUEBLES",
+  8: "TECNICO_RED"
+};
+
+const Header = ({ activeModule }) => {
+  const { user, logoutGlobal, logout } = useAuth();
   const navigate = useNavigate();
-  const [menuAbierto, setMenuAbierto] = useState(false);
+  const location = useLocation();
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
   const [appLogo, setAppLogo] = useState(logo);
+  const dropdownRef = useRef(null);
 
   const fetchDynamicSettings = async () => {
     try {
       const resSettings = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/ui/settings/login-settings`);
-      if (resSettings.data.success && resSettings.data.settings.appLogo) {
+      if (resSettings.data?.logo_url) {
+        setAppLogo(resSettings.data.logo_url);
+      } else if (resSettings.data?.settings?.appLogo) {
         setAppLogo(resSettings.data.settings.appLogo);
       }
     } catch (error) {
@@ -31,130 +48,181 @@ const Header = ({ rolTexto = "USUARIO", titulo }) => {
     return () => window.removeEventListener('settings-updated', fetchDynamicSettings);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleCerrarSesion = () => {
-    logoutGlobal();
-    navigate("/");
+    if (logoutGlobal) logoutGlobal();
+    else if (logout) logout();
+    navigate("/", { replace: true });
   };
 
-  // ✅ Función para regresar al panel correcto según el tipo de usuario
   const irAlInicio = () => {
-    if (!user) return;
+    if (!user) return navigate('/');
     const role = Number(user.role_id);
     if (role === 0 || role === 1) navigate('/VistaRoot');
-    else if (role === 4 || role === 5 || role === 7) navigate('/VistaMarket');
+    else if (role === 4 || role === 5 || role === 7 || role === 3) navigate('/VistaMarket');
     else if (role === 2) navigate('/VistaTecnico');
     else if (role === 6 || role === 8) navigate('/mercado-trabajos');
-    else if (role === 3) navigate('/VistaInicioCliente');
     else navigate('/');
   };
 
+  const userFullName = useMemo(() => {
+    const parts = [user?.first_name, user?.last_name].filter(Boolean);
+    if (parts.length > 0) return parts.join(' ').toUpperCase();
+    if (user?.name) return user.name.toUpperCase();
+    if (user?.nombre) return user.nombre.toUpperCase();
+    return 'USUARIO';
+  }, [user]);
+
+  const userRoleLabel = useMemo(() => {
+    return MAPA_ROLES[user?.role_id] || "USUARIO";
+  }, [user]);
+
+  const userAvatar = user?.profile_picture || user?.avatar_url || user?.foto || null;
+  const userInitial = user?.first_name
+    ? user.first_name.charAt(0).toUpperCase()
+    : (user?.name ? user.name.charAt(0).toUpperCase() : (user?.nombre ? user.nombre.charAt(0).toUpperCase() : 'U'));
+
+  const currentPath = location.pathname.toLowerCase();
+
+  const isUsuariosActive = activeModule === 'usuarios' || currentPath.includes('/usuarios');
+  const isReportesActive = activeModule === 'reportes' || currentPath.includes('/reporte');
+  const isCotizacionesActive = activeModule === 'cotizaciones' || currentPath.includes('/cotizacion');
+  const isServiciosActive = activeModule === 'servicios' || currentPath.includes('/tablero-servicios') || currentPath.includes('/servicios');
+  const isMercadoActive = activeModule === 'mercado' || currentPath.includes('/red-autonomos') || currentPath.includes('/mercado');
+
   return (
-    <header className="header-content">
-      
-      {/* SECCIÓN IZQUIERDA: Logo, Casita y Calendario */}
-      <div className="logo-section" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-        <img src={appLogo} alt="Logo" className="main-logo" style={{ objectFit: 'contain' }} />
-        
-        {/* BOTÓN DE INICIO (Casita) */}
-        <button 
+    <header className="vcp-header">
+      {/* SECCIÓN IZQUIERDA: Logo */}
+      <div className="vcp-header-left">
+        <img
+          src={appLogo}
+          alt="Agente Solutions Logo"
+          className="vcp-brand-logo"
           onClick={irAlInicio}
           title="Ir al Inicio"
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '5px',
-            color: '#FF6600', // Color naranja para que resalte
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'transform 0.2s ease-in-out' // Pequeña animación
-          }}
-          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
-          onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          <Home size={34} strokeWidth={2.5} />
-        </button>
-
-        {/* BOTÓN DE CALENDARIO (Abre Modal Interactivo) */}
-        <button 
-          onClick={() => setMostrarCalendario(true)}
-          title="Ver Calendario de Visitas y Servicios"
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '5px',
-            color: '#FF6600',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'transform 0.2s ease-in-out'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
-          onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          <Calendar size={32} strokeWidth={2.5} />
-        </button>
+        />
       </div>
 
-      {/* SECCIÓN CENTRAL: Título Dinámico */}
-      <div className="center-title-section">
-        <h1 className="welcome-title">
-          {titulo ? titulo.toUpperCase() : 
-            (Number(user?.role_id) === 7 && user?.tenant?.name) 
-              ? `BIENVENIDO ${(user?.first_name || user?.name)?.toUpperCase()} (EQUIPO DE ${user.tenant.name.toUpperCase()})` 
-              : `BIENVENIDO ${(user?.first_name || user?.name) ? (user.first_name || user.name).toUpperCase() : rolTexto}`}
-        </h1>
-      </div>
+      {/* SECCIÓN CENTRAL: Navegación Principal (INICIO + 5 módulos) */}
+      <nav className="vcp-header-nav">
+        <button
+          type="button"
+          className="vcp-nav-btn"
+          onClick={irAlInicio}
+        >
+          INICIO
+        </button>
 
-      {/* SECCIÓN DERECHA: Notificaciones y Perfil */}
-      <div className="user-controls" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-        
-        {/* <NotificationBell /> */}
+        <button
+          type="button"
+          className={`vcp-nav-btn ${isUsuariosActive ? 'active' : ''}`}
+          onClick={() => navigate('/usuarios')}
+        >
+          USUARIOS
+        </button>
 
-        <div style={{ position: "relative" }}>
+        <button
+          type="button"
+          className={`vcp-nav-btn ${isReportesActive ? 'active' : ''}`}
+          onClick={() => navigate('/reportes-globales')}
+        >
+          REPORTE
+        </button>
+
+        <button
+          type="button"
+          className={`vcp-nav-btn ${isCotizacionesActive ? 'active' : ''}`}
+          onClick={() => navigate('/vista-cotizaciones')}
+        >
+          COTIZACION
+        </button>
+
+        <button
+          type="button"
+          className={`vcp-nav-btn ${isServiciosActive ? 'active' : ''}`}
+          onClick={() => navigate('/tablero-servicios')}
+        >
+          SERVICIOS
+        </button>
+
+        <button
+          type="button"
+          className={`vcp-nav-btn ${isMercadoActive ? 'active' : ''}`}
+          onClick={() => navigate('/red-autonomos')}
+        >
+          MERCADO / RED
+        </button>
+      </nav>
+
+      {/* SECCIÓN DERECHA: Calendario + Notificaciones + Perfil */}
+      <div className="vcp-header-right" ref={dropdownRef}>
+        <div className="vcp-header-actions-group">
           <button
-            className="icon-btn"
-            style={{ padding: 0, overflow: "hidden", display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%' }}
-            onClick={() => setMenuAbierto(!menuAbierto)}
+            type="button"
+            className="vcp-nav-icon-btn"
+            title="Abrir Calendario y Citas"
+            onClick={() => setMostrarCalendario(true)}
           >
-            {user?.profile_picture ? (
-              <img
-                src={user.profile_picture}
-                alt="Foto de perfil"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              <span style={{ fontSize: '1.5rem' }}>👤</span>
-            )}
+            <CalendarDays size={18} color="#ffffff" strokeWidth={2.2} />
           </button>
 
-          {menuAbierto && (
-            <>
-              <div 
-                className="profile-backdrop" 
-                onClick={() => setMenuAbierto(false)} 
-                style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 90 }} 
-              />
-              <div className="profile-dropdown-menu">
-                <button
-                  className="dropdown-item"
-                  onClick={() => { setMenuAbierto(false); navigate("/mi-perfil"); }}
-                >
-                  👤 Mi Perfil
-                </button>
-                <div className="dropdown-divider"></div>
-                <button
-                  className="dropdown-item logout"
-                  onClick={handleCerrarSesion}
-                >
-                  🚪 Cerrar Sesión
-                </button>
-              </div>
-            </>
-          )}
+          <NotificationBell />
         </div>
+
+        <button
+          type="button"
+          className="vcp-avatar-btn"
+          onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+          title="Opciones de sesión"
+          aria-label="Perfil"
+        >
+          {userAvatar ? (
+            <img src={userAvatar} alt="Avatar" className="vcp-avatar-img" />
+          ) : (
+            <div className="vcp-avatar-initial">{userInitial}</div>
+          )}
+        </button>
+
+        {profileDropdownOpen && (
+          <div className="vcp-profile-dropdown">
+            <div className="vcp-dropdown-user-header">
+              <div className="vcp-dropdown-role-pill">
+                <Shield size={12} className="vcp-dropdown-role-icon" />
+                <span>{userRoleLabel}</span>
+              </div>
+              <div className="vcp-dropdown-user-name">{userFullName}</div>
+            </div>
+
+            <div className="vcp-dropdown-divider" />
+
+            <button
+              type="button"
+              className="vcp-dropdown-item"
+              onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
+            >
+              <User size={16} /> Mi Perfil
+            </button>
+            <button
+              type="button"
+              className="vcp-dropdown-item logout"
+              onClick={() => {
+                setProfileDropdownOpen(false);
+                handleCerrarSesion();
+              }}
+            >
+              <LogOut size={16} /> Cerrar Sesión
+            </button>
+          </div>
+        )}
       </div>
 
       {/* MODAL GLOBAL DE CALENDARIO DE CLIENTE */}
