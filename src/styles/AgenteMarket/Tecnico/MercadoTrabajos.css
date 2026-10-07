@@ -2754,3 +2754,1279 @@
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* ════════════════════════════════════════════════════════════
+   VISTA 1: NUEVO TABLERO OPERATIVO 3 COLUMNAS (NO-SCROLL LAYOUT)
+   ════════════════════════════════════════════════════════════ */
+.mercado-container {
+  min-height: 100vh;
+  background-color: #0b0d13;
+  padding: 0;
+  color: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Mode Tablero: 100% viewport locked, no body/window scroll */
+.mercado-container.mercado-tablero-mode {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.mercado-container.mercado-tablero-mode .vcp-header {
+  height: 54px !important;
+  min-height: 54px !important;
+  max-height: 54px !important;
+  padding: 0 16px !important;
+  flex-shrink: 0 !important;
+}
+
+.mercado-container.mercado-tablero-mode .vcp-brand-logo {
+  height: 42px !important;
+}
+
+.mercado-board-workspace {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  height: calc(100vh - 54px);
+  max-height: calc(100vh - 54px);
+  padding: 6px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #0b0d13;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Top Header Bar */
+.mercado-board-header {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 5px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.mercado-board-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mercado-board-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mercado-board-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.96rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.3px;
+}
+
+.mercado-board-total-badge {
+  background: rgba(242, 101, 34, 0.2);
+  color: #f26522;
+  border: 1px solid rgba(242, 101, 34, 0.35);
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 12px;
+}
+
+.mercado-board-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mercado-board-search-box {
+  background: #0f121a;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  width: 220px;
+  transition: all 0.2s ease;
+}
+
+.mercado-board-search-box:focus-within {
+  border-color: #f26522;
+  box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.2);
+}
+
+.mercado-board-search-input {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 600;
+  outline: none;
+  width: 100%;
+}
+
+.mercado-board-search-input::placeholder {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.mercado-board-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 0;
+}
+
+.mercado-board-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.mercado-board-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.mercado-board-chip.active {
+  background: rgba(242, 101, 34, 0.2);
+  border-color: #f26522;
+  color: #f26522;
+  box-shadow: 0 0 8px rgba(242, 101, 34, 0.25);
+}
+
+/* ─── 3 COLUMNS MAIN WORKSPACE ─── */
+.mercado-board-3col-layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 230px;
+  gap: 8px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  height: calc(100% - 64px);
+  overflow: hidden;
+}
+
+@media (max-width: 1200px) {
+  .mercado-board-3col-layout {
+    grid-template-columns: 250px minmax(0, 1fr) 210px;
+  }
+}
+
+/* ═══════════════════════════════════════
+   COLUMNA 1: LISTA DE TRABAJOS (IZQUIERDA - ÚNICO SCROLL DEL SISTEMA)
+   ═══════════════════════════════════════ */
+.mercado-board-col-list {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.mercado-board-col-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.mercado-board-col-list-title {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mercado-board-job-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto !important; /* ONLY SCROLLABLE AREA */
+  overflow-x: hidden;
+  padding-right: 3px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Custom scrollbar styling for Col 1 */
+.mercado-board-job-cards-list::-webkit-scrollbar {
+  width: 5px;
+}
+.mercado-board-job-cards-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+.mercado-board-job-cards-list::-webkit-scrollbar-thumb {
+  background: rgba(242, 101, 34, 0.4);
+  border-radius: 4px;
+}
+.mercado-board-job-cards-list::-webkit-scrollbar-thumb:hover {
+  background: #f26522;
+}
+
+.mercado-board-job-card {
+  background: #0f121a;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.mercado-board-job-card:hover {
+  border-color: rgba(242, 101, 34, 0.4);
+  transform: translateY(-1px);
+  background: #161a25;
+}
+
+.mercado-board-job-card.selected {
+  border-color: #f26522;
+  background: rgba(242, 101, 34, 0.09);
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.22), inset 0 0 0 1px #f26522;
+}
+
+.mercado-board-job-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.mercado-board-job-folio {
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: #f26522;
+  background: rgba(242, 101, 34, 0.15);
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+
+.mercado-board-job-status-pill {
+  font-size: 0.60rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.mercado-board-job-status-pill.in-progress {
+  background: rgba(242, 101, 34, 0.2);
+  color: #f26522;
+  border: 1px solid rgba(242, 101, 34, 0.4);
+}
+
+.mercado-board-job-status-pill.scheduled {
+  background: rgba(139, 92, 246, 0.2);
+  color: #c084fc;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+}
+
+.mercado-board-job-status-pill.done {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.mercado-board-job-status-pill.sos {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  animation: pulseSOS 1.5s infinite;
+}
+
+.mercado-board-job-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mercado-board-job-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.mercado-board-job-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mercado-board-job-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 3px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+/* ═══════════════════════════════════════
+   COLUMNA 2: DETALLE DEL TRABAJO (CENTRO - SIN SCROLL)
+   ═══════════════════════════════════════ */
+.mercado-board-col-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden !important;
+  justify-content: space-between;
+}
+
+/* Header Banner (Con foto de Fachada de la Casa) */
+.mercado-board-banner {
+  background: linear-gradient(135deg, #181b28 0%, #0e111a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+  min-height: 72px;
+  height: 72px;
+  box-sizing: border-box;
+}
+
+.mercado-board-banner-facade-box {
+  width: 90px;
+  height: 58px;
+  min-width: 90px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+  cursor: pointer;
+  background: #0a0d14;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.mercado-board-banner-facade-box:hover {
+  transform: scale(1.03);
+  border-color: #f26522;
+}
+
+.mercado-board-banner-facade-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mercado-board-banner-facade-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  background: rgba(242, 101, 34, 0.08);
+}
+
+.mercado-board-banner-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+}
+
+.mercado-board-banner-tag {
+  background: #f26522;
+  color: #ffffff;
+  font-size: 0.60rem;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 4px;
+  width: fit-content;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.mercado-board-banner-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.mercado-board-banner-address {
+  font-size: 0.70rem;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mercado-board-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.mercado-board-btn-gps {
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.mercado-board-btn-gps:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.mercado-board-btn-call {
+  background: #f26522;
+  color: #ffffff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 3px 10px rgba(242, 101, 34, 0.4);
+  transition: all 0.2s ease;
+}
+
+.mercado-board-btn-call:hover {
+  background: #ff7836;
+  transform: translateY(-1px);
+}
+
+/* ─── Fila Media: Consiste en (Izquierda) + Datos Cliente (Derecha) ─── */
+.mercado-board-mid-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.mercado-board-card {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.mercado-board-card.compact {
+  padding: 6px 10px;
+}
+
+.mercado-board-card-title {
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #f26522;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+}
+
+.mercado-board-boxes-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mercado-board-info-box {
+  background: #0f121a;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 7px;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.mercado-board-info-box-label {
+  font-size: 0.58rem;
+  font-weight: 900;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.mercado-board-info-box-val {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mercado-board-card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 3px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.66rem;
+  color: #94a3b8;
+}
+
+.mercado-board-card-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Client Details Rows */
+.mercado-board-client-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mercado-board-client-item {
+  background: #0f121a;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.mercado-board-client-label {
+  font-size: 0.60rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.mercado-board-client-val {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Photo Upload Slots Grid (4 fotos exactas) */
+.mercado-board-evidence-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-bottom: 2px;
+}
+
+.mercado-board-evidence-counter {
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.2px;
+}
+
+.mercado-board-evidence-counter.ready {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.mercado-board-evidence-counter.pending {
+  background: rgba(234, 179, 8, 0.2);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.mercado-board-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.mercado-board-photo-slot {
+  height: 76px;
+  border-radius: 10px;
+  background: #0b0e15;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.mercado-board-photo-slot.empty {
+  border: 1.5px dashed rgba(255, 255, 255, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mercado-board-photo-slot.empty:hover {
+  border-color: #f26522;
+  background: rgba(242, 101, 34, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.2);
+}
+
+.mercado-board-photo-empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+}
+
+.mercado-board-photo-empty-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(242, 101, 34, 0.12);
+  border: 1px solid rgba(242, 101, 34, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.mercado-board-photo-slot.empty:hover .mercado-board-photo-empty-circle {
+  transform: scale(1.1);
+  background: rgba(242, 101, 34, 0.2);
+}
+
+.mercado-board-photo-slot-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  letter-spacing: 0.2px;
+}
+
+.mercado-board-photo-req-badge {
+  font-size: 0.52rem;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.mercado-board-photo-req-badge.req {
+  background: rgba(234, 179, 8, 0.18);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+.mercado-board-photo-req-badge.opt {
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Filled Slot */
+.mercado-board-photo-slot.filled {
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.mercado-board-photo-slot.filled:hover {
+  border-color: #f26522;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 12px rgba(242, 101, 34, 0.25);
+}
+
+.mercado-board-photo-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.mercado-board-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.mercado-board-photo-slot.filled:hover .mercado-board-photo-img {
+  transform: scale(1.05);
+}
+
+.mercado-board-photo-slot-pill {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: #4ade80;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.54rem;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  z-index: 2;
+}
+
+.mercado-board-photo-actions-overlay {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 3px;
+  opacity: 0;
+  z-index: 3;
+  transition: opacity 0.2s ease;
+}
+
+.mercado-board-photo-slot:hover .mercado-board-photo-actions-overlay {
+  opacity: 1;
+}
+
+.mercado-board-photo-btn-icon {
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mercado-board-photo-btn-icon:hover {
+  background: #f26522;
+  border-color: #f26522;
+  transform: scale(1.1);
+}
+
+.mercado-board-photo-btn-icon.delete:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.mercado-board-evidence-notice {
+  font-size: 0.66rem;
+  padding: 3px 6px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+.mercado-board-evidence-notice.warning {
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  color: #facc15;
+}
+
+.mercado-board-evidence-notice.success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: #4ade80;
+}
+
+/* ═══════════════════════════════════════
+   3 BOTONES PRINCIPALES DE FLUJO (COMPACTOS)
+   ═══════════════════════════════════════ */
+.mercado-board-flow-card {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mercado-board-flow-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+
+.mercado-board-flow-btn {
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+/* Botón 1: Iniciar Trabajo */
+.mercado-board-flow-btn.btn-start {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(242, 101, 34, 0.35);
+}
+
+.mercado-board-flow-btn.btn-start:hover {
+  background: linear-gradient(135deg, #ff7836 0%, #f26522 100%);
+  transform: translateY(-1px);
+}
+
+.mercado-board-flow-btn.btn-start.in-progress {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* Botón 2: Finalizar Trabajo */
+.mercado-board-flow-btn.btn-finish {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(34, 197, 94, 0.35);
+}
+
+.mercado-board-flow-btn.btn-finish:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  transform: translateY(-1px);
+}
+
+.mercado-board-flow-btn.btn-finish:disabled {
+  background: #1c202b;
+  color: #64748b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.75;
+}
+
+/* Botón 3: Programar Segunda Visita */
+.mercado-board-flow-btn.btn-second-visit {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+}
+
+.mercado-board-flow-btn.btn-second-visit:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.mercado-board-flow-btn.btn-second-visit.has-visit {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #8b5cf6;
+  color: #c084fc;
+}
+
+/* ═══════════════════════════════════════
+   COLUMNA 3: PROGRESO DEL SERVICIO (DERECHA - SIN SCROLL)
+   ═══════════════════════════════════════ */
+.mercado-board-col-progress {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.mercado-board-col-progress-header {
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.mercado-board-progress-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Vertical Stepper Container */
+.mercado-board-stepper-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  padding: 2px 0;
+  overflow: hidden !important;
+}
+
+.mercado-board-stepper-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  cursor: pointer;
+  padding: 1px 0;
+}
+
+/* Connecting Line */
+.mercado-board-stepper-line {
+  position: absolute;
+  top: 22px;
+  left: 13px;
+  width: 2px;
+  height: calc(100% + 4px);
+  background: rgba(255, 255, 255, 0.12);
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.mercado-board-stepper-line.active {
+  background: linear-gradient(to bottom, #f26522, #eab308);
+  box-shadow: 0 0 8px rgba(242, 101, 34, 0.6);
+}
+
+.mercado-board-stepper-line.done {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+/* Circular Node Icon (Sketch Image 3) */
+.mercado-board-step-node {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #0f121a;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  z-index: 2;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mercado-board-stepper-item.completed .mercado-board-step-node {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: #22c55e;
+  color: #4ade80;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+.mercado-board-stepper-item.current .mercado-board-step-node {
+  background: rgba(242, 101, 34, 0.2);
+  border-color: #f26522;
+  color: #f26522;
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.6);
+}
+
+.mercado-board-step-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mercado-board-step-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #94a3b8;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mercado-board-stepper-item.completed .mercado-board-step-title,
+.mercado-board-stepper-item.current .mercado-board-step-title {
+  color: #ffffff;
+}
+
+.mercado-board-step-desc {
+  font-size: 0.60rem;
+  color: #64748b;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mercado-board-step-item.current .mercado-board-step-desc {
+  color: #f26522;
+  font-weight: 600;
+}
+
+.mercado-board-step-badge {
+  font-size: 0.54rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 4px;
+  width: fit-content;
+  text-transform: uppercase;
+}
+
+.mercado-board-step-badge.done {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.mercado-board-step-badge.current {
+  background: rgba(242, 101, 34, 0.2);
+  color: #f26522;
+}
+
+.mercado-board-step-badge.pending {
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
+}
+
+/* ─── Modal para Segunda Visita ─── */
+.mercado-second-visit-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.mercado-second-visit-modal {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.mercado-second-visit-header {
+  padding: 18px 22px;
+  background: #181b28;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mercado-second-visit-body {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mercado-second-visit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mercado-second-visit-label {
+  font-size: 0.80rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.mercado-second-visit-input,
+.mercado-second-visit-textarea {
+  background: #0f121a;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 0.88rem;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mercado-second-visit-input:focus,
+.mercado-second-visit-textarea:focus {
+  border-color: #f26522;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.2);
+}
+
+.mercado-second-visit-footer {
+  padding: 16px 22px;
+  background: #181b28;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.mercado-second-visit-btn-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mercado-second-visit-btn-submit {
+  background: #f26522;
+  border: none;
+  color: #ffffff;
+  padding: 9px 20px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.4);
+  transition: all 0.2s ease;
+}
+
+.mercado-second-visit-btn-submit:hover:not(:disabled) {
+  background: #ff7836;
+  transform: translateY(-2px);
+}
+
+

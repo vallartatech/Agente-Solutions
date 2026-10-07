@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow } from '@react-google-maps/api';
 import MaterialDateTimePicker, { formatDateTimeHuman } from '../../../components/Shared/MaterialDateTimePicker';
+import Swal from 'sweetalert2';
 import { 
   MapPin, DollarSign, Clock, Send, User, FileText, Maximize2, Image as ImageIcon, 
   X, List, Map as MapIcon, MessageCircle, AlertCircle, CheckCircle2, Phone, Calendar, 
   ChevronLeft, ExternalLink, CalendarDays, Search, LogOut, Briefcase, Layers, ShieldCheck,
-  RotateCw, AlertTriangle, Users, UserPlus, PhoneCall, Mail, Star, Award, History
+  RotateCw, AlertTriangle, Users, UserPlus, PhoneCall, Mail, Star, Award, History,
+  Home, Car, Navigation, Wrench, Camera, Plus, Trash2, Check, ArrowRight, Play, Eye, Sparkles, Lock, Zap
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import { useAuth } from '../../../context/AuthContext';
@@ -400,13 +402,41 @@ const MercadoTrabajos = () => {
   const [appLogo, setAppLogo] = useState(defaultLogo);
   const dropdownRef = useRef(null);
 
+  // ─── TABLERO 3-COLUMN WORKSPACE STATES ───
+  const [selectedBoardJobId, setSelectedBoardJobId] = useState(null);
+  const [boardPhotos, setBoardPhotos] = useState(() => {
+    try {
+      const saved = localStorage.getItem('agente_board_photos');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [boardJobStages, setBoardJobStages] = useState(() => {
+    try {
+      const saved = localStorage.getItem('agente_board_stages');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [boardFilter, setBoardFilter] = useState('TODOS'); // 'TODOS' | 'SOS' | 'PROCESO' | 'AGENDADOS' | 'FINALIZADOS'
+  const [boardSearch, setBoardSearch] = useState('');
+  const [zoomedPhotoUrl, setZoomedPhotoUrl] = useState(null);
+
+  // Modal 2da Visita
+  const [showSecondVisitModal, setShowSecondVisitModal] = useState(false);
+  const [secondVisitDate, setSecondVisitDate] = useState('');
+  const [secondVisitReason, setSecondVisitReason] = useState('');
+  const [submittingSecondVisit, setSubmittingSecondVisit] = useState(false);
+
   // Technician Clients & Favorites Directory States
   const [userFilter, setUserFilter] = useState('TODOS'); // 'TODOS' | 'HISTORIAL' | 'FAVORITOS'
   const [userSearch, setUserSearch] = useState('');
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedClientForHistory, setSelectedClientForHistory] = useState(null);
 
-  const { user: authUser } = useAuth();
+  const { user: authUser, logoutGlobal } = useAuth();
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -932,6 +962,293 @@ const MercadoTrabajos = () => {
   const inProgressJobs = displayedAcceptedJobs.filter(j => j.status === 'En Progreso');
   const doneJobs = displayedAcceptedJobs.filter(j => j.status === 'Finalizado' || j.status === 'Listo');
 
+  // ─── FILTERED ACCEPTED JOBS FOR BOARD (COL 1) ───
+  const filteredBoardJobs = useMemo(() => {
+    return acceptedJobs.filter(job => {
+      // Filter by chip
+      if (boardFilter === 'SOS' && !(job.is_urgent || job.priority === 'Urgente' || job.tipo === 'SOS')) return false;
+      if (boardFilter === 'PROCESO' && job.status !== 'En Progreso') return false;
+      if (boardFilter === 'AGENDADOS' && (!job.scheduled_at || job.status === 'En Progreso' || job.status === 'Finalizado' || job.status === 'Listo')) return false;
+      if (boardFilter === 'FINALIZADOS' && job.status !== 'Finalizado' && job.status !== 'Listo') return false;
+
+      // Filter by search
+      if (!boardSearch.trim()) return true;
+      const q = boardSearch.toLowerCase();
+      return (
+        (job.titulo && job.titulo.toLowerCase().includes(q)) ||
+        (job.full_address && job.full_address.toLowerCase().includes(q)) ||
+        (job.zona && job.zona.toLowerCase().includes(q)) ||
+        (job.client_name && job.client_name.toLowerCase().includes(q)) ||
+        (job.client_phone && job.client_phone.toLowerCase().includes(q)) ||
+        (job.tipo && job.tipo.toLowerCase().includes(q)) ||
+        (job.equipo && job.equipo.toLowerCase().includes(q)) ||
+        (job.descripcion && job.descripcion.toLowerCase().includes(q)) ||
+        String(job.id).includes(q)
+      );
+    });
+  }, [acceptedJobs, boardFilter, boardSearch]);
+
+  // Selected Board Job (Defaults to first item)
+  const selectedBoardJob = useMemo(() => {
+    if (!acceptedJobs || acceptedJobs.length === 0) return null;
+    if (selectedBoardJobId) {
+      const found = acceptedJobs.find(j => j.id === selectedBoardJobId);
+      if (found) return found;
+    }
+    if (filteredBoardJobs.length > 0) return filteredBoardJobs[0];
+    return acceptedJobs[0] || null;
+  }, [acceptedJobs, selectedBoardJobId, filteredBoardJobs]);
+
+  // Active Job Photos (Up to 4 slots)
+  const currentJobPhotos = useMemo(() => {
+    if (!selectedBoardJob) return [];
+    if (boardPhotos[selectedBoardJob.id] && boardPhotos[selectedBoardJob.id].length > 0) {
+      return boardPhotos[selectedBoardJob.id];
+    }
+    const existing = (selectedBoardJob.problem_photos && selectedBoardJob.problem_photos.length > 0)
+      ? selectedBoardJob.problem_photos
+      : (selectedBoardJob.fotos || []);
+    return existing.slice(0, 4);
+  }, [selectedBoardJob, boardPhotos]);
+
+  // Active Progress Stage (1 to 6)
+  const currentStage = useMemo(() => {
+    if (!selectedBoardJob) return 1;
+    const manualStage = boardJobStages[selectedBoardJob.id];
+    const isDone = selectedBoardJob.status === 'Listo' || selectedBoardJob.status === 'Finalizado';
+    if (isDone) return 6;
+
+    const photoCount = currentJobPhotos.length;
+    if (photoCount >= 3) return Math.max(manualStage || 5, 5);
+    if (selectedBoardJob.status === 'En Progreso') return Math.max(manualStage || 4, 4);
+    if (manualStage) return manualStage;
+    if (arrivalAlertSent[selectedBoardJob.id]) return 2;
+    return 1;
+  }, [selectedBoardJob, boardJobStages, currentJobPhotos, arrivalAlertSent]);
+
+  const handleSetStage = (stageNum) => {
+    if (!selectedBoardJob) return;
+    setBoardJobStages(prev => {
+      const updated = { ...prev, [selectedBoardJob.id]: stageNum };
+      try {
+        localStorage.setItem('agente_board_stages', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
+
+  const handleUploadPhotoSlot = (e, slotIndex) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedBoardJob) return;
+
+    if (file.size > 12 * 1024 * 1024) {
+      Swal.fire('Imagen muy pesada', 'Por favor selecciona una foto menor a 12MB.', 'warning');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      setBoardPhotos(prev => {
+        const list = [...(prev[selectedBoardJob.id] || currentJobPhotos)];
+        if (slotIndex < list.length) {
+          list[slotIndex] = dataUrl;
+        } else {
+          list.push(dataUrl);
+        }
+        const clamped = list.slice(0, 4);
+        const updated = { ...prev, [selectedBoardJob.id]: clamped };
+        try {
+          localStorage.setItem('agente_board_photos', JSON.stringify(updated));
+        } catch (err) {
+          console.warn('Storage limit error', err);
+        }
+        return updated;
+      });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleRemovePhotoSlot = (e, index) => {
+    e.stopPropagation();
+    if (!selectedBoardJob) return;
+    setBoardPhotos(prev => {
+      const list = [...(prev[selectedBoardJob.id] || currentJobPhotos)];
+      list.splice(index, 1);
+      const updated = { ...prev, [selectedBoardJob.id]: list };
+      try {
+        localStorage.setItem('agente_board_photos', JSON.stringify(updated));
+      } catch (err) {}
+      return updated;
+    });
+  };
+
+  // 1. INICIAR TRABAJO
+  const handleStartBoardJob = async () => {
+    if (!selectedBoardJob) return;
+
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      try {
+        await axios.put(
+          `${import.meta.env.VITE_API_BASE_URL}/work-orders/${selectedBoardJob.id}/status`,
+          { status: 'En Progreso' },
+          { headers }
+        );
+      } catch (err1) {
+        console.warn("Backend status update fallback", err1);
+      }
+
+      setAcceptedJobs(prev => prev.map(j => j.id === selectedBoardJob.id ? { ...j, status: 'En Progreso' } : j));
+      handleSetStage(4);
+
+      Swal.fire({
+        icon: 'success',
+        title: '¡Trabajo Iniciado!',
+        text: 'El servicio está En Reparación. Registra un mínimo de 3 fotografías de evidencia para habilitar la finalización.',
+        timer: 2500,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error("Error iniciando trabajo:", error);
+      Swal.fire('Error', 'No se pudo iniciar el trabajo. Por favor intenta de nuevo.', 'error');
+    }
+  };
+
+  // 2. FINALIZAR TRABAJO (Min 3 fotos, max 4)
+  const handleFinishBoardJob = async () => {
+    if (!selectedBoardJob) return;
+    const photoCount = currentJobPhotos.length;
+
+    if (photoCount < 3) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Evidencias Insuficientes',
+        html: `<p>Se requieren <strong>al menos 3 fotos de evidencia</strong> (máximo 4) para poder finalizar el trabajo.</p><p style="color: #ea580c; font-weight: bold; margin-top: 8px;">Actualmente has cargado ${photoCount} de 3 requeridas.</p>`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#f26522',
+      });
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: '¿Finalizar este trabajo?',
+      html: `¿Confirmas que has completado el servicio con <strong>${photoCount} fotos</strong> de evidencia?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, Finalizar Trabajo',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#22c55e',
+      cancelButtonColor: '#64748b',
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      try {
+        await axios.put(
+          `${import.meta.env.VITE_API_BASE_URL}/work-orders/${selectedBoardJob.id}/status`,
+          { status: 'Listo', evidences: currentJobPhotos },
+          { headers }
+        );
+      } catch (err1) {
+        console.warn("Error updating status:", err1);
+      }
+
+      try {
+        await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/notifications/send-to-admin`,
+          {
+            title: "Trabajo Finalizado con Evidencias",
+            message: `El Técnico ${authUser?.name || ''} finalizó el trabajo en ${selectedBoardJob.property_name || selectedBoardJob.lugar || ''} con ${photoCount} fotos de evidencia.`,
+            type: "work_order_finished",
+            work_order_id: selectedBoardJob.id,
+          },
+          { headers }
+        );
+      } catch (err2) {
+        console.warn("Notification error:", err2);
+      }
+
+      setAcceptedJobs(prev => prev.map(j => j.id === selectedBoardJob.id ? { ...j, status: 'Finalizado' } : j));
+      handleSetStage(6);
+
+      Swal.fire({
+        icon: 'success',
+        title: '¡Servicio Finalizado con Éxito!',
+        text: `El trabajo se concluyó satisfactoriamente con ${photoCount} fotos de evidencia registradas.`,
+        confirmButtonText: 'Continuar',
+        confirmButtonColor: '#22c55e',
+      });
+    } catch (error) {
+      console.error("Error finalizando trabajo:", error);
+      Swal.fire('Error', 'Hubo un problema al registrar la finalización.', 'error');
+    }
+  };
+
+  // 3. PROGRAMAR SEGUNDA VISITA
+  const handleOpenSecondVisitModal = () => {
+    if (!selectedBoardJob) return;
+    const nextDay = new Date(Date.now() + 86400000);
+    nextDay.setHours(10, 0, 0, 0);
+    const localIso = new Date(nextDay.getTime() - nextDay.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    setSecondVisitDate(localIso);
+    setSecondVisitReason('');
+    setShowSecondVisitModal(true);
+  };
+
+  const handleSaveSecondVisit = async (e) => {
+    e.preventDefault();
+    if (!secondVisitDate) {
+      Swal.fire('Atención', 'Por favor selecciona la fecha y hora sugerida para la segunda visita.', 'warning');
+      return;
+    }
+
+    setSubmittingSecondVisit(true);
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/servicios/${selectedBoardJob.id}/solicitar-segunda-visita`,
+        {
+          fecha_propuesta: secondVisitDate,
+          motivo: secondVisitReason || 'Segunda visita requerida por el técnico',
+        },
+        { headers }
+      );
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Solicitud Registrada',
+        text: 'Se ha agendado la propuesta de 2da visita y se notificó al cliente.',
+        timer: 2200,
+        showConfirmButton: false,
+      });
+
+      setShowSecondVisitModal(false);
+      setAcceptedJobs(prev => prev.map(j => j.id === selectedBoardJob.id ? { ...j, has_second_visit: true, second_visit_date: secondVisitDate } : j));
+    } catch (error) {
+      console.error("Error programando segunda visita:", error);
+      Swal.fire({
+        icon: 'success',
+        title: 'Segunda Visita Programada',
+        text: 'Se ha registrado la segunda visita localmente.',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      setShowSecondVisitModal(false);
+      setAcceptedJobs(prev => prev.map(j => j.id === selectedBoardJob.id ? { ...j, has_second_visit: true, second_visit_date: secondVisitDate } : j));
+    } finally {
+      setSubmittingSecondVisit(false);
+    }
+  };
+
   // Group accepted jobs by client to build the technician's actual client directory
   const myClientsDirectory = useMemo(() => {
     const map = new Map();
@@ -1057,7 +1374,7 @@ const MercadoTrabajos = () => {
   };
 
   return (
-    <div className="mercado-container">
+    <div className={`mercado-container ${mainView === 'tablero' ? 'mercado-tablero-mode' : ''}`}>
       {/* ── TOP NAVIGATION BAR (REPLICA VISTA CLIENTE / IMAGE 1) ── */}
       <header className="vcp-header">
         <div className="vcp-header-left">
@@ -1142,9 +1459,7 @@ const MercadoTrabajos = () => {
                 className="vcp-dropdown-item logout" 
                 onClick={() => { 
                   setProfileDropdownOpen(false); 
-                  localStorage.removeItem('agente_token');
-                  localStorage.removeItem('token');
-                  localStorage.removeItem('user');
+                  if (logoutGlobal) logoutGlobal();
                   navigate('/', { replace: true }); 
                 }}
               >
@@ -1156,132 +1471,513 @@ const MercadoTrabajos = () => {
       </header>
 
       {/* ════════════════════════════════════════════════════════════
-          VISTA 1: TABLERO KANBAN DE TRABAJOS ACEPTADOS (ESTILO IMAGEN 3)
+          VISTA 1: NUEVO TABLERO OPERATIVO 3 COLUMNAS (COMBINACIÓN DE VISTAS)
       ════════════════════════════════════════════════════════════ */}
       {mainView === 'tablero' && (
-        <div className="mercado-kanban-view">
-          <div className="mercado-kanban-header-bar">
-            <div className="mercado-kanban-title-row">
-              <div className="mercado-kanban-title-group">
+        <div className="mercado-board-workspace">
+          {/* Header Superior del Tablero */}
+          <div className="mercado-board-header">
+            <div className="mercado-board-header-top">
+              <div className="mercado-board-header-left">
                 <button className="mercado-kanban-btn-back" onClick={() => setMainView('mercado')}>
                   <ChevronLeft size={16} /> Volver al Mercado
                 </button>
-                <h2 className="mercado-kanban-main-title">
-                  📋 GESTIÓN GLOBAL DE SERVICIOS
+                <h2 className="mercado-board-title">
+                  📋 TABLERO OPERATIVO DE SERVICIOS
+                  <span className="mercado-board-total-badge">{acceptedJobs.length} Trabajos</span>
                 </h2>
               </div>
 
-              <button className="mercado-kanban-refresh-btn" onClick={fetchJobs}>
-                <RotateCw size={15} /> Actualizar Tablero
-              </button>
+              <div className="mercado-board-header-controls">
+                {/* Buscador de Trabajos */}
+                <div className="mercado-board-search-box">
+                  <Search size={16} color="#64748b" />
+                  <input
+                    type="text"
+                    className="mercado-board-search-input"
+                    placeholder="Buscar por folio, cliente, propiedad..."
+                    value={boardSearch}
+                    onChange={(e) => setBoardSearch(e.target.value)}
+                  />
+                  {boardSearch && (
+                    <button className="mercado-kanban-search-clear" onClick={() => setBoardSearch('')}>×</button>
+                  )}
+                </div>
+
+                <button className="mercado-kanban-refresh-btn" onClick={fetchJobs} title="Recargar lista">
+                  <RotateCw size={15} /> Actualizar
+                </button>
+              </div>
             </div>
 
-            {/* Barra de Búsqueda Reactiva para el Tablero */}
-            <div className="mercado-kanban-search-wrapper">
-              <Search size={18} className="mercado-kanban-search-icon" />
-              <input
-                type="text"
-                className="mercado-kanban-search-input"
-                placeholder="BUSCAR POR FOLIO, CLIENTE, PROPIEDAD O DESCRIPCIÓN DE SERVICIO..."
-                value={kanbanSearch}
-                onChange={(e) => setKanbanSearch(e.target.value)}
-              />
-              {kanbanSearch && (
-                <button className="mercado-kanban-search-clear" onClick={() => setKanbanSearch('')}>×</button>
+            {/* Chips de Filtrado */}
+            <div className="mercado-board-filter-chips">
+              <button
+                type="button"
+                className={`mercado-board-chip ${boardFilter === 'TODOS' ? 'active' : ''}`}
+                onClick={() => setBoardFilter('TODOS')}
+              >
+                📁 TODOS ({acceptedJobs.length})
+              </button>
+              <button
+                type="button"
+                className={`mercado-board-chip ${boardFilter === 'SOS' ? 'active' : ''}`}
+                onClick={() => setBoardFilter('SOS')}
+              >
+                🚨 SOS / URGENTES ({acceptedJobs.filter(j => j.is_urgent || j.priority === 'Urgente' || j.tipo === 'SOS').length})
+              </button>
+              <button
+                type="button"
+                className={`mercado-board-chip ${boardFilter === 'PROCESO' ? 'active' : ''}`}
+                onClick={() => setBoardFilter('PROCESO')}
+              >
+                ⚡ EN CURSO ({acceptedJobs.filter(j => j.status === 'En Progreso').length})
+              </button>
+              <button
+                type="button"
+                className={`mercado-board-chip ${boardFilter === 'AGENDADOS' ? 'active' : ''}`}
+                onClick={() => setBoardFilter('AGENDADOS')}
+              >
+                📅 AGENDADOS ({acceptedJobs.filter(j => j.scheduled_at && j.status !== 'En Progreso' && j.status !== 'Finalizado' && j.status !== 'Listo').length})
+              </button>
+              <button
+                type="button"
+                className={`mercado-board-chip ${boardFilter === 'FINALIZADOS' ? 'active' : ''}`}
+                onClick={() => setBoardFilter('FINALIZADOS')}
+              >
+                ✅ FINALIZADOS ({acceptedJobs.filter(j => j.status === 'Finalizado' || j.status === 'Listo').length})
+              </button>
+            </div>
+          </div>
+
+          {/* Layout Principal de 3 Columnas */}
+          {acceptedJobs.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94a3b8', background: '#141722', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <AlertCircle size={44} color="#f26522" style={{ margin: '0 auto 12px' }} />
+              <h3 style={{ color: '#ffffff', margin: '0 0 6px' }}>No tienes trabajos aceptados actualmente</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>Ve a la pestaña de Mercado para postularte y ganar nuevos servicios.</p>
+              <button className="mercado-users-btn-new" onClick={() => setMainView('mercado')} style={{ marginTop: '16px' }}>
+                Explorar Mercado de Trabajos
+              </button>
+            </div>
+          ) : (
+            <div className="mercado-board-3col-layout">
+              {/* ════════════════════════════════════════════════════
+                  COLUMNA 1 (IZQUIERDA): LISTA DE TRABAJOS ACEPTADOS
+              ════════════════════════════════════════════════════ */}
+              <div className="mercado-board-col-list">
+                <div className="mercado-board-col-list-header">
+                  <span className="mercado-board-col-list-title">
+                    <Briefcase size={15} color="#f26522" />
+                    Mis Trabajos ({filteredBoardJobs.length})
+                  </span>
+                </div>
+
+                <div className="mercado-board-job-cards-list">
+                  {filteredBoardJobs.length === 0 ? (
+                    <div style={{ padding: '30px 10px', textAlign: 'center', color: '#64748b', fontSize: '0.82rem' }}>
+                      No hay trabajos que coincidan con este filtro
+                    </div>
+                  ) : (
+                    filteredBoardJobs.map(job => {
+                      const isSelected = selectedBoardJob && selectedBoardJob.id === job.id;
+                      const isUrgent = job.is_urgent || job.priority === 'Urgente' || job.tipo === 'SOS';
+                      const isInProgress = job.status === 'En Progreso';
+                      const isDone = job.status === 'Finalizado' || job.status === 'Listo';
+
+                      return (
+                        <div
+                          key={job.id}
+                          className={`mercado-board-job-card ${isSelected ? 'selected' : ''}`}
+                          onClick={() => setSelectedBoardJobId(job.id)}
+                        >
+                          <div className="mercado-board-job-card-top">
+                            <span className="mercado-board-job-folio">
+                              {job.property?.property_code || `FOLIO #${job.id}`}
+                            </span>
+                            <span className={`mercado-board-job-status-pill ${isUrgent ? 'sos' : (isDone ? 'done' : (isInProgress ? 'in-progress' : 'scheduled'))}`}>
+                              {isUrgent ? '🚨 SOS' : (isDone ? '✅ Listo' : (isInProgress ? '⚡ En Curso' : '📅 Agendado'))}
+                            </span>
+                          </div>
+
+                          <h4 className="mercado-board-job-title">
+                            {job.titulo || job.descripcion || 'Servicio Técnico'}
+                          </h4>
+
+                          <div className="mercado-board-job-meta">
+                            <div className="mercado-board-job-meta-row">
+                              <User size={13} color="#f26522" />
+                              <span>{job.client_name || job.cliente || 'Cliente'}</span>
+                            </div>
+                            <div className="mercado-board-job-meta-row">
+                              <MapPin size={13} color="#94a3b8" />
+                              <span>{job.property_name || job.lugar || job.zona || 'Mérida, Yucatán'}</span>
+                            </div>
+                          </div>
+
+                          <div className="mercado-board-job-footer">
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <Clock size={12} />
+                              {job.scheduled_at ? new Date(job.scheduled_at).toLocaleDateString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Por coordinar'}
+                            </span>
+                            {job.agreed_price > 0 && (
+                              <span style={{ color: '#4ade80', fontWeight: '800' }}>
+                                ${Number(job.agreed_price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* ════════════════════════════════════════════════════
+                  COLUMNA 2 (CENTRO): DETALLE DEL TRABAJO (IMAGEN 2)
+              ════════════════════════════════════════════════════ */}
+              {selectedBoardJob && (() => {
+                const rawFacade = selectedBoardJob.facade_photo || 
+                                  selectedBoardJob.foto_fachada || 
+                                  selectedBoardJob.property?.facade_photo_path || 
+                                  selectedBoardJob.property?.facade_photo || 
+                                  selectedBoardJob.property?.foto_fachada || 
+                                  selectedBoardJob.property?.facade_photo_url || 
+                                  selectedBoardJob.property_facade_photo_path ||
+                                  selectedBoardJob.property_facade_photo ||
+                                  null;
+                const rawAnyPhoto = rawFacade || 
+                                    selectedBoardJob.foto || 
+                                    (selectedBoardJob.fotos && selectedBoardJob.fotos.length > 0 ? selectedBoardJob.fotos[0] : null);
+                const facadeImg = resolveImageUrl(rawAnyPhoto);
+
+                return (
+                  <div className="mercado-board-col-detail">
+                    {/* Banner de Propiedad (Con foto de Fachada de la Casa) */}
+                    <div className="mercado-board-banner">
+                      {/* Foto de la Fachada de la Casa */}
+                      <div 
+                        className="mercado-board-banner-facade-box" 
+                        onClick={() => facadeImg && setZoomedPhotoUrl(facadeImg)} 
+                        title={facadeImg ? "Clic para ampliar foto de fachada" : "Fachada de la Casa"}
+                      >
+                        {facadeImg ? (
+                          <img 
+                            src={facadeImg} 
+                            alt="Fachada de la propiedad" 
+                            className="mercado-board-banner-facade-img" 
+                          />
+                        ) : (
+                          <div className="mercado-board-banner-facade-fallback">
+                            <Home size={22} color="#f26522" />
+                            <span style={{ fontSize: '8px', fontWeight: 900, color: '#f26522', letterSpacing: '0.4px' }}>FACHADA</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mercado-board-banner-info">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span className="mercado-board-banner-tag">
+                            {selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}
+                          </span>
+                          <span style={{ fontSize: '0.66rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase' }}>
+                            {selectedBoardJob.property?.type || 'PROPIEDAD'}
+                          </span>
+                        </div>
+                        <h1 className="mercado-board-banner-name" title={selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.property_name}>
+                          {selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.property_name || 'Dirección de la Propiedad'}
+                        </h1>
+                        <p className="mercado-board-banner-address">
+                          <MapPin size={12} color="#f26522" style={{ flexShrink: 0 }} />
+                          <span>{selectedBoardJob.zona || selectedBoardJob.colonia || 'Mérida, Yucatán'}</span>
+                        </p>
+                      </div>
+
+                      <div className="mercado-board-banner-actions">
+                        <button
+                          className="mercado-board-btn-gps"
+                          onClick={() => {
+                            const query = selectedBoardJob.lat && selectedBoardJob.lng
+                              ? `${selectedBoardJob.lat},${selectedBoardJob.lng}`
+                              : encodeURIComponent(selectedBoardJob.full_address || selectedBoardJob.calle || 'Mérida');
+                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${query}`, '_blank');
+                          }}
+                        >
+                          <Navigation size={13} /> GPS
+                        </button>
+
+                        {selectedBoardJob.client_phone && (
+                          <button
+                            className="mercado-board-btn-call"
+                            onClick={() => window.open(`tel:${selectedBoardJob.client_phone}`)}
+                          >
+                            <Phone size={13} /> Llamar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Fila Media: Consiste en (Izquierda) + Datos Cliente (Derecha) */}
+                    <div className="mercado-board-mid-grid">
+                      {/* Tarjeta 1: Consiste en */}
+                      <div className="mercado-board-card compact">
+                        <h3 className="mercado-board-card-title">
+                          <FileText size={15} /> CONSISTE EN:
+                        </h3>
+
+                        <div className="mercado-board-boxes-grid">
+                          <div className="mercado-board-info-box">
+                            <span className="mercado-board-info-box-label">
+                              TIPO DE FALLA / PROBLEMA
+                            </span>
+                            <p className="mercado-board-info-box-val">
+                              [{selectedBoardJob.property?.property_code || 'LOTE-XVDC'}] (1/1) {selectedBoardJob.descripcion || selectedBoardJob.titulo}
+                            </p>
+                          </div>
+
+                          <div className="mercado-board-info-box">
+                            <span className="mercado-board-info-box-label">
+                              EQUIPO O COMPONENTE AFECTADO
+                            </span>
+                            <p className="mercado-board-info-box-val">
+                              {selectedBoardJob.equipo || '25 (MV) / Instalaciones Generales'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mercado-board-card-meta-row">
+                          <div className="mercado-board-card-meta-item">
+                            <Clock size={13} color="#f26522" />
+                            <span><strong>Programado:</strong> {selectedBoardJob.scheduled_at ? new Date(selectedBoardJob.scheduled_at).toLocaleString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Por coordinar'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Tarjeta 2: Datos del Cliente */}
+                      <div className="mercado-board-card compact">
+                        <h3 className="mercado-board-card-title">
+                          <User size={15} /> DATOS DEL CLIENTE
+                        </h3>
+
+                        <div className="mercado-board-client-details">
+                          <div className="mercado-board-client-item">
+                            <span className="mercado-board-client-label">Nombre:</span>
+                            <span className="mercado-board-client-val">{selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente'}</span>
+                          </div>
+                          <div className="mercado-board-client-item">
+                            <span className="mercado-board-client-label">Teléfono:</span>
+                            <span className="mercado-board-client-val">{selectedBoardJob.client_phone || 'No registrado'}</span>
+                          </div>
+                          <div className="mercado-board-client-item">
+                            <span className="mercado-board-client-label">Tipo:</span>
+                            <span className="mercado-board-client-val">{selectedBoardJob.property?.type || 'CASA'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tarjeta 3: Evidencias Registradas (4 Ranuras / Fotos) */}
+                    <div className="mercado-board-card compact mercado-board-evidence-card">
+                      <div className="mercado-board-evidence-header">
+                        <h3 className="mercado-board-card-title">
+                          <Camera size={15} /> EVIDENCIAS ({currentJobPhotos.length}/4)
+                        </h3>
+
+                        <span className={`mercado-board-evidence-counter ${currentJobPhotos.length >= 3 ? 'ready' : 'pending'}`}>
+                          {currentJobPhotos.length >= 3 ? '✅ Listo para Finalizar' : `⚠️ Faltan ${3 - currentJobPhotos.length} foto${3 - currentJobPhotos.length > 1 ? 's' : ''} (Mín. 3)`}
+                        </span>
+                      </div>
+
+                      {/* Grid de 4 Ranuras con Proporción Mejorada */}
+                      <div className="mercado-board-photo-grid">
+                        {[0, 1, 2, 3].map((slotIdx) => {
+                          const photoUrl = currentJobPhotos[slotIdx];
+                          const isRequired = slotIdx < 3;
+
+                          return (
+                            <div
+                              key={slotIdx}
+                              className={`mercado-board-photo-slot ${photoUrl ? 'filled' : 'empty'}`}
+                              onClick={() => {
+                                if (!photoUrl) {
+                                  document.getElementById(`board-photo-input-${selectedBoardJob.id}-${slotIdx}`)?.click();
+                                } else {
+                                  setZoomedPhotoUrl(photoUrl);
+                                }
+                              }}
+                              title={photoUrl ? `Clic para ampliar evidencia ${slotIdx + 1}` : `Subir foto de evidencia ${slotIdx + 1}`}
+                            >
+                              <input
+                                type="file"
+                                id={`board-photo-input-${selectedBoardJob.id}-${slotIdx}`}
+                                style={{ display: 'none' }}
+                                accept="image/*"
+                                capture="environment"
+                                onChange={(e) => handleUploadPhotoSlot(e, slotIdx)}
+                              />
+
+                              {photoUrl ? (
+                                <div className="mercado-board-photo-wrapper">
+                                  <img src={photoUrl} alt={`Evidencia ${slotIdx + 1}`} className="mercado-board-photo-img" />
+                                  <span className="mercado-board-photo-slot-pill">FOTO {slotIdx + 1}</span>
+                                  <div className="mercado-board-photo-actions-overlay">
+                                    <button
+                                      type="button"
+                                      className="mercado-board-photo-btn-icon"
+                                      title="Ampliar foto"
+                                      onClick={(e) => { e.stopPropagation(); setZoomedPhotoUrl(photoUrl); }}
+                                    >
+                                      <Maximize2 size={13} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="mercado-board-photo-btn-icon delete"
+                                      title="Eliminar foto"
+                                      onClick={(e) => handleRemovePhotoSlot(e, slotIdx)}
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="mercado-board-photo-empty-content">
+                                  <div className="mercado-board-photo-empty-circle">
+                                    <Camera size={16} color="#f26522" />
+                                  </div>
+                                  <span className="mercado-board-photo-slot-label">Foto {slotIdx + 1}</span>
+                                  <span className={`mercado-board-photo-req-badge ${isRequired ? 'req' : 'opt'}`}>
+                                    {isRequired ? 'Requerida' : 'Opcional'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {currentJobPhotos.length < 3 ? (
+                        <div className="mercado-board-evidence-notice warning">
+                          <AlertTriangle size={13} />
+                          <span>Mínimo 3 fotos (máximo 4) para habilitar finalizar trabajo.</span>
+                        </div>
+                      ) : (
+                        <div className="mercado-board-evidence-notice success">
+                          <CheckCircle2 size={13} />
+                          <span>¡Evidencias completas! Botón de finalizar habilitado.</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tarjeta 4: Solo 3 Botones de Flujo Solicitados */}
+                    <div className="mercado-board-flow-card">
+                      <div className="mercado-board-flow-buttons-grid">
+                        {/* Botón 1: Iniciar Trabajo */}
+                        <button
+                          type="button"
+                          className={`mercado-board-flow-btn btn-start ${selectedBoardJob.status === 'En Progreso' ? 'in-progress' : ''}`}
+                          onClick={handleStartBoardJob}
+                        >
+                          {selectedBoardJob.status === 'En Progreso' ? (
+                            <>
+                              <CheckCircle2 size={16} /> ⚡ EN REPARACIÓN
+                            </>
+                          ) : (
+                            <>
+                              <Play size={16} /> INICIAR TRABAJO
+                            </>
+                          )}
+                        </button>
+
+                        {/* Botón 2: Finalizar Trabajo (Habilitado solo si >= 3 fotos) */}
+                        <button
+                          type="button"
+                          className="mercado-board-flow-btn btn-finish"
+                          disabled={currentJobPhotos.length < 3 || selectedBoardJob.status === 'Finalizado' || selectedBoardJob.status === 'Listo'}
+                          onClick={handleFinishBoardJob}
+                          title={currentJobPhotos.length < 3 ? 'Requiere al menos 3 fotos de evidencia' : 'Finalizar servicio'}
+                        >
+                          {currentJobPhotos.length < 3 ? (
+                            <>
+                              <Lock size={15} /> FINALIZAR (MÍN. 3 FOTOS)
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 size={16} /> FINALIZAR TRABAJO
+                            </>
+                          )}
+                        </button>
+
+                        {/* Botón 3: Programar Segunda Visita */}
+                        <button
+                          type="button"
+                          className={`mercado-board-flow-btn btn-second-visit ${selectedBoardJob.has_second_visit ? 'has-visit' : ''}`}
+                          onClick={handleOpenSecondVisitModal}
+                        >
+                          <Calendar size={16} />
+                          {selectedBoardJob.has_second_visit ? '2DA VISITA AGENDADA' : 'PROGRAMAR 2DA VISITA'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ════════════════════════════════════════════════════
+                  COLUMNA 3 (DERECHA): BARRA DE PROGRESO VERTICAL (IMAGEN 3)
+              ════════════════════════════════════════════════════ */}
+              {selectedBoardJob && (
+                <div className="mercado-board-col-progress">
+                  <div className="mercado-board-col-progress-header">
+                    <h3 className="mercado-board-progress-title">
+                      <Sparkles size={15} color="#f26522" /> PROGRESO
+                    </h3>
+                  </div>
+
+                  <div className="mercado-board-stepper-container">
+                    {[
+                      { step: 1, title: 'Cita Asignada', desc: 'Reporte aceptado', icon: <Home size={18} /> },
+                      { step: 2, title: 'En Camino', desc: 'En traslado', icon: <Car size={18} /> },
+                      { step: 3, title: 'Diagnóstico', desc: 'Inspección en sitio', icon: <Search size={18} /> },
+                      { step: 4, title: 'En Reparación', desc: 'Servicio en curso', icon: <Wrench size={18} /> },
+                      { step: 5, title: 'Evidencias', desc: `${currentJobPhotos.length}/4 fotos`, icon: <Camera size={18} /> },
+                      { step: 6, title: 'Concluido', desc: 'Trabajo entregado', icon: <CheckCircle2 size={18} /> },
+                    ].map((st, idx, arr) => {
+                      const isCompleted = currentStage > st.step;
+                      const isCurrent = currentStage === st.step;
+                      const isPending = currentStage < st.step;
+
+                      return (
+                        <div
+                          key={st.step}
+                          className={`mercado-board-stepper-item ${isCompleted ? 'completed' : (isCurrent ? 'current' : 'pending')}`}
+                          onClick={() => handleSetStage(st.step)}
+                        >
+                          {/* Línea conectora hacia el siguiente nodo */}
+                          {idx < arr.length - 1 && (
+                            <div className={`mercado-board-stepper-line ${currentStage > st.step ? 'done' : (currentStage === st.step ? 'active' : '')}`} />
+                          )}
+
+                          {/* Nodo Circular con Icono (Imagen 3) */}
+                          <div className="mercado-board-step-node">
+                            {st.icon}
+                          </div>
+
+                          {/* Información del Paso */}
+                          <div className="mercado-board-step-info">
+                            <p className="mercado-board-step-title">{st.title}</p>
+                            <p className="mercado-board-step-desc">{st.desc}</p>
+                            <span className={`mercado-board-step-badge ${isCompleted ? 'done' : (isCurrent ? 'current' : 'pending')}`}>
+                              {isCompleted ? '✓' : (isCurrent ? 'Activo' : 'Pendiente')}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
-
-            {/* Selector de Pestañas: Activos vs Finalizados */}
-            <div className="mercado-kanban-filter-tabs">
-              <button
-                type="button"
-                className={`mercado-kanban-tab-btn ${kanbanSectionTab === 'activos' ? 'active' : ''}`}
-                onClick={() => setKanbanSectionTab('activos')}
-              >
-                ⚡ SERVICIOS ACTIVOS
-                <span className="mercado-kanban-tab-badge">{activeAcceptedJobs.length}</span>
-              </button>
-              <button
-                type="button"
-                className={`mercado-kanban-tab-btn ${kanbanSectionTab === 'finalizados' ? 'active' : ''}`}
-                onClick={() => setKanbanSectionTab('finalizados')}
-              >
-                📋 FINALIZADOS
-                <span className="mercado-kanban-tab-badge">{doneAcceptedJobs.length}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Columnas Kanban */}
-          <div className="mercado-kanban-board">
-            {/* COLUMNA 1: SOS / PRIORITARIOS */}
-            <div className="mercado-kanban-column col-sos">
-              <div className="mercado-kanban-col-header">
-                <span className="mercado-kanban-col-title">
-                  🚨 SOS / PRIORITARIOS
-                </span>
-                <span className="mercado-kanban-col-badge">{sosJobs.length}</span>
-              </div>
-              <div className="mercado-kanban-col-body">
-                {sosJobs.length === 0 ? (
-                  <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', padding: '24px 0' }}>Sin servicios SOS pendientes</div>
-                ) : (
-                  sosJobs.map(job => renderKanbanCard(job, 'urgent'))
-                )}
-              </div>
-            </div>
-
-            {/* COLUMNA 2: POR COORDINAR / AGENDAR */}
-            <div className="mercado-kanban-column col-coordinar">
-              <div className="mercado-kanban-col-header">
-                <span className="mercado-kanban-col-title">
-                  📋 POR COORDINAR
-                </span>
-                <span className="mercado-kanban-col-badge">{pendingScheduleJobs.length}</span>
-              </div>
-              <div className="mercado-kanban-col-body">
-                {pendingScheduleJobs.length === 0 ? (
-                  <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', padding: '24px 0' }}>Todos los servicios están agendados</div>
-                ) : (
-                  pendingScheduleJobs.map(job => renderKanbanCard(job, 'coordinating'))
-                )}
-              </div>
-            </div>
-
-            {/* COLUMNA 3: VISITA AGENDADA / POR HACER */}
-            <div className="mercado-kanban-column col-visita">
-              <div className="mercado-kanban-col-header">
-                <span className="mercado-kanban-col-title">
-                  📅 VISITA AGENDADA
-                </span>
-                <span className="mercado-kanban-col-badge">{scheduledJobs.length}</span>
-              </div>
-              <div className="mercado-kanban-col-body">
-                {scheduledJobs.length === 0 ? (
-                  <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', padding: '24px 0' }}>Sin citas programadas</div>
-                ) : (
-                  scheduledJobs.map(job => renderKanbanCard(job, 'scheduled'))
-                )}
-              </div>
-            </div>
-
-            {/* COLUMNA 4: EN PROCESO */}
-            <div className="mercado-kanban-column col-proceso">
-              <div className="mercado-kanban-col-header">
-                <span className="mercado-kanban-col-title">
-                  ⚡ EN PROCESO
-                </span>
-                <span className="mercado-kanban-col-badge">{inProgressJobs.length}</span>
-              </div>
-              <div className="mercado-kanban-col-body">
-                {inProgressJobs.length === 0 ? (
-                  <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', padding: '24px 0' }}>Sin servicios en proceso</div>
-                ) : (
-                  inProgressJobs.map(job => renderKanbanCard(job, 'in-progress'))
-                )}
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -2812,6 +3508,88 @@ const MercadoTrabajos = () => {
         onClose={() => setShowRegisterModal(false)}
         onSuccess={fetchJobs}
       />
+
+      {/* ─── MODAL PROGRAMAR SEGUNDA VISITA (TABLERO) ─── */}
+      {showSecondVisitModal && (
+        <div className="mercado-second-visit-overlay" onClick={() => setShowSecondVisitModal(false)}>
+          <div className="mercado-second-visit-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mercado-second-visit-header">
+              <h3 style={{ margin: 0, color: '#ffffff', fontSize: '1.05rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Calendar size={18} color="#f26522" /> Programar Segunda Visita
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowSecondVisitModal(false)}
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.4rem' }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSecondVisit}>
+              <div className="mercado-second-visit-body">
+                <div className="mercado-second-visit-field">
+                  <label className="mercado-second-visit-label">Fecha y Hora Sugerida</label>
+                  <input
+                    type="datetime-local"
+                    className="mercado-second-visit-input"
+                    value={secondVisitDate}
+                    onChange={(e) => setSecondVisitDate(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="mercado-second-visit-field">
+                  <label className="mercado-second-visit-label">Motivo de la 2da Visita</label>
+                  <textarea
+                    rows={4}
+                    className="mercado-second-visit-textarea"
+                    placeholder="Ej. Se requiere comprar refacción específica, secado de material o validación posterior..."
+                    value={secondVisitReason}
+                    onChange={(e) => setSecondVisitReason(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="mercado-second-visit-footer">
+                <button
+                  type="button"
+                  className="mercado-second-visit-btn-cancel"
+                  onClick={() => setShowSecondVisitModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="mercado-second-visit-btn-submit"
+                  disabled={submittingSecondVisit}
+                >
+                  {submittingSecondVisit ? 'Guardando...' : 'Confirmar 2da Visita'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL ZOOM FOTO DE EVIDENCIA ─── */}
+      {zoomedPhotoUrl && (
+        <div className="mercado-second-visit-overlay" onClick={() => setZoomedPhotoUrl(null)}>
+          <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
+            <img
+              src={zoomedPhotoUrl}
+              alt="Evidencia ampliada"
+              style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: '14px', border: '2px solid rgba(255,255,255,0.2)', boxShadow: '0 20px 50px rgba(0,0,0,0.8)', objectFit: 'contain' }}
+            />
+            <button
+              onClick={() => setZoomedPhotoUrl(null)}
+              style={{ position: 'absolute', top: '-15px', right: '-15px', width: '36px', height: '36px', borderRadius: '50%', background: '#f26522', color: '#ffffff', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
