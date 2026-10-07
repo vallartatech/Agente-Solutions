@@ -532,40 +532,42 @@
   transform: translateX(4px);
 }
 
-/* Social Row */
-.aiw-social-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 2px;
-}
-
-.aiw-social-btn {
-  height: 34px;
+/* Social Google Button */
+.aiw-social-btn-google {
+  width: 100%;
+  height: 38px;
   background-color: #1a1b20;
   border: 1px solid #282a33;
-  border-radius: 8px;
-  color: #a0a6b5;
+  border-radius: 10px;
+  color: #d1d5db;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: 'Outfit', sans-serif;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.6px;
+  margin-top: 3px;
+  backdrop-filter: blur(12px);
 }
 
-.aiw-social-btn:hover {
+.aiw-social-btn-google:hover {
   background-color: #242630;
-  border-color: #3b3f4d;
+  border-color: #475569;
   color: #ffffff;
   transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 
-.aiw-social-g {
-  font-weight: 800;
-  font-size: 0.95rem;
+.aiw-social-btn-google:active {
+  transform: translateY(0);
+}
+
+.aiw-google-icon {
+  flex-shrink: 0;
 }
 
 /* Divider OR */

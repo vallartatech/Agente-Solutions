@@ -1,32 +1,94 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Bell, Check, Info } from "lucide-react";
+import { 
+  Bell, 
+  X, 
+  Lightbulb, 
+  Zap, 
+  Clock, 
+  Wrench, 
+  AlertCircle, 
+  FileText, 
+  CheckCircle2, 
+  MessageSquare, 
+  BellRing,
+  ArrowRight
+} from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import "../../styles/Shared/NotificationBell.css";
 
 const timeAgo = (dateString) => {
   if (!dateString) return "";
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "Ahora";
   const now = new Date();
   const seconds = Math.floor((now - date) / 1000);
   
   let interval = Math.floor(seconds / 31536000);
-  if (interval >= 1) return `hace ${interval} año${interval === 1 ? '' : 's'}`;
+  if (interval >= 1) return `${interval} a`;
   interval = Math.floor(seconds / 2592000);
-  if (interval >= 1) return `hace ${interval} mes${interval === 1 ? '' : 'es'}`;
+  if (interval >= 1) return `${interval} m`;
   interval = Math.floor(seconds / 86400);
-  if (interval >= 1) return `hace ${interval} día${interval === 1 ? '' : 's'}`;
+  if (interval >= 1) return `${interval} d`;
   interval = Math.floor(seconds / 3600);
-  if (interval >= 1) return `hace ${interval} hora${interval === 1 ? '' : 's'}`;
+  if (interval >= 1) return `${interval} h`;
   interval = Math.floor(seconds / 60);
-  if (interval >= 1) return `hace ${interval} min${interval === 1 ? '' : 's'}`;
-  return "hace unos segundos";
+  if (interval >= 1) return `${interval} min`;
+  return "Ahora";
+};
+
+const formatNotifTime = (dateString) => {
+  if (!dateString) return "Ahora";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return timeAgo(dateString);
+  const now = new Date();
+  
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  
+  return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+};
+
+const getNotificationMeta = (notif) => {
+  const type = (notif.data?.alert_type || notif.data?.type || notif.type || notif.alert_type || '').toLowerCase();
+  const title = (notif.data?.title || notif.title || notif.titulo || '').toLowerCase();
+  const msg = (notif.data?.message || notif.message || notif.mensaje || '').toLowerCase();
+
+  if (type.includes('quote') || type.includes('pago') || type.includes('payment') || title.includes('cotiza') || title.includes('pago') || title.includes('costo') || msg.includes('cotiza')) {
+    return { 
+      category: 'Alerta de Cotización / Costo', 
+      icon: <Zap size={18} strokeWidth={2.2} color="#0f172a" />, 
+      tab: 'cotizaciones' 
+    };
+  }
+  if (type.includes('visit') || type.includes('visita') || title.includes('visita') || title.includes('recordatorio') || title.includes('reprogram') || msg.includes('visita')) {
+    return { 
+      category: 'Recordatorios', 
+      icon: <BellRing size={18} strokeWidth={2.2} color="#0f172a" />, 
+      tab: 'recordatorios' 
+    };
+  }
+  if (type.includes('service') || type.includes('work_order') || title.includes('servicio') || title.includes('trabajo') || msg.includes('servicio')) {
+    return { 
+      category: 'Estado de Servicio', 
+      icon: <Lightbulb size={18} strokeWidth={2.2} color="#0f172a" />, 
+      tab: 'servicios' 
+    };
+  }
+  return { 
+    category: 'Notificaciones', 
+    icon: <Bell size={18} strokeWidth={2.2} color="#0f172a" />, 
+    tab: 'alertas' 
+  };
 };
 
 const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const { user } = useAuth();
@@ -126,8 +188,6 @@ const NotificationBell = () => {
       let url = notification.data?.url || notification.url;
       const type = notification.data?.alert_type || notification.data?.type || notification.type || notification.alert_type;
 
-      console.log("Notification from Bell clicked:", notification);
-      
       const isTecnico = user?.role_id === 2;
       const isCliente = user?.role_id === 3;
       const workOrderId = notification.data?.work_order_id || notification.data?.service_id || notification.data?.id || notification.work_order_id || notification.service_id || notification.id;
@@ -188,7 +248,6 @@ const NotificationBell = () => {
         url = isTecnico ? (workOrderId ? `/trabajo-propiedad/work_order-${workOrderId}` : '/trabajos-tecnico') : (workOrderId ? `/tablero-servicios?jobId=${workOrderId}` : '/tablero-servicios');
       }
 
-      // Fallback de seguridad
       if (!url || (isTecnico && (url.includes('/propiedad/') || url.includes('/tablero-servicios') || url.includes('/VistaRoot')))) {
         if (isTecnico) {
           url = workOrderId ? `/trabajo-propiedad/work_order-${workOrderId}` : '/trabajos-tecnico';
@@ -202,8 +261,6 @@ const NotificationBell = () => {
         else url = '/VistaRoot';
       }
 
-      console.log("Final URL from Bell:", url);
-
       if (url) {
         navigate(url);
       }
@@ -212,120 +269,141 @@ const NotificationBell = () => {
     }
   };
 
+  // Filtrado de notificaciones por pestaña
+  const filteredNotifications = notifications.filter((notif) => {
+    if (activeTab === 'all') return true;
+    const meta = getNotificationMeta(notif);
+    return meta.tab === activeTab;
+  });
+
   return (
     <div
-      className="notification-bell-container"
+      className="nb-wrapper"
       ref={dropdownRef}
-      style={{ position: "relative", marginRight: "20px" }}
     >
+      {/* Botón Campana Disparador */}
       <button
+        type="button"
+        className={`nb-trigger-btn ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          position: "relative",
-          padding: "5px",
-        }}
+        title="Notificaciones"
       >
-        <Bell size={24} color="#333" />
+        <Bell size={19} className="nb-trigger-icon" />
         {notifications.length > 0 && (
-          <span
-            style={{
-              position: "absolute",
-              top: 0,
-              right: 0,
-              backgroundColor: "#F26522",
-              color: "white",
-              borderRadius: "50%",
-              fontSize: "0.7rem",
-              fontWeight: "bold",
-              width: "18px",
-              height: "18px",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
+          <span className="nb-trigger-badge">
             {notifications.length > 9 ? "9+" : notifications.length}
           </span>
         )}
       </button>
 
+      {/* Popover / Tarjeta de Notificaciones (Estilo Mockup) */}
       {isOpen && (
-        <div className="notification-dropdown">
-          <div className="notification-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>Notificaciones</span>
-              <span className="notification-badge">
-                {notifications.length} nuevas
-              </span>
-            </div>
+        <div className="nb-card-popover animate-popover-in">
+          
+          {/* Header */}
+          <div className="nb-header">
+            <h3 className="nb-title">Notifications</h3>
             <button
-              onClick={() => {
-                setIsOpen(false);
-                navigate("/notificaciones");
-              }}
-              className="notification-top-btn"
-              title="Ver todas las notificaciones"
+              type="button"
+              className="nb-close-btn"
+              onClick={() => setIsOpen(false)}
+              title="Cerrar"
             >
-              Ver todas ➔
+              <X size={17} strokeWidth={2.4} />
             </button>
           </div>
 
-          <div className="notification-action-bar">
-            <button 
-              onClick={() => {
-                setIsOpen(false);
-                navigate("/notificaciones");
-              }}
-              className="notification-action-link"
+          {/* Filter Tabs Row */}
+          <div className="nb-tabs-row">
+            <button
+              type="button"
+              className={`nb-tab-pill ${activeTab === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveTab('all')}
             >
-              Ver todas las notificaciones
+              All
+            </button>
+            <button
+              type="button"
+              className={`nb-tab-pill ${activeTab === 'servicios' ? 'active' : ''}`}
+              onClick={() => setActiveTab('servicios')}
+            >
+              Device Status
+            </button>
+            <button
+              type="button"
+              className={`nb-tab-pill ${activeTab === 'recordatorios' ? 'active' : ''}`}
+              onClick={() => setActiveTab('recordatorios')}
+            >
+              Reminders
+            </button>
+            <button
+              type="button"
+              className={`nb-tab-pill ${activeTab === 'cotizaciones' ? 'active' : ''}`}
+              onClick={() => setActiveTab('cotizaciones')}
+            >
+              Cost Alert
             </button>
           </div>
 
-          <div className="notification-list">
-            {notifications.length === 0 ? (
-              <div className="notification-empty">
-                No tienes notificaciones nuevas.
+          {/* List of Notification Items */}
+          <div className="nb-list-container">
+            {filteredNotifications.length === 0 ? (
+              <div className="nb-empty-state">
+                <div className="nb-empty-icon-box">
+                  <CheckCircle2 size={24} color="#10b981" />
+                </div>
+                <p className="nb-empty-title">Estás al día</p>
+                <p className="nb-empty-desc">No hay notificaciones pendientes en esta categoría.</p>
               </div>
             ) : (
-              notifications.map((notif) => (
-                <div
-                  key={notif.id}
-                  onClick={() => handleNotificationClick(notif)}
-                  className="notification-item"
-                >
-                  <div className="notification-item-icon">
-                    <Info size={20} />
+              filteredNotifications.map((notif) => {
+                const meta = getNotificationMeta(notif);
+                const titleText = notif.data?.title || notif.title || notif.titulo || notif.data?.message || notif.message || notif.mensaje || 'Notificación del sistema';
+                const timeText = formatNotifTime(notif.created_at || notif.fecha);
+
+                return (
+                  <div
+                    key={notif.id}
+                    className="nb-item-card"
+                    onClick={() => handleNotificationClick(notif)}
+                  >
+                    {/* Left Circular Icon with Orange Dot */}
+                    <div className="nb-item-avatar-box">
+                      <span className="nb-unread-orange-dot" />
+                      <div className="nb-item-icon-circle">
+                        {meta.icon}
+                      </div>
+                    </div>
+
+                    {/* Center Text Info */}
+                    <div className="nb-item-content">
+                      <span className="nb-item-category">{meta.category}</span>
+                      <h4 className="nb-item-message">{titleText}</h4>
+                    </div>
+
+                    {/* Right Timestamp */}
+                    <span className="nb-item-time">{timeText}</span>
                   </div>
-                  <div>
-                    <h4 className="notification-item-title">
-                      {notif.data?.title || notif.title || notif.titulo || 'Notificación'}
-                    </h4>
-                    <p className="notification-item-message">
-                      {notif.data?.message || notif.message || notif.mensaje || ''}
-                    </p>
-                    {notif.created_at && (
-                      <span style={{ fontSize: '11px', color: '#888', marginTop: '5px', display: 'block' }}>
-                        {timeAgo(notif.created_at)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
-            <div
-              className="notification-footer"
+          </div>
+
+          {/* Footer Bar */}
+          <div className="nb-footer">
+            <button
+              type="button"
+              className="nb-footer-btn"
               onClick={() => {
                 setIsOpen(false);
                 navigate("/notificaciones");
               }}
             >
-              Ver todas las notificaciones
-            </div>
+              <span>Ver historial completo</span>
+              <ArrowRight size={14} />
+            </button>
           </div>
+
         </div>
       )}
     </div>
@@ -333,3 +411,4 @@ const NotificationBell = () => {
 };
 
 export default NotificationBell;
+

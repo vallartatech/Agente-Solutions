@@ -6,6 +6,7 @@ import ModalCompraEspacios from '../../../components/Shared/ModalCompraEspacios'
 import ModalCalendarioCliente from './ModalCalendarioCliente';
 import ModalRegistroInmueble from './ModalRegistroInmueble';
 import ModalEditarPropiedadCliente from './ModalEditarPropiedadCliente';
+import NotificationBell from '../../../components/Shared/NotificationBell';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
 
 import {
@@ -30,7 +31,8 @@ import {
   Clock,
   Lock,
   Edit3,
-  Bell
+  Bell,
+  Shield
 } from 'lucide-react';
 
 import defaultPropImg from '../../../assets/propiedad_ejemplo.jpg';
@@ -177,6 +179,22 @@ const VistaClienteParticular = () => {
     if (user?.name) return user.name.toUpperCase();
     if (user?.nombre) return user.nombre.toUpperCase();
     return 'CLIENTE PARTICULAR';
+  }, [user]);
+
+  const userRoleLabel = useMemo(() => {
+    const id = Number(user?.role_id);
+    switch (id) {
+      case 0: return 'Usuario Root';
+      case 1: return 'Administrador';
+      case 2: return 'Técnico';
+      case 3: return 'Cliente Particular';
+      case 4: return 'Negocio';
+      case 5: return 'Autónomo';
+      case 6: return 'Contratista';
+      case 7: return 'Admin Propiedades';
+      case 8: return 'Técnico de la Red';
+      default: return 'Cliente Particular';
+    }
   }, [user]);
 
   const userAvatar = user?.profile_picture || user?.avatar_url || user?.foto || null;
@@ -494,6 +512,16 @@ const VistaClienteParticular = () => {
   const maxAllowed = (subInfo?.max_properties ?? 3) + (subInfo?.extra_properties_count ?? 0);
   const currentPropsCount = subInfo?.properties_count ?? (propiedades.length || 1);
 
+  const irAlInicio = () => {
+    if (!user) return navigate('/');
+    const role = Number(user.role_id);
+    if (role === 0 || role === 1) navigate('/VistaRoot');
+    else if (role === 4 || role === 5 || role === 7 || role === 3) navigate('/VistaMarket');
+    else if (role === 2) navigate('/VistaTecnico');
+    else if (role === 6 || role === 8) navigate('/mercado-trabajos');
+    else navigate('/');
+  };
+
   return (
     <div className="vcp-root">
       {/* Full-bleed Background Image Layer across entire viewport including navbar */}
@@ -510,12 +538,16 @@ const VistaClienteParticular = () => {
             src={appLogo} 
             alt="Agente Logo" 
             className="vcp-brand-logo"
-            onClick={() => navigate('/VistaMarket')} 
+            onClick={irAlInicio} 
+            title="Ir al Inicio"
           />
         </div>
 
-        {/* Center Nav Links */}
+        {/* Center Nav Links: INICIO + 5 core modules */}
         <nav className="vcp-header-nav">
+          <button className="vcp-nav-btn" onClick={irAlInicio}>
+            INICIO
+          </button>
           <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
             USUARIOS
           </button>
@@ -547,20 +579,7 @@ const VistaClienteParticular = () => {
             </button>
 
             {/* Botón Notificaciones */}
-            <button 
-              type="button"
-              className="vcp-header-icon-btn" 
-              title="Notificaciones"
-              onClick={() => navigate('/notificaciones')}
-            >
-              <Bell size={18} color="#ffffff" strokeWidth={2} />
-              <span className="vcp-header-notif-dot" />
-            </button>
-          </div>
-
-          <div className="vcp-user-info-text">
-            <span className="vcp-user-role-badge">MARKET_CLIENT_PERSONAL</span>
-            <span className="vcp-user-name">{userFullName}</span>
+            <NotificationBell />
           </div>
 
           <button 
@@ -577,6 +596,19 @@ const VistaClienteParticular = () => {
 
           {profileDropdownOpen && (
             <div className="vcp-profile-dropdown">
+              <div className="vcp-dropdown-user-header">
+                <div className="vcp-dropdown-role-pill">
+                  <Shield size={12} className="vcp-dropdown-role-icon" />
+                  <span>{userRoleLabel}</span>
+                </div>
+                <div className="vcp-dropdown-user-name">{userFullName}</div>
+                {user?.email && (
+                  <div className="vcp-dropdown-user-email">{user.email}</div>
+                )}
+              </div>
+
+              <div className="vcp-dropdown-divider" />
+
               <button 
                 className="vcp-dropdown-item" 
                 onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
@@ -762,97 +794,96 @@ const VistaClienteParticular = () => {
         </section>
 
         {/* ── RIGHT PROPERTY PROFILE CARD ── */}
+        {/* ── RIGHT PROPERTY PROFILE CARD ── */}
         <aside className="vcp-panel-side">
-          <div>
-            {/* Panel Header */}
-            <div className="vcp-panel-header">
-              <button 
-                type="button"
-                className="vcp-panel-header-icon vcp-panel-edit-btn"
-                onClick={() => setShowModalEditarPropiedad(true)}
-                title="Editar información y fachada de esta propiedad"
-              >
-                <Edit3 size={18} />
-              </button>
-              <div className="vcp-panel-header-texts">
-                <h2 className="vcp-panel-title">PERFIL DE LA PROPIEDAD</h2>
-                <span className="vcp-panel-id-badge">
-                  ID REGISTRO: #{activeProperty?.id || '001'}
+          {/* ── 1. TOP: PERFIL DE LA PROPIEDAD ── */}
+          <div className="vcp-panel-header">
+            <button 
+              type="button"
+              className="vcp-panel-header-icon vcp-panel-edit-btn"
+              onClick={() => setShowModalEditarPropiedad(true)}
+              title="Editar información y fachada de esta propiedad"
+            >
+              <Edit3 size={18} />
+            </button>
+            <div className="vcp-panel-header-texts">
+              <h2 className="vcp-panel-title">PERFIL DE LA PROPIEDAD</h2>
+              <span className="vcp-panel-id-badge">
+                ID REGISTRO: #{activeProperty?.id || '001'}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="vcp-panel-edit-text-btn"
+              onClick={() => setShowModalEditarPropiedad(true)}
+              title="Editar información y fachada de esta propiedad"
+            >
+              <Edit3 size={13} />
+              <span>EDITAR</span>
+            </button>
+          </div>
+
+          {/* Fields List */}
+          <div className="vcp-fields-list">
+            {/* Cliente Asociado */}
+            <div className="vcp-field-item">
+              <div className="vcp-field-icon-wrap">
+                <User size={16} />
+              </div>
+              <div className="vcp-field-content">
+                <span className="vcp-field-label">CLIENTE ASOCIADO</span>
+                <span className="vcp-field-value">
+                  {userFullName}
                 </span>
               </div>
-              <button
-                type="button"
-                className="vcp-panel-edit-text-btn"
-                onClick={() => setShowModalEditarPropiedad(true)}
-                title="Editar información y fachada de esta propiedad"
-              >
-                <Edit3 size={13} />
-                <span>EDITAR</span>
-              </button>
             </div>
 
-            {/* Fields List */}
-            <div className="vcp-fields-list">
-              {/* Cliente Asociado */}
-              <div className="vcp-field-item">
-                <div className="vcp-field-icon-wrap">
-                  <User size={16} />
-                </div>
-                <div className="vcp-field-content">
-                  <span className="vcp-field-label">CLIENTE ASOCIADO</span>
-                  <span className="vcp-field-value">
-                    {userFullName}
-                  </span>
-                </div>
+            {/* CURP Inmueble */}
+            <div className="vcp-field-item">
+              <div className="vcp-field-icon-wrap">
+                <ClipboardList size={16} />
               </div>
-
-              {/* CURP Inmueble */}
-              <div className="vcp-field-item">
-                <div className="vcp-field-icon-wrap">
-                  <ClipboardList size={16} />
-                </div>
-                <div className="vcp-field-content">
-                  <span className="vcp-field-label">CURP INMUEBLE</span>
-                  <span className="vcp-curp-pill">
-                    {activeProperty?.curp || activeProperty?.curp_inmueble || `INM-${activeProperty?.id ? String(activeProperty.id).padStart(4, '0') : '2024'}-MX01`}
-                  </span>
-                </div>
+              <div className="vcp-field-content">
+                <span className="vcp-field-label">CURP INMUEBLE</span>
+                <span className="vcp-curp-pill">
+                  {activeProperty?.curp || activeProperty?.curp_inmueble || `INM-${activeProperty?.id ? String(activeProperty.id).padStart(4, '0') : '2024'}-MX01`}
+                </span>
               </div>
+            </div>
 
-              {/* Dirección */}
-              <div className="vcp-field-item">
-                <div className="vcp-field-icon-wrap">
-                  <MapPin size={16} />
-                </div>
-                <div className="vcp-field-content">
-                  <span className="vcp-field-label">DIRECCIÓN</span>
-                  <span className="vcp-field-value">
-                    {activeProperty?.address || activeProperty?.direccion || activeProperty?.calle || 'Residencial Las Palmas #142, Mérida'}
-                  </span>
-                </div>
+            {/* Dirección */}
+            <div className="vcp-field-item">
+              <div className="vcp-field-icon-wrap">
+                <MapPin size={16} />
               </div>
+              <div className="vcp-field-content">
+                <span className="vcp-field-label">DIRECCIÓN</span>
+                <span className="vcp-field-value">
+                  {activeProperty?.address || activeProperty?.direccion || activeProperty?.calle || 'Residencial Las Palmas #142, Mérida'}
+                </span>
+              </div>
+            </div>
 
-              {/* Ubicación GPS */}
-              <div className="vcp-field-item">
-                <div className="vcp-field-icon-wrap">
-                  <Navigation size={16} />
-                </div>
-                <div className="vcp-field-content">
-                  <span className="vcp-field-label">UBICACIÓN GPS</span>
-                  <div className="vcp-gps-row" onClick={handleOpenMaps} title="Ver ubicación exacta en Google Maps">
-                    <span>
-                      {extractPropertyGps(activeProperty)
-                        ? `📍 ${extractPropertyGps(activeProperty).formatted}`
-                        : '📍 Ver en Google Maps'}
-                    </span>
-                    <ExternalLink size={13} />
-                  </div>
+            {/* Ubicación GPS */}
+            <div className="vcp-field-item">
+              <div className="vcp-field-icon-wrap">
+                <Navigation size={16} />
+              </div>
+              <div className="vcp-field-content">
+                <span className="vcp-field-label">UBICACIÓN GPS</span>
+                <div className="vcp-gps-row" onClick={handleOpenMaps} title="Ver ubicación exacta en Google Maps">
+                  <span>
+                    {extractPropertyGps(activeProperty)
+                      ? `📍 ${extractPropertyGps(activeProperty).formatted}`
+                      : '📍 Ver en Google Maps'}
+                  </span>
+                  <ExternalLink size={13} />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ── TABLERO DE CONTROL WIDGET (LLENA EL ESPACIO EN BLANCO) ── */}
+          {/* ── 2. MIDDLE: TABLERO DE CONTROL WIDGET ── */}
           <div className="vcp-tablero-card">
             <div className="vcp-tablero-header">
               <div className="vcp-tablero-icon-wrap">
@@ -926,7 +957,7 @@ const VistaClienteParticular = () => {
             </div>
           </div>
 
-          {/* 2x2 Action Buttons Grid */}
+          {/* ── 3. BOTTOM: 2x2 ACTION BUTTONS GRID ── */}
           <div className="vcp-actions-grid">
             {/* SOS Button */}
             <button 

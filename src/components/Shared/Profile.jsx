@@ -25,6 +25,7 @@ import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/Logo4.png"; 
 import defaultPropImg from "../../assets/propiedad_ejemplo.jpg";
 import ModalCalendarioCliente from "../../portals/AgenteMarket/Cliente/ModalCalendarioCliente";
+import NotificationBell from "./NotificationBell";
 import "../../styles/Shared/Profile.css"; 
 
 const ESPECIALIDADES_CATALOGO = [
@@ -322,18 +323,21 @@ const Profile = () => {
     }
   };
 
+  const irAlInicio = () => {
+    if (!user) return navigate('/');
+    const role = Number(user.role_id);
+    if (role === 0 || role === 1) navigate('/VistaRoot');
+    else if (role === 4 || role === 5 || role === 7 || role === 3) navigate('/VistaMarket');
+    else if (role === 2) navigate('/VistaTecnico');
+    else if (role === 6 || role === 8) navigate('/mercado-trabajos');
+    else navigate('/');
+  };
+
   const nombreCompleto = `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.name || 'Usuario';
   const coverUrl = user?.cover_picture || getPropImage(activeProperty) || DEFAULT_COVER;
 
   return (
     <div className="profile-liquid-root">
-      {/* Cinematic Full-bleed Background */}
-      <div 
-        className="profile-liquid-bg-layer"
-        style={{ backgroundImage: `url("${coverUrl}")` }}
-      />
-      <div className="profile-liquid-bg-overlay" />
-
       {/* Top Floating Action Bar (Full Liquid Glass Header) */}
       <header className="profile-liquid-topbar" ref={dropdownRef}>
         <div className="profile-topbar-left">
@@ -341,91 +345,58 @@ const Profile = () => {
             src={logo} 
             alt="Agente Solutions" 
             className="profile-brand-logo"
-            onClick={() => navigate('/VistaMarket')} 
+            onClick={irAlInicio} 
+            title="Ir al Inicio"
           />
-
-          <button 
-            type="button"
-            className="profile-glass-pill-btn" 
-            onClick={() => navigate(-1)}
-            title="Volver atrás"
-          >
-            <ChevronLeft size={16} />
-            <span>REGRESAR</span>
-          </button>
-
-          <button 
-            type="button"
-            className="profile-glass-pill-btn" 
-            onClick={() => openPhotoMenu('cover_picture')}
-            title="Cambiar imagen de portada"
-          >
-            <Camera size={14} />
-            <span>CAMBIAR PORTADA</span>
-          </button>
         </div>
 
-        {/* Center Nav Links */}
-        <nav className="profile-topbar-nav">
-          <button className="profile-nav-btn" onClick={() => navigate('/usuarios')}>
+        {/* Center Nav Links: INICIO + 5 core modules */}
+        <nav className="vcp-header-nav profile-topbar-nav">
+          <button className="vcp-nav-btn" onClick={irAlInicio}>
+            INICIO
+          </button>
+          <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
             USUARIOS
           </button>
-          <button className="profile-nav-btn" onClick={() => navigate('/reportes-globales')}>
+          <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
             REPORTE
           </button>
-          <button className="profile-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
+          <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
             COTIZACION
           </button>
-          <button className="profile-nav-btn" onClick={() => navigate('/tablero-servicios')}>
+          <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
             SERVICIOS
           </button>
-          <button className="profile-nav-btn" onClick={() => navigate('/red-autonomos')}>
+          <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
             MERCADO / RED
           </button>
         </nav>
 
-        {/* Right Actions & User Profile */}
-        <div className="profile-topbar-right">
-          <div className="profile-topbar-actions-group">
-            {/* Botón Calendario */}
+        {/* Right Actions & User Profile: Calendar + NotificationBell + Avatar */}
+        <div className="vcp-header-right profile-topbar-right">
+          <div className="vcp-header-actions-group">
             <button 
               type="button"
-              className="profile-header-icon-btn" 
+              className="vcp-nav-icon-btn profile-header-icon-btn" 
               title="Abrir Calendario y Citas"
               onClick={() => setShowModalCalendario(true)}
             >
-              <CalendarDays size={18} color="#ffffff" strokeWidth={2} />
+              <CalendarDays size={18} strokeWidth={2.2} />
             </button>
 
-            {/* Botón Notificaciones */}
-            <button 
-              type="button"
-              className="profile-header-icon-btn" 
-              title="Notificaciones"
-              onClick={() => navigate('/notificaciones')}
-            >
-              <Bell size={18} color="#ffffff" strokeWidth={2} />
-              <span className="profile-header-notif-dot" />
-            </button>
-          </div>
-
-          <div className="profile-user-info-text">
-            <span className="profile-user-role-badge">
-              {obtenerNombreRol(user?.role_id)}
-            </span>
-            <span className="profile-user-name">{nombreCompleto}</span>
+            <NotificationBell />
           </div>
 
           <button 
             type="button"
-            className="profile-avatar-btn" 
+            className="vcp-avatar-btn profile-avatar-btn" 
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
             title="Opciones de sesión"
           >
             {user?.profile_picture ? (
-              <img src={user.profile_picture} alt="Avatar" className="profile-avatar-img" />
+              <img src={user.profile_picture} alt="Avatar" className="vcp-avatar-img profile-avatar-img" />
             ) : (
-              <div className="profile-avatar-initial">
+              <div className="vcp-avatar-initial profile-avatar-initial">
                 {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : 'U')}
               </div>
             )}
@@ -433,6 +404,19 @@ const Profile = () => {
 
           {profileDropdownOpen && (
             <div className="profile-header-dropdown">
+              <div className="vcp-dropdown-user-header">
+                <div className="vcp-dropdown-role-pill">
+                  <Shield size={12} className="vcp-dropdown-role-icon" />
+                  <span>{obtenerNombreRol(user?.role_id)}</span>
+                </div>
+                <div className="vcp-dropdown-user-name">{nombreCompleto}</div>
+                {user?.email && (
+                  <div className="vcp-dropdown-user-email">{user.email}</div>
+                )}
+              </div>
+
+              <div className="vcp-dropdown-divider" />
+
               <button 
                 className="profile-dropdown-item" 
                 onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
@@ -457,141 +441,163 @@ const Profile = () => {
       {/* ── YOUTUBE CHANNEL STYLE MAIN DASHBOARD ── */}
       <main className="profile-yt-dashboard">
         
+        {/* ── 0. TOP BANNER CARD (PORTADA COMO CARD SUPERIOR) ── */}
+        <section className="profile-banner-card">
+          <img 
+            src={coverUrl} 
+            alt="Portada del perfil" 
+            className="profile-banner-img" 
+          />
+          <div className="profile-banner-overlay" />
+          <button 
+            type="button" 
+            className="profile-banner-change-btn"
+            onClick={() => openPhotoMenu('cover_picture')}
+            title="Cambiar imagen de portada"
+          >
+            <Camera size={15} />
+            <span>CAMBIAR PORTADA</span>
+          </button>
+        </section>
+
         {/* ── 1. CANAL HEADER / PERFIL INFO (HORIZONTAL) ── */}
         <section className="profile-yt-header-card">
           <div className="profile-yt-header-main">
             
-            {/* Avatar a la izquierda */}
-            <div 
-              className="profile-yt-avatar-wrap" 
-              onClick={() => openPhotoMenu('profile_picture')} 
-              title="Cambiar foto de perfil"
-            >
-              {user?.profile_picture ? (
-                <img src={user.profile_picture} alt="Avatar" className="profile-yt-avatar-img" />
-              ) : (
-                <div className="profile-yt-avatar-initial">
-                  {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : '👤')}
-                </div>
-              )}
-              <div className="profile-yt-avatar-hover">
-                <Camera size={22} color="#ffffff" />
-                <span>CAMBIAR</span>
-              </div>
-            </div>
-
-            <input type="file" ref={cameraRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" capture="environment" />
-            <input type="file" ref={galleryRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" />
-
-            {/* Datos del usuario a la derecha de la foto */}
-            <div className="profile-yt-info-col">
-              <div className="profile-yt-title-row">
-                <h1 className="profile-yt-name">{nombreCompleto}</h1>
-                <div className="profile-yt-badges-inline">
-                  <span className="profile-yt-role-badge">
-                    <Shield size={12} /> {obtenerNombreRol(user?.role_id)}
-                  </span>
-                  <span className="profile-yt-status-badge">
-                    <Sparkles size={11} /> ACTIVO
-                  </span>
-                </div>
-              </div>
-
-              {/* Handle y metadatos */}
-              <div className="profile-yt-handle-row">
-                <span className="profile-yt-handle">@{user?.email ? user.email.split('@')[0] : 'usuario'}</span>
-                <span className="profile-yt-handle-dot">•</span>
-                <span className="profile-yt-meta-item">
-                  <Clock size={12} /> Miembro desde {formatearFecha(user?.created_at)}
-                </span>
-                {user?.birth_date && (
-                  <>
-                    <span className="profile-yt-handle-dot">•</span>
-                    <span className="profile-yt-meta-item">
-                      <Calendar size={12} /> {formatearFecha(user?.birth_date)}
-                    </span>
-                  </>
-                )}
-              </div>
-
-              {/* Chips de contacto */}
-              <div className="profile-yt-chips-row">
-                <div className="profile-yt-chip" title={user?.email}>
-                  <Mail size={13} color="#FF8548" />
-                  <span>{user?.email || 'Sin correo'}</span>
-                </div>
-                <div className="profile-yt-chip">
-                  <Phone size={13} color="#FF8548" />
-                  <span>{user?.phone_number || 'Sin teléfono'}</span>
-                </div>
-              </div>
-
-              {/* Especialidades si es técnico */}
-              {(user?.role_id === 2 || user?.role_id === 8) && (() => {
-                const displaySpecs = (user?.specialties && user.specialties.length > 0)
-                  ? user.specialties
-                  : (selectedSpecialties.length > 0 ? selectedSpecialties : null);
-                return (
-                  <div className="profile-yt-specs-row">
-                    <span className="profile-yt-specs-label">🛠️ ESPECIALIDADES:</span>
-                    {displaySpecs ? (
-                      displaySpecs.map((s, idx) => {
-                        const specName = typeof s === 'string' ? s : s.name;
-                        const specObj = ESPECIALIDADES_CATALOGO.find(item => item.name === specName) || (typeof s === 'object' ? s : null);
-                        const icon = specObj ? (specObj.icon || '⚡') : '⚡';
-                        return (
-                          <span key={idx} className="profile-yt-spec-tag">
-                            {icon} {specName}
-                          </span>
-                        );
-                      })
-                    ) : (
-                      <span className="profile-no-specs">Sin especialidades</span>
-                    )}
+            {/* Grupo Izquierdo: Avatar + Datos */}
+            <div className="profile-yt-header-left-group">
+              {/* Avatar a la izquierda */}
+              <div 
+                className="profile-yt-avatar-wrap" 
+                onClick={() => openPhotoMenu('profile_picture')} 
+                title="Cambiar foto de perfil"
+              >
+                {user?.profile_picture ? (
+                  <img src={user.profile_picture} alt="Avatar" className="profile-yt-avatar-img" />
+                ) : (
+                  <div className="profile-yt-avatar-initial">
+                    {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : '👤')}
                   </div>
-                );
-              })()}
-
-              {/* Fila de botones de acción */}
-              <div className="profile-yt-actions-row">
-                <button 
-                  type="button" 
-                  className="profile-yt-btn-primary" 
-                  onClick={openModal}
-                  title="Editar información de perfil"
-                >
-                  <Edit3 size={15} />
-                  <span>Personalizar datos</span>
-                </button>
-
-                <button 
-                  type="button" 
-                  className="profile-yt-btn-secondary" 
-                  onClick={() => openPhotoMenu('cover_picture')}
-                  title="Cambiar imagen de portada"
-                >
-                  <Camera size={15} />
-                  <span>Cambiar Portada</span>
-                </button>
-
-                {user?.role_id !== 0 && (
-                  <button
-                    type="button"
-                    className="profile-yt-btn-danger"
-                    onClick={() => {
-                      setDeleteConfirmEmail('');
-                      setDeleteError('');
-                      setIsDeleteModalOpen(true);
-                    }}
-                    title="Eliminar mi cuenta"
-                  >
-                    <Trash2 size={13} />
-                    <span>Eliminar Cuenta</span>
-                  </button>
                 )}
+                <div className="profile-yt-avatar-hover">
+                  <Camera size={20} color="#ffffff" />
+                  <span>CAMBIAR</span>
+                </div>
               </div>
 
+              <input type="file" ref={cameraRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" capture="environment" />
+              <input type="file" ref={galleryRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" />
+
+              {/* Datos del usuario */}
+              <div className="profile-yt-info-col">
+                <div className="profile-yt-title-row">
+                  <h1 className="profile-yt-name">{nombreCompleto}</h1>
+                  <div className="profile-yt-badges-inline">
+                    <span className="profile-yt-role-badge">
+                      <Shield size={12} /> {obtenerNombreRol(user?.role_id)}
+                    </span>
+                    <span className="profile-yt-status-badge">
+                      <Sparkles size={11} /> ACTIVO
+                    </span>
+                  </div>
+                </div>
+
+                {/* Handle y metadatos */}
+                <div className="profile-yt-handle-row">
+                  <span className="profile-yt-handle">@{user?.email ? user.email.split('@')[0] : 'usuario'}</span>
+                  <span className="profile-yt-handle-dot">•</span>
+                  <span className="profile-yt-meta-item">
+                    <Clock size={12} /> Miembro desde {formatearFecha(user?.created_at)}
+                  </span>
+                  {user?.birth_date && (
+                    <>
+                      <span className="profile-yt-handle-dot">•</span>
+                      <span className="profile-yt-meta-item">
+                        <Calendar size={12} /> {formatearFecha(user?.birth_date)}
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                {/* Chips de contacto */}
+                <div className="profile-yt-chips-row">
+                  <div className="profile-yt-chip" title={user?.email}>
+                    <Mail size={13} color="#f26522" />
+                    <span>{user?.email || 'Sin correo'}</span>
+                  </div>
+                  <div className="profile-yt-chip">
+                    <Phone size={13} color="#f26522" />
+                    <span>{user?.phone_number || 'Sin teléfono'}</span>
+                  </div>
+                </div>
+
+                {/* Especialidades si es técnico */}
+                {(user?.role_id === 2 || user?.role_id === 8) && (() => {
+                  const displaySpecs = (user?.specialties && user.specialties.length > 0)
+                    ? user.specialties
+                    : (selectedSpecialties.length > 0 ? selectedSpecialties : null);
+                  return (
+                    <div className="profile-yt-specs-row">
+                      <span className="profile-yt-specs-label">🛠️ ESPECIALIDADES:</span>
+                      {displaySpecs ? (
+                        displaySpecs.map((s, idx) => {
+                          const specName = typeof s === 'string' ? s : s.name;
+                          const specObj = ESPECIALIDADES_CATALOGO.find(item => item.name === specName) || (typeof s === 'object' ? s : null);
+                          const icon = specObj ? (specObj.icon || '⚡') : '⚡';
+                          return (
+                            <span key={idx} className="profile-yt-spec-tag">
+                              {icon} {specName}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="profile-no-specs">Sin especialidades</span>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
+
+            {/* Grupo Derecho: Fila de botones de acción */}
+            <div className="profile-yt-actions-row">
+              <button 
+                type="button" 
+                className="profile-yt-btn-primary" 
+                onClick={openModal}
+                title="Editar información de perfil"
+              >
+                <Edit3 size={15} />
+                <span>Personalizar datos</span>
+              </button>
+
+              <button 
+                type="button" 
+                className="profile-yt-btn-secondary" 
+                onClick={() => openPhotoMenu('cover_picture')}
+                title="Cambiar imagen de portada"
+              >
+                <Camera size={15} />
+                <span>Cambiar Portada</span>
+              </button>
+
+              {user?.role_id !== 0 && (
+                <button
+                  type="button"
+                  className="profile-yt-btn-danger"
+                  onClick={() => {
+                    setDeleteConfirmEmail('');
+                    setDeleteError('');
+                    setIsDeleteModalOpen(true);
+                  }}
+                  title="Eliminar mi cuenta"
+                >
+                  <Trash2 size={13} />
+                  <span>Eliminar Cuenta</span>
+                </button>
+              )}
+            </div>
+
           </div>
         </section>
 
@@ -654,7 +660,7 @@ const Profile = () => {
                         <div className="profile-yt-thumb-overlay" />
                         
                         <div className="profile-yt-thumb-badge-top">
-                          <Building2 size={11} color="#FF6600" />
+                          <Building2 size={11} color="#f26522" />
                           <span>MIS PROPIEDADES</span>
                         </div>
 
@@ -672,7 +678,7 @@ const Profile = () => {
                         </div>
 
                         <div className="profile-yt-prop-address-line">
-                          <MapPin size={12} color="#FF8548" />
+                          <MapPin size={12} color="#f26522" />
                           <span>{prop.address || prop.direccion || 'Calle 37 #sin numero x 4 y 6, Mérida, Yucatán'}</span>
                         </div>
 

@@ -1,0 +1,295 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ==========================================================================
+   MASTER HEADER NAVBAR (DARK LIQUID GLASS)
+   Unified navigation for all portals and views
+   ========================================================================== */
+
+.vcp-header {
+  height: 68px;
+  background: linear-gradient(180deg, rgba(20, 22, 29, 0.55) 0%, rgba(15, 17, 23, 0.35) 100%);
+  backdrop-filter: blur(20px) saturate(180%) contrast(105%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) contrast(105%);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.35),
+    inset 0 -1px 1.5px rgba(255, 255, 255, 0.08),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.vcp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.vcp-brand-logo {
+  height: 48px;
+  max-width: 200px;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+
+.vcp-brand-logo:hover {
+  transform: scale(1.04);
+}
+
+/* Center Nav Links */
+.vcp-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.vcp-header-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.vcp-nav-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #cbd5e1;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.80rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.vcp-nav-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.vcp-nav-btn.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.35) 0%, rgba(242, 101, 34, 0.15) 100%);
+  border: 1px solid rgba(242, 101, 34, 0.6);
+  box-shadow: 0 0 14px rgba(242, 101, 34, 0.4);
+}
+
+.vcp-nav-icon-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+  margin-right: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.vcp-nav-icon-btn:hover {
+  background: rgba(242, 101, 34, 0.28);
+  border-color: rgba(242, 101, 34, 0.85);
+  color: #ff9d66;
+  transform: translateY(-1px) scale(1.06);
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.45);
+}
+
+/* User Right Section */
+.vcp-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.vcp-header-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vcp-user-info-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  gap: 2px;
+}
+
+.vcp-user-role-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #f26522;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-family: 'Outfit', sans-serif;
+}
+
+.vcp-user-name {
+  font-size: 0.86rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  max-width: 190px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Outfit', sans-serif;
+}
+
+.vcp-avatar-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f26522;
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  padding: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.vcp-avatar-btn:hover {
+  transform: scale(1.08);
+  border-color: #f26522;
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.5);
+}
+
+.vcp-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vcp-avatar-initial {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* Profile Dropdown */
+.vcp-profile-dropdown {
+  position: absolute;
+  top: 52px;
+  right: 0;
+  width: 220px;
+  background: linear-gradient(145deg, rgba(25, 29, 40, 0.95) 0%, rgba(15, 18, 26, 0.98) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 200;
+  animation: vcpFadeDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes vcpFadeDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.vcp-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.vcp-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.vcp-dropdown-item.logout {
+  color: #fca5a5;
+}
+
+.vcp-dropdown-item.logout:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+@media (max-width: 900px) {
+  .vcp-header {
+    height: auto;
+    min-height: 58px;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .vcp-brand-logo {
+    height: 38px;
+    max-width: 130px;
+  }
+
+  .vcp-header-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .vcp-nav-btn {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+  }
+}
