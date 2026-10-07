@@ -1,9 +1,26 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, X, ChevronLeft } from 'lucide-react';
+import { 
+  Camera, 
+  X, 
+  ChevronLeft, 
+  User, 
+  Mail, 
+  Phone, 
+  Calendar, 
+  Clock, 
+  Shield, 
+  Edit3, 
+  Trash2,
+  Sparkles,
+  Building2,
+  MapPin,
+  ExternalLink
+} from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/Logo3.png"; 
+import defaultPropImg from "../../assets/propiedad_ejemplo.jpg";
 import "../../styles/Shared/Profile.css"; 
 
 const ESPECIALIDADES_CATALOGO = [
@@ -21,6 +38,8 @@ const ESPECIALIDADES_CATALOGO = [
   { id: 12, name: "Redes y CCTV", icon: "🖥️" }
 ];
 
+const DEFAULT_COVER = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80';
+
 const Profile = () => {
   const { user, loginGlobal, logoutGlobal } = useAuth();
   const navigate = useNavigate();
@@ -36,6 +55,60 @@ const Profile = () => {
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  // Propiedades del usuario para el carrusel de la derecha
+  const [propiedades, setPropiedades] = useState([]);
+  const [selectedPropId, setSelectedPropId] = useState(null);
+
+  useEffect(() => {
+    const fetchProps = async () => {
+      try {
+        const token = localStorage.getItem('agente_token');
+        const authHeader = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/propiedades`, authHeader);
+        const rawProps = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        
+        const forThisUser = rawProps.filter(p => 
+          (user?.id && (p.user_id === user.id || p.usuario_id === user.id || p.cliente_id === user.id || p.cliente?.id === user.id)) ||
+          (user?.tenant_id && p.tenant_id === user.tenant_id)
+        );
+        const list = forThisUser.length > 0 ? forThisUser : rawProps;
+        setPropiedades(list);
+        if (list.length > 0) {
+          setSelectedPropId(list[0].id);
+        }
+      } catch (err) {
+        console.error("Error al cargar propiedades en perfil:", err);
+      }
+    };
+    fetchProps();
+  }, [user?.id, user?.tenant_id]);
+
+  const getPropImage = (p) => {
+    if (!p) return defaultPropImg;
+    return (
+      p.foto_url ||
+      p.facade_photo_path ||
+      p.facade_photo ||
+      p.imagen_url ||
+      p.foto_fachada ||
+      p.foto ||
+      p.image ||
+      defaultPropImg
+    );
+  };
+
+  const activeProperty = useMemo(() => {
+    if (!propiedades || propiedades.length === 0) {
+      return {
+        id: 1,
+        nombre_propiedad: 'MI PROPIEDAD',
+        address: 'Residencial Las Palmas #142, Mérida, Yucatán',
+        imagen_url: defaultPropImg
+      };
+    }
+    return propiedades.find(p => p.id === selectedPropId) || propiedades[0];
+  }, [propiedades, selectedPropId]);
 
   const handleConfirmDeleteAccount = async () => {
     if (deleteConfirmEmail !== user?.email) {
@@ -169,8 +242,6 @@ const Profile = () => {
           updatedSpecs = specRes.data.specialties;
         }
       }
-
-      console.log("Perfil actualizado:", res.data);
       
       loginGlobal({
         ...user,
@@ -191,7 +262,7 @@ const Profile = () => {
     }
   };
 
-  // --- MAGIA DE CLOUDINARY ---
+  // --- SUBIDA CLOUDINARY ---
   const handleFileUpload = async (event, type) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -233,188 +304,415 @@ const Profile = () => {
     }
   };
 
-  const nombreCompleto = `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.name || 'Cargando nombre...';
+  const nombreCompleto = `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.name || 'Usuario';
+  const coverUrl = user?.cover_picture || getPropImage(activeProperty) || DEFAULT_COVER;
 
   return (
-    <div className="main-container">
-      <div className="profile-page-scrollable-content">
-        <div className="profile-card full-screen-card">
-          
-          <div 
-            className="profile-banner" 
-            style={{ backgroundImage: user?.cover_picture ? `url(${user.cover_picture})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}
-            onClick={() => openPhotoMenu('cover_picture')}
+    <div className="profile-liquid-root">
+      {/* Cinematic Full-bleed Background */}
+      <div 
+        className="profile-liquid-bg-layer"
+        style={{ backgroundImage: `url("${coverUrl}")` }}
+      />
+      <div className="profile-liquid-bg-overlay" />
+
+      {/* Top Floating Action Bar */}
+      <header className="profile-liquid-topbar">
+        <div className="profile-topbar-left">
+          <button 
+            type="button"
+            className="profile-glass-pill-btn" 
+            onClick={() => navigate(-1)}
+            title="Volver atrás"
           >
-            <div className="banner-overlay"></div>
-            <div className="banner-hover-overlay">
-              <Camera size={48} color="white" />
-              <span>Cambiar Portada</span>
+            <ChevronLeft size={16} />
+            <span>REGRESAR</span>
+          </button>
+
+          <button 
+            type="button"
+            className="profile-glass-pill-btn" 
+            onClick={() => openPhotoMenu('cover_picture')}
+            title="Cambiar imagen de portada"
+          >
+            <Camera size={14} />
+            <span>CAMBIAR PORTADA</span>
+          </button>
+        </div>
+
+        <div className="profile-topbar-right">
+          <div className="profile-logo-glass-badge">
+            <img src={logo} alt="Agente Solutions" className="profile-top-logo" />
+          </div>
+        </div>
+      </header>
+
+      {/* Main Split Layout: 3 Columns Architecture (Identidad Propia Izquierda | Datos Centro | Propiedades Derecha) */}
+      <main className="profile-three-col-viewport">
+        
+        {/* ── COLUMNA 1: IDENTIDAD Y FOTO DE PERFIL (PROPIA A LA IZQUIERDA) ── */}
+        <section className="profile-col-identity">
+          <div className="profile-identity-card">
+            
+            <div className="profile-identity-avatar-wrap" onClick={() => openPhotoMenu('profile_picture')} title="Cambiar foto de perfil">
+              {user?.profile_picture ? (
+                <img src={user.profile_picture} alt="Avatar" className="profile-identity-avatar-img" />
+              ) : (
+                <div className="profile-identity-avatar-initial">
+                  {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : '👤')}
+                </div>
+              )}
+              <div className="profile-identity-avatar-hover">
+                <Camera size={24} color="#ffffff" />
+                <span>CAMBIAR FOTO</span>
+              </div>
+            </div>
+
+            <input type="file" ref={cameraRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" capture="environment" />
+            <input type="file" ref={galleryRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" />
+
+            <div className="profile-identity-info-box">
+              <h1 className="profile-identity-name">{nombreCompleto}</h1>
+              <div className="profile-identity-badges">
+                <span className="profile-identity-role-badge">
+                  <Shield size={11} /> {obtenerNombreRol(user?.role_id)}
+                </span>
+                <span className="profile-identity-status-badge">
+                  <Sparkles size={10} /> ACTIVO
+                </span>
+              </div>
+            </div>
+
+            <button 
+              type="button" 
+              className="profile-identity-edit-btn" 
+              onClick={openModal}
+              title="Editar información de perfil"
+            >
+              <Edit3 size={15} />
+              <span>EDITAR DATOS</span>
+            </button>
+
+            {user?.role_id !== 0 && (
+              <div className="profile-identity-danger-zone">
+                <button
+                  type="button"
+                  className="profile-identity-delete-btn"
+                  onClick={() => {
+                    setDeleteConfirmEmail('');
+                    setDeleteError('');
+                    setIsDeleteModalOpen(true);
+                  }}
+                  title="Eliminar mi cuenta"
+                >
+                  <Trash2 size={12} />
+                  <span>Eliminar mi Cuenta</span>
+                </button>
+              </div>
+            )}
+
+          </div>
+        </section>
+
+        {/* ── COLUMNA 2: DATOS DEL USUARIO (CENTRO) ── */}
+        <section className="profile-col-data">
+          
+          <div className="profile-data-heading">
+            <span className="profile-heading-text">DATOS DEL USUARIO</span>
+            <div className="profile-heading-line" />
+          </div>
+
+          <div className="profile-data-tiles-list">
+            <div className="profile-floating-tile">
+              <div className="profile-tile-icon-wrap">
+                <User size={15} />
+              </div>
+              <div className="profile-tile-content">
+                <span className="profile-tile-label">NOMBRE COMPLETO</span>
+                <span className="profile-tile-val">{nombreCompleto}</span>
+              </div>
+            </div>
+
+            <div className="profile-floating-tile is-accent">
+              <div className="profile-tile-icon-wrap is-accent">
+                <Shield size={15} />
+              </div>
+              <div className="profile-tile-content">
+                <span className="profile-tile-label">ROL EN SISTEMA</span>
+                <span className="profile-tile-val is-accent-text">{obtenerNombreRol(user?.role_id)}</span>
+              </div>
+            </div>
+
+            <div className="profile-floating-tile">
+              <div className="profile-tile-icon-wrap">
+                <Mail size={15} />
+              </div>
+              <div className="profile-tile-content">
+                <span className="profile-tile-label">CORREO ELECTRÓNICO</span>
+                <span className="profile-tile-val" title={user?.email}>{user?.email || 'No registrado'}</span>
+              </div>
+            </div>
+
+            <div className="profile-floating-tile">
+              <div className="profile-tile-icon-wrap">
+                <Phone size={15} />
+              </div>
+              <div className="profile-tile-content">
+                <span className="profile-tile-label">TELÉFONO</span>
+                <span className="profile-tile-val">{user?.phone_number || 'No registrado'}</span>
+              </div>
+            </div>
+
+            <div className="profile-floating-tile">
+              <div className="profile-tile-icon-wrap">
+                <Calendar size={15} />
+              </div>
+              <div className="profile-tile-content">
+                <span className="profile-tile-label">FECHA DE NACIMIENTO</span>
+                <span className="profile-tile-val">{formatearFecha(user?.birth_date)}</span>
+              </div>
+            </div>
+
+            <div className="profile-floating-tile">
+              <div className="profile-tile-icon-wrap">
+                <Clock size={15} />
+              </div>
+              <div className="profile-tile-content">
+                <span className="profile-tile-label">MIEMBRO DESDE</span>
+                <span className="profile-tile-val">{formatearFecha(user?.created_at)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Specialties for Technicians */}
+          {(user?.role_id === 2 || user?.role_id === 8) && (() => {
+            const displaySpecs = (user?.specialties && user.specialties.length > 0)
+              ? user.specialties
+              : (selectedSpecialties.length > 0 ? selectedSpecialties : null);
+            return (
+              <div className="profile-floating-specs-bar">
+                <span className="profile-specs-label">🛠️ ESPECIALIDADES:</span>
+                <div className="profile-specs-pills">
+                  {displaySpecs ? (
+                    displaySpecs.map((s, idx) => {
+                      const specName = typeof s === 'string' ? s : s.name;
+                      const specObj = ESPECIALIDADES_CATALOGO.find(item => item.name === specName) || (typeof s === 'object' ? s : null);
+                      const icon = specObj ? (specObj.icon || '⚡') : '⚡';
+                      return (
+                        <span key={idx} className="profile-spec-pill">
+                          {icon} {specName}
+                        </span>
+                      );
+                    })
+                  ) : (
+                    <span className="profile-no-specs">Sin especialidades</span>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+        </section>
+
+        {/* ── COLUMNA 3: PROPIEDADES ASOCIADAS Y CARRUSEL (DERECHA) ── */}
+        <section className="profile-col-properties">
+          
+          {/* Header de Propiedades */}
+          <div className="profile-props-header-row">
+            <div className="profile-props-title-wrap">
+              <Building2 size={18} color="#FF6600" />
+              <h2 className="profile-props-title">MIS PROPIEDADES</h2>
+              <span className="profile-props-count-pill">
+                {propiedades.length || 1} {propiedades.length === 1 ? 'Propiedad' : 'Propiedades'}
+              </span>
             </div>
             
             <button 
-              onClick={(e) => { e.stopPropagation(); navigate(-1); }}
-              style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 10, display: 'flex', alignItems: 'center', gap: '5px', background: '#F26522', color: 'white', padding: '8px 25px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }}
+              type="button"
+              className="profile-props-view-btn"
+              onClick={() => navigate('/VistaMarket')}
+              title="Ir al Portal de Propiedades"
             >
-              <ChevronLeft size={18} />
-              <span>REGRESAR</span>
+              <span>EXPLORAR</span>
+              <ExternalLink size={13} />
             </button>
-            
-            <div className="banner-logo-wrapper" onClick={(e) => e.stopPropagation()}>
-              <img src={logo} alt="Agente Solutions" className="banner-logo" />
-            </div>
-            
           </div>
 
-          <div className="profile-content">
-            <div className="profile-header-info">
-              <div className="profile-header-left">
-                <div className="avatar-section">
-                  <div className="avatar-wrapper" onClick={() => openPhotoMenu('profile_picture')}>
-                    {user?.profile_picture ? (
-                      <img src={user.profile_picture} alt="Avatar" className="profile-avatar" />
-                    ) : (
-                      <div className="profile-avatar-placeholder">
-                        {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : '👤')}
-                      </div>
-                    )}
-                    <div className="avatar-hover-overlay"><Camera size={40} color="white" /></div>
-                  </div>
-                  <input type="file" ref={cameraRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" capture="environment" />
-                  <input type="file" ref={galleryRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" />
-                </div>
-                
-                <div className="user-info-section">
-                  <h2>{nombreCompleto}</h2>
-                  <span className="role-badge">{obtenerNombreRol(user?.role_id)}</span>
-                </div>
+          {/* Big Featured Property Showcase Visual Card */}
+          <div 
+            className="profile-prop-featured-card"
+            style={{ backgroundImage: `url("${getPropImage(activeProperty)}")` }}
+          >
+            <div className="profile-prop-featured-overlay" />
+            
+            <div className="profile-prop-featured-info-pill">
+              <div className="profile-prop-featured-badge">
+                ★ PROPIEDAD SELECCIONADA
               </div>
-
-              <div className="profile-actions-section">
-                <button className="btn-edit-profile" onClick={openModal}>EDITAR DATOS</button>
+              <h3 className="profile-prop-featured-name">
+                {activeProperty?.nombre_propiedad || activeProperty?.nombre || activeProperty?.alias || 'MI PROPIEDAD'}
+              </h3>
+              <div className="profile-prop-featured-address">
+                <MapPin size={13} color="#FF8548" />
+                <span>{activeProperty?.address || activeProperty?.direccion || 'Mérida, Yucatán'}</span>
               </div>
             </div>
+          </div>
 
-            <div className="about-section">
-              <h3>Datos del Usuario</h3>
-              <div className="about-grid">
-                <div className="data-group"><label>Nombre Completo</label><p>{nombreCompleto}</p></div>
-                <div className="data-group"><label>Rol en sistema</label><p className="highlight-orange">{obtenerNombreRol(user?.role_id)}</p></div>
-                <div className="data-group"><label>Correo Electrónico</label><p>{user?.email || 'No registrado'}</p></div>
-                <div className="data-group"><label>Teléfono</label><p>{user?.phone_number || 'No registrado'}</p></div>
-                <div className="data-group"><label>Fecha de Nacimiento</label><p>{formatearFecha(user?.birth_date)}</p></div>
-                <div className="data-grid-item"><label>Miembro desde</label><p>{formatearFecha(user?.created_at)}</p></div>
-              </div>
-
-              { (user?.role_id === 2 || user?.role_id === 8) && (() => {
-                const displaySpecs = (user?.specialties && user.specialties.length > 0)
-                  ? user.specialties
-                  : (selectedSpecialties.length > 0 ? selectedSpecialties : null);
-                return (
-                  <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                    <h4 style={{ color: '#ff6600', marginBottom: '10px', fontSize: '0.9rem', textTransform: 'uppercase' }}>🛠️ Especialidades Registradas</h4>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {displaySpecs ? (
-                        displaySpecs.map((s, idx) => {
-                          const specName = typeof s === 'string' ? s : s.name;
-                          const specObj = ESPECIALIDADES_CATALOGO.find(item => item.name === specName) || (typeof s === 'object' ? s : null);
-                          const icon = specObj ? (specObj.icon || '⚡') : '⚡';
-                          return (
-                            <span key={idx} style={{ padding: '6px 14px', borderRadius: '20px', background: '#FFF3E6', border: '1.5px solid #FF6600', color: '#D94E00', fontSize: '0.85rem', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                              {icon} {specName}
-                            </span>
-                          );
-                        })
-                      ) : (
-                        <span style={{ color: '#aaa', fontStyle: 'italic', fontSize: '0.85rem' }}>No has seleccionado especialidades. HAZ CLIC EN EDITAR DATOS para agregar.</span>
+          {/* Horizontal Thumbnails Carousel */}
+          <div className="profile-thumbs-container">
+            <span className="profile-thumbs-label">GALERÍA DE PROPIEDADES:</span>
+            <div className="profile-thumbs-scroll-track">
+              {propiedades && propiedades.length > 0 ? (
+                propiedades.map((prop, idx) => {
+                  const isActive = prop.id === activeProperty?.id;
+                  const thumbImg = getPropImage(prop);
+                  return (
+                    <div 
+                      key={prop.id}
+                      className={`profile-thumb-card ${isActive ? 'is-active' : ''}`}
+                      onClick={() => setSelectedPropId(prop.id)}
+                      title={`Seleccionar para vista previa:\n${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
+                    >
+                      <img 
+                        src={thumbImg} 
+                        alt={prop.nombre_propiedad || 'Propiedad'} 
+                        className="profile-thumb-img" 
+                      />
+                      {idx === 0 && (
+                        <div className="profile-thumb-star" title="Propiedad Principal">
+                          ★
+                        </div>
                       )}
                     </div>
-                  </div>
-                );
-              })()}
-
-              {user?.role_id !== 0 && (
-                <div style={{ marginTop: '35px', paddingTop: '25px', paddingBottom: '30px', borderTop: '1px solid #EEEEEE', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
-                  <div style={{ flex: '1 1 300px' }}>
-                    <h4 style={{ color: '#EF4444', margin: '0 0 6px 0', fontSize: '1.05rem', fontWeight: 'bold' }}>¿Deseas eliminar tu cuenta?</h4>
-                    <p style={{ margin: 0, color: '#64748B', fontSize: '0.88rem', lineHeight: '1.4' }}>Al eliminar tu cuenta se desactivará tu perfil y dejarás de tener acceso al sistema.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDeleteConfirmEmail('');
-                      setDeleteError('');
-                      setIsDeleteModalOpen(true);
-                    }}
-                    style={{
-                      padding: '10px 22px',
-                      borderRadius: '8px',
-                      border: '1.5px solid #EF4444',
-                      background: '#FEF2F2',
-                      color: '#EF4444',
-                      fontWeight: 'bold',
-                      fontSize: '0.9rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0
-                    }}
-                  >
-                    🗑️ Eliminar mi Cuenta
-                  </button>
+                  );
+                })
+              ) : (
+                <div className="profile-thumb-card is-active">
+                  <img src={defaultPropImg} alt="Propiedad" className="profile-thumb-img" />
                 </div>
               )}
             </div>
           </div>
-        </div>
-      </div>
 
+        </section>
+
+      </main>
+
+      {/* ── MODAL: EDITAR PERFIL (LIQUID GLASS) ── */}
+      {isModalOpen && (
+        <div className="profile-modal-backdrop" onClick={() => setIsModalOpen(false)}>
+          <div className="profile-modal-liquid-card" onClick={e => e.stopPropagation()}>
+            <button className="profile-modal-close-btn" onClick={() => setIsModalOpen(false)}>
+              <X size={18} />
+            </button>
+            
+            <h3 className="profile-modal-title">
+              <Edit3 size={20} color="#FF6600" /> EDITAR PERFIL
+            </h3>
+            
+            <form onSubmit={handleSaveProfile} className="profile-modal-form">
+              <div className="profile-form-row">
+                <div className="profile-form-group">
+                  <label>Nombre(s)</label>
+                  <input type="text" required value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} />
+                </div>
+                <div className="profile-form-group">
+                  <label>Apellidos</label>
+                  <input type="text" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="profile-form-row">
+                <div className="profile-form-group">
+                  <label>Teléfono Celular</label>
+                  <input type="tel" value={formData.phone_number} onChange={(e) => setFormData({...formData, phone_number: e.target.value})} />
+                </div>
+                <div className="profile-form-group">
+                  <label>Fecha de Nacimiento</label>
+                  <input type="date" value={formData.birth_date} onChange={(e) => setFormData({...formData, birth_date: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="profile-form-group">
+                <label>Correo Electrónico</label>
+                <input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
+              </div>
+
+              {(user?.role_id === 2 || user?.role_id === 8) && (
+                <div className="profile-form-group" style={{ marginTop: '6px' }}>
+                  <label style={{ color: '#FF6600' }}>🛠️ Editar Especialidades:</label>
+                  <div className="profile-modal-specs-list">
+                    {ESPECIALIDADES_CATALOGO.map(spec => {
+                      const isSelected = selectedSpecialties.includes(spec.name);
+                      return (
+                        <button
+                          key={spec.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              if (selectedSpecialties.length > 1) {
+                                setSelectedSpecialties(prev => prev.filter(s => s !== spec.name));
+                              }
+                            } else {
+                              setSelectedSpecialties(prev => [...prev, spec.name]);
+                            }
+                          }}
+                          className={`profile-spec-toggle-btn ${isSelected ? 'is-selected' : ''}`}
+                        >
+                          <span>{spec.icon}</span> <span>{spec.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="profile-modal-actions">
+                <button type="button" className="profile-btn-cancel" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+                <button type="submit" className="profile-btn-save">Guardar Cambios</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: ELIMINAR CUENTA (LIQUID GLASS) ── */}
       {isDeleteModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsDeleteModalOpen(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', borderTop: '6px solid #EF4444' }}>
-            <button className="btn-close-modal" onClick={() => setIsDeleteModalOpen(false)}>&times;</button>
-            <h3 className="modal-title" style={{ color: '#EF4444', borderBottom: '2px solid #FEF2F2' }}>⚠️ Eliminar Cuenta</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <p style={{ margin: 0, color: '#334155', fontSize: '0.92rem', lineHeight: '1.5' }}>
+        <div className="profile-modal-backdrop" onClick={() => setIsDeleteModalOpen(false)}>
+          <div className="profile-modal-liquid-card delete-card" onClick={e => e.stopPropagation()}>
+            <button className="profile-modal-close-btn" onClick={() => setIsDeleteModalOpen(false)}>
+              <X size={18} />
+            </button>
+            <h3 className="profile-modal-title" style={{ color: '#ef4444' }}>
+              <Trash2 size={20} /> Eliminar Cuenta
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <p style={{ margin: 0, color: '#e2e8f0', fontSize: '0.88rem', lineHeight: '1.5' }}>
                 Estás a punto de solicitar la eliminación y desactivación de tu cuenta en <strong>Agente Solutions</strong>. 
-                Dejarás de tener acceso inmediato al sistema y tus propiedades/datos dejarán de estar visibles al público.
+                Dejarás de tener acceso inmediato al sistema.
               </p>
-              <div style={{ background: '#FFF7ED', border: '1px solid #FDBA74', padding: '12px', borderRadius: '8px' }}>
-                <p style={{ margin: 0, color: '#9A3412', fontSize: '0.82rem' }}>
-                  💡 <em>Si en el futuro deseas recuperar tu acceso, historial o solicitar el respaldo de tus datos, deberás comunicarte con nuestro equipo de Soporte Técnico.</em>
+              <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '10px 14px', borderRadius: '10px' }}>
+                <p style={{ margin: 0, color: '#fca5a5', fontSize: '0.80rem' }}>
+                  💡 <em>Para confirmar, escribe tu correo electrónico exacto (<strong>{user?.email}</strong>):</em>
                 </p>
               </div>
-              <div style={{ marginTop: '5px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '6px' }}>
-                  Para confirmar, escribe tu correo electrónico (<strong>{user?.email}</strong>):
-                </label>
-                <input
-                  type="text"
-                  placeholder={user?.email || 'Escribe tu correo...'}
-                  value={deleteConfirmEmail}
-                  onChange={(e) => setDeleteConfirmEmail(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
-                    fontSize: '0.95rem',
-                    color: '#0F172A',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
+              <input
+                type="text"
+                placeholder={user?.email || 'Escribe tu correo...'}
+                value={deleteConfirmEmail}
+                onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                className="profile-delete-input"
+              />
               {deleteError && (
-                <div style={{ color: '#EF4444', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                <div style={{ color: '#ef4444', fontSize: '0.82rem', fontWeight: 'bold' }}>
                   {deleteError}
                 </div>
               )}
-              <div className="modal-actions" style={{ marginTop: '10px', paddingTop: '15px' }}>
+              <div className="profile-modal-actions" style={{ marginTop: '8px' }}>
                 <button
                   type="button"
-                  className="btn-cancel"
+                  className="profile-btn-cancel"
                   onClick={() => setIsDeleteModalOpen(false)}
                   disabled={deletingAccount}
                 >
@@ -424,19 +722,9 @@ const Profile = () => {
                   type="button"
                   onClick={handleConfirmDeleteAccount}
                   disabled={deletingAccount || deleteConfirmEmail !== user?.email}
-                  style={{
-                    padding: '10px 22px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: (deleteConfirmEmail === user?.email && !deletingAccount) ? '#EF4444' : '#E2E8F0',
-                    color: (deleteConfirmEmail === user?.email && !deletingAccount) ? '#FFFFFF' : '#94A3B8',
-                    fontWeight: 'bold',
-                    fontSize: '0.95rem',
-                    cursor: (deleteConfirmEmail === user?.email && !deletingAccount) ? 'pointer' : 'not-allowed',
-                    transition: 'all 0.2s'
-                  }}
+                  className="profile-btn-danger"
                 >
-                  {deletingAccount ? 'Eliminando...' : 'Sí, Eliminar mi Cuenta'}
+                  {deletingAccount ? 'Eliminando...' : 'Sí, Eliminar Cuenta'}
                 </button>
               </div>
             </div>
@@ -444,133 +732,26 @@ const Profile = () => {
         </div>
       )}
 
+      {/* ── MODAL: CAMBIAR FOTO (LIQUID GLASS) ── */}
       {isPhotoMenuOpen && (
-        <div className="modal-overlay" onClick={() => setIsPhotoMenuOpen(false)}>
-          <div className="modal-content photo-menu-content" onClick={e => e.stopPropagation()}>
-            <h3 className="modal-title" style={{ color: '#ff6600', borderBottom: '2px solid #EEEEEE' }}>Actualizar Foto</h3>
-            <div className="photo-menu-actions">
-              <button className="btn-menu-action" onClick={() => selectPhotoSource('camera')}>
-                📷 Tomar Foto
+        <div className="profile-modal-backdrop" onClick={() => setIsPhotoMenuOpen(false)}>
+          <div className="profile-modal-liquid-card photo-card" onClick={e => e.stopPropagation()}>
+            <h3 className="profile-modal-title" style={{ textAlign: 'center' }}>
+              Actualizar Imagen
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+              <button className="profile-menu-action-btn" onClick={() => selectPhotoSource('camera')}>
+                📷 Tomar Foto con Cámara
               </button>
-              <button className="btn-menu-action" onClick={() => selectPhotoSource('gallery')}>
+              <button className="profile-menu-action-btn" onClick={() => selectPhotoSource('gallery')}>
                 🖼️ Elegir de la Galería
               </button>
-              <button className="btn-menu-action btn-menu-cancel" onClick={() => setIsPhotoMenuOpen(false)}>
+              <button className="profile-btn-cancel" style={{ marginTop: '6px' }} onClick={() => setIsPhotoMenuOpen(false)}>
                 Cancelar
               </button>
             </div>
           </div>
         </div>
-      )}
-
-      {isModalOpen && (
-      <div className="modal-overlay">
-        <div className="modal-content">
-          <button className="btn-close-modal" onClick={() => setIsModalOpen(false)}>
-            &times;
-          </button>
-          
-          <h3 className="modal-title">Editar Perfil</h3>
-          
-          <form onSubmit={handleSaveProfile} className="edit-profile-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label>Nombre(s)</label>
-                <input type="text" required value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} />
-              </div>
-              <div className="form-group">
-                <label>Apellidos</label>
-                <input type="text" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Teléfono Celular</label>
-                <input type="tel" value={formData.phone_number} onChange={(e) => setFormData({...formData, phone_number: e.target.value})} />
-              </div>
-              <div className="form-group">
-                <label>Fecha de Nacimiento</label>
-                <input type="date" value={formData.birth_date} onChange={(e) => setFormData({...formData, birth_date: e.target.value})} />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Correo Electrónico</label>
-              <input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
-            </div>
-
-            {(user?.role_id === 2 || user?.role_id === 8) && (
-              <div className="form-group" style={{ marginTop: '15px' }}>
-                <label style={{ color: '#ff6600', fontWeight: 'bold' }}>🛠️ Editar Mis Especialidades:</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', maxHeight: '160px', overflowY: 'auto', padding: '10px', background: '#F0F2F5', border: '1px solid #E2E8F0', borderRadius: '10px' }}>
-                  {ESPECIALIDADES_CATALOGO.map(spec => {
-                    const isSelected = selectedSpecialties.includes(spec.name);
-                    return (
-                      <button
-                        key={spec.id}
-                        type="button"
-                        onClick={() => {
-                          if (isSelected) {
-                            if (selectedSpecialties.length > 1) {
-                              setSelectedSpecialties(prev => prev.filter(s => s !== spec.name));
-                            }
-                          } else {
-                            setSelectedSpecialties(prev => [...prev, spec.name]);
-                          }
-                        }}
-                        style={{
-                          padding: '6px 14px', borderRadius: '20px', cursor: 'pointer',
-                          border: isSelected ? '1.5px solid #FF6600' : '1px solid #CBD5E1',
-                          background: isSelected ? 'linear-gradient(135deg, #FF6600 0%, #d94e00 100%)' : '#FFFFFF',
-                          color: isSelected ? '#FFFFFF' : '#334155',
-                          fontWeight: isSelected ? 'bold' : '600', fontSize: '0.8rem',
-                          display: 'flex', alignItems: 'center', gap: '6px',
-                          boxShadow: isSelected ? '0 2px 6px rgba(255,102,0,0.3)' : '0 1px 2px rgba(0,0,0,0.05)'
-                        }}
-                      >
-                        <span>{spec.icon}</span> <span>{spec.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="modal-actions" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-              <div>
-                {user?.role_id !== 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsModalOpen(false);
-                      setDeleteConfirmEmail('');
-                      setDeleteError('');
-                      setIsDeleteModalOpen(true);
-                    }}
-                    style={{
-                      padding: '8px 14px',
-                      borderRadius: '8px',
-                      border: '1px solid #EF4444',
-                      background: 'transparent',
-                      color: '#EF4444',
-                      fontWeight: 'bold',
-                      fontSize: '0.85rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    🗑️ Eliminar Cuenta
-                  </button>
-                )}
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="button" className="btn-cancel" onClick={() => setIsModalOpen(false)}>Cancelar</button>
-                <button type="submit" className="btn-save">Guardar Cambios</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
       )}
 
     </div>

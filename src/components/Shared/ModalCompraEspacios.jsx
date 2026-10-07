@@ -84,15 +84,17 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
     >
       <div
         style={{
-          backgroundColor: "#0d1117",
-          border: "2px solid #FF6600",
+          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.04) 50%, rgba(255, 255, 255, 0.10) 100%), rgba(18, 22, 31, 0.90)",
+          backdropFilter: "blur(24px) saturate(190%) contrast(105%)",
+          WebkitBackdropFilter: "blur(24px) saturate(190%) contrast(105%)",
+          border: "1.5px solid rgba(255, 255, 255, 0.38)",
           borderRadius: "28px",
           width: "100%",
           maxWidth: "520px",
           padding: "36px 30px",
-          boxShadow: "0 20px 60px rgba(255, 102, 0, 0.3), 0 0 30px rgba(0, 0, 0, 0.9)",
+          boxShadow: "0 25px 60px rgba(0, 0, 0, 0.65), inset 0 1.5px 2px rgba(255, 255, 255, 0.70), inset 0 -1px 1.5px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.12)",
           position: "relative",
-          color: "#fff",
+          color: "#ffffff",
           textAlign: "center",
           animation: "fadeInScale 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
           boxSizing: "border-box"
@@ -108,7 +110,7 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
             top: "18px",
             right: "18px",
             background: "rgba(255, 255, 255, 0.12)",
-            border: "1.5px solid rgba(255, 255, 255, 0.25)",
+            border: "1.5px solid rgba(255, 255, 255, 0.35)",
             borderRadius: "50%",
             width: "38px",
             height: "38px",
@@ -119,7 +121,7 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
             justifyContent: "center",
             transition: "all 0.2s ease",
             zIndex: 50,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4)",
             padding: 0
           }}
           onMouseOver={(e) => {
@@ -131,7 +133,7 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
           }}
           onMouseOut={(e) => {
             e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
-            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
+            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.35)";
             e.currentTarget.style.transform = "scale(1)";
           }}
           title="Cerrar modal"
@@ -152,31 +154,31 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
           </svg>
         </button>
 
-        {/* Ícono superior */}
+        {/* Ícono superior Liquid Glass */}
         <div
           style={{
-            width: "72px",
-            height: "72px",
+            width: "70px",
+            height: "70px",
             borderRadius: "50%",
-            background: "rgba(255, 102, 0, 0.12)",
-            border: "2px solid #FF6600",
+            background: "rgba(255, 255, 255, 0.10)",
+            border: "1.5px solid rgba(255, 255, 255, 0.45)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             margin: "0 auto 20px auto",
-            boxShadow: "0 0 20px rgba(255, 102, 0, 0.25)"
+            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1.5px 2px rgba(255, 255, 255, 0.6)"
           }}
         >
-          <CreditCard size={36} color="#FF6600" />
+          <CreditCard size={34} color="#ffffff" />
         </div>
 
         {/* Título Principal */}
         <h3
           style={{
-            fontSize: "1.6rem",
+            fontSize: "1.65rem",
             fontWeight: 900,
             margin: "0 0 8px 0",
-            letterSpacing: "-0.5px",
+            letterSpacing: "-0.3px",
             lineHeight: 1.25,
             color: "#ffffff"
           }}
@@ -184,14 +186,15 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
           🏠 AMPLIACIÓN DE PORTAFOLIO (+{extraQuantity})
         </h3>
 
-        {/* Subtítulo Dinámico */}
+        {/* Subtítulo */}
         <p
           style={{
-            color: "#FF6600",
-            fontWeight: 800,
+            color: "#ffffff",
+            fontWeight: 700,
             fontSize: "1rem",
             margin: "0 0 16px 0",
-            letterSpacing: "0.2px"
+            letterSpacing: "0.2px",
+            opacity: 0.95
           }}
         >
           Adquiere Espacios para Propiedades en tu Plan {resolvedPlanName}
@@ -200,7 +203,7 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
         {/* Descripción exacta */}
         <p
           style={{
-            color: "#9CA3AF",
+            color: "#cbd5e1",
             fontSize: "0.92rem",
             lineHeight: 1.6,
             marginBottom: "22px",
@@ -210,19 +213,21 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
           Selecciona cuántos espacios de propiedad deseas agregar a tu cuenta. Cada espacio adicional tiene un costo único de <strong style={{ color: "#ffffff" }}>$79.99 MXN</strong>.
         </p>
 
-        {/* Caja de Selector de Cantidad */}
+        {/* Caja de Selector de Cantidad Liquid Glass */}
         <div
           style={{
-            background: "rgba(255, 255, 255, 0.03)",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
+            background: "rgba(255, 255, 255, 0.05)",
+            border: "1.5px solid rgba(255, 255, 255, 0.18)",
             borderRadius: "18px",
             padding: "18px 20px",
-            marginBottom: "22px"
+            marginBottom: "22px",
+            backdropFilter: "blur(12px)",
+            boxShadow: "inset 0 1px 1.5px rgba(255, 255, 255, 0.2)"
           }}
         >
           <label
             style={{
-              color: "#D1D5DB",
+              color: "#e2e8f0",
               fontSize: "0.88rem",
               fontWeight: 700,
               display: "block",
@@ -249,19 +254,30 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
                 width: "48px",
                 height: "48px",
                 borderRadius: "50%",
-                border: "2px solid #FF6600",
-                background: "rgba(255, 102, 0, 0.15)",
-                color: "#fff",
+                border: "1.5px solid rgba(255, 255, 255, 0.4)",
+                background: "rgba(255, 255, 255, 0.12)",
+                color: "#ffffff",
                 fontWeight: 900,
                 fontSize: "1.5rem",
                 cursor: loading ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "all 0.15s"
+                transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1.5px rgba(255, 255, 255, 0.35)"
               }}
-              onMouseOver={(e) => !loading && (e.currentTarget.style.background = "rgba(255, 102, 0, 0.35)")}
-              onMouseOut={(e) => (e.currentTarget.style.background = "rgba(255, 102, 0, 0.15)")}
+              onMouseOver={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.25)";
+                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.8)";
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
+                e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.4)";
+                e.currentTarget.style.transform = "scale(1)";
+              }}
             >
               -
             </button>
@@ -270,10 +286,11 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
               style={{
                 fontSize: "2.2rem",
                 fontWeight: 900,
-                color: "#FF6600",
+                color: "#ffffff",
                 minWidth: "50px",
                 display: "inline-block",
-                textAlign: "center"
+                textAlign: "center",
+                textShadow: "0 2px 10px rgba(0, 0, 0, 0.5)"
               }}
             >
               {extraQuantity}
@@ -287,19 +304,30 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
                 width: "48px",
                 height: "48px",
                 borderRadius: "50%",
-                border: "2px solid #FF6600",
-                background: "rgba(255, 102, 0, 0.15)",
-                color: "#fff",
+                border: "1.5px solid rgba(255, 255, 255, 0.4)",
+                background: "rgba(255, 255, 255, 0.12)",
+                color: "#ffffff",
                 fontWeight: 900,
                 fontSize: "1.5rem",
                 cursor: loading ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "all 0.15s"
+                transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1.5px rgba(255, 255, 255, 0.35)"
               }}
-              onMouseOver={(e) => !loading && (e.currentTarget.style.background = "rgba(255, 102, 0, 0.35)")}
-              onMouseOut={(e) => (e.currentTarget.style.background = "rgba(255, 102, 0, 0.15)")}
+              onMouseOver={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.25)";
+                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.8)";
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
+                e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.4)";
+                e.currentTarget.style.transform = "scale(1)";
+              }}
             >
               +
             </button>
@@ -310,17 +338,17 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              color: "#F3F4F6",
+              color: "#ffffff",
               fontSize: "1.05rem",
               fontWeight: 800,
-              borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+              borderTop: "1px solid rgba(255, 255, 255, 0.15)",
               paddingTop: "14px",
               flexWrap: "wrap",
               gap: "8px"
             }}
           >
             <span>Total a Pagar ({extraQuantity} {extraQuantity === 1 ? "espacio" : "espacios"}):</span>
-            <span style={{ color: "#10B981", fontSize: "1.25rem", fontWeight: 900 }}>${total} MXN</span>
+            <span style={{ color: "#34d399", fontSize: "1.3rem", fontWeight: 900, textShadow: "0 0 12px rgba(52, 211, 153, 0.3)" }}>${total} MXN</span>
           </div>
         </div>
 
@@ -349,15 +377,15 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
             width: "100%",
             padding: "16px",
             borderRadius: "50px",
-            border: "none",
+            border: "1px solid rgba(255, 255, 255, 0.25)",
             background: "linear-gradient(135deg, #FF6600 0%, #ea580c 100%)",
-            color: "#fff",
+            color: "#ffffff",
             fontWeight: 900,
             fontSize: "1.08rem",
             cursor: loading ? "not-allowed" : "pointer",
             letterSpacing: "0.5px",
-            boxShadow: "0 8px 24px rgba(255, 102, 0, 0.45)",
-            transition: "all 0.2s",
+            boxShadow: "0 10px 28px rgba(255, 102, 0, 0.45), inset 0 1px 1.5px rgba(255, 255, 255, 0.35)",
+            transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -365,13 +393,13 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
           }}
           onMouseOver={(e) => {
             if (!loading) {
-              e.currentTarget.style.transform = "scale(1.02)";
-              e.currentTarget.style.boxShadow = "0 10px 28px rgba(255, 102, 0, 0.6)";
+              e.currentTarget.style.transform = "translateY(-2px) scale(1.02)";
+              e.currentTarget.style.boxShadow = "0 14px 34px rgba(255, 102, 0, 0.65), inset 0 1px 1.5px rgba(255, 255, 255, 0.45)";
             }
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
-            e.currentTarget.style.boxShadow = "0 8px 24px rgba(255, 102, 0, 0.45)";
+            e.currentTarget.style.transform = "translateY(0) scale(1)";
+            e.currentTarget.style.boxShadow = "0 10px 28px rgba(255, 102, 0, 0.45), inset 0 1px 1.5px rgba(255, 255, 255, 0.35)";
           }}
         >
           {loading ? (
@@ -391,11 +419,11 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
             alignItems: "center",
             justifyContent: "center",
             gap: "6px",
-            color: "#9CA3AF",
+            color: "#cbd5e1",
             fontSize: "0.8rem"
           }}
         >
-          <ShieldCheck size={16} color="#10B981" />
+          <ShieldCheck size={16} color="#34d399" />
           <span>Pago 100% seguro y encriptado por MercadoPago</span>
         </div>
       </div>

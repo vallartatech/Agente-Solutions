@@ -5,6 +5,7 @@ import { useAuth } from '../../../context/AuthContext';
 import ModalCompraEspacios from '../../../components/Shared/ModalCompraEspacios';
 import ModalCalendarioCliente from './ModalCalendarioCliente';
 import ModalRegistroInmueble from './ModalRegistroInmueble';
+import ModalEditarPropiedadCliente from './ModalEditarPropiedadCliente';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
 
 import {
@@ -27,7 +28,9 @@ import {
   ExternalLink,
   LayoutDashboard,
   Clock,
-  Lock
+  Lock,
+  Edit3,
+  Bell
 } from 'lucide-react';
 
 import defaultPropImg from '../../../assets/propiedad_ejemplo.jpg';
@@ -91,6 +94,7 @@ const VistaClienteParticular = () => {
   const [showModalCompra, setShowModalCompra] = useState(false);
   const [showModalCalendario, setShowModalCalendario] = useState(false);
   const [showModalRegistroPropiedad, setShowModalRegistroPropiedad] = useState(false);
+  const [showModalEditarPropiedad, setShowModalEditarPropiedad] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
   const [isPlanExpanded, setIsPlanExpanded] = useState(false); // Oculto por defecto
@@ -156,6 +160,13 @@ const VistaClienteParticular = () => {
     await fetchData();
     if (newProp && newProp.id) {
       setSelectedPropId(newProp.id);
+    }
+  };
+
+  const handlePropertyUpdated = async (updatedProp) => {
+    await fetchData();
+    if (updatedProp && updatedProp.id) {
+      setSelectedPropId(updatedProp.id);
     }
   };
 
@@ -498,14 +509,6 @@ const VistaClienteParticular = () => {
 
         {/* Center Nav Links */}
         <nav className="vcp-header-nav">
-          <button 
-            className="vcp-nav-icon-btn" 
-            title="Abrir Calendario"
-            onClick={() => setShowModalCalendario(true)}
-          >
-            <CalendarDays size={20} color="#ffffff" strokeWidth={2.2} />
-          </button>
-
           <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
             USUARIOS
           </button>
@@ -523,8 +526,31 @@ const VistaClienteParticular = () => {
           </button>
         </nav>
 
-        {/* User profile dropdown section */}
+        {/* User profile & action buttons on top right */}
         <div className="vcp-header-right" ref={dropdownRef}>
+          <div className="vcp-header-actions-group">
+            {/* Botón Calendario */}
+            <button 
+              type="button"
+              className="vcp-header-icon-btn" 
+              title="Abrir Calendario y Citas"
+              onClick={() => setShowModalCalendario(true)}
+            >
+              <CalendarDays size={18} color="#ffffff" strokeWidth={2} />
+            </button>
+
+            {/* Botón Notificaciones */}
+            <button 
+              type="button"
+              className="vcp-header-icon-btn" 
+              title="Notificaciones"
+              onClick={() => navigate('/notificaciones')}
+            >
+              <Bell size={18} color="#ffffff" strokeWidth={2} />
+              <span className="vcp-header-notif-dot" />
+            </button>
+          </div>
+
           <div className="vcp-user-info-text">
             <span className="vcp-user-role-badge">MARKET_CLIENT_PERSONAL</span>
             <span className="vcp-user-name">{userFullName}</span>
@@ -648,9 +674,20 @@ const VistaClienteParticular = () => {
               {userFullName}
             </div>
 
-            <h1 className="vcp-prop-main-title">
-              {activeProperty?.nombre_propiedad || activeProperty?.nombre || activeProperty?.alias || activeProperty?.titulo || 'MI PROPIEDAD'}
-            </h1>
+            <div className="vcp-title-edit-row">
+              <h1 className="vcp-prop-main-title">
+                {activeProperty?.nombre_propiedad || activeProperty?.nombre || activeProperty?.alias || activeProperty?.titulo || 'MI PROPIEDAD'}
+              </h1>
+              <button
+                type="button"
+                className="vcp-title-edit-btn"
+                onClick={() => setShowModalEditarPropiedad(true)}
+                title="Editar nombre y fachada de esta propiedad"
+              >
+                <Edit3 size={16} />
+                <span>EDITAR</span>
+              </button>
+            </div>
 
             <div className="vcp-prop-category-label">
               PROPIEDADES
@@ -714,7 +751,7 @@ const VistaClienteParticular = () => {
               >
                 {currentPropsCount >= maxAllowed ? (
                   <div className="vcp-thumb-lock-wrap">
-                    <Lock size={20} color="#ff7438" />
+                    <Lock size={20} color="#ffffff" />
                   </div>
                 ) : (
                   <Plus size={28} />
@@ -729,15 +766,29 @@ const VistaClienteParticular = () => {
           <div>
             {/* Panel Header */}
             <div className="vcp-panel-header">
-              <div className="vcp-panel-header-icon">
-                <Building2 size={20} />
-              </div>
+              <button 
+                type="button"
+                className="vcp-panel-header-icon vcp-panel-edit-btn"
+                onClick={() => setShowModalEditarPropiedad(true)}
+                title="Editar información y fachada de esta propiedad"
+              >
+                <Edit3 size={18} />
+              </button>
               <div className="vcp-panel-header-texts">
                 <h2 className="vcp-panel-title">PERFIL DE LA PROPIEDAD</h2>
                 <span className="vcp-panel-id-badge">
                   ID REGISTRO: #{activeProperty?.id || '001'}
                 </span>
               </div>
+              <button
+                type="button"
+                className="vcp-panel-edit-text-btn"
+                onClick={() => setShowModalEditarPropiedad(true)}
+                title="Editar información y fachada de esta propiedad"
+              >
+                <Edit3 size={13} />
+                <span>EDITAR</span>
+              </button>
             </div>
 
             {/* Fields List */}
@@ -946,6 +997,14 @@ const VistaClienteParticular = () => {
         onClose={() => setShowModalRegistroPropiedad(false)}
         onSuccess={handlePropertyCreated}
         user={user}
+      />
+
+      {/* Modal Editar Propiedad */}
+      <ModalEditarPropiedadCliente
+        isOpen={showModalEditarPropiedad}
+        onClose={() => setShowModalEditarPropiedad(false)}
+        propiedad={activeProperty}
+        onSuccess={handlePropertyUpdated}
       />
     </div>
   );
