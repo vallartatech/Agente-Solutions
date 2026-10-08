@@ -22,11 +22,12 @@ const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
   const [tipoMensaje, setTipoMensaje] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Rol permitido según requerimiento: Solo Técnico Agente
+  // Rol permitido según requerimiento: Técnico asignado
+  const isRoot = user?.role_id === 0 || user?.role_id === 1;
   const rolTecnico = {
     id: 2,
-    label: 'TÉCNICO AGENTE',
-    desc: 'Técnico directo de Agente Solutions',
+    label: isRoot ? 'TÉCNICO AGENTE' : 'TÉCNICO DE MI EQUIPO',
+    desc: isRoot ? 'Técnico directo de Agente Solutions' : 'Técnico vinculado a tu cuenta y servicios directos',
     color: '#F26522'
   };
 
@@ -60,6 +61,7 @@ const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
         {
           ...formData,
           role_id: 2,
+          tenant_id: user?.tenant_id || undefined,
           from_admin: true,
           captcha_token: 'from_admin_bypass'
         },

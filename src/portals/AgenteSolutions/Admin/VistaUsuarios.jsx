@@ -141,11 +141,14 @@ const VistaUsuarios = () => {
 
   const obtenerUsuarios = async () => {
     try {
-      const { data } = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios`);
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const { data } = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios`, { headers });
       const formateados = data
         .filter(u => u.role_id === 2 || u.role_id === 8 || u.role_id === 6 || (typeof u.rol === 'string' && u.rol.includes("TECNICO")))
         .map((u) => ({
           id: u.id,
+          rawId: String(u.id).replace(/\D/g, ''),
           nombre: `${u.first_name} ${u.last_name || ""}`.trim(),
           correo: u.email,
           rol: MAPA_ROLES[u.role_id] || "TECNICO",
@@ -495,7 +498,7 @@ const VistaUsuarios = () => {
                           >
                             {/* ID Formateado */}
                             <td data-label="ID" className="vu-id-cell">
-                              <span className="vu-id-code">{String(u.id).padStart(5, '0')}</span>
+                              <span className="vu-id-code">{String(u.rawId || String(u.id).replace(/\D/g, '') || u.id).padStart(5, '0')}</span>
                             </td>
 
                             {/* Nombre */}
@@ -651,7 +654,7 @@ const VistaUsuarios = () => {
                 {/* Header with ID & Status */}
                 <div className="vu-sidebar-card-header">
                   <div className="vu-sidebar-badge-id">
-                    <span>ID #{String(selectedTecnico.id).padStart(5, '0')}</span>
+                    <span>ID #{String(selectedTecnico.rawId || String(selectedTecnico.id).replace(/\D/g, '') || selectedTecnico.id).padStart(5, '0')}</span>
                   </div>
                   <span className={`vu-status-badge ${selectedTecnico.bloqueado ? "offline" : "online"}`}>
                     <span className="vu-status-dot"></span>
