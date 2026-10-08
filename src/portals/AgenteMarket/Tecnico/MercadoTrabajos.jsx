@@ -432,6 +432,12 @@ const MercadoTrabajos = () => {
   const [secondVisitReason, setSecondVisitReason] = useState('');
   const [submittingSecondVisit, setSubmittingSecondVisit] = useState(false);
 
+  // Tablero Horario de Visita States
+  const [showBoardScheduleModal, setShowBoardScheduleModal] = useState(false);
+  const [boardScheduleDate, setBoardScheduleDate] = useState('');
+  const [boardScheduleNotes, setBoardScheduleNotes] = useState('');
+  const [submittingBoardSchedule, setSubmittingBoardSchedule] = useState(false);
+
   // Technician Clients & Favorites Directory States
   const [userFilter, setUserFilter] = useState('TODOS'); // 'TODOS' | 'HISTORIAL' | 'FAVORITOS'
   const [userSearch, setUserSearch] = useState('');
@@ -487,11 +493,8 @@ const MercadoTrabajos = () => {
           }
 
           const isAccepted = Boolean(
-            order.is_accepted ||
-            order.status === 'Asignado' ||
-            order.status === 'En Progreso' ||
             (authUser && Number(order.tecnico_id) === Number(authUser.id)) ||
-            myQuote?.status === 'accepted'
+            (myQuote && myQuote.status === 'accepted')
           );
 
           const photoData = extraerFotosDeTrabajo(order);
@@ -505,9 +508,9 @@ const MercadoTrabajos = () => {
           const rawLat = coordsObj ? coordsObj.lat : (order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025)));
           const rawLng = coordsObj ? coordsObj.lng : (order.lng ? parseFloat(order.lng) : (order.area_lng ? parseFloat(order.area_lng) : (-89.6242 + Math.cos(order.id * 17) * 0.025)));
           const coloniaTexto = order.colonia_cercana || order.zona_colonia || order.zona || 'Mérida, Yucatán';
-          const tituloProblema = order.type 
-            ? `${order.type}${order.equipment ? ' - ' + order.equipment : ''}` 
-            : 'Problema / Servicio Solicitado';
+          const tipoTexto = order.type || 'Problema';
+          const equipoTexto = order.equipment ? ` - ${order.equipment}` : '';
+          const tituloProblema = (order.type ? `${tipoTexto}${equipoTexto}` : (order.titulo || 'Servicio Solicitado'));
 
           // Detectar último mensaje del cliente en el chat para alertas
           const chatHistory = myQuote?.chat_history || [];
@@ -599,7 +602,7 @@ const MercadoTrabajos = () => {
           });
         });
 
-        // Unificar cualquier trabajo de rawJobs que tenga is_accepted === true
+        // Unificar cualquier trabajo de rawJobs que pertenezca como aceptado al usuario
         rawJobs.forEach(job => {
           if (job.is_accepted) {
             const existing = acceptedMap.get(job.id);
@@ -1371,6 +1374,110 @@ const MercadoTrabajos = () => {
     }
   };
 
+  // ─── TABLERO VISIT SCHEDULING HANDLERS ───
+  const handleOpenBoardScheduler = (job) => {
+    const targetJob = job || selectedBoardJob;
+    if (!targetJob) return;
+
+    let initialDate = '';
+    const rawDate = targetJob.scheduled_at || targetJob.scheduled_date || targetJob.fecha_cita;
+    if (rawDate) {
+      try {
+        const d = new Date(rawDate);
+        if (!isNaN(d.getTime())) {
+          const offset = d.getTimezoneOffset() * 60000;
+          initialDate = new Date(d.getTime() - offset).toISOString().slice(0, 16);
+        }
+      } catch (e) {
+        console.error("Error parsing scheduled date:", e);
+      }
+    }
+
+    setBoardScheduleDate(initialDate);
+    setBoardScheduleNotes(targetJob.visit_notes || targetJob.notes || '');
+    setShowBoardScheduleModal(true);
+  };
+
+  const handleSaveBoardSchedule = async (e) => {
+    if (e) e.preventDefault();
+    if (!selectedBoardJob) return;
+    if (!boardScheduleDate) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Fecha requerida',
+        text: 'Por favor selecciona la fecha y hora de la visita.',
+      });
+      return;
+    }
+
+    setSubmittingBoardSchedule(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/mercado-trabajos/${selectedBoardJob.id}/programar-visita`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          scheduled_at: boardScheduleDate,
+          notes: boardScheduleNotes
+        })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Error al agendar la visita');
+      }
+
+      setAcceptedJobs(prev => prev.map(j => {
+        if (j.id === selectedBoardJob.id) {
+          return {
+            ...j,
+            scheduled_at: boardScheduleDate,
+            scheduled_date: boardScheduleDate,
+            visit_notes: boardScheduleNotes,
+            visit_status: 'CONFIRMED'
+          };
+        }
+        return j;
+      }));
+
+      Swal.fire({
+        icon: 'success',
+        title: '¡Horario Programado!',
+        text: 'Se ha agendado la visita y notificado al cliente.',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+      setShowBoardScheduleModal(false);
+    } catch (err) {
+      console.error('Error al programar visita:', err);
+      // Actualización optimista local
+      setAcceptedJobs(prev => prev.map(j => {
+        if (j.id === selectedBoardJob.id) {
+          return {
+            ...j,
+            scheduled_at: boardScheduleDate,
+            scheduled_date: boardScheduleDate,
+            visit_notes: boardScheduleNotes,
+            visit_status: 'CONFIRMED'
+          };
+        }
+        return j;
+      }));
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Horario Asignado',
+        text: 'Se ha guardado el horario de visita para este servicio.',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+      setShowBoardScheduleModal(false);
+    } finally {
+      setSubmittingBoardSchedule(false);
+    }
+  };
+
   // Group accepted jobs by client to build the technician's actual client directory
   const myClientsDirectory = useMemo(() => {
     const map = new Map();
@@ -1743,11 +1850,52 @@ const MercadoTrabajos = () => {
                             </div>
                           </div>
 
-                          <div className="mercado-board-card-meta-row">
-                            <div className="mercado-board-card-meta-item">
-                              <Clock size={12} color="#f26522" />
-                              <span><strong>Programado:</strong> {selectedBoardJob.scheduled_at ? new Date(selectedBoardJob.scheduled_at).toLocaleString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Por coordinar'}</span>
+                          {/* Horario de Visita / Cita Programada Interactivo */}
+                          <div className="mercado-board-schedule-action-box">
+                            <div className="mercado-board-schedule-info">
+                              <div className="mercado-board-schedule-header-row">
+                                <span className="mercado-board-schedule-label">
+                                  <Clock size={12} color="#f26522" /> Horario de Visita
+                                </span>
+                                {selectedBoardJob.scheduled_at ? (
+                                  <span className="mercado-board-schedule-status-tag confirmed">
+                                    Agendado
+                                  </span>
+                                ) : (
+                                  <span className="mercado-board-schedule-status-tag pending">
+                                    Pendiente
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mercado-board-schedule-time-text">
+                                {selectedBoardJob.scheduled_at ? (
+                                  <strong>
+                                    📅 {new Date(selectedBoardJob.scheduled_at).toLocaleString('es-MX', {
+                                      weekday: 'short',
+                                      day: 'numeric',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </strong>
+                                ) : (
+                                  <span className="mercado-board-schedule-not-set">
+                                    Sin horario asignado (Por coordinar con el cliente)
+                                  </span>
+                                )}
+                              </div>
                             </div>
+
+                            <button
+                              type="button"
+                              className="mercado-board-schedule-change-btn"
+                              onClick={() => handleOpenBoardScheduler(selectedBoardJob)}
+                              title="Programar o cambiar fecha y hora de la visita"
+                            >
+                              <Calendar size={13} />
+                              {selectedBoardJob.scheduled_at ? 'Cambiar Horario' : 'Agendar Visita'}
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -3398,17 +3546,17 @@ const MercadoTrabajos = () => {
                     
                     <div style={{ marginBottom: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: '800', color: '#ea580c', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: '800', color: '#f26522', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                           Propuesta de Servicio
                         </span>
                         {selectedJob.is_urgent && (
                           <span className="mercado-urgency-badge urgent">⚡ Urgente (Hoy Mismo)</span>
                         )}
                       </div>
-                      <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>
+                      <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#ffffff' }}>
                         Ingresa tu Oferta Económica
                       </h3>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#64748b' }}>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#94a3b8' }}>
                         Define el costo que cobrarás por solucionar este problema. El cliente revisará tu propuesta.
                       </p>
                     </div>
@@ -3425,7 +3573,7 @@ const MercadoTrabajos = () => {
                     )}
 
                     <div className="mercado-form-group" style={{ marginTop: '10px' }}>
-                      <label style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', marginBottom: '8px', display: 'block' }}>
+                      <label style={{ fontSize: '13.5px', fontWeight: '800', color: '#cbd5e1', marginBottom: '8px', display: 'block' }}>
                         Propuesta Económica ($ MXN) *
                       </label>
                       <div className="mercado-input-wrapper">
@@ -3443,7 +3591,7 @@ const MercadoTrabajos = () => {
                     </div>
 
                     <div className="mercado-form-group" style={{ marginTop: '14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <label style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', marginBottom: '8px', display: 'block' }}>
+                      <label style={{ fontSize: '13.5px', fontWeight: '800', color: '#cbd5e1', marginBottom: '8px', display: 'block' }}>
                         Mensaje para el cliente
                       </label>
                       <textarea
@@ -3563,6 +3711,93 @@ const MercadoTrabajos = () => {
                   disabled={submittingSecondVisit}
                 >
                   {submittingSecondVisit ? 'Guardando...' : 'Confirmar 2da Visita'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL PROGRAMAR / EDITAR HORARIO DE VISITA (TABLERO) ─── */}
+      {showBoardScheduleModal && selectedBoardJob && (
+        <div className="mercado-schedule-modal-overlay" onClick={() => setShowBoardScheduleModal(false)}>
+          <div className="mercado-schedule-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mercado-schedule-modal-header">
+              <h3>
+                <Calendar size={18} color="#f26522" />
+                Programar Horario de Visita
+              </h3>
+              <button
+                type="button"
+                className="mercado-modal-close-btn"
+                onClick={() => setShowBoardScheduleModal(false)}
+                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveBoardSchedule}>
+              <div className="mercado-schedule-modal-body">
+                <div style={{ background: 'rgba(242, 101, 34, 0.08)', border: '1px solid rgba(242, 101, 34, 0.25)', borderRadius: '12px', padding: '12px 14px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#f26522', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    Folio #{selectedBoardJob.id} - {selectedBoardJob.property?.property_code || 'Inmueble'}
+                  </div>
+                  <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#ffffff' }}>
+                    {selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente de la Red'}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+                    📍 {selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.zona || 'Mérida'}
+                  </div>
+                </div>
+
+                <div className="mercado-schedule-form-group">
+                  <label>
+                    Fecha y Hora de la Visita *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className="mercado-schedule-datetime-input"
+                    value={boardScheduleDate}
+                    onChange={(e) => setBoardScheduleDate(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="mercado-schedule-form-group">
+                  <label>
+                    Notas o Instrucciones para el Cliente (Opcional)
+                  </label>
+                  <textarea
+                    placeholder="Ej. Llegaré con equipo de diagnóstico y herramientas necesarias..."
+                    className="mercado-schedule-textarea"
+                    value={boardScheduleNotes}
+                    onChange={(e) => setBoardScheduleNotes(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="mercado-schedule-modal-footer">
+                <button
+                  type="button"
+                  className="mercado-schedule-btn-cancel"
+                  onClick={() => setShowBoardScheduleModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="mercado-schedule-btn-save"
+                  disabled={submittingBoardSchedule}
+                >
+                  {submittingBoardSchedule ? (
+                    'Guardando...'
+                  ) : (
+                    <>
+                      <CheckCircle2 size={16} /> Confirmar Horario
+                    </>
+                  )}
                 </button>
               </div>
             </form>

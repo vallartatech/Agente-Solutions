@@ -51,16 +51,16 @@ const MAPA_ROLES = {
   8: "TÉCNICO DE LA RED"
 };
 
+// Opciones de rol asignables (ROOT no es asignable desde la interfaz por seguridad)
 const OPCIONES_ROLES = [
-  { id: 0, label: "ROOT MASTER" },
-  { id: 1, label: "ADMINISTRADOR GLOBAL" },
+  { id: 1, label: "ADMINISTRADOR (AGENTE)" },
   { id: 2, label: "TÉCNICO AGENTE" },
+  { id: 7, label: "ADMIN. PROPIEDADES (AGENTE)" },
   { id: 3, label: "CLIENTE" },
-  { id: 4, label: "AUTÓNOMO EMPRESARIAL" },
-  { id: 5, label: "AUTÓNOMO PERSONAL" },
+  { id: 8, label: "TÉCNICO DE LA RED" },
   { id: 6, label: "CONTRATISTA" },
-  { id: 7, label: "ADMIN. PROPIEDADES" },
-  { id: 8, label: "TÉCNICO DE LA RED" }
+  { id: 4, label: "AUTÓNOMO EMPRESARIAL" },
+  { id: 5, label: "AUTÓNOMO PERSONAL" }
 ];
 
 const getRoleStyle = (roleId) => {
@@ -725,8 +725,10 @@ const VistaUsuarios = () => {
 
                             {/* Rol / Tipo de Usuario con Selector Completo */}
                             <td data-label="Rol" className="vu-role-cell" onClick={(e) => e.stopPropagation()}>
-                              {u.role_id === 0 && !isRoot ? (
-                                <span className="vu-role-pill-root">ROOT MASTER</span>
+                              {Number(u.role_id) === 0 ? (
+                                <span className="vu-role-pill-root" title="Usuario con privilegios máximos protegidos">
+                                  👑 ROOT MASTER
+                                </span>
                               ) : (
                                 <div className="vu-role-select-box">
                                   <select
@@ -895,41 +897,60 @@ const VistaUsuarios = () => {
                     ⚙️ Control de Estatus & Rol (Root)
                   </label>
 
-                  {/* Selector rápido de rol */}
-                  <div style={{ marginBottom: '8px' }}>
-                    <select
-                      className="vu-sidebar-role-select"
-                      value={selectedTecnico.role_id}
-                      onChange={(e) => cambiarRol(selectedTecnico.id, parseInt(e.target.value), selectedTecnico.nombre)}
-                      title="Cambiar rol"
-                    >
-                      {OPCIONES_ROLES.map((op) => (
-                        <option key={op.id} value={op.id}>
-                          {op.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {Number(selectedTecnico.role_id) === 0 ? (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '10px 14px',
+                      borderRadius: '12px',
+                      background: 'rgba(245, 158, 11, 0.14)',
+                      border: '1.5px solid rgba(245, 158, 11, 0.4)',
+                      color: '#b45309',
+                      fontWeight: '800',
+                      fontSize: '0.8rem'
+                    }}>
+                      <Crown size={16} color="#d97706" />
+                      <span>CUENTA PROTEGIDA (ROOT MASTER)</span>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Selector rápido de rol */}
+                      <div style={{ marginBottom: '8px' }}>
+                        <select
+                          className="vu-sidebar-role-select"
+                          value={selectedTecnico.role_id}
+                          onChange={(e) => cambiarRol(selectedTecnico.id, parseInt(e.target.value), selectedTecnico.nombre)}
+                          title="Cambiar rol"
+                        >
+                          {OPCIONES_ROLES.map((op) => (
+                            <option key={op.id} value={op.id}>
+                              {op.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                  {/* Botón directo de cambio de estatus */}
-                  {selectedTecnico.role_id !== 0 && (
-                    <button
-                      type="button"
-                      className={`vu-sidebar-status-toggle-btn ${selectedTecnico.bloqueado ? "to-activate" : "to-block"}`}
-                      onClick={() => toggleBloqueo(selectedTecnico.id, selectedTecnico.role_id, selectedTecnico.bloqueado)}
-                    >
-                      {selectedTecnico.bloqueado ? (
-                        <>
-                          <Unlock size={14} />
-                          <span>Activar / Desbloquear Cuenta</span>
-                        </>
-                      ) : (
-                        <>
-                          <Lock size={14} />
-                          <span>Bloquear / Inactivar Cuenta</span>
-                        </>
-                      )}
-                    </button>
+                      {/* Botón directo de cambio de estatus */}
+                      <button
+                        type="button"
+                        className={`vu-sidebar-status-toggle-btn ${selectedTecnico.bloqueado ? "to-activate" : "to-block"}`}
+                        onClick={() => toggleBloqueo(selectedTecnico.id, selectedTecnico.role_id, selectedTecnico.bloqueado)}
+                      >
+                        {selectedTecnico.bloqueado ? (
+                          <>
+                            <Unlock size={14} />
+                            <span>Activar / Desbloquear Cuenta</span>
+                          </>
+                        ) : (
+                          <>
+                            <Lock size={14} />
+                            <span>Bloquear / Inactivar Cuenta</span>
+                          </>
+                        )}
+                      </button>
+                    </>
                   )}
                 </div>
 
