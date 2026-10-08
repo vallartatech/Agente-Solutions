@@ -10,38 +10,37 @@
 
 /* ── TRIGGER BELL BUTTON ── */
 .nb-trigger-btn {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1.5px solid rgba(255, 255, 255, 0.16);
-  color: #ffffff;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  color: #1e293b;
   cursor: pointer;
   position: relative;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 0;
 }
 
 .nb-trigger-btn:hover,
 .nb-trigger-btn.active {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: #fff7ed;
+  border-color: #f26522;
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.2);
 }
 
 .nb-trigger-icon {
-  color: #ffffff;
+  color: #1e293b;
   transition: transform 0.2s ease;
 }
 
 .nb-trigger-btn:hover .nb-trigger-icon {
+  color: #f26522;
   transform: rotate(12deg) scale(1.05);
 }
 

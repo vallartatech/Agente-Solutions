@@ -830,25 +830,47 @@
   width: 330px;
   min-width: 310px;
   flex-shrink: 0;
+  align-self: flex-start;
+  margin: 0;
+  padding: 0;
 }
 
 .vu-sidebar-card {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  border-radius: 22px;
-  padding: 22px 18px;
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: linear-gradient(145deg,
+      rgba(255, 255, 255, 0.75) 0%,
+      rgba(255, 255, 255, 0.35) 45%,
+      rgba(255, 255, 255, 0.65) 100%),
+    rgba(255, 255, 255, 0.40);
+  border: 1.5px solid rgba(255, 255, 255, 0.90);
+  border-radius: 24px;
+  padding: 24px 20px;
+  backdrop-filter: blur(32px) saturate(210%) contrast(102%);
+  -webkit-backdrop-filter: blur(32px) saturate(210%) contrast(102%);
   box-shadow: 
-    0 20px 45px rgba(0, 0, 0, 0.08),
-    inset 0 1px 1.5px rgba(255, 255, 255, 1);
+    0 20px 50px rgba(15, 23, 42, 0.08),
+    0 4px 16px rgba(242, 101, 34, 0.06),
+    inset 0 2px 3px rgba(255, 255, 255, 1),
+    inset 0 -2px 3px rgba(203, 213, 225, 0.35);
   display: flex;
   flex-direction: column;
   gap: 18px;
-  position: sticky;
-  top: 90px;
+  position: relative;
+  top: 0;
+  margin: 0;
   overflow: hidden;
   animation: vuFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vu-sidebar-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  border-radius: 24px 24px 0 0;
 }
 
 .vu-sidebar-top-accent {
@@ -1141,22 +1163,26 @@
   flex-direction: column;
   gap: 14px;
   position: relative;
+  z-index: 2;
 }
 
 .vu-sidebar-empty-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background: rgba(242, 101, 34, 0.09);
-  border: 1px solid rgba(242, 101, 34, 0.3);
+  gap: 6px;
+  background: rgba(242, 101, 34, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(242, 101, 34, 0.35);
   color: #ea580c;
   font-family: 'Outfit', sans-serif;
-  font-size: 0.66rem;
-  font-weight: 800;
+  font-size: 0.68rem;
+  font-weight: 900;
   letter-spacing: 0.8px;
-  padding: 3px 12px;
+  padding: 4px 14px;
   border-radius: 20px;
   text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(242, 101, 34, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.6);
 }
 
 .vu-sidebar-pill-icon {
@@ -1165,24 +1191,31 @@
 
 .vu-sidebar-empty-orb {
   position: relative;
-  width: 86px;
-  height: 86px;
+  width: 90px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 2px 0;
+  margin: 4px 0;
 }
 
 .vu-sidebar-empty-orb-inner {
-  width: 76px;
-  height: 76px;
+  width: 78px;
+  height: 78px;
   border-radius: 50%;
-  background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.85) 0%,
+      rgba(255, 255, 255, 0.40) 50%,
+      rgba(255, 255, 255, 0.70) 100%),
+    rgba(255, 255, 255, 0.50);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 2px solid rgba(255, 255, 255, 0.95);
   box-shadow: 
-    0 12px 28px rgba(242, 101, 34, 0.18),
-    0 2px 8px rgba(0, 0, 0, 0.04),
-    inset 0 2px 4px rgba(255, 255, 255, 1);
+    0 14px 32px rgba(242, 101, 34, 0.20),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    inset 0 2.5px 4px rgba(255, 255, 255, 1),
+    inset 0 -2px 3px rgba(203, 213, 225, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1193,15 +1226,15 @@
 
 .vu-sidebar-empty-icon {
   color: #f26522;
-  filter: drop-shadow(0 2px 6px rgba(242, 101, 34, 0.25));
+  filter: drop-shadow(0 2px 6px rgba(242, 101, 34, 0.35));
 }
 
 .vu-sidebar-empty-orb-glow {
   position: absolute;
-  inset: 2px;
+  inset: -2px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(242, 101, 34, 0.35) 0%, rgba(242, 101, 34, 0) 70%);
-  filter: blur(12px);
+  background: radial-gradient(circle, rgba(242, 101, 34, 0.40) 0%, rgba(242, 101, 34, 0) 70%);
+  filter: blur(14px);
   z-index: 1;
   animation: vuGlowPulse 3s ease-in-out infinite alternate;
 }
@@ -1211,7 +1244,7 @@
     transform: translateY(0px) scale(1);
   }
   50% {
-    transform: translateY(-5px) scale(1.03);
+    transform: translateY(-6px) scale(1.04);
   }
 }
 
@@ -1230,12 +1263,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .vu-sidebar-empty-text-wrap h4 {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.18rem;
   font-weight: 900;
   color: #0f172a;
   margin: 0;
@@ -1244,7 +1277,7 @@
 }
 
 .vu-sidebar-empty-text-wrap p {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: #64748b;
   line-height: 1.55;
   margin: 0;
@@ -1255,16 +1288,28 @@
 .vu-sidebar-empty-hint {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(241, 245, 249, 0.95);
-  border: 1.5px solid rgba(226, 232, 240, 0.9);
-  padding: 6px 14px;
-  border-radius: 12px;
+  gap: 7px;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.85) 0%,
+      rgba(241, 245, 249, 0.65) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  padding: 8px 16px;
+  border-radius: 14px;
   font-size: 0.74rem;
-  font-weight: 700;
-  color: #475569;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-  margin-top: 4px;
+  font-weight: 800;
+  color: #334155;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 1);
+  margin-top: 6px;
+  transition: all 0.2s ease;
+}
+
+.vu-sidebar-empty-hint:hover {
+  background: #ffffff;
+  border-color: #f26522;
+  color: #ea580c;
+  transform: translateY(-1px);
 }
 
 .vu-hint-icon {

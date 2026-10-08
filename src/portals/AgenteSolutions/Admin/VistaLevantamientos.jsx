@@ -374,7 +374,7 @@ const VistaLevantamientos = () => {
               title="Abrir Calendario y Citas"
               onClick={() => setShowModalCalendario(true)}
             >
-              <CalendarDays size={18} color="#ffffff" strokeWidth={2.2} />
+              <CalendarDays size={18} strokeWidth={2.2} />
             </button>
 
             <NotificationBell />

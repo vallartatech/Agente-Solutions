@@ -122,6 +122,27 @@ const LoginAgente = () => {
   // Welcome / Onboarding Intro Screen State
   const [showWelcome, setShowWelcome] = useState(true);
   const [welcomeSlide, setWelcomeSlide] = useState(0);
+  const [welcomeTouchStartX, setWelcomeTouchStartX] = useState(null);
+
+  const handleWelcomeTouchStart = (e) => {
+    setWelcomeTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleWelcomeTouchEnd = (e) => {
+    if (welcomeTouchStartX === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const deltaX = touchEndX - welcomeTouchStartX;
+    if (deltaX < -40) {
+      if (welcomeSlide < WELCOME_SLIDES.length - 1) {
+        setWelcomeSlide((prev) => prev + 1);
+      }
+    } else if (deltaX > 40) {
+      if (welcomeSlide > 0) {
+        setWelcomeSlide((prev) => prev - 1);
+      }
+    }
+    setWelcomeTouchStartX(null);
+  };
 
   // Sliding Auth Panel State (false = Login, true = Register)
   const [isSignUp, setIsSignUp] = useState(false);
@@ -608,7 +629,11 @@ const LoginAgente = () => {
 
       {/* === ONBOARDING / WELCOME SCREEN (Shown before opening login/register) === */}
       {showWelcome && (
-        <div className="aiw-welcome-screen">
+        <div
+          className="aiw-welcome-screen"
+          onTouchStart={handleWelcomeTouchStart}
+          onTouchEnd={handleWelcomeTouchEnd}
+        >
           {/* Top Bar with Saltar button pinned to top right */}
           <div className="aiw-welcome-topbar">
             <button

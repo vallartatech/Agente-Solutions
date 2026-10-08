@@ -75,14 +75,14 @@
 .vcp-nav-btn {
   background: transparent;
   border: 1px solid transparent;
-  color: #cbd5e1;
+  color: #1e293b;
   font-family: 'Outfit', sans-serif;
-  font-size: 0.80rem;
+  font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  padding: 7px 14px;
-  border-radius: 12px;
+  padding: 8px 16px;
+  border-radius: 20px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -92,59 +92,47 @@
 }
 
 .vcp-nav-btn:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.28);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  color: #f26522;
+  background: rgba(242, 101, 34, 0.08);
+  border-color: rgba(242, 101, 34, 0.2);
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3);
 }
 
 .vcp-nav-btn.active {
-  color: #ffffff;
-  background: linear-gradient(135deg, rgba(242, 101, 34, 0.35) 0%, rgba(242, 101, 34, 0.15) 100%);
-  border: 1px solid rgba(242, 101, 34, 0.6);
-  box-shadow: 0 0 14px rgba(242, 101, 34, 0.4);
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%) !important;
+  border: 1px solid rgba(242, 101, 34, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.4) !important;
 }
 
 .vcp-nav-icon-btn {
-  background: rgba(255, 255, 255, 0.14);
-  border: 1.5px solid rgba(255, 255, 255, 0.35);
-  color: #ffffff;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  color: #1e293b;
   width: 40px;
   height: 40px;
-  border-radius: 11px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
-  margin-right: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  margin-right: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .vcp-nav-icon-btn svg {
-  width: 20px !important;
-  height: 20px !important;
-  min-width: 20px !important;
-  min-height: 20px !important;
-  stroke: #ffffff !important;
-  color: #ffffff !important;
-  stroke-width: 2.2px !important;
-  display: block !important;
-  pointer-events: none;
+  color: #1e293b !important;
+  stroke: #1e293b !important;
 }
 
 .vcp-nav-icon-btn:hover {
-  background: #f26522;
-  border-color: #ff7836;
-  color: #ffffff;
-  transform: translateY(-1px) scale(1.06);
-  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.6);
+  background: #fff7ed;
+  border-color: #f26522;
+  color: #f26522;
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.25);
 }
 
 /* User profile section on top right */
