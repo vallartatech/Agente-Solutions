@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow } from '@react-google-maps/api';
 import MaterialDateTimePicker, { formatDateTimeHuman } from '../../../components/Shared/MaterialDateTimePicker';
@@ -363,6 +363,7 @@ const MercadoTrabajos = () => {
   });
 
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedJob, setSelectedJob] = useState(null);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [networkJobs, setNetworkJobs] = useState([]);
@@ -449,6 +450,17 @@ const MercadoTrabajos = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Restaurar trabajo seleccionado al regresar de Galería o Nuevo Reporte
+  useEffect(() => {
+    if (location.state?.trabajoId) {
+      const parsedId = Number(String(location.state.trabajoId).replace('work_order-', ''));
+      if (!isNaN(parsedId) && parsedId > 0) {
+        setSelectedBoardJobId(parsedId);
+        setActiveTab('aceptados');
+      }
+    }
+  }, [location.state]);
 
   const fetchJobs = async () => {
     try {
@@ -1000,17 +1012,123 @@ const MercadoTrabajos = () => {
     return acceptedJobs[0] || null;
   }, [acceptedJobs, selectedBoardJobId, filteredBoardJobs]);
 
-  // Active Job Photos (Up to 4 slots)
-  const currentJobPhotos = useMemo(() => {
+  // Fotos de la falla / problema reportadas por el cliente
+  const clientPhotos = useMemo(() => {
     if (!selectedBoardJob) return [];
-    if (boardPhotos[selectedBoardJob.id] && boardPhotos[selectedBoardJob.id].length > 0) {
-      return boardPhotos[selectedBoardJob.id];
-    }
-    const existing = (selectedBoardJob.problem_photos && selectedBoardJob.problem_photos.length > 0)
+    const list = (selectedBoardJob.problem_photos && selectedBoardJob.problem_photos.length > 0)
       ? selectedBoardJob.problem_photos
-      : (selectedBoardJob.fotos || []);
-    return existing.slice(0, 4);
-  }, [selectedBoardJob, boardPhotos]);
+      : (selectedBoardJob.fotos && selectedBoardJob.fotos.length > 0 ? selectedBoardJob.fotos : (selectedBoardJob.foto ? [selectedBoardJob.foto] : []));
+    return list.map(f => resolveImageUrl(f)).filter(Boolean);
+  }, [selectedBoardJob]);
+
+  // Estado de reportes reales del backend para el trabajo seleccionado
+  const [boardJobReports, setBoardJobReports] = useState([]);
+  const [loadingJobReports, setLoadingJobReports] = useState(false);
+
+  const fetchJobReports = async (jobId) => {
+    if (!jobId) return;
+    try {
+      setLoadingJobReports(true);
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios/work_order-${jobId}/reportes`, { headers });
+      setBoardJobReports(res.data || []);
+    } catch (e) {
+      console.warn("Error fetching work order reports:", e);
+    } finally {
+      setLoadingJobReports(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedBoardJob?.id) {
+      fetchJobReports(selectedBoardJob.id);
+    }
+  }, [selectedBoardJob?.id]);
+
+  // Estructura oficial de 4 etapas de evidencias
+  const STAGE_SLOTS = [
+    { key: 'ANTES', label: 'ANTES', tag: '[ANTES]', required: true, subtitle: 'Inicial' },
+    { key: 'DURANTE', label: 'DURANTE', tag: '[DURANTE]', required: true, subtitle: 'Proceso' },
+    { key: 'DESPUÉS', label: 'DESPUÉS', tag: '[DESPUÉS]', required: true, subtitle: 'Concluido' },
+    { key: 'EXTRA', label: 'EXTRA', tag: '[EXTRA]', required: false, subtitle: 'Opcional' },
+  ];
+
+  // Reporte o foto asignada a cada una de las 4 etapas
+  const currentSlotReports = useMemo(() => {
+    return STAGE_SLOTS.map((slot, sIdx) => {
+      // 1. Buscar en boardJobReports por tag
+      const found = (boardJobReports || []).find(r => {
+        const desc = (r.description || '').toUpperCase();
+        return desc.includes(slot.tag) || (slot.key === 'DESPUÉS' && desc.includes('[DESPUES]'));
+      });
+      if (found) {
+        return {
+          id: found.id,
+          image_url: resolveImageUrl(found.image_url),
+          description: found.description,
+          isBackend: true
+        };
+      }
+      // 2. Fallback por posición
+      if (boardJobReports && boardJobReports[sIdx]) {
+        return {
+          id: boardJobReports[sIdx].id,
+          image_url: resolveImageUrl(boardJobReports[sIdx].image_url),
+          description: boardJobReports[sIdx].description,
+          isBackend: true
+        };
+      }
+      // 3. Fallback a almacenamiento local si existe
+      if (boardPhotos[selectedBoardJob?.id]?.[sIdx]) {
+        return {
+          image_url: boardPhotos[selectedBoardJob.id][sIdx],
+          description: slot.label,
+          isBackend: false
+        };
+      }
+      return null;
+    });
+  }, [boardJobReports, boardPhotos, selectedBoardJob?.id]);
+
+  // Total de reportes completados
+  const completedReportsCount = useMemo(() => {
+    return currentSlotReports.filter(Boolean).length;
+  }, [currentSlotReports]);
+
+  // Ranuras del reporte del técnico [Antes, Durante, Después, Extra]
+  const currentJobSlots = useMemo(() => {
+    return currentSlotReports.map(r => r?.image_url || null);
+  }, [currentSlotReports]);
+
+  // Lista de fotos no nulas cargadas por el técnico
+  const currentJobPhotos = useMemo(() => {
+    return currentJobSlots.filter(Boolean);
+  }, [currentJobSlots]);
+
+  // Navegación al flujo de reportes (NuevoReporte si 0, GaleriaReportes si 1+)
+  const handleOpenReportFlow = (slotKey = 'ANTES') => {
+    if (!selectedBoardJob) return;
+    const hasReports = (boardJobReports && boardJobReports.length > 0) || completedReportsCount > 0;
+    if (hasReports) {
+      navigate(`/galeria-reportes/work_order-${selectedBoardJob.id}`, {
+        state: {
+          trabajoId: `work_order-${selectedBoardJob.id}`,
+          servicio: selectedBoardJob,
+          from: '/mercado-trabajos'
+        }
+      });
+    } else {
+      navigate('/nuevo-reporte', {
+        state: {
+          trabajoId: `work_order-${selectedBoardJob.id}`,
+          servicio: selectedBoardJob,
+          from: '/mercado-trabajos',
+          stageKey: slotKey
+        }
+      });
+    }
+  };
 
   // Active Progress Stage (1 to 6)
   const currentStage = useMemo(() => {
@@ -1019,13 +1137,13 @@ const MercadoTrabajos = () => {
     const isDone = selectedBoardJob.status === 'Listo' || selectedBoardJob.status === 'Finalizado';
     if (isDone) return 6;
 
-    const photoCount = currentJobPhotos.length;
+    const photoCount = completedReportsCount;
     if (photoCount >= 3) return Math.max(manualStage || 5, 5);
     if (selectedBoardJob.status === 'En Progreso') return Math.max(manualStage || 4, 4);
     if (manualStage) return manualStage;
     if (arrivalAlertSent[selectedBoardJob.id]) return 2;
     return 1;
-  }, [selectedBoardJob, boardJobStages, currentJobPhotos, arrivalAlertSent]);
+  }, [selectedBoardJob, boardJobStages, completedReportsCount, arrivalAlertSent]);
 
   const handleSetStage = (stageNum) => {
     if (!selectedBoardJob) return;
@@ -1051,14 +1169,10 @@ const MercadoTrabajos = () => {
     reader.onload = () => {
       const dataUrl = reader.result;
       setBoardPhotos(prev => {
-        const list = [...(prev[selectedBoardJob.id] || currentJobPhotos)];
-        if (slotIndex < list.length) {
-          list[slotIndex] = dataUrl;
-        } else {
-          list.push(dataUrl);
-        }
-        const clamped = list.slice(0, 4);
-        const updated = { ...prev, [selectedBoardJob.id]: clamped };
+        const slots = [...(prev[selectedBoardJob.id] || [null, null, null, null])];
+        while (slots.length < 4) slots.push(null);
+        slots[slotIndex] = dataUrl;
+        const updated = { ...prev, [selectedBoardJob.id]: slots };
         try {
           localStorage.setItem('agente_board_photos', JSON.stringify(updated));
         } catch (err) {
@@ -1071,13 +1185,14 @@ const MercadoTrabajos = () => {
     e.target.value = '';
   };
 
-  const handleRemovePhotoSlot = (e, index) => {
+  const handleRemovePhotoSlot = (e, slotIndex) => {
     e.stopPropagation();
     if (!selectedBoardJob) return;
     setBoardPhotos(prev => {
-      const list = [...(prev[selectedBoardJob.id] || currentJobPhotos)];
-      list.splice(index, 1);
-      const updated = { ...prev, [selectedBoardJob.id]: list };
+      const slots = [...(prev[selectedBoardJob.id] || [null, null, null, null])];
+      while (slots.length < 4) slots.push(null);
+      slots[slotIndex] = null;
+      const updated = { ...prev, [selectedBoardJob.id]: slots };
       try {
         localStorage.setItem('agente_board_photos', JSON.stringify(updated));
       } catch (err) {}
@@ -1085,50 +1200,47 @@ const MercadoTrabajos = () => {
     });
   };
 
-  // 1. INICIAR TRABAJO
+  // 1. INICIAR REPORTE / CONTINUAR REPORTE (Abre vista NuevoReporte o GaleriaReportes)
   const handleStartBoardJob = async () => {
     if (!selectedBoardJob) return;
 
-    try {
-      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
+    // Si aún no está en progreso, actualizar estado
+    if (selectedBoardJob.status !== 'En Progreso' && selectedBoardJob.status !== 'Finalizado' && selectedBoardJob.status !== 'Listo') {
       try {
-        await axios.put(
-          `${import.meta.env.VITE_API_BASE_URL}/work-orders/${selectedBoardJob.id}/status`,
-          { status: 'En Progreso' },
-          { headers }
-        );
-      } catch (err1) {
-        console.warn("Backend status update fallback", err1);
+        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        try {
+          await axios.put(
+            `${import.meta.env.VITE_API_BASE_URL}/work-orders/${selectedBoardJob.id}/status`,
+            { status: 'En Progreso' },
+            { headers }
+          );
+        } catch (err1) {
+          console.warn("Backend status update fallback", err1);
+        }
+
+        setAcceptedJobs(prev => prev.map(j => j.id === selectedBoardJob.id ? { ...j, status: 'En Progreso' } : j));
+        handleSetStage(4);
+      } catch (error) {
+        console.warn("Error actualizando estado en progreso:", error);
       }
-
-      setAcceptedJobs(prev => prev.map(j => j.id === selectedBoardJob.id ? { ...j, status: 'En Progreso' } : j));
-      handleSetStage(4);
-
-      Swal.fire({
-        icon: 'success',
-        title: '¡Trabajo Iniciado!',
-        text: 'El servicio está En Reparación. Registra un mínimo de 3 fotografías de evidencia para habilitar la finalización.',
-        timer: 2500,
-        showConfirmButton: false,
-      });
-    } catch (error) {
-      console.error("Error iniciando trabajo:", error);
-      Swal.fire('Error', 'No se pudo iniciar el trabajo. Por favor intenta de nuevo.', 'error');
     }
+
+    // Navegar directamente a la vista de reporte
+    handleOpenReportFlow('ANTES');
   };
 
-  // 2. FINALIZAR TRABAJO (Min 3 fotos, max 4)
+  // 2. FINALIZAR TRABAJO (Mínimo 3 evidencias obligatorias)
   const handleFinishBoardJob = async () => {
     if (!selectedBoardJob) return;
-    const photoCount = currentJobPhotos.length;
+    const photoCount = completedReportsCount;
 
     if (photoCount < 3) {
       Swal.fire({
         icon: 'warning',
         title: 'Evidencias Insuficientes',
-        html: `<p>Se requieren <strong>al menos 3 fotos de evidencia</strong> (máximo 4) para poder finalizar el trabajo.</p><p style="color: #ea580c; font-weight: bold; margin-top: 8px;">Actualmente has cargado ${photoCount} de 3 requeridas.</p>`,
+        html: `<p>Se requieren <strong>al menos 3 evidencias registradas</strong> (Antes, Durante y Después) para poder finalizar el trabajo.</p><p style="color: #ea580c; font-weight: bold; margin-top: 8px;">Actualmente has registrado ${photoCount} de 3 requeridas.</p>`,
         confirmButtonText: 'Entendido',
         confirmButtonColor: '#f26522',
       });
@@ -1137,7 +1249,7 @@ const MercadoTrabajos = () => {
 
     const result = await Swal.fire({
       title: '¿Finalizar este trabajo?',
-      html: `¿Confirmas que has completado el servicio con <strong>${photoCount} fotos</strong> de evidencia?`,
+      html: `¿Confirmas que has completado el servicio con <strong>${photoCount} evidencias</strong> registradas?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Sí, Finalizar Trabajo',
@@ -1155,7 +1267,7 @@ const MercadoTrabajos = () => {
       try {
         await axios.put(
           `${import.meta.env.VITE_API_BASE_URL}/work-orders/${selectedBoardJob.id}/status`,
-          { status: 'Listo', evidences: currentJobPhotos },
+          { status: 'Listo' },
           { headers }
         );
       } catch (err1) {
@@ -1167,29 +1279,33 @@ const MercadoTrabajos = () => {
           `${import.meta.env.VITE_API_BASE_URL}/notifications/send-to-admin`,
           {
             title: "Trabajo Finalizado con Evidencias",
-            message: `El Técnico ${authUser?.name || ''} finalizó el trabajo en ${selectedBoardJob.property_name || selectedBoardJob.lugar || ''} con ${photoCount} fotos de evidencia.`,
+            message: `El Técnico ${authUser?.name || ''} finalizó el trabajo en ${selectedBoardJob.property_name || selectedBoardJob.lugar || ''} con ${photoCount} evidencias registradas.`,
             type: "work_order_finished",
-            work_order_id: selectedBoardJob.id,
+            data: {
+              work_order_id: selectedBoardJob.id,
+              technician_id: authUser?.id,
+              property: selectedBoardJob.property_name || selectedBoardJob.lugar || ''
+            }
           },
           { headers }
         );
       } catch (err2) {
-        console.warn("Notification error:", err2);
+        console.warn("Error sending notification:", err2);
       }
 
-      setAcceptedJobs(prev => prev.map(j => j.id === selectedBoardJob.id ? { ...j, status: 'Finalizado' } : j));
+      setAcceptedJobs(prev => prev.map(j => j.id === selectedBoardJob.id ? { ...j, status: 'Listo' } : j));
       handleSetStage(6);
 
       Swal.fire({
         icon: 'success',
-        title: '¡Servicio Finalizado con Éxito!',
-        text: `El trabajo se concluyó satisfactoriamente con ${photoCount} fotos de evidencia registradas.`,
-        confirmButtonText: 'Continuar',
-        confirmButtonColor: '#22c55e',
+        title: '¡Trabajo Finalizado!',
+        text: 'El servicio ha sido completado con éxito con todas sus evidencias registradas.',
+        timer: 2500,
+        showConfirmButton: false,
       });
     } catch (error) {
       console.error("Error finalizando trabajo:", error);
-      Swal.fire('Error', 'Hubo un problema al registrar la finalización.', 'error');
+      Swal.fire('Error', 'No se pudo finalizar el trabajo. Por favor intenta de nuevo.', 'error');
     }
   };
 
@@ -1662,256 +1778,215 @@ const MercadoTrabajos = () => {
 
                 return (
                   <div className="mercado-board-col-detail">
-                    {/* Banner de Propiedad (Con foto de Fachada de la Casa) */}
-                    <div className="mercado-board-banner">
-                      {/* Foto de la Fachada de la Casa */}
-                      <div 
-                        className="mercado-board-banner-facade-box" 
-                        onClick={() => facadeImg && setZoomedPhotoUrl(facadeImg)} 
-                        title={facadeImg ? "Clic para ampliar foto de fachada" : "Fachada de la Casa"}
-                      >
-                        {facadeImg ? (
-                          <img 
-                            src={facadeImg} 
-                            alt="Fachada de la propiedad" 
-                            className="mercado-board-banner-facade-img" 
-                          />
-                        ) : (
-                          <div className="mercado-board-banner-facade-fallback">
-                            <Home size={22} color="#f26522" />
-                            <span style={{ fontSize: '8px', fontWeight: 900, color: '#f26522', letterSpacing: '0.4px' }}>FACHADA</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="mercado-board-banner-info">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span className="mercado-board-banner-tag">
-                            {selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}
-                          </span>
-                          <span style={{ fontSize: '0.66rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase' }}>
-                            {selectedBoardJob.property?.type || 'PROPIEDAD'}
-                          </span>
-                        </div>
-                        <h1 className="mercado-board-banner-name" title={selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.property_name}>
-                          {selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.property_name || 'Dirección de la Propiedad'}
-                        </h1>
-                        <p className="mercado-board-banner-address">
-                          <MapPin size={12} color="#f26522" style={{ flexShrink: 0 }} />
-                          <span>{selectedBoardJob.zona || selectedBoardJob.colonia || 'Mérida, Yucatán'}</span>
-                        </p>
-                      </div>
-
-                      <div className="mercado-board-banner-actions">
-                        <button
-                          className="mercado-board-btn-gps"
-                          onClick={() => {
-                            const query = selectedBoardJob.lat && selectedBoardJob.lng
-                              ? `${selectedBoardJob.lat},${selectedBoardJob.lng}`
-                              : encodeURIComponent(selectedBoardJob.full_address || selectedBoardJob.calle || 'Mérida');
-                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${query}`, '_blank');
-                          }}
-                        >
-                          <Navigation size={13} /> GPS
-                        </button>
-
-                        {selectedBoardJob.client_phone && (
-                          <button
-                            className="mercado-board-btn-call"
-                            onClick={() => window.open(`tel:${selectedBoardJob.client_phone}`)}
-                          >
-                            <Phone size={13} /> Llamar
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Fila Media: Consiste en (Izquierda) + Datos Cliente (Derecha) */}
+                    {/* Fila Superior: Datos del Cliente + Consiste en (Izquierda) vs Propiedad / Fachada (Derecha) */}
                     <div className="mercado-board-mid-grid">
-                      {/* Tarjeta 1: Consiste en */}
-                      <div className="mercado-board-card compact">
-                        <h3 className="mercado-board-card-title">
-                          <FileText size={15} /> CONSISTE EN:
-                        </h3>
+                      {/* Columna Izquierda: Datos del Cliente (arriba) + Consiste en (abajo) */}
+                      <div className="mercado-board-left-info-stack">
+                        {/* Tarjeta 1: Datos del Cliente (Sobre consiste en) */}
+                        <div className="mercado-board-card compact">
+                          <h3 className="mercado-board-card-title">
+                            <User size={13} /> DATOS DEL CLIENTE
+                          </h3>
 
-                        <div className="mercado-board-boxes-grid">
-                          <div className="mercado-board-info-box">
-                            <span className="mercado-board-info-box-label">
-                              TIPO DE FALLA / PROBLEMA
-                            </span>
-                            <p className="mercado-board-info-box-val">
-                              [{selectedBoardJob.property?.property_code || 'LOTE-XVDC'}] (1/1) {selectedBoardJob.descripcion || selectedBoardJob.titulo}
-                            </p>
-                          </div>
-
-                          <div className="mercado-board-info-box">
-                            <span className="mercado-board-info-box-label">
-                              EQUIPO O COMPONENTE AFECTADO
-                            </span>
-                            <p className="mercado-board-info-box-val">
-                              {selectedBoardJob.equipo || '25 (MV) / Instalaciones Generales'}
-                            </p>
+                          <div className="mercado-board-client-details-grid">
+                            <div className="mercado-board-client-item">
+                              <span className="mercado-board-client-label">Nombre:</span>
+                              <span className="mercado-board-client-val" title={selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente'}>
+                                {selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente'}
+                              </span>
+                            </div>
+                            <div className="mercado-board-client-item">
+                              <span className="mercado-board-client-label">Teléfono:</span>
+                              <span className="mercado-board-client-val">
+                                {selectedBoardJob.client_phone || 'No registrado'}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="mercado-board-card-meta-row">
-                          <div className="mercado-board-card-meta-item">
-                            <Clock size={13} color="#f26522" />
-                            <span><strong>Programado:</strong> {selectedBoardJob.scheduled_at ? new Date(selectedBoardJob.scheduled_at).toLocaleString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Por coordinar'}</span>
+                        {/* Tarjeta 2: Consiste en */}
+                        <div className="mercado-board-card compact">
+                          <h3 className="mercado-board-card-title">
+                            <FileText size={13} /> CONSISTE EN:
+                          </h3>
+
+                          <div className="mercado-board-boxes-grid">
+                            <div className="mercado-board-info-box">
+                              <span className="mercado-board-info-box-label">
+                                TIPO DE FALLA / PROBLEMA
+                              </span>
+                              <p className="mercado-board-info-box-val">
+                                [{selectedBoardJob.property?.property_code || 'LOTE-XVDC'}] (1/1) {selectedBoardJob.descripcion || selectedBoardJob.titulo}
+                              </p>
+                            </div>
+
+                            <div className="mercado-board-info-box">
+                              <span className="mercado-board-info-box-label">
+                                EQUIPO O COMPONENTE AFECTADO
+                              </span>
+                              <p className="mercado-board-info-box-val">
+                                {selectedBoardJob.equipo || '25 (MV) / Instalaciones Generales'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mercado-board-card-meta-row">
+                            <div className="mercado-board-card-meta-item">
+                              <Clock size={12} color="#f26522" />
+                              <span><strong>Programado:</strong> {selectedBoardJob.scheduled_at ? new Date(selectedBoardJob.scheduled_at).toLocaleString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Por coordinar'}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Tarjeta 2: Datos del Cliente */}
-                      <div className="mercado-board-card compact">
-                        <h3 className="mercado-board-card-title">
-                          <User size={15} /> DATOS DEL CLIENTE
-                        </h3>
+                      {/* Tarjeta Derecha: Propiedad / Fachada / Folio (Donde estaba Datos del Cliente) */}
+                      <div className="mercado-board-card compact mercado-board-property-card">
+                        <div className="mercado-board-property-header">
+                          <div className="mercado-board-property-title-group">
+                            <span className="mercado-board-banner-tag">
+                              {selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}
+                            </span>
+                            <span className="mercado-board-property-type-pill">
+                              <Home size={11} color="#f26522" />
+                              {selectedBoardJob.property?.type || 'CASA'}
+                            </span>
+                          </div>
 
-                        <div className="mercado-board-client-details">
-                          <div className="mercado-board-client-item">
-                            <span className="mercado-board-client-label">Nombre:</span>
-                            <span className="mercado-board-client-val">{selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente'}</span>
+                          <div className="mercado-board-property-actions">
+                            <button
+                              type="button"
+                              className="mercado-board-btn-gps"
+                              onClick={() => {
+                                const query = selectedBoardJob.lat && selectedBoardJob.lng
+                                  ? `${selectedBoardJob.lat},${selectedBoardJob.lng}`
+                                  : encodeURIComponent(selectedBoardJob.full_address || selectedBoardJob.calle || 'Mérida');
+                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${query}`, '_blank');
+                              }}
+                              title="Abrir en Google Maps (GPS)"
+                            >
+                              <Navigation size={12} /> GPS
+                            </button>
+
+                            {selectedBoardJob.client_phone && (
+                              <button
+                                type="button"
+                                className="mercado-board-btn-call"
+                                onClick={() => window.open(`tel:${selectedBoardJob.client_phone}`)}
+                                title="Llamar al cliente"
+                              >
+                                <Phone size={12} /> Llamar
+                              </button>
+                            )}
                           </div>
-                          <div className="mercado-board-client-item">
-                            <span className="mercado-board-client-label">Teléfono:</span>
-                            <span className="mercado-board-client-val">{selectedBoardJob.client_phone || 'No registrado'}</span>
+                        </div>
+
+                        <div className="mercado-board-property-content">
+                          {/* Foto de la Fachada de la Casa */}
+                          <div 
+                            className="mercado-board-property-facade-box" 
+                            onClick={() => facadeImg && setZoomedPhotoUrl(facadeImg)} 
+                            title={facadeImg ? "Clic para ampliar foto de fachada" : "Fachada de la Casa"}
+                          >
+                            {facadeImg ? (
+                              <img 
+                                src={facadeImg} 
+                                alt="Fachada de la propiedad" 
+                                className="mercado-board-banner-facade-img" 
+                              />
+                            ) : (
+                              <div className="mercado-board-banner-facade-fallback">
+                                <Home size={22} color="#f26522" />
+                                <span style={{ fontSize: '8px', fontWeight: 900, color: '#f26522', letterSpacing: '0.4px' }}>FACHADA</span>
+                              </div>
+                            )}
+                            <span className="mercado-board-facade-zoom-badge">🔍 FACHADA</span>
                           </div>
-                          <div className="mercado-board-client-item">
-                            <span className="mercado-board-client-label">Tipo:</span>
-                            <span className="mercado-board-client-val">{selectedBoardJob.property?.type || 'CASA'}</span>
+
+                          {/* Dirección completa y Zona */}
+                          <div className="mercado-board-property-address-box">
+                            <h4 className="mercado-board-property-name" title={selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.property_name}>
+                              {selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.property_name || 'Dirección de la Propiedad'}
+                            </h4>
+                            <p className="mercado-board-property-zone">
+                              <MapPin size={12} color="#f26522" style={{ flexShrink: 0 }} />
+                              <span>{selectedBoardJob.zona || selectedBoardJob.colonia || 'Mérida, Yucatán'}</span>
+                            </p>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Tarjeta 3: Evidencias Registradas (4 Ranuras / Fotos) */}
-                    <div className="mercado-board-card compact mercado-board-evidence-card">
-                      <div className="mercado-board-evidence-header">
+                    {/* Tarjeta 3: Evidencias del Cliente (Fotos adjuntas en el reporte inicial) */}
+                    <div className="mercado-board-card compact mercado-board-client-evidence-card">
+                      <div className="mercado-board-client-evidence-header">
                         <h3 className="mercado-board-card-title">
-                          <Camera size={15} /> EVIDENCIAS ({currentJobPhotos.length}/4)
+                          <Eye size={14} /> EVIDENCIAS DEL CLIENTE ({clientPhotos.length})
                         </h3>
-
-                        <span className={`mercado-board-evidence-counter ${currentJobPhotos.length >= 3 ? 'ready' : 'pending'}`}>
-                          {currentJobPhotos.length >= 3 ? '✅ Listo para Finalizar' : `⚠️ Faltan ${3 - currentJobPhotos.length} foto${3 - currentJobPhotos.length > 1 ? 's' : ''} (Mín. 3)`}
+                        <span className="mercado-board-evidence-counter info">
+                          {clientPhotos.length > 0 ? `${clientPhotos.length} foto${clientPhotos.length > 1 ? 's' : ''} adjunta${clientPhotos.length > 1 ? 's' : ''}` : 'Sin fotos adjuntas'}
                         </span>
                       </div>
 
-                      {/* Grid de 4 Ranuras con Proporción Mejorada */}
-                      <div className="mercado-board-photo-grid">
-                        {[0, 1, 2, 3].map((slotIdx) => {
-                          const photoUrl = currentJobPhotos[slotIdx];
-                          const isRequired = slotIdx < 3;
-
-                          return (
+                      {clientPhotos.length > 0 ? (
+                        <div className="mercado-board-client-photo-grid">
+                          {clientPhotos.map((photoUrl, pIdx) => (
                             <div
-                              key={slotIdx}
-                              className={`mercado-board-photo-slot ${photoUrl ? 'filled' : 'empty'}`}
-                              onClick={() => {
-                                if (!photoUrl) {
-                                  document.getElementById(`board-photo-input-${selectedBoardJob.id}-${slotIdx}`)?.click();
-                                } else {
-                                  setZoomedPhotoUrl(photoUrl);
-                                }
-                              }}
-                              title={photoUrl ? `Clic para ampliar evidencia ${slotIdx + 1}` : `Subir foto de evidencia ${slotIdx + 1}`}
+                              key={pIdx}
+                              className="mercado-board-client-photo-thumb"
+                              onClick={() => setZoomedPhotoUrl(photoUrl)}
+                              title={`Clic para ampliar foto ${pIdx + 1} del cliente`}
                             >
-                              <input
-                                type="file"
-                                id={`board-photo-input-${selectedBoardJob.id}-${slotIdx}`}
-                                style={{ display: 'none' }}
-                                accept="image/*"
-                                capture="environment"
-                                onChange={(e) => handleUploadPhotoSlot(e, slotIdx)}
-                              />
-
-                              {photoUrl ? (
-                                <div className="mercado-board-photo-wrapper">
-                                  <img src={photoUrl} alt={`Evidencia ${slotIdx + 1}`} className="mercado-board-photo-img" />
-                                  <span className="mercado-board-photo-slot-pill">FOTO {slotIdx + 1}</span>
-                                  <div className="mercado-board-photo-actions-overlay">
-                                    <button
-                                      type="button"
-                                      className="mercado-board-photo-btn-icon"
-                                      title="Ampliar foto"
-                                      onClick={(e) => { e.stopPropagation(); setZoomedPhotoUrl(photoUrl); }}
-                                    >
-                                      <Maximize2 size={13} />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="mercado-board-photo-btn-icon delete"
-                                      title="Eliminar foto"
-                                      onClick={(e) => handleRemovePhotoSlot(e, slotIdx)}
-                                    >
-                                      <Trash2 size={13} />
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="mercado-board-photo-empty-content">
-                                  <div className="mercado-board-photo-empty-circle">
-                                    <Camera size={16} color="#f26522" />
-                                  </div>
-                                  <span className="mercado-board-photo-slot-label">Foto {slotIdx + 1}</span>
-                                  <span className={`mercado-board-photo-req-badge ${isRequired ? 'req' : 'opt'}`}>
-                                    {isRequired ? 'Requerida' : 'Opcional'}
-                                  </span>
-                                </div>
-                              )}
+                              <img src={photoUrl} alt={`Foto cliente ${pIdx + 1}`} className="mercado-board-client-photo-img" />
+                              <span className="mercado-board-client-photo-badge">FOTO {pIdx + 1}</span>
                             </div>
-                          );
-                        })}
-                      </div>
-
-                      {currentJobPhotos.length < 3 ? (
-                        <div className="mercado-board-evidence-notice warning">
-                          <AlertTriangle size={13} />
-                          <span>Mínimo 3 fotos (máximo 4) para habilitar finalizar trabajo.</span>
+                          ))}
                         </div>
                       ) : (
-                        <div className="mercado-board-evidence-notice success">
-                          <CheckCircle2 size={13} />
-                          <span>¡Evidencias completas! Botón de finalizar habilitado.</span>
+                        <div className="mercado-board-client-empty-note">
+                          <span>ℹ️ El cliente no adjuntó fotografías al levantar este reporte.</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Tarjeta 4: Solo 3 Botones de Flujo Solicitados */}
+                    {/* Tarjeta 4: Botones Principales de Flujo */}
                     <div className="mercado-board-flow-card">
                       <div className="mercado-board-flow-buttons-grid">
-                        {/* Botón 1: Iniciar Trabajo */}
-                        <button
-                          type="button"
-                          className={`mercado-board-flow-btn btn-start ${selectedBoardJob.status === 'En Progreso' ? 'in-progress' : ''}`}
-                          onClick={handleStartBoardJob}
-                        >
-                          {selectedBoardJob.status === 'En Progreso' ? (
-                            <>
-                              <CheckCircle2 size={16} /> ⚡ EN REPARACIÓN
-                            </>
-                          ) : (
-                            <>
-                              <Play size={16} /> INICIAR TRABAJO
-                            </>
-                          )}
-                        </button>
+                        {/* Botón 1: Iniciar Reporte (0 fotos) / Continuar Reporte (1+ fotos) */}
+                        {completedReportsCount === 0 ? (
+                          <button
+                            type="button"
+                            className="mercado-board-flow-btn btn-start"
+                            onClick={handleStartBoardJob}
+                            title="Iniciar trabajo y registrar la primera foto de evidencia"
+                          >
+                            <Play size={15} /> INICIAR REPORTE
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="mercado-board-flow-btn btn-continue"
+                            onClick={() => handleOpenReportFlow()}
+                            title="Continuar registrando o consultando evidencias"
+                          >
+                            <Camera size={15} /> CONTINUAR REPORTE ({completedReportsCount}/3)
+                          </button>
+                        )}
 
-                        {/* Botón 2: Finalizar Trabajo (Habilitado solo si >= 3 fotos) */}
+                        {/* Botón 2: Finalizar Trabajo (Habilitado solo si >= 3 evidencias) */}
                         <button
                           type="button"
                           className="mercado-board-flow-btn btn-finish"
-                          disabled={currentJobPhotos.length < 3 || selectedBoardJob.status === 'Finalizado' || selectedBoardJob.status === 'Listo'}
+                          disabled={completedReportsCount < 3 || selectedBoardJob.status === 'Finalizado' || selectedBoardJob.status === 'Listo'}
                           onClick={handleFinishBoardJob}
-                          title={currentJobPhotos.length < 3 ? 'Requiere al menos 3 fotos de evidencia' : 'Finalizar servicio'}
+                          title={completedReportsCount < 3 ? 'Requiere al menos 3 fotos de evidencia con descripción (Antes, Durante y Después)' : 'Finalizar servicio'}
                         >
-                          {currentJobPhotos.length < 3 ? (
+                          {completedReportsCount < 3 ? (
                             <>
-                              <Lock size={15} /> FINALIZAR (MÍN. 3 FOTOS)
+                              <Lock size={14} /> FINALIZAR (MÍN. 3 FOTOS)
                             </>
                           ) : (
                             <>
-                              <CheckCircle2 size={16} /> FINALIZAR TRABAJO
+                              <CheckCircle2 size={15} /> FINALIZAR TRABAJO
                             </>
                           )}
                         </button>
@@ -1921,9 +1996,10 @@ const MercadoTrabajos = () => {
                           type="button"
                           className={`mercado-board-flow-btn btn-second-visit ${selectedBoardJob.has_second_visit ? 'has-visit' : ''}`}
                           onClick={handleOpenSecondVisitModal}
+                          title="Programar una segunda visita técnica"
                         >
-                          <Calendar size={16} />
-                          {selectedBoardJob.has_second_visit ? '2DA VISITA AGENDADA' : 'PROGRAMAR 2DA VISITA'}
+                          <Calendar size={15} />
+                          {selectedBoardJob.has_second_visit ? '2DA VISITA AGENDADA' : '2DA VISITA'}
                         </button>
                       </div>
                     </div>
