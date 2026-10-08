@@ -85,7 +85,7 @@ const getNotificationMeta = (notif) => {
   };
 };
 
-const NotificationBell = () => {
+const NotificationBell = ({ triggerClassName = '' }) => {
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
@@ -284,7 +284,7 @@ const NotificationBell = () => {
       {/* Botón Campana Disparador */}
       <button
         type="button"
-        className={`nb-trigger-btn ${isOpen ? 'active' : ''}`}
+        className={`nb-trigger-btn ${triggerClassName} ${isOpen ? 'active' : ''}`.trim()}
         onClick={() => setIsOpen(!isOpen)}
         title="Notificaciones"
       >

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Camera, 
   X, 
-  ChevronLeft, 
   User, 
   Mail, 
   Phone, 
@@ -17,7 +16,6 @@ import {
   MapPin,
   ExternalLink,
   CalendarDays,
-  Bell,
   LogOut
 } from 'lucide-react';
 import axios from 'axios';
@@ -62,7 +60,6 @@ const Profile = () => {
   const [deleteError, setDeleteError] = useState('');
   const [showModalCalendario, setShowModalCalendario] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('propiedades');
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -239,7 +236,7 @@ const Profile = () => {
     try {
       const token = localStorage.getItem('agente_token');
       
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/usuarios/update-profile`, {
+      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/usuarios/update-profile`, {
         user_id: user.id,
         ...formData
       }, {
@@ -372,19 +369,30 @@ const Profile = () => {
           </button>
         </nav>
 
-        {/* Right Actions & User Profile: Calendar + NotificationBell + Avatar */}
+        {/* Right Actions & User Profile: Cover Button + Calendar + NotificationBell + Avatar */}
         <div className="vcp-header-right profile-topbar-right">
+          <button 
+            type="button"
+            className="profile-change-cover-header-btn" 
+            onClick={() => openPhotoMenu('cover_picture')}
+            disabled={isUploading}
+            title="Cambiar imagen de portada"
+          >
+            <Camera size={14} />
+            <span>{isUploading ? 'SUBIENDO...' : 'CAMBIAR PORTADA'}</span>
+          </button>
+
           <div className="vcp-header-actions-group">
             <button 
               type="button"
-              className="vcp-nav-icon-btn profile-header-icon-btn" 
+              className="vcp-header-icon-btn profile-header-icon-btn" 
               title="Abrir Calendario y Citas"
               onClick={() => setShowModalCalendario(true)}
             >
               <CalendarDays size={18} strokeWidth={2.2} />
             </button>
 
-            <NotificationBell />
+            <NotificationBell triggerClassName="vcp-header-icon-btn" />
           </div>
 
           <button 
@@ -438,153 +446,81 @@ const Profile = () => {
         </div>
       </header>
 
-      {/* ── YOUTUBE CHANNEL STYLE MAIN DASHBOARD ── */}
-      <main className="profile-yt-dashboard">
+      {/* ── MAIN DASHBOARD VIEWPORT ── */}
+      <main className="profile-dashboard-viewport">
+        <div className="profile-dashboard-content">
+
+          {/* ── 1. WIDE HERO BANNER CARD (PORTADA HORIZONTAL) ── */}
+          <section className="profile-wide-banner-card">
+            <img 
+              src={coverUrl} 
+              alt="Portada del perfil" 
+              className="profile-wide-banner-img" 
+            />
+            <div className="profile-wide-banner-overlay" />
+            <button 
+              type="button" 
+              className="profile-wide-banner-btn"
+              onClick={() => openPhotoMenu('cover_picture')}
+              disabled={isUploading}
+              title="Cambiar imagen de portada"
+            >
+              <Camera size={14} />
+              <span>{isUploading ? 'SUBIENDO...' : 'CAMBIAR PORTADA'}</span>
+            </button>
+          </section>
+
+          {/* ── 2. 3 COLUMNS DIRECTLY BELOW THE BANNER ── */}
+          <div className="profile-three-col-viewport">
         
-        {/* ── 0. TOP BANNER CARD (PORTADA COMO CARD SUPERIOR) ── */}
-        <section className="profile-banner-card">
-          <img 
-            src={coverUrl} 
-            alt="Portada del perfil" 
-            className="profile-banner-img" 
-          />
-          <div className="profile-banner-overlay" />
-          <button 
-            type="button" 
-            className="profile-banner-change-btn"
-            onClick={() => openPhotoMenu('cover_picture')}
-            title="Cambiar imagen de portada"
-          >
-            <Camera size={15} />
-            <span>CAMBIAR PORTADA</span>
-          </button>
-        </section>
-
-        {/* ── 1. CANAL HEADER / PERFIL INFO (HORIZONTAL) ── */}
-        <section className="profile-yt-header-card">
-          <div className="profile-yt-header-main">
+        {/* ── COLUMNA 1: IDENTIDAD Y FOTO DE PERFIL (PROPIA A LA IZQUIERDA) ── */}
+        <section className="profile-col-identity">
+          <div className="profile-identity-card">
             
-            {/* Grupo Izquierdo: Avatar + Datos */}
-            <div className="profile-yt-header-left-group">
-              {/* Avatar a la izquierda */}
-              <div 
-                className="profile-yt-avatar-wrap" 
-                onClick={() => openPhotoMenu('profile_picture')} 
-                title="Cambiar foto de perfil"
-              >
-                {user?.profile_picture ? (
-                  <img src={user.profile_picture} alt="Avatar" className="profile-yt-avatar-img" />
-                ) : (
-                  <div className="profile-yt-avatar-initial">
-                    {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : '👤')}
-                  </div>
-                )}
-                <div className="profile-yt-avatar-hover">
-                  <Camera size={20} color="#ffffff" />
-                  <span>CAMBIAR</span>
+            <div className="profile-identity-avatar-wrap" onClick={() => openPhotoMenu('profile_picture')} title="Cambiar foto de perfil">
+              {user?.profile_picture ? (
+                <img src={user.profile_picture} alt="Avatar" className="profile-identity-avatar-img" />
+              ) : (
+                <div className="profile-identity-avatar-initial">
+                  {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : '👤')}
                 </div>
-              </div>
-
-              <input type="file" ref={cameraRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" capture="environment" />
-              <input type="file" ref={galleryRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" />
-
-              {/* Datos del usuario */}
-              <div className="profile-yt-info-col">
-                <div className="profile-yt-title-row">
-                  <h1 className="profile-yt-name">{nombreCompleto}</h1>
-                  <div className="profile-yt-badges-inline">
-                    <span className="profile-yt-role-badge">
-                      <Shield size={12} /> {obtenerNombreRol(user?.role_id)}
-                    </span>
-                    <span className="profile-yt-status-badge">
-                      <Sparkles size={11} /> ACTIVO
-                    </span>
-                  </div>
-                </div>
-
-                {/* Handle y metadatos */}
-                <div className="profile-yt-handle-row">
-                  <span className="profile-yt-handle">@{user?.email ? user.email.split('@')[0] : 'usuario'}</span>
-                  <span className="profile-yt-handle-dot">•</span>
-                  <span className="profile-yt-meta-item">
-                    <Clock size={12} /> Miembro desde {formatearFecha(user?.created_at)}
-                  </span>
-                  {user?.birth_date && (
-                    <>
-                      <span className="profile-yt-handle-dot">•</span>
-                      <span className="profile-yt-meta-item">
-                        <Calendar size={12} /> {formatearFecha(user?.birth_date)}
-                      </span>
-                    </>
-                  )}
-                </div>
-
-                {/* Chips de contacto */}
-                <div className="profile-yt-chips-row">
-                  <div className="profile-yt-chip" title={user?.email}>
-                    <Mail size={13} color="#f26522" />
-                    <span>{user?.email || 'Sin correo'}</span>
-                  </div>
-                  <div className="profile-yt-chip">
-                    <Phone size={13} color="#f26522" />
-                    <span>{user?.phone_number || 'Sin teléfono'}</span>
-                  </div>
-                </div>
-
-                {/* Especialidades si es técnico */}
-                {(user?.role_id === 2 || user?.role_id === 8) && (() => {
-                  const displaySpecs = (user?.specialties && user.specialties.length > 0)
-                    ? user.specialties
-                    : (selectedSpecialties.length > 0 ? selectedSpecialties : null);
-                  return (
-                    <div className="profile-yt-specs-row">
-                      <span className="profile-yt-specs-label">🛠️ ESPECIALIDADES:</span>
-                      {displaySpecs ? (
-                        displaySpecs.map((s, idx) => {
-                          const specName = typeof s === 'string' ? s : s.name;
-                          const specObj = ESPECIALIDADES_CATALOGO.find(item => item.name === specName) || (typeof s === 'object' ? s : null);
-                          const icon = specObj ? (specObj.icon || '⚡') : '⚡';
-                          return (
-                            <span key={idx} className="profile-yt-spec-tag">
-                              {icon} {specName}
-                            </span>
-                          );
-                        })
-                      ) : (
-                        <span className="profile-no-specs">Sin especialidades</span>
-                      )}
-                    </div>
-                  );
-                })()}
+              )}
+              <div className="profile-identity-avatar-hover">
+                <Camera size={24} color="#ffffff" />
+                <span>CAMBIAR FOTO</span>
               </div>
             </div>
 
-            {/* Grupo Derecho: Fila de botones de acción */}
-            <div className="profile-yt-actions-row">
-              <button 
-                type="button" 
-                className="profile-yt-btn-primary" 
-                onClick={openModal}
-                title="Editar información de perfil"
-              >
-                <Edit3 size={15} />
-                <span>Personalizar datos</span>
-              </button>
+            <input type="file" ref={cameraRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" capture="environment" />
+            <input type="file" ref={galleryRef} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} accept="image/*" />
 
-              <button 
-                type="button" 
-                className="profile-yt-btn-secondary" 
-                onClick={() => openPhotoMenu('cover_picture')}
-                title="Cambiar imagen de portada"
-              >
-                <Camera size={15} />
-                <span>Cambiar Portada</span>
-              </button>
+            <div className="profile-identity-info-box">
+              <h1 className="profile-identity-name">{nombreCompleto}</h1>
+              <div className="profile-identity-badges">
+                <span className="profile-identity-role-badge">
+                  <Shield size={11} /> {obtenerNombreRol(user?.role_id)}
+                </span>
+                <span className="profile-identity-status-badge">
+                  <Sparkles size={10} /> ACTIVO
+                </span>
+              </div>
+            </div>
 
-              {user?.role_id !== 0 && (
+            <button 
+              type="button" 
+              className="profile-identity-edit-btn" 
+              onClick={openModal}
+              title="Editar información de perfil"
+            >
+              <Edit3 size={15} />
+              <span>EDITAR DATOS</span>
+            </button>
+
+            {user?.role_id !== 0 && (
+              <div className="profile-identity-danger-zone">
                 <button
                   type="button"
-                  className="profile-yt-btn-danger"
+                  className="profile-identity-delete-btn"
                   onClick={() => {
                     setDeleteConfirmEmail('');
                     setDeleteError('');
@@ -592,199 +528,202 @@ const Profile = () => {
                   }}
                   title="Eliminar mi cuenta"
                 >
-                  <Trash2 size={13} />
-                  <span>Eliminar Cuenta</span>
+                  <Trash2 size={12} />
+                  <span>Eliminar mi Cuenta</span>
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
           </div>
         </section>
 
-        {/* ── 2. BARRA DE PESTAÑAS ESTILO YOUTUBE (Playlists / Propiedades) ── */}
-        <nav className="profile-yt-tabs-bar">
-          <div className="profile-yt-tabs-left">
-            <button 
-              type="button" 
-              className={`profile-yt-tab-btn ${activeTab === 'propiedades' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('propiedades')}
-            >
-              <Building2 size={15} />
-              <span>Mis Propiedades ({propiedades.length > 0 ? propiedades.length : 1})</span>
-              {activeTab === 'propiedades' && <div className="profile-yt-tab-indicator" />}
-            </button>
-
-            <button 
-              type="button" 
-              className={`profile-yt-tab-btn ${activeTab === 'datos' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('datos')}
-            >
-              <User size={15} />
-              <span>Datos Completos</span>
-              {activeTab === 'datos' && <div className="profile-yt-tab-indicator" />}
-            </button>
+        {/* ── COLUMNA 2: DATOS DEL USUARIO (CENTRO) ── */}
+        <section className="profile-col-data">
+          
+          <div className="profile-data-heading">
+            <span className="profile-heading-text">DATOS DEL USUARIO</span>
+            <div className="profile-heading-line" />
           </div>
 
-          <div className="profile-yt-tabs-right">
+          <div className="profile-data-tiles-list">
+            <div className="profile-floating-tile">
+              <div className="profile-tile-icon-wrap">
+                <User size={15} />
+              </div>
+              <div className="profile-tile-content">
+                <span className="profile-tile-label">NOMBRE COMPLETO</span>
+                <span className="profile-tile-val">{nombreCompleto}</span>
+              </div>
+            </div>
+
+            <div className="profile-floating-tile is-accent">
+              <div className="profile-tile-icon-wrap is-accent">
+                <Shield size={15} />
+              </div>
+              <div className="profile-tile-content">
+                <span className="profile-tile-label">ROL EN SISTEMA</span>
+                <span className="profile-tile-val is-accent-text">{obtenerNombreRol(user?.role_id)}</span>
+              </div>
+            </div>
+
+            <div className="profile-floating-tile">
+              <div className="profile-tile-icon-wrap">
+                <Mail size={15} />
+              </div>
+              <div className="profile-tile-content">
+                <span className="profile-tile-label">CORREO ELECTRÓNICO</span>
+                <span className="profile-tile-val" title={user?.email}>{user?.email || 'No registrado'}</span>
+              </div>
+            </div>
+
+            <div className="profile-floating-tile">
+              <div className="profile-tile-icon-wrap">
+                <Phone size={15} />
+              </div>
+              <div className="profile-tile-content">
+                <span className="profile-tile-label">TELÉFONO</span>
+                <span className="profile-tile-val">{user?.phone_number || 'No registrado'}</span>
+              </div>
+            </div>
+
+            <div className="profile-floating-tile">
+              <div className="profile-tile-icon-wrap">
+                <Calendar size={15} />
+              </div>
+              <div className="profile-tile-content">
+                <span className="profile-tile-label">FECHA DE NACIMIENTO</span>
+                <span className="profile-tile-val">{formatearFecha(user?.birth_date)}</span>
+              </div>
+            </div>
+
+            <div className="profile-floating-tile">
+              <div className="profile-tile-icon-wrap">
+                <Clock size={15} />
+              </div>
+              <div className="profile-tile-content">
+                <span className="profile-tile-label">MIEMBRO DESDE</span>
+                <span className="profile-tile-val">{formatearFecha(user?.created_at)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Specialties for Technicians */}
+          {(user?.role_id === 2 || user?.role_id === 8) && (() => {
+            const displaySpecs = (user?.specialties && user.specialties.length > 0)
+              ? user.specialties
+              : (selectedSpecialties.length > 0 ? selectedSpecialties : null);
+            return (
+              <div className="profile-floating-specs-bar">
+                <span className="profile-specs-label">🛠️ ESPECIALIDADES:</span>
+                <div className="profile-specs-pills">
+                  {displaySpecs ? (
+                    displaySpecs.map((s, idx) => {
+                      const specName = typeof s === 'string' ? s : s.name;
+                      const specObj = ESPECIALIDADES_CATALOGO.find(item => item.name === specName) || (typeof s === 'object' ? s : null);
+                      const icon = specObj ? (specObj.icon || '⚡') : '⚡';
+                      return (
+                        <span key={idx} className="profile-spec-pill">
+                          {icon} {specName}
+                        </span>
+                      );
+                    })
+                  ) : (
+                    <span className="profile-no-specs">Sin especialidades</span>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+        </section>
+
+        {/* ── COLUMNA 3: PROPIEDADES ASOCIADAS Y CARRUSEL (DERECHA) ── */}
+        <section className="profile-col-properties">
+          
+          {/* Header de Propiedades */}
+          <div className="profile-props-header-row">
+            <div className="profile-props-title-wrap">
+              <Building2 size={18} color="#FF6600" />
+              <h2 className="profile-props-title">MIS PROPIEDADES</h2>
+              <span className="profile-props-count-pill">
+                {propiedades.length || 1} {propiedades.length === 1 ? 'Propiedad' : 'Propiedades'}
+              </span>
+            </div>
+            
             <button 
-              type="button" 
-              className="profile-yt-tab-action-btn"
+              type="button"
+              className="profile-props-view-btn"
               onClick={() => navigate('/VistaMarket')}
-              title="Explorar propiedades en el mercado"
+              title="Ir al Portal de Propiedades"
             >
-              <span>Explorar Mercado</span>
+              <span>EXPLORAR</span>
               <ExternalLink size={13} />
             </button>
           </div>
-        </nav>
 
-        {/* ── 3. CONTENIDO PRINCIPAL (DONDE VAN LOS VIDEOS / PROPIEDADES) ── */}
-        <section className="profile-yt-content-grid-wrap">
-          
-          {activeTab === 'propiedades' && (
-            <div className="profile-yt-props-grid">
+          {/* Big Featured Property Showcase Visual Card */}
+          <div 
+            className="profile-prop-featured-card"
+            style={{ backgroundImage: `url("${getPropImage(activeProperty)}")` }}
+          >
+            <div className="profile-prop-featured-overlay" />
+            
+            <div className="profile-prop-featured-info-pill">
+              <div className="profile-prop-featured-badge">
+                ★ PROPIEDAD SELECCIONADA
+              </div>
+              <h3 className="profile-prop-featured-name">
+                {activeProperty?.nombre_propiedad || activeProperty?.nombre || activeProperty?.alias || 'MI PROPIEDAD'}
+              </h3>
+              <div className="profile-prop-featured-address">
+                <MapPin size={13} color="#FF8548" />
+                <span>{activeProperty?.address || activeProperty?.direccion || 'Mérida, Yucatán'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Horizontal Thumbnails Carousel */}
+          <div className="profile-thumbs-container">
+            <span className="profile-thumbs-label">GALERÍA DE PROPIEDADES:</span>
+            <div className="profile-thumbs-scroll-track">
               {propiedades && propiedades.length > 0 ? (
                 propiedades.map((prop, idx) => {
-                  const isSelected = prop.id === activeProperty?.id;
-                  const propImg = getPropImage(prop);
+                  const isActive = prop.id === activeProperty?.id;
+                  const thumbImg = getPropImage(prop);
                   return (
-                    <article 
+                    <div 
                       key={prop.id}
-                      className={`profile-yt-prop-card ${isSelected ? 'is-selected' : ''}`}
+                      className={`profile-thumb-card ${isActive ? 'is-active' : ''}`}
                       onClick={() => setSelectedPropId(prop.id)}
-                      title={`Seleccionar ${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
+                      title={`Seleccionar para vista previa:
+${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
                     >
-                      {/* Miniatura estilo video de YouTube */}
-                      <div className="profile-yt-thumb-wrap">
-                        <img src={propImg} alt={prop.nombre_propiedad || 'Propiedad'} className="profile-yt-thumb-img" />
-                        <div className="profile-yt-thumb-overlay" />
-                        
-                        <div className="profile-yt-thumb-badge-top">
-                          <Building2 size={11} color="#f26522" />
-                          <span>MIS PROPIEDADES</span>
+                      <img 
+                        src={thumbImg} 
+                        alt={prop.nombre_propiedad || 'Propiedad'} 
+                        className="profile-thumb-img" 
+                      />
+                      {idx === 0 && (
+                        <div className="profile-thumb-star" title="Propiedad Principal">
+                          ★
                         </div>
-
-                        <div className="profile-yt-thumb-badge-bottom">
-                          {isSelected ? '★ ACTIVA' : `#${idx + 1}`}
-                        </div>
-                      </div>
-
-                      {/* Información debajo de la miniatura (como el título del video en YouTube) */}
-                      <div className="profile-yt-prop-meta">
-                        <div className="profile-yt-prop-header-line">
-                          <h4 className="profile-yt-prop-title">
-                            {prop.nombre_propiedad || prop.nombre || prop.alias || `PROPIEDAD #${prop.id}`}
-                          </h4>
-                        </div>
-
-                        <div className="profile-yt-prop-address-line">
-                          <MapPin size={12} color="#f26522" />
-                          <span>{prop.address || prop.direccion || 'Calle 37 #sin numero x 4 y 6, Mérida, Yucatán'}</span>
-                        </div>
-
-                        <div className="profile-yt-prop-actions-line">
-                          <span className={`profile-yt-prop-status-tag ${isSelected ? 'is-selected' : ''}`}>
-                            {isSelected ? '▲ Propiedad Seleccionada' : 'Hacer clic para activar'}
-                          </span>
-                          <button 
-                            type="button" 
-                            className="profile-yt-prop-link-btn"
-                            onClick={(e) => { e.stopPropagation(); navigate('/VistaMarket'); }}
-                          >
-                            <span>Ver</span>
-                            <ExternalLink size={11} />
-                          </button>
-                        </div>
-                      </div>
-                    </article>
+                      )}
+                    </div>
                   );
                 })
               ) : (
-                <article className="profile-yt-prop-card is-selected">
-                  <div className="profile-yt-thumb-wrap">
-                    <img src={defaultPropImg} alt="Casa" className="profile-yt-thumb-img" />
-                    <div className="profile-yt-thumb-overlay" />
-                    <div className="profile-yt-thumb-badge-top">
-                      <Building2 size={11} color="#FF6600" />
-                      <span>MIS PROPIEDADES</span>
-                    </div>
-                    <div className="profile-yt-thumb-badge-bottom">★ ACTIVA</div>
-                  </div>
-
-                  <div className="profile-yt-prop-meta">
-                    <div className="profile-yt-prop-header-line">
-                      <h4 className="profile-yt-prop-title">CASA DE MI INFANCIA</h4>
-                    </div>
-                    <div className="profile-yt-prop-address-line">
-                      <MapPin size={12} color="#FF8548" />
-                      <span>Calle 37 #sin numero x 4 y 6, Col. leandro valle, Mérida, Yucatán</span>
-                    </div>
-                    <div className="profile-yt-prop-actions-line">
-                      <span className="profile-yt-prop-status-tag is-selected">▲ Propiedad Seleccionada</span>
-                      <button type="button" className="profile-yt-prop-link-btn" onClick={() => navigate('/VistaMarket')}>
-                        <span>Ver</span>
-                        <ExternalLink size={11} />
-                      </button>
-                    </div>
-                  </div>
-                </article>
+                <div className="profile-thumb-card is-active">
+                  <img src={defaultPropImg} alt="Propiedad" className="profile-thumb-img" />
+                </div>
               )}
             </div>
-          )}
-
-          {activeTab === 'datos' && (
-            <div className="profile-yt-datos-grid">
-              <div className="profile-floating-tile">
-                <div className="profile-tile-icon-wrap"><User size={15} /></div>
-                <div className="profile-tile-content">
-                  <span className="profile-tile-label">NOMBRE COMPLETO</span>
-                  <span className="profile-tile-val">{nombreCompleto}</span>
-                </div>
-              </div>
-
-              <div className="profile-floating-tile is-accent">
-                <div className="profile-tile-icon-wrap is-accent"><Shield size={15} /></div>
-                <div className="profile-tile-content">
-                  <span className="profile-tile-label">ROL EN SISTEMA</span>
-                  <span className="profile-tile-val is-accent-text">{obtenerNombreRol(user?.role_id)}</span>
-                </div>
-              </div>
-
-              <div className="profile-floating-tile">
-                <div className="profile-tile-icon-wrap"><Mail size={15} /></div>
-                <div className="profile-tile-content">
-                  <span className="profile-tile-label">CORREO ELECTRÓNICO</span>
-                  <span className="profile-tile-val">{user?.email || 'No registrado'}</span>
-                </div>
-              </div>
-
-              <div className="profile-floating-tile">
-                <div className="profile-tile-icon-wrap"><Phone size={15} /></div>
-                <div className="profile-tile-content">
-                  <span className="profile-tile-label">TELÉFONO</span>
-                  <span className="profile-tile-val">{user?.phone_number || 'No registrado'}</span>
-                </div>
-              </div>
-
-              <div className="profile-floating-tile">
-                <div className="profile-tile-icon-wrap"><Calendar size={15} /></div>
-                <div className="profile-tile-content">
-                  <span className="profile-tile-label">FECHA DE NACIMIENTO</span>
-                  <span className="profile-tile-val">{formatearFecha(user?.birth_date)}</span>
-                </div>
-              </div>
-
-              <div className="profile-floating-tile">
-                <div className="profile-tile-icon-wrap"><Clock size={15} /></div>
-                <div className="profile-tile-content">
-                  <span className="profile-tile-label">MIEMBRO DESDE</span>
-                  <span className="profile-tile-val">{formatearFecha(user?.created_at)}</span>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
 
         </section>
+
+          </div>
+
+        </div>
 
       </main>
 

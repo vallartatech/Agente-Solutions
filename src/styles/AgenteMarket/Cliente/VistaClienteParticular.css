@@ -20,7 +20,7 @@
 
 /* ── TOP NAVIGATION BAR (APPLE LIQUID GLASS TRANSLUCENT) ── */
 .vcp-header {
-  height: 72px;
+  height: 82px;
   background: linear-gradient(180deg,
       rgba(20, 22, 29, 0.48) 0%,
       rgba(15, 17, 23, 0.30) 100%);
@@ -30,7 +30,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 32px;
   position: relative;
   z-index: 100;
   box-shadow:
@@ -43,20 +43,22 @@
 .vcp-header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   flex-shrink: 0;
+  margin-left: 36px;
 }
 
 .vcp-brand-logo {
-  height: 58px;
-  max-width: 260px;
+  height: 70px;
+  max-width: 320px;
   object-fit: contain;
   cursor: pointer;
   transition: transform 0.25s ease;
+  margin-right: 14px;
 }
 
 .vcp-brand-logo:hover {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 
 /* Center Nav Links */
@@ -72,10 +74,11 @@
   display: none;
 }
 
-.vcp-nav-btn {
+.vcp-nav-btn,
+.vcp-header-nav .vcp-nav-btn {
   background: transparent;
   border: 1px solid transparent;
-  color: #1e293b;
+  color: #ffffff;
   font-family: 'Outfit', sans-serif;
   font-size: 0.82rem;
   font-weight: 800;
@@ -91,14 +94,16 @@
   white-space: nowrap;
 }
 
-.vcp-nav-btn:hover {
+.vcp-nav-btn:hover,
+.vcp-header-nav .vcp-nav-btn:hover {
   color: #f26522;
-  background: rgba(242, 101, 34, 0.08);
-  border-color: rgba(242, 101, 34, 0.2);
+  background: rgba(242, 101, 34, 0.14);
+  border-color: rgba(242, 101, 34, 0.35);
   transform: translateY(-1px);
 }
 
-.vcp-nav-btn.active {
+.vcp-nav-btn.active,
+.vcp-header-nav .vcp-nav-btn.active {
   color: #ffffff !important;
   background: linear-gradient(135deg, #f26522 0%, #ea580c 100%) !important;
   border: 1px solid rgba(242, 101, 34, 0.4) !important;
@@ -106,12 +111,14 @@
 }
 
 .vcp-nav-icon-btn {
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
-  color: #1e293b;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -119,20 +126,20 @@
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
   margin-right: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4);
 }
 
 .vcp-nav-icon-btn svg {
-  color: #1e293b !important;
-  stroke: #1e293b !important;
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 .vcp-nav-icon-btn:hover {
-  background: #fff7ed;
-  border-color: #f26522;
-  color: #f26522;
+  background: rgba(242, 101, 34, 0.28);
+  border-color: rgba(242, 101, 34, 0.85);
+  color: #ff9d66;
   transform: translateY(-1px) scale(1.05);
-  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.25);
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.45);
 }
 
 /* User profile section on top right */
@@ -189,6 +196,82 @@
 
 .vcp-header-icon-btn:active {
   transform: scale(0.95);
+}
+
+/* ── BOTÓN DE NOTIFICACIÓN IDÉNTICO AL DEL CALENDARIO ── */
+.vcp-header .nb-trigger-btn,
+.vcp-header-actions-group .nb-trigger-btn,
+.vcp-header-icon-btn.nb-trigger-btn {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 11px !important;
+  background: rgba(255, 255, 255, 0.10) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  position: relative !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4) !important;
+  padding: 0 !important;
+}
+
+.vcp-header .nb-trigger-btn:hover,
+.vcp-header .nb-trigger-btn.active,
+.vcp-header-actions-group .nb-trigger-btn:hover,
+.vcp-header-actions-group .nb-trigger-btn.active,
+.vcp-header-icon-btn.nb-trigger-btn:hover,
+.vcp-header-icon-btn.nb-trigger-btn.active {
+  background: rgba(242, 101, 34, 0.28) !important;
+  border-color: rgba(242, 101, 34, 0.85) !important;
+  color: #ff9d66 !important;
+  transform: translateY(-1px) scale(1.06) !important;
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.45) !important;
+}
+
+.vcp-header .nb-trigger-btn .nb-trigger-icon,
+.vcp-header-actions-group .nb-trigger-btn .nb-trigger-icon,
+.vcp-header-icon-btn.nb-trigger-btn .nb-trigger-icon,
+.vcp-header .nb-trigger-btn svg,
+.vcp-header-actions-group .nb-trigger-btn svg,
+.vcp-header-icon-btn.nb-trigger-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+
+.vcp-header .nb-trigger-btn:hover .nb-trigger-icon,
+.vcp-header .nb-trigger-btn:hover svg,
+.vcp-header-actions-group .nb-trigger-btn:hover .nb-trigger-icon,
+.vcp-header-actions-group .nb-trigger-btn:hover svg,
+.vcp-header-icon-btn.nb-trigger-btn:hover .nb-trigger-icon,
+.vcp-header-icon-btn.nb-trigger-btn:hover svg,
+.vcp-header .nb-trigger-btn.active .nb-trigger-icon,
+.vcp-header .nb-trigger-btn.active svg,
+.vcp-header-actions-group .nb-trigger-btn.active .nb-trigger-icon,
+.vcp-header-actions-group .nb-trigger-btn.active svg,
+.vcp-header-icon-btn.nb-trigger-btn.active .nb-trigger-icon,
+.vcp-header-icon-btn.nb-trigger-btn.active svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.vcp-header .nb-trigger-badge,
+.vcp-header-actions-group .nb-trigger-badge,
+.vcp-header-icon-btn.nb-trigger-btn .nb-trigger-badge {
+  position: absolute !important;
+  top: -4px !important;
+  right: -4px !important;
+  border: 1.5px solid #0c101b !important;
 }
 
 .vcp-header-notif-dot {

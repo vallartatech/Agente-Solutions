@@ -579,7 +579,7 @@ const VistaClienteParticular = () => {
             </button>
 
             {/* Botón Notificaciones */}
-            <NotificationBell />
+            <NotificationBell triggerClassName="vcp-header-icon-btn" />
           </div>
 
           <button 

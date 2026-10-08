@@ -64,6 +64,54 @@
   box-shadow: 0 0 10px rgba(255, 107, 0, 0.7);
 }
 
+/* ── DARK HEADER SQUIRCLE OVERRIDE (MATCHES CALENDAR BUTTON) ── */
+.nb-trigger-btn.vcp-header-icon-btn,
+.vcp-header-actions-group .nb-trigger-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.nb-trigger-btn.vcp-header-icon-btn:hover,
+.nb-trigger-btn.vcp-header-icon-btn.active,
+.vcp-header-actions-group .nb-trigger-btn:hover,
+.vcp-header-actions-group .nb-trigger-btn.active {
+  background: rgba(242, 101, 34, 0.28);
+  border-color: rgba(242, 101, 34, 0.85);
+  color: #ff9d66;
+  transform: translateY(-1px) scale(1.06);
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.45);
+}
+
+.nb-trigger-btn.vcp-header-icon-btn .nb-trigger-icon,
+.vcp-header-actions-group .nb-trigger-btn .nb-trigger-icon {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  width: 18px;
+  height: 18px;
+}
+
+.nb-trigger-btn.vcp-header-icon-btn:hover .nb-trigger-icon,
+.nb-trigger-btn.vcp-header-icon-btn.active .nb-trigger-icon,
+.vcp-header-actions-group .nb-trigger-btn:hover .nb-trigger-icon,
+.vcp-header-actions-group .nb-trigger-btn.active .nb-trigger-icon {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.nb-trigger-btn.vcp-header-icon-btn .nb-trigger-badge,
+.vcp-header-actions-group .nb-trigger-btn .nb-trigger-badge {
+  top: -4px;
+  right: -4px;
+  border: 1.5px solid #0c101b;
+}
+
 /* ── NOTIFICATION FLOATING POPOVER (MOCKUP DESIGN) ── */
 .nb-card-popover {
   position: absolute;
