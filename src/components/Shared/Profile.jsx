@@ -16,7 +16,15 @@ import {
   MapPin,
   ExternalLink,
   CalendarDays,
-  LogOut
+  LogOut,
+  Wrench,
+  Check,
+  Star,
+  Award,
+  ShieldCheck,
+  CheckCircle2,
+  Layers,
+  Briefcase
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from "../../context/AuthContext";
@@ -47,6 +55,8 @@ const Profile = () => {
   const { user, loginGlobal, logoutGlobal } = useAuth();
   const navigate = useNavigate();
 
+  const isTecnico = [2, 4, 5, 6, 8].includes(Number(user?.role_id));
+
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const uploadTargetRef = useRef(null);
@@ -54,6 +64,7 @@ const Profile = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPhotoMenuOpen, setIsPhotoMenuOpen] = useState(false);
   const [selectedSpecialties, setSelectedSpecialties] = useState([]);
+  const [savingDirectSpecs, setSavingDirectSpecs] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -72,11 +83,13 @@ const Profile = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Propiedades del usuario para el carrusel de la derecha
+  // Propiedades del usuario (Solo para Clientes y Administradores de Propiedad)
   const [propiedades, setPropiedades] = useState([]);
   const [selectedPropId, setSelectedPropId] = useState(null);
 
   useEffect(() => {
+    if (isTecnico) return; // Técnicos y proveedores no tienen propiedades de cliente
+
     const fetchProps = async () => {
       try {
         const token = localStorage.getItem('agente_token');
@@ -88,17 +101,20 @@ const Profile = () => {
           (user?.id && (p.user_id === user.id || p.usuario_id === user.id || p.cliente_id === user.id || p.cliente?.id === user.id)) ||
           (user?.tenant_id && p.tenant_id === user.tenant_id)
         );
-        const list = forThisUser.length > 0 ? forThisUser : rawProps;
-        setPropiedades(list);
-        if (list.length > 0) {
-          setSelectedPropId(list[0].id);
+        
+        // No hacer fallback a todas las propiedades de la BD si no tiene ninguna
+        setPropiedades(forThisUser);
+        if (forThisUser.length > 0) {
+          setSelectedPropId(forThisUser[0].id);
+        } else {
+          setSelectedPropId(null);
         }
       } catch (err) {
         console.error("Error al cargar propiedades en perfil:", err);
       }
     };
     fetchProps();
-  }, [user?.id, user?.tenant_id]);
+  }, [user?.id, user?.tenant_id, isTecnico]);
 
   const getPropImage = (p) => {
     if (!p) return defaultPropImg;
@@ -171,29 +187,80 @@ const Profile = () => {
     birth_date: ''
   });
 
+  // Cargar especialidades para técnicos y contratistas
   useEffect(() => {
-    if (user?.role_id === 2 && user?.id) {
+    if (isTecnico && user?.id) {
       const fetchMySpecialties = async () => {
         try {
-          const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/users/u_${user.id}/specialties`);
+          const rawId = String(user.id).replace(/[^\d]/g, '');
+          const token = localStorage.getItem('agente_token');
+          const authHeader = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+          const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/users/u_${rawId}/specialties`, authHeader);
           if (res.data?.success && res.data?.specialties) {
             const specsArray = res.data.specialties;
             const specsNames = specsArray.map(s => typeof s === 'string' ? s : s.name);
-            setSelectedSpecialties(specsNames);
-            if (loginGlobal && JSON.stringify(user.specialties || []) !== JSON.stringify(specsArray)) {
-              loginGlobal({ ...user, specialties: specsArray });
+            if (specsNames.length > 0) {
+              setSelectedSpecialties(specsNames);
+            } else if (user.specialties && user.specialties.length > 0) {
+              setSelectedSpecialties(user.specialties.map(s => typeof s === 'string' ? s : s.name));
             }
+          } else if (user.specialties && user.specialties.length > 0) {
+            setSelectedSpecialties(user.specialties.map(s => typeof s === 'string' ? s : s.name));
           }
         } catch (err) {
           console.error("Error cargando especialidades del técnico:", err);
+          if (user?.specialties && user.specialties.length > 0) {
+            setSelectedSpecialties(user.specialties.map(s => typeof s === 'string' ? s : s.name));
+          }
         }
       };
       fetchMySpecialties();
     }
-  }, [user?.id, user?.role_id]);
+  }, [user?.id, user?.role_id, isTecnico]);
+
+  const handleToggleSpecialty = (specName) => {
+    setSelectedSpecialties(prev => {
+      if (prev.includes(specName)) {
+        if (prev.length <= 1) return prev; // Mantener al menos 1
+        return prev.filter(s => s !== specName);
+      } else {
+        return [...prev, specName];
+      }
+    });
+  };
+
+  const handleSaveDirectSpecialties = async (customSpecs) => {
+    const specsToSave = customSpecs || selectedSpecialties;
+    if (!user?.id) return;
+    setSavingDirectSpecs(true);
+    try {
+      const rawId = String(user.id).replace(/[^\d]/g, '');
+      const token = localStorage.getItem('agente_token');
+      const specRes = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/u_${rawId}/specialties`, {
+        specialties: specsToSave
+      }, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const updated = specRes.data?.specialties || specsToSave;
+      if (loginGlobal) {
+        loginGlobal({
+          ...user,
+          specialties: updated
+        });
+      }
+
+      alert("¡Especialidades actualizadas con éxito!");
+    } catch (err) {
+      console.error("Error guardando especialidades:", err);
+      alert("No se pudieron guardar las especialidades. Verifica tu conexión.");
+    } finally {
+      setSavingDirectSpecs(false);
+    }
+  };
 
   const obtenerNombreRol = (roleId) => {
-    switch(roleId) {
+    switch(Number(roleId)) {
       case 0: return 'Usuario Root';
       case 1: return 'Administrador';
       case 2: return 'Técnico';
@@ -222,7 +289,7 @@ const Profile = () => {
       phone_number: user?.phone_number || '',
       birth_date: user?.birth_date || ''
     });
-    if (user?.role_id === 2 || user?.role_id === 8) {
+    if (isTecnico) {
       const specs = (user?.specialties && user.specialties.length > 0)
         ? user.specialties.map(s => typeof s === 'string' ? s : s.name)
         : (selectedSpecialties.length > 0 ? selectedSpecialties : ["Electricidad"]);
@@ -246,8 +313,9 @@ const Profile = () => {
       });
 
       let updatedSpecs = user?.specialties || [];
-      if (user?.role_id === 2 || user?.role_id === 8) {
-        const specRes = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/u_${user.id}/specialties`, {
+      if (isTecnico) {
+        const rawId = String(user.id).replace(/[^\d]/g, '');
+        const specRes = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/u_${rawId}/specialties`, {
           specialties: selectedSpecialties
         }, {
           headers: {
@@ -347,26 +415,54 @@ const Profile = () => {
           />
         </div>
 
-        {/* Center Nav Links: INICIO + 5 core modules */}
+        {/* Center Nav Links Dinámicos según Rol */}
         <nav className="vcp-header-nav profile-topbar-nav">
-          <button className="vcp-nav-btn" onClick={irAlInicio}>
-            INICIO
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
-            USUARIOS
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
-            REPORTE
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
-            COTIZACION
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
-            SERVICIOS
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
-            MERCADO / RED
-          </button>
+          {isTecnico ? (
+            <>
+              <button className="vcp-nav-btn" onClick={() => navigate('/mercado-trabajos', { state: { view: 'mercado' } })}>
+                MERCADO (SOLICITUDES)
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/mercado-trabajos', { state: { view: 'tablero' } })}>
+                TRABAJOS ACEPTADOS
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/mercado-trabajos', { state: { view: 'usuarios' } })}>
+                MIS CLIENTES
+              </button>
+            </>
+          ) : (user?.role_id === 3 || user?.role_id === 7) ? (
+            <>
+              <button className="vcp-nav-btn" onClick={irAlInicio}>
+                INICIO
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
+                MIS PROPIEDADES
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/servicios')}>
+                SERVICIOS
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="vcp-nav-btn" onClick={irAlInicio}>
+                INICIO
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
+                USUARIOS
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
+                REPORTE
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
+                COTIZACION
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
+                SERVICIOS
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
+                MERCADO / RED
+              </button>
+            </>
+          )}
         </nav>
 
         {/* Right Actions & User Profile: Cover Button + Calendar + NotificationBell + Avatar */}
@@ -607,8 +703,8 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Specialties for Technicians */}
-          {(user?.role_id === 2 || user?.role_id === 8) && (() => {
+          {/* Specialties for Technicians in Column 2 */}
+          {isTecnico && (() => {
             const displaySpecs = (user?.specialties && user.specialties.length > 0)
               ? user.specialties
               : (selectedSpecialties.length > 0 ? selectedSpecialties : null);
@@ -637,89 +733,161 @@ const Profile = () => {
 
         </section>
 
-        {/* ── COLUMNA 3: PROPIEDADES ASOCIADAS Y CARRUSEL (DERECHA) ── */}
-        <section className="profile-col-properties">
-          
-          {/* Header de Propiedades */}
-          <div className="profile-props-header-row">
-            <div className="profile-props-title-wrap">
-              <Building2 size={18} color="#FF6600" />
-              <h2 className="profile-props-title">MIS PROPIEDADES</h2>
-              <span className="profile-props-count-pill">
-                {propiedades.length || 1} {propiedades.length === 1 ? 'Propiedad' : 'Propiedades'}
-              </span>
-            </div>
-            
-            <button 
-              type="button"
-              className="profile-props-view-btn"
-              onClick={() => navigate('/VistaMarket')}
-              title="Ir al Portal de Propiedades"
-            >
-              <span>EXPLORAR</span>
-              <ExternalLink size={13} />
-            </button>
-          </div>
-
-          {/* Big Featured Property Showcase Visual Card */}
-          <div 
-            className="profile-prop-featured-card"
-            style={{ backgroundImage: `url("${getPropImage(activeProperty)}")` }}
-          >
-            <div className="profile-prop-featured-overlay" />
-            
-            <div className="profile-prop-featured-info-pill">
-              <div className="profile-prop-featured-badge">
-                ★ PROPIEDAD SELECCIONADA
+        {/* ── COLUMNA 3: ESPECIALIDADES (TÉCNICOS) / PROPIEDADES (CLIENTES) ── */}
+        {isTecnico ? (
+          <section className="profile-col-technician-panel">
+            <div className="profile-tech-header-row">
+              <div className="profile-tech-title-wrap">
+                <Wrench size={18} color="#f26522" />
+                <h2 className="profile-tech-title">MIS ESPECIALIDADES Y SERVICIOS</h2>
+                <span className="profile-tech-count-pill">
+                  {selectedSpecialties.length} {selectedSpecialties.length === 1 ? 'Activa' : 'Activas'}
+                </span>
               </div>
-              <h3 className="profile-prop-featured-name">
-                {activeProperty?.nombre_propiedad || activeProperty?.nombre || activeProperty?.alias || 'MI PROPIEDAD'}
-              </h3>
-              <div className="profile-prop-featured-address">
-                <MapPin size={13} color="#FF8548" />
-                <span>{activeProperty?.address || activeProperty?.direccion || 'Mérida, Yucatán'}</span>
-              </div>
+              
+              <button 
+                type="button"
+                className="profile-tech-save-btn"
+                onClick={() => handleSaveDirectSpecialties()}
+                disabled={savingDirectSpecs}
+                title="Guardar especialidades seleccionadas"
+              >
+                <CheckCircle2 size={13} />
+                <span>{savingDirectSpecs ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}</span>
+              </button>
             </div>
-          </div>
 
-          {/* Horizontal Thumbnails Carousel */}
-          <div className="profile-thumbs-container">
-            <span className="profile-thumbs-label">GALERÍA DE PROPIEDADES:</span>
-            <div className="profile-thumbs-scroll-track">
-              {propiedades && propiedades.length > 0 ? (
-                propiedades.map((prop, idx) => {
-                  const isActive = prop.id === activeProperty?.id;
-                  const thumbImg = getPropImage(prop);
+            {/* Showcase Visual Card with Interactive Specialty Grid */}
+            <div className="profile-tech-showcase-card">
+              <div className="profile-tech-specs-subheading">
+                <span>⚡ Haz clic para activar o desactivar especialidades:</span>
+                <small>{selectedSpecialties.length} de {ESPECIALIDADES_CATALOGO.length} activas</small>
+              </div>
+
+              <div className="profile-tech-specs-grid">
+                {ESPECIALIDADES_CATALOGO.map(spec => {
+                  const isSelected = selectedSpecialties.includes(spec.name);
                   return (
                     <div 
-                      key={prop.id}
-                      className={`profile-thumb-card ${isActive ? 'is-active' : ''}`}
-                      onClick={() => setSelectedPropId(prop.id)}
-                      title={`Seleccionar para vista previa:
-${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
+                      key={spec.id}
+                      className={`profile-tech-spec-item ${isSelected ? 'is-selected' : ''}`}
+                      onClick={() => handleToggleSpecialty(spec.name)}
+                      title={`Clic para ${isSelected ? 'desactivar' : 'activar'} ${spec.name}`}
                     >
-                      <img 
-                        src={thumbImg} 
-                        alt={prop.nombre_propiedad || 'Propiedad'} 
-                        className="profile-thumb-img" 
-                      />
-                      {idx === 0 && (
-                        <div className="profile-thumb-star" title="Propiedad Principal">
-                          ★
-                        </div>
+                      <span className="profile-tech-spec-icon">{spec.icon}</span>
+                      <span className="profile-tech-spec-name">{spec.name}</span>
+                      {isSelected && (
+                        <span className="profile-tech-spec-check">✓</span>
                       )}
                     </div>
                   );
-                })
-              ) : (
-                <div className="profile-thumb-card is-active">
-                  <img src={defaultPropImg} alt="Propiedad" className="profile-thumb-img" />
-                </div>
-              )}
-            </div>
-          </div>
+                })}
+              </div>
 
-        </section>
+              {/* Bottom Metrics Bar */}
+              <div className="profile-tech-metrics-bar">
+                <div className="profile-tech-metric-box">
+                  <span className="profile-tech-metric-val star">
+                    ★ 5.0
+                  </span>
+                  <span className="profile-tech-metric-label">Calificación</span>
+                </div>
+                <div className="profile-tech-metric-box">
+                  <span className="profile-tech-metric-val status">
+                    <ShieldCheck size={14} /> Verificado
+                  </span>
+                  <span className="profile-tech-metric-label">Proveedor de Red</span>
+                </div>
+                <div className="profile-tech-metric-box">
+                  <span className="profile-tech-metric-val">
+                    <MapPin size={13} color="#f26522" /> Mérida
+                  </span>
+                  <span className="profile-tech-metric-label">Zona Cobertura</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="profile-col-properties">
+            <div className="profile-props-header-row">
+              <div className="profile-props-title-wrap">
+                <Building2 size={18} color="#FF6600" />
+                <h2 className="profile-props-title">MIS PROPIEDADES</h2>
+                <span className="profile-props-count-pill">
+                  {propiedades.length || 0} {propiedades.length === 1 ? 'Propiedad' : 'Propiedades'}
+                </span>
+              </div>
+              
+              <button 
+                type="button"
+                className="profile-props-view-btn"
+                onClick={() => navigate('/VistaMarket')}
+                title="Ir al Portal de Propiedades"
+              >
+                <span>EXPLORAR</span>
+                <ExternalLink size={13} />
+              </button>
+            </div>
+
+            {/* Big Featured Property Showcase Visual Card */}
+            <div 
+              className="profile-prop-featured-card"
+              style={{ backgroundImage: `url("${getPropImage(activeProperty)}")` }}
+            >
+              <div className="profile-prop-featured-overlay" />
+              
+              <div className="profile-prop-featured-info-pill">
+                <div className="profile-prop-featured-badge">
+                  ★ PROPIEDAD SELECCIONADA
+                </div>
+                <h3 className="profile-prop-featured-name">
+                  {activeProperty?.nombre_propiedad || activeProperty?.nombre || activeProperty?.alias || 'MI PROPIEDAD'}
+                </h3>
+                <div className="profile-prop-featured-address">
+                  <MapPin size={13} color="#FF8548" />
+                  <span>{activeProperty?.address || activeProperty?.direccion || 'Mérida, Yucatán'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Horizontal Thumbnails Carousel */}
+            <div className="profile-thumbs-container">
+              <span className="profile-thumbs-label">GALERÍA DE PROPIEDADES:</span>
+              <div className="profile-thumbs-scroll-track">
+                {propiedades && propiedades.length > 0 ? (
+                  propiedades.map((prop, idx) => {
+                    const isActive = prop.id === activeProperty?.id;
+                    const thumbImg = getPropImage(prop);
+                    return (
+                      <div 
+                        key={prop.id}
+                        className={`profile-thumb-card ${isActive ? 'is-active' : ''}`}
+                        onClick={() => setSelectedPropId(prop.id)}
+                        title={`Seleccionar para vista previa:
+${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
+                      >
+                        <img 
+                          src={thumbImg} 
+                          alt={prop.nombre_propiedad || 'Propiedad'} 
+                          className="profile-thumb-img" 
+                        />
+                        {idx === 0 && (
+                          <div className="profile-thumb-star" title="Propiedad Principal">
+                            ★
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="profile-thumb-card is-active">
+                    <img src={defaultPropImg} alt="Propiedad" className="profile-thumb-img" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
           </div>
 
@@ -767,7 +935,7 @@ ${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
                 <input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
               </div>
 
-              {(user?.role_id === 2 || user?.role_id === 8) && (
+              {isTecnico && (
                 <div className="profile-form-group" style={{ marginTop: '6px' }}>
                   <label style={{ color: '#FF6600' }}>🛠️ Editar Especialidades:</label>
                   <div className="profile-modal-specs-list">
@@ -777,15 +945,7 @@ ${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
                         <button
                           key={spec.id}
                           type="button"
-                          onClick={() => {
-                            if (isSelected) {
-                              if (selectedSpecialties.length > 1) {
-                                setSelectedSpecialties(prev => prev.filter(s => s !== spec.name));
-                              }
-                            } else {
-                              setSelectedSpecialties(prev => [...prev, spec.name]);
-                            }
-                          }}
+                          onClick={() => handleToggleSpecialty(spec.name)}
                           className={`profile-spec-toggle-btn ${isSelected ? 'is-selected' : ''}`}
                         >
                           <span>{spec.icon}</span> <span>{spec.name}</span>

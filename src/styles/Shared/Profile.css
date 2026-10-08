@@ -1448,7 +1448,234 @@ html, body {
 
   .profile-col-identity,
   .profile-col-data,
-  .profile-col-properties {
+  .profile-col-properties,
+  .profile-col-technician-panel {
     height: auto;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COLUMN 3: TECHNICIAN SPECIALTIES & NETWORK SHOWCASE (RIGHT)
+   ══════════════════════════════════════════════════════════════════════════ */
+.profile-col-technician-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  justify-content: center;
+  box-sizing: border-box;
+  animation: profileSlideRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.profile-tech-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.profile-tech-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-tech-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.profile-tech-count-pill {
+  background: rgba(242, 101, 34, 0.22);
+  border: 1px solid rgba(242, 101, 34, 0.55);
+  color: #ff945e;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.64rem;
+  font-weight: 900;
+}
+
+.profile-tech-save-btn {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.70rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.4);
+}
+
+.profile-tech-save-btn:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #ff7a38 0%, #f26522 100%);
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.6);
+}
+
+.profile-tech-showcase-card {
+  flex: 1;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.10) 0%,
+      rgba(255, 255, 255, 0.03) 50%,
+      rgba(255, 255, 255, 0.06) 100%),
+    rgba(15, 18, 26, 0.85);
+  backdrop-filter: blur(28px) saturate(190%) contrast(105%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%) contrast(105%);
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.45),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.profile-tech-specs-subheading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.profile-tech-specs-subheading span {
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.profile-tech-specs-subheading small {
+  font-size: 0.60rem;
+  color: #94a3b8;
+}
+
+.profile-tech-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 175px;
+  padding-right: 4px;
+}
+
+.profile-tech-specs-grid::-webkit-scrollbar {
+  width: 4px;
+}
+.profile-tech-specs-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.profile-tech-spec-item {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.profile-tech-spec-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.profile-tech-spec-item.is-selected {
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.35) 0%, rgba(242, 101, 34, 0.15) 100%);
+  border-color: #f26522;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.profile-tech-spec-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.profile-tech-spec-name {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.25;
+  flex: 1;
+}
+
+.profile-tech-spec-item.is-selected .profile-tech-spec-name {
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.profile-tech-spec-check {
+  color: #4ade80;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+/* Bottom Metrics Bar in Technician Showcase */
+.profile-tech-metrics-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.profile-tech-metric-box {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.profile-tech-metric-val {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.profile-tech-metric-val.star {
+  color: #facc15;
+}
+
+.profile-tech-metric-val.status {
+  color: #4ade80;
+}
+
+.profile-tech-metric-label {
+  font-size: 0.56rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
 }
