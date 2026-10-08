@@ -5,7 +5,7 @@ import "../../../styles/AgenteSolutions/Tecnico/GaleriaReportes.css";
 import { ChevronLeft, FileText, Camera, CheckCircle2, Trash2, Edit3, Loader2, X, Upload, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import Swal from 'sweetalert2';
 
-import Header from '../../../components/Shared/Header';
+import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
 import { useAuth } from "../../../context/AuthContext";
 
 const STAGES = [
@@ -272,7 +272,7 @@ const GaleriaReportes = () => {
 
   return (
     <>
-      <Header />
+      <TecnicoHeader activeTab="tablero" />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', padding: '0 20px', minHeight: '90vh', background: '#f8fafc' }}>
         
         {/* ENCABEZADO E INFORMACIÓN DEL TRABAJO */}

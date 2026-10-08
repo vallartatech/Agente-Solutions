@@ -16,6 +16,7 @@ import { useAuth } from '../../../context/AuthContext';
 import defaultLogo from '../../../assets/Logo4.png';
 import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
 import RegisterModal from '../../../components/Auth/Register';
+import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
 
 const mapContainerStyle = {
   width: '100%',
@@ -451,13 +452,17 @@ const MercadoTrabajos = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Restaurar trabajo seleccionado al regresar de Galería o Nuevo Reporte
+  // Restaurar trabajo seleccionado o pestaña al regresar de Galería o Nuevo Reporte
   useEffect(() => {
+    if (location.state?.view) {
+      setMainView(location.state.view);
+    }
     if (location.state?.trabajoId) {
       const parsedId = Number(String(location.state.trabajoId).replace('work_order-', ''));
       if (!isNaN(parsedId) && parsedId > 0) {
         setSelectedBoardJobId(parsedId);
         setActiveTab('aceptados');
+        setMainView('tablero');
       }
     }
   }, [location.state]);
@@ -1493,107 +1498,15 @@ const MercadoTrabajos = () => {
   return (
     <div className={`mercado-container ${mainView === 'tablero' ? 'mercado-tablero-mode' : ''}`}>
       {/* ── TOP NAVIGATION BAR (REPLICA VISTA CLIENTE / IMAGE 1) ── */}
-      <header className="vcp-header">
-        <div className="vcp-header-left">
-          <img 
-            src={appLogo} 
-            alt="Agente Logo" 
-            className="vcp-brand-logo"
-            onClick={() => navigate('/mercado-trabajos')} 
-          />
-        </div>
-
-        {/* Center Nav Links */}
-        <nav className="vcp-header-nav">
-          <button 
-            className="vcp-nav-icon-btn" 
-            title="Abrir Calendario"
-            onClick={() => setShowModalCalendario(true)}
-          >
-            <CalendarDays size={20} color="#ffffff" strokeWidth={2.2} />
-          </button>
-
-          <button 
-            className={`vcp-nav-btn ${mainView === 'mercado' ? 'active' : ''}`}
-            onClick={() => setMainView('mercado')}
-          >
-            MERCADO (SOLICITUDES)
-          </button>
-
-          <button 
-            className={`vcp-nav-btn ${mainView === 'tablero' ? 'active' : ''}`}
-            onClick={() => setMainView('tablero')}
-          >
-            TRABAJOS ACEPTADOS ({acceptedJobs.length})
-          </button>
-
-          <button 
-            className={`vcp-nav-btn ${mainView === 'usuarios' ? 'active' : ''}`}
-            onClick={() => {
-              setMainView('usuarios');
-              fetchJobs();
-            }}
-          >
-            USUARIOS ({totalClientesAtendidos})
-          </button>
-        </nav>
-
-        {/* User profile dropdown section */}
-        <div className="vcp-header-right" ref={dropdownRef}>
-          <button 
-            className="vcp-avatar-btn" 
-            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            title="Opciones de perfil"
-          >
-            {userAvatar ? (
-              <img src={userAvatar} alt="Avatar" className="vcp-avatar-img" />
-            ) : (
-              <div className="vcp-avatar-initial">{userInitial}</div>
-            )}
-          </button>
-
-          {profileDropdownOpen && (
-            <div className="vcp-profile-dropdown">
-              <div className="vcp-dropdown-user-header">
-                <div className="vcp-dropdown-role-pill">
-                  <ShieldCheck size={12} className="vcp-dropdown-role-icon" />
-                  <span>{userRole}</span>
-                </div>
-                <div className="vcp-dropdown-user-name">{userFullName}</div>
-                {authUser?.email && (
-                  <div className="vcp-dropdown-user-email">{authUser.email}</div>
-                )}
-              </div>
-
-              <div className="vcp-dropdown-divider" />
-
-              <button 
-                className="vcp-dropdown-item" 
-                onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
-              >
-                <User size={16} /> Mi Perfil
-              </button>
-              <button 
-                className="vcp-dropdown-item" 
-                onClick={() => { setProfileDropdownOpen(false); setShowModalCalendario(true); }}
-              >
-                <Calendar size={16} /> Ver Calendario
-              </button>
-              <div className="vcp-dropdown-divider" />
-              <button 
-                className="vcp-dropdown-item logout" 
-                onClick={() => { 
-                  setProfileDropdownOpen(false); 
-                  if (logoutGlobal) logoutGlobal();
-                  navigate('/', { replace: true }); 
-                }}
-              >
-                <LogOut size={16} /> Cerrar Sesión
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
+      <TecnicoHeader 
+        activeTab={mainView} 
+        onTabChange={(tab) => {
+          setMainView(tab);
+          if (tab === 'usuarios') fetchJobs();
+        }}
+        acceptedCount={acceptedJobs.length}
+        usersCount={totalClientesAtendidos}
+      />
 
       {/* ════════════════════════════════════════════════════════════
           VISTA 1: NUEVO TABLERO OPERATIVO 3 COLUMNAS (COMBINACIÓN DE VISTAS)

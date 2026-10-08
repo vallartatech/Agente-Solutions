@@ -5,6 +5,7 @@ import { CalendarDays, Shield, User, LogOut } from 'lucide-react';
 import logo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
+import TecnicoHeader from './TecnicoHeader';
 import axios from 'axios';
 import '../../styles/Shared/Header.css';
 
@@ -24,6 +25,19 @@ const Header = ({ activeModule }) => {
   const { user, logoutGlobal, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isTechnician = Boolean(
+    user?.role_id === 6 || 
+    user?.role_id === 8 || 
+    user?.role_id === 2 || 
+    location.pathname.includes('/galeria-reportes') || 
+    location.pathname.includes('/nuevo-reporte') ||
+    location.pathname.includes('/mercado-trabajos')
+  );
+
+  if (isTechnician) {
+    return <TecnicoHeader activeTab={activeModule || 'tablero'} />;
+  }
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
   const [appLogo, setAppLogo] = useState(logo);

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import "../../../styles/AgenteSolutions/Tecnico/ReporteIndividual.css";
 import { Camera, ChevronLeft, Loader2, Image as ImageIcon } from 'lucide-react';
-import Header from '../../../components/Shared/Header';
+import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
 import Swal from 'sweetalert2';
 
 const NuevoReporte = () => {
@@ -108,7 +108,7 @@ const NuevoReporte = () => {
 
   return (
     <>
-      <Header />
+      <TecnicoHeader activeTab="tablero" />
       <div className="report-detail-body" style={{ marginTop: '20px', flexDirection: 'column' }}>
         {/* BOTÓN REGRESAR */}
         <div style={{ width: '90%', maxWidth: '1000px', marginBottom: '20px', display: 'flex' }}>
