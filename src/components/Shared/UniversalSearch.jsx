@@ -12,23 +12,31 @@ const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, typ
       let coincideFiltro = true;
       
       if (type === 'USUARIOS') {
-        if (filtroActual === "TODOS" || filtroActual === "TECNICOS") {
+        if (filtroActual === "TODOS") {
           coincideFiltro = true;
         } else if (filtroActual === "ACTIVOS") {
           coincideFiltro = !item.bloqueado;
         } else if (filtroActual === "BLOQUEADOS") {
           coincideFiltro = item.bloqueado === true;
-        } else if (filtroActual === "AUTONOMOS") {
-          coincideFiltro = item.role_id === 4 || item.role_id === 5 || item.role_id === 6 || (typeof item.rol === 'string' && item.rol.includes("AUTONOMO"));
-        } else if (filtroActual === "ADMINS") {
-          coincideFiltro = item.role_id === 1 || item.role_id === 7 || (typeof item.rol === 'string' && item.rol.includes("ADMIN"));
         } else if (filtroActual === "CLIENTES") {
-          coincideFiltro = item.role_id === 3 || (typeof item.rol === 'string' && item.rol.includes("CLIENTE"));
+          coincideFiltro = Number(item.role_id) === 3 || String(item.id).startsWith('c_') || (typeof item.rol === 'string' && item.rol.toUpperCase().includes("CLIENTE"));
+        } else if (filtroActual === "TECNICOS" || filtroActual === "TECNICOS_TODOS") {
+          coincideFiltro = Number(item.role_id) === 2 || Number(item.role_id) === 8 || Number(item.role_id) === 6 || (typeof item.rol === 'string' && item.rol.toUpperCase().includes("TECNICO"));
+        } else if (filtroActual === "TECNICOS_AGENTE") {
+          coincideFiltro = Number(item.role_id) === 2;
+        } else if (filtroActual === "TECNICOS_RED") {
+          coincideFiltro = Number(item.role_id) === 8;
+        } else if (filtroActual === "CONTRATISTAS") {
+          coincideFiltro = Number(item.role_id) === 6;
+        } else if (filtroActual === "AUTONOMOS") {
+          coincideFiltro = Number(item.role_id) === 4 || Number(item.role_id) === 5 || (typeof item.rol === 'string' && item.rol.toUpperCase().includes("AUTONOMO"));
+        } else if (filtroActual === "ADMINS" || filtroActual === "ADMINISTRADORES") {
+          coincideFiltro = Number(item.role_id) === 1 || Number(item.role_id) === 7 || Number(item.role_id) === 0 || (typeof item.rol === 'string' && item.rol.toUpperCase().includes("ADMIN"));
         } else if (filtroActual === "ROOTS") {
-          coincideFiltro = item.role_id === 0 || item.rol === "ROOT";
+          coincideFiltro = Number(item.role_id) === 0 || item.rol === "ROOT";
         } else {
           const rolBuscado = filtroActual.replace("S", "");
-          coincideFiltro = item.rol === rolBuscado;
+          coincideFiltro = item.rol === rolBuscado || String(item.role_id) === String(filtroActual);
         }
       } else if (type === 'PROPIEDADES') {
         coincideFiltro = filtroActual === "TODAS" || item.tipo === filtroActual;
