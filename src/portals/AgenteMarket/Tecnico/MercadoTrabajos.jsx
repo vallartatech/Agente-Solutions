@@ -1264,9 +1264,12 @@ const MercadoTrabajos = () => {
     );
   }, [acceptedJobs, searchQuery]);
 
+  // Helper para identificar trabajos completados / finalizados
+  const isJobDone = (s) => ['Finalizado', 'Listo', 'Terminado', 'Completado', 'Aprobado', 'Entregado'].includes(s);
+
   // Kanban Filtered Jobs (Trabajos Aceptados / Ganados)
-  const activeAcceptedJobs = acceptedJobs.filter(j => j.status !== 'Finalizado' && j.status !== 'Listo' && j.status !== 'Rechazado');
-  const doneAcceptedJobs = acceptedJobs.filter(j => j.status === 'Finalizado' || j.status === 'Listo');
+  const activeAcceptedJobs = acceptedJobs.filter(j => !isJobDone(j.status) && j.status !== 'Rechazado');
+  const doneAcceptedJobs = acceptedJobs.filter(j => isJobDone(j.status));
 
   const displayedAcceptedJobs = (kanbanSectionTab === 'activos' ? activeAcceptedJobs : doneAcceptedJobs).filter(job => {
     if (!kanbanSearch.trim()) return true;
@@ -1283,11 +1286,11 @@ const MercadoTrabajos = () => {
     );
   });
 
-  const sosJobs = displayedAcceptedJobs.filter(j => j.is_urgent || j.priority === 'Urgente' || j.tipo === 'SOS');
-  const pendingScheduleJobs = displayedAcceptedJobs.filter(j => !j.is_urgent && j.priority !== 'Urgente' && j.tipo !== 'SOS' && !j.scheduled_at && j.status !== 'En Progreso' && j.status !== 'Finalizado' && j.status !== 'Listo');
-  const scheduledJobs = displayedAcceptedJobs.filter(j => !j.is_urgent && j.priority !== 'Urgente' && j.tipo !== 'SOS' && j.scheduled_at && j.status !== 'En Progreso' && j.status !== 'Finalizado' && j.status !== 'Listo');
+  const sosJobs = displayedAcceptedJobs.filter(j => (j.is_urgent || j.priority === 'Urgente' || j.tipo === 'SOS') && !isJobDone(j.status));
+  const pendingScheduleJobs = displayedAcceptedJobs.filter(j => !j.is_urgent && j.priority !== 'Urgente' && j.tipo !== 'SOS' && !j.scheduled_at && j.status !== 'En Progreso' && !isJobDone(j.status));
+  const scheduledJobs = displayedAcceptedJobs.filter(j => !j.is_urgent && j.priority !== 'Urgente' && j.tipo !== 'SOS' && j.scheduled_at && j.status !== 'En Progreso' && !isJobDone(j.status));
   const inProgressJobs = displayedAcceptedJobs.filter(j => j.status === 'En Progreso');
-  const doneJobs = displayedAcceptedJobs.filter(j => j.status === 'Finalizado' || j.status === 'Listo');
+  const doneJobs = displayedAcceptedJobs.filter(j => isJobDone(j.status));
 
   // ─── FILTERED ACCEPTED JOBS FOR BOARD (COL 1) ───
   const filteredBoardJobs = useMemo(() => {
@@ -1295,8 +1298,8 @@ const MercadoTrabajos = () => {
       // Filter by chip
       if (boardFilter === 'SOS' && !(job.is_urgent || job.priority === 'Urgente' || job.tipo === 'SOS')) return false;
       if (boardFilter === 'PROCESO' && job.status !== 'En Progreso') return false;
-      if (boardFilter === 'AGENDADOS' && (!job.scheduled_at || job.status === 'En Progreso' || job.status === 'Finalizado' || job.status === 'Listo')) return false;
-      if (boardFilter === 'FINALIZADOS' && job.status !== 'Finalizado' && job.status !== 'Listo') return false;
+      if (boardFilter === 'AGENDADOS' && (!job.scheduled_at || job.status === 'En Progreso' || isJobDone(job.status))) return false;
+      if (boardFilter === 'FINALIZADOS' && !isJobDone(job.status)) return false;
 
       // Filter by search
       if (!boardSearch.trim()) return true;
@@ -2018,7 +2021,7 @@ const MercadoTrabajos = () => {
                 className={`mercado-board-chip ${boardFilter === 'SOS' ? 'active' : ''}`}
                 onClick={() => setBoardFilter('SOS')}
               >
-                🚨 SOS / URGENTES ({acceptedJobs.filter(j => j.is_urgent || j.priority === 'Urgente' || j.tipo === 'SOS').length})
+                🚨 SOS / URGENTES ({acceptedJobs.filter(j => (j.is_urgent || j.priority === 'Urgente' || j.tipo === 'SOS') && !isJobDone(j.status)).length})
               </button>
               <button
                 type="button"
@@ -2032,14 +2035,14 @@ const MercadoTrabajos = () => {
                 className={`mercado-board-chip ${boardFilter === 'AGENDADOS' ? 'active' : ''}`}
                 onClick={() => setBoardFilter('AGENDADOS')}
               >
-                📅 AGENDADOS ({acceptedJobs.filter(j => j.scheduled_at && j.status !== 'En Progreso' && j.status !== 'Finalizado' && j.status !== 'Listo').length})
+                📅 AGENDADOS ({acceptedJobs.filter(j => j.scheduled_at && j.status !== 'En Progreso' && !isJobDone(j.status)).length})
               </button>
               <button
                 type="button"
                 className={`mercado-board-chip ${boardFilter === 'FINALIZADOS' ? 'active' : ''}`}
                 onClick={() => setBoardFilter('FINALIZADOS')}
               >
-                ✅ FINALIZADOS ({acceptedJobs.filter(j => j.status === 'Finalizado' || j.status === 'Listo').length})
+                ✅ FINALIZADOS ({acceptedJobs.filter(j => isJobDone(j.status)).length})
               </button>
             </div>
           </div>
@@ -2077,7 +2080,7 @@ const MercadoTrabajos = () => {
                       const isSelected = selectedBoardJob && selectedBoardJob.id === job.id;
                       const isUrgent = job.is_urgent || job.priority === 'Urgente' || job.tipo === 'SOS';
                       const isInProgress = job.status === 'En Progreso';
-                      const isDone = job.status === 'Finalizado' || job.status === 'Listo';
+                      const isDone = isJobDone(job.status);
 
                       return (
                         <div

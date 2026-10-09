@@ -87,7 +87,7 @@ const ModalCalificarTecnico = ({
           technician_id: technician.id,
           work_order_id: workOrderId || null,
           service_id: serviceId || null,
-          rating_stars: null,
+          rating_stars: 5,
           rating_time: ratingTime,
           comment: comment.trim() || (isCancellation ? 'Cancelación de servicio por el técnico.' : '')
         },
