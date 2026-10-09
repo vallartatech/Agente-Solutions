@@ -77,6 +77,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
 
   // Estados del Modal Reciclado de Detalle de Publicación y Cotizaciones
   const [showQuotesModal, setShowQuotesModal] = useState(false);
+  const [mobileModalTab, setMobileModalTab] = useState('quotes'); // 'details' | 'quotes'
   const [selectedJobForQuotes, setSelectedJobForQuotes] = useState(null);
   const [activePhoto, setActivePhoto] = useState(null);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
@@ -468,6 +469,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
     setSelectedJobForQuotes(job);
     setActivePhoto(job.fotos?.[0] || job.foto || null);
     setActiveChatQuote(null);
+    setMobileModalTab((job.cotizaciones_list && job.cotizaciones_list.length > 0) ? 'quotes' : 'details');
     setShowQuotesModal(true);
   };
 
@@ -829,9 +831,9 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
             <div className="modal-cal-icon-circle">
               <CalendarIcon size={22} color="#FFFFFF" />
             </div>
-            <div>
+            <div className="modal-cal-title-text-box">
               <h2 className="modal-cal-title">
-                CALENDARIO DE <span style={{ color: '#FF6600' }}>VISITAS Y SERVICIOS</span>
+                CALENDARIO <span className="modal-cal-title-extra">DE <span style={{ color: '#FF6600' }}>VISITAS Y SERVICIOS</span></span>
               </h2>
               <span className="modal-cal-subtext">
                 Gestión interactiva de citas coordinadas, servicios en red y cotizaciones con técnicos.
@@ -839,13 +841,14 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="modal-cal-actions">
             <button 
               className="btn-modal-quick-new"
               onClick={() => setShowNewServiceModal(true)}
+              title="Publicar nuevo servicio"
             >
               <PlusCircle size={17} />
-              <span>Publicar Servicio</span>
+              <span className="btn-modal-quick-new-text">Publicar Servicio</span>
             </button>
             <button 
               className="btn-modal-close-window" 
@@ -998,7 +1001,8 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
                   <div className="cal-month-header-row">
                     {DAY_NAMES_FULL.map((name, index) => (
                       <div key={index} className="cal-header-cell">
-                        {name}
+                        <span className="cal-header-day-full">{name}</span>
+                        <span className="cal-header-day-short">{name.substring(0, 3)}</span>
                       </div>
                     ))}
                   </div>
@@ -1311,18 +1315,45 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
         {showQuotesModal && selectedJobForQuotes && (
           <div 
             className="mercado-modal-overlay" 
-            style={{ zIndex: 100000 }}
+            style={{ zIndex: 1000000000 }}
             onClick={(e) => e.target === e.currentTarget && setShowQuotesModal(false)}
           >
-            <div className="mercado-premium-modal" style={{ maxWidth: '1080px' }}>
+            <div className="mercado-premium-modal">
               <div className="mercado-premium-header">
                 <h2>📋 Detalle de Publicación y Cotizaciones</h2>
-                <span className="mercado-modal-close" onClick={() => setShowQuotesModal(false)}>×</span>
+                <button className="mercado-modal-close" onClick={() => setShowQuotesModal(false)} aria-label="Cerrar modal" title="Cerrar">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* BARRA DE PESTAÑAS RESPONSIVAS (SOLO EN MÓVIL) */}
+              <div className="mercado-mobile-tab-bar">
+                <button 
+                  type="button"
+                  className={`mercado-mobile-tab-btn ${mobileModalTab === 'quotes' ? 'active' : ''}`}
+                  onClick={() => setMobileModalTab('quotes')}
+                >
+                  <MessageCircle size={15} />
+                  <span>Cotizaciones y Chat</span>
+                  {selectedJobForQuotes.cotizaciones_list?.length > 0 && (
+                    <span className="mercado-tab-count-badge">
+                      {selectedJobForQuotes.cotizaciones_list.length}
+                    </span>
+                  )}
+                </button>
+                <button 
+                  type="button"
+                  className={`mercado-mobile-tab-btn ${mobileModalTab === 'details' ? 'active' : ''}`}
+                  onClick={() => setMobileModalTab('details')}
+                >
+                  <FileText size={15} />
+                  <span>Detalle Problema</span>
+                </button>
               </div>
 
               <div className="mercado-premium-body">
                 {/* Panel Izquierdo: Galería de Fotos e Información del Problema */}
-                <div className="mercado-premium-details" style={{ flex: '1.05' }}>
+                <div className={`mercado-premium-details ${mobileModalTab === 'details' ? 'mobile-tab-active' : 'mobile-tab-hidden'}`} style={{ flex: '1.05' }}>
                   {activePhoto ? (
                     <div className="mercado-photo-gallery">
                       <div
@@ -1466,11 +1497,11 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
                 </div>
 
                 {/* Panel Derecho: Lista de Cotizaciones O Chat Directo */}
-                <div className="mercado-premium-form" style={{ background: '#ffffff', overflowY: 'auto', padding: 0, display: 'flex', flexDirection: 'column' }}>
+                <div className={`mercado-premium-form ${mobileModalTab === 'quotes' ? 'mobile-tab-active' : 'mobile-tab-hidden'}`}>
                   
                   {/* Vista 1: Lista de Cotizaciones */}
                   {!activeChatQuote && (
-                    <div style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
+                    <div style={{ padding: '16px 20px', flex: 1, overflowY: 'auto' }}>
                       <div style={{ marginBottom: '16px' }}>
                         <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
                           📋 Cotizaciones de Técnicos

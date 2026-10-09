@@ -92,12 +92,20 @@ const VistaLevantamientos = () => {
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(e.target) &&
+        !e.target.closest?.('.vcp-profile-dropdown')
+      ) {
         setProfileDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   // CARGAR SERVICIOS, TÉCNICOS Y PROPIEDADES

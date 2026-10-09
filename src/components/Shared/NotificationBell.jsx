@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { 
@@ -89,8 +90,9 @@ const NotificationBell = ({ triggerClassName = '' }) => {
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [popoverStyle, setPopoverStyle] = useState({});
   const navigate = useNavigate();
-  const dropdownRef = useRef(null);
+  const triggerBtnRef = useRef(null);
   const { user } = useAuth();
 
   // Función para obtener las notificaciones de Laravel y respaldo local
@@ -163,15 +165,57 @@ const NotificationBell = ({ triggerClassName = '' }) => {
     }
   }, [user]);
 
+  // Recalcular posición del popover respecto a la ventana
+  const updatePosition = () => {
+    if (!triggerBtnRef.current) return;
+    const rect = triggerBtnRef.current.getBoundingClientRect();
+    const isMobile = window.innerWidth <= 600;
+
+    if (isMobile) {
+      setPopoverStyle({
+        position: 'fixed',
+        top: `${Math.max(58, rect.bottom + 8)}px`,
+        left: '12px',
+        right: '12px',
+        width: 'auto',
+        maxWidth: 'calc(100vw - 24px)',
+        zIndex: 999999999
+      });
+    } else {
+      const rightDistance = Math.max(16, window.innerWidth - rect.right - 8);
+      setPopoverStyle({
+        position: 'fixed',
+        top: `${rect.bottom + 12}px`,
+        right: `${rightDistance}px`,
+        left: 'auto',
+        width: '400px',
+        maxWidth: 'calc(100vw - 32px)',
+        zIndex: 999999999
+      });
+    }
+  };
+
+  const handleToggle = (e) => {
+    e.stopPropagation();
+    if (!isOpen) {
+      updatePosition();
+    }
+    setIsOpen((prev) => !prev);
+  };
+
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    if (isOpen) {
+      updatePosition();
+      const handleResize = () => updatePosition();
+      const handleScroll = () => updatePosition();
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', handleScroll, true);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('scroll', handleScroll, true);
+      };
+    }
+  }, [isOpen]);
 
   const handleNotificationClick = async (notification) => {
     try {
@@ -277,16 +321,15 @@ const NotificationBell = ({ triggerClassName = '' }) => {
   });
 
   return (
-    <div
-      className="nb-wrapper"
-      ref={dropdownRef}
-    >
+    <div className="nb-wrapper">
       {/* Botón Campana Disparador */}
       <button
         type="button"
+        ref={triggerBtnRef}
         className={`nb-trigger-btn ${triggerClassName} ${isOpen ? 'active' : ''}`.trim()}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         title="Notificaciones"
+        aria-label="Notificaciones"
       >
         <Bell size={19} className="nb-trigger-icon" />
         {notifications.length > 0 && (
@@ -296,115 +339,134 @@ const NotificationBell = ({ triggerClassName = '' }) => {
         )}
       </button>
 
-      {/* Popover / Tarjeta de Notificaciones (Estilo Mockup) */}
-      {isOpen && (
-        <div className="nb-card-popover animate-popover-in">
-          
-          {/* Header */}
-          <div className="nb-header">
-            <h3 className="nb-title">Notifications</h3>
-            <button
-              type="button"
-              className="nb-close-btn"
-              onClick={() => setIsOpen(false)}
-              title="Cerrar"
-            >
-              <X size={17} strokeWidth={2.4} />
-            </button>
-          </div>
+      {/* Popover / Tarjeta de Notificaciones renderizada en Portal directo al body */}
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <>
+          {/* Backdrop invisible / translúcido para cerrar al hacer tap fuera */}
+          <div
+            className="nb-backdrop"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+            }}
+          />
 
-          {/* Filter Tabs Row */}
-          <div className="nb-tabs-row">
-            <button
-              type="button"
-              className={`nb-tab-pill ${activeTab === 'all' ? 'active' : ''}`}
-              onClick={() => setActiveTab('all')}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              className={`nb-tab-pill ${activeTab === 'servicios' ? 'active' : ''}`}
-              onClick={() => setActiveTab('servicios')}
-            >
-              Device Status
-            </button>
-            <button
-              type="button"
-              className={`nb-tab-pill ${activeTab === 'recordatorios' ? 'active' : ''}`}
-              onClick={() => setActiveTab('recordatorios')}
-            >
-              Reminders
-            </button>
-            <button
-              type="button"
-              className={`nb-tab-pill ${activeTab === 'cotizaciones' ? 'active' : ''}`}
-              onClick={() => setActiveTab('cotizaciones')}
-            >
-              Cost Alert
-            </button>
-          </div>
+          <div
+            className="nb-card-popover animate-popover-in"
+            style={popoverStyle}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="nb-header">
+              <h3 className="nb-title">Notificaciones</h3>
+              <button
+                type="button"
+                className="nb-close-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                }}
+                title="Cerrar"
+                aria-label="Cerrar notificaciones"
+              >
+                <X size={17} strokeWidth={2.4} />
+              </button>
+            </div>
 
-          {/* List of Notification Items */}
-          <div className="nb-list-container">
-            {filteredNotifications.length === 0 ? (
-              <div className="nb-empty-state">
-                <div className="nb-empty-icon-box">
-                  <CheckCircle2 size={24} color="#10b981" />
-                </div>
-                <p className="nb-empty-title">Estás al día</p>
-                <p className="nb-empty-desc">No hay notificaciones pendientes en esta categoría.</p>
-              </div>
-            ) : (
-              filteredNotifications.map((notif) => {
-                const meta = getNotificationMeta(notif);
-                const titleText = notif.data?.title || notif.title || notif.titulo || notif.data?.message || notif.message || notif.mensaje || 'Notificación del sistema';
-                const timeText = formatNotifTime(notif.created_at || notif.fecha);
+            {/* Filter Tabs Row */}
+            <div className="nb-tabs-row">
+              <button
+                type="button"
+                className={`nb-tab-pill ${activeTab === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveTab('all')}
+              >
+                Todas
+              </button>
+              <button
+                type="button"
+                className={`nb-tab-pill ${activeTab === 'servicios' ? 'active' : ''}`}
+                onClick={() => setActiveTab('servicios')}
+              >
+                Servicios
+              </button>
+              <button
+                type="button"
+                className={`nb-tab-pill ${activeTab === 'recordatorios' ? 'active' : ''}`}
+                onClick={() => setActiveTab('recordatorios')}
+              >
+                Recordatorios
+              </button>
+              <button
+                type="button"
+                className={`nb-tab-pill ${activeTab === 'cotizaciones' ? 'active' : ''}`}
+                onClick={() => setActiveTab('cotizaciones')}
+              >
+                Cotizaciones
+              </button>
+            </div>
 
-                return (
-                  <div
-                    key={notif.id}
-                    className="nb-item-card"
-                    onClick={() => handleNotificationClick(notif)}
-                  >
-                    {/* Left Circular Icon with Orange Dot */}
-                    <div className="nb-item-avatar-box">
-                      <span className="nb-unread-orange-dot" />
-                      <div className="nb-item-icon-circle">
-                        {meta.icon}
-                      </div>
-                    </div>
-
-                    {/* Center Text Info */}
-                    <div className="nb-item-content">
-                      <span className="nb-item-category">{meta.category}</span>
-                      <h4 className="nb-item-message">{titleText}</h4>
-                    </div>
-
-                    {/* Right Timestamp */}
-                    <span className="nb-item-time">{timeText}</span>
+            {/* List of Notification Items */}
+            <div className="nb-list-container">
+              {filteredNotifications.length === 0 ? (
+                <div className="nb-empty-state">
+                  <div className="nb-empty-icon-box">
+                    <CheckCircle2 size={24} color="#10b981" />
                   </div>
-                );
-              })
-            )}
-          </div>
+                  <p className="nb-empty-title">Estás al día</p>
+                  <p className="nb-empty-desc">No hay notificaciones pendientes en esta categoría.</p>
+                </div>
+              ) : (
+                filteredNotifications.map((notif) => {
+                  const meta = getNotificationMeta(notif);
+                  const titleText = notif.data?.title || notif.title || notif.titulo || notif.data?.message || notif.message || notif.mensaje || 'Notificación del sistema';
+                  const timeText = formatNotifTime(notif.created_at || notif.fecha);
 
-          {/* Footer Bar */}
-          <div className="nb-footer">
-            <button
-              type="button"
-              className="nb-footer-btn"
-              onClick={() => {
-                setIsOpen(false);
-                navigate("/notificaciones");
-              }}
-            >
-              <span>Ver historial completo</span>
-              <ArrowRight size={14} />
-            </button>
-          </div>
+                  return (
+                    <div
+                      key={notif.id}
+                      className="nb-item-card"
+                      onClick={() => handleNotificationClick(notif)}
+                    >
+                      {/* Left Circular Icon with Orange Dot */}
+                      <div className="nb-item-avatar-box">
+                        <span className="nb-unread-orange-dot" />
+                        <div className="nb-item-icon-circle">
+                          {meta.icon}
+                        </div>
+                      </div>
 
-        </div>
+                      {/* Center Text Info */}
+                      <div className="nb-item-content">
+                        <span className="nb-item-category">{meta.category}</span>
+                        <h4 className="nb-item-message">{titleText}</h4>
+                      </div>
+
+                      {/* Right Timestamp */}
+                      <span className="nb-item-time">{timeText}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer Bar */}
+            <div className="nb-footer">
+              <button
+                type="button"
+                className="nb-footer-btn"
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate("/notificaciones");
+                }}
+              >
+                <span>Ver historial completo</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+
+          </div>
+        </>,
+        document.body
       )}
     </div>
   );

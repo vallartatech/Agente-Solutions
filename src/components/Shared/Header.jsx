@@ -6,6 +6,7 @@ import logo from '../../assets/Logo4.png';
 import NotificationBell from './NotificationBell';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
 import TecnicoHeader from './TecnicoHeader';
+import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
 import '../../styles/Shared/Header.css';
 
@@ -64,12 +65,20 @@ const Header = ({ activeModule }) => {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(e.target) &&
+        !e.target.closest?.('.vcp-profile-dropdown')
+      ) {
         setProfileDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const handleCerrarSesion = () => {
@@ -114,137 +123,142 @@ const Header = ({ activeModule }) => {
   const isMercadoActive = activeModule === 'mercado' || currentPath.includes('/red-autonomos') || currentPath.includes('/mercado');
 
   return (
-    <header className="vcp-header">
-      {/* SECCIÓN IZQUIERDA: Logo */}
-      <div className="vcp-header-left">
-        <img
-          src={appLogo}
-          alt="Agente Solutions Logo"
-          className="vcp-brand-logo"
-          onClick={irAlInicio}
-          title="Ir al Inicio"
-        />
-      </div>
-
-      {/* SECCIÓN CENTRAL: Navegación Principal (INICIO + 5 módulos) */}
-      <nav className="vcp-header-nav">
-        <button
-          type="button"
-          className="vcp-nav-btn"
-          onClick={irAlInicio}
-        >
-          INICIO
-        </button>
-
-        <button
-          type="button"
-          className={`vcp-nav-btn ${isUsuariosActive ? 'active' : ''}`}
-          onClick={() => navigate('/usuarios')}
-        >
-          USUARIOS
-        </button>
-
-        <button
-          type="button"
-          className={`vcp-nav-btn ${isReportesActive ? 'active' : ''}`}
-          onClick={() => navigate('/reportes-globales')}
-        >
-          REPORTE
-        </button>
-
-        <button
-          type="button"
-          className={`vcp-nav-btn ${isCotizacionesActive ? 'active' : ''}`}
-          onClick={() => navigate('/vista-cotizaciones')}
-        >
-          COTIZACION
-        </button>
-
-        <button
-          type="button"
-          className={`vcp-nav-btn ${isServiciosActive ? 'active' : ''}`}
-          onClick={() => navigate('/tablero-servicios')}
-        >
-          SERVICIOS
-        </button>
-
-        <button
-          type="button"
-          className={`vcp-nav-btn ${isMercadoActive ? 'active' : ''}`}
-          onClick={() => navigate('/red-autonomos')}
-        >
-          MERCADO / RED
-        </button>
-      </nav>
-
-      {/* SECCIÓN DERECHA: Calendario + Notificaciones + Perfil */}
-      <div className="vcp-header-right" ref={dropdownRef}>
-        <div className="vcp-header-actions-group">
-          <button
-            type="button"
-            className="vcp-nav-icon-btn"
-            title="Abrir Calendario y Citas"
-            onClick={() => setMostrarCalendario(true)}
-          >
-            <CalendarDays size={18} strokeWidth={2.2} />
-          </button>
-
-          <NotificationBell />
+    <>
+      <header className="vcp-header">
+        {/* SECCIÓN IZQUIERDA: Logo */}
+        <div className="vcp-header-left">
+          <img
+            src={appLogo}
+            alt="Agente Solutions Logo"
+            className="vcp-brand-logo"
+            onClick={irAlInicio}
+            title="Ir al Inicio"
+          />
         </div>
 
-        <button
-          type="button"
-          className="vcp-avatar-btn"
-          onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-          title="Opciones de sesión"
-          aria-label="Perfil"
-        >
-          {userAvatar ? (
-            <img src={userAvatar} alt="Avatar" className="vcp-avatar-img" />
-          ) : (
-            <div className="vcp-avatar-initial">{userInitial}</div>
-          )}
-        </button>
+        {/* SECCIÓN CENTRAL: Navegación Principal (INICIO + 5 módulos) */}
+        <nav className="vcp-header-nav">
+          <button
+            type="button"
+            className="vcp-nav-btn"
+            onClick={irAlInicio}
+          >
+            INICIO
+          </button>
 
-        {profileDropdownOpen && (
-          <div className="vcp-profile-dropdown">
-            <div className="vcp-dropdown-user-header">
-              <div className="vcp-dropdown-role-pill">
-                <Shield size={12} className="vcp-dropdown-role-icon" />
-                <span>{userRoleLabel}</span>
-              </div>
-              <div className="vcp-dropdown-user-name">{userFullName}</div>
-            </div>
+          <button
+            type="button"
+            className={`vcp-nav-btn ${isUsuariosActive ? 'active' : ''}`}
+            onClick={() => navigate('/usuarios')}
+          >
+            USUARIOS
+          </button>
 
-            <div className="vcp-dropdown-divider" />
+          <button
+            type="button"
+            className={`vcp-nav-btn ${isReportesActive ? 'active' : ''}`}
+            onClick={() => navigate('/reportes-globales')}
+          >
+            REPORTE
+          </button>
 
+          <button
+            type="button"
+            className={`vcp-nav-btn ${isCotizacionesActive ? 'active' : ''}`}
+            onClick={() => navigate('/vista-cotizaciones')}
+          >
+            COTIZACION
+          </button>
+
+          <button
+            type="button"
+            className={`vcp-nav-btn ${isServiciosActive ? 'active' : ''}`}
+            onClick={() => navigate('/tablero-servicios')}
+          >
+            SERVICIOS
+          </button>
+
+          <button
+            type="button"
+            className={`vcp-nav-btn ${isMercadoActive ? 'active' : ''}`}
+            onClick={() => navigate('/red-autonomos')}
+          >
+            MERCADO / RED
+          </button>
+        </nav>
+
+        {/* SECCIÓN DERECHA: Calendario + Notificaciones + Perfil */}
+        <div className="vcp-header-right" ref={dropdownRef}>
+          <div className="vcp-header-actions-group">
             <button
               type="button"
-              className="vcp-dropdown-item"
-              onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
+              className="vcp-nav-icon-btn"
+              title="Abrir Calendario y Citas"
+              onClick={() => setMostrarCalendario(true)}
             >
-              <User size={16} /> Mi Perfil
+              <CalendarDays size={18} strokeWidth={2.2} />
             </button>
-            <button
-              type="button"
-              className="vcp-dropdown-item logout"
-              onClick={() => {
-                setProfileDropdownOpen(false);
-                handleCerrarSesion();
-              }}
-            >
-              <LogOut size={16} /> Cerrar Sesión
-            </button>
+
+            <NotificationBell />
           </div>
-        )}
-      </div>
 
-      {/* MODAL GLOBAL DE CALENDARIO DE CLIENTE */}
-      <ModalCalendarioCliente 
-        isOpen={mostrarCalendario} 
-        onClose={() => setMostrarCalendario(false)} 
-      />
-    </header>
+          <button
+            type="button"
+            className="vcp-avatar-btn"
+            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+            title="Opciones de sesión"
+            aria-label="Perfil"
+          >
+            {userAvatar ? (
+              <img src={userAvatar} alt="Avatar" className="vcp-avatar-img" />
+            ) : (
+              <div className="vcp-avatar-initial">{userInitial}</div>
+            )}
+          </button>
+
+          {profileDropdownOpen && (
+            <div className="vcp-profile-dropdown">
+              <div className="vcp-dropdown-user-header">
+                <div className="vcp-dropdown-role-pill">
+                  <Shield size={12} className="vcp-dropdown-role-icon" />
+                  <span>{userRoleLabel}</span>
+                </div>
+                <div className="vcp-dropdown-user-name">{userFullName}</div>
+              </div>
+
+              <div className="vcp-dropdown-divider" />
+
+              <button
+                type="button"
+                className="vcp-dropdown-item"
+                onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
+              >
+                <User size={16} /> Mi Perfil
+              </button>
+              <button
+                type="button"
+                className="vcp-dropdown-item logout"
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  handleCerrarSesion();
+                }}
+              >
+                <LogOut size={16} /> Cerrar Sesión
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* MODAL GLOBAL DE CALENDARIO DE CLIENTE */}
+        <ModalCalendarioCliente 
+          isOpen={mostrarCalendario} 
+          onClose={() => setMostrarCalendario(false)} 
+        />
+      </header>
+
+      {/* BARRA DE NAVEGACIÓN INFERIOR RESPONSIVA (SOLO ICONOS) */}
+      <MobileBottomNav activeModule={activeModule} />
+    </>
   );
 };
 

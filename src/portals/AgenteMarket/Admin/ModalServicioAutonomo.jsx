@@ -3,6 +3,7 @@ import axios from 'axios';
 import { 
   X, FileText, Home, Wrench, MessageSquare, Camera, Trash2, PlusCircle, Globe
 } from 'lucide-react';
+import '../../../styles/AgenteMarket/Admin/ModalServicioAutonomo.css';
 
 const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
   const [propiedades, setPropiedades] = useState([]);
@@ -15,6 +16,9 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
     area_id: '',
     equipo: '',
     descripcion: '',
+    urgencia: 'urgente',
+    fechaProgramada: '',
+    horarioPreferido: '',
     fotos: []
   });
   const [carritoServicios, setCarritoServicios] = useState([]);
@@ -255,26 +259,30 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
 
   return (
     <>
-      <div className="modal-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
-        <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '95%' }}>
-          <button className="close-modal" onClick={onClose}><X /></button>
-          <div className="modal-header">
-            <div className="modal-tag">NUEVA SOLICITUD</div>
-            <h2>Reportar Problema</h2>
+      <div className="modal-servicio-autonomo-overlay" onClick={onClose}>
+        <div className="modal-servicio-autonomo-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-servicio-autonomo-header">
+            <div className="msa-header-title-box">
+              <div className="modal-tag">NUEVA SOLICITUD</div>
+              <h2>Reportar Problema</h2>
+            </div>
+            <button className="msa-close-btn" onClick={onClose} aria-label="Cerrar modal" title="Cerrar">
+              <X size={20} />
+            </button>
           </div>
           
-          <div className="modal-body service-form" style={{ padding: '20px' }}>
+          <div className="modal-servicio-autonomo-body">
             
             {/* Si no se pasó un propertyId, mostrar dropdown para seleccionar propiedad */}
             {!propertyId && (
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ fontWeight: 'bold' }}><Home size={16}/> Seleccionar Propiedad *</label>
+              <div className="msa-form-group">
+                <label className="msa-form-label"><Home size={15}/> Seleccionar Propiedad *</label>
                 <select 
                   required 
                   value={selectedPropertyId}
                   onChange={(e) => setSelectedPropertyId(e.target.value)}
                   disabled={loadingPropiedades}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+                  className="msa-form-control"
                 >
                   <option value="">{loadingPropiedades ? "Cargando propiedades..." : "Selecciona tu propiedad..."}</option>
                   {propiedades.map(p => (
@@ -286,22 +294,22 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
 
             {/* GALERÍA DE CARRITO */}
             {carritoServicios.length > 0 && (
-              <div style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '12px', border: '1px solid #e9ecef' }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#334155' }}>Problemas a reportar ({carritoServicios.length})</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ marginBottom: '16px', padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1.5px solid #e2e8f0' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#334155', fontSize: '13px', fontWeight: '800' }}>Problemas a reportar ({carritoServicios.length})</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {carritoServicios.map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '10px', background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', alignItems: 'center' }}>
+                    <div key={idx} style={{ display: 'flex', gap: '10px', background: '#ffffff', padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0', alignItems: 'center' }}>
                       {item.fotos.length > 0 ? (
-                        <img src={URL.createObjectURL(item.fotos[0])} alt="preview" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px' }} />
+                        <img src={URL.createObjectURL(item.fotos[0])} alt="preview" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px' }} />
                       ) : (
-                        <div style={{ width: '50px', height: '50px', background: '#e2e8f0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FileText size={20} color="#94a3b8"/></div>
+                        <div style={{ width: '48px', height: '48px', background: '#f1f5f9', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FileText size={20} color="#94a3b8"/></div>
                       )}
-                      <div style={{ flex: 1 }}>
-                        <strong style={{ display: 'block', fontSize: '14px', color: '#F26522' }}>{item.tipo} - {item.zona}</strong>
-                        <span style={{ fontSize: '12px', color: '#64748b' }}>{item.descripcion.substring(0, 50)}...</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <strong style={{ display: 'block', fontSize: '13px', color: '#ea580c', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.tipo} - {item.zona}</strong>
+                        <span style={{ fontSize: '12px', color: '#64748b', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.descripcion}</span>
                       </div>
-                      <button type="button" onClick={() => setCarritoServicios(carritoServicios.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '5px' }}>
-                        <Trash2 size={18} />
+                      <button type="button" onClick={() => setCarritoServicios(carritoServicios.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Eliminar">
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   ))}
@@ -310,13 +318,13 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
             )}
 
             <form onSubmit={handleAnadirAlCarrito}>
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ fontWeight: 'bold' }}><FileText size={16}/> Tipo de Servicio *</label>
+              <div className="msa-form-group">
+                <label className="msa-form-label"><FileText size={15}/> Tipo de Servicio *</label>
                 <select 
                   required 
                   value={nuevoServicio.tipo}
                   onChange={(e) => setNuevoServicio({...nuevoServicio, tipo: e.target.value})}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+                  className="msa-form-control"
                   disabled={!selectedPropertyId}
                 >
                   <option value="">Selecciona el tipo...</option>
@@ -325,14 +333,14 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                 </select>
               </div>
 
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ fontWeight: 'bold' }}><Home size={16}/> Zona de la propiedad *</label>
+              <div className="msa-form-group">
+                <label className="msa-form-label"><Home size={15}/> Zona de la propiedad *</label>
                 <select 
                   required 
                   value={nuevoServicio.area_id}
                   onChange={(e) => handleZonaChange(e.target.value)}
                   disabled={loadingZonas || !selectedPropertyId}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+                  className="msa-form-control"
                 >
                   <option value="">{loadingZonas ? "Cargando zonas..." : "Seleccionar zona..."}</option>
                   {zonasDisponibles.map(zona => {
@@ -356,13 +364,13 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                 </select>
               </div>
 
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ fontWeight: 'bold' }}><Wrench size={16}/> Equipo afectado (Opcional)</label>
+              <div className="msa-form-group">
+                <label className="msa-form-label"><Wrench size={15}/> Equipo afectado (Opcional)</label>
                 <select 
                   value={nuevoServicio.equipo}
                   disabled={!nuevoServicio.area_id || loadingEquipos}
                   onChange={(e) => setNuevoServicio({...nuevoServicio, equipo: e.target.value})}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+                  className="msa-form-control"
                 >
                   <option value="">
                     {!nuevoServicio.area_id ? "Primero selecciona una zona" : (loadingEquipos ? "Cargando equipos..." : "Seleccionar equipo...")}
@@ -380,42 +388,30 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                 </select>
               </div>
 
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ fontWeight: 'bold' }}><MessageSquare size={16}/> Descripción *</label>
+              <div className="msa-form-group">
+                <label className="msa-form-label"><MessageSquare size={15}/> Descripción *</label>
                 <textarea 
                   required 
                   rows="3" 
-                  placeholder="Describe el problema..." 
+                  placeholder="Describe el problema detalladamente..." 
                   value={nuevoServicio.descripcion} 
                   onChange={(e) => setNuevoServicio({...nuevoServicio, descripcion: e.target.value})}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+                  className="msa-form-control"
                   disabled={!selectedPropertyId}
+                  style={{ resize: 'vertical', minHeight: '75px' }}
                 />
               </div>
 
               {/* ⚡ DISPONIBILIDAD / HORARIO SOLICITADO */}
-              <div style={{ marginBottom: '18px', padding: '14px', background: '#fff7ed', borderRadius: '12px', border: '1.5px solid #fed7aa' }}>
-                <label style={{ fontWeight: '800', fontSize: '13px', color: '#ea580c', display: 'block', marginBottom: '8px' }}>
+              <div className="msa-urgency-card">
+                <div className="msa-urgency-title">
                   ⏰ ¿Cuándo necesitas el servicio?
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                </div>
+                <div className="msa-urgency-grid">
                   <button
                     type="button"
                     onClick={() => setNuevoServicio({...nuevoServicio, urgencia: 'urgente', fechaProgramada: '', horarioPreferido: ''})}
-                    style={{
-                      padding: '10px 8px',
-                      borderRadius: '8px',
-                      border: nuevoServicio.urgencia === 'urgente' || !nuevoServicio.urgencia ? '2px solid #ea580c' : '1px solid #fed7aa',
-                      background: nuevoServicio.urgencia === 'urgente' || !nuevoServicio.urgencia ? '#ea580c' : '#ffffff',
-                      color: nuevoServicio.urgencia === 'urgente' || !nuevoServicio.urgencia ? '#ffffff' : '#334155',
-                      fontWeight: '800',
-                      fontSize: '12px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '4px'
-                    }}
+                    className={`msa-urgency-btn ${nuevoServicio.urgencia === 'urgente' || !nuevoServicio.urgencia ? 'active-urgent' : 'inactive-urgent'}`}
                   >
                     ⚡ Urgente (Hoy mismo)
                   </button>
@@ -423,20 +419,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                   <button
                     type="button"
                     onClick={() => setNuevoServicio({...nuevoServicio, urgencia: 'programado', fechaProgramada: new Date(Date.now() + 86400000).toISOString().split('T')[0], horarioPreferido: 'Por la tarde (12pm - 5pm)'})}
-                    style={{
-                      padding: '10px 8px',
-                      borderRadius: '8px',
-                      border: nuevoServicio.urgencia === 'programado' ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                      background: nuevoServicio.urgencia === 'programado' ? '#2563eb' : '#ffffff',
-                      color: nuevoServicio.urgencia === 'programado' ? '#ffffff' : '#334155',
-                      fontWeight: '800',
-                      fontSize: '12px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '4px'
-                    }}
+                    className={`msa-urgency-btn ${nuevoServicio.urgencia === 'programado' ? 'active-scheduled' : 'inactive-scheduled'}`}
                   >
                     📅 Programar Fecha
                   </button>
@@ -445,21 +428,23 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                 {nuevoServicio.urgencia === 'programado' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #fed7aa' }}>
                     <div>
-                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>Fecha deseada:</span>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: '#475569', display: 'block', marginBottom: '4px' }}>FECHA DESEADA:</span>
                       <input
                         type="date"
                         value={nuevoServicio.fechaProgramada || ''}
                         min={new Date().toISOString().split('T')[0]}
                         onChange={(e) => setNuevoServicio({...nuevoServicio, fechaProgramada: e.target.value})}
-                        style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }}
+                        className="msa-form-control"
+                        style={{ padding: '8px 10px', fontSize: '13px' }}
                       />
                     </div>
                     <div>
-                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '4px' }}>Horario preferido:</span>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: '#475569', display: 'block', marginBottom: '4px' }}>HORARIO PREFERIDO:</span>
                       <select
                         value={nuevoServicio.horarioPreferido || 'Por la tarde (12pm - 5pm)'}
                         onChange={(e) => setNuevoServicio({...nuevoServicio, horarioPreferido: e.target.value})}
-                        style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }}
+                        className="msa-form-control"
+                        style={{ padding: '8px 10px', fontSize: '13px' }}
                       >
                         <option value="Por la mañana (8am - 12pm)">Por la mañana (8:00 AM - 12:00 PM)</option>
                         <option value="Por la tarde (12pm - 5pm)">Por la tarde (12:00 PM - 5:00 PM)</option>
@@ -471,24 +456,24 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                 )}
               </div>
 
-              <div className="form-group" style={{ marginBottom: '20px' }}>
-                <label style={{ fontWeight: 'bold' }}><Camera size={16}/> Evidencia Visual (Máx 2 fotos)</label>
+              <div className="msa-form-group">
+                <label className="msa-form-label"><Camera size={15}/> Evidencia Visual (Máx 2 fotos)</label>
                 
                 <input type="file" ref={cameraRef} hidden accept="image/*" capture="environment" onChange={handleFileSelect} />
                 <input type="file" ref={galleryRef} hidden accept="image/*" multiple onChange={handleFileSelect} />
 
-                <div className="fotos-preview-container" style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                <div className="fotos-preview-container" style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                   {nuevoServicio.fotos.map((foto, idx) => (
-                    <div key={idx} className="foto-preview-wrapper" style={{ position: 'relative', width: '70px', height: '70px' }}>
+                    <div key={idx} className="foto-preview-wrapper" style={{ position: 'relative', width: '64px', height: '64px' }}>
                       <img 
                         src={URL.createObjectURL(foto)} 
                         alt="preview" 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '2px solid #f26624' }} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px', border: '2px solid #ea580c' }} 
                       />
                       <button 
                         type="button"
                         onClick={() => removeFoto(idx)}
-                        style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#e63946', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}
                       >
                         <X size={12} />
                       </button>
@@ -500,45 +485,37 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                       type="button" 
                       onClick={() => setIsPhotoMenuOpen(true)}
                       disabled={!selectedPropertyId}
-                      style={{ width: '70px', height: '70px', border: '2px dashed #ccc', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: selectedPropertyId ? 'pointer' : 'not-allowed', background: '#f9f9f9', color: '#666' }}
+                      style={{ width: '64px', height: '64px', border: '2px dashed #cbd5e1', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: selectedPropertyId ? 'pointer' : 'not-allowed', background: '#f8fafc', color: '#64748b', transition: 'all 0.2s' }}
                     >
-                      <PlusCircle size={20} />
-                      <span style={{ fontSize: '9px', fontWeight: 'bold', marginTop: '4px' }}>AÑADIR</span>
+                      <PlusCircle size={20} color={selectedPropertyId ? "#ea580c" : "#94a3b8"} />
+                      <span style={{ fontSize: '9px', fontWeight: '800', marginTop: '3px', color: '#475569' }}>FOTO</span>
                     </button>
                   )}
                 </div>
               </div>
 
-              <button type="submit" disabled={!selectedPropertyId} style={{ background: '#f1f5f9', color: '#334155', border: '2px dashed #94a3b8', width: '100%', padding: '10px', borderRadius: '8px', fontWeight: 'bold', cursor: selectedPropertyId ? 'pointer' : 'not-allowed' }}>
-                + AÑADIR PROBLEMA A LA LISTA
+              <button type="submit" disabled={!selectedPropertyId} className="msa-btn-add-list">
+                <PlusCircle size={16} /> AÑADIR PROBLEMA A LA LISTA
               </button>
             </form>
 
-            <div style={{ marginTop: '20px' }}>
+            <div className="msa-footer-actions">
+              <button 
+                type="button" 
+                onClick={onClose} 
+                className="msa-btn-cancel"
+              >
+                Cerrar
+              </button>
               <button 
                 type="button" 
                 onClick={() => handleSubmitBatch(true)} 
                 disabled={loadingSubmit || (!selectedPropertyId && carritoServicios.length === 0)} 
-                style={{ 
-                  background: 'linear-gradient(135deg, #ff6600 0%, #ea580c 100%)', 
-                  color: 'white', 
-                  width: '100%', 
-                  padding: '14px', 
-                  borderRadius: '12px', 
-                  border: 'none', 
-                  fontWeight: '800', 
-                  fontSize: '1rem', 
-                  cursor: loadingSubmit ? 'not-allowed' : 'pointer', 
-                  opacity: loadingSubmit ? 0.6 : 1, 
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  alignItems: 'center', 
-                  gap: '8px',
-                  boxShadow: '0 4px 14px rgba(234, 88, 12, 0.3)'
-                }}
+                className="msa-btn-submit-batch"
+                style={{ marginTop: 0 }}
               >
                 <Globe size={18} />
-                {loadingSubmit ? "PUBLICANDO EN LA RED..." : `PUBLICAR EN LA RED (TÉCNICOS) ${carritoServicios.length > 0 ? `(${carritoServicios.length})` : ''}`}
+                {loadingSubmit ? "PUBLICANDO..." : `PUBLICAR EN LA RED (TÉCNICOS) ${carritoServicios.length > 0 ? `(${carritoServicios.length})` : ''}`}
               </button>
             </div>
 
@@ -548,25 +525,25 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
 
       {/* MODAL DE SELECCIÓN DE FOTO */}
       {isPhotoMenuOpen && (
-        <div className="modal-overlay" onClick={() => setIsPhotoMenuOpen(false)} style={{ zIndex: 10000 }}>
-          <div className="modal-content" style={{ maxWidth: '300px', padding: '0', backgroundColor: '#fff' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '15px', textAlign: 'center', borderBottom: '1px solid #eee' }}>
-              <h3 style={{ margin: 0, color: '#F26522', fontSize: '1.1rem' }}>Seleccionar Origen</h3>
+        <div className="modal-servicio-autonomo-overlay" onClick={() => setIsPhotoMenuOpen(false)} style={{ zIndex: 1000000005 }}>
+          <div className="modal-servicio-autonomo-content" style={{ maxWidth: '300px', padding: '0', background: '#ffffff', borderRadius: '16px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '16px', textAlign: 'center', borderBottom: '1px solid #f1f5f9' }}>
+              <h3 style={{ margin: 0, color: '#ea580c', fontSize: '1rem', fontWeight: '800' }}>Seleccionar Origen</h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <button 
                 type="button"
                 onClick={() => selectPhotoSource('camera')}
-                style={{ background: 'transparent', border: 'none', padding: '15px', color: '#333', borderBottom: '1px solid #eee', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                style={{ background: 'transparent', border: 'none', padding: '14px', color: '#1e293b', borderBottom: '1px solid #f1f5f9', fontSize: '14px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
-                <Camera size={20} /> Tomar Foto
+                <Camera size={18} color="#ea580c" /> Tomar Foto
               </button>
               <button 
                 type="button"
                 onClick={() => selectPhotoSource('gallery')}
-                style={{ background: 'transparent', border: 'none', padding: '15px', color: '#333', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                style={{ background: 'transparent', border: 'none', padding: '14px', color: '#1e293b', fontSize: '14px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
-                <FileText size={20} /> Galería
+                <FileText size={18} color="#ea580c" /> Galería
               </button>
             </div>
           </div>
@@ -577,3 +554,4 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
 };
 
 export default ModalServicioAutonomo;
+

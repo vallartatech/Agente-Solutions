@@ -4,6 +4,7 @@ import { CalendarDays, ShieldCheck, User, Calendar, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext';
 import defaultLogo from '../../assets/Logo4.png';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
+import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
 import '../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 
@@ -60,12 +61,20 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
   // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target) &&
+        !event.target.closest?.('.vcp-profile-dropdown')
+      ) {
         setProfileDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const handleSelectTab = (tabKey) => {
@@ -204,6 +213,9 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
         isOpen={showModalCalendario} 
         onClose={() => setShowModalCalendario(false)} 
       />
+
+      {/* Responsive Bottom Dock Navigation (Only Icons) */}
+      <MobileBottomNav activeModule={activeTab} />
     </>
   );
 };

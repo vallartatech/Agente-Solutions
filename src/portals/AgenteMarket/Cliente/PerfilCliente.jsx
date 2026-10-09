@@ -25,6 +25,7 @@ import logo from '../../../assets/Logo4.png';
 import defaultPropImg from '../../../assets/propiedad_ejemplo.jpg';
 import ModalCalendarioCliente from './ModalCalendarioCliente';
 import NotificationBell from '../../../components/Shared/NotificationBell';
+import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import '../../../styles/Shared/Profile.css';
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80';
@@ -789,6 +790,9 @@ const PerfilCliente = () => {
         isOpen={showModalCalendario}
         onClose={() => setShowModalCalendario(false)}
       />
+
+      {/* Responsive Bottom Navigation (Only Icons) */}
+      <MobileBottomNav />
 
     </div>
   );

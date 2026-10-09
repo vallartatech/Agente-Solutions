@@ -12,8 +12,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -1678,3 +1677,214 @@ html, body {
   letter-spacing: 0.4px;
   text-transform: uppercase;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN (TABLETS & MOBILE SMARTPHONES)
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  html, body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: auto;
+  }
+
+  .profile-liquid-root {
+    height: auto !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* ── TOPBAR RESPONSIVA ── */
+  .profile-liquid-topbar {
+    height: 64px !important;
+    padding: 0 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .profile-topbar-left {
+    margin-left: 0 !important;
+    gap: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  .profile-brand-logo {
+    height: 38px !important;
+    max-width: 120px !important;
+    display: block !important;
+  }
+
+  /* Ocultar navegación central de escritorio (se usa la barra inferior MobileBottomNav) */
+  .profile-topbar-nav {
+    display: none !important;
+  }
+
+  /* Ocultar botón duplicado de cambiar portada en header móvil */
+  .profile-change-cover-header-btn {
+    display: none !important;
+  }
+
+  .profile-topbar-right,
+  .vcp-header-right.profile-topbar-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .profile-avatar-btn,
+  .vcp-avatar-btn.profile-avatar-btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+  }
+
+  .profile-header-icon-btn,
+  .vcp-header-icon-btn.profile-header-icon-btn,
+  .profile-liquid-topbar .nb-trigger-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+
+  .profile-header-dropdown {
+    position: fixed !important;
+    top: 66px !important;
+    right: 12px !important;
+    width: 230px !important;
+    max-width: calc(100vw - 24px) !important;
+    z-index: 999999999 !important;
+  }
+
+  /* ── VIEWPORT PRINCIPAL ── */
+  .profile-dashboard-viewport {
+    padding: 12px 12px 88px 12px !important;
+    height: auto !important;
+    overflow: visible !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .profile-dashboard-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 14px !important;
+  }
+
+  /* ── BANNER DE PORTADA ── */
+  .profile-wide-banner-card {
+    height: 150px !important;
+    min-height: 150px !important;
+    max-height: 170px !important;
+    border-radius: 20px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .profile-wide-banner-btn {
+    bottom: 10px !important;
+    right: 10px !important;
+    padding: 6px 12px !important;
+    font-size: 0.68rem !important;
+  }
+
+  /* ── 3 COLUMNAS APILADAS EN MÓVIL ── */
+  .profile-three-col-viewport {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .profile-col-identity,
+  .profile-col-data,
+  .profile-col-properties,
+  .profile-col-technician-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Columna 1: Tarjeta de Identidad */
+  .profile-identity-card {
+    border-radius: 20px !important;
+    padding: 20px 14px !important;
+    gap: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .profile-identity-avatar-wrap {
+    width: 84px !important;
+    height: 84px !important;
+    min-width: 84px !important;
+  }
+
+  .profile-identity-name {
+    font-size: 1.15rem !important;
+  }
+
+  .profile-identity-edit-btn {
+    padding: 10px 14px !important;
+    font-size: 0.80rem !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+  }
+
+  .profile-identity-delete-btn {
+    padding: 8px 12px !important;
+    font-size: 0.74rem !important;
+    border-radius: 10px !important;
+    width: 100% !important;
+  }
+
+  /* Columna 2: Datos de Usuario */
+  .profile-data-heading {
+    margin-top: 4px !important;
+  }
+
+  .profile-floating-tile {
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .profile-tile-val {
+    font-size: 0.82rem !important;
+    word-break: break-word !important;
+  }
+
+  /* Columna 3: Propiedades */
+  .profile-props-showcase-card,
+  .profile-tech-showcase-card {
+    border-radius: 20px !important;
+    padding: 14px 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .profile-props-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    max-height: 280px !important;
+  }
+
+  .profile-tech-specs-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+    max-height: 240px !important;
+  }
+}
+
