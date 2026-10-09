@@ -112,21 +112,33 @@
   border: 1.5px solid #0c101b;
 }
 
+/* ── BACKDROP OVERLAY FOR CLOSING ON CLICK OUTSIDE ── */
+.nb-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999999998;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: nbBackdropFadeIn 0.2s ease;
+}
+
+@keyframes nbBackdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* ── NOTIFICATION FLOATING POPOVER (MOCKUP DESIGN) ── */
 .nb-card-popover {
-  position: absolute;
-  top: calc(100% + 14px);
-  right: -10px;
-  width: 400px;
-  max-width: calc(100vw - 32px);
+  position: fixed !important;
   background: #ffffff;
   border-radius: 28px;
   padding: 22px 20px 18px 20px;
   box-shadow: 
-    0 24px 70px rgba(0, 0, 0, 0.28),
-    0 4px 14px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
-  z-index: 99999;
+    0 24px 70px rgba(0, 0, 0, 0.45),
+    0 4px 18px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+  z-index: 999999999 !important;
   font-family: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   color: #0f172a;
   box-sizing: border-box;
@@ -136,7 +148,7 @@
 @keyframes nbPopoverIn {
   from {
     opacity: 0;
-    transform: translateY(-8px) scale(0.96);
+    transform: translateY(-8px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -402,13 +414,65 @@
 }
 
 /* Responsive */
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .nb-card-popover {
-    position: fixed;
-    top: 70px;
-    left: 16px;
-    right: 16px;
-    width: auto;
-    max-width: none;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: calc(100vw - 24px) !important;
+    padding: 18px 16px 14px 16px !important;
+    border-radius: 24px !important;
+    box-shadow: 
+      0 20px 60px rgba(0, 0, 0, 0.55),
+      0 4px 20px rgba(0, 0, 0, 0.18),
+      0 0 0 1px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .nb-header {
+    margin-bottom: 12px;
+  }
+
+  .nb-title {
+    font-size: 1.22rem;
+  }
+
+  .nb-tabs-row {
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+
+  .nb-tab-pill {
+    padding: 6px 12px;
+    font-size: 0.74rem;
+  }
+
+  .nb-list-container {
+    max-height: min(360px, calc(100vh - 230px));
+    gap: 7px;
+  }
+
+  .nb-item-card {
+    padding: 10px 12px;
+    border-radius: 16px;
+    gap: 10px;
+  }
+
+  .nb-item-avatar-box {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+
+  .nb-item-icon-circle {
+    width: 34px;
+    height: 34px;
+  }
+
+  .nb-item-message {
+    font-size: 0.80rem;
+  }
+
+  .nb-item-time {
+    font-size: 0.68rem;
   }
 }

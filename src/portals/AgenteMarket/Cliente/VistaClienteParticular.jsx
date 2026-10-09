@@ -9,10 +9,16 @@ import ModalRegistroInmueble from './ModalRegistroInmueble';
 import ModalEditarPropiedadCliente from './ModalEditarPropiedadCliente';
 import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
 import NotificationBell from '../../../components/Shared/NotificationBell';
+import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
 
 import {
   Home,
+  Users,
+  FileText,
+  Receipt,
+  Wrench,
+  Globe,
   Calendar,
   CalendarDays,
   ChevronDown,
@@ -110,7 +116,11 @@ const VistaClienteParticular = () => {
   // Cerrar dropdown al hacer click o tap fuera
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(e.target) &&
+        !e.target.closest?.('.vcp-profile-dropdown')
+      ) {
         setProfileDropdownOpen(false);
       }
     };
@@ -765,23 +775,29 @@ const VistaClienteParticular = () => {
 
         {/* Center Nav Links: INICIO + 5 core modules */}
         <nav className="vcp-header-nav">
-          <button className="vcp-nav-btn" onClick={irAlInicio}>
-            INICIO
+          <button className="vcp-nav-btn active" onClick={irAlInicio} title="Inicio">
+            <Home size={18} className="vcp-nav-icon" />
+            <span className="vcp-nav-text">Inicio</span>
           </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
-            USUARIOS
+          <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')} title="Usuarios">
+            <Users size={18} className="vcp-nav-icon" />
+            <span className="vcp-nav-text">Usuarios</span>
           </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
-            REPORTE
+          <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')} title="Reportes">
+            <FileText size={18} className="vcp-nav-icon" />
+            <span className="vcp-nav-text">Reportes</span>
           </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
-            COTIZACION
+          <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')} title="Cotizaciones">
+            <Receipt size={18} className="vcp-nav-icon" />
+            <span className="vcp-nav-text">Cotización</span>
           </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
-            SERVICIOS
+          <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')} title="Servicios">
+            <Wrench size={18} className="vcp-nav-icon" />
+            <span className="vcp-nav-text">Servicios</span>
           </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
-            MERCADO / RED
+          <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')} title="Mercado / Red">
+            <Globe size={18} className="vcp-nav-icon" />
+            <span className="vcp-nav-text">Mercado</span>
           </button>
         </nav>
 
@@ -972,13 +988,10 @@ const VistaClienteParticular = () => {
                     <Building2 size={14} color="#ffffff" />
                     <span>PERFIL DE LA PROPIEDAD</span>
                   </div>
-                  <div className="vcp-drawer-tab-curp">
-                    <span>CURP:</span> <strong>{activeProperty?.curp || activeProperty?.curp_inmueble || `INM-${activeProperty?.id ? String(activeProperty.id).padStart(4, '0') : '2024'}-MX01`}</strong>
-                  </div>
                 </div>
 
                 <div className="vcp-drawer-tab-btn">
-                  <span>{isMobilePropProfileOpen ? 'CERRAR FICHA' : 'VER FICHA'}</span>
+                  <span>DETALLES</span>
                   {isMobilePropProfileOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </div>
               </div>
@@ -1072,6 +1085,9 @@ const VistaClienteParticular = () => {
           {renderPropertyProfileCard(false)}
         </aside>
       </main>
+
+      {/* ── BARRA DE NAVEGACIÓN INFERIOR (MÓVIL / RESPONSIVO - SOLO ICONOS) ── */}
+      <MobileBottomNav activeModule="inicio" />
 
       {/* ── MODALES COMPARTIDOS ── */}
       {/* Modal Compra de Espacios */}

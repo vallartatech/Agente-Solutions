@@ -139,7 +139,11 @@ const VistaUsuarios = () => {
   // Cerrar dropdowns al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(e.target) &&
+        !e.target.closest?.('.vcp-profile-dropdown')
+      ) {
         setProfileDropdownOpen(false);
       }
       if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target)) {
@@ -147,7 +151,11 @@ const VistaUsuarios = () => {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const obtenerUsuarios = async () => {

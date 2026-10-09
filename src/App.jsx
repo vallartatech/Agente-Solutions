@@ -207,12 +207,8 @@ const AppRoutes = () => {
       <Route path="/levantamientos" element={
         user?.role_id === 3 ? <MainLayoutCliente><VistaLevantamientos /></MainLayoutCliente> : <VistaLevantamientos />
       } />
-      <Route path="/mi-perfil" element={
-        user?.role_id === 3 ? <MainLayoutCliente><Profile /></MainLayoutCliente> : <Profile />
-      } />
-      <Route path="/profile" element={
-        user?.role_id === 3 ? <MainLayoutCliente><Profile /></MainLayoutCliente> : <Profile />
-      } />
+      <Route path="/mi-perfil" element={<Profile />} />
+      <Route path="/profile" element={<Profile />} />
 
 
       <Route path="/detalle-producto" element={<ProductoDetalleView />} />

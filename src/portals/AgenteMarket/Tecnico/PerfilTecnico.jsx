@@ -26,6 +26,7 @@ import { useAuth } from '../../../context/AuthContext';
 import logo from '../../../assets/Logo4.png';
 import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
 import NotificationBell from '../../../components/Shared/NotificationBell';
+import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import '../../../styles/Shared/Profile.css';
 
 export const ESPECIALIDADES_CATALOGO = [
@@ -827,6 +828,9 @@ const PerfilTecnico = () => {
         isOpen={showModalCalendario}
         onClose={() => setShowModalCalendario(false)}
       />
+
+      {/* Responsive Bottom Navigation (Only Icons) */}
+      <MobileBottomNav />
 
     </div>
   );
