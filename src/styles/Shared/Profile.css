@@ -1576,6 +1576,12 @@ html, body {
   padding-right: 4px;
 }
 
+.profile-tech-specs-grid.readonly-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-height: 210px;
+}
+
 .profile-tech-specs-grid::-webkit-scrollbar {
   width: 4px;
 }
@@ -1592,21 +1598,14 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
 }
 
-.profile-tech-spec-item:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.35);
-  transform: translateY(-1px);
-}
-
 .profile-tech-spec-item.is-selected {
-  background: linear-gradient(135deg, rgba(242, 101, 34, 0.35) 0%, rgba(242, 101, 34, 0.15) 100%);
-  border-color: #f26522;
-  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.32) 0%, rgba(242, 101, 34, 0.12) 100%);
+  border-color: rgba(242, 101, 34, 0.7);
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.35);
 }
 
 .profile-tech-spec-icon {
