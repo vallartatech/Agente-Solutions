@@ -760,7 +760,7 @@ const TrabajoPropiedad = () => {
                   style={hasReports ? { background: '#3b82f6', borderColor: '#3b82f6' } : {}}
                 >
                   {!puedeIniciarReporte && <Lock size={18} />}
-                  <span>{hasReports ? 'CONTINUAR REPORTE' : 'INICIAR REPORTE'}</span>
+                  <span>{hasReports ? 'VER REPORTE' : 'INICIAR REPORTE'}</span>
                   <ArrowRight size={18} />
                 </button>
 

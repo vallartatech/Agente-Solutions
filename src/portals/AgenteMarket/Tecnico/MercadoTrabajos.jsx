@@ -2158,6 +2158,7 @@ const MercadoTrabajos = () => {
                                     (selectedBoardJob.fotos && selectedBoardJob.fotos.length > 0 ? selectedBoardJob.fotos[0] : null);
                 const facadeImg = resolveImageUrl(rawAnyPhoto);
                 const boardSched = getTimeRemainingInfo(selectedBoardJob);
+                const isJobCompleted = isJobDone(selectedBoardJob.status) || selectedBoardJob.status === 'Listo' || selectedBoardJob.status === 'Finalizado';
 
                 return (
                   <div className="mercado-board-col-detail">
@@ -2214,13 +2215,22 @@ const MercadoTrabajos = () => {
                           </div>
 
                           {/* Horario de Visita / Cita Programada Interactivo */}
-                          <div className={`mercado-board-schedule-action-box ${!selectedBoardJob.scheduled_at ? 'mandatory' : ''}`}>
+                          <div className={`mercado-board-schedule-action-box ${!selectedBoardJob.scheduled_at && !isJobCompleted ? 'mandatory' : ''}`}>
                             <div className="mercado-board-schedule-info">
                               <div className="mercado-board-schedule-header-row">
                                 <span className="mercado-board-schedule-label">
                                   <Clock size={12} color="#f26522" /> Horario de Visita
                                 </span>
-                                {selectedBoardJob.scheduled_at ? (
+                                {isJobCompleted ? (
+                                  <>
+                                    <span className="mercado-board-schedule-status-tag confirmed" style={{ background: '#16a34a', color: '#ffffff' }}>
+                                      ✅ Concluido
+                                    </span>
+                                    <span className="mercado-board-schedule-countdown done" style={{ color: '#4ade80', fontWeight: '800' }}>
+                                      Servicio Finalizado
+                                    </span>
+                                  </>
+                                ) : selectedBoardJob.scheduled_at ? (
                                   <>
                                     <span className="mercado-board-schedule-status-tag confirmed">
                                       Agendado
@@ -2249,21 +2259,23 @@ const MercadoTrabajos = () => {
                                   </strong>
                                 ) : (
                                   <span className="mercado-board-schedule-not-set">
-                                    ⚠️ Debes ingresar tu hora estimada de llegada para este servicio y sincronizar al cliente.
+                                    {isJobCompleted ? 'Servicio concluido.' : '⚠️ Debes ingresar tu hora estimada de llegada para este servicio y sincronizar al cliente.'}
                                   </span>
                                 )}
                               </div>
                             </div>
 
-                            <button
-                              type="button"
-                              className={`mercado-board-schedule-change-btn ${!selectedBoardJob.scheduled_at ? 'mandatory' : ''}`}
-                              onClick={() => handleOpenBoardScheduler(selectedBoardJob)}
-                              title="Programar o cambiar fecha y hora de la visita"
-                            >
-                              <Calendar size={13} />
-                              {selectedBoardJob.scheduled_at ? 'Cambiar Horario' : '⏰ Agendar Hora de Llegada'}
-                            </button>
+                            {!isJobCompleted && (
+                              <button
+                                type="button"
+                                className={`mercado-board-schedule-change-btn ${!selectedBoardJob.scheduled_at ? 'mandatory' : ''}`}
+                                onClick={() => handleOpenBoardScheduler(selectedBoardJob)}
+                                title="Programar o cambiar fecha y hora de la visita"
+                              >
+                                <Calendar size={13} />
+                                {selectedBoardJob.scheduled_at ? 'Cambiar Horario' : '⏰ Agendar Hora de Llegada'}
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2389,8 +2401,8 @@ const MercadoTrabajos = () => {
                     {/* Tarjeta 4: Botones Principales de Flujo */}
                     <div className="mercado-board-flow-card">
                       <div className="mercado-board-flow-buttons-grid">
-                        {/* Botón 1: Iniciar Reporte (0 fotos) / Continuar Reporte (1+ fotos) */}
-                        {completedReportsCount === 0 ? (
+                        {/* Botón 1: Iniciar Reporte (0 fotos) / Ver Reporte (1+ fotos o Finalizado) */}
+                        {completedReportsCount === 0 && !isJobCompleted ? (
                           <button
                             type="button"
                             className="mercado-board-flow-btn btn-start"
@@ -2404,9 +2416,9 @@ const MercadoTrabajos = () => {
                             type="button"
                             className="mercado-board-flow-btn btn-continue"
                             onClick={() => handleOpenReportFlow()}
-                            title="Continuar registrando o consultando evidencias"
+                            title="Consultar evidencias y reporte técnico"
                           >
-                            <Camera size={15} /> CONTINUAR REPORTE ({completedReportsCount}/3)
+                            <Eye size={15} /> VER REPORTE
                           </button>
                         )}
 
@@ -4597,6 +4609,8 @@ const MercadoTrabajos = () => {
           isOpen={showPdfReportModal}
           onClose={() => setShowPdfReportModal(false)}
           job={selectedBoardJob}
+          boardJobReports={boardJobReports}
+          boardPhotos={boardPhotos[selectedBoardJob.id]}
         />
       )}
     </div>

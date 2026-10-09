@@ -1,10 +1,51 @@
-import React, { useRef } from 'react';
-import { Printer, X, FileText, Home, User, Wrench, Clock, MapPin, CheckCircle, Eye } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Printer, X, FileText, Home, User, Wrench, Clock, MapPin, CheckCircle, Eye, Maximize2 } from 'lucide-react';
+import axios from 'axios';
 import logo from '../../../assets/Logo3.png';
 import '../../../styles/AgenteSolutions/Admin/ReporteTrabajo.css';
 
-const ModalReportePdfTecnico = ({ isOpen, onClose, job }) => {
+const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], boardPhotos = [] }) => {
   const componentRef = useRef();
+  const [selectedZoomImage, setSelectedZoomImage] = useState(null);
+  const [fetchedReports, setFetchedReports] = useState([]);
+  const [finalReportData, setFinalReportData] = useState(null);
+
+  useEffect(() => {
+    if (isOpen && job?.id) {
+      const loadDetailedData = async () => {
+        try {
+          const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+          // Intentar obtener reportes de evidencias si no vienen por props
+          if (!boardJobReports || boardJobReports.length === 0) {
+            try {
+              const resRep = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios/work_order-${job.id}/reportes`, { headers });
+              if (resRep.data && Array.isArray(resRep.data)) {
+                setFetchedReports(resRep.data);
+              }
+            } catch (e) {
+              console.warn("No se pudieron cargar reportes adicionales:", e);
+            }
+          }
+
+          // Intentar obtener final-report guardado
+          try {
+            const resFinal = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios/work_order-${job.id}/final-report`, { headers });
+            if (resFinal.data) {
+              setFinalReportData(resFinal.data);
+            }
+          } catch (e) {
+            // Ignorar si no existe
+          }
+        } catch (err) {
+          console.warn("Error cargando datos para PDF:", err);
+        }
+      };
+
+      loadDetailedData();
+    }
+  }, [isOpen, job?.id]);
 
   if (!isOpen || !job) return null;
 
@@ -15,38 +56,140 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job }) => {
   const resolveImageUrl = (imgObj) => {
     if (!imgObj) return null;
     if (typeof imgObj === 'string') {
-      if (imgObj.startsWith('http://') || imgObj.startsWith('https://') || imgObj.startsWith('data:')) {
-        return imgObj;
+      const clean = imgObj.trim();
+      if (clean === '' || clean === 'null' || clean === 'undefined') return null;
+      if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:')) {
+        return clean;
       }
-      return `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api\/?$/, '')}/storage/${imgObj.replace(/^\/+/, '')}`;
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const hostBase = apiBase.replace(/\/api\/?$/, '');
+      const cleanPath = clean.replace(/^\/?(storage\/)?/, '');
+      return `${hostBase}/storage/${cleanPath}`;
     }
     if (typeof imgObj === 'object') {
-      const path = imgObj.url || imgObj.path || imgObj.image_path || imgObj.photo_path;
+      const path = imgObj.image_url || imgObj.url || imgObj.path || imgObj.image_path || imgObj.photo_path;
       return resolveImageUrl(path);
     }
     return null;
   };
 
   // Formateo de Folio
-  const folioDisplay = job.folio || `FT-${new Date().getFullYear()}-${String(job.id || '001').padStart(4, '0')}`;
-  
-  // Fotos
+  const folioDisplay = finalReportData?.folio || job.folio || `FT-${new Date().getFullYear()}-${String(job.id || '001').padStart(3, '0')}`;
+
+  // Fecha y Horario
+  const rawDate = job.scheduled_at || job.scheduled_date || job.fecha_cita || new Date();
+  const fechaFormateada = new Date(rawDate).toLocaleDateString('es-MX', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+  const horaFormateada = job.scheduled_at 
+    ? new Date(job.scheduled_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+    : '09:00 AM - 01:00 PM';
+
+  // Datos Cliente
+  const clienteNombre = finalReportData?.cliente?.nombre || job.client_name || job.cliente || job.propietario || 'Cliente de la Red';
+  const clienteTelefono = finalReportData?.cliente?.telefono || job.client_phone || job.telefono_cliente || job.telefono || 'No registrado';
+  const clienteCorreo = finalReportData?.cliente?.correo || job.client_email || job.email || 'Contacto vía Plataforma Agente';
+
+  // Datos Propiedad
+  const propiedadNombre = finalReportData?.propiedad?.nombre || (job.property?.property_code ? `[${job.property.property_code}] ` : '') + (job.property_name || job.property?.type || 'Residencial');
+  const propiedadTipo = finalReportData?.propiedad?.tipo || job.property?.type || 'Casa / Residencial';
+  const propiedadDireccion = finalReportData?.propiedad?.direccion || job.full_address || job.calle || job.property?.address || job.address || job.zona || 'Mérida, Yucatán';
+
+  // Datos Técnico
+  const tecnicoNombre = finalReportData?.tecnico?.nombre || job.tecnico_nombre || job.technician_name || 'Técnico Especialista de la Red';
+  const tecnicoEspecialidad = finalReportData?.tecnico?.especialidad || job.tecnico_specialty || job.tipo || 'Instalaciones y Mantenimiento';
+  const tecnicoCelular = finalReportData?.tecnico?.celular || job.tecnico_celular || 'Soporte Agente Solutions';
+  const tecnicoCorreo = finalReportData?.tecnico?.correo || job.tecnico_email || 'soporte@agentesolutions.com';
+
+  // Descripción y Equipo
+  const descripcionTrabajo = finalReportData?.descripcion || job.descripcion || job.titulo || 'Servicio técnico especializado y mantenimiento general ejecutado en sitio.';
+  const equipoAfectado = job.equipo || null;
+
+  // Materiales / Presupuesto
+  const materiales = (finalReportData?.materiales && finalReportData.materiales.length > 0)
+    ? finalReportData.materiales
+    : (Array.isArray(job.materiales) && job.materiales.length > 0)
+      ? job.materiales
+      : [
+          {
+            nombre: job.titulo || job.tipo || 'Mano de Obra y Servicio Técnico Especializado',
+            cantidad: 1,
+            unidad: 'Serv',
+            precio: Number(job.agreed_price || job.precio || 0)
+          }
+        ];
+
+  const totalMateriales = materiales.reduce((sum, m) => sum + (Number(m.cantidad || 1) * Number(m.precio || 0)), 0);
+
+  // Recopilación de Imágenes (Fachada + Reportes Técnicos + Evidencias de Cliente)
+  const allImagesList = [];
+
+  // 1. Fachada de la Propiedad
   const rawFacade = job.facade_photo || 
                     job.foto_fachada || 
                     job.property?.facade_photo_path || 
+                    job.property?.facade_photo || 
                     job.property?.foto_fachada || 
+                    job.property_facade_photo_path ||
                     null;
   const facadeUrl = resolveImageUrl(rawFacade);
+  if (facadeUrl) {
+    allImagesList.push({ url: facadeUrl, label: 'FACHADA DEL INMUEBLE' });
+  }
 
-  const clientEvidences = (job.evidencias || job.evidence_photos || job.fotos || []).map(resolveImageUrl).filter(Boolean);
+  // 2. Reportes de Etapas Técnicas (Antes, Durante, Después, Extra)
+  const activeReports = (boardJobReports && boardJobReports.length > 0) ? boardJobReports : fetchedReports;
+  if (activeReports && activeReports.length > 0) {
+    activeReports.forEach((r, idx) => {
+      const rUrl = resolveImageUrl(r.image_url || r.photo_url || r.path);
+      if (rUrl && !allImagesList.some(i => i.url === rUrl)) {
+        allImagesList.push({
+          url: rUrl,
+          label: r.description || `EVIDENCIA TÉCNICA ${idx + 1}`
+        });
+      }
+    });
+  }
 
-  const materiales = Array.isArray(job.materiales) && job.materiales.length > 0 
-    ? job.materiales 
-    : [
-        { nombre: job.tipo || job.titulo || 'Servicio Técnico Especializado', cantidad: 1, unidad: 'Serv', precio: Number(job.agreed_price || job.precio || 0) }
-      ];
+  // 3. Fotos locales o pasadas por array
+  if (Array.isArray(boardPhotos) && boardPhotos.length > 0) {
+    const stageLabels = ['[ANTES] Diagnóstico Inicial', '[DURANTE] Servicio en Curso', '[DESPUÉS] Trabajo Terminado', '[EXTRA] Evidencia Adicional'];
+    boardPhotos.forEach((pUrl, pIdx) => {
+      if (pUrl && typeof pUrl === 'string' && !allImagesList.some(i => i.url === pUrl)) {
+        allImagesList.push({
+          url: pUrl,
+          label: stageLabels[pIdx] || `EVIDENCIA ${pIdx + 1}`
+        });
+      }
+    });
+  }
 
-  const totalMateriales = materiales.reduce((sum, m) => sum + (Number(m.cantidad || 1) * Number(m.precio || 0)), 0);
+  // 4. Evidencias subidas por el cliente inicialmente
+  const rawClientEvidences = [
+    job.evidence_path,
+    job.evidence_path_2,
+    job.evidence_path_3,
+    job.evidence_photo,
+    job.foto_evidencia,
+    ...(job.fotos || []),
+    ...(job.evidencias || [])
+  ].filter(Boolean);
+
+  rawClientEvidences.forEach((cPhoto, cIdx) => {
+    const cUrl = resolveImageUrl(cPhoto);
+    if (cUrl && !allImagesList.some(i => i.url === cUrl)) {
+      allImagesList.push({
+        url: cUrl,
+        label: `EVIDENCIA CLIENTE ${cIdx + 1}`
+      });
+    }
+  });
+
+  const isDone = ['Finalizado', 'Listo', 'Terminado', 'Completado', 'Aprobado', 'Entregado'].includes(job.status);
+  const estadoDisplay = isDone ? 'Concluido / Listo' : (job.status || 'En Proceso');
 
   return (
     <div className="reporte-modal-backdrop" onClick={onClose} style={{
@@ -55,7 +198,7 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job }) => {
       left: 0,
       width: '100vw',
       height: '100vh',
-      background: 'rgba(5, 8, 15, 0.85)',
+      background: 'rgba(5, 8, 15, 0.88)',
       backdropFilter: 'blur(10px)',
       WebkitBackdropFilter: 'blur(10px)',
       zIndex: 99999,
@@ -64,12 +207,12 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job }) => {
       alignItems: 'center',
       justifyContent: 'flex-start',
       overflowY: 'auto',
-      padding: '20px 10px'
+      padding: '24px 12px'
     }}>
-      {/* Barra Superior de Acciones Flotante */}
+      {/* ── BARRA SUPERIOR DE ACCIONES FLOTANTE (NO SE IMPRIME) ── */}
       <div className="no-print" style={{
         position: 'sticky',
-        top: '10px',
+        top: '8px',
         zIndex: 100000,
         display: 'flex',
         alignItems: 'center',
@@ -78,10 +221,11 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job }) => {
         maxWidth: '900px',
         background: 'linear-gradient(135deg, #191e2b, #11141e)',
         border: '1.5px solid rgba(255, 255, 255, 0.15)',
-        borderRadius: '14px',
+        borderRadius: '12px',
         padding: '10px 18px',
         marginBottom: '16px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.6)'
+        boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+        boxSizing: 'border-box'
       }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ffffff' }}>
           <FileText size={18} color="#f26522" />
@@ -134,216 +278,284 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job }) => {
         </div>
       </div>
 
-      {/* ── HOJA OFICIAL DEL REPORTE (IMPRIMIBLE) ── */}
+      {/* ── HOJA OFICIAL DEL REPORTE (IDÉNTICA A REPORTE TRABAJO DE AGENTE) ── */}
       <div 
         ref={componentRef} 
         className="reporte-content"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: '#ffffff',
-          color: '#111827',
+          color: '#1a1a1a',
           maxWidth: '900px',
           width: '100%',
-          borderRadius: '12px',
-          boxShadow: '0 15px 40px rgba(0,0,0,0.45)',
+          borderRadius: '8px',
+          boxShadow: '0 15px 40px rgba(0,0,0,0.5)',
           overflow: 'hidden',
-          fontFamily: 'Plus Jakarta Sans, Arial, sans-serif',
-          marginBottom: '40px'
+          fontFamily: 'Arial, sans-serif',
+          marginBottom: '50px',
+          boxSizing: 'border-box'
         }}
       >
-        {/* Encabezado */}
-        <div className="reporte-header" style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          background: '#f8fafc',
-          padding: '16px 28px',
-          borderBottom: '3.5px solid #f26522'
-        }}>
+        {/* Encabezado Oficial */}
+        <div className="reporte-header">
           <div className="header-left">
-            <img src={logo} alt="Agente Solutions" style={{ maxHeight: '60px', width: 'auto', display: 'block' }} />
+            <img src={logo} alt="Agente Solutions" className="logo-reporte" />
           </div>
-          <div className="header-right" style={{ textAlign: 'right' }}>
-            <div style={{
-              background: '#0f172a',
-              color: '#ffffff',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              display: 'inline-block',
-              textAlign: 'center'
-            }}>
-              <span style={{ fontSize: '0.62rem', display: 'block', color: '#94a3b8', fontWeight: '800', letterSpacing: '0.5px' }}>
-                FOLIO DE ORDEN
-              </span>
-              <span style={{ fontSize: '1.05rem', fontWeight: '900', color: '#f26522' }}>
-                {folioDisplay}
-              </span>
+          <div className="header-right">
+            <div className="folio-box">
+              <span className="folio-label">FOLIO:</span>
+              <span className="folio-number">{folioDisplay}</span>
             </div>
           </div>
         </div>
 
-        {/* Título y Fechas */}
-        <div className="reporte-title" style={{ padding: '16px 28px 10px', textAlign: 'center' }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: '900', color: '#0f172a', margin: '0 0 6px', letterSpacing: '0.5px' }}>
-            REPORTE TÉCNICO DE TRABAJO & DIAGNÓSTICO
-          </h2>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '0.78rem', color: '#475569', fontWeight: '600' }}>
-            <span>📅 Fecha: <strong>{job.scheduled_at ? new Date(job.scheduled_at).toLocaleDateString('es-MX') : new Date().toLocaleDateString('es-MX')}</strong></span>
-            <span>⏰ Horario: <strong>{job.scheduled_at ? new Date(job.scheduled_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : 'Horario Acordado'}</strong></span>
-            <span>📌 Estado: <strong style={{ color: '#16a34a' }}>{job.status || 'En Proceso'}</strong></span>
+        {/* Título Principal */}
+        <div className="reporte-title">
+          <h2>REPORTE DE TRABAJO REALIZADO</h2>
+          <div className="fecha-trabajo">
+            <span>📅 Fecha: <strong>{fechaFormateada}</strong></span>
+            <span>⏰ Horario: <strong>{horaFormateada}</strong></span>
+            <span>📌 Estado: <strong style={{ color: isDone ? '#16a34a' : '#f26522' }}>{estadoDisplay}</strong></span>
           </div>
         </div>
 
-        {/* Info Grid: Cliente & Propiedad */}
-        <div style={{ padding: '10px 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          {/* Cliente */}
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 14px' }}>
-            <h3 style={{ fontSize: '0.76rem', fontWeight: '900', color: '#0f172a', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '4px' }}>
-              <User size={14} color="#f26522" /> INFORMACIÓN DEL CLIENTE
-            </h3>
-            <div style={{ fontSize: '0.76rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div><strong>Nombre:</strong> {job.client_name || job.cliente || 'Cliente de la Red'}</div>
-              <div><strong>Teléfono:</strong> {job.client_phone || job.telefono || 'No especificado'}</div>
-              <div><strong>Contacto:</strong> {job.client_email || 'Contacto vía Plataforma'}</div>
+        {/* 1. Información del Cliente */}
+        <div className="info-section">
+          <h3>INFORMACIÓN DEL CLIENTE</h3>
+          <div className="info-grid-2cols">
+            <div className="info-linea">
+              <strong>NOMBRE:</strong> 
+              <span>{clienteNombre}</span>
             </div>
-          </div>
-
-          {/* Propiedad */}
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 14px' }}>
-            <h3 style={{ fontSize: '0.76rem', fontWeight: '900', color: '#0f172a', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '4px' }}>
-              <Home size={14} color="#f26522" /> INMUEBLE / PROPIEDAD
-            </h3>
-            <div style={{ fontSize: '0.76rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div><strong>Inmueble:</strong> {job.property?.property_code ? `[${job.property.property_code}]` : ''} {job.property_name || job.property?.type || 'Residencial'}</div>
-              <div><strong>Dirección:</strong> {job.full_address || job.calle || job.property?.address || 'Dirección no registrada'}</div>
-              <div><strong>Zona:</strong> {job.zona || job.colonia || 'Mérida, Yucatán'}</div>
+            <div className="info-linea">
+              <strong>TELÉFONO:</strong> 
+              <span>{clienteTelefono}</span>
+            </div>
+            <div className="info-linea full-width">
+              <strong>CORREO:</strong> 
+              <span>{clienteCorreo}</span>
             </div>
           </div>
         </div>
 
-        {/* Técnico Asignado */}
-        <div style={{ padding: '0 28px 10px' }}>
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 14px' }}>
-            <h3 style={{ fontSize: '0.76rem', fontWeight: '900', color: '#0f172a', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '4px' }}>
-              <Wrench size={14} color="#f26522" /> TÉCNICO ESPECIALISTA RESPONSABLE
-            </h3>
-            <div style={{ fontSize: '0.76rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-              <div><strong>Nombre del Técnico:</strong> {job.tecnico_nombre || 'Técnico Especialista de la Red'}</div>
-              <div><strong>Especialidad:</strong> {job.tecnico_specialty || 'Instalaciones y Mantenimiento'}</div>
-              <div><strong>Estado Operativo:</strong> Asignado y Verificado</div>
-              <div><strong>Garantía:</strong> Aplica garantía de satisfacción Agente Solutions</div>
+        {/* 2. Información de la Propiedad */}
+        <div className="info-section">
+          <h3>INFORMACIÓN DE LA PROPIEDAD</h3>
+          <div className="info-grid-2cols">
+            <div className="info-linea">
+              <strong>PROPIEDAD:</strong> 
+              <span>{propiedadNombre}</span>
+            </div>
+            <div className="info-linea">
+              <strong>TIPO:</strong> 
+              <span>{propiedadTipo}</span>
+            </div>
+            <div className="info-linea full-width">
+              <strong>DIRECCIÓN:</strong> 
+              <span>{propiedadDireccion}</span>
             </div>
           </div>
         </div>
 
-        {/* Descripción del Trabajo / Falla */}
-        <div style={{ padding: '0 28px 10px' }}>
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 14px' }}>
-            <h3 style={{ fontSize: '0.76rem', fontWeight: '900', color: '#0f172a', margin: '0 0 8px', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '4px' }}>
-              📝 DESCRIPCIÓN DEL REPORTE / TRABAJO REALIZADO
-            </h3>
-            <p style={{ fontSize: '0.78rem', color: '#334155', margin: 0, lineHeight: 1.5 }}>
-              {job.descripcion || job.titulo || 'Servicio correctivo y mantenimiento reportado.'}
-            </p>
-            {job.equipo && (
-              <p style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '6px', fontWeight: '600' }}>
-                Componente o área afectada: <strong>{job.equipo}</strong>
+        {/* 3. Técnico Responsable */}
+        <div className="info-section">
+          <h3>TÉCNICO RESPONSABLE</h3>
+          <div className="info-grid-2cols">
+            <div className="info-linea full-width">
+              <strong>NOMBRE:</strong> 
+              <span>{tecnicoNombre}</span>
+            </div>
+            <div className="info-linea">
+              <strong>ESPECIALIDAD:</strong> 
+              <span>{tecnicoEspecialidad}</span>
+            </div>
+            <div className="info-linea">
+              <strong>CELULAR:</strong> 
+              <span>{tecnicoCelular}</span>
+            </div>
+            <div className="info-linea full-width">
+              <strong>CORREO:</strong> 
+              <span>{tecnicoCorreo}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Descripción del Trabajo */}
+        <div className="info-section">
+          <h3>DESCRIPCIÓN DEL TRABAJO</h3>
+          <div className="descripcion-box">
+            <p>{descripcionTrabajo}</p>
+            {equipoAfectado && (
+              <p style={{ marginTop: '6px', fontSize: '0.68rem', color: '#475569', fontWeight: 'bold' }}>
+                Componente / Área Afectada: {equipoAfectado}
               </p>
             )}
           </div>
         </div>
 
-        {/* Galería de Fotos (Fachada + Evidencias) */}
-        <div style={{ padding: '0 28px 10px' }}>
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 14px' }}>
-            <h3 style={{ fontSize: '0.76rem', fontWeight: '900', color: '#0f172a', margin: '0 0 10px', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '4px' }}>
-              📸 EVIDENCIA FOTOGRÁFICA DEL SERVICIO
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
-              {/* Fachada */}
-              {facadeUrl && (
-                <div style={{ textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#0f172a' }}>
-                  <img src={facadeUrl} alt="Fachada" style={{ width: '100%', height: '95px', objectFit: 'cover' }} />
-                  <span style={{ display: 'block', fontSize: '0.62rem', fontWeight: '900', padding: '2px 4px', color: '#f26522', background: '#ffffff' }}>FACHADA</span>
-                </div>
-              )}
-              {/* Evidencias */}
-              {clientEvidences.map((evImg, eIdx) => (
-                <div key={eIdx} style={{ textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#0f172a' }}>
-                  <img src={evImg} alt={`Evidencia ${eIdx + 1}`} style={{ width: '100%', height: '95px', objectFit: 'cover' }} />
-                  <span style={{ display: 'block', fontSize: '0.62rem', fontWeight: '800', padding: '2px 4px', color: '#334155', background: '#ffffff' }}>Evidencia {eIdx + 1}</span>
-                </div>
-              ))}
-              {!facadeUrl && clientEvidences.length === 0 && (
-                <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '8px 0', gridColumn: '1 / -1' }}>No se adjuntaron fotografías al reporte.</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Materiales / Costos */}
-        <div style={{ padding: '0 28px 16px' }}>
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 14px' }}>
-            <h3 style={{ fontSize: '0.76rem', fontWeight: '900', color: '#0f172a', margin: '0 0 8px', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '4px' }}>
-              💰 DESGLOSE DE CONCEPTOS / COTIZACIÓN
-            </h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.74rem' }}>
-              <thead>
-                <tr style={{ background: '#0f172a', color: '#ffffff', textAlign: 'left' }}>
-                  <th style={{ padding: '6px 8px' }}>Concepto</th>
-                  <th style={{ padding: '6px 8px', width: '50px', textAlign: 'center' }}>Cant.</th>
-                  <th style={{ padding: '6px 8px', width: '70px', textAlign: 'center' }}>Unidad</th>
-                  <th style={{ padding: '6px 8px', width: '90px', textAlign: 'right' }}>P. Unitario</th>
-                  <th style={{ padding: '6px 8px', width: '90px', textAlign: 'right' }}>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {materiales.map((m, mIdx) => (
-                  <tr key={mIdx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '6px 8px' }}>{m.nombre || 'Servicio Técnico'}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>{m.cantidad || 1}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>{m.unidad || 'pza'}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right' }}>${Number(m.precio || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: '700' }}>
-                      ${(Number(m.cantidad || 1) * Number(m.precio || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                ))}
-                <tr style={{ background: '#f1f5f9', fontWeight: '900' }}>
-                  <td colSpan="4" style={{ padding: '8px', textAlign: 'right', color: '#0f172a' }}>TOTAL COTIZADO:</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#16a34a', fontSize: '0.86rem' }}>
-                    ${totalMateriales.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
+        {/* 5. Materiales Utilizados y Cotización */}
+        <div className="info-section">
+          <h3>MATERIALES UTILIZADOS Y CONCEPTOS</h3>
+          <table className="materiales-table">
+            <thead>
+              <tr>
+                <th>Descripción</th>
+                <th style={{ width: '60px', textAlign: 'center' }}>Cant.</th>
+                <th style={{ width: '80px', textAlign: 'center' }}>Unidad</th>
+                <th style={{ width: '110px', textAlign: 'right' }}>P. Unitario</th>
+                <th style={{ width: '110px', textAlign: 'right' }}>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {materiales.map((material, idx) => (
+                <tr key={idx}>
+                  <td>{material.nombre || 'Servicio Técnico Especializado'}</td>
+                  <td style={{ textAlign: 'center' }}>{material.cantidad || 1}</td>
+                  <td style={{ textAlign: 'center' }}>{material.unidad || 'pza'}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    ${Number(material.precio || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </td>
+                  <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                    ${(Number(material.cantidad || 1) * Number(material.precio || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </td>
                 </tr>
-              </tbody>
-            </table>
+              ))}
+              <tr className="total-row">
+                <td colSpan="4" className="total-label">TOTAL DEL SERVICIO:</td>
+                <td className="total-amount">${totalMateriales.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* 6. Galería de Evidencia Fotográfica */}
+        <div className="info-section">
+          <h3>EVIDENCIA FOTOGRÁFICA DEL SERVICIO ({allImagesList.length})</h3>
+          <div className="galeria-imagenes">
+            {allImagesList.map((img, idx) => (
+              <div 
+                key={idx} 
+                className="imagen-item"
+                onClick={() => setSelectedZoomImage(img.url)}
+                title="Clic para ampliar imagen"
+              >
+                <img src={img.url} alt={img.label} />
+                <div className="photo-zoom-hint no-print">
+                  <Maximize2 size={12} />
+                </div>
+                <p className="no-print" style={{
+                  fontSize: '0.65rem',
+                  fontWeight: '800',
+                  color: '#333333',
+                  textAlign: 'center',
+                  margin: '4px 0 2px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  padding: '0 4px'
+                }}>
+                  {img.label}
+                </p>
+              </div>
+            ))}
+            {allImagesList.length === 0 && (
+              <p className="empty-gallery" style={{ padding: '10px 0', color: '#888', fontStyle: 'italic', fontSize: '0.72rem' }}>
+                No hay fotografías adjuntas registradas en este servicio.
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Firmas / Pie */}
-        <div style={{ padding: '10px 28px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', textAlign: 'center' }}>
-          <div>
-            <div style={{ borderBottom: '1px solid #475569', height: '40px', marginBottom: '4px' }}></div>
-            <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#334155' }}>FIRMA DEL TÉCNICO</span>
-          </div>
-          <div>
-            <div style={{ borderBottom: '1px solid #475569', height: '40px', marginBottom: '4px' }}></div>
-            <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#334155' }}>CONFORMIDAD DEL CLIENTE</span>
+        {/* 7. Observaciones y Recomendaciones */}
+        <div className="info-section">
+          <h3>OBSERVACIONES Y RECOMENDACIONES</h3>
+          <div className="observaciones-box">
+            <p>
+              {finalReportData?.observaciones || job.observaciones || "El servicio técnico se ejecutó bajo los estándares de calidad de Agente Solutions. Las evidencias adjuntas certifican la correcta realización del trabajo."}
+            </p>
           </div>
         </div>
 
-        {/* Footer */}
-        <div style={{
-          background: '#0f172a',
-          color: '#94a3b8',
-          fontSize: '0.65rem',
-          textAlign: 'center',
-          padding: '8px 20px',
-          fontWeight: '600'
-        }}>
-          Agente Solutions S.A. de C.V. — Plataforma de Gestión y Conexión Técnica Certificada
+        {/* 8. Firmas de Conformidad */}
+        <div className="firmas-section">
+          <div className="firma-cliente">
+            <div className="firma-linea">
+              <div className="linea-firma"></div>
+            </div>
+            <p>Firma del Cliente ({clienteNombre})</p>
+          </div>
+          <div className="firma-tecnico">
+            <div className="firma-linea">
+              <div className="linea-firma"></div>
+            </div>
+            <p>Firma del Técnico Responsable ({tecnicoNombre})</p>
+          </div>
+        </div>
+
+        {/* Pie de página Oficial */}
+        <div className="reporte-footer">
+          <p>Este documento es un comprobante oficial de los trabajos realizados.</p>
+          <p>AGENTE SOLUTIONS - Resolviendo tus necesidades</p>
+          <p>Tel: (999) 123-4567 | Email: soporte@agentesolutions.com</p>
         </div>
       </div>
+
+      {/* ── MODAL DE ZOOM DE IMAGEN ── */}
+      {selectedZoomImage && (
+        <div 
+          className="image-zoom-modal no-print" 
+          onClick={() => setSelectedZoomImage(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0, 0, 0, 0.85)',
+            zIndex: 100005,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+        >
+          <div 
+            className="zoom-modal-content" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }}
+          >
+            <button 
+              className="zoom-close-btn" 
+              onClick={() => setSelectedZoomImage(null)}
+              style={{
+                position: 'absolute',
+                top: '-15px',
+                right: '-15px',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                background: '#f26522',
+                color: '#ffffff',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+              }}
+            >
+              <X size={20} />
+            </button>
+            <img 
+              src={selectedZoomImage} 
+              alt="Zoom evidencia" 
+              className="zoom-main-image" 
+              style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: '8px', objectFit: 'contain' }} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
