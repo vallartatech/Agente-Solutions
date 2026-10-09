@@ -220,41 +220,62 @@
 /* AJUSTES DE IMPRESIÓN PARA UNA HOJA */
 @media print {
     @page {
-        size: auto;
-        margin: 0 !important; /* Forzado para todos los tamaños de papel */
+        size: letter portrait;
+        margin: 4mm !important;
     }
 
-    body {
-        margin: 0;
-        padding: 0;
-    }
-
-    /* Escondemos elementos innecesarios y mostramos el reporte y la cotización */
-    .reporte-content, .reporte-content *, 
-    .cotizacion-container, .cotizacion-container *,
-    .printable-page-container, .printable-page-container *,
-    #cotizacion-pdf, #cotizacion-pdf * {
-        visibility: visible !important;
-    }
-
-    /* Posicionamos el reporte con un margen interno para que no toque los bordes físicos */
-    .reporte-content {
-        position: absolute;
-        left: 5mm;
-        right: 5mm;
-        top: 5mm;
-        width: calc(100% - 10mm) !important;
+    html, body {
         margin: 0 !important;
-        padding: 10mm !important;
+        padding: 0 !important;
+        background: white !important;
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Ocultar absolutamente todo en la app excepto el reporte */
+    #root,
+    .mercado-container,
+    .vcp-header,
+    .vcp-mobile-bottom-nav,
+    .mobile-bottom-nav,
+    .no-print,
+    .print-actions,
+    .image-zoom-modal,
+    body > *:not(.reporte-modal-backdrop) {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .reporte-modal-backdrop {
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        display: block !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    .reporte-content {
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
         box-shadow: none !important;
         border: none !important;
         display: block !important;
         background: white !important;
-    }
-
-    .no-print, .print-actions {
-        display: none !important;
-        visibility: hidden !important;
+        overflow: visible !important;
     }
 
     /* Forzar visibilidad de todo el texto y fondos */
@@ -264,11 +285,100 @@
         color-adjust: exact !important;
     }
 
-    /* Asegurar que las imágenes se impriman */
-    img {
-        max-width: 100% !important;
-        height: auto !important;
-        display: block !important;
+    .reporte-header {
+        background: #eeeeee !important;
+        padding: 6px 15px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .logo-reporte {
+        max-height: 45px !important;
+    }
+
+    .reporte-title {
+        margin-bottom: 8px !important;
+    }
+
+    .reporte-title h2 {
+        font-size: 0.88rem !important;
+        margin-bottom: 2px !important;
+    }
+
+    .info-section {
+        margin-bottom: 8px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .info-section h3 {
+        padding: 3px 8px !important;
+        margin-bottom: 4px !important;
+        font-size: 0.70rem !important;
+    }
+
+    .info-linea {
+        font-size: 0.65rem !important;
+    }
+
+    .descripcion-box, .observaciones-box {
+        padding: 6px !important;
+    }
+
+    .descripcion-box p, .observaciones-box p {
+        font-size: 0.65rem !important;
+    }
+
+    .materiales-table {
+        font-size: 0.62rem !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .materiales-table th, .materiales-table td {
+        padding: 3px 5px !important;
+    }
+
+    .galeria-imagenes {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)) !important;
+        gap: 6px !important;
+        margin-top: 4px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .imagen-item {
+        padding: 1px !important;
+        border: 1px solid #ccc !important;
+    }
+
+    .imagen-item img {
+        max-height: 75px !important;
+        height: 75px !important;
+        width: 100% !important;
+        object-fit: cover !important;
+    }
+
+    .firmas-section {
+        margin-top: 8px !important;
+        padding-top: 6px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .linea-firma {
+        height: 22px !important;
+        margin-bottom: 2px !important;
+    }
+
+    .firmas-section p {
+        font-size: 0.60rem !important;
+    }
+
+    .reporte-footer {
+        margin-top: 6px !important;
+        padding-top: 4px !important;
+        font-size: 0.55rem !important;
     }
 }
 

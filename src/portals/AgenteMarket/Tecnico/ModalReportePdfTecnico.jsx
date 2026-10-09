@@ -199,22 +199,23 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], bo
       left: 0,
       width: '100vw',
       height: '100vh',
-      background: 'rgba(5, 8, 15, 0.94)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
+      background: 'rgba(5, 8, 15, 0.96)',
+      backdropFilter: 'blur(14px)',
+      WebkitBackdropFilter: 'blur(14px)',
       zIndex: 99999999,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'flex-start',
       overflowY: 'auto',
-      padding: '24px 12px',
+      WebkitOverflowScrolling: 'touch',
+      padding: '20px 14px 80px 14px',
       boxSizing: 'border-box'
     }}>
       {/* ── BARRA SUPERIOR DE ACCIONES FLOTANTE (NO SE IMPRIME) ── */}
       <div className="no-print" style={{
         position: 'sticky',
-        top: '8px',
+        top: '4px',
         zIndex: 100000,
         display: 'flex',
         alignItems: 'center',
@@ -294,7 +295,6 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], bo
           boxShadow: '0 15px 40px rgba(0,0,0,0.5)',
           overflow: 'hidden',
           fontFamily: 'Arial, sans-serif',
-          marginBottom: '50px',
           boxSizing: 'border-box'
         }}
       >

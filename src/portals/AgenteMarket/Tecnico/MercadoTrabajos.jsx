@@ -1831,6 +1831,7 @@ const MercadoTrabajos = () => {
       const key = cleanPhone || clientName.toLowerCase().trim();
 
       const price = parseFloat(job.agreed_price || 0);
+      const jobReviews = job.review ? [job.review] : [];
 
       const existing = map.get(key);
       if (!existing) {
@@ -1846,6 +1847,7 @@ const MercadoTrabajos = () => {
           trabajosCount: 1,
           totalFacturado: price,
           ultimoTrabajo: job,
+          reviews: jobReviews,
           // Se categoriza como favorito si tiene recurrencia o asignación preferente
           esFavorito: Boolean(job.is_favorite || job.cotizaciones >= 2 || (job.id % 2 === 1)),
         });
@@ -1854,13 +1856,33 @@ const MercadoTrabajos = () => {
         existing.trabajosCount += 1;
         existing.totalFacturado += price;
         existing.esFavorito = true; // Cliente recurrente
+        if (job.review) {
+          existing.reviews.push(job.review);
+        }
         if (new Date(job.created_at || job.fecha) > new Date(existing.ultimoTrabajo?.created_at || existing.ultimoTrabajo?.fecha || 0)) {
           existing.ultimoTrabajo = job;
         }
       }
     });
 
-    return Array.from(map.values());
+    return Array.from(map.values()).map(client => {
+      const revs = client.reviews || [];
+      const hasReviews = revs.length > 0;
+      const avgStars = hasReviews 
+        ? (revs.reduce((sum, r) => sum + (Number(r.rating_stars) || 5), 0) / revs.length)
+        : 5.0;
+      const avgTime = hasReviews 
+        ? (revs.reduce((sum, r) => sum + (Number(r.rating_time) || 5), 0) / revs.length)
+        : 5.0;
+
+      return {
+        ...client,
+        reviewsCount: revs.length,
+        hasReviews,
+        avgStars,
+        avgTime
+      };
+    });
   }, [acceptedJobs]);
 
   const filteredMyClients = myClientsDirectory.filter(c => {
@@ -2689,6 +2711,35 @@ const MercadoTrabajos = () => {
                           Total: ${client.totalFacturado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
+
+                      {/* Calificaciones Registradas Inmutables */}
+                      <div style={{
+                        marginTop: '8px',
+                        background: 'rgba(15, 23, 42, 0.75)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '10px',
+                        padding: '8px 10px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            ⭐ Calidad: <strong style={{ color: '#facc15' }}>{client.avgStars ? `${client.avgStars.toFixed(1)} / 5.0` : '5.0 / 5.0'}</strong>
+                          </span>
+                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            ⏱️ Puntualidad: <strong style={{ color: '#38bdf8' }}>{client.avgTime ? `${client.avgTime.toFixed(1)} / 5.0` : '5.0 / 5.0'}</strong>
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '4px', fontSize: '9.5px', color: '#94a3b8' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            🔒 <span style={{ color: '#94a3b8', fontWeight: '700' }}>Calificación Inmutable</span>
+                          </span>
+                          <span style={{ color: client.reviewsCount > 0 ? '#4ade80' : '#a1a1aa', fontWeight: '700' }}>
+                            {client.reviewsCount > 0 ? `${client.reviewsCount} evaluaci${client.reviewsCount > 1 ? 'ones' : 'ón'}` : 'Historial definitivo'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="mercado-user-card-footer">
@@ -2756,7 +2807,7 @@ const MercadoTrabajos = () => {
               </div>
 
               <h4 style={{ margin: '8px 0 2px 0', color: '#f26522', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: '800' }}>
-                Desglose de Trabajos:
+                Desglose de Trabajos y Evaluaciones:
               </h4>
 
               {selectedClientForHistory.trabajos.map((job, idx) => (
@@ -2769,6 +2820,62 @@ const MercadoTrabajos = () => {
                   </div>
 
                   <p className="mercado-client-job-desc">{job.descripcion}</p>
+
+                  {/* Detalle de Calificación Inmutable por Trabajo */}
+                  <div style={{
+                    margin: '8px 0',
+                    background: 'rgba(24, 28, 42, 0.95)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '10px',
+                    padding: '10px 12px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        📊 Calificación del Servicio:
+                      </span>
+                      <span style={{
+                        fontSize: '9.5px',
+                        fontWeight: '800',
+                        background: 'rgba(148, 163, 184, 0.15)',
+                        color: '#cbd5e1',
+                        border: '1px solid rgba(148, 163, 184, 0.3)',
+                        borderRadius: '20px',
+                        padding: '2px 8px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        🔒 Inmutable (Solo Lectura)
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '6px' }}>
+                      <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.25)', borderRadius: '8px', padding: '6px 8px' }}>
+                        <div style={{ fontSize: '10px', color: '#facc15', fontWeight: '700', marginBottom: '2px' }}>⭐ Calidad del Trabajo</div>
+                        <div style={{ fontSize: '12.5px', fontWeight: '900', color: '#ffffff' }}>
+                          {job.review ? `${Number(job.review.rating_stars).toFixed(1)} / 5.0 ⭐` : '5.0 / 5.0 ⭐'}
+                        </div>
+                      </div>
+
+                      <div style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '8px', padding: '6px 8px' }}>
+                        <div style={{ fontSize: '10px', color: '#38bdf8', fontWeight: '700', marginBottom: '2px' }}>⏱️ Puntualidad (Relojes)</div>
+                        <div style={{ fontSize: '12.5px', fontWeight: '900', color: '#ffffff' }}>
+                          {job.review ? `${Number(job.review.rating_time).toFixed(1)} / 5.0 ⏱️` : '5.0 / 5.0 ⏱️'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {job.review?.comment && (
+                      <div style={{ fontSize: '11px', color: '#e2e8f0', background: 'rgba(0,0,0,0.3)', padding: '6px 8px', borderRadius: '6px', fontStyle: 'italic', marginBottom: '4px' }}>
+                        "{job.review.comment}"
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9.5px', color: '#94a3b8', marginTop: '4px' }}>
+                      <span>📅 Registrado: {job.review?.created_at || job.fecha}</span>
+                      <span style={{ color: '#f26522', fontWeight: '700' }}>🔒 Calificación cerrada y grabada</span>
+                    </div>
+                  </div>
 
                   <div className="mercado-client-job-footer">
                     <span>📅 Solicitado: {job.fecha}</span>

@@ -64,16 +64,15 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
       if (
         dropdownRef.current && 
         !dropdownRef.current.contains(event.target) &&
-        !event.target.closest?.('.vcp-profile-dropdown')
+        !event.target.closest?.('.vcp-profile-dropdown') &&
+        !event.target.closest?.('.vcp-avatar-btn')
       ) {
         setProfileDropdownOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    document.addEventListener('click', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, []);
 
@@ -152,6 +151,12 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
             type="button"
             className="vcp-avatar-btn" 
             onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setProfileDropdownOpen(prev => !prev);
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               setProfileDropdownOpen(prev => !prev);
             }}
@@ -165,56 +170,88 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
           </button>
 
           {profileDropdownOpen && (
-            <div className="vcp-profile-dropdown" onClick={(e) => e.stopPropagation()}>
-              <div className="vcp-dropdown-user-header">
-                <div className="vcp-dropdown-role-pill">
-                  <ShieldCheck size={12} className="vcp-dropdown-role-icon" />
-                  <span>{userRole}</span>
+            <>
+              {/* Invisible backdrop to capture outside touches/clicks reliably on mobile/desktop */}
+              <div 
+                className="vcp-dropdown-backdrop" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setProfileDropdownOpen(false);
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                  setProfileDropdownOpen(false);
+                }}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  width: '100vw',
+                  height: '100vh',
+                  zIndex: 999998,
+                  background: 'rgba(0, 0, 0, 0.25)',
+                  backdropFilter: 'blur(2px)',
+                  WebkitBackdropFilter: 'blur(2px)'
+                }}
+              />
+              <div 
+                className="vcp-profile-dropdown" 
+                onClick={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                style={{ zIndex: 9999999 }}
+              >
+                <div className="vcp-dropdown-user-header">
+                  <div className="vcp-dropdown-role-pill">
+                    <ShieldCheck size={12} className="vcp-dropdown-role-icon" />
+                    <span>{userRole}</span>
+                  </div>
+                  <div className="vcp-dropdown-user-name">{userFullName}</div>
+                  {authUser?.email && (
+                    <div className="vcp-dropdown-user-email">{authUser.email}</div>
+                  )}
                 </div>
-                <div className="vcp-dropdown-user-name">{userFullName}</div>
-                {authUser?.email && (
-                  <div className="vcp-dropdown-user-email">{authUser.email}</div>
-                )}
+
+                <div className="vcp-dropdown-divider" />
+
+                <button 
+                  type="button"
+                  className="vcp-dropdown-item" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setProfileDropdownOpen(false);
+                    navigate('/mi-perfil');
+                  }}
+                >
+                  <User size={16} /> Mi Perfil
+                </button>
+                <button 
+                  type="button"
+                  className="vcp-dropdown-item" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setProfileDropdownOpen(false);
+                    setShowModalCalendario(true);
+                  }}
+                >
+                  <Calendar size={16} /> Ver Calendario
+                </button>
+                <div className="vcp-dropdown-divider" />
+                <button 
+                  type="button"
+                  className="vcp-dropdown-item logout" 
+                  onClick={(e) => { 
+                    e.stopPropagation();
+                    setProfileDropdownOpen(false); 
+                    if (logoutGlobal) logoutGlobal();
+                    navigate('/', { replace: true }); 
+                  }}
+                >
+                  <LogOut size={16} /> Cerrar Sesión
+                </button>
               </div>
-
-              <div className="vcp-dropdown-divider" />
-
-              <button 
-                type="button"
-                className="vcp-dropdown-item" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setProfileDropdownOpen(false);
-                  navigate('/mi-perfil');
-                }}
-              >
-                <User size={16} /> Mi Perfil
-              </button>
-              <button 
-                type="button"
-                className="vcp-dropdown-item" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setProfileDropdownOpen(false);
-                  setShowModalCalendario(true);
-                }}
-              >
-                <Calendar size={16} /> Ver Calendario
-              </button>
-              <div className="vcp-dropdown-divider" />
-              <button 
-                type="button"
-                className="vcp-dropdown-item logout" 
-                onClick={(e) => { 
-                  e.stopPropagation();
-                  setProfileDropdownOpen(false); 
-                  if (logoutGlobal) logoutGlobal();
-                  navigate('/', { replace: true }); 
-                }}
-              >
-                <LogOut size={16} /> Cerrar Sesión
-              </button>
-            </div>
+            </>
           )}
         </div>
       </header>

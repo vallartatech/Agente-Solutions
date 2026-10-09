@@ -80,7 +80,14 @@ const MobileBottomNav = ({ activeModule }) => {
       <button 
         type="button" 
         className={`vcp-mobile-nav-item ${isUsuariosActive ? 'active' : ''}`} 
-        onClick={() => navigate('/usuarios')} 
+        onClick={() => {
+          const role = Number(user?.role_id ?? 0);
+          if (role === 6 || role === 8 || currentPath.includes('/mercado-trabajos')) {
+            navigate('/mercado-trabajos', { state: { view: 'usuarios' } });
+          } else {
+            navigate('/usuarios');
+          }
+        }} 
         title="Usuarios"
         aria-label="Usuarios"
       >
@@ -110,7 +117,14 @@ const MobileBottomNav = ({ activeModule }) => {
       <button 
         type="button" 
         className={`vcp-mobile-nav-item ${isServiciosActive ? 'active' : ''}`} 
-        onClick={() => navigate('/tablero-servicios')} 
+        onClick={() => {
+          const role = Number(user?.role_id ?? 0);
+          if (role === 6 || role === 8 || currentPath.includes('/mercado-trabajos')) {
+            navigate('/mercado-trabajos', { state: { view: 'tablero' } });
+          } else {
+            navigate('/tablero-servicios');
+          }
+        }} 
         title="Servicios"
         aria-label="Servicios"
       >
@@ -120,7 +134,14 @@ const MobileBottomNav = ({ activeModule }) => {
       <button 
         type="button" 
         className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`} 
-        onClick={() => navigate('/red-autonomos')} 
+        onClick={() => {
+          const role = Number(user?.role_id ?? 0);
+          if (role === 6 || role === 8 || currentPath.includes('/mercado-trabajos')) {
+            navigate('/mercado-trabajos', { state: { view: 'mercado' } });
+          } else {
+            navigate('/red-autonomos');
+          }
+        }} 
         title="Mercado / Red"
         aria-label="Mercado / Red"
       >
