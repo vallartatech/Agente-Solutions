@@ -36,8 +36,11 @@ export const DARK_MAP_STYLES = [
   },
   {
     featureType: "poi",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#798394" }]
+    stylers: [{ visibility: "off" }]
+  },
+  {
+    featureType: "poi.business",
+    stylers: [{ visibility: "off" }]
   },
   {
     featureType: "poi.park",
@@ -81,13 +84,7 @@ export const DARK_MAP_STYLES = [
   },
   {
     featureType: "transit",
-    elementType: "geometry",
-    stylers: [{ color: "#1d2331" }]
-  },
-  {
-    featureType: "transit.station",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#cbd5e1" }]
+    stylers: [{ visibility: "off" }]
   },
   {
     featureType: "water",
@@ -3074,7 +3071,7 @@ const MercadoTrabajos = () => {
                   mapContainerStyle={mapContainerStyle}
                   center={activeNavJob ? { lat: activeNavJob.lat, lng: activeNavJob.lng } : defaultCenter}
                   zoom={activeNavJob ? 14 : 13}
-                  options={{ disableDefaultUI: false, styles: DARK_MAP_STYLES }}
+                  options={{ disableDefaultUI: false, styles: DARK_MAP_STYLES, clickableIcons: false }}
                 >
                   {/* PESTAÑA DISPONIBLES: Marcadores de Trabajos Disponibles */}
                   {activeTab === 'disponibles' && filteredNetworkJobs.map(job => (

@@ -432,10 +432,38 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
     }
   };
 
+  const checkPendingCancellations = async () => {
+    try {
+      if (isTechnician) return;
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      if (!token) return;
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/client/pending-cancellations`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data?.success && res.data?.cancellations?.length > 0) {
+        const first = res.data.cancellations[0];
+        setRatingTargetTech(first.technician);
+        setRatingTargetJob({
+          id: first.work_order_id,
+          titulo: first.work_order_title,
+          cancelled_by_tech: true,
+          cancellation_reason: first.reason
+        });
+        setShowRatingModal(true);
+      }
+    } catch (e) {
+      console.warn("Error checking pending cancellations in calendar:", e);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       fetchJobs();
-      const interval = setInterval(fetchJobs, 4000);
+      checkPendingCancellations();
+      const interval = setInterval(() => {
+        fetchJobs();
+        checkPendingCancellations();
+      }, 5000);
       return () => clearInterval(interval);
     }
   }, [isOpen]);

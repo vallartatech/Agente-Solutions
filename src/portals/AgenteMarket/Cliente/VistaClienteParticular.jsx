@@ -8,6 +8,7 @@ import ModalCalendarioCliente from './ModalCalendarioCliente';
 import ModalRegistroInmueble from './ModalRegistroInmueble';
 import ModalEditarPropiedadCliente from './ModalEditarPropiedadCliente';
 import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
+import ModalCalificarTecnico from '../../../components/Shared/ModalCalificarTecnico';
 import NotificationBell from '../../../components/Shared/NotificationBell';
 import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
@@ -106,6 +107,8 @@ const VistaClienteParticular = () => {
   const [showModalRegistroPropiedad, setShowModalRegistroPropiedad] = useState(false);
   const [showModalEditarPropiedad, setShowModalEditarPropiedad] = useState(false);
   const [showModalSolicitarServicio, setShowModalSolicitarServicio] = useState(false);
+  const [pendingCancellation, setPendingCancellation] = useState(null);
+  const [showCancellationRatingModal, setShowCancellationRatingModal] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
   const [isPlanExpanded, setIsPlanExpanded] = useState(false); // Oculto por defecto
@@ -172,8 +175,27 @@ const VistaClienteParticular = () => {
     }
   };
 
+  const checkPendingCancellations = async () => {
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      if (!token) return;
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/client/pending-cancellations`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data?.success && res.data?.cancellations?.length > 0) {
+        setPendingCancellation(res.data.cancellations[0]);
+        setShowCancellationRatingModal(true);
+      }
+    } catch (e) {
+      console.warn("Error checking pending cancellations:", e);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    checkPendingCancellations();
+    const pollInterval = setInterval(checkPendingCancellations, 6000);
+    return () => clearInterval(pollInterval);
   }, []);
 
   const handlePropertyCreated = async (newProp) => {
@@ -1128,6 +1150,27 @@ const VistaClienteParticular = () => {
           onClose={() => setShowModalSolicitarServicio(false)}
           onSuccess={() => {
             setShowModalSolicitarServicio(false);
+            fetchData();
+          }}
+        />
+      )}
+
+      {/* Modal de Calificación por Cancelación de Técnico (Encuesta 5 Relojes) */}
+      {showCancellationRatingModal && pendingCancellation && (
+        <ModalCalificarTecnico
+          isOpen={showCancellationRatingModal}
+          onClose={() => {
+            setShowCancellationRatingModal(false);
+            setPendingCancellation(null);
+          }}
+          technician={pendingCancellation.technician}
+          workOrderId={pendingCancellation.work_order_id}
+          onlyTime={true}
+          isCancellation={true}
+          cancellationReason={pendingCancellation.reason}
+          onSuccess={() => {
+            setShowCancellationRatingModal(false);
+            setPendingCancellation(null);
             fetchData();
           }}
         />

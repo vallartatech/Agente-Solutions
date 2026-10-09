@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { Star, Clock, X, CheckCircle, Award, Sparkles, MessageSquare, AlertCircle } from 'lucide-react';
+import { Star, Clock, X, CheckCircle, Award, Sparkles, MessageSquare, AlertCircle, Trash2, RotateCcw, Send } from 'lucide-react';
 import '../../styles/Shared/ModalCalificarTecnico.css';
 
 const ModalCalificarTecnico = ({
@@ -17,7 +17,7 @@ const ModalCalificarTecnico = ({
   cancellationReason = '',
   onSuccess
 }) => {
-  const [ratingStars, setRatingStars] = useState(onlyTime ? null : 5);
+  const [ratingStars, setRatingStars] = useState(onlyTime || isCancellation ? null : 5);
   const [hoverStars, setHoverStars] = useState(0);
   const [ratingTime, setRatingTime] = useState(isCancellation ? 1 : 5);
   const [hoverTime, setHoverTime] = useState(0);
@@ -62,8 +62,92 @@ const ModalCalificarTecnico = ({
 
   const delayInfo = getArrivalDelayText();
 
+  // Enviar calificación y resolver la solicitud (Reenviar a la red o Borrar)
+  const handleCancellationAction = async (actionType) => {
+    if (!technician?.id) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se encontró la información del técnico.',
+        background: '#191e2b',
+        color: '#fff'
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    try {
+      // 1. Guardar la calificación de los 5 relojes
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/technician-reviews`,
+        {
+          technician_id: technician.id,
+          work_order_id: workOrderId || null,
+          service_id: serviceId || null,
+          rating_stars: null,
+          rating_time: ratingTime,
+          comment: comment.trim() || (isCancellation ? 'Cancelación de servicio por el técnico.' : '')
+        },
+        { headers }
+      );
+
+      // 2. Ejecutar la acción sobre la orden de trabajo
+      if (workOrderId) {
+        if (actionType === 'reopen') {
+          await axios.post(
+            `${import.meta.env.VITE_API_BASE_URL}/client/resolve-cancelled-work-order/${workOrderId}`,
+            { action: 'reopen' },
+            { headers }
+          );
+        } else if (actionType === 'delete') {
+          await axios.post(
+            `${import.meta.env.VITE_API_BASE_URL}/client/resolve-cancelled-work-order/${workOrderId}`,
+            { action: 'delete' },
+            { headers }
+          );
+        }
+      }
+
+      await Swal.fire({
+        icon: 'success',
+        title: '¡Evaluación Registrada!',
+        text: actionType === 'reopen'
+          ? 'La calificación de puntualidad fue guardada y tu solicitud ha sido enviada nuevamente a la red para recibir nuevas cotizaciones.'
+          : 'La calificación de puntualidad fue guardada y la solicitud de servicio ha sido eliminada.',
+        confirmButtonColor: '#f26522',
+        background: '#191e2b',
+        color: '#fff'
+      });
+
+      if (onSuccess) {
+        onSuccess({ action: actionType });
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error procesando evaluación y acción:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al procesar',
+        text: error.response?.data?.message || 'No fue posible registrar tu calificación. Inténtalo de nuevo.',
+        background: '#191e2b',
+        color: '#fff'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isCancellation) {
+      // Si es cancelación por formulario default, reabre por defecto
+      handleCancellationAction('reopen');
+      return;
+    }
+
     if (!technician?.id) {
       Swal.fire({
         icon: 'error',
@@ -97,9 +181,7 @@ const ModalCalificarTecnico = ({
       Swal.fire({
         icon: 'success',
         title: '¡Muchas Gracias!',
-        text: isCancellation 
-          ? 'Se ha registrado la evaluación de puntualidad del técnico y se aplicó la penalización correspondiente.' 
-          : 'Tu calificación y opinión ayudan a mantener la más alta calidad en el servicio.',
+        text: 'Tu calificación y opinión ayudan a mantener la más alta calidad en el servicio.',
         confirmButtonColor: '#f26522',
         background: '#191e2b',
         color: '#fff'
@@ -285,30 +367,102 @@ const ModalCalificarTecnico = ({
           </div>
 
           {/* Submit buttons */}
-          <div className="calif-footer-actions">
-            <button
-              type="button"
-              className="calif-btn-cancel"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Cerrar
-            </button>
-            <button
-              type="submit"
-              className="calif-btn-submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <span>Guardando...</span>
-              ) : (
-                <>
-                  <Award size={18} />
-                  <span>Enviar Calificación</span>
-                </>
-              )}
-            </button>
-          </div>
+          {isCancellation ? (
+            <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ textAlign: 'center', marginBottom: '12px', fontSize: '13px', color: '#cbd5e1', fontWeight: '600' }}>
+                ¿Qué deseas hacer con esta solicitud de servicio?
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => handleCancellationAction('reopen')}
+                  style={{
+                    background: 'linear-gradient(135deg, #f26522 0%, #ea580c 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    fontWeight: '800',
+                    fontSize: '12.5px',
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 14px rgba(242, 101, 34, 0.35)',
+                    transition: 'all 0.2s ease',
+                    opacity: isSubmitting ? 0.7 : 1
+                  }}
+                  title="Permitir que otros técnicos de la red envíen cotizaciones"
+                >
+                  <Sparkles size={15} />
+                  <span>{isSubmitting ? 'Enviando...' : '🌐 Enviar a la Red'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => handleCancellationAction('delete')}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    color: '#f87171',
+                    border: '1px solid rgba(239, 68, 68, 0.45)',
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    fontWeight: '800',
+                    fontSize: '12.5px',
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s ease',
+                    opacity: isSubmitting ? 0.7 : 1
+                  }}
+                  title="Eliminar esta solicitud definitivamente"
+                >
+                  <Trash2 size={15} />
+                  <span>{isSubmitting ? 'Borrando...' : '🗑️ Borrar servicio'}</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                className="calif-btn-cancel"
+                onClick={onClose}
+                disabled={isSubmitting}
+                style={{ width: '100%', marginTop: '10px', textAlign: 'center' }}
+              >
+                Cerrar sin calificar
+              </button>
+            </div>
+          ) : (
+            <div className="calif-footer-actions">
+              <button
+                type="button"
+                className="calif-btn-cancel"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                Cerrar
+              </button>
+              <button
+                type="submit"
+                className="calif-btn-submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <span>Guardando...</span>
+                ) : (
+                  <>
+                    <Award size={18} />
+                    <span>Enviar Calificación</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>
