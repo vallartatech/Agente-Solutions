@@ -441,19 +441,55 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data?.success && res.data?.cancellations?.length > 0) {
-        const first = res.data.cancellations[0];
-        setRatingTargetTech(first.technician);
-        setRatingTargetJob({
-          id: first.work_order_id,
-          titulo: first.work_order_title,
-          cancelled_by_tech: true,
-          cancellation_reason: first.reason
+        const unhandled = res.data.cancellations.filter(c => {
+          const cKey = 'dismissed_cancellation_' + c.cancellation_id;
+          const woKey = 'dismissed_cancellation_wo_' + c.work_order_id;
+          return !localStorage.getItem(cKey) && !sessionStorage.getItem(cKey) && !localStorage.getItem(woKey) && !sessionStorage.getItem(woKey);
         });
-        setShowRatingModal(true);
+        if (unhandled.length > 0) {
+          const first = unhandled[0];
+          localStorage.setItem('dismissed_cancellation_' + first.cancellation_id, '1');
+          if (first.work_order_id) localStorage.setItem('dismissed_cancellation_wo_' + first.work_order_id, '1');
+          sessionStorage.setItem('dismissed_cancellation_' + first.cancellation_id, '1');
+          if (first.work_order_id) sessionStorage.setItem('dismissed_cancellation_wo_' + first.work_order_id, '1');
+
+          setRatingTargetTech(first.technician);
+          setRatingTargetJob({
+            id: first.work_order_id,
+            cancellation_id: first.cancellation_id,
+            titulo: first.work_order_title,
+            cancelled_by_tech: true,
+            cancellation_reason: first.reason
+          });
+          setShowRatingModal(true);
+        }
       }
     } catch (e) {
       console.warn("Error checking pending cancellations in calendar:", e);
     }
+  };
+
+  const handleCloseRatingModal = async () => {
+    if (ratingTargetJob) {
+      const cId = ratingTargetJob.cancellation_id;
+      const woId = ratingTargetJob.id;
+      if (cId) localStorage.setItem('dismissed_cancellation_' + cId, '1');
+      if (woId) localStorage.setItem('dismissed_cancellation_wo_' + woId, '1');
+      if (cId) sessionStorage.setItem('dismissed_cancellation_' + cId, '1');
+      if (woId) sessionStorage.setItem('dismissed_cancellation_wo_' + woId, '1');
+
+      try {
+        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+        if (token && cId) {
+          await axios.post(`${import.meta.env.VITE_API_BASE_URL}/client/dismiss-cancellation/${cId}`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        }
+      } catch {}
+    }
+    setShowRatingModal(false);
+    setRatingTargetTech(null);
+    setRatingTargetJob(null);
   };
 
   useEffect(() => {
@@ -2273,11 +2309,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
         {showRatingModal && ratingTargetTech && (
           <ModalCalificarTecnico
             isOpen={showRatingModal}
-            onClose={() => {
-              setShowRatingModal(false);
-              setRatingTargetTech(null);
-              setRatingTargetJob(null);
-            }}
+            onClose={handleCloseRatingModal}
             technician={ratingTargetTech}
             workOrderId={ratingTargetJob?.id}
             serviceId={ratingTargetJob?.service_id}
@@ -2287,6 +2319,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
             isCancellation={Boolean(ratingTargetJob?.cancelled_by_tech || ratingTargetJob?.status === 'Cancelado_Tecnico')}
             cancellationReason={ratingTargetJob?.cancellation_reason || ''}
             onSuccess={() => {
+              handleCloseRatingModal();
               fetchJobs();
             }}
           />

@@ -183,12 +183,48 @@ const VistaClienteParticular = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data?.success && res.data?.cancellations?.length > 0) {
-        setPendingCancellation(res.data.cancellations[0]);
-        setShowCancellationRatingModal(true);
+        const unhandled = res.data.cancellations.filter(c => {
+          const cKey = 'dismissed_cancellation_' + c.cancellation_id;
+          const woKey = 'dismissed_cancellation_wo_' + c.work_order_id;
+          return !localStorage.getItem(cKey) && !sessionStorage.getItem(cKey) && !localStorage.getItem(woKey) && !sessionStorage.getItem(woKey);
+        });
+        if (unhandled.length > 0) {
+          const first = unhandled[0];
+          // Marcar de inmediato para que nunca se abra más de una vez por trabajo cancelado
+          localStorage.setItem('dismissed_cancellation_' + first.cancellation_id, '1');
+          if (first.work_order_id) localStorage.setItem('dismissed_cancellation_wo_' + first.work_order_id, '1');
+          sessionStorage.setItem('dismissed_cancellation_' + first.cancellation_id, '1');
+          if (first.work_order_id) sessionStorage.setItem('dismissed_cancellation_wo_' + first.work_order_id, '1');
+
+          setPendingCancellation(first);
+          setShowCancellationRatingModal(true);
+        }
       }
     } catch (e) {
       console.warn("Error checking pending cancellations:", e);
     }
+  };
+
+  const handleCloseCancellationRating = async () => {
+    if (pendingCancellation) {
+      const cId = pendingCancellation.cancellation_id;
+      const woId = pendingCancellation.work_order_id;
+      if (cId) localStorage.setItem('dismissed_cancellation_' + cId, '1');
+      if (woId) localStorage.setItem('dismissed_cancellation_wo_' + woId, '1');
+      if (cId) sessionStorage.setItem('dismissed_cancellation_' + cId, '1');
+      if (woId) sessionStorage.setItem('dismissed_cancellation_wo_' + woId, '1');
+
+      try {
+        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+        if (token && cId) {
+          await axios.post(`${import.meta.env.VITE_API_BASE_URL}/client/dismiss-cancellation/${cId}`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        }
+      } catch {}
+    }
+    setShowCancellationRatingModal(false);
+    setPendingCancellation(null);
   };
 
   useEffect(() => {
@@ -1159,18 +1195,14 @@ const VistaClienteParticular = () => {
       {showCancellationRatingModal && pendingCancellation && (
         <ModalCalificarTecnico
           isOpen={showCancellationRatingModal}
-          onClose={() => {
-            setShowCancellationRatingModal(false);
-            setPendingCancellation(null);
-          }}
+          onClose={handleCloseCancellationRating}
           technician={pendingCancellation.technician}
           workOrderId={pendingCancellation.work_order_id}
           onlyTime={true}
           isCancellation={true}
           cancellationReason={pendingCancellation.reason}
           onSuccess={() => {
-            setShowCancellationRatingModal(false);
-            setPendingCancellation(null);
+            handleCloseCancellationRating();
             fetchData();
           }}
         />

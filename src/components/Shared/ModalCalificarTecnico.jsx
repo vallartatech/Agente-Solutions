@@ -78,21 +78,33 @@ const ModalCalificarTecnico = ({
     setIsSubmitting(true);
     const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const session = JSON.parse(localStorage.getItem('agente_session') || '{}');
+    const currentUserId = session?.userData?.id || null;
+
+    if (workOrderId) {
+      localStorage.setItem('dismissed_cancellation_wo_' + workOrderId, '1');
+      sessionStorage.setItem('dismissed_cancellation_wo_' + workOrderId, '1');
+    }
 
     try {
       // 1. Guardar la calificación de los 5 relojes
-      await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/technician-reviews`,
-        {
-          technician_id: technician.id,
-          work_order_id: workOrderId || null,
-          service_id: serviceId || null,
-          rating_stars: 5,
-          rating_time: ratingTime,
-          comment: comment.trim() || (isCancellation ? 'Cancelación de servicio por el técnico.' : '')
-        },
-        { headers }
-      );
+      try {
+        await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/technician-reviews`,
+          {
+            technician_id: technician.id,
+            client_id: currentUserId,
+            work_order_id: workOrderId || null,
+            service_id: serviceId || null,
+            rating_stars: 5,
+            rating_time: ratingTime,
+            comment: comment.trim() || (isCancellation ? 'Cancelación de servicio por el técnico.' : '')
+          },
+          { headers }
+        );
+      } catch (reviewErr) {
+        console.warn('Advertencia al registrar review (continuando resolución):', reviewErr);
+      }
 
       // 2. Ejecutar la acción sobre la orden de trabajo
       if (workOrderId) {
@@ -131,7 +143,7 @@ const ModalCalificarTecnico = ({
       Swal.fire({
         icon: 'error',
         title: 'Error al procesar',
-        text: error.response?.data?.message || 'No fue posible registrar tu calificación. Inténtalo de nuevo.',
+        text: error.response?.data?.message || 'No fue posible completar la acción. Inténtalo de nuevo.',
         background: '#191e2b',
         color: '#fff'
       });
@@ -163,10 +175,19 @@ const ModalCalificarTecnico = ({
 
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const session = JSON.parse(localStorage.getItem('agente_session') || '{}');
+      const currentUserId = session?.userData?.id || null;
+
+      if (workOrderId) {
+        localStorage.setItem('dismissed_cancellation_wo_' + workOrderId, '1');
+        sessionStorage.setItem('dismissed_cancellation_wo_' + workOrderId, '1');
+      }
+
       const response = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/technician-reviews`,
         {
           technician_id: technician.id,
+          client_id: currentUserId,
           work_order_id: workOrderId || null,
           service_id: serviceId || null,
           rating_stars: onlyTime ? null : ratingStars,
