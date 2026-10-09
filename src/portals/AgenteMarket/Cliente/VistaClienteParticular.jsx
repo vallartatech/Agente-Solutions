@@ -146,7 +146,7 @@ const VistaClienteParticular = () => {
   // Cargar propiedades y estado de suscripción
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('agente_token');
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const authHeader = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
       const [propsRes, subRes] = await Promise.allSettled([
@@ -303,7 +303,7 @@ const VistaClienteParticular = () => {
     let isMounted = true;
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem('agente_token');
+        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
         const authHeader = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
         const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/propiedades/${activeProperty.id}/dashboard`, authHeader);
         if (isMounted && res.data?.stats) {
