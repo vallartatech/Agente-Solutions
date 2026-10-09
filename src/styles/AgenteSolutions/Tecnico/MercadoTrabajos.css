@@ -3463,6 +3463,29 @@
   transform: translateY(-1px);
 }
 
+.mercado-board-btn-pdf {
+  background: linear-gradient(135deg, #f26522, #ea580c);
+  color: #ffffff;
+  border: 1px solid rgba(242, 101, 34, 0.6);
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 0.66rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(242, 101, 34, 0.4);
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+}
+
+.mercado-board-btn-pdf:hover {
+  background: #ff7836;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.6);
+}
+
 .mercado-board-property-content {
   display: flex;
   gap: 8px;
@@ -3472,11 +3495,11 @@
 }
 
 .mercado-board-property-facade-box {
-  width: 100px;
-  min-width: 100px;
-  height: 100%;
-  min-height: 70px;
-  max-height: 95px;
+  width: 108px;
+  min-width: 108px;
+  height: 82px;
+  min-height: 82px;
+  max-height: 82px;
   border-radius: 7px;
   overflow: hidden;
   position: relative;

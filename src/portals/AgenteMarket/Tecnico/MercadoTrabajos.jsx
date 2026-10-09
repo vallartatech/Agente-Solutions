@@ -17,6 +17,7 @@ import defaultLogo from '../../../assets/Logo4.png';
 import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
 import RegisterModal from '../../../components/Auth/Register';
 import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
+import ModalReportePdfTecnico from './ModalReportePdfTecnico';
 
 const mapContainerStyle = {
   width: '100%',
@@ -431,6 +432,7 @@ const MercadoTrabajos = () => {
   const [boardFilter, setBoardFilter] = useState('TODOS'); // 'TODOS' | 'SOS' | 'PROCESO' | 'AGENDADOS' | 'FINALIZADOS'
   const [boardSearch, setBoardSearch] = useState('');
   const [zoomedPhotoUrl, setZoomedPhotoUrl] = useState(null);
+  const [showPdfReportModal, setShowPdfReportModal] = useState(false);
 
   // Modal 2da Visita
   const [showSecondVisitModal, setShowSecondVisitModal] = useState(false);
@@ -2280,6 +2282,15 @@ const MercadoTrabajos = () => {
                           </div>
 
                           <div className="mercado-board-property-actions">
+                            <button
+                              type="button"
+                              className="mercado-board-btn-pdf"
+                              onClick={() => setShowPdfReportModal(true)}
+                              title="Visualizar Reporte Detallado Oficial en PDF"
+                            >
+                              <FileText size={12} /> PDF
+                            </button>
+
                             <button
                               type="button"
                               className="mercado-board-btn-gps"
@@ -4579,6 +4590,14 @@ const MercadoTrabajos = () => {
             </button>
           </div>
         </div>
+      )}
+      {/* ─── MODAL VISUALIZADOR DE REPORTE DETALLADO PDF (ESTILO AGENTE) ─── */}
+      {showPdfReportModal && selectedBoardJob && (
+        <ModalReportePdfTecnico
+          isOpen={showPdfReportModal}
+          onClose={() => setShowPdfReportModal(false)}
+          job={selectedBoardJob}
+        />
       )}
     </div>
   );

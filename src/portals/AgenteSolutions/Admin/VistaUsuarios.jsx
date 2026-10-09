@@ -132,6 +132,8 @@ const VistaUsuarios = () => {
     };
   }, []);
 
+  const isClientPortalUser = Number(user?.role_id) === 3;
+
   const obtenerUsuarios = async () => {
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
@@ -158,7 +160,13 @@ const VistaUsuarios = () => {
           profile_picture_url: u.profile_picture_url || u.profile_picture,
           telefono: cleanPhone,
           address: u.address || u.direccion || '',
-          isCliente: isClient
+          isCliente: isClient,
+          specialties: u.specialties || [],
+          rating_stars_avg: Number(u.rating_stars_avg || 5.0),
+          rating_time_avg: Number(u.rating_time_avg || 5.0),
+          total_reviews_count: Number(u.total_reviews_count || 0),
+          my_review: u.my_review || null,
+          jobs_count: Number(u.jobs_count || 0)
         };
       });
 
@@ -315,36 +323,16 @@ const VistaUsuarios = () => {
     return MAPA_ROLES[user?.role_id] || "USUARIO";
   }, [user]);
 
-  const userAvatar = user?.profile_picture || user?.avatar_url || user?.foto || null;
-  const userInitial = user?.first_name
-    ? user.first_name.charAt(0).toUpperCase()
-    : (user?.name ? user.name.charAt(0).toUpperCase() : (user?.nombre ? user.nombre.charAt(0).toUpperCase() : 'U'));
-
-  // Conteos por categoría
+  // Conteos por categoría adaptados para Cliente vs Admin
   const countClientes = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 3 || String(u.id).startsWith('c_')).length, [listaUsuarios]);
   const countTecnicosAgente = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 2).length, [listaUsuarios]);
   const countTecnicosRed = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 8).length, [listaUsuarios]);
+  const countCalificados = useMemo(() => listaUsuarios.filter(u => u.my_review !== null).length, [listaUsuarios]);
   const countContratistas = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 6).length, [listaUsuarios]);
   const countAutonomos = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 4 || Number(u.role_id) === 5).length, [listaUsuarios]);
   const countAdmins = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 1 || Number(u.role_id) === 7 || Number(u.role_id) === 0).length, [listaUsuarios]);
   const activosCount = useMemo(() => listaUsuarios.filter(u => !u.bloqueado).length, [listaUsuarios]);
   const bloqueadosCount = useMemo(() => listaUsuarios.filter(u => u.bloqueado).length, [listaUsuarios]);
-
-  const handleCerrarSesion = () => {
-    if (logoutGlobal) logoutGlobal();
-    else if (logout) logout();
-    navigate("/", { replace: true });
-  };
-
-  const irAlInicio = () => {
-    if (!user) return navigate('/');
-    const role = Number(user.role_id);
-    if (role === 0 || role === 1) navigate('/VistaRoot');
-    else if (role === 4 || role === 5 || role === 7 || role === 3) navigate('/VistaMarket');
-    else if (role === 2) navigate('/VistaTecnico');
-    else if (role === 6 || role === 8) navigate('/mercado-trabajos');
-    else navigate('/');
-  };
 
   return (
     <div className="vu-root">
@@ -358,7 +346,7 @@ const VistaUsuarios = () => {
         <div className="vu-action-bar">
           <div className="vu-page-title-badge">
             <Users size={18} className="vu-title-icon" />
-            <span>DIRECTORIO GENERAL DE USUARIOS</span>
+            <span>{isClientPortalUser ? "DIRECTORIO DE TÉCNICOS & HISTORIAL" : "DIRECTORIO GENERAL DE USUARIOS"}</span>
             <span className="vu-count-pill">{listaUsuarios.length}</span>
           </div>
         </div>
@@ -371,7 +359,7 @@ const VistaUsuarios = () => {
               data={listaUsuarios}
               setFilteredData={setUsuariosFiltrados}
               filtroActual={filtro}
-              placeholder="BUSCAR USUARIO POR NOMBRE, CORREO, TELÉFONO O ROL..."
+              placeholder={isClientPortalUser ? "BUSCAR TÉCNICO POR NOMBRE, ESPECIALIDAD, CORREO O TELÉFONO..." : "BUSCAR USUARIO POR NOMBRE, CORREO, TELÉFONO O ROL..."}
             />
           </div>
 
@@ -398,27 +386,20 @@ const VistaUsuarios = () => {
                     onClick={() => { setFiltro("TODOS"); setFilterDropdownOpen(false); }}
                   >
                     <Users size={14} />
-                    <span>Todos los Usuarios</span>
+                    <span>{isClientPortalUser ? "Todos los Técnicos" : "Todos los Usuarios"}</span>
                     <span className="vu-menu-badge">{listaUsuarios.length}</span>
                   </button>
-                  <button
-                    type="button"
-                    className={`vu-filter-menu-item ${filtro === "CLIENTES" ? "selected" : ""}`}
-                    onClick={() => { setFiltro("CLIENTES"); setFilterDropdownOpen(false); }}
-                  >
-                    <User size={14} color="#16a34a" />
-                    <span>Clientes</span>
-                    <span className="vu-menu-badge">{countClientes}</span>
-                  </button>
+
                   <button
                     type="button"
                     className={`vu-filter-menu-item ${filtro === "TECNICOS_AGENTE" ? "selected" : ""}`}
                     onClick={() => { setFiltro("TECNICOS_AGENTE"); setFilterDropdownOpen(false); }}
                   >
                     <Wrench size={14} color="#0284c7" />
-                    <span>Técnicos Agente</span>
+                    <span>{isClientPortalUser ? "Mis Técnicos Agente" : "Técnicos Agente"}</span>
                     <span className="vu-menu-badge">{countTecnicosAgente}</span>
                   </button>
+
                   <button
                     type="button"
                     className={`vu-filter-menu-item ${filtro === "TECNICOS_RED" ? "selected" : ""}`}
@@ -428,34 +409,65 @@ const VistaUsuarios = () => {
                     <span>Técnicos de la Red</span>
                     <span className="vu-menu-badge">{countTecnicosRed}</span>
                   </button>
-                  <button
-                    type="button"
-                    className={`vu-filter-menu-item ${filtro === "CONTRATISTAS" ? "selected" : ""}`}
-                    onClick={() => { setFiltro("CONTRATISTAS"); setFilterDropdownOpen(false); }}
-                  >
-                    <HardHat size={14} color="#0d9488" />
-                    <span>Contratistas</span>
-                    <span className="vu-menu-badge">{countContratistas}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`vu-filter-menu-item ${filtro === "AUTONOMOS" ? "selected" : ""}`}
-                    onClick={() => { setFiltro("AUTONOMOS"); setFilterDropdownOpen(false); }}
-                  >
-                    <Briefcase size={14} color="#8b5cf6" />
-                    <span>Autónomos</span>
-                    <span className="vu-menu-badge">{countAutonomos}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`vu-filter-menu-item ${filtro === "ADMINS" ? "selected" : ""}`}
-                    onClick={() => { setFiltro("ADMINS"); setFilterDropdownOpen(false); }}
-                  >
-                    <Shield size={14} color="#ea580c" />
-                    <span>Administradores</span>
-                    <span className="vu-menu-badge">{countAdmins}</span>
-                  </button>
+
+                  {isClientPortalUser && (
+                    <button
+                      type="button"
+                      className={`vu-filter-menu-item ${filtro === "CALIFICADOS" ? "selected" : ""}`}
+                      onClick={() => { setFiltro("CALIFICADOS"); setFilterDropdownOpen(false); }}
+                    >
+                      <Star size={14} color="#f59e0b" fill="#f59e0b" />
+                      <span>Historial de Calificados</span>
+                      <span className="vu-menu-badge">{countCalificados}</span>
+                    </button>
+                  )}
+
+                  {!isClientPortalUser && (
+                    <>
+                      <button
+                        type="button"
+                        className={`vu-filter-menu-item ${filtro === "CLIENTES" ? "selected" : ""}`}
+                        onClick={() => { setFiltro("CLIENTES"); setFilterDropdownOpen(false); }}
+                      >
+                        <User size={14} color="#16a34a" />
+                        <span>Clientes</span>
+                        <span className="vu-menu-badge">{countClientes}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`vu-filter-menu-item ${filtro === "CONTRATISTAS" ? "selected" : ""}`}
+                        onClick={() => { setFiltro("CONTRATISTAS"); setFilterDropdownOpen(false); }}
+                      >
+                        <HardHat size={14} color="#0d9488" />
+                        <span>Contratistas</span>
+                        <span className="vu-menu-badge">{countContratistas}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`vu-filter-menu-item ${filtro === "AUTONOMOS" ? "selected" : ""}`}
+                        onClick={() => { setFiltro("AUTONOMOS"); setFilterDropdownOpen(false); }}
+                      >
+                        <Briefcase size={14} color="#8b5cf6" />
+                        <span>Autónomos</span>
+                        <span className="vu-menu-badge">{countAutonomos}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`vu-filter-menu-item ${filtro === "ADMINS" ? "selected" : ""}`}
+                        onClick={() => { setFiltro("ADMINS"); setFilterDropdownOpen(false); }}
+                      >
+                        <Shield size={14} color="#ea580c" />
+                        <span>Administradores</span>
+                        <span className="vu-menu-badge">{countAdmins}</span>
+                      </button>
+                    </>
+                  )}
+
                   <div style={{ height: '1px', background: 'rgba(0,0,0,0.08)', margin: '4px 0' }} />
+
                   <button
                     type="button"
                     className={`vu-filter-menu-item ${filtro === "ACTIVOS" ? "selected-green" : ""}`}
@@ -465,34 +477,45 @@ const VistaUsuarios = () => {
                     <span>Activos</span>
                     <span className="vu-menu-badge green">{activosCount}</span>
                   </button>
-                  <button
-                    type="button"
-                    className={`vu-filter-menu-item ${filtro === "BLOQUEADOS" ? "selected-red" : ""}`}
-                    onClick={() => { setFiltro("BLOQUEADOS"); setFilterDropdownOpen(false); }}
-                  >
-                    <Lock size={14} color="#ef4444" />
-                    <span>Bloqueados / Inactivos</span>
-                    <span className="vu-menu-badge red">{bloqueadosCount}</span>
-                  </button>
+
+                  {!isClientPortalUser && (
+                    <button
+                      type="button"
+                      className={`vu-filter-menu-item ${filtro === "BLOQUEADOS" ? "selected-red" : ""}`}
+                      onClick={() => { setFiltro("BLOQUEADOS"); setFilterDropdownOpen(false); }}
+                    >
+                      <Lock size={14} color="#ef4444" />
+                      <span>Bloqueados / Inactivos</span>
+                      <span className="vu-menu-badge red">{bloqueadosCount}</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Botón Icono Registrar Usuario */}
-            <button
-              type="button"
-              className="vu-icon-btn vu-icon-btn-register"
-              onClick={() => setShowRegisterModal(true)}
-              title="Registrar nuevo usuario"
-            >
-              <UserPlus size={20} />
-            </button>
+            {/* Botón Icono Registrar Usuario (Solo Admin/Root) */}
+            {!isClientPortalUser && (
+              <button
+                type="button"
+                className="vu-icon-btn vu-icon-btn-register"
+                onClick={() => setShowRegisterModal(true)}
+                title="Registrar nuevo usuario"
+              >
+                <UserPlus size={20} />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Chips de Categorías Rápidas */}
         <div className="vu-category-chips-bar">
-          {[
+          {(isClientPortalUser ? [
+            { key: 'TODOS', label: 'Todos los Técnicos', icon: '👥', count: listaUsuarios.length },
+            { key: 'TECNICOS_AGENTE', label: 'Téc. Agente', icon: '🛠️', count: countTecnicosAgente },
+            { key: 'TECNICOS_RED', label: 'Téc. de la Red', icon: '🌐', count: countTecnicosRed },
+            { key: 'CALIFICADOS', label: 'Historial / Calificados', icon: '⭐', count: countCalificados },
+            { key: 'ACTIVOS', label: 'Disponibles', icon: '🟢', count: activosCount },
+          ] : [
             { key: 'TODOS', label: 'Todos', icon: '👥', count: listaUsuarios.length },
             { key: 'CLIENTES', label: 'Clientes', icon: '👤', count: countClientes },
             { key: 'TECNICOS_AGENTE', label: 'Téc. Agente', icon: '🛠️', count: countTecnicosAgente },
@@ -502,7 +525,7 @@ const VistaUsuarios = () => {
             { key: 'ADMINS', label: 'Administradores', icon: '🛡️', count: countAdmins },
             { key: 'ACTIVOS', label: 'Activos', icon: '🟢', count: activosCount },
             { key: 'BLOQUEADOS', label: 'Bloqueados', icon: '🔒', count: bloqueadosCount },
-          ].map(chip => (
+          ]).map(chip => (
             <button
               key={chip.key}
               type="button"
@@ -517,11 +540,13 @@ const VistaUsuarios = () => {
         </div>
 
         {/* Register Modal */}
-        <RegisterModal
-          isOpen={showRegisterModal}
-          onClose={() => setShowRegisterModal(false)}
-          onSuccess={obtenerUsuarios}
-        />
+        {!isClientPortalUser && (
+          <RegisterModal
+            isOpen={showRegisterModal}
+            onClose={() => setShowRegisterModal(false)}
+            onSuccess={obtenerUsuarios}
+          />
+        )}
 
         {/* ── CONTENT SPLIT: TABLE ON LEFT, VERTICAL PROFILE CARD ON RIGHT ── */}
         <div className="vu-content-split">
@@ -532,7 +557,7 @@ const VistaUsuarios = () => {
               <div className="vu-table-card-topbar">
                 <div className="vu-table-title-group">
                   <Users size={16} className="vu-table-icon" />
-                  <span className="vu-table-title">LISTA DE USUARIOS</span>
+                  <span className="vu-table-title">{isClientPortalUser ? "TÉCNICOS DISPONIBLES" : "LISTA DE USUARIOS"}</span>
                   <span className="vu-table-badge-count">{usuariosFiltrados.length}</span>
                 </div>
                 <span className="vu-table-hint-swipe">↔ Desliza la tabla</span>
@@ -557,7 +582,7 @@ const VistaUsuarios = () => {
                         <td colSpan="8" className="vu-loading-cell">
                           <div className="vu-loader-content">
                             <div className="vu-spinner"></div>
-                            <span>Cargando directorio de usuarios...</span>
+                            <span>Cargando directorio...</span>
                           </div>
                         </td>
                       </tr>
@@ -606,7 +631,15 @@ const VistaUsuarios = () => {
 
                             {/* Estado / Estatus Interactivo */}
                             <td data-label="Estado" className="vu-status-cell" onClick={(e) => e.stopPropagation()}>
-                              {isRoot ? (
+                              {isClientPortalUser ? (
+                                <span
+                                  className={`vu-status-pill-btn ${u.bloqueado ? "offline" : "online"}`}
+                                  style={{ cursor: 'default' }}
+                                >
+                                  <span className="vu-status-dot"></span>
+                                  {u.bloqueado ? "No disponible" : "Disponible"}
+                                </span>
+                              ) : isRoot ? (
                                 <button
                                   type="button"
                                   className={`vu-status-pill-btn ${u.bloqueado ? "offline" : "online"}`}
@@ -616,21 +649,12 @@ const VistaUsuarios = () => {
                                   <span className="vu-status-dot"></span>
                                   {u.bloqueado ? "Inactivo" : "Activo"}
                                 </button>
-                              ) : u.id === user?.id ? (
-                                <span
-                                  className={`vu-status-pill-btn ${u.bloqueado ? "offline" : "online"}`}
-                                  style={{ cursor: 'default' }}
-                                  title="Tu cuenta principal"
-                                >
-                                  <span className="vu-status-dot"></span>
-                                  {u.bloqueado ? "Inactivo" : "Activo"}
-                                </span>
                               ) : (
                                 <button
                                   type="button"
                                   className={`vu-status-pill-btn ${u.bloqueado ? "offline" : "online"}`}
                                   onClick={() => toggleBloqueo(u.id, u.role_id, u.bloqueado)}
-                                  title={u.bloqueado ? "Técnico Inactivo (Clic para Activar)" : "Técnico Activo (Clic para Bloquear / Inactivar)"}
+                                  title={u.bloqueado ? "Inactivo (Clic para Activar)" : "Activo (Clic para Bloquear / Inactivar)"}
                                 >
                                   <span className="vu-status-dot"></span>
                                   {u.bloqueado ? "Inactivo" : "Activo"}
@@ -638,7 +662,7 @@ const VistaUsuarios = () => {
                               )}
                             </td>
 
-                            {/* Rol / Tipo de Usuario (Exclusivo de Root, Estático para Clientes) */}
+                            {/* Rol / Tipo de Usuario */}
                             <td data-label="Rol" className="vu-role-cell" onClick={(e) => e.stopPropagation()}>
                               {Number(u.role_id) === 0 ? (
                                 <span className="vu-role-pill-root" title="Usuario con privilegios máximos protegidos">
@@ -675,14 +699,14 @@ const VistaUsuarios = () => {
                                     textTransform: 'uppercase',
                                     userSelect: 'none'
                                   }}
-                                  title={`Rol: ${MAPA_ROLES[u.role_id] || u.rol} (Gestionado por Root)`}
+                                  title={`Rol: ${MAPA_ROLES[u.role_id] || u.rol}`}
                                 >
                                   {MAPA_ROLES[u.role_id] || u.rol}
                                 </span>
                               )}
                             </td>
 
-                            {/* Contacto / Ubicación */}
+                            {/* Contacto */}
                             <td data-label="Contacto" className="vu-contact-cell">
                               <div className="vu-contact-box">
                                 <span className="vu-contact-item" title={u.correo}>
@@ -696,47 +720,51 @@ const VistaUsuarios = () => {
                               </div>
                             </td>
 
-                            {/* Calificación */}
+                            {/* Calificación Dual: ⭐ Calidad y ⏱️ Relojes de Puntualidad */}
                             <td data-label="Calificación" className="vu-rating-cell">
-                              <div className="vu-rating-badge">
-                                <Star size={13} className="vu-star-filled" fill="#f59e0b" color="#f59e0b" />
-                                <span>4.9</span>
+                              <div className="vu-rating-dual-badge">
+                                <div className="vu-rating-dual-item" title="Calidad promedio del trabajo">
+                                  <Star size={12} fill="#f59e0b" color="#f59e0b" />
+                                  <span>{u.rating_stars_avg.toFixed(1)}</span>
+                                </div>
+                                <div className="vu-rating-dual-item" title="Puntualidad promedio de llegada">
+                                  <Clock size={12} color="#06b6d4" />
+                                  <span>{u.rating_time_avg.toFixed(1)}</span>
+                                </div>
                               </div>
+                              {u.my_review && (
+                                <div>
+                                  <span className="vu-my-review-pill" title={`Calificado por ti: ⭐ ${u.my_review.rating_stars} / ⏱️ ${u.my_review.rating_time}`}>
+                                    ⭐ {u.my_review.rating_stars} ⏱️ {u.my_review.rating_time}
+                                  </span>
+                                </div>
+                              )}
                             </td>
 
                             {/* Acciones */}
                             <td data-label="Acciones" className="vu-actions-cell" onClick={(e) => e.stopPropagation()}>
-                              {u.role_id === 0 && !isRoot ? (
-                                <span className="vu-protected-chip" title="Usuario con privilegios máximos">
-                                  <Lock size={12} style={{ display: 'inline-block', marginRight: '4px', verticalAlign: 'middle' }} />
-                                  Protegido
-                                </span>
-                              ) : (
-                                <div className="vu-mockup-actions">
-                                  {/* Ver Expediente */}
-                                  <button
-                                    type="button"
-                                    className="vu-mockup-btn view"
-                                    onClick={() => handleVerExpediente(u)}
-                                    title="Ver expediente completo"
-                                  >
-                                    <Eye size={15} />
-                                  </button>
+                              <div className="vu-mockup-actions">
+                                {/* Ver Expediente */}
+                                <button
+                                  type="button"
+                                  className="vu-mockup-btn view"
+                                  onClick={() => handleVerExpediente(u)}
+                                  title="Ver expediente e historial"
+                                >
+                                  <Eye size={15} />
+                                </button>
 
-                                  {/* Bloquear / Desbloquear (No para sí mismo a menos que sea root, no para root) */}
-                                  {u.role_id !== 0 && (isRoot || u.id !== user?.id) && (
+                                {!isClientPortalUser && u.role_id !== 0 && (isRoot || u.id !== user?.id) && (
+                                  <>
                                     <button
                                       type="button"
                                       className={`vu-mockup-btn ${u.bloqueado ? "unblock" : "lock"}`}
                                       onClick={() => toggleBloqueo(u.id, u.role_id, u.bloqueado)}
-                                      title={u.bloqueado ? "Desbloquear / Activar cuenta" : "Bloquear / Inactivar cuenta"}
+                                      title={u.bloqueado ? "Desbloquear cuenta" : "Bloquear cuenta"}
                                     >
                                       {u.bloqueado ? <Unlock size={15} /> : <Lock size={15} />}
                                     </button>
-                                  )}
 
-                                  {/* Eliminar (No para sí mismo a menos que sea root, no para root) */}
-                                  {u.role_id !== 0 && (isRoot || u.id !== user?.id) && (
                                     <button
                                       type="button"
                                       className="vu-mockup-btn delete"
@@ -745,9 +773,9 @@ const VistaUsuarios = () => {
                                     >
                                       <Trash2 size={15} />
                                     </button>
-                                  )}
-                                </div>
-                              )}
+                                  </>
+                                )}
+                              </div>
                             </td>
 
                           </tr>
@@ -758,7 +786,7 @@ const VistaUsuarios = () => {
                         <td colSpan="8" className="vu-empty-cell">
                           <div className="vu-empty-state">
                             <Users size={36} className="vu-empty-icon" />
-                            <p className="vu-empty-title">No se encontraron usuarios</p>
+                            <p className="vu-empty-title">No se encontraron técnicos</p>
                             <p className="vu-empty-desc">Prueba cambiando el filtro o término de búsqueda.</p>
                           </div>
                         </td>
@@ -812,61 +840,145 @@ const VistaUsuarios = () => {
                     {MAPA_ROLES[selectedTecnico.role_id] || "USUARIO"}
                   </div>
 
-                  <div className="vu-sidebar-rating-row">
+                  {/* Promedios Generales de Calificación */}
+                  <div className="vu-sidebar-rating-row" style={{ marginTop: '8px' }}>
                     <div className="vu-sidebar-stars">
                       <Star size={14} fill="#f59e0b" color="#f59e0b" />
-                      <Star size={14} fill="#f59e0b" color="#f59e0b" />
-                      <Star size={14} fill="#f59e0b" color="#f59e0b" />
-                      <Star size={14} fill="#f59e0b" color="#f59e0b" />
-                      <Star size={14} fill="#f59e0b" color="#f59e0b" />
+                      <span className="vu-sidebar-rating-num">{selectedTecnico.rating_stars_avg.toFixed(1)} ⭐</span>
                     </div>
-                    <span className="vu-sidebar-rating-num">4.9</span>
-                    <span className="vu-sidebar-rating-reviews">(38 reseñas)</span>
+                    <div className="vu-sidebar-stars" style={{ marginLeft: '10px' }}>
+                      <Clock size={14} color="#06b6d4" />
+                      <span className="vu-sidebar-rating-num" style={{ color: '#06b6d4' }}>{selectedTecnico.rating_time_avg.toFixed(1)} ⏱️</span>
+                    </div>
+                    <span className="vu-sidebar-rating-reviews">({selectedTecnico.total_reviews_count} opiniones)</span>
                   </div>
                 </div>
 
-                {/* Root / Admin Control Panel for Selected User */}
-                <div className="vu-sidebar-control-panel">
-                  <label className="vu-sidebar-control-label">
-                    {isRoot ? "⚙️ Control de Estatus & Rol (Root)" : "⚙️ Gestión de Usuario"}
-                  </label>
-
-                  {Number(selectedTecnico.role_id) === 0 ? (
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      padding: '10px 14px',
-                      borderRadius: '12px',
-                      background: 'rgba(245, 158, 11, 0.14)',
-                      border: '1.5px solid rgba(245, 158, 11, 0.4)',
-                      color: '#b45309',
-                      fontWeight: '800',
-                      fontSize: '0.8rem'
-                    }}>
-                      <Crown size={16} color="#d97706" />
-                      <span>CUENTA PROTEGIDA (ROOT MASTER)</span>
-                    </div>
-                  ) : isRoot ? (
-                    <>
-                      {/* Selector rápido de rol (Exclusivo Root) */}
-                      <div style={{ marginBottom: '8px' }}>
-                        <select
-                          className="vu-sidebar-role-select"
-                          value={selectedTecnico.role_id}
-                          onChange={(e) => cambiarRol(selectedTecnico.id, parseInt(e.target.value), selectedTecnico.nombre)}
-                          title="Cambiar rol del usuario (Solo Root)"
-                        >
-                          {OPCIONES_ROLES.map((op) => (
-                            <option key={op.id} value={op.id}>
-                              {op.label}
-                            </option>
-                          ))}
-                        </select>
+                {/* HISTORIAL DE CALIFICACIÓN DEL CLIENTE (READ-ONLY) */}
+                {isClientPortalUser ? (
+                  selectedTecnico.my_review ? (
+                    <div className="vu-client-rating-history-card">
+                      <div className="vu-client-rating-history-header">
+                        <Lock size={13} color="#f26522" />
+                        <span>Tu Calificación Registrada (Fija)</span>
                       </div>
 
-                      {/* Botón directo de cambio de estatus */}
+                      <div className="vu-client-rating-breakdown">
+                        <div className="vu-rating-stat-box">
+                          <span className="vu-stat-label">⭐ Calidad de Trabajo:</span>
+                          <div className="vu-stars-readonly">
+                            {[1, 2, 3, 4, 5].map(st => (
+                              <Star
+                                key={st}
+                                size={13}
+                                fill={st <= selectedTecnico.my_review.rating_stars ? "#f59e0b" : "none"}
+                                color="#f59e0b"
+                              />
+                            ))}
+                            <span className="vu-rating-val">{selectedTecnico.my_review.rating_stars}/5</span>
+                          </div>
+                        </div>
+
+                        <div className="vu-rating-stat-box">
+                          <span className="vu-stat-label">⏱️ Puntualidad de Llegada:</span>
+                          <div className="vu-clocks-readonly">
+                            {[1, 2, 3, 4, 5].map(ck => (
+                              <Clock
+                                key={ck}
+                                size={13}
+                                color={ck <= selectedTecnico.my_review.rating_time ? "#06b6d4" : "#475569"}
+                              />
+                            ))}
+                            <span className="vu-rating-val" style={{ color: '#06b6d4' }}>{selectedTecnico.my_review.rating_time}/5</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {selectedTecnico.my_review.comment && (
+                        <div className="vu-client-review-comment">
+                          <span className="vu-comment-label">Tu Opinión / Motivo:</span>
+                          <p>"{selectedTecnico.my_review.comment}"</p>
+                        </div>
+                      )}
+
+                      <div className="vu-client-review-footer">
+                        <span>📅 {selectedTecnico.my_review.created_at}</span>
+                        <span>🔨 {selectedTecnico.jobs_count || 1} servicio(s)</span>
+                      </div>
+
+                      <p className="vu-readonly-disclaimer">
+                        🔒 Esta calificación es definitiva y queda grabada en el historial de servicio.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="vu-client-rating-pending-card">
+                      <Sparkles size={16} color="#f26522" style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <div>
+                        <h4>Sin Calificación Registrada</h4>
+                        <p>Aún no has evaluado a este técnico. Cuando finalices un trabajo o se cancele, el sistema te solicitará su calificación de puntualidad y estrellas.</p>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  /* Panel de Control de Root/Admin */
+                  <div className="vu-sidebar-control-panel">
+                    <label className="vu-sidebar-control-label">
+                      {isRoot ? "⚙️ Control de Estatus & Rol (Root)" : "⚙️ Gestión de Usuario"}
+                    </label>
+
+                    {Number(selectedTecnico.role_id) === 0 ? (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        background: 'rgba(245, 158, 11, 0.14)',
+                        border: '1.5px solid rgba(245, 158, 11, 0.4)',
+                        color: '#b45309',
+                        fontWeight: '800',
+                        fontSize: '0.8rem'
+                      }}>
+                        <Crown size={16} color="#d97706" />
+                        <span>CUENTA PROTEGIDA (ROOT MASTER)</span>
+                      </div>
+                    ) : isRoot ? (
+                      <>
+                        <div style={{ marginBottom: '8px' }}>
+                          <select
+                            className="vu-sidebar-role-select"
+                            value={selectedTecnico.role_id}
+                            onChange={(e) => cambiarRol(selectedTecnico.id, parseInt(e.target.value), selectedTecnico.nombre)}
+                            title="Cambiar rol del usuario (Solo Root)"
+                          >
+                            {OPCIONES_ROLES.map((op) => (
+                              <option key={op.id} value={op.id}>
+                                {op.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <button
+                          type="button"
+                          className={`vu-sidebar-status-toggle-btn ${selectedTecnico.bloqueado ? "to-activate" : "to-block"}`}
+                          onClick={() => toggleBloqueo(selectedTecnico.id, selectedTecnico.role_id, selectedTecnico.bloqueado)}
+                        >
+                          {selectedTecnico.bloqueado ? (
+                            <>
+                              <Unlock size={14} />
+                              <span>Activar / Desbloquear Cuenta</span>
+                            </>
+                          ) : (
+                            <>
+                              <Lock size={14} />
+                              <span>Bloquear / Inactivar Cuenta</span>
+                            </>
+                          )}
+                        </button>
+                      </>
+                    ) : (
                       <button
                         type="button"
                         className={`vu-sidebar-status-toggle-btn ${selectedTecnico.bloqueado ? "to-activate" : "to-block"}`}
@@ -875,50 +987,18 @@ const VistaUsuarios = () => {
                         {selectedTecnico.bloqueado ? (
                           <>
                             <Unlock size={14} />
-                            <span>Activar / Desbloquear Cuenta</span>
+                            <span>Activar / Desbloquear Técnico</span>
                           </>
                         ) : (
                           <>
                             <Lock size={14} />
-                            <span>Bloquear / Inactivar Cuenta</span>
+                            <span>Bloquear / Inactivar Técnico</span>
                           </>
                         )}
                       </button>
-                    </>
-                  ) : selectedTecnico.id === user?.id ? (
-                    <div style={{
-                      padding: '10px 12px',
-                      background: 'rgba(241, 245, 249, 0.9)',
-                      border: '1.5px solid rgba(203, 213, 225, 0.8)',
-                      borderRadius: '10px',
-                      fontSize: '0.78rem',
-                      color: '#475569',
-                      textAlign: 'center',
-                      fontWeight: '600'
-                    }}>
-                      Tu cuenta principal de cliente (ID de base y rol gestionados por Root)
-                    </div>
-                  ) : (
-                    /* Para técnicos: el cliente solo puede bloquear/inactivar */
-                    <button
-                      type="button"
-                      className={`vu-sidebar-status-toggle-btn ${selectedTecnico.bloqueado ? "to-activate" : "to-block"}`}
-                      onClick={() => toggleBloqueo(selectedTecnico.id, selectedTecnico.role_id, selectedTecnico.bloqueado)}
-                    >
-                      {selectedTecnico.bloqueado ? (
-                        <>
-                          <Unlock size={14} />
-                          <span>Activar / Desbloquear Técnico</span>
-                        </>
-                      ) : (
-                        <>
-                          <Lock size={14} />
-                          <span>Bloquear / Inactivar Técnico</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Details / Contact items */}
                 <div className="vu-sidebar-details-list">
@@ -947,9 +1027,9 @@ const VistaUsuarios = () => {
                       <Shield size={15} />
                     </div>
                     <div className="vu-sidebar-detail-text">
-                      <label>ESTADO DE CUENTA</label>
+                      <label>ESTADO DEL TÉCNICO</label>
                       <span className={selectedTecnico.bloqueado ? "vu-text-danger" : "vu-text-success"}>
-                        {selectedTecnico.bloqueado ? "Acceso Restringido / Bloqueado" : "Cuenta Verificada & Activa"}
+                        {selectedTecnico.bloqueado ? "No disponible para servicios" : "Verificado & Activo para servicios"}
                       </span>
                     </div>
                   </div>
@@ -957,6 +1037,25 @@ const VistaUsuarios = () => {
 
                 {/* Actions Bottom */}
                 <div className="vu-sidebar-actions">
+                  {selectedTecnico.telefono && isClientPortalUser && (
+                    <div className="vu-client-contact-actions">
+                      <button
+                        type="button"
+                        className="vu-btn-contact-action call"
+                        onClick={() => window.open(`tel:${selectedTecnico.telefono}`)}
+                      >
+                        <Phone size={14} /> Llamar
+                      </button>
+                      <button
+                        type="button"
+                        className="vu-btn-contact-action email"
+                        onClick={() => window.open(`mailto:${selectedTecnico.correo}`)}
+                      >
+                        <Mail size={14} /> Correo
+                      </button>
+                    </div>
+                  )}
+
                   <button
                     type="button"
                     className="vu-sidebar-btn-primary"
@@ -966,7 +1065,7 @@ const VistaUsuarios = () => {
                     <span>{selectedTecnico.isCliente ? "EXPEDIENTE DEL CLIENTE" : "EXPEDIENTE COMPLETO"}</span>
                   </button>
 
-                  {selectedTecnico.role_id !== 0 && (isRoot || selectedTecnico.id !== user?.id) && (
+                  {!isClientPortalUser && selectedTecnico.role_id !== 0 && (isRoot || selectedTecnico.id !== user?.id) && (
                     <div className="vu-sidebar-secondary-actions">
                       <button
                         type="button"
@@ -996,13 +1095,13 @@ const VistaUsuarios = () => {
                 </div>
 
                 <div className="vu-sidebar-empty-text-wrap">
-                  <h4>Ningún Usuario Seleccionado</h4>
-                  <p>Selecciona un usuario de la lista para ver su tarjeta de perfil, cambiar su rol y modificar su estatus.</p>
+                  <h4>Ningún Técnico Seleccionado</h4>
+                  <p>Selecciona un técnico de la lista para ver su perfil, especialidad y tu historial de calificaciones.</p>
                 </div>
 
                 <div className="vu-sidebar-empty-hint">
                   <MousePointerClick size={13} className="vu-hint-icon" />
-                  <span>Haz clic en una fila para activar</span>
+                  <span>Haz clic en una fila para ver detalles</span>
                 </div>
               </div>
             )}

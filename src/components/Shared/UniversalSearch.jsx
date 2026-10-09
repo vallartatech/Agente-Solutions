@@ -26,6 +26,8 @@ const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, typ
           coincideFiltro = Number(item.role_id) === 2;
         } else if (filtroActual === "TECNICOS_RED") {
           coincideFiltro = Number(item.role_id) === 8;
+        } else if (filtroActual === "CALIFICADOS" || filtroActual === "HISTORIAL") {
+          coincideFiltro = item.my_review !== null;
         } else if (filtroActual === "CONTRATISTAS") {
           coincideFiltro = Number(item.role_id) === 6;
         } else if (filtroActual === "AUTONOMOS") {

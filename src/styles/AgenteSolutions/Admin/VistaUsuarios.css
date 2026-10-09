@@ -1702,3 +1702,202 @@
     font-size: 0.78rem;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   CLIENT PORTAL - HISTORIAL DE CALIFICACIONES DE TÉCNICOS (READ-ONLY)
+════════════════════════════════════════════════════════════════════════════ */
+.vu-rating-dual-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.vu-rating-dual-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.vu-my-review-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(242, 101, 34, 0.12);
+  border: 1px solid rgba(242, 101, 34, 0.35);
+  color: #c2410c;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  margin-top: 3px;
+}
+
+.vu-client-rating-history-card {
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  border: 1.5px solid rgba(242, 101, 34, 0.4);
+  border-radius: 14px;
+  padding: 14px;
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.vu-client-rating-history-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #f26522;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.vu-client-rating-breakdown {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vu-rating-stat-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.vu-stat-label {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.vu-stars-readonly,
+.vu-clocks-readonly {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.vu-rating-val {
+  margin-left: 6px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.vu-client-review-comment {
+  background: rgba(0, 0, 0, 0.25);
+  border-left: 3px solid #f26522;
+  padding: 8px 10px;
+  border-radius: 4px 8px 8px 4px;
+  font-size: 0.78rem;
+  color: #e2e8f0;
+  line-height: 1.4;
+}
+
+.vu-client-review-comment .vu-comment-label {
+  display: block;
+  font-size: 0.65rem;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.vu-client-review-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 700;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 6px;
+}
+
+.vu-readonly-disclaimer {
+  font-size: 0.66rem;
+  color: #fb923c;
+  background: rgba(242, 101, 34, 0.08);
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.vu-client-rating-pending-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(241, 245, 249, 0.8);
+  border: 1px dashed rgba(148, 163, 184, 0.6);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.vu-client-rating-pending-card h4 {
+  margin: 0 0 3px 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #334155;
+}
+
+.vu-client-rating-pending-card p {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.vu-client-contact-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.vu-btn-contact-action {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.vu-btn-contact-action.call {
+  background: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+}
+
+.vu-btn-contact-action.call:hover {
+  background: #15803d;
+}
+
+.vu-btn-contact-action.email {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+}
+
+.vu-btn-contact-action.email:hover {
+  background: #0369a1;
+}
