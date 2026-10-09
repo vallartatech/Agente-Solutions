@@ -34,9 +34,7 @@ import {
 import { useAuth } from "../../../context/AuthContext";
 import UniversalSearch from "../../../components/Shared/UniversalSearch";
 import RegisterModal from "../../../components/Auth/Register";
-import ModalCalendarioCliente from "../../AgenteMarket/Cliente/ModalCalendarioCliente";
-import NotificationBell from "../../../components/Shared/NotificationBell";
-import defaultLogo from "../../../assets/Logo4.png";
+import Header from "../../../components/Shared/Header";
 import "../../../styles/AgenteSolutions/Admin/VistaUsuarios.css";
 
 const MAPA_ROLES = {
@@ -90,19 +88,15 @@ const getRoleStyle = (roleId) => {
 
 const VistaUsuarios = () => {
   const navigate = useNavigate();
-  const { user, logout, logoutGlobal } = useAuth();
+  const { user } = useAuth();
   const [filtro, setFiltro] = useState("TODOS");
   const [cargando, setCargando] = useState(true);
   const [listaUsuarios, setListaUsuarios] = useState([]);
   const [usuariosFiltrados, setUsuariosFiltrados] = useState([]);
   const [selectedTecnicoId, setSelectedTecnicoId] = useState(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [showModalCalendario, setShowModalCalendario] = useState(false);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
-  const [appLogo, setAppLogo] = useState(defaultLogo);
 
-  const dropdownRef = useRef(null);
   const filterDropdownRef = useRef(null);
   const isRoot = Number(user?.role_id) === 0;
 
@@ -123,29 +117,9 @@ const VistaUsuarios = () => {
     return usuariosFiltrados.find(u => u.id === selectedTecnicoId) || listaUsuarios.find(u => u.id === selectedTecnicoId) || null;
   }, [usuariosFiltrados, listaUsuarios, selectedTecnicoId]);
 
-  // Cargar logo de personalización
-  useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_BASE_URL}/ui/settings/login-settings`)
-      .then(res => {
-        if (res.data?.logo_url) {
-          setAppLogo(res.data.logo_url);
-        } else if (res.data?.settings?.appLogo) {
-          setAppLogo(res.data.settings.appLogo);
-        }
-      })
-      .catch(() => { });
-  }, []);
-
-  // Cerrar dropdowns al hacer click fuera
+  // Cerrar dropdown de filtro al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (
-        dropdownRef.current && 
-        !dropdownRef.current.contains(e.target) &&
-        !e.target.closest?.('.vcp-profile-dropdown')
-      ) {
-        setProfileDropdownOpen(false);
-      }
       if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target)) {
         setFilterDropdownOpen(false);
       }
@@ -374,99 +348,8 @@ const VistaUsuarios = () => {
 
   return (
     <div className="vu-root">
-      {/* ── TOP NAVIGATION BAR ── */}
-      <header className="vcp-header vu-header">
-        <div className="vcp-header-left">
-          <img
-            src={appLogo}
-            alt="Agente Solutions Logo"
-            className="vcp-brand-logo"
-            onClick={irAlInicio}
-            title="Ir al Inicio"
-          />
-        </div>
-
-        {/* Center Nav Links */}
-        <nav className="vcp-header-nav">
-          <button className="vcp-nav-btn" onClick={irAlInicio}>
-            INICIO
-          </button>
-          <button className="vcp-nav-btn active" onClick={() => navigate('/usuarios')}>
-            USUARIOS
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
-            REPORTE
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
-            COTIZACION
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
-            SERVICIOS
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
-            MERCADO / RED
-          </button>
-        </nav>
-
-        {/* User profile section on top right */}
-        <div className="vcp-header-right" ref={dropdownRef}>
-          <div className="vcp-header-actions-group">
-            <button
-              type="button"
-              className="vcp-nav-icon-btn"
-              title="Abrir Calendario y Citas"
-              onClick={() => setShowModalCalendario(true)}
-            >
-              <CalendarDays size={18} strokeWidth={2.2} />
-            </button>
-
-            <NotificationBell />
-          </div>
-
-          <button
-            className="vcp-avatar-btn"
-            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            title="Opciones de perfil"
-            aria-label="Perfil"
-          >
-            {userAvatar ? (
-              <img src={userAvatar} alt="Avatar" className="vcp-avatar-img" />
-            ) : (
-              <div className="vcp-avatar-initial">{userInitial}</div>
-            )}
-          </button>
-
-          {profileDropdownOpen && (
-            <div className="vcp-profile-dropdown">
-              <div className="vcp-dropdown-user-header">
-                <div className="vcp-dropdown-role-pill">
-                  <Shield size={12} className="vcp-dropdown-role-icon" />
-                  <span>{userRoleLabel}</span>
-                </div>
-                <div className="vcp-dropdown-user-name">{userFullName}</div>
-              </div>
-
-              <div className="vcp-dropdown-divider" />
-
-              <button
-                className="vcp-dropdown-item"
-                onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
-              >
-                <User size={16} /> Mi Perfil
-              </button>
-              <button
-                className="vcp-dropdown-item logout"
-                onClick={() => {
-                  setProfileDropdownOpen(false);
-                  handleCerrarSesion();
-                }}
-              >
-                <LogOut size={16} /> Cerrar Sesión
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
+      {/* ── SHARED HEADER BAR WITH MOBILE BOTTOM NAV ── */}
+      <Header activeModule="usuarios" />
 
       {/* ── MAIN CONTENT AREA ── */}
       <main className="vu-main-container">
@@ -640,17 +523,20 @@ const VistaUsuarios = () => {
           onSuccess={obtenerUsuarios}
         />
 
-        {/* Calendar Modal */}
-        {showModalCalendario && (
-          <ModalCalendarioCliente onClose={() => setShowModalCalendario(false)} />
-        )}
-
         {/* ── CONTENT SPLIT: TABLE ON LEFT, VERTICAL PROFILE CARD ON RIGHT ── */}
         <div className="vu-content-split">
           
           {/* Left Table Section */}
           <div className="vu-table-section">
             <div className="vu-table-card">
+              <div className="vu-table-card-topbar">
+                <div className="vu-table-title-group">
+                  <Users size={16} className="vu-table-icon" />
+                  <span className="vu-table-title">LISTA DE USUARIOS</span>
+                  <span className="vu-table-badge-count">{usuariosFiltrados.length}</span>
+                </div>
+                <span className="vu-table-hint-swipe">↔ Desliza la tabla</span>
+              </div>
               <div className="vu-table-responsive-wrapper">
                 <table className="vu-modern-table">
                   <thead>

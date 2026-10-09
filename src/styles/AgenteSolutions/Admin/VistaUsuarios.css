@@ -651,6 +651,57 @@
   z-index: 2;
 }
 
+.vu-table-card-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: rgba(248, 250, 252, 0.90);
+  border-bottom: 1.5px solid rgba(226, 232, 240, 0.9);
+}
+
+.vu-table-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vu-table-icon {
+  color: #f26522;
+}
+
+.vu-table-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.80rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #334155;
+  text-transform: uppercase;
+}
+
+.vu-table-badge-count {
+  background: rgba(242, 101, 34, 0.12);
+  color: #ea580c;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  border: 1px solid rgba(242, 101, 34, 0.3);
+}
+
+.vu-table-hint-swipe {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .vu-table-hint-swipe {
+    display: inline-block;
+  }
+}
+
 .vu-table-responsive-wrapper {
   width: 100%;
   max-height: 640px;
@@ -1538,11 +1589,116 @@
 @media (max-width: 1180px) {
   .vu-content-split {
     flex-direction: column-reverse;
+    gap: 16px;
   }
   .vu-profile-sidebar-wrap {
     width: 100%;
   }
   .vu-sidebar-card {
     position: static;
+    max-width: 100%;
+  }
+  .vu-table-section {
+    width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .vu-root {
+    padding-bottom: 85px !important;
+  }
+  
+  .vu-main-container {
+    width: 94%;
+    margin: 12px auto 85px auto !important;
+    gap: 12px;
+  }
+
+  .vu-table-responsive-wrapper {
+    max-height: 480px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .vu-modern-table {
+    min-width: 820px;
+  }
+
+  .vu-modern-table thead th {
+    padding: 12px 12px;
+    font-size: 0.70rem;
+  }
+
+  .vu-modern-table td {
+    padding: 12px 12px;
+    font-size: 0.82rem;
+  }
+
+  .vu-category-chips-bar {
+    padding-bottom: 4px;
+  }
+
+  .vu-category-chip {
+    padding: 5px 12px;
+    font-size: 0.74rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .vu-main-container {
+    width: 92%;
+    margin: 8px auto 90px auto !important;
+    gap: 10px;
+  }
+
+  .vu-page-title-badge {
+    font-size: 0.72rem;
+    padding: 5px 12px;
+  }
+
+  .vu-search-unified .search-input-large {
+    font-size: 0.82rem !important;
+    padding: 10px 14px 10px 40px !important;
+  }
+
+  .vu-icon-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+
+  .vu-table-card {
+    border-radius: 16px;
+  }
+
+  .vu-table-card-topbar {
+    padding: 10px 14px;
+  }
+
+  .vu-table-title {
+    font-size: 0.75rem;
+  }
+
+  .vu-sidebar-card {
+    padding: 18px 14px;
+    border-radius: 18px;
+    gap: 14px;
+  }
+
+  .vu-sidebar-avatar-wrap {
+    width: 74px;
+    height: 74px;
+  }
+
+  .vu-sidebar-name {
+    font-size: 1.05rem;
+  }
+
+  .vu-sidebar-detail-item {
+    padding: 8px 10px;
+  }
+
+  .vu-sidebar-btn-primary {
+    padding: 10px 14px;
+    font-size: 0.78rem;
   }
 }
