@@ -4824,6 +4824,19 @@
   gap: 12px;
   margin-top: 10px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: all 0.25s ease;
+}
+
+.mercado-board-schedule-action-box.mandatory {
+  background: rgba(245, 158, 11, 0.07);
+  border: 1.5px dashed rgba(245, 158, 11, 0.65);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
+  animation: scheduleBorderGlow 2s infinite ease-in-out;
+}
+
+@keyframes scheduleBorderGlow {
+  0%, 100% { border-color: rgba(245, 158, 11, 0.5); box-shadow: 0 0 12px rgba(245, 158, 11, 0.15); }
+  50% { border-color: rgba(245, 158, 11, 0.95); box-shadow: 0 0 22px rgba(245, 158, 11, 0.35); }
 }
 
 .mercado-board-schedule-info {
@@ -4837,6 +4850,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .mercado-board-schedule-label {
@@ -4869,9 +4883,25 @@
   border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
+.mercado-board-schedule-status-tag.mandatory {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  animation: pulseTag 1.5s infinite;
+}
+
+@keyframes pulseTag {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; filter: brightness(1.2); }
+}
+
 .mercado-board-schedule-time-text {
   font-size: 12.5px;
   color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .mercado-board-schedule-time-text strong {
@@ -4879,10 +4909,44 @@
   font-weight: 800;
 }
 
+.mercado-board-schedule-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.mercado-board-schedule-countdown.imminent {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
+}
+
+.mercado-board-schedule-countdown.upcoming {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.mercado-board-schedule-countdown.inprogress {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.mercado-board-schedule-countdown.future {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
 .mercado-board-schedule-not-set {
-  color: #94a3b8;
-  font-size: 12px;
-  font-style: italic;
+  color: #fbbf24;
+  font-size: 11.5px;
+  font-weight: 600;
 }
 
 .mercado-board-schedule-change-btn {
@@ -4904,10 +4968,63 @@
   flex-shrink: 0;
 }
 
+.mercado-board-schedule-change-btn.mandatory {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45);
+  animation: btnPulse 1.8s infinite alternate;
+}
+
+@keyframes btnPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.025); }
+}
+
 .mercado-board-schedule-change-btn:hover {
   background: linear-gradient(135deg, #ff7a38 0%, #f26522 100%);
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(242, 101, 34, 0.5);
+}
+
+/* Uber Floating Nav Panel Dynamic Schedule Row */
+.mercado-uber-schedule-banner {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.mercado-uber-schedule-banner.has-date {
+  border-color: rgba(56, 189, 248, 0.3);
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.mercado-uber-schedule-banner.missing {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.mercado-uber-quick-schedule-btn {
+  background: #f26522;
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.mercado-uber-quick-schedule-btn:hover {
+  background: #ff7a38;
 }
 
 .mercado-schedule-modal-overlay {

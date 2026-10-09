@@ -456,6 +456,13 @@ const MercadoTrabajos = () => {
   const { user, logoutGlobal } = useAuth();
   const authUser = user;
 
+  // Timer reactivo para actualizar dinámicamente minutos restantes cada 30 segundos
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
   // GPS Tracking en tiempo real del técnico
   useEffect(() => {
     if ('geolocation' in navigator) {
@@ -490,30 +497,108 @@ const MercadoTrabajos = () => {
     return (R * c).toFixed(1);
   };
 
+  // Cálculo dinámico de minutos faltantes e información de horario
+  const getTimeRemainingInfo = (jobOrDate) => {
+    const rawDate = typeof jobOrDate === 'object' ? (jobOrDate?.scheduled_at || jobOrDate?.scheduled_date || jobOrDate?.fecha_cita) : jobOrDate;
+    if (!rawDate) {
+      return {
+        hasSchedule: false,
+        text: '⚠️ Asignación obligatoria',
+        shortText: 'Sin horario',
+        badgeClass: 'mandatory',
+        minutesDiff: null,
+        formattedTime: null,
+        isUrgent: false
+      };
+    }
+    try {
+      const schedTime = new Date(rawDate).getTime();
+      if (isNaN(schedTime)) {
+        return {
+          hasSchedule: false,
+          text: '⚠️ Asignación obligatoria',
+          shortText: 'Sin horario',
+          badgeClass: 'mandatory',
+          minutesDiff: null,
+          formattedTime: null,
+          isUrgent: false
+        };
+      }
+      const nowTime = currentTime || Date.now();
+      const diffMinutes = Math.round((schedTime - nowTime) / 60000);
+      const dObj = new Date(rawDate);
+      const formattedTime = dObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+      const formattedDate = dObj.toLocaleDateString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+      let text = '';
+      let shortText = '';
+      let badgeClass = 'future';
+      let isUrgent = false;
+
+      if (diffMinutes > 1440) {
+        const days = Math.round(diffMinutes / 1440);
+        text = `📅 Cita en ${days} día${days > 1 ? 's' : ''} (${formattedTime})`;
+        shortText = formattedDate;
+        badgeClass = 'future';
+      } else if (diffMinutes > 60) {
+        const hours = Math.floor(diffMinutes / 60);
+        const mins = diffMinutes % 60;
+        text = `⏳ Faltan ${hours}h ${mins > 0 ? `${mins}m` : ''} para la cita`;
+        shortText = `En ${hours}h ${mins > 0 ? `${mins}m` : ''}`;
+        badgeClass = 'upcoming';
+      } else if (diffMinutes > 0) {
+        text = `⚡ Faltan ${diffMinutes} min para la cita`;
+        shortText = `En ${diffMinutes} min`;
+        badgeClass = 'imminent';
+        isUrgent = true;
+      } else if (diffMinutes === 0) {
+        text = `📍 ¡Es la hora acordada de la cita!`;
+        shortText = `Hora acordada`;
+        badgeClass = 'imminent';
+        isUrgent = true;
+      } else if (diffMinutes >= -180) {
+        text = `📍 Cita en curso (+${Math.abs(diffMinutes)} min)`;
+        shortText = `En curso (+${Math.abs(diffMinutes)}m)`;
+        badgeClass = 'inprogress';
+      } else {
+        text = `⏰ Visita agendada el ${formattedDate}`;
+        shortText = formattedDate;
+        badgeClass = 'future';
+      }
+
+      return {
+        hasSchedule: true,
+        text,
+        shortText,
+        badgeClass,
+        minutesDiff: diffMinutes,
+        formattedTime,
+        formattedDate,
+        isUrgent
+      };
+    } catch {
+      return {
+        hasSchedule: false,
+        text: '⚠️ Asignación obligatoria',
+        shortText: 'Sin horario',
+        badgeClass: 'mandatory',
+        minutesDiff: null,
+        formattedTime: null,
+        isUrgent: false
+      };
+    }
+  };
+
   // Detección inteligente de horario para brillo de marcador (si faltan 45 min o menos)
   const getSmartScheduleStatus = (job) => {
-    if (!job || !job.scheduled_at) return { isUrgentGlow: false, label: null, minutesLeft: null };
-    try {
-      const schedTime = new Date(job.scheduled_at).getTime();
-      if (isNaN(schedTime)) return { isUrgentGlow: false, label: null, minutesLeft: null };
-      const nowTime = Date.now();
-      const diffMinutes = Math.round((schedTime - nowTime) / 60000);
-
-      if (diffMinutes <= 45 && diffMinutes >= -120) {
-        let label = '';
-        if (diffMinutes > 0) {
-          label = `⚡ Cita en ${diffMinutes} min`;
-        } else if (diffMinutes === 0) {
-          label = `⚡ ¡Es la hora de la cita!`;
-        } else {
-          label = `⚡ Cita en curso`;
-        }
-        return { isUrgentGlow: true, label, minutesLeft: diffMinutes };
-      }
-      return { isUrgentGlow: false, label: null, minutesLeft: diffMinutes };
-    } catch {
+    const info = getTimeRemainingInfo(job);
+    if (!info.hasSchedule || info.minutesDiff === null) {
       return { isUrgentGlow: false, label: null, minutesLeft: null };
     }
+    if (info.minutesDiff <= 45 && info.minutesDiff >= -120) {
+      return { isUrgentGlow: true, label: info.text, minutesLeft: info.minutesDiff };
+    }
+    return { isUrgentGlow: false, label: null, minutesLeft: info.minutesDiff };
   };
 
   // Iniciar ruta de navegación hacia el trabajo (Modo Uber)
@@ -1362,6 +1447,24 @@ const MercadoTrabajos = () => {
   const handleStartBoardJob = async () => {
     if (!selectedBoardJob) return;
 
+    // Validación de horario de llegada obligatorio
+    if (!selectedBoardJob.scheduled_at) {
+      const res = await Swal.fire({
+        icon: 'warning',
+        title: '⏰ Hora de Llegada Obligatoria',
+        text: 'Es obligatorio definir la hora estimada de llegada para este trabajo para que el cliente pueda darle seguimiento en su calendario.',
+        showCancelButton: true,
+        confirmButtonColor: '#f26522',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '⏰ Asignar Horario Ahora',
+        cancelButtonText: 'Continuar al Reporte'
+      });
+      if (res.isConfirmed) {
+        handleOpenBoardScheduler(selectedBoardJob);
+        return;
+      }
+    }
+
     // Si aún no está en progreso, actualizar estado
     if (selectedBoardJob.status !== 'En Progreso' && selectedBoardJob.status !== 'Finalizado' && selectedBoardJob.status !== 'Listo') {
       try {
@@ -1526,7 +1629,7 @@ const MercadoTrabajos = () => {
 
   // ─── TABLERO VISIT SCHEDULING HANDLERS ───
   const handleOpenBoardScheduler = (job) => {
-    const targetJob = job || selectedBoardJob;
+    const targetJob = job || selectedBoardJob || activeNavJob;
     if (!targetJob) return;
 
     let initialDate = '';
@@ -1550,7 +1653,8 @@ const MercadoTrabajos = () => {
 
   const handleSaveBoardSchedule = async (e) => {
     if (e) e.preventDefault();
-    if (!selectedBoardJob) return;
+    const targetJob = selectedBoardJob || activeNavJob;
+    if (!targetJob) return;
     if (!boardScheduleDate) {
       Swal.fire({
         icon: 'warning',
@@ -1562,26 +1666,26 @@ const MercadoTrabajos = () => {
 
     setSubmittingBoardSchedule(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/mercado-trabajos/${selectedBoardJob.id}/programar-visita`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${targetJob.id}/programar-visita`,
+        {
           scheduled_at: boardScheduleDate,
           notes: boardScheduleNotes
-        })
-      });
+        },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        }
+      );
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Error al agendar la visita');
-      }
+      const savedDate = response.data?.scheduled_at || boardScheduleDate;
 
       setAcceptedJobs(prev => prev.map(j => {
-        if (j.id === selectedBoardJob.id) {
+        if (j.id === targetJob.id) {
           return {
             ...j,
-            scheduled_at: boardScheduleDate,
-            scheduled_date: boardScheduleDate,
+            scheduled_at: savedDate,
+            scheduled_date: savedDate,
             visit_notes: boardScheduleNotes,
             visit_status: 'CONFIRMED'
           };
@@ -1589,20 +1693,44 @@ const MercadoTrabajos = () => {
         return j;
       }));
 
+      setSelectedBoardJob(prev => {
+        if (prev && prev.id === targetJob.id) {
+          return {
+            ...prev,
+            scheduled_at: savedDate,
+            scheduled_date: savedDate,
+            visit_notes: boardScheduleNotes,
+            visit_status: 'CONFIRMED'
+          };
+        }
+        return prev;
+      });
+
+      if (activeNavJob && activeNavJob.id === targetJob.id) {
+        setActiveNavJob(prev => ({
+          ...prev,
+          scheduled_at: savedDate,
+          scheduled_date: savedDate,
+          visit_notes: boardScheduleNotes,
+          visit_status: 'CONFIRMED'
+        }));
+      }
+
       Swal.fire({
         icon: 'success',
         title: '¡Horario Programado!',
-        text: 'Se ha agendado la visita y notificado al cliente.',
-        timer: 2000,
+        text: response.data?.message || 'Se ha agendado la visita y sincronizado con el calendario del cliente.',
+        timer: 2500,
         showConfirmButton: false
       });
 
       setShowBoardScheduleModal(false);
+      fetchJobs();
     } catch (err) {
       console.error('Error al programar visita:', err);
-      // Actualización optimista local
+      // Actualización optimista local en caso de desconexión
       setAcceptedJobs(prev => prev.map(j => {
-        if (j.id === selectedBoardJob.id) {
+        if (j.id === targetJob.id) {
           return {
             ...j,
             scheduled_at: boardScheduleDate,
@@ -1912,8 +2040,16 @@ const MercadoTrabajos = () => {
 
                           <div className="mercado-board-job-footer">
                             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <Clock size={12} />
-                              {job.scheduled_at ? new Date(job.scheduled_at).toLocaleDateString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Por coordinar'}
+                              <Clock size={12} color={job.scheduled_at ? '#38bdf8' : '#fbbf24'} />
+                              {job.scheduled_at ? (
+                                <span style={{ color: '#38bdf8', fontWeight: '700' }}>
+                                  {getTimeRemainingInfo(job).shortText}
+                                </span>
+                              ) : (
+                                <span style={{ color: '#fbbf24', fontWeight: '700' }}>
+                                  ⚠️ Sin horario
+                                </span>
+                              )}
                             </span>
                             {job.agreed_price > 0 && (
                               <span style={{ color: '#4ade80', fontWeight: '800' }}>
@@ -1945,6 +2081,7 @@ const MercadoTrabajos = () => {
                                     selectedBoardJob.foto || 
                                     (selectedBoardJob.fotos && selectedBoardJob.fotos.length > 0 ? selectedBoardJob.fotos[0] : null);
                 const facadeImg = resolveImageUrl(rawAnyPhoto);
+                const boardSched = getTimeRemainingInfo(selectedBoardJob);
 
                 return (
                   <div className="mercado-board-col-detail">
@@ -2001,19 +2138,24 @@ const MercadoTrabajos = () => {
                           </div>
 
                           {/* Horario de Visita / Cita Programada Interactivo */}
-                          <div className="mercado-board-schedule-action-box">
+                          <div className={`mercado-board-schedule-action-box ${!selectedBoardJob.scheduled_at ? 'mandatory' : ''}`}>
                             <div className="mercado-board-schedule-info">
                               <div className="mercado-board-schedule-header-row">
                                 <span className="mercado-board-schedule-label">
                                   <Clock size={12} color="#f26522" /> Horario de Visita
                                 </span>
                                 {selectedBoardJob.scheduled_at ? (
-                                  <span className="mercado-board-schedule-status-tag confirmed">
-                                    Agendado
-                                  </span>
+                                  <>
+                                    <span className="mercado-board-schedule-status-tag confirmed">
+                                      Agendado
+                                    </span>
+                                    <span className={`mercado-board-schedule-countdown ${boardSched.badgeClass}`}>
+                                      {boardSched.text}
+                                    </span>
+                                  </>
                                 ) : (
-                                  <span className="mercado-board-schedule-status-tag pending">
-                                    Pendiente
+                                  <span className="mercado-board-schedule-status-tag mandatory">
+                                    ⚠️ Asignación Obligatoria
                                   </span>
                                 )}
                               </div>
@@ -2031,7 +2173,7 @@ const MercadoTrabajos = () => {
                                   </strong>
                                 ) : (
                                   <span className="mercado-board-schedule-not-set">
-                                    Sin horario asignado (Por coordinar con el cliente)
+                                    ⚠️ Debes ingresar tu hora estimada de llegada para este servicio y sincronizar al cliente.
                                   </span>
                                 )}
                               </div>
@@ -2039,12 +2181,12 @@ const MercadoTrabajos = () => {
 
                             <button
                               type="button"
-                              className="mercado-board-schedule-change-btn"
+                              className={`mercado-board-schedule-change-btn ${!selectedBoardJob.scheduled_at ? 'mandatory' : ''}`}
                               onClick={() => handleOpenBoardScheduler(selectedBoardJob)}
                               title="Programar o cambiar fecha y hora de la visita"
                             >
                               <Calendar size={13} />
-                              {selectedBoardJob.scheduled_at ? 'Cambiar Horario' : 'Agendar Visita'}
+                              {selectedBoardJob.scheduled_at ? 'Cambiar Horario' : '⏰ Agendar Hora de Llegada'}
                             </button>
                           </div>
                         </div>
@@ -3020,81 +3162,116 @@ const MercadoTrabajos = () => {
                 {/* ══════════════════════════════════════════════════
                     PANEL DE RUTA Y LLEGADA FLOTANTE (ESTILO UBER)
                     ══════════════════════════════════════════════════ */}
-                {activeNavJob && (
-                  <div className="mercado-uber-nav-panel">
-                    <div className="mercado-uber-header">
-                      <div className="mercado-uber-title-group">
-                        <span className="mercado-uber-pulse-dot" />
-                        <strong style={{ fontSize: '12.5px', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                          {navStatus === 'en_sitio' ? '✅ En el lugar del trabajo' : '🚀 En camino al servicio'}
-                        </strong>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveNavJob(null);
-                          setNavDirections(null);
-                          setNavStatus('idle');
-                        }}
-                        style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}
-                        title="Cerrar navegación"
-                      >
-                        ×
-                      </button>
-                    </div>
+                {activeNavJob && (() => {
+                  const navSched = getTimeRemainingInfo(activeNavJob);
 
-                    <div className="mercado-uber-body-grid">
-                      <div className="mercado-uber-dest-info">
-                        <h4 className="mercado-uber-prop-name">
-                          {activeNavJob.titulo}
-                        </h4>
-                        <p className="mercado-uber-address">
-                          <MapPin size={13} color="#f26522" />
-                          <span>{activeNavJob.full_address || activeNavJob.calle || activeNavJob.zona}</span>
-                        </p>
-                        <span style={{ fontSize: '11.5px', color: '#cbd5e1' }}>
-                          👤 Cliente: <strong>{activeNavJob.client_name || activeNavJob.cliente}</strong>
-                        </span>
+                  return (
+                    <div className="mercado-uber-nav-panel">
+                      <div className="mercado-uber-header">
+                        <div className="mercado-uber-title-group">
+                          <span className="mercado-uber-pulse-dot" />
+                          <strong style={{ fontSize: '12.5px', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                            {navStatus === 'en_sitio' ? '✅ En el lugar del trabajo' : '🚀 En camino al servicio'}
+                          </strong>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveNavJob(null);
+                            setNavDirections(null);
+                            setNavStatus('idle');
+                          }}
+                          style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}
+                          title="Cerrar navegación"
+                        >
+                          ×
+                        </button>
                       </div>
 
-                      <div className="mercado-uber-stats">
-                        {navDuration && <span className="mercado-uber-eta">{navDuration}</span>}
-                        {navDistance ? (
-                          <span className="mercado-uber-dist">{navDistance}</span>
-                        ) : (
-                          technicianLocation && activeNavJob.lat && (
-                            <span className="mercado-uber-dist">
-                              Aprox. {calculateDistanceKm(technicianLocation.lat, technicianLocation.lng, activeNavJob.lat, activeNavJob.lng)} km
+                      <div className="mercado-uber-body-grid">
+                        <div className="mercado-uber-dest-info">
+                          <h4 className="mercado-uber-prop-name">
+                            {activeNavJob.titulo}
+                          </h4>
+                          <p className="mercado-uber-address">
+                            <MapPin size={13} color="#f26522" />
+                            <span>{activeNavJob.full_address || activeNavJob.calle || activeNavJob.zona}</span>
+                          </p>
+                          <span style={{ fontSize: '11.5px', color: '#cbd5e1' }}>
+                            👤 Cliente: <strong>{activeNavJob.client_name || activeNavJob.cliente}</strong>
+                          </span>
+                        </div>
+
+                        <div className="mercado-uber-stats">
+                          {navDuration && <span className="mercado-uber-eta">{navDuration}</span>}
+                          {navDistance ? (
+                            <span className="mercado-uber-dist">{navDistance}</span>
+                          ) : (
+                            technicianLocation && activeNavJob.lat && (
+                              <span className="mercado-uber-dist">
+                                Aprox. {calculateDistanceKm(technicianLocation.lat, technicianLocation.lng, activeNavJob.lat, activeNavJob.lng)} km
+                              </span>
+                            )
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Banner dinámico de hora de llegada y cuenta regresiva */}
+                      <div className={`mercado-uber-schedule-banner ${navSched.hasSchedule ? 'has-date' : 'missing'}`}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                          <Clock size={14} color={navSched.hasSchedule ? '#38bdf8' : '#fbbf24'} style={{ flexShrink: 0 }} />
+                          {navSched.hasSchedule ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: '800', color: '#ffffff' }}>
+                                Cita: {navSched.formattedTime}
+                              </span>
+                              <span style={{ color: '#64748b' }}>•</span>
+                              <span style={{ color: navSched.isUrgent ? '#fb923c' : '#38bdf8', fontWeight: '800' }}>
+                                {navSched.text}
+                              </span>
+                            </div>
+                          ) : (
+                            <span style={{ color: '#fbbf24', fontWeight: '700' }}>
+                              ⚠️ Sin horario de llegada programado
                             </span>
-                          )
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="mercado-uber-quick-schedule-btn"
+                          onClick={() => handleOpenBoardScheduler(activeNavJob)}
+                          title="Definir o cambiar hora de llegada"
+                        >
+                          <Calendar size={12} /> {navSched.hasSchedule ? 'Modificar' : 'Agendar'}
+                        </button>
+                      </div>
+
+                      <div className="mercado-uber-actions-row">
+                        <button
+                          type="button"
+                          className="mercado-uber-btn-arrived"
+                          onClick={() => handleConfirmArrival(activeNavJob)}
+                        >
+                          <CheckCircle2 size={16} />
+                          <span>📍 ME ENCUENTRO EN EL LUGAR</span>
+                        </button>
+
+                        {activeNavJob.client_phone && (
+                          <button
+                            type="button"
+                            className="mercado-uber-btn-call"
+                            onClick={() => window.open(`tel:${activeNavJob.client_phone}`)}
+                            title="Llamar al cliente"
+                          >
+                            <Phone size={14} color="#38bdf8" />
+                            <span>Llamar</span>
+                          </button>
                         )}
                       </div>
                     </div>
-
-                    <div className="mercado-uber-actions-row">
-                      <button
-                        type="button"
-                        className="mercado-uber-btn-arrived"
-                        onClick={() => handleConfirmArrival(activeNavJob)}
-                      >
-                        <CheckCircle2 size={16} />
-                        <span>📍 ME ENCUENTRO EN EL LUGAR</span>
-                      </button>
-
-                      {activeNavJob.client_phone && (
-                        <button
-                          type="button"
-                          className="mercado-uber-btn-call"
-                          onClick={() => window.open(`tel:${activeNavJob.client_phone}`)}
-                          title="Llamar al cliente"
-                        >
-                          <Phone size={14} color="#38bdf8" />
-                          <span>Llamar</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
               </>
             ) : (
               <div className="mercado-loading-map">Cargando Mapa...</div>
