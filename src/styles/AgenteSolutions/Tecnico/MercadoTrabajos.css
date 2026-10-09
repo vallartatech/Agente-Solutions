@@ -929,7 +929,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
+  z-index: 1000005 !important;
   padding: 20px;
   animation: overlayFadeIn 0.25s ease-out;
 }

@@ -383,12 +383,12 @@
   cursor: default !important;
 }
 
-/* Dropdown menu (Apple Liquid Glass) rendered directly on body via Portal */
+/* Dropdown menu (Apple Liquid Glass) positioned directly under avatar */
 .vcp-profile-dropdown,
 .vcp-root .vcp-profile-dropdown {
-  position: fixed !important;
-  top: 76px !important;
-  right: 24px !important;
+  position: absolute !important;
+  top: calc(100% + 10px) !important;
+  right: 0 !important;
   width: 230px !important;
   background: linear-gradient(145deg,
       rgba(255, 255, 255, 0.16) 0%,
@@ -405,7 +405,7 @@
   display: flex !important;
   flex-direction: column !important;
   gap: 5px !important;
-  z-index: 999999999 !important; /* ABSOLUTE TOP: Sits in front of everything */
+  z-index: 1000002 !important;
   animation: vcpFadeDrop 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
   border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
   visibility: visible !important;
@@ -1945,12 +1945,12 @@
 
   .vcp-profile-dropdown,
   .vcp-root .vcp-profile-dropdown {
-    position: fixed !important;
-    top: 66px !important;
-    right: 14px !important;
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    right: 0 !important;
     width: 230px !important;
     max-width: calc(100vw - 24px) !important;
-    z-index: 999999999 !important;
+    z-index: 1000002 !important;
     display: flex !important;
     flex-direction: column !important;
     visibility: visible !important;
@@ -2252,11 +2252,11 @@
 
   .vcp-profile-dropdown,
   .vcp-root .vcp-profile-dropdown {
-    position: fixed !important;
-    top: 56px !important;
-    right: 10px !important;
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    right: 0 !important;
     width: 220px !important;
-    z-index: 999999999 !important;
+    z-index: 1000002 !important;
   }
 
   .vcp-nav-icon-btn,

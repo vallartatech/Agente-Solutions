@@ -1,0 +1,428 @@
+/* ==========================================================================
+   MODAL CALIFICAR TÉCNICO (DUAL FACTOR: RELOJES ⏱️ & ESTRELLAS ⭐)
+   ========================================================================== */
+
+.calif-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(8, 12, 22, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000005 !important;
+  padding: 18px;
+  animation: califFadeIn 0.25s ease-out;
+}
+
+@keyframes califFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.calif-modal-card {
+  background: linear-gradient(160deg, #181d2a 0%, #111520 100%);
+  border: 1px solid rgba(242, 101, 34, 0.28);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px -10px rgba(0, 0, 0, 0.75),
+              0 0 35px rgba(242, 101, 34, 0.15);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  color: #f1f5f9;
+}
+
+/* Custom scrollbar */
+.calif-modal-card::-webkit-scrollbar {
+  width: 6px;
+}
+.calif-modal-card::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+.calif-modal-card::-webkit-scrollbar-thumb {
+  background: rgba(242, 101, 34, 0.4);
+  border-radius: 4px;
+}
+
+/* Header */
+.calif-modal-header {
+  padding: 22px 24px 16px 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.calif-header-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.calif-sparkle-icon {
+  color: #f26522;
+  filter: drop-shadow(0 0 8px rgba(242, 101, 34, 0.6));
+  flex-shrink: 0;
+}
+
+.calif-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+}
+
+.calif-header-sub {
+  margin: 3px 0 0 0;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.calif-close-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.calif-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Technician summary pill */
+.calif-tech-pill {
+  margin: 16px 24px 0 24px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+}
+
+.calif-tech-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f26522, #ea580c);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.15rem;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.35);
+  flex-shrink: 0;
+}
+
+.calif-tech-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.calif-tech-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.calif-tech-meta h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calif-tech-spec {
+  font-size: 0.78rem;
+  color: #38bdf8;
+  display: block;
+  margin-top: 2px;
+}
+
+.calif-delay-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.calif-delay-badge.ontime {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.calif-delay-badge.delayed {
+  background: rgba(234, 179, 8, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+/* Form Body */
+.calif-form-body {
+  padding: 18px 24px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Factor Block */
+.calif-factor-block {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 16px 18px;
+  transition: border-color 0.2s;
+}
+
+.calif-factor-block:hover {
+  border-color: rgba(242, 101, 34, 0.25);
+}
+
+.calif-factor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.calif-factor-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.calif-factor-badge.time-badge {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.calif-factor-badge.star-badge {
+  background: rgba(250, 204, 21, 0.12);
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.25);
+}
+
+.calif-current-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.calif-factor-desc {
+  margin: 0 0 14px 0;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+/* Watches & Stars Rating rows */
+.calif-watches-row,
+.calif-stars-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.calif-watch-btn,
+.calif-star-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #64748b;
+}
+
+.calif-btn-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* Watches Active State */
+.calif-watch-btn:hover,
+.calif-watch-btn.filled {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(56, 189, 248, 0.25);
+}
+
+.calif-watch-btn.filled .calif-watch-icon {
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.7));
+}
+
+/* Stars Active State */
+.calif-star-btn:hover,
+.calif-star-btn.filled {
+  background: rgba(250, 204, 21, 0.15);
+  border-color: #facc15;
+  color: #facc15;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(250, 204, 21, 0.25);
+}
+
+.calif-star-btn.filled .calif-star-icon {
+  fill: #facc15;
+  filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.7));
+}
+
+/* Comment block */
+.calif-comment-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.calif-comment-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.calif-textarea {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.calif-textarea:focus {
+  border-color: #f26522;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.18);
+}
+
+/* Footer Actions */
+.calif-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.calif-btn-cancel {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.calif-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.calif-btn-submit {
+  background: linear-gradient(135deg, #f26522, #ea580c);
+  border: none;
+  color: #ffffff;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.4);
+  transition: all 0.2s ease;
+}
+
+.calif-btn-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(242, 101, 34, 0.6);
+  filter: brightness(1.08);
+}
+
+.calif-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .calif-modal-card {
+    border-radius: 16px;
+  }
+  .calif-modal-header,
+  .calif-form-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .calif-tech-pill {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+  .calif-watch-btn,
+  .calif-star-btn {
+    padding: 8px 2px;
+  }
+}

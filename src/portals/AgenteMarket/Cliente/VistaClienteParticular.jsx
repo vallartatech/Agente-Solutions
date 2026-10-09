@@ -7,6 +7,7 @@ import ModalCompraEspacios from '../../../components/Shared/ModalCompraEspacios'
 import ModalCalendarioCliente from './ModalCalendarioCliente';
 import ModalRegistroInmueble from './ModalRegistroInmueble';
 import ModalEditarPropiedadCliente from './ModalEditarPropiedadCliente';
+import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
 import NotificationBell from '../../../components/Shared/NotificationBell';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
 
@@ -98,6 +99,7 @@ const VistaClienteParticular = () => {
   const [showModalCalendario, setShowModalCalendario] = useState(false);
   const [showModalRegistroPropiedad, setShowModalRegistroPropiedad] = useState(false);
   const [showModalEditarPropiedad, setShowModalEditarPropiedad] = useState(false);
+  const [showModalSolicitarServicio, setShowModalSolicitarServicio] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
   const [isPlanExpanded, setIsPlanExpanded] = useState(false); // Oculto por defecto
@@ -705,7 +707,7 @@ const VistaClienteParticular = () => {
         {/* Solicitar Servicio Button */}
         <button 
           className="vcp-btn vcp-btn-service"
-          onClick={() => navigate('/tablero-servicios', { state: { selectedPropId: activeProperty?.id } })}
+          onClick={() => setShowModalSolicitarServicio(true)}
           title="Crear o Solicitar un Nuevo Servicio"
         >
           <Plus size={17} /> SOLICITAR SERVICIO
@@ -816,64 +818,53 @@ const VistaClienteParticular = () => {
               <div className="vcp-avatar-initial">{userInitial}</div>
             )}
           </button>
+
+          {/* ── DROPDOWN DE PERFIL DIRECTO DENTRO DE VCP-HEADER-RIGHT ── */}
+          {profileDropdownOpen && (
+            <div 
+              className="vcp-profile-dropdown"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="vcp-dropdown-user-header">
+                <div className="vcp-dropdown-role-pill">
+                  <Shield size={12} className="vcp-dropdown-role-icon" />
+                  <span>{userRoleLabel}</span>
+                </div>
+                <div className="vcp-dropdown-user-name">{userFullName}</div>
+                {user?.email && (
+                  <div className="vcp-dropdown-user-email">{user.email}</div>
+                )}
+              </div>
+
+              <div className="vcp-dropdown-divider" />
+
+              <button 
+                type="button"
+                className="vcp-dropdown-item" 
+                onClick={(e) => { 
+                  e.stopPropagation();
+                  setProfileDropdownOpen(false); 
+                  navigate('/mi-perfil'); 
+                }}
+              >
+                <User size={16} /> Mi Perfil
+              </button>
+              <button 
+                type="button"
+                className="vcp-dropdown-item logout" 
+                onClick={(e) => { 
+                  e.stopPropagation();
+                  setProfileDropdownOpen(false); 
+                  if (typeof logout === 'function') logout();
+                  navigate('/', { replace: true }); 
+                }}
+              >
+                <LogOut size={16} /> Cerrar Sesión
+              </button>
+            </div>
+          )}
         </div>
       </header>
-
-      {/* ── DROPDOWN DE PERFIL EN PORTAL (SIEMPRE ADELANTE DE TODO) ── */}
-      {profileDropdownOpen && typeof document !== 'undefined' && createPortal(
-        <>
-          {/* Backdrop invisible que cubre toda la pantalla para cerrar al hacer tap fuera */}
-          <div 
-            className="vcp-profile-backdrop" 
-            onClick={(e) => {
-              e.stopPropagation();
-              setProfileDropdownOpen(false);
-            }}
-          />
-          <div 
-            className="vcp-profile-dropdown"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="vcp-dropdown-user-header">
-              <div className="vcp-dropdown-role-pill">
-                <Shield size={12} className="vcp-dropdown-role-icon" />
-                <span>{userRoleLabel}</span>
-              </div>
-              <div className="vcp-dropdown-user-name">{userFullName}</div>
-              {user?.email && (
-                <div className="vcp-dropdown-user-email">{user.email}</div>
-              )}
-            </div>
-
-            <div className="vcp-dropdown-divider" />
-
-            <button 
-              type="button"
-              className="vcp-dropdown-item" 
-              onClick={(e) => { 
-                e.stopPropagation();
-                setProfileDropdownOpen(false); 
-                navigate('/mi-perfil'); 
-              }}
-            >
-              <User size={16} /> Mi Perfil
-            </button>
-            <button 
-              type="button"
-              className="vcp-dropdown-item logout" 
-              onClick={(e) => { 
-                e.stopPropagation();
-                setProfileDropdownOpen(false); 
-                logout(); 
-                navigate('/', { replace: true }); 
-              }}
-            >
-              <LogOut size={16} /> Cerrar Sesión
-            </button>
-          </div>
-        </>,
-        document.body
-      )}
 
       {/* ── MAIN SPLIT VIEW CONTAINER ── */}
       <main className="vcp-body-layout">
@@ -1113,6 +1104,18 @@ const VistaClienteParticular = () => {
         propiedad={activeProperty}
         onSuccess={handlePropertyUpdated}
       />
+
+      {/* Modal Solicitar Servicio / Reportar Problema (Red vs Mis Técnicos) */}
+      {showModalSolicitarServicio && (
+        <ModalServicioAutonomo
+          propertyId={activeProperty?.id}
+          onClose={() => setShowModalSolicitarServicio(false)}
+          onSuccess={() => {
+            setShowModalSolicitarServicio(false);
+            fetchData();
+          }}
+        />
+      )}
     </div>
   );
 };

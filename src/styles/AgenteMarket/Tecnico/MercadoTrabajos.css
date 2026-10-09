@@ -929,7 +929,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
+  z-index: 1000005 !important;
   padding: 20px;
   animation: overlayFadeIn 0.25s ease-out;
 }
@@ -5059,10 +5059,272 @@
   box-shadow: 0 6px 18px rgba(242, 101, 34, 0.55);
 }
 
-.mercado-schedule-btn-save:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+/* ==========================================================================
+   SIDEBAR TABS & LIVE GPS UBER-STYLE NAVIGATION PANEL
+   ========================================================================== */
+
+.mercado-sidebar-tabs-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #10121b;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.08);
+  padding: 4px;
+  gap: 4px;
 }
+
+.mercado-sidebar-tab-button {
+  background: transparent;
+  border: none;
+  padding: 10px 8px;
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-family: inherit;
+}
+
+.mercado-sidebar-tab-button.active {
+  background: #1e2230;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.mercado-sidebar-tab-button.active.tab-solicitudes {
+  color: #f26522;
+  border-bottom: 2px solid #f26522;
+}
+
+.mercado-sidebar-tab-button.active.tab-aceptados {
+  color: #38bdf8;
+  border-bottom: 2px solid #38bdf8;
+}
+
+.mercado-sidebar-tab-badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.mercado-sidebar-tab-button.active.tab-solicitudes .mercado-sidebar-tab-badge {
+  background: #f26522;
+  color: #ffffff;
+}
+
+.mercado-sidebar-tab-button.active.tab-aceptados .mercado-sidebar-tab-badge {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+/* Smart Glow Pulse Animation */
+@keyframes glowPulseAnimation {
+  0% {
+    box-shadow: 0 0 0 0 rgba(242, 101, 34, 0.7);
+    border-color: #f26522;
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(242, 101, 34, 0);
+    border-color: #fb923c;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(242, 101, 34, 0);
+    border-color: #f26522;
+  }
+}
+
+.mercado-job-card.is-urgent-glow {
+  border: 1.5px solid #f26522 !important;
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.12) 0%, rgba(20, 22, 31, 0.95) 100%) !important;
+  animation: glowPulseAnimation 2s infinite ease-in-out;
+}
+
+.mercado-smart-time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.4);
+  animation: badgeBlink 1.5s infinite alternate;
+}
+
+@keyframes badgeBlink {
+  0% { opacity: 0.85; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1.02); }
+}
+
+/* Uber-Style Floating Navigation Panel over Map */
+.mercado-uber-nav-panel {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 580px;
+  background: rgba(20, 23, 33, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  padding: 16px 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), 0 0 25px rgba(242, 101, 34, 0.2);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: uberSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #ffffff;
+}
+
+@keyframes uberSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.mercado-uber-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+}
+
+.mercado-uber-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mercado-uber-pulse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 10px #22c55e;
+  animation: livePulse 1.2s infinite;
+}
+
+.mercado-uber-body-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.mercado-uber-dest-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mercado-uber-prop-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.mercado-uber-address {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mercado-uber-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.mercado-uber-eta {
+  font-size: 16px;
+  font-weight: 900;
+  color: #38bdf8;
+  font-variant-numeric: tabular-nums;
+}
+
+.mercado-uber-dist {
+  font-size: 11.5px;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.mercado-uber-actions-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding-top: 6px;
+}
+
+.mercado-uber-btn-arrived {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  color: #ffffff;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.4);
+  transition: all 0.22s ease;
+  letter-spacing: 0.3px;
+}
+
+.mercado-uber-btn-arrived:hover {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.55);
+}
+
+.mercado-uber-btn-call {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.mercado-uber-btn-call:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 
 
 

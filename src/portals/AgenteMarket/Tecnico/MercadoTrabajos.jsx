@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
 import MaterialDateTimePicker, { formatDateTimeHuman } from '../../../components/Shared/MaterialDateTimePicker';
 import Swal from 'sweetalert2';
 import { 
@@ -378,6 +378,15 @@ const MercadoTrabajos = () => {
   const [acceptedJobs, setAcceptedJobs] = useState([]);
   const [activeModalTab, setActiveModalTab] = useState('detalle'); // 'detalle' | 'chat'
   
+  // Live GPS & Navigation State (Uber Style)
+  const [technicianLocation, setTechnicianLocation] = useState({ lat: 21.0181, lng: -89.6242 });
+  const [hasTechnicianGps, setHasTechnicianGps] = useState(false);
+  const [activeNavJob, setActiveNavJob] = useState(null);
+  const [navDirections, setNavDirections] = useState(null);
+  const [navDistance, setNavDistance] = useState('');
+  const [navDuration, setNavDuration] = useState('');
+  const [navStatus, setNavStatus] = useState('idle'); // 'idle' | 'en_camino' | 'en_sitio'
+
   // Embedded Chat State
   const [chatInput, setChatInput] = useState('');
   const [sendingChat, setSendingChat] = useState(false);
@@ -446,6 +455,131 @@ const MercadoTrabajos = () => {
 
   const { user, logoutGlobal } = useAuth();
   const authUser = user;
+
+  // GPS Tracking en tiempo real del técnico
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      const watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          setTechnicianLocation({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+          });
+          setHasTechnicianGps(true);
+        },
+        (err) => {
+          console.warn("GPS no disponible:", err);
+        },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+      );
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  }, []);
+
+  // Calcular distancia en km entre dos puntos geográficos (Haversine)
+  const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return (R * c).toFixed(1);
+  };
+
+  // Detección inteligente de horario para brillo de marcador (si faltan 45 min o menos)
+  const getSmartScheduleStatus = (job) => {
+    if (!job || !job.scheduled_at) return { isUrgentGlow: false, label: null, minutesLeft: null };
+    try {
+      const schedTime = new Date(job.scheduled_at).getTime();
+      if (isNaN(schedTime)) return { isUrgentGlow: false, label: null, minutesLeft: null };
+      const nowTime = Date.now();
+      const diffMinutes = Math.round((schedTime - nowTime) / 60000);
+
+      if (diffMinutes <= 45 && diffMinutes >= -120) {
+        let label = '';
+        if (diffMinutes > 0) {
+          label = `⚡ Cita en ${diffMinutes} min`;
+        } else if (diffMinutes === 0) {
+          label = `⚡ ¡Es la hora de la cita!`;
+        } else {
+          label = `⚡ Cita en curso`;
+        }
+        return { isUrgentGlow: true, label, minutesLeft: diffMinutes };
+      }
+      return { isUrgentGlow: false, label: null, minutesLeft: diffMinutes };
+    } catch {
+      return { isUrgentGlow: false, label: null, minutesLeft: null };
+    }
+  };
+
+  // Iniciar ruta de navegación hacia el trabajo (Modo Uber)
+  const handleStartRoute = (job) => {
+    setActiveNavJob(job);
+    setNavStatus('en_camino');
+
+    if (window.google && technicianLocation && job.lat && job.lng) {
+      const directionsService = new window.google.maps.DirectionsService();
+      directionsService.route(
+        {
+          origin: new window.google.maps.LatLng(technicianLocation.lat, technicianLocation.lng),
+          destination: new window.google.maps.LatLng(job.lat, job.lng),
+          travelMode: window.google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          if (status === window.google.maps.DirectionsStatus.OK) {
+            setNavDirections(result);
+            const leg = result.routes[0]?.legs[0];
+            if (leg) {
+              setNavDistance(leg.distance?.text || '');
+              setNavDuration(leg.duration?.text || '');
+            }
+          }
+        }
+      );
+    }
+  };
+
+  // Confirmar llegada al sitio (Validación GPS y registro arrived_at)
+  const handleConfirmArrival = async (job) => {
+    const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/work-orders/${job.id}/confirm-arrival`,
+        {
+          latitude: technicianLocation?.lat || job.lat,
+          longitude: technicianLocation?.lng || job.lng
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setNavStatus('en_sitio');
+      Swal.fire({
+        title: '📍 ¡Llegada Confirmada!',
+        text: 'Se ha registrado tu hora de llegada exitosamente y se notificó al cliente.',
+        icon: 'success',
+        confirmButtonColor: '#f26522',
+        confirmButtonText: 'Excelente'
+      });
+
+      setAcceptedJobs(prev => prev.map(j => j.id === job.id ? { ...j, arrived_at: new Date().toISOString(), arrival_status: 'EN_SITIO' } : j));
+      if (activeNavJob && activeNavJob.id === job.id) {
+        setActiveNavJob(prev => ({ ...prev, arrived_at: new Date().toISOString(), arrival_status: 'EN_SITIO' }));
+      }
+    } catch (error) {
+      console.error("Error confirmando llegada:", error);
+      setNavStatus('en_sitio');
+      Swal.fire({
+        title: '📍 Llegada Registrada',
+        text: 'Tu llegada al lugar ha sido confirmada.',
+        icon: 'success',
+        confirmButtonColor: '#f26522'
+      });
+    }
+  };
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -957,6 +1091,22 @@ const MercadoTrabajos = () => {
       (job.client_name && job.client_name.toLowerCase().includes(q))
     );
   });
+
+  // Filtered Accepted Jobs para la pestaña del mapa (Trabajos Aceptados)
+  const filteredAcceptedJobs = useMemo(() => {
+    if (!searchQuery.trim()) return acceptedJobs;
+    const q = searchQuery.toLowerCase();
+    return acceptedJobs.filter(job =>
+      (job.titulo && job.titulo.toLowerCase().includes(q)) ||
+      (job.zona && job.zona.toLowerCase().includes(q)) ||
+      (job.descripcion && job.descripcion.toLowerCase().includes(q)) ||
+      (job.tipo && job.tipo.toLowerCase().includes(q)) ||
+      (job.equipo && job.equipo.toLowerCase().includes(q)) ||
+      (job.client_name && job.client_name.toLowerCase().includes(q)) ||
+      (job.calle && job.calle.toLowerCase().includes(q)) ||
+      (job.full_address && job.full_address.toLowerCase().includes(q))
+    );
+  }, [acceptedJobs, searchQuery]);
 
   // Kanban Filtered Jobs (Trabajos Aceptados / Ganados)
   const activeAcceptedJobs = acceptedJobs.filter(j => j.status !== 'Finalizado' && j.status !== 'Listo' && j.status !== 'Rechazado');
@@ -2462,105 +2612,256 @@ const MercadoTrabajos = () => {
               </div>
             </div>
 
-            {/* Barra de Contador de Disponibles */}
-            <div style={{ padding: '10px 18px', background: '#141722', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                🌐 Solicitudes Disponibles
-              </span>
-              <span style={{ background: '#f26522', color: '#ffffff', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: '900' }}>
-                {filteredNetworkJobs.length}
-              </span>
+            {/* Barra de Pestañas: Solicitudes Disponibles vs Trabajos Aceptados */}
+            <div className="mercado-sidebar-tabs-container">
+              <button
+                type="button"
+                className={`mercado-sidebar-tab-button tab-solicitudes ${activeTab === 'disponibles' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('disponibles');
+                  setActiveNavJob(null);
+                  setNavDirections(null);
+                }}
+              >
+                <span>🌐 Solicitudes</span>
+                <span className="mercado-sidebar-tab-badge">{filteredNetworkJobs.length}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`mercado-sidebar-tab-button tab-aceptados ${activeTab === 'aceptados' ? 'active' : ''}`}
+                onClick={() => setActiveTab('aceptados')}
+              >
+                <span>💼 Aceptados</span>
+                <span className="mercado-sidebar-tab-badge">{filteredAcceptedJobs.length}</span>
+              </button>
             </div>
 
             {/* Lista de Trabajos con Scroll */}
             <div className="mercado-job-list">
-              {filteredNetworkJobs.length === 0 && (
-                <div className="mercado-empty-state-card">
-                  <div className="empty-icon">⏳</div>
-                  <h4>No hay solicitudes disponibles</h4>
-                  <p>{searchQuery ? 'Ningún trabajo coincide con tu búsqueda.' : 'En cuanto los clientes publiquen solicitudes aparecerán aquí.'}</p>
-                </div>
-              )}
-              {filteredNetworkJobs.map(job => {
-                const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
-                return (
-                  <div
-                    key={job.id}
-                    className={`mercado-job-card ${selectedJob?.id === job.id ? 'active' : ''}`}
-                    onClick={() => openQuoteModalForJob(job)}
-                  >
-                    <div className="mercado-card-inner-flex">
-                      {/* Circular Category Avatar */}
-                      <div 
-                        className="mercado-card-avatar-circle"
-                        style={{ background: cat.bg, borderColor: cat.color }}
-                        title={cat.label}
-                      >
-                        <span>{cat.icon}</span>
-                      </div>
-
-                      <div className="mercado-card-content-wrap">
-                        {/* 1. Colonia, Urgencia y Badge de Cotización */}
-                        <div className="mercado-job-card-top">
-                          <div className="mercado-job-colonia-tag">
-                            <MapPin size={12} color="#f26522" />
-                            <span>{job.zona}</span>
-                          </div>
-                          
-                          {job.is_urgent && (
-                            <span className="mercado-urgency-badge urgent">⚡ SOS</span>
-                          )}
-                          
-                          {job.myQuote ? (
-                            <span className={`mercado-job-badge ${job.myQuote.status === 'rejected' ? 'badge-rejected' : (job.myQuote.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`}>
-                              {job.myQuote.status === 'rejected' ? 'Rechazada' : (job.myQuote.price > 0 ? `$${parseFloat(job.myQuote.price).toLocaleString('es-MX')}` : 'Chat')}
-                            </span>
-                          ) : (
-                            <span className="mercado-job-badge-disponible">Disponible</span>
-                          )}
-                        </div>
-
-                        {/* 2. Titulo y Descripción */}
-                        <h4 className="mercado-job-card-title">{job.titulo}</h4>
-                        <p className="mercado-job-card-desc">{job.descripcion}</p>
-
-                        {/* 3. ALERTA DE MENSAJE DEL CLIENTE */}
-                        {job.lastClientMsg && (
-                          <div className="mercado-job-msg-alert">
-                            <span className="mercado-msg-dot-pulse" />
-                            <span>💬 <strong>Mensaje del Cliente:</strong> "{job.lastClientMsg.message}"</span>
-                          </div>
-                        )}
-
-                        {/* 4. Footer */}
-                        <div className="mercado-job-card-footer">
-                          <span className="mercado-ofertas-count">{job.cotizaciones} ofertas enviadas</span>
-                          <span className="mercado-fecha-tag"><Clock size={11} /> {job.fecha}</span>
-                        </div>
-                      </div>
+              {activeTab === 'disponibles' ? (
+                /* ══════════════════════════════════════════
+                   PESTAÑA 1: SOLICITUDES DISPONIBLES EN RED
+                   ══════════════════════════════════════════ */
+                <>
+                  {filteredNetworkJobs.length === 0 && (
+                    <div className="mercado-empty-state-card">
+                      <div className="empty-icon">⏳</div>
+                      <h4>No hay solicitudes disponibles</h4>
+                      <p>{searchQuery ? 'Ningún trabajo coincide con tu búsqueda.' : 'En cuanto los clientes publiquen solicitudes aparecerán aquí.'}</p>
                     </div>
-                  </div>
-                );
-              })}
+                  )}
+                  {filteredNetworkJobs.map(job => {
+                    const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
+                    return (
+                      <div
+                        key={job.id}
+                        className={`mercado-job-card ${selectedJob?.id === job.id ? 'active' : ''}`}
+                        onClick={() => openQuoteModalForJob(job)}
+                      >
+                        <div className="mercado-card-inner-flex">
+                          {/* Circular Category Avatar */}
+                          <div 
+                            className="mercado-card-avatar-circle"
+                            style={{ background: cat.bg, borderColor: cat.color }}
+                            title={cat.label}
+                          >
+                            <span>{cat.icon}</span>
+                          </div>
+
+                          <div className="mercado-card-content-wrap">
+                            {/* 1. Colonia, Urgencia y Badge de Cotización */}
+                            <div className="mercado-job-card-top">
+                              <div className="mercado-job-colonia-tag">
+                                <MapPin size={12} color="#f26522" />
+                                <span>{job.zona}</span>
+                              </div>
+                              
+                              {job.is_urgent && (
+                                <span className="mercado-urgency-badge urgent">⚡ SOS</span>
+                              )}
+                              
+                              {job.myQuote ? (
+                                <span className={`mercado-job-badge ${job.myQuote.status === 'rejected' ? 'badge-rejected' : (job.myQuote.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`}>
+                                  {job.myQuote.status === 'rejected' ? 'Rechazada' : (job.myQuote.price > 0 ? `$${parseFloat(job.myQuote.price).toLocaleString('es-MX')}` : 'Chat')}
+                                </span>
+                              ) : (
+                                <span className="mercado-job-badge-disponible">Disponible</span>
+                              )}
+                            </div>
+
+                            {/* 2. Titulo y Descripción */}
+                            <h4 className="mercado-job-card-title">{job.titulo}</h4>
+                            <p className="mercado-job-card-desc">{job.descripcion}</p>
+
+                            {/* 3. ALERTA DE MENSAJE DEL CLIENTE */}
+                            {job.lastClientMsg && (
+                              <div className="mercado-job-msg-alert">
+                                <span className="mercado-msg-dot-pulse" />
+                                <span>💬 <strong>Mensaje del Cliente:</strong> "{job.lastClientMsg.message}"</span>
+                              </div>
+                            )}
+
+                            {/* 4. Footer */}
+                            <div className="mercado-job-card-footer">
+                              <span className="mercado-ofertas-count">{job.cotizaciones} ofertas enviadas</span>
+                              <span className="mercado-fecha-tag"><Clock size={11} /> {job.fecha}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              ) : (
+                /* ══════════════════════════════════════════
+                   PESTAÑA 2: TRABAJOS ACEPTADOS / GANADOS
+                   ══════════════════════════════════════════ */
+                <>
+                  {filteredAcceptedJobs.length === 0 && (
+                    <div className="mercado-empty-state-card">
+                      <div className="empty-icon">💼</div>
+                      <h4>No tienes trabajos aceptados</h4>
+                      <p>{searchQuery ? 'Ningún trabajo aceptado coincide con tu búsqueda.' : 'Tus cotizaciones aceptadas por clientes aparecerán aquí.'}</p>
+                    </div>
+                  )}
+                  {filteredAcceptedJobs.map(job => {
+                    const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
+                    const scheduleInfo = getSmartScheduleStatus(job);
+                    const isArrived = job.arrived_at || job.arrival_status === 'EN_SITIO';
+
+                    return (
+                      <div
+                        key={job.id}
+                        className={`mercado-job-card ${selectedJob?.id === job.id ? 'active' : ''} ${scheduleInfo.isUrgentGlow ? 'is-urgent-glow' : ''}`}
+                        onClick={() => {
+                          setSelectedJob(job);
+                          handleStartRoute(job);
+                        }}
+                      >
+                        <div className="mercado-card-inner-flex">
+                          {/* Circular Category Avatar */}
+                          <div 
+                            className="mercado-card-avatar-circle"
+                            style={{ background: cat.bg, borderColor: cat.color }}
+                            title={cat.label}
+                          >
+                            <span>{cat.icon}</span>
+                          </div>
+
+                          <div className="mercado-card-content-wrap">
+                            {/* 1. Header con Badge de Estado y Brillo Inteligente */}
+                            <div className="mercado-job-card-top">
+                              <div className="mercado-job-colonia-tag">
+                                <MapPin size={12} color="#0284c7" />
+                                <span>{job.zona}</span>
+                              </div>
+
+                              {scheduleInfo.isUrgentGlow && (
+                                <span className="mercado-smart-time-badge">
+                                  <Zap size={11} /> {scheduleInfo.label}
+                                </span>
+                              )}
+
+                              <span className="mercado-job-badge badge-accepted" style={{ background: '#0284c7', color: '#ffffff' }}>
+                                {isArrived ? '✅ En sitio' : 'Aceptado'}
+                              </span>
+                            </div>
+
+                            {/* 2. Titulo y Dirección */}
+                            <h4 className="mercado-job-card-title" style={{ color: '#38bdf8' }}>{job.titulo}</h4>
+                            <p className="mercado-job-card-desc" style={{ color: '#cbd5e1' }}>
+                              📍 {job.full_address || job.calle || job.zona}
+                            </p>
+
+                            {/* 3. Cliente y Horario */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', fontSize: '11px', color: '#94a3b8' }}>
+                              <span>👤 <strong>{job.client_name || job.cliente}</strong></span>
+                              {job.scheduled_at && (
+                                <span style={{ color: '#f26522', fontWeight: '800' }}>
+                                  📅 {new Date(job.scheduled_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* 4. Botón de Acción Directa En Camino */}
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                              <button
+                                type="button"
+                                style={{
+                                  flex: 1,
+                                  background: 'linear-gradient(135deg, #f26522 0%, #ea580c 100%)',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  padding: '7px 10px',
+                                  fontSize: '11px',
+                                  fontWeight: '800',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '5px'
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStartRoute(job);
+                                }}
+                              >
+                                <Navigation size={12} /> INICIAR RUTA (EN CAMINO)
+                              </button>
+
+                              <button
+                                type="button"
+                                style={{
+                                  background: 'rgba(255,255,255,0.1)',
+                                  color: '#ffffff',
+                                  border: '1px solid rgba(255,255,255,0.2)',
+                                  borderRadius: '8px',
+                                  padding: '7px 10px',
+                                  fontSize: '11px',
+                                  fontWeight: '800',
+                                  cursor: 'pointer'
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openQuoteModalForJob(job);
+                                }}
+                                title="Ver detalles y chat"
+                              >
+                                <FileText size={12} />
+                              </button>
+                            </div>
+
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
             </div>
           </div>
 
           {/* ─── Map ─── */}
-          <div className="mercado-map-section">
+          <div className="mercado-map-section" style={{ position: 'relative' }}>
             {isLoaded ? (
               <>
                 <div className="mercado-map-overlay-badge">
                   <span className="mercado-map-live-dot" />
-                  {`${filteredNetworkJobs.length} disponibles`}
+                  {activeTab === 'disponibles' 
+                    ? `${filteredNetworkJobs.length} disponibles` 
+                    : `💼 ${filteredAcceptedJobs.length} trabajos aceptados`}
                 </div>
+
                 <GoogleMap
                   mapContainerStyle={mapContainerStyle}
-                  center={defaultCenter}
-                  zoom={13}
+                  center={activeNavJob ? { lat: activeNavJob.lat, lng: activeNavJob.lng } : defaultCenter}
+                  zoom={activeNavJob ? 14 : 13}
                   options={{ disableDefaultUI: false, styles: DARK_MAP_STYLES }}
                 >
-                  {/* Marcadores de Trabajos Disponibles */}
-                  {filteredNetworkJobs.map(job => (
+                  {/* PESTAÑA DISPONIBLES: Marcadores de Trabajos Disponibles */}
+                  {activeTab === 'disponibles' && filteredNetworkJobs.map(job => (
                     <React.Fragment key={job.id}>
                       <Circle
                         center={{ lat: job.lat, lng: job.lng }}
@@ -2590,7 +2891,106 @@ const MercadoTrabajos = () => {
                     </React.Fragment>
                   ))}
 
-                  {selectedJob && !showQuoteModal && (
+                  {/* PESTAÑA ACEPTADOS: Marcadores de Trabajos Aceptados con Brillo Inteligente */}
+                  {activeTab === 'aceptados' && filteredAcceptedJobs.map(job => {
+                    const schedInfo = getSmartScheduleStatus(job);
+                    return (
+                      <React.Fragment key={`acc-${job.id}`}>
+                        {/* Círculo Brillante si la cita es en los próximos 45 min */}
+                        {schedInfo.isUrgentGlow && (
+                          <Circle
+                            center={{ lat: job.lat, lng: job.lng }}
+                            radius={400}
+                            options={{
+                              fillColor: '#f26522',
+                              fillOpacity: 0.35,
+                              strokeColor: '#ea580c',
+                              strokeOpacity: 0.95,
+                              strokeWeight: 2.5,
+                              clickable: true
+                            }}
+                            onClick={() => {
+                              setSelectedJob(job);
+                              handleStartRoute(job);
+                            }}
+                          />
+                        )}
+
+                        <Circle
+                          center={{ lat: job.lat, lng: job.lng }}
+                          radius={250}
+                          options={{
+                            fillColor: '#0284c7',
+                            fillOpacity: 0.22,
+                            strokeColor: '#38bdf8',
+                            strokeOpacity: 0.85,
+                            strokeWeight: 2,
+                            clickable: true
+                          }}
+                          onClick={() => {
+                            setSelectedJob(job);
+                            handleStartRoute(job);
+                          }}
+                        />
+
+                        <Marker
+                          position={{ lat: job.lat, lng: job.lng }}
+                          onClick={() => {
+                            setSelectedJob(job);
+                            handleStartRoute(job);
+                          }}
+                          title={`Trabajo: ${job.titulo} (${job.client_name || 'Cliente'})`}
+                          icon={{
+                            url: schedInfo.isUrgentGlow 
+                              ? 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png' 
+                              : 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+                          }}
+                        />
+                      </React.Fragment>
+                    );
+                  })}
+
+                  {/* 🚗 UBICACIÓN EN TIEMPO REAL DEL TÉCNICO (GPS) */}
+                  {technicianLocation && (
+                    <>
+                      <Circle
+                        center={technicianLocation}
+                        radius={120}
+                        options={{
+                          fillColor: '#38bdf8',
+                          fillOpacity: 0.25,
+                          strokeColor: '#0284c7',
+                          strokeOpacity: 0.85,
+                          strokeWeight: 2
+                        }}
+                      />
+                      <Marker
+                        position={technicianLocation}
+                        title="Tu Ubicación Actual"
+                        icon={{
+                          url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                        }}
+                      />
+                    </>
+                  )}
+
+                  {/* 🗺️ RUTA TRAZADA EN VIVO (DIRECTIONS RENDERER) */}
+                  {navDirections && (
+                    <DirectionsRenderer
+                      directions={navDirections}
+                      options={{
+                        suppressMarkers: false,
+                        polylineOptions: {
+                          strokeColor: '#f26522',
+                          strokeWeight: 5,
+                          strokeOpacity: 0.9
+                        }
+                      }}
+                    />
+                  )}
+
+                  {/* InfoWindow si se selecciona un trabajo sin navegar */}
+                  {selectedJob && !showQuoteModal && !activeNavJob && (
                     <InfoWindow
                       position={{ lat: selectedJob.lat, lng: selectedJob.lng }}
                       onCloseClick={() => setSelectedJob(null)}
@@ -2602,14 +3002,99 @@ const MercadoTrabajos = () => {
                         </p>
                         <button
                           className="mercado-btn-details"
-                          onClick={() => openQuoteModalForJob(selectedJob)}
+                          onClick={() => {
+                            if (selectedJob.is_accepted) {
+                              handleStartRoute(selectedJob);
+                            } else {
+                              openQuoteModalForJob(selectedJob);
+                            }
+                          }}
                         >
-                          {selectedJob.is_accepted ? '✅ Ver Detalle y Visita' : (selectedJob.myQuote ? '📋 Ver Detalle y Chat' : '💼 Cotizar este trabajo')}
+                          {selectedJob.is_accepted ? '🚗 Iniciar Ruta (En Camino)' : (selectedJob.myQuote ? '📋 Ver Detalle y Chat' : '💼 Cotizar este trabajo')}
                         </button>
                       </div>
                     </InfoWindow>
                   )}
                 </GoogleMap>
+
+                {/* ══════════════════════════════════════════════════
+                    PANEL DE RUTA Y LLEGADA FLOTANTE (ESTILO UBER)
+                    ══════════════════════════════════════════════════ */}
+                {activeNavJob && (
+                  <div className="mercado-uber-nav-panel">
+                    <div className="mercado-uber-header">
+                      <div className="mercado-uber-title-group">
+                        <span className="mercado-uber-pulse-dot" />
+                        <strong style={{ fontSize: '12.5px', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                          {navStatus === 'en_sitio' ? '✅ En el lugar del trabajo' : '🚀 En camino al servicio'}
+                        </strong>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveNavJob(null);
+                          setNavDirections(null);
+                          setNavStatus('idle');
+                        }}
+                        style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}
+                        title="Cerrar navegación"
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    <div className="mercado-uber-body-grid">
+                      <div className="mercado-uber-dest-info">
+                        <h4 className="mercado-uber-prop-name">
+                          {activeNavJob.titulo}
+                        </h4>
+                        <p className="mercado-uber-address">
+                          <MapPin size={13} color="#f26522" />
+                          <span>{activeNavJob.full_address || activeNavJob.calle || activeNavJob.zona}</span>
+                        </p>
+                        <span style={{ fontSize: '11.5px', color: '#cbd5e1' }}>
+                          👤 Cliente: <strong>{activeNavJob.client_name || activeNavJob.cliente}</strong>
+                        </span>
+                      </div>
+
+                      <div className="mercado-uber-stats">
+                        {navDuration && <span className="mercado-uber-eta">{navDuration}</span>}
+                        {navDistance ? (
+                          <span className="mercado-uber-dist">{navDistance}</span>
+                        ) : (
+                          technicianLocation && activeNavJob.lat && (
+                            <span className="mercado-uber-dist">
+                              Aprox. {calculateDistanceKm(technicianLocation.lat, technicianLocation.lng, activeNavJob.lat, activeNavJob.lng)} km
+                            </span>
+                          )
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mercado-uber-actions-row">
+                      <button
+                        type="button"
+                        className="mercado-uber-btn-arrived"
+                        onClick={() => handleConfirmArrival(activeNavJob)}
+                      >
+                        <CheckCircle2 size={16} />
+                        <span>📍 ME ENCUENTRO EN EL LUGAR</span>
+                      </button>
+
+                      {activeNavJob.client_phone && (
+                        <button
+                          type="button"
+                          className="mercado-uber-btn-call"
+                          onClick={() => window.open(`tel:${activeNavJob.client_phone}`)}
+                          title="Llamar al cliente"
+                        >
+                          <Phone size={14} color="#38bdf8" />
+                          <span>Llamar</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <div className="mercado-loading-map">Cargando Mapa...</div>

@@ -5,31 +5,54 @@
 }
 
 .perfil-tecnico-content {
-  margin-top: 30px;
+  margin-top: 20px;
+}
+
+.perfil-back-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  padding: 8px 14px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  margin-bottom: 16px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.perfil-back-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
 }
 
 .perfil-header-card {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
+  background: linear-gradient(135deg, #191e2b 0%, #111520 100%);
+  border-radius: 18px;
+  padding: 28px;
   display: flex;
-  gap: 30px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  border: 1px solid #eee;
-  margin-bottom: 30px;
+  gap: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 24px;
+  align-items: center;
 }
 
 .perfil-avatar-large {
-  width: 100px;
-  height: 100px;
-  background: #007bff;
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(135deg, #f26522, #ea580c);
   color: white;
-  border-radius: 50%;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40px;
+  font-size: 38px;
   font-weight: bold;
+  box-shadow: 0 8px 20px rgba(242, 101, 34, 0.35);
+  flex-shrink: 0;
 }
 
 .perfil-info-main {
@@ -37,163 +60,280 @@
 }
 
 .perfil-info-main h2 {
-  margin: 0 0 5px 0;
+  margin: 0 0 4px 0;
   display: flex;
   align-items: center;
   gap: 10px;
+  color: #ffffff;
+  font-size: 1.5rem;
 }
 
 .verified-badge {
-  color: #28a745;
+  color: #22c55e;
 }
 
 .perfil-especialidad {
-  color: #666;
-  font-size: 16px;
-  margin-bottom: 15px;
+  color: #38bdf8;
+  font-size: 0.95rem;
+  margin-bottom: 14px;
+  font-weight: 500;
 }
 
 .perfil-stats-row {
   display: flex;
   align-items: center;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 14px;
   margin-bottom: 20px;
-  color: #555;
+  color: #94a3b8;
+  font-size: 0.9rem;
 }
 
-.perfil-rating-badge {
-  display: flex;
+/* Dual Factor Rating Badges */
+.perfil-dual-badge {
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background: #fff3cd;
-  color: #856404;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-weight: bold;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.perfil-dual-badge.stars {
+  background: rgba(250, 204, 21, 0.12);
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.28);
+}
+
+.perfil-dual-badge.clocks {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+}
+
+.perfil-dual-badge small {
+  font-size: 0.72rem;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .star-filled {
-  color: #f39c12;
-  fill: #f39c12;
+  color: #facc15;
+  fill: #facc15;
 }
 
-.star-empty {
-  color: #ddd;
+.clock-filled {
+  color: #38bdf8;
+}
+
+.perfil-reviews-counter {
+  color: #64748b;
+  font-weight: 500;
 }
 
 .perfil-actions {
   display: flex;
-  gap: 15px;
+  gap: 12px;
 }
 
 .perfil-btn-primary {
-  background: #007bff;
+  background: linear-gradient(135deg, #f26522, #ea580c);
   color: white;
   border: none;
-  padding: 10px 24px;
-  border-radius: 8px;
+  padding: 10px 22px;
+  border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.35);
+  transition: all 0.2s;
+}
+
+.perfil-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(242, 101, 34, 0.5);
 }
 
 .perfil-btn-secondary {
-  background: white;
-  border: 1px solid #ddd;
-  color: #333;
-  padding: 10px 24px;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  padding: 10px 20px;
+  border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: all 0.2s;
+}
+
+.perfil-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
 .perfil-body-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 30px;
+  gap: 24px;
 }
 
 .perfil-section {
-  background: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  border: 1px solid #eee;
+  background: #191e2b;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   margin-bottom: 20px;
 }
 
 .perfil-section h3 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+  margin: 0 0 16px 0;
+  font-size: 1.15rem;
+  color: #ffffff;
+  font-weight: 700;
 }
 
+.perfil-section p {
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Reviews List */
 .perfil-reviews-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 14px;
 }
 
 .perfil-review-item {
-  border-bottom: 1px solid #eee;
-  padding-bottom: 15px;
-}
-
-.perfil-review-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 16px;
 }
 
 .perfil-review-header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
 }
 
-.perfil-review-date {
-  font-size: 12px;
-  color: #999;
+.perfil-reviewer-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
+.perfil-reviewer-info strong {
+  color: #ffffff;
+  font-size: 0.92rem;
+}
+
+.perfil-review-date {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.perfil-review-dual-ratings {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.perfil-review-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.perfil-review-metric.stars {
+  background: rgba(250, 204, 21, 0.12);
+  color: #facc15;
+}
+
+.perfil-review-metric.clocks {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+}
+
+.perfil-review-comment {
+  color: #94a3b8;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  font-style: italic;
+  margin: 0;
+}
+
+.perfil-no-reviews {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+/* Side Column Cards */
 .perfil-info-card {
-  background: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  border: 1px solid #eee;
+  background: #191e2b;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .perfil-info-card h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
+  margin: 0 0 18px 0;
+  font-size: 1.15rem;
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .perfil-stat-item {
   display: flex;
-  align-items: flex-start;
-  gap: 15px;
-  margin-bottom: 20px;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.perfil-stat-item:last-child {
+  border-bottom: none;
 }
 
 .stat-icon {
-  color: #007bff;
-  margin-top: 3px;
-}
-
-.perfil-stat-item div {
-  display: flex;
-  flex-direction: column;
+  color: #f26522;
 }
 
 .perfil-stat-item strong {
-  font-size: 18px;
-  color: #333;
+  display: block;
+  font-size: 1.1rem;
+  color: #ffffff;
 }
 
 .perfil-stat-item span {
-  font-size: 13px;
-  color: #666;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+  .perfil-header-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  .perfil-info-main h2 {
+    justify-content: center;
+  }
+  .perfil-stats-row {
+    justify-content: center;
+  }
+  .perfil-actions {
+    justify-content: center;
+  }
+  .perfil-body-grid {
+    grid-template-columns: 1fr;
+  }
 }

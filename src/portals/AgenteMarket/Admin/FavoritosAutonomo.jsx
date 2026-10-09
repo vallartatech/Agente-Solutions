@@ -1,11 +1,27 @@
 import React, { useState } from 'react';
 import Header from '../../../components/Shared/Header';
-import { Star, Trash2, MapPin, Phone } from 'lucide-react';
+import { Star, Clock, Trash2, MapPin, Phone, Award } from 'lucide-react';
 import '../../../styles/AgenteMarket/Admin/FavoritosAutonomo.css';
 
 const mockFavoritos = [
-  { id: 1, nombre: "Juan Pérez", especialidad: "Aire Acondicionado", rating: 4.8, ubicacion: "Mérida, Norte", telefono: "999-123-4567" },
-  { id: 2, nombre: "Carlos Sánchez", especialidad: "Plomería General", rating: 4.5, ubicacion: "Mérida, Centro", telefono: "999-987-6543" }
+  { 
+    id: 1, 
+    nombre: "Juan Pérez", 
+    especialidad: "Aire Acondicionado", 
+    rating_stars: 4.9, 
+    rating_time: 4.8, 
+    ubicacion: "Mérida, Norte", 
+    telefono: "999-123-4567" 
+  },
+  { 
+    id: 2, 
+    nombre: "Carlos Sánchez", 
+    especialidad: "Plomería General", 
+    rating_stars: 4.7, 
+    rating_time: 4.6, 
+    ubicacion: "Mérida, Centro", 
+    telefono: "999-987-6543" 
+  }
 ];
 
 const FavoritosAutonomo = () => {
@@ -48,10 +64,18 @@ const FavoritosAutonomo = () => {
               </div>
               
               <div className="fav-card-body">
-                <div className="fav-stat">
-                  <Star size={16} className="star-filled" />
-                  <span>{tecnico.rating} Calificación Promedio</span>
+                {/* Dual Factor Metrics */}
+                <div className="fav-dual-stats">
+                  <div className="fav-stat-badge stars" title="Calidad del trabajo">
+                    <Star size={14} className="star-filled" />
+                    <span>{tecnico.rating_stars || 5.0} Calidad</span>
+                  </div>
+                  <div className="fav-stat-badge clocks" title="Puntualidad de llegada">
+                    <Clock size={14} className="clock-filled" />
+                    <span>{tecnico.rating_time || 5.0} Puntualidad</span>
+                  </div>
                 </div>
+
                 <div className="fav-stat">
                   <MapPin size={16} />
                   <span>{tecnico.ubicacion}</span>

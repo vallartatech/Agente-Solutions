@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
+import ModalCalificarTecnico from '../../../components/Shared/ModalCalificarTecnico';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import '../../../styles/AgenteMarket/Cliente/CalendarioCliente.css';
@@ -31,7 +32,8 @@ import {
   DollarSign,
   AlertTriangle,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  Star
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -84,6 +86,9 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
   const [selectedTechnicianProfile, setSelectedTechnicianProfile] = useState(null);
   const [showTechModal, setShowTechModal] = useState(false);
   const [showNewServiceModal, setShowNewServiceModal] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingTargetTech, setRatingTargetTech] = useState(null);
+  const [ratingTargetJob, setRatingTargetJob] = useState(null);
 
   // Estados de Chat de Cliente
   const [clientChatInput, setClientChatInput] = useState('');
@@ -1461,6 +1466,54 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
                           </div>
                         );
                       })()}
+
+                      {selectedJobForQuotes.arrived_at && (
+                        <div className="mercado-info-item full-width" style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                          <MapPin size={16} color="#16a34a" />
+                          <div>
+                            <strong style={{ color: '#166534', fontSize: '12px', display: 'block' }}>📍 Técnico Arribó al Domicilio</strong>
+                            <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>
+                              {new Date(selectedJobForQuotes.arrived_at).toLocaleString('es-MX', { timeStyle: 'short', dateStyle: 'medium' })}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Botón de Calificación Dual */}
+                      {(selectedJobForQuotes.is_accepted || selectedJobForQuotes.status === 'Terminado' || selectedJobForQuotes.status === 'Completado' || selectedJobForQuotes.status === 'Listo' || selectedJobForQuotes.status === 'Asignado') && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const assignedQuote = selectedJobForQuotes.cotizaciones_list?.find(q => q.is_assigned || q.status === 'accepted');
+                            const tech = assignedQuote?.technician || selectedJobForQuotes.tecnico || {
+                              id: selectedJobForQuotes.tecnico_id || assignedQuote?.technician_id,
+                              name: assignedQuote?.technicianName || 'Técnico Asignado'
+                            };
+                            setRatingTargetTech(tech);
+                            setRatingTargetJob(selectedJobForQuotes);
+                            setShowRatingModal(true);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '11px 16px',
+                            background: 'linear-gradient(135deg, #f26522, #ea580c)',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '10px',
+                            fontWeight: '800',
+                            fontSize: '13px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 14px rgba(242, 101, 34, 0.35)',
+                            marginTop: '12px'
+                          }}
+                        >
+                          <Sparkles size={16} /> 🌟 Calificar Servicio y Puntualidad
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1609,7 +1662,15 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
                                           </span>
                                         )}
                                       </h4>
-                                      <span className="red-quote-role">Técnico Verificado</span>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '2px' }}>
+                                        <span className="red-quote-role">Técnico Verificado</span>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: '700', color: '#b45309', background: '#fef3c7', padding: '1px 6px', borderRadius: '6px', border: '1px solid #fde68a' }} title="Calidad del trabajo">
+                                          <Star size={11} style={{ fill: '#f59e0b', color: '#f59e0b' }} /> {Number(quote.technician?.rating_stars_avg || 5.0).toFixed(1)}
+                                        </span>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: '700', color: '#0369a1', background: '#e0f2fe', padding: '1px 6px', borderRadius: '6px', border: '1px solid #bae6fd' }} title="Puntualidad de llegada">
+                                          <Clock size={11} color="#0284c7" /> {Number(quote.technician?.rating_time_avg || 5.0).toFixed(1)}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
                                   <div className="red-quote-price" style={{ color: isAcceptedQuote ? '#16a34a' : '#ea580c' }}>
@@ -1946,13 +2007,21 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
                   }}>
                     {selectedTechnicianProfile.first_name?.charAt(0) || 'T'}
                   </div>
-                  <div>
+                    <div>
                     <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>
                       {selectedTechnicianProfile.first_name} {selectedTechnicianProfile.last_name}
                     </h3>
-                    <span className="red-quote-role" style={{ background: '#fff7ed', padding: '4px 10px', borderRadius: '20px', border: '1px solid #fed7aa' }}>
-                      Técnico Verificado
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span className="red-quote-role" style={{ background: '#fff7ed', padding: '4px 10px', borderRadius: '20px', border: '1px solid #fed7aa' }}>
+                        Técnico Verificado
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '800', color: '#b45309', background: '#fef3c7', padding: '3px 8px', borderRadius: '8px', border: '1px solid #fde68a' }} title="Calidad del trabajo">
+                        <Star size={13} style={{ fill: '#f59e0b', color: '#f59e0b' }} /> {Number(selectedTechnicianProfile.rating_stars_avg || 5.0).toFixed(1)} Calidad
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '800', color: '#0369a1', background: '#e0f2fe', padding: '3px 8px', borderRadius: '8px', border: '1px solid #bae6fd' }} title="Puntualidad de llegada">
+                        <Clock size={13} color="#0284c7" /> {Number(selectedTechnicianProfile.rating_time_avg || 5.0).toFixed(1)} Puntualidad
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1992,6 +2061,26 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
             onClose={() => setShowNewServiceModal(false)}
             onSuccess={() => {
               setShowNewServiceModal(false);
+              fetchJobs();
+            }}
+          />
+        )}
+
+        {/* ─── MODAL DE CALIFICACIÓN DUAL (RELOJES ⏱️ Y ESTRELLAS ⭐) ─── */}
+        {showRatingModal && ratingTargetTech && (
+          <ModalCalificarTecnico
+            isOpen={showRatingModal}
+            onClose={() => {
+              setShowRatingModal(false);
+              setRatingTargetTech(null);
+              setRatingTargetJob(null);
+            }}
+            technician={ratingTargetTech}
+            workOrderId={ratingTargetJob?.id}
+            serviceId={ratingTargetJob?.service_id}
+            scheduledAt={ratingTargetJob?.scheduled_at}
+            arrivedAt={ratingTargetJob?.arrived_at}
+            onSuccess={() => {
               fetchJobs();
             }}
           />
