@@ -296,45 +296,26 @@ const PerfilCliente = () => {
           />
         </div>
 
-        {/* Center Nav Links */}
+        {/* Center Nav Links: Conservar los 6 módulos como en VistaMarket y Usuarios */}
         <nav className="vcp-header-nav profile-topbar-nav">
-          {showAdminNav ? (
-            <>
-              <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
-                INICIO
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
-                USUARIOS
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
-                REPORTE
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
-                COTIZACION
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
-                SERVICIOS
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
-                MERCADO / RED
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
-                INICIO
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
-                MIS PROPIEDADES
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/servicios')}>
-                SERVICIOS
-              </button>
-              <button className="vcp-nav-btn active" onClick={() => navigate('/mi-perfil')}>
-                MI PERFIL
-              </button>
-            </>
-          )}
+          <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
+            INICIO
+          </button>
+          <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
+            USUARIOS
+          </button>
+          <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
+            REPORTE
+          </button>
+          <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
+            COTIZACION
+          </button>
+          <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
+            SERVICIOS
+          </button>
+          <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
+            MERCADO / RED
+          </button>
         </nav>
 
         {/* Right Actions & User Profile */}

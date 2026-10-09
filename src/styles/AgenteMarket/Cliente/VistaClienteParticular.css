@@ -1853,9 +1853,28 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   MOBILE PROPERTY PROFILE DRAWER / ACCORDION TAB & BLOCKS (DESKTOP DEFAULT)
+   ══════════════════════════════════════════════════════════════════════════ */
+.vcp-mobile-prop-drawer-wrap {
+  display: none;
+}
+
+.vcp-prop-header-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vcp-prop-carousel-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
    MOBILE & TABLET RESPONSIVE FIXES (IPHONE / ANDROID / IPAD)
    ══════════════════════════════════════════════════════════════════════════ */
-@media (max-width: 990px) {
+@media (max-width: 900px) {
   .vcp-root {
     height: auto !important;
     min-height: 100vh !important;
@@ -1871,29 +1890,16 @@
     position: fixed !important;
     inset: 0 !important;
   }
-
   .vcp-header,
   .vcp-root .vcp-header {
-    height: auto !important;
-    min-height: 60px !important;
-    padding: 10px 14px !important;
-    gap: 10px !important;
-    position: relative !important;
-    z-index: 999999 !important;
-    background: linear-gradient(180deg,
-        rgba(20, 22, 29, 0.75) 0%,
-        rgba(15, 17, 23, 0.55) 100%) !important;
-    backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
-    border-bottom: 1.5px solid rgba(255, 255, 255, 0.20) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
+    height: 66px !important;
+    padding: 0 16px !important;
   }
 
   .vcp-header-left,
   .vcp-root .vcp-header-left {
     margin-left: 0 !important;
     gap: 8px !important;
-    flex-shrink: 0 !important;
   }
 
   .vcp-brand-logo {
@@ -1944,7 +1950,7 @@
     right: 14px !important;
     width: 230px !important;
     max-width: calc(100vw - 24px) !important;
-    z-index: 999999999 !important; /* CRITICAL: Guarantees it is in front of all page cards and badges */
+    z-index: 999999999 !important;
     display: flex !important;
     flex-direction: column !important;
     visibility: visible !important;
@@ -1955,13 +1961,13 @@
   .vcp-body-layout {
     display: flex !important;
     flex-direction: column !important;
+    min-height: calc(100vh - 66px) !important;
     height: auto !important;
-    min-height: auto !important;
     max-height: none !important;
     overflow-x: hidden !important;
-    overflow-y: visible !important;
-    padding: 12px 16px 40px 16px !important;
-    gap: 18px !important;
+    overflow-y: auto !important;
+    padding: 12px 16px 28px 16px !important;
+    gap: 12px !important;
     box-sizing: border-box !important;
     width: 100% !important;
     align-items: center !important;
@@ -1970,48 +1976,222 @@
   .vcp-hero-side {
     height: auto !important;
     max-height: none !important;
-    min-height: auto !important;
+    min-height: calc(100vh - 90px) !important;
     overflow: visible !important;
-    gap: 16px !important;
-    justify-content: flex-start !important;
+    gap: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
     padding: 0 !important;
     margin: 0 !important;
     width: 100% !important;
     max-width: 580px !important;
     box-sizing: border-box !important;
+    flex: 1 !important;
   }
 
-  .vcp-prop-title-box {
-    margin-top: 10px !important;
+  .vcp-hero-bottom {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    flex: 1 !important;
+    width: 100% !important;
+    gap: 10px !important;
+  }
+
+  .vcp-prop-header-block {
+    margin-top: 4px !important;
   }
 
   .vcp-prop-main-title {
     font-size: 1.45rem !important;
   }
 
+  /* ── PESTAÑA DESPLEGABLE EN MÓVIL (FROSTED WHITE LIQUID GLASS) ── */
+  .vcp-mobile-prop-drawer-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    margin: 6px 0 10px 0 !important;
+    gap: 6px !important;
+  }
+
+  .vcp-mobile-prop-drawer-tab {
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.20) 0%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.16) 100%) !important;
+    backdrop-filter: blur(24px) saturate(190%) contrast(105%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(190%) contrast(105%) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.38) !important;
+    border-radius: 20px !important;
+    padding: 10px 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    box-shadow: 
+      0 12px 32px rgba(0, 0, 0, 0.35),
+      inset 0 1.5px 2px rgba(255, 255, 255, 0.75),
+      inset 0 -1px 1.5px rgba(0, 0, 0, 0.12) !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    color: #ffffff !important;
+  }
+
+  .vcp-mobile-prop-drawer-tab:hover {
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.26) 0%,
+        rgba(255, 255, 255, 0.12) 50%,
+        rgba(255, 255, 255, 0.22) 100%) !important;
+    border-color: rgba(255, 255, 255, 0.65) !important;
+    box-shadow: 
+      0 16px 36px rgba(0, 0, 0, 0.40),
+      inset 0 2px 3px rgba(255, 255, 255, 0.85) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .vcp-mobile-prop-drawer-tab.is-open {
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.28) 0%,
+        rgba(255, 255, 255, 0.14) 50%,
+        rgba(255, 255, 255, 0.24) 100%) !important;
+    border-color: rgba(255, 255, 255, 0.75) !important;
+    box-shadow: 
+      0 18px 40px rgba(0, 0, 0, 0.45),
+      inset 0 2px 3px rgba(255, 255, 255, 0.90) !important;
+  }
+
+  .vcp-drawer-tab-main {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    min-width: 0 !important;
+  }
+
+  .vcp-drawer-tab-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 0.68rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.8px !important;
+    color: #ffffff !important;
+    text-transform: uppercase !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) !important;
+  }
+
+  .vcp-drawer-tab-curp {
+    font-size: 0.76rem !important;
+    color: #e2e8f0 !important;
+    font-family: monospace !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .vcp-drawer-tab-curp strong {
+    color: #ffffff !important;
+    font-weight: 900 !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    padding: 1px 8px !important;
+    border-radius: 6px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .vcp-drawer-tab-btn {
+    background: rgba(255, 255, 255, 0.16) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.40) !important;
+    color: #ffffff !important;
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.72rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.20), inset 0 1px 1.5px rgba(255, 255, 255, 0.55) !important;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .vcp-mobile-prop-drawer-tab:hover .vcp-drawer-tab-btn {
+    background: rgba(255, 255, 255, 0.30) !important;
+    border-color: rgba(255, 255, 255, 0.70) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28), inset 0 1px 2px rgba(255, 255, 255, 0.75) !important;
+  }
+
+  .vcp-mobile-prop-drawer-tab.is-open .vcp-drawer-tab-btn {
+    background: rgba(255, 255, 255, 0.35) !important;
+    border-color: rgba(255, 255, 255, 0.85) !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.30), inset 0 1px 2px rgba(255, 255, 255, 0.90) !important;
+  }
+
+  .vcp-mobile-prop-drawer-content {
+    width: 100% !important;
+    animation: vcpDrawerSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-sizing: border-box !important;
+    margin-top: 4px !important;
+  }
+
+  @keyframes vcpDrawerSlideDown {
+    from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .vcp-property-profile-inner.is-mobile-inner {
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.18) 0%,
+        rgba(255, 255, 255, 0.06) 50%,
+        rgba(255, 255, 255, 0.14) 100%) !important;
+    backdrop-filter: blur(24px) saturate(190%) contrast(105%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(190%) contrast(105%) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.38) !important;
+    border-radius: 26px !important;
+    padding: 16px 16px 18px 16px !important;
+    box-shadow:
+      0 20px 50px rgba(0, 0, 0, 0.45),
+      inset 0 1.5px 2px rgba(255, 255, 255, 0.75),
+      inset 0 -1px 1.5px rgba(0, 0, 0, 0.12),
+      0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+    width: 100% !important;
+    color: #ffffff !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  /* Ocultar aside de escritorio en móvil */
+  .vcp-panel-side {
+    display: none !important;
+  }
+
+  /* ── CARROUSEL DE MINIATURAS ABAJO EN MÓVIL ── */
+  .vcp-prop-carousel-block {
+    margin-top: auto !important;
+    width: 100% !important;
+    padding-top: 8px !important;
+  }
+
   .vcp-thumbs-track {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     padding: 4px 2px 8px 2px !important;
-  }
-
-  .vcp-panel-side {
-    position: static !important;
-    width: 100% !important;
-    max-width: 580px !important;
-    box-sizing: border-box !important;
-    height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
-    margin: 8px auto 0 auto !important;
-    padding: 20px 18px !important;
-    border-radius: 24px !important;
-    align-self: center !important;
-  }
-
-  .vcp-fields-list {
-    max-height: none !important;
-    overflow: visible !important;
   }
 
   .vcp-tablero-card {
@@ -2076,7 +2256,7 @@
     top: 56px !important;
     right: 10px !important;
     width: 220px !important;
-    z-index: 999999999 !important; /* CRITICAL: Must be above floating badge */
+    z-index: 999999999 !important;
   }
 
   .vcp-nav-icon-btn,
@@ -2102,8 +2282,8 @@
   }
 
   .vcp-body-layout {
-    padding: 10px 14px 40px 14px !important;
-    gap: 14px !important;
+    padding: 10px 14px 30px 14px !important;
+    gap: 12px !important;
   }
 
   .vcp-hero-side {
@@ -2112,14 +2292,6 @@
 
   .vcp-prop-main-title {
     font-size: 1.25rem !important;
-  }
-
-  .vcp-panel-side {
-    padding: 16px 14px !important;
-    border-radius: 20px !important;
-    margin: 6px auto 0 auto !important;
-    width: 100% !important;
-    max-width: 100% !important;
   }
 
   .vcp-tablero-card {

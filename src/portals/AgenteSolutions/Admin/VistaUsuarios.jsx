@@ -710,32 +710,53 @@ const VistaUsuarios = () => {
                               </div>
                             </td>
 
-                            {/* Estado / Estatus Interactivo (Clic para cambiar estado como Root) */}
+                            {/* Estado / Estatus Interactivo */}
                             <td data-label="Estado" className="vu-status-cell" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                type="button"
-                                className={`vu-status-pill-btn ${u.bloqueado ? "offline" : "online"}`}
-                                onClick={() => toggleBloqueo(u.id, u.role_id, u.bloqueado)}
-                                title={u.bloqueado ? "Cuenta Inactiva / Bloqueada (Clic para Activar)" : "Cuenta Activa (Clic para Bloquear)"}
-                              >
-                                <span className="vu-status-dot"></span>
-                                {u.bloqueado ? "Inactivo" : "Activo"}
-                              </button>
+                              {isRoot ? (
+                                <button
+                                  type="button"
+                                  className={`vu-status-pill-btn ${u.bloqueado ? "offline" : "online"}`}
+                                  onClick={() => toggleBloqueo(u.id, u.role_id, u.bloqueado)}
+                                  title={u.bloqueado ? "Cuenta Inactiva / Bloqueada (Clic para Activar)" : "Cuenta Activa (Clic para Bloquear)"}
+                                >
+                                  <span className="vu-status-dot"></span>
+                                  {u.bloqueado ? "Inactivo" : "Activo"}
+                                </button>
+                              ) : u.id === user?.id ? (
+                                <span
+                                  className={`vu-status-pill-btn ${u.bloqueado ? "offline" : "online"}`}
+                                  style={{ cursor: 'default' }}
+                                  title="Tu cuenta principal"
+                                >
+                                  <span className="vu-status-dot"></span>
+                                  {u.bloqueado ? "Inactivo" : "Activo"}
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className={`vu-status-pill-btn ${u.bloqueado ? "offline" : "online"}`}
+                                  onClick={() => toggleBloqueo(u.id, u.role_id, u.bloqueado)}
+                                  title={u.bloqueado ? "Técnico Inactivo (Clic para Activar)" : "Técnico Activo (Clic para Bloquear / Inactivar)"}
+                                >
+                                  <span className="vu-status-dot"></span>
+                                  {u.bloqueado ? "Inactivo" : "Activo"}
+                                </button>
+                              )}
                             </td>
 
-                            {/* Rol / Tipo de Usuario con Selector Completo */}
+                            {/* Rol / Tipo de Usuario (Exclusivo de Root, Estático para Clientes) */}
                             <td data-label="Rol" className="vu-role-cell" onClick={(e) => e.stopPropagation()}>
                               {Number(u.role_id) === 0 ? (
                                 <span className="vu-role-pill-root" title="Usuario con privilegios máximos protegidos">
                                   👑 ROOT MASTER
                                 </span>
-                              ) : (
+                              ) : isRoot ? (
                                 <div className="vu-role-select-box">
                                   <select
                                     className="vu-role-select-mockup"
                                     value={u.role_id}
                                     onChange={(e) => cambiarRol(u.id, parseInt(e.target.value), u.nombre)}
-                                    title="Cambiar rol del usuario"
+                                    title="Cambiar rol del usuario (Solo Root)"
                                     style={getRoleStyle(u.role_id)}
                                   >
                                     {OPCIONES_ROLES.map((op) => (
@@ -745,6 +766,25 @@ const VistaUsuarios = () => {
                                     ))}
                                   </select>
                                 </div>
+                              ) : (
+                                <span
+                                  className="vu-role-badge-static"
+                                  style={{
+                                    ...getRoleStyle(u.role_id),
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    padding: '6px 14px',
+                                    borderRadius: '12px',
+                                    fontSize: '0.76rem',
+                                    fontWeight: '800',
+                                    letterSpacing: '0.4px',
+                                    textTransform: 'uppercase',
+                                    userSelect: 'none'
+                                  }}
+                                  title={`Rol: ${MAPA_ROLES[u.role_id] || u.rol} (Gestionado por Root)`}
+                                >
+                                  {MAPA_ROLES[u.role_id] || u.rol}
+                                </span>
                               )}
                             </td>
 
@@ -789,8 +829,8 @@ const VistaUsuarios = () => {
                                     <Eye size={15} />
                                   </button>
 
-                                  {/* Bloquear / Desbloquear */}
-                                  {u.role_id !== 0 && (
+                                  {/* Bloquear / Desbloquear (No para sí mismo a menos que sea root, no para root) */}
+                                  {u.role_id !== 0 && (isRoot || u.id !== user?.id) && (
                                     <button
                                       type="button"
                                       className={`vu-mockup-btn ${u.bloqueado ? "unblock" : "lock"}`}
@@ -801,8 +841,8 @@ const VistaUsuarios = () => {
                                     </button>
                                   )}
 
-                                  {/* Eliminar */}
-                                  {u.role_id !== 0 && (
+                                  {/* Eliminar (No para sí mismo a menos que sea root, no para root) */}
+                                  {u.role_id !== 0 && (isRoot || u.id !== user?.id) && (
                                     <button
                                       type="button"
                                       className="vu-mockup-btn delete"
@@ -894,7 +934,7 @@ const VistaUsuarios = () => {
                 {/* Root / Admin Control Panel for Selected User */}
                 <div className="vu-sidebar-control-panel">
                   <label className="vu-sidebar-control-label">
-                    ⚙️ Control de Estatus & Rol (Root)
+                    {isRoot ? "⚙️ Control de Estatus & Rol (Root)" : "⚙️ Gestión de Usuario"}
                   </label>
 
                   {Number(selectedTecnico.role_id) === 0 ? (
@@ -914,15 +954,15 @@ const VistaUsuarios = () => {
                       <Crown size={16} color="#d97706" />
                       <span>CUENTA PROTEGIDA (ROOT MASTER)</span>
                     </div>
-                  ) : (
+                  ) : isRoot ? (
                     <>
-                      {/* Selector rápido de rol */}
+                      {/* Selector rápido de rol (Exclusivo Root) */}
                       <div style={{ marginBottom: '8px' }}>
                         <select
                           className="vu-sidebar-role-select"
                           value={selectedTecnico.role_id}
                           onChange={(e) => cambiarRol(selectedTecnico.id, parseInt(e.target.value), selectedTecnico.nombre)}
-                          title="Cambiar rol"
+                          title="Cambiar rol del usuario (Solo Root)"
                         >
                           {OPCIONES_ROLES.map((op) => (
                             <option key={op.id} value={op.id}>
@@ -951,6 +991,38 @@ const VistaUsuarios = () => {
                         )}
                       </button>
                     </>
+                  ) : selectedTecnico.id === user?.id ? (
+                    <div style={{
+                      padding: '10px 12px',
+                      background: 'rgba(241, 245, 249, 0.9)',
+                      border: '1.5px solid rgba(203, 213, 225, 0.8)',
+                      borderRadius: '10px',
+                      fontSize: '0.78rem',
+                      color: '#475569',
+                      textAlign: 'center',
+                      fontWeight: '600'
+                    }}>
+                      Tu cuenta principal de cliente (ID de base y rol gestionados por Root)
+                    </div>
+                  ) : (
+                    /* Para técnicos: el cliente solo puede bloquear/inactivar */
+                    <button
+                      type="button"
+                      className={`vu-sidebar-status-toggle-btn ${selectedTecnico.bloqueado ? "to-activate" : "to-block"}`}
+                      onClick={() => toggleBloqueo(selectedTecnico.id, selectedTecnico.role_id, selectedTecnico.bloqueado)}
+                    >
+                      {selectedTecnico.bloqueado ? (
+                        <>
+                          <Unlock size={14} />
+                          <span>Activar / Desbloquear Técnico</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock size={14} />
+                          <span>Bloquear / Inactivar Técnico</span>
+                        </>
+                      )}
+                    </button>
                   )}
                 </div>
 
@@ -1000,7 +1072,7 @@ const VistaUsuarios = () => {
                     <span>{selectedTecnico.isCliente ? "EXPEDIENTE DEL CLIENTE" : "EXPEDIENTE COMPLETO"}</span>
                   </button>
 
-                  {selectedTecnico.role_id !== 0 && (
+                  {selectedTecnico.role_id !== 0 && (isRoot || selectedTecnico.id !== user?.id) && (
                     <div className="vu-sidebar-secondary-actions">
                       <button
                         type="button"
