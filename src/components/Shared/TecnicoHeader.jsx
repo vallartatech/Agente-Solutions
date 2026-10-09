@@ -150,61 +150,34 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
 
       {/* Global Profile Dropdown Modal Portal */}
       {profileDropdownOpen && createPortal(
-        <div 
-          className="vcp-profile-dropdown-portal"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 99999999,
-            pointerEvents: 'auto'
-          }}
-        >
-          {/* Backdrop */}
+        <div className="tecnico-profile-portal-root">
+          {/* Full Screen Dimmed Backdrop */}
           <div 
-            className="vcp-dropdown-backdrop" 
+            className="tecnico-profile-backdrop" 
             onClick={() => setProfileDropdownOpen(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 1,
-              background: 'rgba(0, 0, 0, 0.4)',
-              backdropFilter: 'blur(3px)',
-              WebkitBackdropFilter: 'blur(3px)'
-            }}
           />
 
           {/* Floating Dropdown Card */}
           <div 
-            className="vcp-profile-dropdown" 
+            className="tecnico-profile-dropdown" 
             onClick={(e) => e.stopPropagation()}
-            style={{
-              position: 'fixed',
-              top: '64px',
-              right: '12px',
-              zIndex: 2,
-              width: '235px',
-              maxWidth: 'calc(100vw - 24px)',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.85)',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
           >
-            <div className="vcp-dropdown-user-header">
-              <div className="vcp-dropdown-role-pill">
-                <ShieldCheck size={12} className="vcp-dropdown-role-icon" />
+            <div className="tecnico-dropdown-user-header">
+              <div className="tecnico-dropdown-role-pill">
+                <ShieldCheck size={12} className="tecnico-dropdown-role-icon" />
                 <span>{userRole}</span>
               </div>
-              <div className="vcp-dropdown-user-name">{userFullName}</div>
+              <div className="tecnico-dropdown-user-name">{userFullName}</div>
               {authUser?.email && (
-                <div className="vcp-dropdown-user-email">{authUser.email}</div>
+                <div className="tecnico-dropdown-user-email">{authUser.email}</div>
               )}
             </div>
 
-            <div className="vcp-dropdown-divider" />
+            <div className="tecnico-dropdown-divider" />
 
             <button 
               type="button"
-              className="vcp-dropdown-item" 
+              className="tecnico-dropdown-item" 
               onClick={() => {
                 setProfileDropdownOpen(false);
                 navigate('/mi-perfil');
@@ -214,7 +187,7 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
             </button>
             <button 
               type="button"
-              className="vcp-dropdown-item" 
+              className="tecnico-dropdown-item" 
               onClick={() => {
                 setProfileDropdownOpen(false);
                 setShowModalCalendario(true);
@@ -222,10 +195,10 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
             >
               <Calendar size={16} /> Ver Calendario
             </button>
-            <div className="vcp-dropdown-divider" />
+            <div className="tecnico-dropdown-divider" />
             <button 
               type="button"
-              className="vcp-dropdown-item logout" 
+              className="tecnico-dropdown-item logout" 
               onClick={() => { 
                 setProfileDropdownOpen(false); 
                 if (logoutGlobal) logoutGlobal();

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { CalendarDays, Shield, User, LogOut } from 'lucide-react'; 
@@ -215,38 +216,6 @@ const Header = ({ activeModule }) => {
               <div className="vcp-avatar-initial">{userInitial}</div>
             )}
           </button>
-
-          {profileDropdownOpen && (
-            <div className="vcp-profile-dropdown">
-              <div className="vcp-dropdown-user-header">
-                <div className="vcp-dropdown-role-pill">
-                  <Shield size={12} className="vcp-dropdown-role-icon" />
-                  <span>{userRoleLabel}</span>
-                </div>
-                <div className="vcp-dropdown-user-name">{userFullName}</div>
-              </div>
-
-              <div className="vcp-dropdown-divider" />
-
-              <button
-                type="button"
-                className="vcp-dropdown-item"
-                onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
-              >
-                <User size={16} /> Mi Perfil
-              </button>
-              <button
-                type="button"
-                className="vcp-dropdown-item logout"
-                onClick={() => {
-                  setProfileDropdownOpen(false);
-                  handleCerrarSesion();
-                }}
-              >
-                <LogOut size={16} /> Cerrar Sesión
-              </button>
-            </div>
-          )}
         </div>
 
         {/* MODAL GLOBAL DE CALENDARIO DE CLIENTE */}
@@ -255,6 +224,55 @@ const Header = ({ activeModule }) => {
           onClose={() => setMostrarCalendario(false)} 
         />
       </header>
+
+      {/* ── PORTAL GLOBAL DE PERFIL FLOTANTE (CLIENTE / NEGOCIO / ADMIN) ── */}
+      {profileDropdownOpen && createPortal(
+        <div className="vcp-profile-portal-root">
+          {/* Backdrop para cerrar al hacer clic o tap fuera */}
+          <div 
+            className="vcp-profile-backdrop" 
+            onClick={() => setProfileDropdownOpen(false)}
+          />
+
+          {/* Tarjeta flotante de opciones de perfil */}
+          <div 
+            className="vcp-profile-dropdown"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="vcp-dropdown-user-header">
+              <div className="vcp-dropdown-role-pill">
+                <Shield size={12} className="vcp-dropdown-role-icon" />
+                <span>{userRoleLabel}</span>
+              </div>
+              <div className="vcp-dropdown-user-name">{userFullName}</div>
+              {user?.email && (
+                <div className="vcp-dropdown-user-email">{user.email}</div>
+              )}
+            </div>
+
+            <div className="vcp-dropdown-divider" />
+
+            <button
+              type="button"
+              className="vcp-dropdown-item"
+              onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
+            >
+              <User size={16} /> Mi Perfil
+            </button>
+            <button
+              type="button"
+              className="vcp-dropdown-item logout"
+              onClick={() => {
+                setProfileDropdownOpen(false);
+                handleCerrarSesion();
+              }}
+            >
+              <LogOut size={16} /> Cerrar Sesión
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* BARRA DE NAVEGACIÓN INFERIOR RESPONSIVA (SOLO ICONOS) */}
       <MobileBottomNav activeModule={activeModule} />

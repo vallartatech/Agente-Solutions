@@ -892,53 +892,63 @@ const VistaClienteParticular = () => {
               <div className="vcp-avatar-initial">{userInitial}</div>
             )}
           </button>
-
-          {/* ── DROPDOWN DE PERFIL DIRECTO DENTRO DE VCP-HEADER-RIGHT ── */}
-          {profileDropdownOpen && (
-            <div 
-              className="vcp-profile-dropdown"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="vcp-dropdown-user-header">
-                <div className="vcp-dropdown-role-pill">
-                  <Shield size={12} className="vcp-dropdown-role-icon" />
-                  <span>{userRoleLabel}</span>
-                </div>
-                <div className="vcp-dropdown-user-name">{userFullName}</div>
-                {user?.email && (
-                  <div className="vcp-dropdown-user-email">{user.email}</div>
-                )}
-              </div>
-
-              <div className="vcp-dropdown-divider" />
-
-              <button 
-                type="button"
-                className="vcp-dropdown-item" 
-                onClick={(e) => { 
-                  e.stopPropagation();
-                  setProfileDropdownOpen(false); 
-                  navigate('/mi-perfil'); 
-                }}
-              >
-                <User size={16} /> Mi Perfil
-              </button>
-              <button 
-                type="button"
-                className="vcp-dropdown-item logout" 
-                onClick={(e) => { 
-                  e.stopPropagation();
-                  setProfileDropdownOpen(false); 
-                  if (typeof logout === 'function') logout();
-                  navigate('/', { replace: true }); 
-                }}
-              >
-                <LogOut size={16} /> Cerrar Sesión
-              </button>
-            </div>
-          )}
         </div>
       </header>
+
+      {/* ── PORTAL GLOBAL DE PERFIL FLOTANTE (CLIENTE / PARTICULAR / NEGOCIO) ── */}
+      {profileDropdownOpen && createPortal(
+        <div className="vcp-profile-portal-root">
+          {/* Backdrop para cerrar al hacer clic o tap fuera */}
+          <div 
+            className="vcp-profile-backdrop" 
+            onClick={() => setProfileDropdownOpen(false)}
+          />
+
+          {/* Tarjeta flotante de opciones de perfil */}
+          <div 
+            className="vcp-profile-dropdown"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="vcp-dropdown-user-header">
+              <div className="vcp-dropdown-role-pill">
+                <Shield size={12} className="vcp-dropdown-role-icon" />
+                <span>{userRoleLabel}</span>
+              </div>
+              <div className="vcp-dropdown-user-name">{userFullName}</div>
+              {user?.email && (
+                <div className="vcp-dropdown-user-email">{user.email}</div>
+              )}
+            </div>
+
+            <div className="vcp-dropdown-divider" />
+
+            <button 
+              type="button"
+              className="vcp-dropdown-item" 
+              onClick={(e) => { 
+                e.stopPropagation();
+                setProfileDropdownOpen(false); 
+                navigate('/mi-perfil'); 
+              }}
+            >
+              <User size={16} /> Mi Perfil
+            </button>
+            <button 
+              type="button"
+              className="vcp-dropdown-item logout" 
+              onClick={(e) => { 
+                e.stopPropagation();
+                setProfileDropdownOpen(false); 
+                if (typeof logout === 'function') logout();
+                navigate('/', { replace: true }); 
+              }}
+            >
+              <LogOut size={16} /> Cerrar Sesión
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* ── MAIN SPLIT VIEW CONTAINER ── */}
       <main className="vcp-body-layout">

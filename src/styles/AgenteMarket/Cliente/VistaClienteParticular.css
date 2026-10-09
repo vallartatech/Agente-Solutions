@@ -384,51 +384,62 @@
   user-select: none;
 }
 
-/* Invisible backdrop for outside click/tap on mobile and desktop */
+/* ── PORTAL FLOATING PROFILE DROPDOWN (GLOBAL LIQUID GLASS) ── */
+.vcp-profile-portal-root {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+}
+
+/* Completely transparent backdrop for outside click/tap on mobile and desktop without dimming or blurring background */
 .vcp-profile-backdrop {
   position: fixed !important;
   inset: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  z-index: 999999998 !important;
+  z-index: 1 !important;
   background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   cursor: default !important;
 }
 
-/* Dropdown menu (Apple Liquid Glass) positioned directly under avatar */
+/* Dropdown menu (Apple Liquid Glass) positioned directly on top right - Compact Edition */
 .vcp-profile-dropdown,
 .vcp-root .vcp-profile-dropdown {
-  position: absolute !important;
-  top: calc(100% + 10px) !important;
-  right: 0 !important;
-  width: 230px !important;
-  background: linear-gradient(145deg,
-      rgba(255, 255, 255, 0.16) 0%,
-      rgba(255, 255, 255, 0.05) 50%,
-      rgba(255, 255, 255, 0.10) 100%),
-    rgba(15, 18, 26, 0.98) !important;
-  backdrop-filter: blur(28px) saturate(190%) contrast(105%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) contrast(105%) !important;
-  border-radius: 18px !important;
-  box-shadow:
-    0 18px 45px rgba(0, 0, 0, 0.75),
-    inset 0 1.5px 2px rgba(255, 255, 255, 0.70) !important;
-  padding: 12px 10px 10px 10px !important;
+  position: fixed !important;
+  top: 64px !important;
+  right: 12px !important;
+  left: auto !important;
+  bottom: auto !important;
+  width: 195px !important;
+  max-width: calc(100vw - 24px) !important;
+  background: rgba(20, 24, 34, 0.96) !important;
+  backdrop-filter: blur(24px) saturate(190%) contrast(105%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) contrast(105%) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  padding: 8px 8px 6px 8px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 5px !important;
-  z-index: 1000002 !important;
-  animation: vcpFadeDrop 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+  gap: 3px !important;
+  z-index: 2 !important;
+  animation: vcpFadeDrop 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.22) !important;
   visibility: visible !important;
   opacity: 1 !important;
   pointer-events: auto !important;
+  box-sizing: border-box !important;
+  transform: none !important;
 }
 
 @keyframes vcpFadeDrop {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(-6px);
   }
 
   to {
@@ -439,94 +450,96 @@
 
 /* User Info Header inside Dropdown */
 .vcp-dropdown-user-header {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 4px 6px 8px 6px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 3px !important;
+  padding: 2px 4px 4px 4px !important;
 }
 
 .vcp-dropdown-role-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(242, 101, 34, 0.2);
-  border: 1px solid rgba(242, 101, 34, 0.55);
-  color: #ff8548;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.68rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 3px 8px;
-  border-radius: 20px;
-  box-shadow: 0 0 10px rgba(242, 101, 34, 0.25);
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: rgba(242, 101, 34, 0.2) !important;
+  border: 1px solid rgba(242, 101, 34, 0.55) !important;
+  color: #ff8548 !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 0.60rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.4px !important;
+  padding: 2px 6px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 8px rgba(242, 101, 34, 0.25) !important;
 }
 
 .vcp-dropdown-role-icon {
-  color: #ff8548;
+  color: #ff8548 !important;
+  width: 10px !important;
+  height: 10px !important;
 }
 
 .vcp-dropdown-user-name {
-  font-size: 0.88rem;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: 0.2px;
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.2px !important;
+  margin-top: 1px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  width: 100% !important;
 }
 
 .vcp-dropdown-user-email {
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: #94a3b8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
+  font-size: 0.65rem !important;
+  font-weight: 500 !important;
+  color: #94a3b8 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  width: 100% !important;
 }
 
 .vcp-dropdown-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.12);
-  margin: 2px 0 4px 0;
-  width: 100%;
+  height: 1px !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  margin: 1px 0 3px 0 !important;
+  width: 100% !important;
 }
 
 .vcp-dropdown-item {
-  background: transparent;
-  border: none;
-  color: #ffffff;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.82rem;
-  font-weight: 700;
-  padding: 9px 12px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: left;
-  width: 100%;
-  box-sizing: border-box;
+  background: transparent !important;
+  border: none !important;
+  color: #e2e8f0 !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  padding: 7px 8px !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  text-align: left !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .vcp-dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
 }
 
 .vcp-dropdown-item.logout {
-  color: #fca5a5;
+  color: #fca5a5 !important;
 }
 
 .vcp-dropdown-item.logout:hover {
-  background: rgba(239, 68, 68, 0.25);
-  color: #ffffff;
+  background: rgba(239, 68, 68, 0.22) !important;
+  color: #f87171 !important;
 }
 
 
@@ -1961,12 +1974,14 @@
 
   .vcp-profile-dropdown,
   .vcp-root .vcp-profile-dropdown {
-    position: absolute !important;
-    top: calc(100% + 8px) !important;
-    right: 0 !important;
-    width: 230px !important;
-    max-width: calc(100vw - 24px) !important;
-    z-index: 1000002 !important;
+    position: fixed !important;
+    top: 60px !important;
+    right: 10px !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: 195px !important;
+    max-width: calc(100vw - 20px) !important;
+    z-index: 2 !important;
     display: flex !important;
     flex-direction: column !important;
     visibility: visible !important;
@@ -2061,13 +2076,13 @@
   .vcp-body-layout {
     display: flex !important;
     flex-direction: column !important;
-    min-height: calc(100vh - 66px) !important;
+    min-height: calc(100dvh - 66px) !important;
     height: auto !important;
     max-height: none !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
-    padding: 12px 16px 84px 16px !important;
-    gap: 12px !important;
+    padding: 8px 12px 74px 12px !important;
+    gap: 8px !important;
     box-sizing: border-box !important;
     width: 100% !important;
     align-items: center !important;
@@ -2076,9 +2091,9 @@
   .vcp-hero-side {
     height: auto !important;
     max-height: none !important;
-    min-height: calc(100vh - 90px) !important;
+    min-height: calc(100dvh - 148px) !important;
     overflow: visible !important;
-    gap: 12px !important;
+    gap: 8px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
@@ -2087,24 +2102,25 @@
     width: 100% !important;
     max-width: 580px !important;
     box-sizing: border-box !important;
-    flex: 1 !important;
+    flex: 1 0 auto !important;
   }
 
   .vcp-hero-bottom {
     display: flex !important;
     flex-direction: column !important;
-    justify-content: space-between !important;
-    flex: 1 !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
     width: 100% !important;
-    gap: 10px !important;
+    gap: 6px !important;
+    margin-top: auto !important;
   }
 
   .vcp-prop-header-block {
-    margin-top: 4px !important;
+    margin-top: 2px !important;
   }
 
   .vcp-prop-main-title {
-    font-size: 1.45rem !important;
+    font-size: 1.4rem !important;
   }
 
   /* ── PESTAÑA DESPLEGABLE EN MÓVIL (FROSTED WHITE LIQUID GLASS) ── */
@@ -2112,8 +2128,8 @@
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
-    margin-top: auto !important;
-    margin-bottom: 6px !important;
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
     gap: 6px !important;
   }
 
@@ -2353,11 +2369,14 @@
 
   .vcp-profile-dropdown,
   .vcp-root .vcp-profile-dropdown {
-    position: absolute !important;
-    top: calc(100% + 8px) !important;
-    right: 0 !important;
-    width: 220px !important;
-    z-index: 1000002 !important;
+    position: fixed !important;
+    top: 58px !important;
+    right: 8px !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: 190px !important;
+    max-width: calc(100vw - 16px) !important;
+    z-index: 2 !important;
   }
 
   .vcp-nav-icon-btn,

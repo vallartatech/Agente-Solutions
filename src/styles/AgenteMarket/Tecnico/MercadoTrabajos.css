@@ -249,6 +249,152 @@
   }
 }
 
+/* ── PORTAL FLOATING PROFILE DROPDOWN (TECNICO HEADER) ── */
+.tecnico-profile-portal-root {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+}
+
+.tecnico-profile-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  z-index: 1 !important;
+  cursor: default !important;
+}
+
+.tecnico-profile-dropdown {
+  position: fixed !important;
+  top: 64px !important;
+  right: 12px !important;
+  left: auto !important;
+  bottom: auto !important;
+  width: 195px !important;
+  max-width: calc(100vw - 24px) !important;
+  background: rgba(20, 24, 34, 0.96) !important;
+  backdrop-filter: blur(24px) saturate(190%) contrast(105%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) contrast(105%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  padding: 8px 8px 6px 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  z-index: 2 !important;
+  animation: tecnicoFadeDown 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+@keyframes tecnicoFadeDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tecnico-dropdown-user-header {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 3px !important;
+  padding: 2px 4px 4px 4px !important;
+}
+
+.tecnico-dropdown-role-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: rgba(242, 101, 34, 0.2) !important;
+  border: 1px solid rgba(242, 101, 34, 0.55) !important;
+  color: #ff8548 !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 0.60rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.4px !important;
+  padding: 2px 6px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 8px rgba(242, 101, 34, 0.25) !important;
+}
+
+.tecnico-dropdown-role-icon {
+  color: #ff8548 !important;
+  width: 10px !important;
+  height: 10px !important;
+}
+
+.tecnico-dropdown-user-name {
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.2px !important;
+  margin-top: 1px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  width: 100% !important;
+}
+
+.tecnico-dropdown-user-email {
+  font-size: 0.65rem !important;
+  font-weight: 500 !important;
+  color: #94a3b8 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  width: 100% !important;
+}
+
+.tecnico-dropdown-divider {
+  height: 1px !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  margin: 1px 0 3px 0 !important;
+  width: 100% !important;
+}
+
+.tecnico-dropdown-item {
+  width: 100% !important;
+  background: transparent !important;
+  border: none !important;
+  color: #cbd5e1 !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  padding: 7px 8px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  text-align: left !important;
+  transition: all 0.15s ease !important;
+  box-sizing: border-box !important;
+}
+
+.tecnico-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.tecnico-dropdown-item.logout {
+  color: #f87171 !important;
+}
+
+.tecnico-dropdown-item.logout:hover {
+  background: rgba(239, 68, 68, 0.22) !important;
+  color: #fca5a5 !important;
+}
+
 @keyframes vcpFadeDown {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }

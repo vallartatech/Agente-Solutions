@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { 
   Camera, 
@@ -359,42 +360,53 @@ const PerfilCliente = () => {
               </div>
             )}
           </button>
-
-          {profileDropdownOpen && (
-            <div className="profile-header-dropdown">
-              <div className="vcp-dropdown-user-header">
-                <div className="vcp-dropdown-role-pill">
-                  <Shield size={12} className="vcp-dropdown-role-icon" />
-                  <span>{obtenerNombreRol(user?.role_id)}</span>
-                </div>
-                <div className="vcp-dropdown-user-name">{nombreCompleto}</div>
-                {user?.email && (
-                  <div className="vcp-dropdown-user-email">{user.email}</div>
-                )}
-              </div>
-
-              <div className="vcp-dropdown-divider" />
-
-              <button 
-                className="profile-dropdown-item" 
-                onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
-              >
-                <User size={16} /> Mi Perfil
-              </button>
-              <button 
-                className="profile-dropdown-item logout" 
-                onClick={() => { 
-                  setProfileDropdownOpen(false); 
-                  if (logoutGlobal) logoutGlobal(); 
-                  navigate('/', { replace: true }); 
-                }}
-              >
-                <LogOut size={16} /> Cerrar Sesión
-              </button>
-            </div>
-          )}
         </div>
       </header>
+
+      {/* ── PORTAL GLOBAL DE PERFIL FLOTANTE ── */}
+      {profileDropdownOpen && createPortal(
+        <div className="vcp-profile-portal-root">
+          <div 
+            className="vcp-profile-backdrop" 
+            onClick={() => setProfileDropdownOpen(false)}
+          />
+          <div 
+            className="profile-header-dropdown vcp-profile-dropdown"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="vcp-dropdown-user-header">
+              <div className="vcp-dropdown-role-pill">
+                <Shield size={12} className="vcp-dropdown-role-icon" />
+                <span>{obtenerNombreRol(user?.role_id)}</span>
+              </div>
+              <div className="vcp-dropdown-user-name">{nombreCompleto}</div>
+              {user?.email && (
+                <div className="vcp-dropdown-user-email">{user.email}</div>
+              )}
+            </div>
+
+            <div className="vcp-dropdown-divider" />
+
+            <button 
+              className="profile-dropdown-item vcp-dropdown-item" 
+              onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
+            >
+              <User size={16} /> Mi Perfil
+            </button>
+            <button 
+              className="profile-dropdown-item logout vcp-dropdown-item" 
+              onClick={() => { 
+                setProfileDropdownOpen(false); 
+                if (logoutGlobal) logoutGlobal(); 
+                navigate('/', { replace: true }); 
+              }}
+            >
+              <LogOut size={16} /> Cerrar Sesión
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* ── MAIN DASHBOARD VIEWPORT ── */}
       <main className="profile-dashboard-viewport">

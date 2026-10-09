@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { 
@@ -400,41 +401,52 @@ const VistaLevantamientos = () => {
               <div className="vcp-avatar-initial">{userInitial}</div>
             )}
           </button>
-
-          {profileDropdownOpen && (
-            <div className="vcp-profile-dropdown">
-              <div className="vcp-dropdown-user-header">
-                <div className="vcp-dropdown-role-pill">
-                  <Shield size={12} className="vcp-dropdown-role-icon" />
-                  <span>{userRoleLabel}</span>
-                </div>
-                <div className="vcp-dropdown-user-name">{userFullName}</div>
-                {user?.email && (
-                  <div className="vcp-dropdown-user-email">{user.email}</div>
-                )}
-              </div>
-
-              <div className="vcp-dropdown-divider" />
-
-              <button 
-                className="vcp-dropdown-item" 
-                onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
-              >
-                <User size={16} /> Mi Perfil
-              </button>
-              <button 
-                className="vcp-dropdown-item logout" 
-                onClick={() => { 
-                  setProfileDropdownOpen(false); 
-                  handleCerrarSesion();
-                }}
-              >
-                <LogOut size={16} /> Cerrar Sesión
-              </button>
-            </div>
-          )}
         </div>
       </header>
+
+      {/* ── PORTAL GLOBAL DE PERFIL FLOTANTE (ADMIN) ── */}
+      {profileDropdownOpen && createPortal(
+        <div className="vcp-profile-portal-root">
+          <div 
+            className="vcp-profile-backdrop" 
+            onClick={() => setProfileDropdownOpen(false)}
+          />
+          <div 
+            className="vcp-profile-dropdown"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="vcp-dropdown-user-header">
+              <div className="vcp-dropdown-role-pill">
+                <Shield size={12} className="vcp-dropdown-role-icon" />
+                <span>{userRoleLabel}</span>
+              </div>
+              <div className="vcp-dropdown-user-name">{userFullName}</div>
+              {user?.email && (
+                <div className="vcp-dropdown-user-email">{user.email}</div>
+              )}
+            </div>
+
+            <div className="vcp-dropdown-divider" />
+
+            <button 
+              className="vcp-dropdown-item" 
+              onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
+            >
+              <User size={16} /> Mi Perfil
+            </button>
+            <button 
+              className="vcp-dropdown-item logout" 
+              onClick={() => { 
+                setProfileDropdownOpen(false); 
+                handleCerrarSesion();
+              }}
+            >
+              <LogOut size={16} /> Cerrar Sesión
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* ── MAIN CONTENT AREA ── */}
       <main className="lev-main-container">
