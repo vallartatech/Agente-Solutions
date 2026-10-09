@@ -151,8 +151,10 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
           <button 
             type="button"
             className="vcp-avatar-btn" 
-            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            title="Opciones de perfil"
+            onClick={(e) => {
+              e.stopPropagation();
+              setProfileDropdownOpen(prev => !prev);
+            }}
             aria-label="Perfil de usuario"
           >
             {userAvatar ? (
@@ -163,7 +165,7 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
           </button>
 
           {profileDropdownOpen && (
-            <div className="vcp-profile-dropdown">
+            <div className="vcp-profile-dropdown" onClick={(e) => e.stopPropagation()}>
               <div className="vcp-dropdown-user-header">
                 <div className="vcp-dropdown-role-pill">
                   <ShieldCheck size={12} className="vcp-dropdown-role-icon" />
@@ -180,14 +182,22 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
               <button 
                 type="button"
                 className="vcp-dropdown-item" 
-                onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setProfileDropdownOpen(false);
+                  navigate('/mi-perfil');
+                }}
               >
                 <User size={16} /> Mi Perfil
               </button>
               <button 
                 type="button"
                 className="vcp-dropdown-item" 
-                onClick={() => { setProfileDropdownOpen(false); setShowModalCalendario(true); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setProfileDropdownOpen(false);
+                  setShowModalCalendario(true);
+                }}
               >
                 <Calendar size={16} /> Ver Calendario
               </button>
@@ -195,7 +205,8 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
               <button 
                 type="button"
                 className="vcp-dropdown-item logout" 
-                onClick={() => { 
+                onClick={(e) => { 
+                  e.stopPropagation();
                   setProfileDropdownOpen(false); 
                   if (logoutGlobal) logoutGlobal();
                   navigate('/', { replace: true }); 

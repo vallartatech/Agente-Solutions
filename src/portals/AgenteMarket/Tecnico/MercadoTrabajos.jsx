@@ -667,17 +667,6 @@ const MercadoTrabajos = () => {
     }
   };
 
-  // Close profile dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setProfileDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   // Restaurar trabajo seleccionado o pestaña al regresar de Galería o Nuevo Reporte
   useEffect(() => {
     if (location.state?.view) {

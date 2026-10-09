@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Printer, X, FileText, Home, User, Wrench, Clock, MapPin, CheckCircle, Eye, Maximize2 } from 'lucide-react';
 import axios from 'axios';
 import logo from '../../../assets/Logo3.png';
@@ -191,23 +192,24 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], bo
   const isDone = ['Finalizado', 'Listo', 'Terminado', 'Completado', 'Aprobado', 'Entregado'].includes(job.status);
   const estadoDisplay = isDone ? 'Concluido / Listo' : (job.status || 'En Proceso');
 
-  return (
+  return createPortal(
     <div className="reporte-modal-backdrop" onClick={onClose} style={{
       position: 'fixed',
       top: 0,
       left: 0,
       width: '100vw',
       height: '100vh',
-      background: 'rgba(5, 8, 15, 0.88)',
-      backdropFilter: 'blur(10px)',
-      WebkitBackdropFilter: 'blur(10px)',
-      zIndex: 99999,
+      background: 'rgba(5, 8, 15, 0.94)',
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
+      zIndex: 99999999,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'flex-start',
       overflowY: 'auto',
-      padding: '24px 12px'
+      padding: '24px 12px',
+      boxSizing: 'border-box'
     }}>
       {/* ── BARRA SUPERIOR DE ACCIONES FLOTANTE (NO SE IMPRIME) ── */}
       <div className="no-print" style={{
@@ -556,7 +558,8 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], bo
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 };
 
