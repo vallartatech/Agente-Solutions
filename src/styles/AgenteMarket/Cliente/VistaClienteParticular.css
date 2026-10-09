@@ -19,25 +19,27 @@
 }
 
 /* ── TOP NAVIGATION BAR (APPLE LIQUID GLASS TRANSLUCENT) ── */
-.vcp-header {
-  height: 82px;
+.vcp-header,
+.vcp-root .vcp-header {
+  height: 82px !important;
   background: linear-gradient(180deg,
-      rgba(20, 22, 29, 0.48) 0%,
-      rgba(15, 17, 23, 0.30) 100%);
-  backdrop-filter: blur(20px) saturate(180%) contrast(105%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%) contrast(105%);
-  border-bottom: 1.5px solid rgba(255, 255, 255, 0.22);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
-  position: relative;
-  z-index: 100;
+      rgba(20, 22, 29, 0.65) 0%,
+      rgba(15, 17, 23, 0.45) 100%) !important;
+  backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.20) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 32px !important;
+  position: relative !important;
+  z-index: 999999 !important; /* CRITICAL: Must be higher than main layout and badges */
   box-shadow:
-    0 8px 28px rgba(0, 0, 0, 0.30),
-    inset 0 -1px 1.5px rgba(255, 255, 255, 0.12),
-    inset 0 1px 1.5px rgba(255, 255, 255, 0.28);
-  flex-shrink: 0;
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 -1px 1.5px rgba(255, 255, 255, 0.10),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.25) !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
 }
 
 .vcp-header-left {
@@ -75,35 +77,38 @@
 }
 
 .vcp-nav-btn,
-.vcp-header-nav .vcp-nav-btn {
-  background: transparent;
-  border: 1px solid transparent;
-  color: #ffffff;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  white-space: nowrap;
+.vcp-header-nav .vcp-nav-btn,
+.vcp-root .vcp-header .vcp-nav-btn {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #ffffff !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.8px !important;
+  text-transform: uppercase !important;
+  padding: 8px 16px !important;
+  border-radius: 20px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  white-space: nowrap !important;
 }
 
 .vcp-nav-btn:hover,
-.vcp-header-nav .vcp-nav-btn:hover {
-  color: #f26522;
-  background: rgba(242, 101, 34, 0.14);
-  border-color: rgba(242, 101, 34, 0.35);
-  transform: translateY(-1px);
+.vcp-header-nav .vcp-nav-btn:hover,
+.vcp-root .vcp-header .vcp-nav-btn:hover {
+  color: #f26522 !important;
+  background: rgba(242, 101, 34, 0.14) !important;
+  border-color: rgba(242, 101, 34, 0.35) !important;
+  transform: translateY(-1px) !important;
 }
 
 .vcp-nav-btn.active,
-.vcp-header-nav .vcp-nav-btn.active {
+.vcp-header-nav .vcp-nav-btn.active,
+.vcp-root .vcp-header .vcp-nav-btn.active {
   color: #ffffff !important;
   background: linear-gradient(135deg, #f26522 0%, #ea580c 100%) !important;
   border: 1px solid rgba(242, 101, 34, 0.4) !important;
@@ -158,50 +163,56 @@
   margin-right: 4px;
 }
 
-.vcp-header-icon-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.10);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+.vcp-header-icon-btn,
+.vcp-root .vcp-header .vcp-header-icon-btn {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 11px !important;
+  background: rgba(255, 255, 255, 0.10) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  position: relative !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4) !important;
 }
 
-.vcp-header-icon-btn:hover {
-  background: rgba(242, 101, 34, 0.28);
-  border-color: rgba(242, 101, 34, 0.85);
-  color: #ff9d66;
-  transform: translateY(-1px) scale(1.06);
-  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.45);
+.vcp-header-icon-btn:hover,
+.vcp-root .vcp-header .vcp-header-icon-btn:hover {
+  background: rgba(242, 101, 34, 0.28) !important;
+  border-color: rgba(242, 101, 34, 0.85) !important;
+  color: #ff9d66 !important;
+  transform: translateY(-1px) scale(1.06) !important;
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.45) !important;
 }
 
-.vcp-header-icon-btn svg {
+.vcp-header-icon-btn svg,
+.vcp-root .vcp-header .vcp-header-icon-btn svg {
   width: 18px !important;
   height: 18px !important;
   stroke: #ffffff !important;
   color: #ffffff !important;
   display: block !important;
   flex-shrink: 0 !important;
-  pointer-events: none;
+  pointer-events: none !important;
 }
 
-.vcp-header-icon-btn:active {
-  transform: scale(0.95);
+.vcp-header-icon-btn:active,
+.vcp-root .vcp-header .vcp-header-icon-btn:active {
+  transform: scale(0.95) !important;
 }
 
 /* ── BOTÓN DE NOTIFICACIÓN IDÉNTICO AL DEL CALENDARIO ── */
 .vcp-header .nb-trigger-btn,
 .vcp-header-actions-group .nb-trigger-btn,
-.vcp-header-icon-btn.nb-trigger-btn {
+.vcp-header-icon-btn.nb-trigger-btn,
+.vcp-root .vcp-header .nb-trigger-btn,
+.vcp-root .vcp-header-actions-group .nb-trigger-btn {
   width: 36px !important;
   height: 36px !important;
   border-radius: 11px !important;
@@ -225,7 +236,9 @@
 .vcp-header-actions-group .nb-trigger-btn:hover,
 .vcp-header-actions-group .nb-trigger-btn.active,
 .vcp-header-icon-btn.nb-trigger-btn:hover,
-.vcp-header-icon-btn.nb-trigger-btn.active {
+.vcp-header-icon-btn.nb-trigger-btn.active,
+.vcp-root .vcp-header .nb-trigger-btn:hover,
+.vcp-root .vcp-header .nb-trigger-btn.active {
   background: rgba(242, 101, 34, 0.28) !important;
   border-color: rgba(242, 101, 34, 0.85) !important;
   color: #ff9d66 !important;
@@ -331,10 +344,11 @@
   flex-shrink: 0;
 }
 
-.vcp-avatar-btn:hover {
+.vcp-avatar-btn:hover,
+.vcp-avatar-btn.active {
   transform: scale(1.08);
   border-color: #f26522;
-  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.5);
+  box-shadow: 0 0 16px rgba(242, 101, 34, 0.65);
 }
 
 .vcp-avatar-img {
@@ -358,31 +372,45 @@
   user-select: none;
 }
 
-/* Dropdown menu (Apple Liquid Glass) */
-/* Dropdown menu (Apple Liquid Glass) */
-.vcp-profile-dropdown {
-  position: absolute;
-  top: 54px;
-  right: 0;
-  width: 220px;
+/* Invisible backdrop for outside click/tap on mobile and desktop */
+.vcp-profile-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 999999998 !important;
+  background: transparent !important;
+  cursor: default !important;
+}
+
+/* Dropdown menu (Apple Liquid Glass) rendered directly on body via Portal */
+.vcp-profile-dropdown,
+.vcp-root .vcp-profile-dropdown {
+  position: fixed !important;
+  top: 76px !important;
+  right: 24px !important;
+  width: 230px !important;
   background: linear-gradient(145deg,
       rgba(255, 255, 255, 0.16) 0%,
       rgba(255, 255, 255, 0.05) 50%,
       rgba(255, 255, 255, 0.10) 100%),
-    rgba(15, 18, 26, 0.96);
-  backdrop-filter: blur(28px) saturate(190%) contrast(105%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%) contrast(105%);
-  border-radius: 18px;
+    rgba(15, 18, 26, 0.98) !important;
+  backdrop-filter: blur(28px) saturate(190%) contrast(105%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) contrast(105%) !important;
+  border-radius: 18px !important;
   box-shadow:
-    0 18px 45px rgba(0, 0, 0, 0.70),
-    inset 0 1.5px 2px rgba(255, 255, 255, 0.70);
-  padding: 12px 10px 10px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  z-index: 120;
-  animation: vcpFadeDrop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1.5px solid rgba(255, 255, 255, 0.35);
+    0 18px 45px rgba(0, 0, 0, 0.75),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.70) !important;
+  padding: 12px 10px 10px 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+  z-index: 999999999 !important; /* ABSOLUTE TOP: Sits in front of everything */
+  animation: vcpFadeDrop 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 @keyframes vcpFadeDrop {
@@ -491,13 +519,15 @@
 
 
 /* ── MAIN SPLIT VIEW CONTAINER (NO SCROLL ON DESKTOP, FULL BLEED PHOTO) ── */
-.vcp-body-layout {
+.vcp-body-layout,
+.vcp-root .vcp-body-layout {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 380px;
   height: calc(100vh - 72px);
   max-height: calc(100vh - 72px);
-  position: relative;
+  position: relative !important;
+  z-index: 1 !important; /* Low stacking context so header (z-index 999999) is in front */
   overflow: hidden;
   gap: 24px;
   padding: 16px 24px;
@@ -537,23 +567,9 @@
   z-index: 1;
 }
 
-/* DUAL SMOOTH GRADIENT: CLEAR/BRIGHT PHOTO WITH SOFT RIGHT & BOTTOM SHADING */
+/* Background overlay: Disabled to keep background photo 100% clear with no black shading */
 .vcp-hero-bg-overlay {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(to right,
-      rgba(11, 12, 16, 0.02) 0%,
-      rgba(11, 12, 16, 0) 40%,
-      rgba(11, 12, 16, 0.20) 75%,
-      rgba(11, 12, 16, 0.45) 100%),
-    linear-gradient(to bottom,
-      rgba(11, 12, 16, 0.20) 0%,
-      rgba(11, 12, 16, 0) 30%,
-      rgba(11, 12, 16, 0.35) 75%,
-      rgba(11, 12, 16, 0.75) 100%);
-  z-index: 2;
-  pointer-events: none;
+  display: none !important;
 }
 
 /* ── TOP FLOATING PLAN (COLLAPSIBLE / HIDDEN BY DEFAULT) ── */
@@ -1218,6 +1234,12 @@
   gap: 10px;
 }
 
+.vcp-field-item::after {
+  content: '';
+  width: 30px;
+  flex-shrink: 0;
+}
+
 .vcp-field-icon-wrap {
   width: 30px;
   height: 30px;
@@ -1538,61 +1560,7 @@
 }
 
 
-/* ── RESPONSIVE ADAPTATIONS ── */
-@media (max-width: 990px) {
-  .vcp-root {
-    height: auto;
-    max-height: none;
-    overflow-y: auto;
-  }
-
-  .vcp-body-layout {
-    grid-template-columns: 1fr;
-    height: auto;
-    max-height: none;
-    overflow-y: visible;
-    padding: 0;
-  }
-
-  .vcp-panel-side {
-    border-radius: 20px;
-    margin: 16px;
-    min-height: auto;
-  }
-
-  .vcp-hero-side {
-    min-height: 480px;
-    padding: 20px;
-  }
-
-  .vcp-prop-main-title {
-    font-size: 2.0rem;
-  }
-}
-
-@media (max-width: 600px) {
-  .vcp-header {
-    padding: 0 14px;
-  }
-
-  .vcp-user-name,
-  .vcp-user-role-badge {
-    display: none;
-  }
-
-  .vcp-hero-side {
-    padding: 16px;
-    min-height: 420px;
-  }
-
-  .vcp-prop-main-title {
-    font-size: 1.7rem;
-  }
-
-  .vcp-actions-grid {
-    grid-template-columns: 1fr;
-  }
-}
+/* Note: Responsive adaptations are centralized at the bottom of this stylesheet */
 
 /* ==========================================================================
    LIQUID GLASS MODAL: EDITAR PROPIEDAD CLIENTE
@@ -1904,11 +1872,28 @@
     inset: 0 !important;
   }
 
-  .vcp-header {
+  .vcp-header,
+  .vcp-root .vcp-header {
     height: auto !important;
     min-height: 60px !important;
     padding: 10px 14px !important;
     gap: 10px !important;
+    position: relative !important;
+    z-index: 999999 !important;
+    background: linear-gradient(180deg,
+        rgba(20, 22, 29, 0.75) 0%,
+        rgba(15, 17, 23, 0.55) 100%) !important;
+    backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.20) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  .vcp-header-left,
+  .vcp-root .vcp-header-left {
+    margin-left: 0 !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
   }
 
   .vcp-brand-logo {
@@ -1916,15 +1901,55 @@
     max-width: 140px !important;
   }
 
-  .vcp-header-nav {
+  .vcp-user-name,
+  .vcp-user-role-badge {
+    display: none !important;
+  }
+
+  .vcp-header-nav,
+  .vcp-root .vcp-header-nav {
+    flex: 1 !important;
+    min-width: 0 !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     padding-bottom: 2px !important;
   }
 
-  .vcp-nav-btn {
+  .vcp-nav-btn,
+  .vcp-root .vcp-header .vcp-nav-btn {
     padding: 6px 10px !important;
     font-size: 0.74rem !important;
+    background: transparent !important;
+    color: #ffffff !important;
+  }
+
+  .vcp-header-right,
+  .vcp-root .vcp-header-right {
+    flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 1000000 !important;
+  }
+
+  .vcp-avatar-btn,
+  .vcp-root .vcp-avatar-btn {
+    cursor: pointer !important;
+    position: relative !important;
+    z-index: 1000001 !important;
+  }
+
+  .vcp-profile-dropdown,
+  .vcp-root .vcp-profile-dropdown {
+    position: fixed !important;
+    top: 66px !important;
+    right: 14px !important;
+    width: 230px !important;
+    max-width: calc(100vw - 24px) !important;
+    z-index: 999999999 !important; /* CRITICAL: Guarantees it is in front of all page cards and badges */
+    display: flex !important;
+    flex-direction: column !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
   }
 
   .vcp-body-layout {
@@ -1933,9 +1958,13 @@
     height: auto !important;
     min-height: auto !important;
     max-height: none !important;
-    overflow: visible !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
     padding: 12px 16px 40px 16px !important;
     gap: 18px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    align-items: center !important;
   }
 
   .vcp-hero-side {
@@ -1945,6 +1974,11 @@
     overflow: visible !important;
     gap: 16px !important;
     justify-content: flex-start !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 580px !important;
+    box-sizing: border-box !important;
   }
 
   .vcp-prop-title-box {
@@ -1964,27 +1998,52 @@
   .vcp-panel-side {
     position: static !important;
     width: 100% !important;
-    max-width: 100% !important;
+    max-width: 580px !important;
+    box-sizing: border-box !important;
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
-    margin-top: 8px !important;
-    padding: 18px 16px !important;
+    margin: 8px auto 0 auto !important;
+    padding: 20px 18px !important;
+    border-radius: 24px !important;
+    align-self: center !important;
   }
 
   .vcp-fields-list {
     max-height: none !important;
     overflow: visible !important;
   }
+
+  .vcp-tablero-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .vcp-actions-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
 }
 
 @media (max-width: 576px) {
-  .vcp-header {
+  .vcp-header,
+  .vcp-root .vcp-header {
     padding: 8px 12px !important;
+    z-index: 999999 !important;
+    background: linear-gradient(180deg,
+        rgba(20, 22, 29, 0.85) 0%,
+        rgba(15, 17, 23, 0.70) 100%) !important;
+    backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.20) !important;
   }
 
-  .vcp-header-left {
-    gap: 8px !important;
+  .vcp-header-left,
+  .vcp-root .vcp-header-left {
+    margin-left: 0 !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
   }
 
   .vcp-brand-logo {
@@ -1992,23 +2051,63 @@
     max-width: 120px !important;
   }
 
-  .vcp-header-right {
+  .vcp-header-right,
+  .vcp-root .vcp-header-right {
     gap: 8px !important;
+    flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 1000000 !important;
   }
 
-  .vcp-avatar-btn {
-    width: 36px !important;
-    height: 36px !important;
+  .vcp-avatar-btn,
+  .vcp-root .vcp-avatar-btn {
+    width: 40px !important;
+    height: 40px !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    position: relative !important;
+    z-index: 1000001 !important;
+  }
+
+  .vcp-profile-dropdown,
+  .vcp-root .vcp-profile-dropdown {
+    position: fixed !important;
+    top: 56px !important;
+    right: 10px !important;
+    width: 220px !important;
+    z-index: 999999999 !important; /* CRITICAL: Must be above floating badge */
   }
 
   .vcp-nav-icon-btn,
-  .vcp-header-icon-btn {
+  .vcp-header-icon-btn,
+  .vcp-root .vcp-header .vcp-header-icon-btn,
+  .vcp-root .vcp-header .nb-trigger-btn {
     width: 34px !important;
     height: 34px !important;
+    background: rgba(255, 255, 255, 0.10) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+  }
+
+  .vcp-nav-icon-btn svg,
+  .vcp-header-icon-btn svg,
+  .vcp-root .vcp-header .vcp-header-icon-btn svg,
+  .vcp-root .vcp-header .nb-trigger-btn svg,
+  .vcp-root .vcp-header .nb-trigger-icon {
+    stroke: #ffffff !important;
+    color: #ffffff !important;
   }
 
   .vcp-body-layout {
-    padding: 10px 12px 40px 12px !important;
+    padding: 10px 14px 40px 14px !important;
+    gap: 14px !important;
+  }
+
+  .vcp-hero-side {
+    max-width: 100% !important;
   }
 
   .vcp-prop-main-title {
@@ -2018,6 +2117,47 @@
   .vcp-panel-side {
     padding: 16px 14px !important;
     border-radius: 20px !important;
+    margin: 6px auto 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .vcp-tablero-card {
+    padding: 12px 10px 14px 10px !important;
+    margin: 6px 0 8px 0 !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+  }
+
+  .vcp-tablero-grid {
+    gap: 6px !important;
+  }
+
+  .vcp-stat-box {
+    padding: 8px 2px 7px 2px !important;
+    min-width: 0 !important;
+  }
+
+  .vcp-stat-count {
+    font-size: 1.22rem !important;
+  }
+
+  .vcp-stat-label {
+    font-size: 0.50rem !important;
+    letter-spacing: 0.3px !important;
+  }
+
+  .vcp-actions-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    margin-top: 6px !important;
+  }
+
+  .vcp-btn {
+    font-size: 0.70rem !important;
+    padding: 9px 6px !important;
+    letter-spacing: 0.3px !important;
+    border-radius: 12px !important;
   }
 
   .vcp-action-btn-primary {
