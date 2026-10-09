@@ -557,13 +557,15 @@ const MercadoTrabajos = () => {
         badgeClass = 'imminent';
         isUrgent = true;
       } else if (diffMinutes >= -180) {
-        text = `📍 Cita en curso (+${Math.abs(diffMinutes)} min)`;
-        shortText = `En curso (+${Math.abs(diffMinutes)}m)`;
-        badgeClass = 'inprogress';
+        text = `⚠️ Retraso (+${Math.abs(diffMinutes)} min)`;
+        shortText = `Retraso (+${Math.abs(diffMinutes)}m)`;
+        badgeClass = 'delay';
+        isUrgent = true;
       } else {
-        text = `⏰ Visita agendada el ${formattedDate}`;
-        shortText = formattedDate;
-        badgeClass = 'future';
+        text = `⚠️ Retraso (+${Math.abs(diffMinutes)} min)`;
+        shortText = `Retraso (+${Math.abs(diffMinutes)}m)`;
+        badgeClass = 'delay';
+        isUrgent = true;
       }
 
       return {
@@ -1097,6 +1099,78 @@ const MercadoTrabajos = () => {
     setArrivalAlertToast(`🔔 ¡Aviso de llegada enviado al cliente! (${nowTime})`);
     setTimeout(() => setArrivalAlertToast(null), 4500);
     setSendingArrivalAlert(false);
+  };
+
+  const handleCancelServiceByTech = async (job) => {
+    if (!job) return;
+    const { value: reason, isConfirmed } = await Swal.fire({
+      title: '¿Cancelar este servicio?',
+      html: `
+        <div style="text-align: left; font-size: 13.5px; color: #cbd5e1; line-height: 1.5;">
+          <p style="margin-bottom: 10px;">
+            Al cancelar tu asistencia, se notificará de inmediato al cliente para que pueda evaluar tu puntualidad con el sistema de <strong>5 relojes</strong> y reenviar su solicitud a la red.
+          </p>
+          <div style="background: rgba(239, 68, 68, 0.15); border-left: 3px solid #ef4444; padding: 9px 12px; border-radius: 6px; margin-bottom: 8px; color: #fca5a5; font-size: 13px;">
+            ⚠️ <strong>Penalizaciones aplicadas:</strong>
+            <ul style="margin: 4px 0 0 16px; padding: 0;">
+              <li>Bloqueo de <strong>24 horas</strong> para ver o cotizar solicitudes de este usuario.</li>
+              <li>Calificación de puntualidad de 5 relojes por parte del cliente.</li>
+            </ul>
+          </div>
+        </div>
+      `,
+      input: 'textarea',
+      inputLabel: 'Motivo de la cancelación (opcional):',
+      inputPlaceholder: 'Ej. Imprevisto de fuerza mayor, descompostura de vehículo, emergencia...',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, Cancelar Servicio',
+      cancelButtonText: 'Volver atrás',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#475569',
+      background: '#191e2b',
+      color: '#ffffff'
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}/cancelar-tecnico`,
+        { reason: reason || 'Cancelado por el técnico por causas de fuerza mayor o imprevisto.' },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+
+      if (res.data.success) {
+        await Swal.fire({
+          icon: 'info',
+          title: 'Servicio Cancelado',
+          text: 'Has cancelado tu asistencia para este servicio. Se ha notificado al cliente.',
+          confirmButtonColor: '#f26522',
+          background: '#191e2b',
+          color: '#ffffff'
+        });
+
+        if (activeNavJob && activeNavJob.id === job.id) {
+          setActiveNavJob(null);
+          setNavDirections(null);
+          setNavStatus('idle');
+        }
+        if (selectedJob && selectedJob.id === job.id) {
+          setShowQuoteModal(false);
+        }
+        fetchJobs();
+      }
+    } catch (err) {
+      console.error("Error al cancelar servicio:", err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al cancelar',
+        text: err.response?.data?.message || 'No fue posible cancelar el servicio.',
+        background: '#191e2b',
+        color: '#ffffff'
+      });
+    }
   };
 
   const openQuoteModalForJob = (job) => {
@@ -3257,6 +3331,16 @@ const MercadoTrabajos = () => {
                           <span>📍 ME ENCUENTRO EN EL LUGAR</span>
                         </button>
 
+                        <button
+                          type="button"
+                          className="mercado-uber-btn-cancel-service"
+                          onClick={() => handleCancelServiceByTech(activeNavJob)}
+                          title="Cancelar asistencia a este servicio"
+                        >
+                          <X size={15} />
+                          <span>Cancelar</span>
+                        </button>
+
                         {activeNavJob.client_phone && (
                           <button
                             type="button"
@@ -3596,6 +3680,17 @@ const MercadoTrabajos = () => {
                                       ? `✓ Aviso Enviado (${arrivalAlertSent[selectedJob.id]})` 
                                       : 'Aviso: Me encuentro en el lugar')}
                               </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              className="mercado-contact-action-btn cancel-service-action"
+                              onClick={() => handleCancelServiceByTech(selectedJob)}
+                              title="Cancelar mi asistencia para este servicio"
+                              style={{ gridColumn: 'span 2', borderColor: '#fca5a5', color: '#ef4444', background: '#fef2f2' }}
+                            >
+                              <X size={17} color="#ef4444" />
+                              <span>Cancelar Servicio (Liberar Solicitud)</span>
                             </button>
                           </div>
 

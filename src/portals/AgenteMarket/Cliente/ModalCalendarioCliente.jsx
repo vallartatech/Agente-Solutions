@@ -603,6 +603,27 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
     }
   };
 
+  const handleReopenJobInNetwork = async (job) => {
+    if (!job?.id) return;
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}/reabrir-red`,
+        {},
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      if (res.data?.success) {
+        alert("🌐 " + res.data.message);
+        setShowQuotesModal(false);
+        setActiveChatQuote(null);
+        fetchJobs();
+      }
+    } catch (e) {
+      console.error("Error reenviando solicitud a la red:", e);
+      alert(e.response?.data?.message || "Hubo un error al reenviar la solicitud a la red.");
+    }
+  };
+
   // Filtrado de eventos con todos los criterios de tiempo y búsqueda
   const filteredEvents = useMemo(() => {
     return networkJobs.filter(job => {
@@ -1567,6 +1588,129 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
                         </p>
                       </div>
 
+                      {/* Banner de Cancelación por el Técnico con 5 Relojes + Borrar / Reenviar a la Red */}
+                      {(selectedJobForQuotes.cancelled_by_tech || selectedJobForQuotes.status === 'Cancelado_Tecnico') && (
+                        <div style={{
+                          marginBottom: '18px',
+                          padding: '16px',
+                          background: 'linear-gradient(145deg, #fef2f2, #fff1f2)',
+                          borderRadius: '16px',
+                          border: '2px solid #fecaca',
+                          boxShadow: '0 4px 16px rgba(239, 68, 68, 0.08)'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
+                            <div style={{
+                              width: '40px',
+                              height: '40px',
+                              borderRadius: '12px',
+                              background: '#fee2e2',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#ef4444',
+                              flexShrink: 0
+                            }}>
+                              <AlertTriangle size={22} />
+                            </div>
+                            <div>
+                              <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: '800', color: '#991b1b' }}>
+                                ⚠️ El técnico canceló este servicio
+                              </h4>
+                              <p style={{ margin: 0, fontSize: '13px', color: '#7f1d1d', lineHeight: '1.4' }}>
+                                {selectedJobForQuotes.cancellation_reason 
+                                  ? `Motivo: "${selectedJobForQuotes.cancellation_reason}"` 
+                                  : 'El técnico notificó que no asistirá a la visita acordada.'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* 1. Paso 1: Encuesta de 5 Relojes para calcular puntualidad */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const tech = selectedJobForQuotes.cancelled_technician || selectedJobForQuotes.tecnico || {
+                                id: selectedJobForQuotes.cancelled_technician_id || selectedJobForQuotes.tecnico_id,
+                                name: selectedJobForQuotes.assigned_tech_name || 'Técnico Asignado'
+                              };
+                              setRatingTargetTech(tech);
+                              setRatingTargetJob(selectedJobForQuotes);
+                              setShowRatingModal(true);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '12px 16px',
+                              background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '12px',
+                              fontWeight: '800',
+                              fontSize: '13.5px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px',
+                              cursor: 'pointer',
+                              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)',
+                              marginBottom: '12px',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <Clock size={18} />
+                            <span>⏱️ Calificar Puntualidad del Técnico (5 Relojes)</span>
+                          </button>
+
+                          {/* 2. Paso 2: Opciones de Resolución (Borrar Solicitud O Enviar a la Red Nuevamente) */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteJob(selectedJobForQuotes.id)}
+                              style={{
+                                padding: '10px 14px',
+                                background: '#ffffff',
+                                color: '#dc2626',
+                                border: '1.5px solid #fca5a5',
+                                borderRadius: '10px',
+                                fontWeight: '800',
+                                fontSize: '12.5px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <Trash2 size={15} />
+                              <span>Borrar Servicio</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleReopenJobInNetwork(selectedJobForQuotes)}
+                              style={{
+                                padding: '10px 14px',
+                                background: 'linear-gradient(135deg, #f26522, #ea580c)',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '10px',
+                                fontWeight: '800',
+                                fontSize: '12.5px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 12px rgba(242, 101, 34, 0.35)',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <Send size={15} />
+                              <span>🌐 Enviar a la Red nuevamente</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Banner de Horario Propuesto */}
                       {selectedJobForQuotes.scheduled_at && (() => {
                         const sched = getJobScheduleStatus(selectedJobForQuotes);
@@ -2111,6 +2255,9 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
             serviceId={ratingTargetJob?.service_id}
             scheduledAt={ratingTargetJob?.scheduled_at}
             arrivedAt={ratingTargetJob?.arrived_at}
+            onlyTime={Boolean(ratingTargetJob?.cancelled_by_tech || ratingTargetJob?.status === 'Cancelado_Tecnico')}
+            isCancellation={Boolean(ratingTargetJob?.cancelled_by_tech || ratingTargetJob?.status === 'Cancelado_Tecnico')}
+            cancellationReason={ratingTargetJob?.cancellation_reason || ''}
             onSuccess={() => {
               fetchJobs();
             }}

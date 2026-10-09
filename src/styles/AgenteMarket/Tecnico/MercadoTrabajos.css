@@ -5442,6 +5442,51 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+.mercado-uber-btn-cancel-service {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 12.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.mercado-uber-btn-cancel-service:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.45);
+  transform: translateY(-1px);
+}
+
+/* Badge de Retraso Dinámico */
+.mercado-schedule-badge.delay,
+.mercado-time-left-tag.delay {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.45) !important;
+  animation: mercadoDelayPulse 2s infinite ease-in-out;
+}
+
+@keyframes mercadoDelayPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.82;
+    transform: scale(1.02);
+  }
+}
+
 
 
 
