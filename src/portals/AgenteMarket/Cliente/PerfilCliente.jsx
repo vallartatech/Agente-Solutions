@@ -47,10 +47,9 @@ const PerfilCliente = () => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Propiedades del cliente
+  // Propiedades del cliente / negocio
   const [propiedades, setPropiedades] = useState([]);
   const [selectedPropId, setSelectedPropId] = useState(null);
-  const [loadingProps, setLoadingProps] = useState(true);
 
   // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
@@ -63,53 +62,65 @@ const PerfilCliente = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Cargar propiedades exclusivas del cliente autenticado
+  // Cargar propiedades del cliente/negocio (mismo método que en VistaMarket)
   useEffect(() => {
     const fetchProps = async () => {
       try {
-        const token = localStorage.getItem('agente_token');
+        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
         const authHeader = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
         const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/propiedades`, authHeader);
         const rawProps = Array.isArray(res.data) ? res.data : (res.data?.data || []);
         
-        // Filtro estricto por usuario / tenant del cliente
+        // Priorizar propiedades del usuario/tenant si existen filtros
         const forThisUser = rawProps.filter(p => 
           (user?.id && (p.user_id === user.id || p.usuario_id === user.id || p.cliente_id === user.id || p.cliente?.id === user.id)) ||
           (user?.tenant_id && p.tenant_id === user.tenant_id)
         );
         
-        // Si la API ya devuelve filtradas por token, usamos rawProps si coinciden o forThisUser
-        const list = forThisUser.length > 0 ? forThisUser : (rawProps.length > 0 && user?.role_id === 3 ? rawProps : []);
+        const list = forThisUser.length > 0 ? forThisUser : rawProps;
         setPropiedades(list);
         if (list.length > 0) {
           setSelectedPropId(list[0].id);
         }
       } catch (err) {
-        console.error("Error al cargar propiedades del cliente:", err);
-      } finally {
-        setLoadingProps(false);
+        console.error("Error al cargar propiedades en perfil cliente:", err);
       }
     };
     fetchProps();
-  }, [user?.id, user?.tenant_id, user?.role_id]);
+  }, [user?.id, user?.tenant_id]);
 
   const getPropImage = (p) => {
     if (!p) return defaultPropImg;
-    return (
+    const raw = (
       p.foto_url ||
       p.facade_photo_path ||
       p.facade_photo ||
-      p.imagen_url ||
       p.foto_fachada ||
+      p.property_photo ||
+      p.imagen_url ||
       p.foto ||
       p.image ||
-      defaultPropImg
+      p.image_url ||
+      null
     );
+    if (!raw) return defaultPropImg;
+    if (typeof raw === 'string' && (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:image'))) {
+      return raw;
+    }
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+    const hostBase = apiBase.replace(/\/api\/?$/, '');
+    const cleanPath = String(raw).replace(/^\/?(storage\/)?/, '');
+    return `${hostBase}/storage/${cleanPath}`;
   };
 
   const activeProperty = useMemo(() => {
     if (!propiedades || propiedades.length === 0) {
-      return null;
+      return {
+        id: 1,
+        nombre_propiedad: 'MI PROPIEDAD',
+        address: 'Mérida, Yucatán',
+        imagen_url: defaultPropImg
+      };
     }
     return propiedades.find(p => p.id === selectedPropId) || propiedades[0];
   }, [propiedades, selectedPropId]);
@@ -266,11 +277,14 @@ const PerfilCliente = () => {
   };
 
   const nombreCompleto = `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.name || 'Cliente';
-  const coverUrl = user?.cover_picture || (activeProperty ? getPropImage(activeProperty) : DEFAULT_COVER);
+  const coverUrl = user?.cover_picture || getPropImage(activeProperty) || DEFAULT_COVER;
+
+  const roleId = Number(user?.role_id);
+  const showAdminNav = [0, 1].includes(roleId);
 
   return (
     <div className="profile-liquid-root">
-      {/* Top Floating Action Bar (Cliente Theme) */}
+      {/* Top Floating Action Bar */}
       <header className="profile-liquid-topbar" ref={dropdownRef}>
         <div className="profile-topbar-left">
           <img 
@@ -282,20 +296,45 @@ const PerfilCliente = () => {
           />
         </div>
 
-        {/* Center Nav Links: CLIENTE NAVIGATION */}
+        {/* Center Nav Links */}
         <nav className="vcp-header-nav profile-topbar-nav">
-          <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
-            INICIO
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
-            MIS PROPIEDADES
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/servicios')}>
-            SERVICIOS
-          </button>
-          <button className="vcp-nav-btn active" onClick={() => navigate('/mi-perfil')}>
-            MI PERFIL
-          </button>
+          {showAdminNav ? (
+            <>
+              <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
+                INICIO
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
+                USUARIOS
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
+                REPORTE
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
+                COTIZACION
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
+                SERVICIOS
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
+                MERCADO / RED
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
+                INICIO
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
+                MIS PROPIEDADES
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/servicios')}>
+                SERVICIOS
+              </button>
+              <button className="vcp-nav-btn active" onClick={() => navigate('/mi-perfil')}>
+                MI PERFIL
+              </button>
+            </>
+          )}
         </nav>
 
         {/* Right Actions & User Profile */}
@@ -557,80 +596,62 @@ const PerfilCliente = () => {
                 </button>
               </div>
 
-              {activeProperty ? (
-                <>
-                  {/* Visual Card de la Propiedad Seleccionada */}
-                  <div 
-                    className="profile-prop-featured-card"
-                    style={{ backgroundImage: `url("${getPropImage(activeProperty)}")` }}
-                  >
-                    <div className="profile-prop-featured-overlay" />
-                    
-                    <div className="profile-prop-featured-info-pill">
-                      <div className="profile-prop-featured-badge">
-                        ★ PROPIEDAD SELECCIONADA
-                      </div>
-                      <h3 className="profile-prop-featured-name">
-                        {activeProperty?.nombre_propiedad || activeProperty?.nombre || activeProperty?.alias || 'MI INMUEBLE'}
-                      </h3>
-                      <div className="profile-prop-featured-address">
-                        <MapPin size={13} color="#FF8548" />
-                        <span>{activeProperty?.address || activeProperty?.direccion || activeProperty?.zona || 'Mérida, Yucatán'}</span>
-                      </div>
-                    </div>
+              {/* Big Featured Property Showcase Visual Card */}
+              <div 
+                className="profile-prop-featured-card"
+                style={{ backgroundImage: `url("${getPropImage(activeProperty)}")` }}
+              >
+                <div className="profile-prop-featured-overlay" />
+                
+                <div className="profile-prop-featured-info-pill">
+                  <div className="profile-prop-featured-badge">
+                    ★ PROPIEDAD SELECCIONADA
                   </div>
-
-                  {/* Carrusel horizontal de miniaturas */}
-                  <div className="profile-thumbs-container">
-                    <span className="profile-thumbs-label">GALERÍA DE PROPIEDADES:</span>
-                    <div className="profile-thumbs-scroll-track">
-                      {propiedades.map((prop, idx) => {
-                        const isActive = prop.id === activeProperty?.id;
-                        const thumbImg = getPropImage(prop);
-                        return (
-                          <div 
-                            key={prop.id}
-                            className={`profile-thumb-card ${isActive ? 'is-active' : ''}`}
-                            onClick={() => setSelectedPropId(prop.id)}
-                            title={`Seleccionar: ${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
-                          >
-                            <img 
-                              src={thumbImg} 
-                              alt={prop.nombre_propiedad || 'Propiedad'} 
-                              className="profile-thumb-img" 
-                            />
-                            {idx === 0 && (
-                              <div className="profile-thumb-star" title="Propiedad Principal">
-                                ★
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                /* Estado cuando el cliente aún no registra propiedades */
-                <div className="profile-prop-featured-card empty-state" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '30px', textAlign: 'center' }}>
-                  <Building2 size={44} color="#f26522" style={{ marginBottom: '12px', opacity: 0.8 }} />
-                  <h3 style={{ margin: '0 0 6px 0', fontSize: '1.1rem', color: '#ffffff', fontWeight: 800 }}>
-                    Sin Propiedades Registradas
+                  <h3 className="profile-prop-featured-name">
+                    {activeProperty?.nombre_propiedad || activeProperty?.nombre || activeProperty?.alias || 'MI INMUEBLE'}
                   </h3>
-                  <p style={{ margin: '0 0 16px 0', fontSize: '0.82rem', color: '#94a3b8', maxWidth: '320px' }}>
-                    Registra tu primer inmueble, casa o negocio para solicitar servicios de mantenimiento preventivo y correctivo.
-                  </p>
-                  <button
-                    type="button"
-                    className="profile-props-view-btn"
-                    onClick={() => navigate('/VistaMarket')}
-                    style={{ padding: '9px 18px', fontSize: '0.80rem' }}
-                  >
-                    <Plus size={15} />
-                    <span>REGISTRAR INMUEBLE</span>
-                  </button>
+                  <div className="profile-prop-featured-address">
+                    <MapPin size={13} color="#FF8548" />
+                    <span>{activeProperty?.address || activeProperty?.direccion || activeProperty?.calle || 'Mérida, Yucatán'}</span>
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* Horizontal Thumbnails Carousel */}
+              <div className="profile-thumbs-container">
+                <span className="profile-thumbs-label">GALERÍA DE PROPIEDADES:</span>
+                <div className="profile-thumbs-scroll-track">
+                  {propiedades && propiedades.length > 0 ? (
+                    propiedades.map((prop, idx) => {
+                      const isActive = prop.id === activeProperty?.id;
+                      const thumbImg = getPropImage(prop);
+                      return (
+                        <div 
+                          key={prop.id}
+                          className={`profile-thumb-card ${isActive ? 'is-active' : ''}`}
+                          onClick={() => setSelectedPropId(prop.id)}
+                          title={`Seleccionar: ${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
+                        >
+                          <img 
+                            src={thumbImg} 
+                            alt={prop.nombre_propiedad || 'Propiedad'} 
+                            className="profile-thumb-img" 
+                          />
+                          {idx === 0 && (
+                            <div className="profile-thumb-star" title="Propiedad Principal">
+                              ★
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="profile-thumb-card is-active">
+                      <img src={defaultPropImg} alt="Propiedad" className="profile-thumb-img" />
+                    </div>
+                  )}
+                </div>
+              </div>
 
             </section>
 
