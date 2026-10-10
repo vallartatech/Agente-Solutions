@@ -2276,6 +2276,56 @@ const MercadoTrabajos = () => {
                       </div>
                     </div>
 
+                    {/* ── BARRA DE PROGRESO INTEGRADA SOBRE DETALLE DEL SERVICIO (SOLO MÓVIL) ── */}
+                    <div className="mercado-board-mobile-progress-card">
+                      <div className="mercado-board-mobile-progress-header">
+                        <div className="mercado-board-mobile-progress-title-row">
+                          <span className="mercado-board-mobile-progress-label">
+                            <Sparkles size={12} color="#f26522" /> PROGRESO
+                          </span>
+                          <span className="mercado-board-mobile-progress-folio">
+                            {selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}
+                          </span>
+                        </div>
+                        <span className="mercado-board-mobile-progress-step-pill">
+                          {currentStage === 1 && '1/6: Cita'}
+                          {currentStage === 2 && '2/6: En Camino'}
+                          {currentStage === 3 && '3/6: Diagnóstico'}
+                          {currentStage === 4 && '4/6: Reparación'}
+                          {currentStage === 5 && '5/6: Evidencias'}
+                          {currentStage === 6 && '6/6: Concluido'}
+                        </span>
+                      </div>
+
+                      {/* Stepper Horizontal Compacto */}
+                      <div className="mercado-board-mobile-stepper">
+                        {[
+                          { step: 1, label: 'Cita', icon: <Home size={12} /> },
+                          { step: 2, label: 'Camino', icon: <Car size={12} /> },
+                          { step: 3, label: 'Diag.', icon: <Search size={12} /> },
+                          { step: 4, label: 'Repar.', icon: <Wrench size={12} /> },
+                          { step: 5, label: 'Evid.', icon: <Camera size={12} /> },
+                          { step: 6, label: 'Listo', icon: <CheckCircle2 size={12} /> },
+                        ].map((st) => {
+                          const isCompleted = currentStage > st.step;
+                          const isCurrent = currentStage === st.step;
+                          return (
+                            <div
+                              key={st.step}
+                              className={`mercado-board-mobile-step-item ${isCompleted ? 'completed' : (isCurrent ? 'current' : 'pending')}`}
+                              onClick={() => handleSetStage(st.step)}
+                              title={`Etapa ${st.step}: ${st.label}`}
+                            >
+                              <div className="mercado-board-mobile-step-icon">
+                                {isCompleted ? <Check size={11} strokeWidth={3} /> : st.icon}
+                              </div>
+                              <span className="mercado-board-mobile-step-label">{st.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
                     {/* Fila Superior: Datos del Cliente + Consiste en (Izquierda) vs Propiedad / Fachada (Derecha) */}
                     <div className="mercado-board-mid-grid">
                       {/* Columna Izquierda: Datos del Cliente (arriba) + Consiste en (abajo) */}
