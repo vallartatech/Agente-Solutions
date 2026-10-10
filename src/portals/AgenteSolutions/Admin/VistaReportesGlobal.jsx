@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Shared/Header';
+import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
+import { useAuth } from '../../../context/AuthContext';
 import { Search, MapPin, Calendar, FileText, ChevronLeft, Plus, Edit, Trash2, X, Upload, CheckCircle2, AlertTriangle, Eye, Pencil } from 'lucide-react';
 import Swal from 'sweetalert2';
 import '../../../styles/AgenteSolutions/Admin/VistaReportesGlobal.css';
@@ -42,11 +44,14 @@ const STAGES = [
 ];
 
 const VistaReportesGlobal = () => {
+  const { user } = useAuth();
+  const isTech = Boolean(user?.role_id === 6 || user?.role_id === 8 || user?.role_id === 2);
+  const navigate = useNavigate();
+
   const [reportes, setReportes] = useState([]);
   const [cotizaciones, setCotizaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('add');
@@ -65,9 +70,12 @@ const VistaReportesGlobal = () => {
 
   const fetchReportesYCotizaciones = async () => {
     try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
       const [resReportes, resCoti] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/reportes-globales`),
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones`)
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/reportes-globales`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones`, { headers })
       ]);
       setReportes(resReportes.data || []);
       setCotizaciones(resCoti.data || []);
@@ -134,17 +142,20 @@ const VistaReportesGlobal = () => {
     }
 
     try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
       if (modalMode === 'add') {
         const url = `${import.meta.env.VITE_API_BASE_URL}/servicios/${selectedTipo}-${selectedTrabajoId}/reportes`;
         await axios.post(url, data, {
-          headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${localStorage.getItem('agente_token')}` }
+          headers: { 'Content-Type': 'multipart/form-data', ...authHeaders }
         });
         Swal.fire('Éxito', 'Evidencia añadida correctamente', 'success');
       } else {
         const url = `${import.meta.env.VITE_API_BASE_URL}/reportes/${selectedReportId}`;
         data.append('_method', 'PUT');
         await axios.post(url, data, { 
-          headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${localStorage.getItem('agente_token')}` }
+          headers: { 'Content-Type': 'multipart/form-data', ...authHeaders }
         });
         Swal.fire('Éxito', 'Evidencia actualizada correctamente', 'success');
       }
@@ -172,8 +183,11 @@ const VistaReportesGlobal = () => {
 
     if (result.isConfirmed) {
       try {
+        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+        const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
         await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/reportes/${id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('agente_token')}` }
+          headers: authHeaders
         });
         Swal.fire('Eliminado', 'La evidencia ha sido eliminada.', 'success');
         fetchReportesYCotizaciones();
@@ -201,8 +215,32 @@ const VistaReportesGlobal = () => {
     return null;
   };
 
+  // Filtrado de reportes: si es técnico, SOLO mostrar los suyos
   const filteredReportes = reportes.filter(r => {
-    const techName = r.technician ? `${r.technician.first_name} ${r.technician.last_name}`.toLowerCase() : '';
+    if (isTech && user) {
+      const uId = Number(user.id);
+      const uTechId = Number(user.technician_id || user.id);
+      const rTechId = Number(r.technician_id || r.technician?.id || r.user_id || 0);
+      const rServiceTechId = Number(r.service?.technician_id || r.service?.assigned_technician_id || r.service?.user_id || 0);
+      const rWorkOrderTechId = Number(r.work_order?.technician_id || r.work_order?.assigned_technician_id || r.work_order?.user_id || 0);
+
+      const techName = (r.technician ? `${r.technician.first_name || ''} ${r.technician.last_name || ''}` : '').trim().toLowerCase();
+      const uFullName = `${user.first_name || ''} ${user.last_name || ''}`.trim().toLowerCase();
+      const uName = (user.name || '').trim().toLowerCase();
+
+      const isMatch = (
+        rTechId === uId ||
+        rTechId === uTechId ||
+        rServiceTechId === uId ||
+        rWorkOrderTechId === uId ||
+        (techName && (techName === uFullName || techName === uName)) ||
+        (r.technician?.email && user.email && r.technician.email.toLowerCase() === user.email.toLowerCase())
+      );
+
+      if (!isMatch) return false;
+    }
+
+    const techName = r.technician ? `${r.technician.first_name || ''} ${r.technician.last_name || ''}`.toLowerCase() : '';
     const prop = r.service?.property || r.work_order?.property || r.workOrder?.property;
     const propName = prop?.property_name?.toLowerCase() || '';
     const curp = prop?.custom_curp?.toLowerCase() || '';
@@ -212,43 +250,59 @@ const VistaReportesGlobal = () => {
     return techName.includes(search) || propName.includes(search) || curp.includes(search) || desc.includes(search);
   });
 
+  const pageHeading = isTech ? 'MIS REPORTES TÉCNICOS' : 'GALERÍA GLOBAL DE REPORTES';
+
   return (
-    <div className="main-container" style={{ backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-      <Header titulo="REPORTES" />
+    <div className="global-reports-wrapper">
+      <Header activeModule="reportes" />
+
       <div className="global-reports-container">
-        
         {/* TITULO Y BOTÓN REGRESAR */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <div className="reportes-topbar-row">
           <button 
-            onClick={() => navigate(-1)} 
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#F26522', color: 'white', padding: '10px 25px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(242, 101, 34, 0.25)' }}
+            type="button"
+            className="reportes-btn-regresar"
+            onClick={() => {
+              if (isTech) {
+                navigate('/mercado-trabajos', { state: { view: 'tablero' } });
+              } else {
+                navigate(-1);
+              }
+            }}
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={18} />
             <span>REGRESAR</span>
           </button>
-          <h2 style={{ margin: 0, color: '#F26522', fontWeight: 900, fontStyle: 'italic', fontSize: '28px' }}>GALERÍA GLOBAL DE REPORTES</h2>
+          <h2 className="reportes-title-heading">{pageHeading}</h2>
         </div>
 
         {/* BUSCADOR */}
-        <div className="report-filters" style={{ marginBottom: '30px' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: '250px', maxWidth: '600px' }}>
-            <Search size={20} style={{ position: 'absolute', left: '15px', top: '12px', color: '#94a3b8' }} />
+        <div className="report-filters">
+          <div className="report-search-wrap">
+            <Search size={18} style={{ position: 'absolute', left: '15px', top: '12px', color: '#94a3b8' }} />
             <input 
               type="text" 
-              placeholder="Buscar por técnico, propiedad o descripción..." 
+              className="report-search-input"
+              placeholder="Buscar por propiedad, cliente o descripción..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ paddingLeft: '45px', width: '100%', fontSize: '15px', borderRadius: '25px', border: '1.5px solid #cbd5e1', padding: '10px 15px 10px 45px' }}
             />
           </div>
         </div>
 
         {loading ? (
-          <p style={{ textAlign: 'center', marginTop: '50px', fontSize: '18px', fontWeight: 'bold' }}>Cargando evidencias de los trabajos...</p>
-        ) : filteredReportes.length === 0 ? (
-          <p style={{ textAlign: 'center', marginTop: '50px', color: '#64748b', fontSize: '16px' }}>
-            {searchTerm ? 'No se encontraron coincidencias para tu búsqueda.' : 'Aún no hay reportes subidos por los técnicos.'}
+          <p style={{ textAlign: 'center', marginTop: '50px', fontSize: '16px', fontWeight: 'bold', color: '#F26522' }}>
+            Cargando evidencias de los trabajos...
           </p>
+        ) : filteredReportes.length === 0 ? (
+          <div style={{ textAlign: 'center', marginTop: '50px', color: '#64748b', padding: '30px 20px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+            <p style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 6px', color: '#1e293b' }}>
+              {searchTerm ? 'No se encontraron coincidencias para tu búsqueda.' : (isTech ? 'Aún no tienes evidencias o reportes registrados.' : 'Aún no hay reportes subidos por los técnicos.')}
+            </p>
+            <p style={{ fontSize: '13px', margin: 0, color: '#94a3b8' }}>
+              {isTech ? 'Los reportes de tus trabajos aceptados aparecerán organizados aquí.' : 'Cuando los técnicos suban fotos de sus etapas se mostrarán aquí.'}
+            </p>
+          </div>
         ) : (
           <div className="global-gallery-grouped">
             {Object.entries(
@@ -274,36 +328,25 @@ const VistaReportesGlobal = () => {
               const [nombre, curp, dueno, trabajoId, tipo, tituloTrabajo] = groupKey.split('|');
               
               return (
-                <div key={groupKey} className="property-group-section" style={{ marginBottom: '40px', background: '#ffffff', borderRadius: '22px', padding: '24px', boxShadow: '0 8px 25px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
+                <div key={groupKey} className="property-group-section">
                   
                   {/* ENCABEZADO DEL GRUPO DE TRABAJO */}
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '12px',
-                    marginBottom: '20px',
-                    paddingBottom: '16px',
-                    borderBottom: '2px solid #f1f5f9'
-                  }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        <MapPin size={22} color="#F26522" />
-                        <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#0f172a', fontWeight: '900', textTransform: 'uppercase' }}>
-                          {nombre}
-                        </h3>
-                        <span style={{ fontSize: '0.82rem', color: '#F26522', backgroundColor: '#fff7ed', padding: '4px 12px', borderRadius: '14px', border: '1px solid #ffedd5', fontWeight: '800' }}>
+                  <div className="property-group-header">
+                    <div className="property-header-info">
+                      <div className="property-name-row">
+                        <MapPin size={20} color="#F26522" style={{ flexShrink: 0 }} />
+                        <h3 className="property-title-text">{nombre}</h3>
+                        <span className="property-trabajo-badge">
                           TRABAJO #{trabajoId} – {tituloTrabajo}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', gap: '15px', marginTop: '6px', fontSize: '0.82rem', color: '#64748b' }}>
+                      <div className="property-meta-row">
                         <span><strong>CURP:</strong> <strong style={{ color: '#F26522' }}>{curp}</strong></span>
                         <span><strong>DUEÑO:</strong> <strong>{dueno}</strong></span>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <div className="property-header-actions">
                       {(() => {
                         const cotizacionAsociada = cotizaciones.find(c => 
                           (tipo === 'work_order' && c.work_order_id === parseInt(trabajoId)) || 
@@ -313,25 +356,14 @@ const VistaReportesGlobal = () => {
                         if (cotizacionAsociada) {
                           return (
                             <button 
+                              type="button"
+                              className="btn-reporte-coti"
                               onClick={() => {
                                 localStorage.setItem('cotizacion_para_imprimir', JSON.stringify(cotizacionAsociada));
                                 navigate('/imprimir-cotizacion');
                               }}
-                              style={{ 
-                                background: '#16a34a', 
-                                color: 'white', 
-                                padding: '8px 16px', 
-                                borderRadius: '20px', 
-                                border: 'none', 
-                                cursor: 'pointer', 
-                                fontWeight: 'bold', 
-                                fontSize: '0.78rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px'
-                              }}
                             >
-                              <FileText size={15} /> VER COTIZACIÓN
+                              <FileText size={14} /> VER COTIZACIÓN
                             </button>
                           );
                         }
@@ -339,6 +371,8 @@ const VistaReportesGlobal = () => {
                       })()}
 
                       <button 
+                        type="button"
+                        className="btn-reporte-oficial"
                         onClick={() => {
                           const firstReport = reports[0];
                           const isService = tipo === 'servicio';
@@ -363,165 +397,88 @@ const VistaReportesGlobal = () => {
                             } 
                           });
                         }}
-                        style={{ 
-                          background: '#0f172a', 
-                          color: 'white', 
-                          padding: '8px 16px', 
-                          borderRadius: '20px', 
-                          border: 'none', 
-                          cursor: 'pointer', 
-                          fontWeight: 'bold', 
-                          fontSize: '0.78rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}
                       >
-                        <FileText size={15} /> REPORTE OFICIAL
+                        <FileText size={14} /> REPORTE OFICIAL
                       </button>
                     </div>
                   </div>
 
                   {/* GRID DE LAS 4 ETAPAS ESTRUCTURADAS (ANTES, DURANTE, DESPUÉS, EXTRA) */}
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', 
-                    gap: '20px' 
-                  }}>
+                  <div className="stages-grid-4cols">
                     {STAGES.map(stage => {
                       const r = getReportForStage(reports, stage);
                       const cleanDesc = r ? (r.description || '').replace(/\[(ANTES|DURANTE|DESPUÉS|DESPUES|EXTRA)\]/gi, '').trim() : '';
 
                       return (
-                        <div 
-                          key={stage.key}
-                          style={{
-                            background: r ? '#ffffff' : '#fafafa',
-                            borderRadius: '16px',
-                            border: r ? '1.5px solid #e2e8f0' : '2px dashed #cbd5e1',
-                            padding: '16px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justify: 'space-between',
-                            boxShadow: r ? '0 4px 12px rgba(0,0,0,0.03)' : 'none',
-                            position: 'relative'
-                          }}
-                        >
-                          <div>
-                            {/* BADGE DE ETAPA */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                              <span style={{ 
-                                background: stage.badgeColor, 
-                                color: 'white', 
-                                padding: '4px 10px', 
-                                borderRadius: '10px', 
-                                fontSize: '0.72rem', 
-                                fontWeight: '800' 
-                              }}>
-                                {stage.title}
-                              </span>
+                        <div key={stage.key} className={r ? "stage-card" : "stage-card-empty"} onClick={!r ? () => handleOpenModal('add', null, trabajoId, tipo, stage) : undefined}>
+                          {r ? (
+                            <>
+                              <div>
+                                {/* BADGE DE ETAPA */}
+                                <div className="stage-card-header">
+                                  <span className="stage-badge-tag" style={{ background: stage.badgeColor }}>
+                                    {stage.title}
+                                  </span>
 
-                              <span style={{
-                                fontSize: '0.7rem',
-                                fontWeight: '800',
-                                padding: '3px 8px',
-                                borderRadius: '8px',
-                                background: r ? '#dcfce7' : (stage.required ? '#fee2e2' : '#f1f5f9'),
-                                color: r ? '#15803d' : (stage.required ? '#b91c1c' : '#475569')
-                              }}>
-                                {r ? '✅ REGISTRADO' : (stage.required ? '⚠️ REQUERIDO' : '🔵 OPCIONAL')}
-                              </span>
-                            </div>
+                                  <span 
+                                    className="stage-status-pill"
+                                    style={{
+                                      background: '#dcfce7',
+                                      color: '#15803d'
+                                    }}
+                                  >
+                                    ✅ REGISTRADO
+                                  </span>
+                                </div>
 
-                            {/* CONTENIDO DE LA TARJETA */}
-                            {r ? (
-                              <>
-                                <div style={{ position: 'relative', width: '100%', height: '170px', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px', backgroundColor: '#0f172a' }}>
+                                {/* FOTOGRAFÍA DE EVIDENCIA */}
+                                <div className="stage-image-container">
                                   <img 
                                     src={r.image_url || r.image_path} 
                                     alt={stage.title} 
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
                                     onClick={() => setZoomImage(r.image_url || r.image_path)}
                                   />
                                 </div>
 
-                                <div style={{ fontSize: '0.78rem', color: '#475569', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold', color: '#0f172a' }}>
-                                    {r.technician?.first_name?.charAt(0) || 'T'}
+                                <div className="stage-tech-chip">
+                                  <div className="stage-tech-initial">
+                                    {r.technician?.first_name?.charAt(0) || (user?.first_name ? user.first_name.charAt(0) : 'T')}
                                   </div>
-                                  <span style={{ fontWeight: '700' }}>{r.technician ? `${r.technician.first_name} ${r.technician.last_name}` : 'Técnico'}</span>
+                                  <span style={{ fontWeight: '700' }}>
+                                    {r.technician ? `${r.technician.first_name} ${r.technician.last_name || ''}`.trim() : (user?.name || 'Técnico')}
+                                  </span>
                                 </div>
 
-                                <p style={{ margin: 0, fontSize: '0.84rem', color: '#0f172a', fontWeight: '600', lineHeight: 1.4, whiteSpace: 'pre-line', flex: 1 }}>
+                                <p className="stage-desc-text">
                                   "{cleanDesc || 'Sin descripción.'}"
                                 </p>
-
-                                {/* FILA DE BOTONES VISIBLES DE ACCIÓN DEBAJO DE LA DESCRIPCIÓN */}
-                                <div style={{ display: 'flex', gap: '8px', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); handleOpenModal('edit', r, trabajoId, tipo, stage); }}
-                                    style={{
-                                      flex: 1,
-                                      background: '#f1f5f9',
-                                      color: '#0f172a',
-                                      border: '1px solid #cbd5e1',
-                                      padding: '8px 12px',
-                                      borderRadius: '10px',
-                                      fontWeight: '800',
-                                      fontSize: '0.78rem',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: '6px'
-                                    }}
-                                  >
-                                    <Pencil size={14} color="#0f172a" /> Editar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteReport(r.id); }}
-                                    style={{
-                                      background: '#fee2e2',
-                                      color: '#991b1b',
-                                      border: '1px solid #fecaca',
-                                      padding: '8px 12px',
-                                      borderRadius: '10px',
-                                      fontWeight: '800',
-                                      fontSize: '0.78rem',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: '6px'
-                                    }}
-                                  >
-                                    <Trash2 size={14} color="#dc2626" /> Eliminar
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <div 
-                                onClick={() => handleOpenModal('add', null, trabajoId, tipo, stage)}
-                                style={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  height: '210px',
-                                  cursor: 'pointer',
-                                  color: '#64748b',
-                                  textAlign: 'center',
-                                  gap: '8px'
-                                }}
-                              >
-                                <Plus size={36} color="#F26522" />
-                                <strong style={{ color: '#0f172a', fontSize: '0.85rem' }}>AÑADIR EVIDENCIA</strong>
-                                <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Tap para subir foto y descripción</span>
                               </div>
-                            )}
-                          </div>
+
+                              {/* FILA DE BOTONES VISIBLES DE ACCIÓN DEBAJO DE LA DESCRIPCIÓN */}
+                              <div className="stage-card-actions">
+                                <button
+                                  type="button"
+                                  className="stage-btn-edit"
+                                  onClick={(e) => { e.stopPropagation(); handleOpenModal('edit', r, trabajoId, tipo, stage); }}
+                                >
+                                  <Pencil size={13} color="#0f172a" /> Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="stage-btn-delete"
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteReport(r.id); }}
+                                >
+                                  <Trash2 size={13} color="#dc2626" /> Eliminar
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <Plus size={32} color="#F26522" />
+                              <strong style={{ color: '#0f172a', fontSize: '0.82rem' }}>AÑADIR EVIDENCIA</strong>
+                              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Tap para subir foto ({stage.title})</span>
+                            </>
+                          )}
                         </div>
                       );
                     })}
@@ -534,20 +491,20 @@ const VistaReportesGlobal = () => {
         )}
       </div>
 
-      {/* MODAL PARA AGREGAR O EDITAR EVIDENCIA POR EL ROOT/ADMIN */}
+      {/* MODAL PARA AGREGAR O EDITAR EVIDENCIA */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(4px)' }}>
-          <div style={{ background: 'white', padding: '28px', borderRadius: '20px', width: '100%', maxWidth: '520px', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-            <button onClick={closeModal} style={{ position: 'absolute', top: '18px', right: '18px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'white', padding: '24px', borderRadius: '20px', width: '100%', maxWidth: '520px', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <button onClick={closeModal} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
               <X size={24} />
             </button>
             
-            <h3 style={{ marginTop: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.2rem', fontWeight: '800' }}>
-              {modalMode === 'add' ? <Plus size={24} color="#F26522" /> : <Edit size={24} color="#F26522" />}
+            <h3 style={{ marginTop: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.15rem', fontWeight: '800' }}>
+              {modalMode === 'add' ? <Plus size={22} color="#F26522" /> : <Edit size={22} color="#F26522" />}
               {modalMode === 'add' ? `AÑADIR EVIDENCIA (${selectedStage?.title || ''})` : `EDITAR EVIDENCIA (${selectedStage?.title || ''})`}
             </h3>
             
-            <form onSubmit={handleSubmitReport} style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginTop: '16px' }}>
+            <form onSubmit={handleSubmitReport} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', fontWeight: '800', color: '#1e293b', fontSize: '0.85rem' }}>
                   Descripción Obligatoria <span style={{ color: '#dc2626' }}>*</span>
@@ -556,7 +513,7 @@ const VistaReportesGlobal = () => {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder={selectedStage?.placeholder || "Escribe la descripción de lo realizado..."}
-                  style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #cbd5e1', minHeight: '100px', resize: 'vertical', fontSize: '0.88rem', outline: 'none' }}
+                  style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #cbd5e1', minHeight: '90px', resize: 'vertical', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
                   required
                 />
               </div>
@@ -575,27 +532,27 @@ const VistaReportesGlobal = () => {
                 <label 
                   htmlFor="report-image-upload" 
                   style={{ 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                    padding: '14px', border: '2px dashed #F26522', borderRadius: '12px', 
-                    cursor: 'pointer', color: '#F26522', fontWeight: 'bold', textAlign: 'center', background: '#fff7ed'
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    padding: '12px', border: '2px dashed #F26522', borderRadius: '12px', 
+                    cursor: 'pointer', color: '#F26522', fontWeight: 'bold', textAlign: 'center', background: '#fff7ed', fontSize: '0.82rem'
                   }}
                 >
-                  <Upload size={20} />
+                  <Upload size={18} />
                   {formData.image ? 'Cambiar Imagen Seleccionada' : (modalMode === 'edit' ? 'Subir Nueva Foto (Opcional)' : 'Seleccionar Fotografía')}
                 </label>
 
                 {previewImage && (
-                  <div style={{ marginTop: '14px', textAlign: 'center' }}>
-                    <img src={previewImage} alt="Vista previa" style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '12px', border: '1px solid #cbd5e1', objectFit: 'cover' }} />
+                  <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                    <img src={previewImage} alt="Vista previa" style={{ maxWidth: '100%', maxHeight: '160px', borderRadius: '10px', border: '1px solid #cbd5e1', objectFit: 'cover' }} />
                   </div>
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                <button type="button" onClick={closeModal} style={{ flex: 1, padding: '12px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                <button type="button" onClick={closeModal} style={{ flex: 1, padding: '11px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.82rem' }}>
                   CANCELAR
                 </button>
-                <button type="submit" disabled={isSubmitting} style={{ flex: 1, padding: '12px', background: '#F26522', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1, textTransform: 'uppercase' }}>
+                <button type="submit" disabled={isSubmitting} style={{ flex: 1, padding: '11px', background: '#F26522', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1, textTransform: 'uppercase', fontSize: '0.82rem' }}>
                   {isSubmitting ? 'GUARDANDO...' : 'GUARDAR EVIDENCIA'}
                 </button>
               </div>
@@ -614,6 +571,9 @@ const VistaReportesGlobal = () => {
           <button onClick={() => setZoomImage(null)} style={{ position: 'absolute', top: '20px', right: '25px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={36}/></button>
         </div>
       )}
+
+      {/* Mobile Bottom Dock Bar */}
+      <MobileBottomNav activeModule="reportes" />
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { CalendarDays, ShieldCheck, User, Calendar, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext';
 import defaultLogo from '../../assets/Logo4.png';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
+import NotificationBell from './NotificationBell';
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
 import '../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
@@ -67,10 +68,18 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
     }
   };
 
-  const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : 'T';
-  const userFullName = authUser?.name || 'TÉCNICO DE LA RED';
+  const currentPath = (location.pathname || '').toLowerCase();
+  const currentView = location.state?.view;
+
+  const isPerfilActive = activeTab === 'perfil' || currentPath.includes('/mi-perfil') || currentPath.includes('/profile');
+  const isMercadoActive = !isPerfilActive && (activeTab === 'mercado' || currentView === 'mercado' || (currentPath.includes('/mercado-trabajos') && currentView !== 'tablero' && currentView !== 'usuarios'));
+  const isTableroActive = !isPerfilActive && (activeTab === 'tablero' || currentView === 'tablero' || currentPath.includes('/trabajos-tecnico') || currentPath.includes('/tablero-servicios'));
+  const isUsuariosActive = !isPerfilActive && (activeTab === 'usuarios' || currentView === 'usuarios' || currentPath.includes('/usuarios'));
+
+  const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : (authUser?.first_name ? authUser.first_name.charAt(0).toUpperCase() : 'T');
+  const userFullName = authUser?.name || (authUser?.first_name ? `${authUser.first_name} ${authUser.last_name || ''}`.trim() : 'TÉCNICO DE LA RED');
   const userRole = authUser?.role_id === 6 ? 'TÉCNICO INDEPENDIENTE' : (authUser?.role_id === 8 ? 'TÉCNICO ENLACE' : 'TÉCNICO DE LA RED');
-  const userAvatar = authUser?.avatar_url || authUser?.avatar || null;
+  const userAvatar = authUser?.profile_picture || authUser?.avatar_url || authUser?.avatar || null;
 
   return (
     <>
@@ -90,16 +99,7 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
         <nav className="vcp-header-nav">
           <button 
             type="button"
-            className="vcp-nav-icon-btn" 
-            title="Abrir Calendario"
-            onClick={() => setShowModalCalendario(true)}
-          >
-            <CalendarDays size={18} color="#ffffff" strokeWidth={2.2} />
-          </button>
-
-          <button 
-            type="button"
-            className={`vcp-nav-btn ${activeTab === 'mercado' ? 'active' : ''}`}
+            className={`vcp-nav-btn ${isMercadoActive ? 'active' : ''}`}
             onClick={() => handleSelectTab('mercado')}
             title="Mercado de solicitudes"
           >
@@ -109,27 +109,50 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
 
           <button 
             type="button"
-            className={`vcp-nav-btn ${activeTab === 'tablero' ? 'active' : ''}`}
+            className={`vcp-nav-btn ${isTableroActive ? 'active' : ''}`}
             onClick={() => handleSelectTab('tablero')}
             title="Trabajos aceptados"
           >
-            <span className="vcp-tab-full">TRABAJOS ACEPTADOS ({liveAcceptedCount})</span>
-            <span className="vcp-tab-short">ACEPTADOS ({liveAcceptedCount})</span>
+            <span className="vcp-tab-full">TRABAJOS ACEPTADOS{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
+            <span className="vcp-tab-short">ACEPTADOS{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
           </button>
 
           <button 
             type="button"
-            className={`vcp-nav-btn ${activeTab === 'usuarios' ? 'active' : ''}`}
+            className={`vcp-nav-btn ${isUsuariosActive ? 'active' : ''}`}
             onClick={() => handleSelectTab('usuarios')}
-            title="Directorio de usuarios"
+            title="Mis clientes"
           >
-            <span className="vcp-tab-full">USUARIOS ({liveUsersCount})</span>
-            <span className="vcp-tab-short">USUARIOS ({liveUsersCount})</span>
+            <span className="vcp-tab-full">MIS CLIENTES{liveUsersCount > 0 ? ` (${liveUsersCount})` : ''}</span>
+            <span className="vcp-tab-short">CLIENTES{liveUsersCount > 0 ? ` (${liveUsersCount})` : ''}</span>
+          </button>
+
+          <button 
+            type="button"
+            className={`vcp-nav-btn ${isPerfilActive ? 'active' : ''}`}
+            onClick={() => navigate('/mi-perfil')}
+            title="Mi perfil profesional"
+          >
+            <span className="vcp-tab-full">MI PERFIL</span>
+            <span className="vcp-tab-short">PERFIL</span>
           </button>
         </nav>
 
-        {/* User profile avatar section */}
+        {/* User profile avatar section & action icons */}
         <div className="vcp-header-right" ref={dropdownRef}>
+          <div className="vcp-header-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button 
+              type="button"
+              className="vcp-header-icon-btn vcp-nav-icon-btn" 
+              title="Abrir Calendario y Citas"
+              onClick={() => setShowModalCalendario(true)}
+            >
+              <CalendarDays size={18} color="#ffffff" strokeWidth={2.2} />
+            </button>
+
+            <NotificationBell triggerClassName="vcp-header-icon-btn vcp-nav-icon-btn" />
+          </div>
+
           <button 
             type="button"
             className="vcp-avatar-btn" 
