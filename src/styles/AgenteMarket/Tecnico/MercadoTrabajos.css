@@ -741,6 +741,9 @@
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0 !important;
+  min-height: fit-content !important;
+  height: auto !important;
 }
 
 .mercado-job-card:hover {
@@ -4942,7 +4945,8 @@
     width: 100% !important;
     min-width: 100% !important;
     max-width: 100% !important;
-    max-height: 82vh !important;
+    height: 75vh !important;
+    max-height: 85vh !important;
     z-index: 40 !important;
     border-radius: 24px 24px 0 0 !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -4970,6 +4974,7 @@
   }
 
   .mercado-sidebar-header {
+    flex-shrink: 0 !important;
     padding: 10px 16px 12px !important;
     cursor: pointer !important;
     background: linear-gradient(180deg, rgba(242, 101, 34, 0.12) 0%, #13151f 100%) !important;
@@ -4984,10 +4989,29 @@
     font-size: 11.5px !important;
   }
 
+  .mercado-sidebar-tabs-container {
+    flex-shrink: 0 !important;
+  }
+
   .mercado-job-list {
-    max-height: calc(82vh - 130px) !important;
-    padding: 12px 14px 24px !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 14px 16px 130px 16px !important;
     background: #0e1017 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+
+  .mercado-job-card {
+    flex-shrink: 0 !important;
+    min-height: fit-content !important;
+    height: auto !important;
+    padding: 14px 16px !important;
+    box-sizing: border-box !important;
   }
 }
 

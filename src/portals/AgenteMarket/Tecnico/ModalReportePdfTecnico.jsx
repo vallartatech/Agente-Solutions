@@ -198,7 +198,7 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], bo
       top: 0,
       left: 0,
       width: '100vw',
-      height: '100vh',
+      height: '100dvh',
       background: 'rgba(5, 8, 15, 0.96)',
       backdropFilter: 'blur(14px)',
       WebkitBackdropFilter: 'blur(14px)',
@@ -209,35 +209,41 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], bo
       justifyContent: 'flex-start',
       overflowY: 'auto',
       WebkitOverflowScrolling: 'touch',
-      padding: '20px 14px 80px 14px',
+      touchAction: 'pan-y',
+      padding: '12px 10px 160px 10px',
       boxSizing: 'border-box'
     }}>
       {/* ── BARRA SUPERIOR DE ACCIONES FLOTANTE (NO SE IMPRIME) ── */}
       <div className="no-print" style={{
         position: 'sticky',
-        top: '4px',
+        top: '6px',
         zIndex: 100000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '8px',
         width: '100%',
         maxWidth: '900px',
-        background: 'linear-gradient(135deg, #191e2b, #11141e)',
-        border: '1.5px solid rgba(255, 255, 255, 0.15)',
+        background: 'rgba(25, 30, 43, 0.96)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        border: '1.5px solid rgba(255, 255, 255, 0.18)',
         borderRadius: '12px',
-        padding: '10px 18px',
-        marginBottom: '16px',
+        padding: '10px 14px',
+        marginBottom: '14px',
         boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        flexShrink: 0
       }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ffffff' }}>
           <FileText size={18} color="#f26522" />
-          <span style={{ fontWeight: '800', fontSize: '0.88rem', letterSpacing: '0.4px' }}>
+          <span style={{ fontWeight: '800', fontSize: '0.86rem', letterSpacing: '0.4px' }}>
             REPORTE TÉCNICO OFICIAL - {folioDisplay}
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             type="button"
             onClick={handlePrint}
@@ -246,12 +252,12 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], bo
               color: '#ffffff',
               border: 'none',
               borderRadius: '8px',
-              padding: '8px 16px',
-              fontSize: '0.8rem',
+              padding: '8px 14px',
+              fontSize: '0.78rem',
               fontWeight: '800',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '5px',
               cursor: 'pointer',
               boxShadow: '0 4px 14px rgba(242, 101, 34, 0.4)'
             }}
@@ -267,8 +273,8 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], bo
               color: '#ffffff',
               border: '1px solid rgba(255, 255, 255, 0.2)',
               borderRadius: '8px',
-              padding: '8px 14px',
-              fontSize: '0.8rem',
+              padding: '8px 12px',
+              fontSize: '0.78rem',
               fontWeight: '700',
               display: 'inline-flex',
               alignItems: 'center',
@@ -293,9 +299,12 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], bo
           width: '100%',
           borderRadius: '8px',
           boxShadow: '0 15px 40px rgba(0,0,0,0.5)',
-          overflow: 'hidden',
+          overflow: 'visible',
           fontFamily: 'Arial, sans-serif',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          marginBottom: '50px',
+          flexShrink: 0,
+          minHeight: 'fit-content'
         }}
       >
         {/* Encabezado Oficial */}
