@@ -2067,7 +2067,7 @@ const MercadoTrabajos = () => {
                 className={`mercado-board-mobile-tab-btn ${mobileBoardTab === 'trabajos' ? 'active' : ''}`}
                 onClick={() => setMobileBoardTab('trabajos')}
               >
-                <Briefcase size={14} />
+                <Briefcase size={15} />
                 <span>Mis Trabajos</span>
                 <span className="mercado-board-mobile-tab-pill">{filteredBoardJobs.length}</span>
               </button>
@@ -2077,25 +2077,11 @@ const MercadoTrabajos = () => {
                 className={`mercado-board-mobile-tab-btn ${mobileBoardTab === 'detalle' ? 'active' : ''}`}
                 onClick={() => setMobileBoardTab('detalle')}
               >
-                <FileText size={14} />
-                <span>Detalle</span>
+                <FileText size={15} />
+                <span>Detalle del Servicio</span>
                 {selectedBoardJob && (
                   <span className="mercado-board-mobile-tab-pill folio">
                     {selectedBoardJob.property?.property_code || `#${selectedBoardJob.id}`}
-                  </span>
-                )}
-              </button>
-
-              <button
-                type="button"
-                className={`mercado-board-mobile-tab-btn ${mobileBoardTab === 'progreso' ? 'active' : ''}`}
-                onClick={() => setMobileBoardTab('progreso')}
-              >
-                <Sparkles size={14} />
-                <span>Progreso</span>
-                {selectedBoardJob && (
-                  <span className="mercado-board-mobile-tab-pill progress">
-                    {currentStage}/6
                   </span>
                 )}
               </button>
@@ -2118,6 +2104,58 @@ const MercadoTrabajos = () => {
                   COLUMNA 1 (IZQUIERDA): LISTA DE TRABAJOS ACEPTADOS
               ════════════════════════════════════════════════════ */}
               <div className={`mercado-board-col-list ${mobileBoardTab === 'trabajos' ? 'is-mobile-active' : 'is-mobile-hidden'}`}>
+                {/* ── BARRA DE PROGRESO INTEGRADA SOBRE MIS TRABAJOS (SOLO MÓVIL) ── */}
+                {selectedBoardJob && (
+                  <div className="mercado-board-mobile-progress-card">
+                    <div className="mercado-board-mobile-progress-header">
+                      <div className="mercado-board-mobile-progress-title-row">
+                        <span className="mercado-board-mobile-progress-label">
+                          <Sparkles size={12} color="#f26522" /> PROGRESO
+                        </span>
+                        <span className="mercado-board-mobile-progress-folio">
+                          {selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}
+                        </span>
+                      </div>
+                      <span className="mercado-board-mobile-progress-step-pill">
+                        {currentStage === 1 && '1/6: Cita'}
+                        {currentStage === 2 && '2/6: En Camino'}
+                        {currentStage === 3 && '3/6: Diagnóstico'}
+                        {currentStage === 4 && '4/6: Reparación'}
+                        {currentStage === 5 && '5/6: Evidencias'}
+                        {currentStage === 6 && '6/6: Concluido'}
+                      </span>
+                    </div>
+
+                    {/* Stepper Horizontal Compacto */}
+                    <div className="mercado-board-mobile-stepper">
+                      {[
+                        { step: 1, label: 'Cita', icon: <Home size={12} /> },
+                        { step: 2, label: 'Camino', icon: <Car size={12} /> },
+                        { step: 3, label: 'Diag.', icon: <Search size={12} /> },
+                        { step: 4, label: 'Repar.', icon: <Wrench size={12} /> },
+                        { step: 5, label: 'Evid.', icon: <Camera size={12} /> },
+                        { step: 6, label: 'Listo', icon: <CheckCircle2 size={12} /> },
+                      ].map((st) => {
+                        const isCompleted = currentStage > st.step;
+                        const isCurrent = currentStage === st.step;
+                        return (
+                          <div
+                            key={st.step}
+                            className={`mercado-board-mobile-step-item ${isCompleted ? 'completed' : (isCurrent ? 'current' : 'pending')}`}
+                            onClick={() => handleSetStage(st.step)}
+                            title={`Etapa ${st.step}: ${st.label}`}
+                          >
+                            <div className="mercado-board-mobile-step-icon">
+                              {isCompleted ? <Check size={11} strokeWidth={3} /> : st.icon}
+                            </div>
+                            <span className="mercado-board-mobile-step-label">{st.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mercado-board-col-list-header">
                   <span className="mercado-board-col-list-title">
                     <Briefcase size={15} color="#f26522" />
@@ -2225,21 +2263,16 @@ const MercadoTrabajos = () => {
                         className="mercado-board-subnav-back-btn"
                         onClick={() => setMobileBoardTab('trabajos')}
                       >
-                        <ChevronLeft size={16} /> Lista de Trabajos
+                        <ChevronLeft size={16} /> Volver a Mis Trabajos
                       </button>
 
                       <div className="mercado-board-subnav-actions">
                         <span className="mercado-board-subnav-folio">
                           {selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}
                         </span>
-                        <button
-                          type="button"
-                          className="mercado-board-subnav-prog-btn"
-                          onClick={() => setMobileBoardTab('progreso')}
-                        >
-                          <span>Progreso ({currentStage}/6)</span>
-                          <ChevronRight size={14} />
-                        </button>
+                        <span className="mercado-board-subnav-stage-badge">
+                          ⚡ Paso {currentStage}/6
+                        </span>
                       </div>
                     </div>
 
