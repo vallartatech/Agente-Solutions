@@ -3138,7 +3138,16 @@
   align-items: center;
   gap: 5px;
   overflow-x: auto;
-  padding-bottom: 0;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mercado-board-filter-chips::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .mercado-board-chip {
@@ -3167,6 +3176,161 @@
   border-color: #f26522;
   color: #f26522;
   box-shadow: 0 0 8px rgba(242, 101, 34, 0.25);
+}
+
+/* ─── MOBILE SEGMENTED TAB BAR (Hidden on desktop) ─── */
+.mercado-board-mobile-tab-bar {
+  display: none;
+  align-items: center;
+  background: rgba(15, 18, 26, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.mercado-board-mobile-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.mercado-board-mobile-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.mercado-board-mobile-tab-btn.active {
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.25) 0%, rgba(234, 88, 12, 0.16) 100%);
+  border-color: rgba(242, 101, 34, 0.6);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(242, 101, 34, 0.25), inset 0 0 10px rgba(242, 101, 34, 0.12);
+}
+
+.mercado-board-mobile-tab-pill {
+  font-size: 0.62rem;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 1px 6px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.mercado-board-mobile-tab-btn.active .mercado-board-mobile-tab-pill {
+  background: #f26522;
+  color: #ffffff;
+}
+
+.mercado-board-mobile-tab-pill.folio {
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mercado-board-mobile-tab-pill.progress {
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.mercado-board-mobile-tab-btn.active .mercado-board-mobile-tab-pill.progress {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+}
+
+/* ─── MOBILE SUBNAV (Hidden on desktop) ─── */
+.mercado-board-mobile-subnav {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: rgba(20, 23, 34, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
+
+.mercado-board-subnav-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mercado-board-subnav-back-btn:hover {
+  background: rgba(242, 101, 34, 0.18);
+  border-color: #f26522;
+  color: #ffffff;
+}
+
+.mercado-board-subnav-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mercado-board-subnav-folio {
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #f26522;
+  background: rgba(242, 101, 34, 0.15);
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(242, 101, 34, 0.3);
+}
+
+.mercado-board-subnav-prog-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.70rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mercado-board-subnav-prog-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: #ffffff;
 }
 
 /* ─── 3 COLUMNS MAIN WORKSPACE ─── */
@@ -4493,16 +4657,31 @@
 @media (max-width: 1024px) {
   .mercado-container.mercado-tablero-mode {
     height: auto !important;
+    min-height: 100vh !important;
     max-height: unset !important;
     overflow-y: auto !important;
   }
 
   .mercado-board-workspace {
     height: auto !important;
+    min-height: calc(100vh - 54px) !important;
     max-height: unset !important;
     overflow-y: visible !important;
-    padding: 10px 12px 24px;
-    gap: 12px;
+    padding: 8px 10px 85px !important;
+    gap: 8px !important;
+  }
+
+  .mercado-board-header {
+    padding: 8px 10px !important;
+    gap: 8px !important;
+  }
+
+  .mercado-board-mobile-tab-bar {
+    display: flex !important;
+  }
+
+  .mercado-board-mobile-subnav {
+    display: flex !important;
   }
 
   .mercado-board-3col-layout {
@@ -4510,36 +4689,74 @@
     flex-direction: column !important;
     height: auto !important;
     overflow: visible !important;
-    gap: 14px !important;
+    gap: 8px !important;
+  }
+
+  /* Control de visibilidad de pestañas móviles */
+  .mercado-board-col-list.is-mobile-hidden,
+  .mercado-board-col-detail.is-mobile-hidden,
+  .mercado-board-col-progress.is-mobile-hidden {
+    display: none !important;
+  }
+
+  .mercado-board-col-list.is-mobile-active,
+  .mercado-board-col-detail.is-mobile-active,
+  .mercado-board-col-progress.is-mobile-active {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+    max-height: unset !important;
+    height: auto !important;
+    overflow: visible !important;
+    animation: fadeInTableroTab 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes fadeInTableroTab {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .mercado-board-col-list {
-    max-height: 260px !important;
+    max-height: unset !important;
     height: auto !important;
-    overflow-y: auto !important;
+    overflow: visible !important;
+    padding: 8px !important;
+  }
+
+  .mercado-board-job-cards-list {
+    max-height: unset !important;
+    overflow: visible !important;
   }
 
   .mercado-board-col-detail {
     max-height: unset !important;
     height: auto !important;
     overflow: visible !important;
-    gap: 10px;
+    gap: 8px !important;
+    padding-right: 0 !important;
   }
 
-  .mercado-board-grid-cards {
+  .mercado-board-mid-grid {
     grid-template-columns: 1fr !important;
-    gap: 10px;
+    gap: 8px !important;
   }
 
   .mercado-board-col-progress {
     max-height: unset !important;
     height: auto !important;
     overflow: visible !important;
-    padding: 14px;
+    padding: 10px !important;
   }
 
   .mercado-board-stepper-container {
-    gap: 12px;
+    gap: 10px !important;
   }
 }
 

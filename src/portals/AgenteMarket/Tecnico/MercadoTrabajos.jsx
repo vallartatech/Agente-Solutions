@@ -7,7 +7,7 @@ import Swal from 'sweetalert2';
 import { 
   MapPin, DollarSign, Clock, Send, User, FileText, Maximize2, Image as ImageIcon, 
   X, List, Map as MapIcon, MessageCircle, AlertCircle, CheckCircle2, Phone, Calendar, 
-  ChevronLeft, ExternalLink, CalendarDays, Search, LogOut, Briefcase, Layers, ShieldCheck,
+  ChevronLeft, ChevronRight, ExternalLink, CalendarDays, Search, LogOut, Briefcase, Layers, ShieldCheck,
   RotateCw, AlertTriangle, Users, UserPlus, PhoneCall, Mail, Star, Award, History,
   Home, Car, Navigation, Wrench, Camera, Plus, Trash2, Check, ArrowRight, Play, Eye, Sparkles, Lock, Zap
 } from 'lucide-react';
@@ -413,6 +413,7 @@ const MercadoTrabajos = () => {
 
   // ─── TABLERO 3-COLUMN WORKSPACE STATES ───
   const [selectedBoardJobId, setSelectedBoardJobId] = useState(null);
+  const [mobileBoardTab, setMobileBoardTab] = useState('trabajos'); // 'trabajos' | 'detalle' | 'progreso'
   const [boardPhotos, setBoardPhotos] = useState(() => {
     try {
       const saved = localStorage.getItem('agente_board_photos');
@@ -2058,6 +2059,47 @@ const MercadoTrabajos = () => {
                 ✅ FINALIZADOS ({acceptedJobs.filter(j => isJobDone(j.status)).length})
               </button>
             </div>
+
+            {/* Barra de Pestañas Segmentadas para Móvil/Tablet */}
+            <div className="mercado-board-mobile-tab-bar">
+              <button
+                type="button"
+                className={`mercado-board-mobile-tab-btn ${mobileBoardTab === 'trabajos' ? 'active' : ''}`}
+                onClick={() => setMobileBoardTab('trabajos')}
+              >
+                <Briefcase size={14} />
+                <span>Mis Trabajos</span>
+                <span className="mercado-board-mobile-tab-pill">{filteredBoardJobs.length}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`mercado-board-mobile-tab-btn ${mobileBoardTab === 'detalle' ? 'active' : ''}`}
+                onClick={() => setMobileBoardTab('detalle')}
+              >
+                <FileText size={14} />
+                <span>Detalle</span>
+                {selectedBoardJob && (
+                  <span className="mercado-board-mobile-tab-pill folio">
+                    {selectedBoardJob.property?.property_code || `#${selectedBoardJob.id}`}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                className={`mercado-board-mobile-tab-btn ${mobileBoardTab === 'progreso' ? 'active' : ''}`}
+                onClick={() => setMobileBoardTab('progreso')}
+              >
+                <Sparkles size={14} />
+                <span>Progreso</span>
+                {selectedBoardJob && (
+                  <span className="mercado-board-mobile-tab-pill progress">
+                    {currentStage}/6
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Layout Principal de 3 Columnas */}
@@ -2075,7 +2117,7 @@ const MercadoTrabajos = () => {
               {/* ════════════════════════════════════════════════════
                   COLUMNA 1 (IZQUIERDA): LISTA DE TRABAJOS ACEPTADOS
               ════════════════════════════════════════════════════ */}
-              <div className="mercado-board-col-list">
+              <div className={`mercado-board-col-list ${mobileBoardTab === 'trabajos' ? 'is-mobile-active' : 'is-mobile-hidden'}`}>
                 <div className="mercado-board-col-list-header">
                   <span className="mercado-board-col-list-title">
                     <Briefcase size={15} color="#f26522" />
@@ -2099,7 +2141,10 @@ const MercadoTrabajos = () => {
                         <div
                           key={job.id}
                           className={`mercado-board-job-card ${isSelected ? 'selected' : ''}`}
-                          onClick={() => setSelectedBoardJobId(job.id)}
+                          onClick={() => {
+                            setSelectedBoardJobId(job.id);
+                            setMobileBoardTab('detalle');
+                          }}
                         >
                           <div className="mercado-board-job-card-top">
                             <span className="mercado-board-job-folio">
@@ -2172,7 +2217,32 @@ const MercadoTrabajos = () => {
                 const isJobCompleted = isJobDone(selectedBoardJob.status) || selectedBoardJob.status === 'Listo' || selectedBoardJob.status === 'Finalizado';
 
                 return (
-                  <div className="mercado-board-col-detail">
+                  <div className={`mercado-board-col-detail ${mobileBoardTab === 'detalle' ? 'is-mobile-active' : 'is-mobile-hidden'}`}>
+                    {/* Barra de Subnavegación Móvil para Detalle */}
+                    <div className="mercado-board-mobile-subnav">
+                      <button
+                        type="button"
+                        className="mercado-board-subnav-back-btn"
+                        onClick={() => setMobileBoardTab('trabajos')}
+                      >
+                        <ChevronLeft size={16} /> Lista de Trabajos
+                      </button>
+
+                      <div className="mercado-board-subnav-actions">
+                        <span className="mercado-board-subnav-folio">
+                          {selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}
+                        </span>
+                        <button
+                          type="button"
+                          className="mercado-board-subnav-prog-btn"
+                          onClick={() => setMobileBoardTab('progreso')}
+                        >
+                          <span>Progreso ({currentStage}/6)</span>
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Fila Superior: Datos del Cliente + Consiste en (Izquierda) vs Propiedad / Fachada (Derecha) */}
                     <div className="mercado-board-mid-grid">
                       {/* Columna Izquierda: Datos del Cliente (arriba) + Consiste en (abajo) */}
@@ -2472,7 +2542,21 @@ const MercadoTrabajos = () => {
                   COLUMNA 3 (DERECHA): BARRA DE PROGRESO VERTICAL (IMAGEN 3)
               ════════════════════════════════════════════════════ */}
               {selectedBoardJob && (
-                <div className="mercado-board-col-progress">
+                <div className={`mercado-board-col-progress ${mobileBoardTab === 'progreso' ? 'is-mobile-active' : 'is-mobile-hidden'}`}>
+                  {/* Subnav Móvil para Progreso */}
+                  <div className="mercado-board-mobile-subnav">
+                    <button
+                      type="button"
+                      className="mercado-board-subnav-back-btn"
+                      onClick={() => setMobileBoardTab('detalle')}
+                    >
+                      <ChevronLeft size={16} /> Volver al Detalle
+                    </button>
+                    <span className="mercado-board-subnav-folio">
+                      {selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}
+                    </span>
+                  </div>
+
                   <div className="mercado-board-col-progress-header">
                     <h3 className="mercado-board-progress-title">
                       <Sparkles size={15} color="#f26522" /> PROGRESO
