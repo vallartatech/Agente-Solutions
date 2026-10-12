@@ -10,7 +10,7 @@ import {
   ChevronLeft, ChevronRight, ExternalLink, CalendarDays, Search, LogOut, Briefcase, Layers, ShieldCheck,
   RotateCw, AlertTriangle, Users, UserPlus, PhoneCall, Mail, Star, Award, History,
   Home, Car, Navigation, Wrench, Camera, Plus, Trash2, Check, ArrowRight, Play, Eye, Sparkles, Lock, Zap,
-  Sun, Moon
+  Sun, Moon, Globe, SlidersHorizontal
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import { useAuth } from '../../../context/AuthContext';
@@ -407,6 +407,13 @@ const MercadoTrabajos = () => {
   // Top Navbar & Search States
   const [mainView, setMainView] = useState('mercado'); // 'mercado' | 'tablero' | 'usuarios'
   const [searchQuery, setSearchQuery] = useState('');
+
+  // ─── FILTER STATES (FECHA, HORA, TRABAJO) ───
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterDatePreset, setFilterDatePreset] = useState('TODAS'); // 'TODAS' | 'HOY' | 'MANANA' | 'SEMANA' | 'CUSTOM'
+  const [filterCustomDate, setFilterCustomDate] = useState('');
+  const [filterTimeSlot, setFilterTimeSlot] = useState('TODAS'); // 'TODAS' | 'MANANA' | 'TARDE' | 'NOCHE'
+  const [filterJobType, setFilterJobType] = useState('TODOS');
   const [kanbanSearch, setKanbanSearch] = useState('');
   const [kanbanSectionTab, setKanbanSectionTab] = useState('activos'); // 'activos' | 'finalizados'
   const [showModalCalendario, setShowModalCalendario] = useState(false);
@@ -1229,35 +1236,148 @@ const MercadoTrabajos = () => {
     !isRescheduleRequested
   );
 
-  // Filtered jobs based on search input (Disponibles)
-  const filteredNetworkJobs = networkJobs.filter(job => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      (job.titulo && job.titulo.toLowerCase().includes(q)) ||
-      (job.zona && job.zona.toLowerCase().includes(q)) ||
-      (job.descripcion && job.descripcion.toLowerCase().includes(q)) ||
-      (job.tipo && job.tipo.toLowerCase().includes(q)) ||
-      (job.equipo && job.equipo.toLowerCase().includes(q)) ||
-      (job.client_name && job.client_name.toLowerCase().includes(q))
-    );
-  });
+  // ─── FILTROS ESPECÍFICOS (FECHA, HORA, TRABAJO) ───
+  const getJobDateObj = (job) => {
+    const rawDateStr = job.scheduled_at || job.scheduled_date || job.fecha_cita || job.created_at;
+    if (rawDateStr) {
+      const parsed = new Date(rawDateStr);
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+    if (job.fecha) {
+      const parts = String(job.fecha).split(/[\/\-]/);
+      if (parts.length === 3) {
+        if (parts[2].length === 4) {
+          const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+          if (!isNaN(d.getTime())) return d;
+        } else if (parts[0].length === 4) {
+          const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          if (!isNaN(d.getTime())) return d;
+        }
+      } else {
+        const parsed = new Date(job.fecha);
+        if (!isNaN(parsed.getTime())) return parsed;
+      }
+    }
+    return null;
+  };
+
+  const jobMatchesDate = (job) => {
+    if (filterDatePreset === 'TODAS' && !filterCustomDate) return true;
+    const d = getJobDateObj(job);
+    if (!d) return false;
+
+    const today = new Date();
+    const jY = d.getFullYear();
+    const jM = d.getMonth();
+    const jD = d.getDate();
+
+    if (filterDatePreset === 'CUSTOM' || filterCustomDate) {
+      if (!filterCustomDate) return true;
+      const [y, m, day] = filterCustomDate.split('-').map(Number);
+      return jY === y && jM === (m - 1) && jD === day;
+    }
+
+    if (filterDatePreset === 'HOY') {
+      return jY === today.getFullYear() && jM === today.getMonth() && jD === today.getDate();
+    }
+
+    if (filterDatePreset === 'MANANA') {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      return jY === tomorrow.getFullYear() && jM === tomorrow.getMonth() && jD === tomorrow.getDate();
+    }
+
+    if (filterDatePreset === 'SEMANA') {
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+      const jobTime = new Date(jY, jM, jD).getTime();
+      const diffDays = (jobTime - startOfDay) / (1000 * 60 * 60 * 24);
+      return diffDays >= -1 && diffDays <= 7;
+    }
+
+    return true;
+  };
+
+  const jobMatchesTime = (job) => {
+    if (filterTimeSlot === 'TODAS') return true;
+    const d = getJobDateObj(job);
+    if (!d) return false;
+    const hours = d.getHours();
+
+    if (filterTimeSlot === 'MANANA') {
+      return hours >= 6 && hours < 12;
+    }
+    if (filterTimeSlot === 'TARDE') {
+      return hours >= 12 && hours < 18;
+    }
+    if (filterTimeSlot === 'NOCHE') {
+      return hours >= 18 && hours <= 23;
+    }
+    return true;
+  };
+
+  const jobMatchesType = (job) => {
+    if (filterJobType === 'TODOS') return true;
+    const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
+    if (cat.label && cat.label.toLowerCase() === filterJobType.toLowerCase()) return true;
+    const fullText = `${job.tipo || ''} ${job.titulo || ''} ${job.equipo || ''} ${job.descripcion || ''}`.toLowerCase();
+    return fullText.includes(filterJobType.toLowerCase());
+  };
+
+  const hasActiveFilters = Boolean(
+    (filterDatePreset !== 'TODAS' && filterDatePreset !== '') ||
+    filterCustomDate ||
+    filterTimeSlot !== 'TODAS' ||
+    filterJobType !== 'TODOS'
+  );
+
+  const resetAllFilters = () => {
+    setFilterDatePreset('TODAS');
+    setFilterCustomDate('');
+    setFilterTimeSlot('TODAS');
+    setFilterJobType('TODOS');
+  };
+
+  // Filtered jobs based on search input & specific filters (Disponibles)
+  const filteredNetworkJobs = useMemo(() => {
+    return networkJobs.filter(job => {
+      if (!jobMatchesDate(job)) return false;
+      if (!jobMatchesTime(job)) return false;
+      if (!jobMatchesType(job)) return false;
+
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        (job.titulo && job.titulo.toLowerCase().includes(q)) ||
+        (job.zona && job.zona.toLowerCase().includes(q)) ||
+        (job.descripcion && job.descripcion.toLowerCase().includes(q)) ||
+        (job.tipo && job.tipo.toLowerCase().includes(q)) ||
+        (job.equipo && job.equipo.toLowerCase().includes(q)) ||
+        (job.client_name && job.client_name.toLowerCase().includes(q))
+      );
+    });
+  }, [networkJobs, searchQuery, filterDatePreset, filterCustomDate, filterTimeSlot, filterJobType]);
 
   // Filtered Accepted Jobs para la pestaña del mapa (Trabajos Aceptados)
   const filteredAcceptedJobs = useMemo(() => {
-    if (!searchQuery.trim()) return acceptedJobs;
-    const q = searchQuery.toLowerCase();
-    return acceptedJobs.filter(job =>
-      (job.titulo && job.titulo.toLowerCase().includes(q)) ||
-      (job.zona && job.zona.toLowerCase().includes(q)) ||
-      (job.descripcion && job.descripcion.toLowerCase().includes(q)) ||
-      (job.tipo && job.tipo.toLowerCase().includes(q)) ||
-      (job.equipo && job.equipo.toLowerCase().includes(q)) ||
-      (job.client_name && job.client_name.toLowerCase().includes(q)) ||
-      (job.calle && job.calle.toLowerCase().includes(q)) ||
-      (job.full_address && job.full_address.toLowerCase().includes(q))
-    );
-  }, [acceptedJobs, searchQuery]);
+    return acceptedJobs.filter(job => {
+      if (!jobMatchesDate(job)) return false;
+      if (!jobMatchesTime(job)) return false;
+      if (!jobMatchesType(job)) return false;
+
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        (job.titulo && job.titulo.toLowerCase().includes(q)) ||
+        (job.zona && job.zona.toLowerCase().includes(q)) ||
+        (job.descripcion && job.descripcion.toLowerCase().includes(q)) ||
+        (job.tipo && job.tipo.toLowerCase().includes(q)) ||
+        (job.equipo && job.equipo.toLowerCase().includes(q)) ||
+        (job.client_name && job.client_name.toLowerCase().includes(q)) ||
+        (job.calle && job.calle.toLowerCase().includes(q)) ||
+        (job.full_address && job.full_address.toLowerCase().includes(q))
+      );
+    });
+  }, [acceptedJobs, searchQuery, filterDatePreset, filterCustomDate, filterTimeSlot, filterJobType]);
 
   // Helper para identificar trabajos completados / finalizados
   const isJobDone = (s) => ['Finalizado', 'Listo', 'Terminado', 'Completado', 'Aprobado', 'Entregado'].includes(s);
@@ -3111,50 +3231,209 @@ const MercadoTrabajos = () => {
                 onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)} 
               />
               <div className="mercado-sidebar-brand-row">
-                <span className="mercado-sidebar-eyebrow">Panel Técnico</span>
+                <h2 className="mercado-sidebar-subtitle">Trabajos en Red</h2>
                 <span className="mercado-sidebar-live-pill">● EN VIVO</span>
               </div>
-              <h2 className="mercado-sidebar-subtitle">Mercado de la Red</h2>
-              <p className="mercado-sidebar-desc">Cotiza solicitudes de clientes disponibles en tiempo real</p>
 
-              {/* Barra de Búsqueda estilo Image 4 */}
-              <div className="mercado-search-box">
-                <Search size={16} className="mercado-search-icon" />
-                <input
-                  type="text"
-                  className="mercado-search-input"
-                  placeholder="Buscar por falla, colonia, cliente..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button className="mercado-search-clear" onClick={() => setSearchQuery('')}>×</button>
-                )}
+              {/* Barra de Búsqueda y Botón de Filtro Específico */}
+              <div className="mercado-search-row">
+                <div className="mercado-search-box">
+                  <Search size={16} className="mercado-search-icon" />
+                  <input
+                    type="text"
+                    className="mercado-search-input"
+                    placeholder="Buscar por falla, colonia, cliente..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button className="mercado-search-clear" onClick={() => setSearchQuery('')}>×</button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className={`mercado-filter-btn ${isFilterOpen ? 'active' : ''} ${hasActiveFilters ? 'has-active' : ''}`}
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  title="Filtrar por fecha, hora y trabajo"
+                  aria-label="Filtrar por fecha, hora y trabajo"
+                >
+                  <svg 
+                    width="19" 
+                    height="19" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="#ffffff" 
+                    strokeWidth="2.2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    style={{ display: 'block', color: '#ffffff' }}
+                  >
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                  </svg>
+                  {hasActiveFilters && <span className="mercado-filter-badge-dot" />}
+                </button>
               </div>
+
+              {/* Panel de Filtros Específicos (Fecha, Hora, Trabajo) */}
+              {isFilterOpen && (
+                <div className="mercado-filter-panel">
+                  <div className="mercado-filter-header">
+                    <div className="mercado-filter-title">
+                      <svg 
+                        width="14" 
+                        height="14" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="#f26522" 
+                        strokeWidth="2.2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                        style={{ display: 'inline-block', verticalAlign: 'middle' }}
+                      >
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                      </svg>
+                      <span>Filtros Específicos</span>
+                    </div>
+                    {hasActiveFilters && (
+                      <button
+                        type="button"
+                        className="mercado-filter-reset-link"
+                        onClick={resetAllFilters}
+                      >
+                        Limpiar todo
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 1. FILTRO FECHA */}
+                  <div className="mercado-filter-group">
+                    <label className="mercado-filter-group-label">
+                      <Calendar size={12} /> Fecha
+                    </label>
+                    <div className="mercado-filter-chips">
+                      {[
+                        { id: 'TODAS', label: 'Todas' },
+                        { id: 'HOY', label: 'Hoy' },
+                        { id: 'MANANA', label: 'Mañana' },
+                        { id: 'SEMANA', label: '7 días' },
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={`mercado-filter-chip ${filterDatePreset === item.id && !filterCustomDate ? 'active' : ''}`}
+                          onClick={() => {
+                            setFilterDatePreset(item.id);
+                            setFilterCustomDate('');
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mercado-filter-custom-date-box">
+                      <input
+                        type="date"
+                        className="mercado-filter-date-picker"
+                        value={filterCustomDate}
+                        onChange={(e) => {
+                          setFilterCustomDate(e.target.value);
+                          if (e.target.value) setFilterDatePreset('CUSTOM');
+                          else setFilterDatePreset('TODAS');
+                        }}
+                        title="Seleccionar fecha específica en calendario"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 2. FILTRO HORA */}
+                  <div className="mercado-filter-group">
+                    <label className="mercado-filter-group-label">
+                      <Clock size={12} /> Hora / Horario
+                    </label>
+                    <div className="mercado-filter-chips">
+                      {[
+                        { id: 'TODAS', label: 'Cualquiera' },
+                        { id: 'MANANA', label: 'Mañana (8-12)' },
+                        { id: 'TARDE', label: 'Tarde (12-18)' },
+                        { id: 'NOCHE', label: 'Noche (18-22)' },
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={`mercado-filter-chip ${filterTimeSlot === item.id ? 'active' : ''}`}
+                          onClick={() => setFilterTimeSlot(item.id)}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 3. FILTRO TRABAJO / SERVICIO */}
+                  <div className="mercado-filter-group">
+                    <label className="mercado-filter-group-label">
+                      <Wrench size={12} /> Trabajo / Especialidad
+                    </label>
+                    <select
+                      className="mercado-filter-select"
+                      value={filterJobType}
+                      onChange={(e) => setFilterJobType(e.target.value)}
+                    >
+                      <option value="TODOS">Todos los trabajos</option>
+                      <option value="Climatización">❄️ Climatización / A/A</option>
+                      <option value="Plomería">🚰 Plomería / Fugas</option>
+                      <option value="Electricidad">⚡ Electricidad</option>
+                      <option value="Pintura">🎨 Pintura</option>
+                      <option value="Cerrajería">🔑 Cerrajería</option>
+                      <option value="Carpintería">🪚 Carpintería</option>
+                      <option value="Jardinería">🌿 Jardinería</option>
+                      <option value="Emergencia SOS">🚨 Emergencia SOS</option>
+                      <option value="Mantenimiento">🛠️ Mantenimiento / General</option>
+                    </select>
+                  </div>
+
+                  <div className="mercado-filter-panel-actions">
+                    <button
+                      type="button"
+                      className="mercado-filter-panel-done-btn"
+                      onClick={() => setIsFilterOpen(false)}
+                    >
+                      Listo
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Barra de Pestañas: Solicitudes Disponibles vs Trabajos Aceptados */}
+            {/* Barra de Pestañas: Solicitudes vs Aceptados (Solo Círculos Iconos) */}
             <div className="mercado-sidebar-tabs-container">
               <button
                 type="button"
-                className={`mercado-sidebar-tab-button tab-solicitudes ${activeTab === 'disponibles' ? 'active' : ''}`}
+                className={`mercado-sidebar-tab-circle-btn tab-solicitudes ${activeTab === 'disponibles' ? 'active' : ''}`}
                 onClick={() => {
                   setActiveTab('disponibles');
                   setActiveNavJob(null);
                   setNavDirections(null);
                 }}
+                title="Solicitudes Disponibles"
               >
-                <span>🌐 Solicitudes</span>
-                <span className="mercado-sidebar-tab-badge">{filteredNetworkJobs.length}</span>
+                <div className="mercado-tab-circle">
+                  <Globe size={19} strokeWidth={2.4} />
+                  <span className="mercado-sidebar-tab-badge">{filteredNetworkJobs.length}</span>
+                </div>
               </button>
 
               <button
                 type="button"
-                className={`mercado-sidebar-tab-button tab-aceptados ${activeTab === 'aceptados' ? 'active' : ''}`}
+                className={`mercado-sidebar-tab-circle-btn tab-aceptados ${activeTab === 'aceptados' ? 'active' : ''}`}
                 onClick={() => setActiveTab('aceptados')}
+                title="Trabajos Aceptados"
               >
-                <span>💼 Aceptados</span>
-                <span className="mercado-sidebar-tab-badge">{filteredAcceptedJobs.length}</span>
+                <div className="mercado-tab-circle">
+                  <Briefcase size={19} strokeWidth={2.4} />
+                  <span className="mercado-sidebar-tab-badge">{filteredAcceptedJobs.length}</span>
+                </div>
               </button>
             </div>
 
