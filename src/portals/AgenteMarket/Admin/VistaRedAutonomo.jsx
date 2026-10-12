@@ -6,7 +6,8 @@ import axios from 'axios';
 import ModalServicioAutonomo from './ModalServicioAutonomo';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
-import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft } from 'lucide-react';
+import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon } from 'lucide-react';
+import { DARK_MAP_STYLES } from '../Tecnico/MercadoTrabajos';
 
 const mapContainerStyle = {
   width: '100%',
@@ -48,7 +49,9 @@ const VistaRedAutonomo = () => {
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [networkJobs, setNetworkJobs] = useState([]);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('en_red'); // 'en_red' | 'aceptados'
+  const [mapTheme, setMapTheme] = useState(() => localStorage.getItem('agente_map_theme') || 'dark');
 
   // Client Chat Input State
   const [clientChatInput, setClientChatInput] = useState('');
@@ -537,15 +540,48 @@ const VistaRedAutonomo = () => {
         <div className="mercado-map-section">
           {isLoaded ? (
             <>
-              <div className="mercado-map-overlay-badge">
-                <span className="mercado-map-live-dot" />
-                {activeTab === 'en_red' ? `${enRedJobs.length} en red` : `${aceptadosJobs.length} asignados`}
+              <div className="mercado-map-top-bar">
+                <div className="mercado-map-overlay-badge">
+                  <span className="mercado-map-live-dot" />
+                  {activeTab === 'en_red' ? `${enRedJobs.length} en red` : `${aceptadosJobs.length} asignados`}
+                </div>
+
+                <button
+                  type="button"
+                  className="mercado-map-theme-btn"
+                  onClick={() => {
+                    const next = mapTheme === 'dark' ? 'light' : 'dark';
+                    setMapTheme(next);
+                    localStorage.setItem('agente_map_theme', next);
+                  }}
+                  title={mapTheme === 'dark' ? 'Cambiar a Mapa Claro (Blanco)' : 'Cambiar a Mapa Oscuro (Negro)'}
+                >
+                  {mapTheme === 'dark' ? (
+                    <>
+                      <Sun size={14} />
+                      <span>Mapa Claro</span>
+                    </>
+                  ) : (
+                    <>
+                      <Moon size={14} />
+                      <span>Mapa Oscuro</span>
+                    </>
+                  )}
+                </button>
               </div>
+
               <GoogleMap
                 mapContainerStyle={mapContainerStyle}
                 center={defaultCenter}
                 zoom={13}
-                options={{ disableDefaultUI: false }}
+                options={{ 
+                  disableDefaultUI: false,
+                  styles: mapTheme === 'dark' ? DARK_MAP_STYLES : [],
+                  mapTypeControl: true,
+                  mapTypeControlOptions: {
+                    position: window.google?.maps?.ControlPosition?.TOP_RIGHT || 3
+                  }
+                }}
               >
                 {displayedJobs.map(job => (
                   <React.Fragment key={job.id}>
@@ -607,7 +643,23 @@ const VistaRedAutonomo = () => {
         </div>
 
         {/* ─── Sidebar (Tipo Uber) ─── */}
-        <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''}`}>
+        <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+          
+          {/* Pestaña lateral con flecha para ocultar / mostrar (Edge Tab) */}
+          <button
+            type="button"
+            className="mercado-sidebar-edge-tab"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            title={isSidebarCollapsed ? "Mostrar panel" : "Ocultar panel"}
+            aria-label={isSidebarCollapsed ? "Mostrar panel" : "Ocultar panel"}
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRight size={22} color="#ffffff" strokeWidth={2.8} />
+            ) : (
+              <ChevronLeft size={22} color="#ffffff" strokeWidth={2.8} />
+            )}
+          </button>
+
           <div className="mercado-sidebar-header">
             <div 
               className="mercado-mobile-drag-handle" 
@@ -652,13 +704,13 @@ const VistaRedAutonomo = () => {
                 {activeTab === 'en_red' ? (
                   <>
                     <div style={{ fontSize: '32px', marginBottom: '8px' }}>🌐</div>
-                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#0f172a' }}>No tienes publicaciones abiertas en la red</p>
+                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#ffffff' }}>No tienes publicaciones abiertas en la red</p>
                     <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>Haz clic en "Publicar Problema" para solicitar cotizaciones de técnicos.</span>
                   </>
                 ) : (
                   <>
                     <div style={{ fontSize: '32px', marginBottom: '8px' }}>✅</div>
-                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#0f172a' }}>No tienes trabajos asignados</p>
+                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#ffffff' }}>No tienes trabajos asignados</p>
                     <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>Cuando aceptes la cotización de un técnico, tu servicio aparecerá aquí para coordinar visita y chatear directamente.</span>
                   </>
                 )}

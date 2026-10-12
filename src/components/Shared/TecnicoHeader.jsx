@@ -127,15 +127,6 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
             <span className="vcp-tab-short">CLIENTES{liveUsersCount > 0 ? ` (${liveUsersCount})` : ''}</span>
           </button>
 
-          <button 
-            type="button"
-            className={`vcp-nav-btn ${isPerfilActive ? 'active' : ''}`}
-            onClick={() => navigate('/mi-perfil')}
-            title="Mi perfil profesional"
-          >
-            <span className="vcp-tab-full">MI PERFIL</span>
-            <span className="vcp-tab-short">PERFIL</span>
-          </button>
         </nav>
 
         {/* User profile avatar section & action icons */}

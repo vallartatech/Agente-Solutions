@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
-  X, FileText, Home, Wrench, MessageSquare, Camera, Trash2, PlusCircle, Globe, Users, Shield, AlertCircle, CheckCircle2, UserCheck, Clock, Calendar
+  X, FileText, Home, Wrench, MessageSquare, Camera, Trash2, PlusCircle, Globe, Users, Shield, AlertCircle, CheckCircle2, UserCheck, Clock, Calendar, Check
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Admin/ModalServicioAutonomo.css';
 
@@ -35,6 +35,8 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   
   const [isPhotoMenuOpen, setIsPhotoMenuOpen] = useState(false);
+  const [solicitudExitosa, setSolicitudExitosa] = useState(null);
+  const [errorEnvio, setErrorEnvio] = useState(null);
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
 
@@ -306,23 +308,35 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
 
       const techObj = tecnicos.find(t => String(t.id) === String(targetTechId));
       const techName = techObj ? `${techObj.first_name || techObj.name || ''} ${techObj.last_name || ''}`.trim() : 'tu técnico';
+      const propObj = propiedades.find(p => String(p.id) === String(selectedPropertyId));
+      const propName = propObj ? (propObj.nombre_propiedad || propObj.nombre || propObj.address || `Propiedad #${propObj.id}`) : 'Mi Propiedad';
 
-      const msg = isToNetwork 
-        ? "✅ Solicitud publicada en la red con éxito. Los técnicos disponibles comenzarán a cotizar." 
-        : `✅ Solicitud enviada y asignada a ${techName} con éxito.`;
-      
-      alert(msg);
-      
-      setCarritoServicios([]);
-      setNuevoServicio({ tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', urgencia: 'urgente', fechaProgramada: '', horarioPreferido: '', fotos: [] });
-      if (onSuccess) onSuccess();
-      if (onClose) onClose();
+      // Mostramos la elegante Ficha de Solicitud en vez del alert del navegador
+      const exitosaData = {
+        isToNetwork,
+        techName,
+        propiedadNombre: propName,
+        totalSolicitudes: total,
+        primerServicio: lote[0],
+        loteId: total > 1 ? loteId : null,
+        fecha: new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      };
+
+      setSolicitudExitosa(exitosaData);
     } catch (error) {
       console.error("Error enviando lote:", error);
-      alert("❌ Hubo un error al enviar algunas solicitudes. Por favor, intenta de nuevo.");
+      setErrorEnvio("Hubo un error al procesar tu solicitud. Por favor intenta de nuevo.");
     } finally {
       setLoadingSubmit(false);
     }
+  };
+
+  const handleFinalizarExito = () => {
+    setSolicitudExitosa(null);
+    setCarritoServicios([]);
+    setNuevoServicio({ tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', urgencia: 'urgente', fechaProgramada: '', horarioPreferido: '', fotos: [] });
+    if (onSuccess) onSuccess();
+    if (onClose) onClose();
   };
 
   const totalItemsCount = carritoServicios.length + (nuevoServicio.tipo && nuevoServicio.area_id && nuevoServicio.descripcion ? 1 : 0);
@@ -341,8 +355,8 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
               <h2 className="msa-title">Reportar Problema</h2>
               <p className="msa-subtitle">Especifica los detalles del servicio y elige el destino de envío</p>
             </div>
-            <button className="msa-close-btn" onClick={onClose} title="Cerrar modal">
-              <X size={18} />
+            <button className="msa-close-btn" onClick={onClose} title="Cerrar modal" type="button" aria-label="Cerrar">
+              <X size={18} strokeWidth={2.5} />
             </button>
           </div>
           
@@ -489,11 +503,16 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                   ══════════════════════════════════════════ */}
               <div className="msa-col-right">
 
-                {/* 📷 EVIDENCIA VISUAL (FOTOS) - ARRIBA DE CUÁNDO NECESITAS LA ATENCIÓN */}
-                <div className="msa-card-box" style={{ marginBottom: '14px', background: '#ffffff' }}>
-                  <label className="msa-label" style={{ marginBottom: '6px' }}>
-                    <Camera size={14} color="#ea580c" /> Evidencia Visual (Máx 2 fotos)
-                  </label>
+                {/* 📷 EVIDENCIA VISUAL (FOTOS) */}
+                <div className="msa-card-box msa-evidence-box">
+                  <div className="msa-card-box-header">
+                    <label className="msa-label">
+                      <Camera size={14} color="#ea580c" /> Evidencia Visual
+                    </label>
+                    <span className="msa-counter-badge">
+                      {nuevoServicio.fotos.length}/2 fotos
+                    </span>
+                  </div>
                   
                   <input type="file" ref={cameraRef} hidden accept="image/*" capture="environment" onChange={handleFileSelect} />
                   <input type="file" ref={galleryRef} hidden accept="image/*" multiple onChange={handleFileSelect} />
@@ -503,7 +522,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                       <div key={idx} className="msa-photo-item">
                         <img src={URL.createObjectURL(foto)} alt="preview" />
                         <button type="button" className="msa-photo-remove" onClick={() => removeFoto(idx)} title="Eliminar foto">
-                          <X size={12} />
+                          <X size={12} strokeWidth={2.5} />
                         </button>
                       </div>
                     ))}
@@ -514,10 +533,9 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                         className="msa-photo-add-btn"
                         onClick={() => setIsPhotoMenuOpen(true)}
                         disabled={!selectedPropertyId}
-                        style={{ height: '62px', width: '62px' }}
                       >
-                        <PlusCircle size={18} color="#ea580c" />
-                        <span style={{ fontSize: '9px', fontWeight: '800', marginTop: '2px' }}>FOTO</span>
+                        <PlusCircle size={20} />
+                        <span className="msa-photo-add-label">+ Añadir</span>
                       </button>
                     )}
                   </div>
@@ -525,36 +543,36 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
 
                 {/* LISTA DE PROBLEMAS EN LOTE (CARRITO) */}
                 {carritoServicios.length > 0 && (
-                  <div className="msa-card-box" style={{ marginBottom: '14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <h4 style={{ margin: 0, color: '#0f172a', fontSize: '12.5px', fontWeight: '800' }}>
-                        Problemas en lote ({carritoServicios.length})
+                  <div className="msa-card-box msa-batch-box">
+                    <div className="msa-batch-header">
+                      <h4 className="msa-batch-title">
+                        Problemas agregados ({carritoServicios.length})
                       </h4>
-                      <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Se enviarán juntos</span>
+                      <span className="msa-batch-badge">Se enviarán juntos</span>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
+                    <div className="msa-batch-list">
                       {carritoServicios.map((item, idx) => (
-                        <div key={idx} style={{ display: 'flex', gap: '8px', background: '#ffffff', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', alignItems: 'center' }}>
+                        <div key={idx} className="msa-batch-item">
                           {item.fotos.length > 0 ? (
-                            <img src={URL.createObjectURL(item.fotos[0])} alt="preview" style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #ea580c' }} />
+                            <img src={URL.createObjectURL(item.fotos[0])} alt="preview" className="msa-batch-thumb" />
                           ) : (
-                            <div style={{ width: '36px', height: '36px', background: '#f1f5f9', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FileText size={16} color="#94a3b8"/></div>
+                            <div className="msa-batch-thumb-placeholder"><FileText size={16} color="#94a3b8"/></div>
                           )}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <strong style={{ display: 'block', fontSize: '12px', color: '#ea580c', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <div className="msa-batch-info">
+                            <strong className="msa-batch-item-title">
                               {item.tipo} - {item.zona}
                             </strong>
-                            <span style={{ fontSize: '11px', color: '#64748b', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <span className="msa-batch-item-desc">
                               {item.descripcion}
                             </span>
                           </div>
                           <button 
                             type="button" 
                             onClick={() => setCarritoServicios(carritoServicios.filter((_, i) => i !== idx))} 
-                            style={{ background: '#fee2e2', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '5px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            className="msa-batch-delete-btn"
                             title="Eliminar de la lista"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={13} />
                           </button>
                         </div>
                       ))}
@@ -563,31 +581,18 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                 )}
 
                 {/* ⏰ DISPONIBILIDAD / HORARIO */}
-                <div className="msa-card-box highlight-orange" style={{ marginBottom: '14px' }}>
-                  <label className="msa-label" style={{ color: '#ea580c', marginBottom: '8px' }}>
-                    <Clock size={14} /> ¿Cuándo necesitas la atención?
+                <div className="msa-card-box msa-urgencia-box">
+                  <label className="msa-label">
+                    <Clock size={14} color="#ea580c" /> ¿Cuándo necesitas la atención?
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div className="msa-urgencia-grid">
                     <button
                       type="button"
                       onClick={() => setNuevoServicio({...nuevoServicio, urgencia: 'urgente', fechaProgramada: '', horarioPreferido: ''})}
-                      style={{
-                        padding: '9px 8px',
-                        borderRadius: '10px',
-                        border: nuevoServicio.urgencia === 'urgente' || !nuevoServicio.urgencia ? '2px solid #ea580c' : '1.5px solid #fed7aa',
-                        background: nuevoServicio.urgencia === 'urgente' || !nuevoServicio.urgencia ? '#ea580c' : '#ffffff',
-                        color: nuevoServicio.urgencia === 'urgente' || !nuevoServicio.urgencia ? '#ffffff' : '#334155',
-                        fontWeight: '800',
-                        fontSize: '11.5px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '5px',
-                        transition: 'all 0.2s ease'
-                      }}
+                      className={`msa-urgencia-btn ${nuevoServicio.urgencia === 'urgente' || !nuevoServicio.urgencia ? 'active-urgente' : ''}`}
                     >
-                      ⚡ Urgente (Hoy)
+                      <span className="msa-urgencia-icon">⚡</span>
+                      <span>Urgente (Hoy)</span>
                     </button>
 
                     <button
@@ -598,46 +603,31 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                         fechaProgramada: nuevoServicio.fechaProgramada || new Date(Date.now() + 86400000).toISOString().split('T')[0], 
                         horarioPreferido: nuevoServicio.horarioPreferido || 'Por la tarde (12pm - 5pm)'
                       })}
-                      style={{
-                        padding: '9px 8px',
-                        borderRadius: '10px',
-                        border: nuevoServicio.urgencia === 'programado' ? '2px solid #2563eb' : '1.5px solid #cbd5e1',
-                        background: nuevoServicio.urgencia === 'programado' ? '#2563eb' : '#ffffff',
-                        color: nuevoServicio.urgencia === 'programado' ? '#ffffff' : '#334155',
-                        fontWeight: '800',
-                        fontSize: '11.5px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '5px',
-                        transition: 'all 0.2s ease'
-                      }}
+                      className={`msa-urgencia-btn ${nuevoServicio.urgencia === 'programado' ? 'active-programado' : ''}`}
                     >
-                      <Calendar size={13} /> Programar
+                      <Calendar size={14} />
+                      <span>Programar</span>
                     </button>
                   </div>
 
                   {nuevoServicio.urgencia === 'programado' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #fed7aa' }}>
-                      <div>
-                        <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#475569', display: 'block', marginBottom: '3px' }}>Fecha deseada:</span>
+                    <div className="msa-programar-fields">
+                      <div className="msa-programar-field">
+                        <span className="msa-sublabel">Fecha deseada:</span>
                         <input
                           type="date"
                           value={nuevoServicio.fechaProgramada || ''}
                           min={new Date().toISOString().split('T')[0]}
                           onChange={(e) => setNuevoServicio({...nuevoServicio, fechaProgramada: e.target.value})}
                           className="msa-input"
-                          style={{ padding: '7px 8px', fontSize: '12px' }}
                         />
                       </div>
-                      <div>
-                        <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#475569', display: 'block', marginBottom: '3px' }}>Horario preferido:</span>
+                      <div className="msa-programar-field">
+                        <span className="msa-sublabel">Horario preferido:</span>
                         <select
                           value={nuevoServicio.horarioPreferido || 'Por la tarde (12pm - 5pm)'}
                           onChange={(e) => setNuevoServicio({...nuevoServicio, horarioPreferido: e.target.value})}
                           className="msa-select"
-                          style={{ padding: '7px 8px', fontSize: '12px' }}
                         >
                           <option value="Por la mañana (8am - 12pm)">Mañana (8am - 12pm)</option>
                           <option value="Por la tarde (12pm - 5pm)">Tarde (12pm - 5pm)</option>
@@ -649,9 +639,9 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                   )}
                 </div>
 
-                {/* 🛡️ DESTINO DEL SERVICIO: RED PÚBLICA VS ENVIAR A MIS TÉCNICOS */}
-                <div className="msa-card-box" style={{ padding: '14px', background: '#f8fafc' }}>
-                  <label className="msa-label" style={{ marginBottom: '8px', color: '#0f172a' }}>
+                {/* 🛡️ DESTINO DEL SERVICIO */}
+                <div className="msa-card-box msa-destino-box">
+                  <label className="msa-label">
                     <Shield size={14} color="#ea580c" /> ¿A quién deseas enviar?
                   </label>
 
@@ -662,11 +652,11 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                       onClick={() => setDestinoEnvio('red')}
                       className={`msa-destino-btn ${destinoEnvio === 'red' ? 'active-red' : ''}`}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: '900', fontSize: '12px' }}>
-                        <Globe size={15} />
+                      <div className="msa-destino-btn-head">
+                        <Globe size={16} />
                         <span>A LA RED</span>
                       </div>
-                      <span style={{ fontSize: '10px', fontWeight: '600', opacity: 0.85 }}>
+                      <span className="msa-destino-btn-sub">
                         Técnicos autónomos
                       </span>
                     </button>
@@ -676,11 +666,11 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                       onClick={() => setDestinoEnvio('mis_tecnicos')}
                       className={`msa-destino-btn ${destinoEnvio === 'mis_tecnicos' ? 'active-blue' : ''}`}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: '900', fontSize: '12px' }}>
-                        <Users size={15} />
+                      <div className="msa-destino-btn-head">
+                        <Users size={16} />
                         <span>A MIS TÉCNICOS</span>
                       </div>
-                      <span style={{ fontSize: '10px', fontWeight: '600', opacity: 0.85 }}>
+                      <span className="msa-destino-btn-sub">
                         Tus técnicos ligados
                       </span>
                     </button>
@@ -688,21 +678,20 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
 
                   {/* Panel según destino */}
                   {destinoEnvio === 'mis_tecnicos' ? (
-                    <div>
+                    <div className="msa-destino-panel">
                       {loadingTecnicos ? (
-                        <div style={{ padding: '12px', textAlign: 'center', color: '#64748b', fontSize: '12px', fontWeight: '700' }}>
+                        <div className="msa-loading-tecnicos">
                           Cargando técnicos asociados...
                         </div>
                       ) : tecnicos.length > 0 ? (
-                        <div>
-                          <label style={{ fontSize: '11.5px', fontWeight: '800', color: '#0369a1', display: 'block', marginBottom: '5px' }}>
+                        <div className="msa-tecnicos-wrapper">
+                          <label className="msa-tecnicos-sublabel">
                             Selecciona el técnico que atenderá la solicitud:
                           </label>
                           <select
                             value={selectedTechId}
                             onChange={(e) => setSelectedTechId(e.target.value)}
-                            className="msa-select"
-                            style={{ borderColor: '#bae6fd', marginBottom: '10px', padding: '9px 12px', fontSize: '12.5px' }}
+                            className="msa-select msa-select-tech"
                           >
                             {tecnicos.map(t => {
                               const fullName = `${t.first_name || t.name || ''} ${t.last_name || ''}`.trim() || `Técnico #${t.id}`;
@@ -727,11 +716,11 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                         </div>
                       ) : (
                         /* ESTADO VACÍO CUANDO NO TIENE TÉCNICOS */
-                        <div style={{ padding: '12px', background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '12px', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#b91c1c', fontWeight: '900', fontSize: '12px', marginBottom: '3px' }}>
+                        <div className="msa-no-tecnicos-card">
+                          <div className="msa-no-tecnicos-title">
                             <AlertCircle size={15} /> Sin técnicos vinculados
                           </div>
-                          <p style={{ margin: '0 0 10px 0', fontSize: '11px', color: '#7f1d1d', lineHeight: 1.35 }}>
+                          <p className="msa-no-tecnicos-desc">
                             No tienes técnicos directos registrados. Te recomendamos enviar esta solicitud a la <strong>Red de Técnicos</strong> para recibir cotizaciones.
                           </p>
                           <button
@@ -742,7 +731,6 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                             }}
                             disabled={loadingSubmit || (!selectedPropertyId && carritoServicios.length === 0)}
                             className="msa-btn-submit-orange"
-                            style={{ padding: '10px 14px', fontSize: '0.82rem' }}
                           >
                             <Globe size={15} /> PUBLICAR EN LA RED DE TÉCNICOS
                           </button>
@@ -751,8 +739,8 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                     </div>
                   ) : (
                     /* MODO RED PÚBLICA */
-                    <div>
-                      <p style={{ margin: '0 0 10px 0', fontSize: '11.5px', color: '#64748b', lineHeight: 1.35, textAlign: 'center' }}>
+                    <div className="msa-destino-panel">
+                      <p className="msa-network-desc">
                         Tu solicitud será visible para técnicos de la red para que recibas cotizaciones en tiempo real.
                       </p>
                       <button 
@@ -780,23 +768,171 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
       {isPhotoMenuOpen && (
         <div className="msa-photo-source-overlay" onClick={() => setIsPhotoMenuOpen(false)}>
           <div className="msa-photo-source-modal" onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '14px', textAlign: 'center', borderBottom: '1px solid #eee' }}>
-              <h3 style={{ margin: 0, color: '#f26522', fontSize: '1rem', fontWeight: '900' }}>Seleccionar Origen</h3>
+            <div className="msa-photo-source-header">
+              <h3 className="msa-photo-source-title">Seleccionar Origen</h3>
+              <button 
+                type="button" 
+                className="msa-photo-source-close" 
+                onClick={() => setIsPhotoMenuOpen(false)}
+                title="Cerrar"
+              >
+                <X size={15} strokeWidth={2.5} />
+              </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="msa-photo-source-body">
               <button 
                 type="button"
                 onClick={() => selectPhotoSource('camera')}
-                style={{ background: 'transparent', border: 'none', padding: '13px', color: '#1e293b', borderBottom: '1px solid #eee', fontSize: '0.9rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                className="msa-photo-source-btn"
               >
-                <Camera size={17} color="#ea580c" /> Tomar Foto con Cámara
+                <div className="msa-photo-source-icon camera">
+                  <Camera size={18} />
+                </div>
+                <div className="msa-photo-source-info">
+                  <strong>Tomar Foto con Cámara</strong>
+                  <span>Usa la cámara de tu dispositivo</span>
+                </div>
               </button>
               <button 
                 type="button"
                 onClick={() => selectPhotoSource('gallery')}
-                style={{ background: 'transparent', border: 'none', padding: '13px', color: '#1e293b', fontSize: '0.9rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                className="msa-photo-source-btn"
               >
-                <FileText size={17} color="#0284c7" /> Elegir de Galería
+                <div className="msa-photo-source-icon gallery">
+                  <FileText size={18} />
+                </div>
+                <div className="msa-photo-source-info">
+                  <strong>Elegir de Galería</strong>
+                  <span>Sube archivos o fotos guardadas</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ══════════════════════════════════════════
+          FICHA DE CONFIRMACIÓN / ÉXITO DE SOLICITUD
+          ══════════════════════════════════════════ */}
+      {solicitudExitosa && (
+        <div className="msa-overlay" onClick={handleFinalizarExito}>
+          <div className="msa-ficha-card" onClick={e => e.stopPropagation()}>
+            <div className="msa-ficha-top-bar" />
+            
+            <div className="msa-ficha-header">
+              <div className="msa-ficha-icon-circle">
+                <CheckCircle2 size={36} color="#16a34a" strokeWidth={2.4} />
+              </div>
+              <h3 className="msa-ficha-title">
+                {solicitudExitosa.isToNetwork ? '¡Solicitud Publicada en la Red!' : '¡Solicitud Asignada con Éxito!'}
+              </h3>
+              <p className="msa-ficha-subtitle">
+                {solicitudExitosa.isToNetwork 
+                  ? 'Tu requerimiento ya está visible para los técnicos disponibles para cotizar.' 
+                  : `Se ha notificado y asignado directamente a ${solicitudExitosa.techName}.`}
+              </p>
+            </div>
+
+            {/* CUERPO DE LA FICHA */}
+            <div className="msa-ficha-body">
+              <div className="msa-ficha-badge-row">
+                <span className="msa-ficha-folio">
+                  {solicitudExitosa.loteId ? `LOTE: ${solicitudExitosa.loteId}` : 'FOLIO: EN RED'}
+                </span>
+                <span className={`msa-ficha-status-pill ${solicitudExitosa.isToNetwork ? 'network' : 'tech'}`}>
+                  ● {solicitudExitosa.isToNetwork ? 'EN VIVO EN LA RED' : 'ASIGNADO'}
+                </span>
+              </div>
+
+              <div className="msa-ficha-details-grid">
+                <div className="msa-ficha-item">
+                  <span className="msa-ficha-item-label">
+                    <Home size={13} color="#ea580c" /> Propiedad
+                  </span>
+                  <strong className="msa-ficha-item-val" title={solicitudExitosa.propiedadNombre}>
+                    {solicitudExitosa.propiedadNombre}
+                  </strong>
+                </div>
+
+                <div className="msa-ficha-item">
+                  <span className="msa-ficha-item-label">
+                    <FileText size={13} color="#ea580c" /> Tipo
+                  </span>
+                  <strong className="msa-ficha-item-val">
+                    {solicitudExitosa.primerServicio?.tipo || 'Mantenimiento'}
+                  </strong>
+                </div>
+
+                <div className="msa-ficha-item">
+                  <span className="msa-ficha-item-label">
+                    <Wrench size={13} color="#ea580c" /> Zona
+                  </span>
+                  <strong className="msa-ficha-item-val">
+                    {solicitudExitosa.primerServicio?.zona || 'Área General'}
+                  </strong>
+                </div>
+
+                <div className="msa-ficha-item">
+                  <span className="msa-ficha-item-label">
+                    <Clock size={13} color="#ea580c" /> Atención
+                  </span>
+                  <strong className="msa-ficha-item-val">
+                    {solicitudExitosa.primerServicio?.urgencia === 'programado'
+                      ? `📅 Programado` 
+                      : '⚡ Urgente (Hoy)'}
+                  </strong>
+                </div>
+              </div>
+
+              {solicitudExitosa.primerServicio?.descripcion && (
+                <div className="msa-ficha-desc-box">
+                  <span className="msa-ficha-desc-label">Detalle reportado:</span>
+                  <p className="msa-ficha-desc-text">
+                    "{solicitudExitosa.primerServicio.descripcion}"
+                  </p>
+                </div>
+              )}
+
+              {solicitudExitosa.totalSolicitudes > 1 && (
+                <div className="msa-ficha-batch-banner">
+                  <span>💼 Incluye {solicitudExitosa.totalSolicitudes} problemas enviados en este lote</span>
+                </div>
+              )}
+            </div>
+
+            {/* BOTÓN ACEPTAR */}
+            <div className="msa-ficha-footer">
+              <button
+                type="button"
+                className="msa-ficha-btn-ok"
+                onClick={handleFinalizarExito}
+              >
+                <Check size={18} strokeWidth={2.5} />
+                <span>Aceptar y Ver en el Mapa</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ERROR (SI FALLA EL ENVÍO) */}
+      {errorEnvio && (
+        <div className="msa-overlay" onClick={() => setErrorEnvio(null)}>
+          <div className="msa-ficha-card" onClick={e => e.stopPropagation()}>
+            <div className="msa-ficha-top-bar error" />
+            <div className="msa-ficha-header">
+              <div className="msa-ficha-icon-circle error">
+                <AlertCircle size={36} color="#ef4444" strokeWidth={2.4} />
+              </div>
+              <h3 className="msa-ficha-title">No se pudo enviar la solicitud</h3>
+              <p className="msa-ficha-subtitle">{errorEnvio}</p>
+            </div>
+            <div className="msa-ficha-footer">
+              <button
+                type="button"
+                className="msa-ficha-btn-error"
+                onClick={() => setErrorEnvio(null)}
+              >
+                Reintentar
               </button>
             </div>
           </div>

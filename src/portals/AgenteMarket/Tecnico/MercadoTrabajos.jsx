@@ -9,7 +9,8 @@ import {
   X, List, Map as MapIcon, MessageCircle, AlertCircle, CheckCircle2, Phone, Calendar, 
   ChevronLeft, ChevronRight, ExternalLink, CalendarDays, Search, LogOut, Briefcase, Layers, ShieldCheck,
   RotateCw, AlertTriangle, Users, UserPlus, PhoneCall, Mail, Star, Award, History,
-  Home, Car, Navigation, Wrench, Camera, Plus, Trash2, Check, ArrowRight, Play, Eye, Sparkles, Lock, Zap
+  Home, Car, Navigation, Wrench, Camera, Plus, Trash2, Check, ArrowRight, Play, Eye, Sparkles, Lock, Zap,
+  Sun, Moon
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import { useAuth } from '../../../context/AuthContext';
@@ -372,9 +373,11 @@ const MercadoTrabajos = () => {
   const [activePhoto, setActivePhoto] = useState(null);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('disponibles'); // 'disponibles' | 'aceptados'
   const [acceptedJobs, setAcceptedJobs] = useState([]);
   const [activeModalTab, setActiveModalTab] = useState('detalle'); // 'detalle' | 'chat'
+  const [mapTheme, setMapTheme] = useState(() => localStorage.getItem('agente_map_theme') || 'dark');
   
   // Live GPS & Navigation State (Uber Style)
   const [technicianLocation, setTechnicianLocation] = useState({ lat: 21.0181, lng: -89.6242 });
@@ -3085,7 +3088,23 @@ const MercadoTrabajos = () => {
           </button>
 
           {/* ─── Sidebar (Solo Trabajos Disponibles / Solicitudes) ─── */}
-          <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''}`}>
+          <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+            
+            {/* Pestaña lateral con flecha para ocultar / mostrar (Edge Tab) */}
+            <button
+              type="button"
+              className="mercado-sidebar-edge-tab"
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              title={isSidebarCollapsed ? "Mostrar panel" : "Ocultar panel"}
+              aria-label={isSidebarCollapsed ? "Mostrar panel" : "Ocultar panel"}
+            >
+              {isSidebarCollapsed ? (
+                <ChevronRight size={22} color="#ffffff" strokeWidth={2.8} />
+              ) : (
+                <ChevronLeft size={22} color="#ffffff" strokeWidth={2.8} />
+              )}
+            </button>
+
             <div className="mercado-sidebar-header">
               <div 
                 className="mercado-mobile-drag-handle" 
@@ -3349,18 +3368,51 @@ const MercadoTrabajos = () => {
           <div className="mercado-map-section" style={{ position: 'relative' }}>
             {isLoaded ? (
               <>
-                <div className="mercado-map-overlay-badge">
-                  <span className="mercado-map-live-dot" />
-                  {activeTab === 'disponibles' 
-                    ? `${filteredNetworkJobs.length} disponibles` 
-                    : `💼 ${filteredAcceptedJobs.length} trabajos aceptados`}
+                <div className="mercado-map-top-bar">
+                  <div className="mercado-map-overlay-badge">
+                    <span className="mercado-map-live-dot" />
+                    {activeTab === 'disponibles' 
+                      ? `${filteredNetworkJobs.length} disponibles` 
+                      : `💼 ${filteredAcceptedJobs.length} trabajos aceptados`}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="mercado-map-theme-btn"
+                    onClick={() => {
+                      const next = mapTheme === 'dark' ? 'light' : 'dark';
+                      setMapTheme(next);
+                      localStorage.setItem('agente_map_theme', next);
+                    }}
+                    title={mapTheme === 'dark' ? 'Cambiar a Mapa Claro (Blanco)' : 'Cambiar a Mapa Oscuro (Negro)'}
+                  >
+                    {mapTheme === 'dark' ? (
+                      <>
+                        <Sun size={14} />
+                        <span>Mapa Claro</span>
+                      </>
+                    ) : (
+                      <>
+                        <Moon size={14} />
+                        <span>Mapa Oscuro</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <GoogleMap
                   mapContainerStyle={mapContainerStyle}
                   center={activeNavJob ? { lat: activeNavJob.lat, lng: activeNavJob.lng } : defaultCenter}
                   zoom={activeNavJob ? 14 : 13}
-                  options={{ disableDefaultUI: false, styles: DARK_MAP_STYLES, clickableIcons: false }}
+                  options={{ 
+                    disableDefaultUI: false, 
+                    styles: mapTheme === 'dark' ? DARK_MAP_STYLES : [], 
+                    clickableIcons: false,
+                    mapTypeControl: true,
+                    mapTypeControlOptions: {
+                      position: window.google?.maps?.ControlPosition?.TOP_RIGHT || 3
+                    }
+                  }}
                 >
                   {/* PESTAÑA DISPONIBLES: Marcadores de Trabajos Disponibles */}
                   {activeTab === 'disponibles' && filteredNetworkJobs.map(job => (
