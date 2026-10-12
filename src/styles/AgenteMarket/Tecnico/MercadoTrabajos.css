@@ -551,15 +551,16 @@
 .mercado-sidebar-edge-tab {
   position: absolute;
   top: 70px;
-  left: 100%;
+  left: calc(100% - 1.5px);
   width: 36px;
   height: 72px;
   background: linear-gradient(145deg,
-      rgba(15, 23, 42, 0.88) 0%,
-      rgba(10, 15, 28, 0.82) 100%) !important;
+      rgba(24, 32, 52, 0.85) 0%,
+      rgba(18, 24, 40, 0.80) 50%,
+      rgba(22, 30, 48, 0.85) 100%) !important;
   backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
   -webkit-backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.20) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
   border-left: none !important;
   border-radius: 0 18px 18px 0;
   display: flex;
@@ -568,7 +569,7 @@
   cursor: pointer;
   color: #ffffff;
   box-shadow: 
-    8px 4px 22px rgba(0, 0, 0, 0.55), 
+    8px 4px 20px rgba(0, 0, 0, 0.45), 
     inset 0 1px 1px rgba(255, 255, 255, 0.20) !important;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 25;
@@ -578,8 +579,8 @@
 
 .mercado-sidebar-edge-tab:hover {
   background: linear-gradient(145deg,
-      rgba(242, 101, 34, 0.4) 0%,
-      rgba(15, 23, 42, 0.9) 100%) !important;
+      rgba(242, 101, 34, 0.45) 0%,
+      rgba(24, 32, 52, 0.90) 100%) !important;
   border-color: #f26522 !important;
   box-shadow: 10px 4px 26px rgba(0, 0, 0, 0.75), 0 0 16px rgba(242, 101, 34, 0.35) !important;
 }
@@ -601,12 +602,12 @@
 }
 
 .mercado-sidebar-header {
-  padding: 22px 20px 16px;
+  padding: 16px 18px 12px;
   border-bottom: 1.5px solid rgba(255, 255, 255, 0.12) !important;
   background: linear-gradient(180deg, rgba(242, 101, 34, 0.12) 0%, rgba(15, 23, 42, 0.45) 100%) !important;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   border-radius: 24px 24px 0 0;
 }
 
@@ -637,11 +638,11 @@
 
 .mercado-sidebar-subtitle {
   font-family: 'Outfit', sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 900;
   color: #ffffff;
   margin: 0;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.3px;
 }
 
 .mercado-sidebar-desc {
@@ -649,6 +650,269 @@
   color: #94a3b8;
   margin: 0;
   line-height: 1.4;
+}
+
+/* Search & Filter Row */
+.mercado-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.mercado-search-row .mercado-search-box {
+  flex: 1;
+  margin-top: 0;
+}
+
+/* Filter Toggle Button (Liquid Glass) */
+.mercado-filter-btn {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.mercado-filter-btn svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+  display: block !important;
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0 !important;
+}
+
+.mercado-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.mercado-filter-btn.active {
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.35) 0%, rgba(242, 101, 34, 0.15) 100%) !important;
+  border-color: #f26522 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(242, 101, 34, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
+}
+
+.mercado-filter-btn.has-active:not(.active) {
+  border-color: rgba(242, 101, 34, 0.75) !important;
+  color: #f26522;
+}
+
+.mercado-filter-badge-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f26522;
+  box-shadow: 0 0 8px #f26522;
+  border: 1.5px solid #0f172a;
+}
+
+/* Filter Panel (Dark Liquid Glass) */
+.mercado-filter-panel {
+  background: linear-gradient(160deg, rgba(24, 32, 52, 0.94) 0%, rgba(15, 23, 42, 0.96) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  animation: filterPanelFadeIn 0.22s ease-out;
+}
+
+@keyframes filterPanelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mercado-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+}
+
+.mercado-filter-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+}
+
+.mercado-filter-reset-link {
+  background: transparent;
+  border: none;
+  color: #f26522;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.mercado-filter-reset-link:hover {
+  background: rgba(242, 101, 34, 0.15);
+  text-decoration: underline;
+}
+
+.mercado-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mercado-filter-group-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.mercado-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.mercado-filter-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.mercado-filter-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.mercado-filter-chip.active {
+  background: rgba(242, 101, 34, 0.24) !important;
+  border-color: #f26522 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.35) !important;
+  font-weight: 800 !important;
+}
+
+.mercado-filter-custom-date-box {
+  width: 100%;
+}
+
+.mercado-filter-date-picker {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  color: #ffffff;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.mercado-filter-date-picker::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.mercado-filter-date-picker:focus {
+  border-color: #f26522 !important;
+  box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.25) !important;
+}
+
+.mercado-filter-select {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 11.5px;
+  color: #ffffff;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mercado-filter-select option {
+  background: #141b2d;
+  color: #ffffff;
+  padding: 8px;
+}
+
+.mercado-filter-select:focus {
+  border-color: #f26522 !important;
+  box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.25) !important;
+}
+
+.mercado-filter-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.mercado-filter-panel-done-btn {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  border: none;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(242, 101, 34, 0.35);
+  transition: all 0.2s ease;
+}
+
+.mercado-filter-panel-done-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.5);
 }
 
 /* Search Box (Image 4 Style) */
@@ -5860,17 +6124,124 @@
    SIDEBAR TABS & LIVE GPS UBER-STYLE NAVIGATION PANEL
    ========================================================================== */
 
-.mercado-sidebar-tabs-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  background: rgba(10, 15, 28, 0.45) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
+.mercado-sidebar-tabs-container,
+.mercado-sidebar-tabs {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 20px !important;
+  padding: 10px 16px 12px !important;
+  background: transparent !important;
   border-bottom: 1.5px solid rgba(255, 255, 255, 0.10) !important;
-  padding: 4px;
-  gap: 4px;
+  border-radius: 0 !important;
 }
 
+/* Botón Circular Único (Sin texto, compacto) */
+.mercado-sidebar-tab-circle-btn,
+.mercado-tab-circle-btn {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  outline: none !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+}
+
+.mercado-sidebar-tab-circle-btn:hover,
+.mercado-tab-circle-btn:hover {
+  transform: translateY(-1.5px) scale(1.08) !important;
+}
+
+/* El Círculo Pequeño con fondo Liquid Glass idéntico a la Card */
+.mercado-tab-circle {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  /* Fondo Liquid Glass igual a la card */
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.20) !important;
+}
+
+/* Íconos blancos */
+.mercado-tab-circle svg {
+  width: 19px !important;
+  height: 19px !important;
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+  stroke-width: 2.2px !important;
+  display: block !important;
+  transition: transform 0.2s ease, stroke 0.2s ease !important;
+}
+
+/* Badge con el conteo compacto */
+.mercado-tab-circle .mercado-sidebar-tab-badge {
+  position: absolute !important;
+  top: -3px !important;
+  right: -3px !important;
+  min-width: 17px !important;
+  height: 17px !important;
+  padding: 0 4px !important;
+  border-radius: 10px !important;
+  background: rgba(15, 23, 42, 0.90) !important;
+  border: 1.2px solid rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+  line-height: 1 !important;
+}
+
+/* Hover State */
+.mercado-sidebar-tab-circle-btn:hover .mercado-tab-circle,
+.mercado-tab-circle-btn:hover .mercado-tab-circle {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.40) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.30) !important;
+}
+
+/* ACTIVE STATE (Círculo Activo con resplandor blanco liquid glass) */
+.mercado-sidebar-tab-circle-btn.active .mercado-tab-circle,
+.mercado-tab-circle-btn.active .mercado-tab-circle {
+  background: rgba(255, 255, 255, 0.22) !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.45), 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+  transform: scale(1.08) !important;
+}
+
+.mercado-sidebar-tab-circle-btn.active .mercado-tab-circle svg,
+.mercado-tab-circle-btn.active .mercado-tab-circle svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.mercado-sidebar-tab-circle-btn.active .mercado-tab-circle .mercado-sidebar-tab-badge,
+.mercado-tab-circle-btn.active .mercado-tab-circle .mercado-sidebar-tab-badge {
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+
+/* Legacy fallback support */
 .mercado-sidebar-tab-button {
   background: transparent;
   border: none;
@@ -5888,47 +6259,6 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
   font-family: inherit;
-}
-
-.mercado-sidebar-tab-button:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
-}
-
-.mercado-sidebar-tab-button.active {
-  background: rgba(255, 255, 255, 0.12) !important;
-  backdrop-filter: blur(12px) !important;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
-}
-
-.mercado-sidebar-tab-button.active.tab-solicitudes {
-  color: #f26522;
-  border-bottom: 2px solid #f26522;
-}
-
-.mercado-sidebar-tab-button.active.tab-aceptados {
-  color: #38bdf8;
-  border-bottom: 2px solid #38bdf8;
-}
-
-.mercado-sidebar-tab-badge {
-  background: rgba(255, 255, 255, 0.1);
-  color: inherit;
-  padding: 2px 6px;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.mercado-sidebar-tab-button.active.tab-solicitudes .mercado-sidebar-tab-badge {
-  background: #f26522;
-  color: #ffffff;
-}
-
-.mercado-sidebar-tab-button.active.tab-aceptados .mercado-sidebar-tab-badge {
-  background: #0284c7;
-  color: #ffffff;
 }
 
 /* Smart Glow Pulse Animation */

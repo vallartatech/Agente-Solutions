@@ -6,8 +6,8 @@ import axios from 'axios';
 import ModalServicioAutonomo from './ModalServicioAutonomo';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
-import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon } from 'lucide-react';
-import { DARK_MAP_STYLES } from '../Tecnico/MercadoTrabajos';
+import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase } from 'lucide-react';
+import { DARK_MAP_STYLES, getCategoryIcon } from '../Tecnico/MercadoTrabajos';
 
 const mapContainerStyle = {
   width: '100%',
@@ -665,8 +665,8 @@ const VistaRedAutonomo = () => {
               className="mercado-mobile-drag-handle" 
               onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)} 
             />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <p className="mercado-sidebar-title">🔴 Panel Cliente</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 className="mercado-sidebar-subtitle" style={{ margin: 0, fontSize: '18px', fontWeight: '900' }}>Trabajos en Red</h2>
               <button 
                 className="red-btn-publish"
                 onClick={() => setShowModal(true)}
@@ -674,27 +674,32 @@ const VistaRedAutonomo = () => {
                 <Plus size={16} /> Publicar Problema
               </button>
             </div>
-            <h2 className="mercado-sidebar-subtitle">Mis Publicaciones</h2>
-            <p className="mercado-sidebar-desc">Tus reportes en la red y servicios asignados</p>
           </div>
 
-          {/* Selector de Pestañas (En Red vs Asignados) */}
-          <div className="mercado-sidebar-tabs">
+          {/* Selector de Pestañas: En Red vs Asignados (Solo Círculos Iconos con Liquid Glass) */}
+          <div className="mercado-sidebar-tabs-container">
             <button
               type="button"
-              className={`mercado-tab-btn ${activeTab === 'en_red' ? 'active' : ''}`}
+              className={`mercado-sidebar-tab-circle-btn tab-solicitudes ${activeTab === 'en_red' ? 'active' : ''}`}
               onClick={() => setActiveTab('en_red')}
+              title="Publicaciones en la red"
             >
-              🌐 En Red
-              <span className="mercado-tab-badge">{enRedJobs.length}</span>
+              <div className="mercado-tab-circle">
+                <Globe size={19} strokeWidth={2.4} />
+                <span className="mercado-sidebar-tab-badge">{enRedJobs.length}</span>
+              </div>
             </button>
+
             <button
               type="button"
-              className={`mercado-tab-btn tab-accepted ${activeTab === 'aceptados' ? 'active' : ''}`}
+              className={`mercado-sidebar-tab-circle-btn tab-aceptados ${activeTab === 'aceptados' ? 'active' : ''}`}
               onClick={() => setActiveTab('aceptados')}
+              title="Trabajos asignados"
             >
-              ✓ Asignados
-              <span className="mercado-tab-badge">{aceptadosJobs.length}</span>
+              <div className="mercado-tab-circle">
+                <Briefcase size={19} strokeWidth={2.4} />
+                <span className="mercado-sidebar-tab-badge">{aceptadosJobs.length}</span>
+              </div>
             </button>
           </div>
 
@@ -717,115 +722,131 @@ const VistaRedAutonomo = () => {
               </div>
             )}
 
-            {displayedJobs.map(job => (
-              <div
-                key={job.id}
-                className={`mercado-job-card ${selectedJobForQuotes?.id === job.id ? 'active' : ''}`}
-                onClick={() => openQuotesModal(job)}
-              >
-                <div className="mercado-job-card-top">
-                  <h4>{job.titulo}</h4>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                    {job.is_urgent ? (
-                      <span className="mercado-urgency-badge urgent">⚡ Urgente</span>
-                    ) : (job.scheduled_at || job.priority === 'Programado') ? (
-                      <span className="mercado-urgency-badge scheduled">📅 Programado</span>
-                    ) : null}
-                    <span className={`mercado-job-badge ${job.is_accepted ? 'badge-accepted' : 'badge-pending'}`}>
-                      {job.is_accepted ? 'Asignado a Técnico' : job.estado}
-                    </span>
-                  </div>
-                </div>
-
-                {job.is_accepted && job.assigned_tech_name && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '800', color: '#16a34a', margin: '4px 0 2px 0' }}>
-                    <User size={13} color="#16a34a" />
-                    <span>Técnico: {job.assigned_tech_name}</span>
-                    {job.agreed_price > 0 && (
-                      <span style={{ color: '#ea580c', marginLeft: 'auto' }}>
-                        ${job.agreed_price.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                <div className="mercado-job-meta">
-                  <span style={{ color: '#ea580c', fontWeight: '700' }}><MapPin size={11} /> {job.zona}</span>
-                  <span><Clock size={11} /> {job.fecha}</span>
-                </div>
-
-                {/* HORARIO DE VISITA / ESTADO */}
-                {job.scheduled_at && (() => {
-                  const sched = getJobScheduleStatus(job);
-                  if (sched.isRescheduleRequested) {
-                    return (
-                      <div style={{ fontSize: '11.5px', padding: '6px 10px', borderRadius: '8px', background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>⚠️</span>
-                        <span><strong>Re-coordinación:</strong> Solicitaste cambio de horario</span>
-                      </div>
-                    );
-                  }
-                  if (sched.isScheduleConfirmed) {
-                    return (
-                      <div style={{ fontSize: '11.5px', padding: '6px 10px', borderRadius: '8px', background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>✅</span>
-                        <span><strong>Visita Confirmada:</strong> {new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                      </div>
-                    );
-                  }
-                  return (
-                    <div style={{ fontSize: '11.5px', padding: '6px 10px', borderRadius: '8px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>📅</span>
-                      <span><strong>Visita Propuesta:</strong> {new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })} (Por confirmar)</span>
+            {displayedJobs.map(job => {
+              const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
+              const sched = job.scheduled_at ? getJobScheduleStatus(job) : null;
+              return (
+                <div
+                  key={job.id}
+                  className={`mercado-job-card ${job.is_accepted ? 'accepted-job' : ''} ${selectedJobForQuotes?.id === job.id ? 'active' : ''}`}
+                  onClick={() => openQuotesModal(job)}
+                >
+                  <div className="mercado-card-inner-flex">
+                    {/* Circular Category Avatar */}
+                    <div 
+                      className="mercado-card-avatar-circle"
+                      style={{ background: cat.bg, borderColor: cat.color }}
+                      title={cat.label}
+                    >
+                      <span>{cat.icon}</span>
                     </div>
-                  );
-                })()}
 
-                {/* ALERTA DE NUEVO MENSAJE DE TÉCNICO */}
-                {job.hasNewTechMessage && (
-                  <div className="red-publication-msg-alert">
-                    <span className="red-msg-dot-pulse" />
-                    <span>💬 <strong>Mensaje de técnico:</strong> "{job.lastTechMsg?.message}"</span>
-                  </div>
-                )}
+                    <div className="mercado-card-content-wrap">
+                      {/* Top: Colonia, Urgencia y Badge de Estado */}
+                      <div className="mercado-job-card-top">
+                        <div className="mercado-job-colonia-tag">
+                          <MapPin size={12} color="#f26522" />
+                          <span>{job.zona}</span>
+                        </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #f1f5f9', fontSize: '12px' }}>
-                  <span style={{ color: job.is_accepted ? '#16a34a' : '#ea580c', fontWeight: '800' }}>
-                    {job.is_accepted ? '✓ Asignación Activa' : `${job.cotizaciones} ${job.cotizaciones === 1 ? 'oferta recibida' : 'ofertas recibidas'}`}
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {job.is_mine && !job.is_accepted && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteJob(job.id);
-                        }}
-                        title="Eliminar mi publicación"
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#94a3b8',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '4px',
-                          borderRadius: '6px',
-                          transition: 'color 0.2s'
-                        }}
-                        onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
-                        onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    )}
-                    <span style={{ color: job.is_accepted ? '#16a34a' : '#ff6600', fontWeight: '700', cursor: 'pointer' }}>
-                      {job.is_accepted ? 'Ver coordinación →' : 'Ver ofertas →'}
-                    </span>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          {job.is_urgent ? (
+                            <span className="mercado-urgency-badge urgent">⚡ Urgente</span>
+                          ) : (job.scheduled_at || job.priority === 'Programado') ? (
+                            <span className="mercado-urgency-badge scheduled">📅 Programado</span>
+                          ) : null}
+                          <span className={`mercado-job-badge ${job.is_accepted ? 'badge-accepted' : 'badge-pending'}`}>
+                            {job.is_accepted ? 'Asignado a Técnico' : job.estado}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Titulo */}
+                      <h4 className="mercado-job-card-title">{job.titulo}</h4>
+
+                      {/* Técnico asignado si aplica */}
+                      {job.is_accepted && job.assigned_tech_name && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '800', color: '#22c55e', margin: '4px 0 2px 0' }}>
+                          <User size={13} color="#22c55e" />
+                          <span>Técnico: {job.assigned_tech_name}</span>
+                          {job.agreed_price > 0 && (
+                            <span style={{ color: '#ea580c', marginLeft: 'auto' }}>
+                              ${job.agreed_price.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Horario de visita */}
+                      {sched && (
+                        sched.isRescheduleRequested ? (
+                          <div style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '8px', background: 'rgba(234, 88, 12, 0.15)', border: '1px solid rgba(234, 88, 12, 0.35)', color: '#fb923c', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>⚠️</span>
+                            <span><strong>Re-coordinación:</strong> Solicitaste cambio de horario</span>
+                          </div>
+                        ) : sched.isScheduleConfirmed ? (
+                          <div style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '8px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.35)', color: '#4ade80', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>✅</span>
+                            <span><strong>Visita Confirmada:</strong> {new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.35)', color: '#60a5fa', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>📅</span>
+                            <span><strong>Visita Propuesta:</strong> {new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })} (Por confirmar)</span>
+                          </div>
+                        )
+                      )}
+
+                      {/* Mensaje de técnico */}
+                      {job.hasNewTechMessage && (
+                        <div className="red-publication-msg-alert" style={{ marginTop: '6px' }}>
+                          <span className="red-msg-dot-pulse" />
+                          <span>💬 <strong>Mensaje de técnico:</strong> "{job.lastTechMsg?.message}"</span>
+                        </div>
+                      )}
+
+                      {/* Footer */}
+                      <div className="mercado-job-card-footer" style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.10)' }}>
+                        <span className="mercado-ofertas-count" style={{ color: job.is_accepted ? '#22c55e' : '#f26522' }}>
+                          {job.is_accepted ? '✓ Asignación Activa' : `${job.cotizaciones} ${job.cotizaciones === 1 ? 'oferta recibida' : 'ofertas recibidas'}`}
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span className="mercado-fecha-tag"><Clock size={11} /> {job.fecha}</span>
+                          {job.is_mine && !job.is_accepted && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteJob(job.id);
+                              }}
+                              title="Eliminar mi publicación"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#94a3b8',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: '4px',
+                                borderRadius: '6px',
+                                transition: 'color 0.2s'
+                              }}
+                              onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
+                              onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                          <span style={{ color: job.is_accepted ? '#22c55e' : '#f26522', fontWeight: '700', fontSize: '11.5px', cursor: 'pointer' }}>
+                            {job.is_accepted ? 'Ver coordinación →' : 'Ver ofertas →'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
