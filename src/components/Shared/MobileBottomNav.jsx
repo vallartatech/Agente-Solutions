@@ -1,24 +1,40 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
+  Home,
   Globe,
-  Calendar,
   Users,
   FileText,
   Receipt,
   Wrench
 } from 'lucide-react';
-import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
 import '../../styles/Shared/MobileBottomNav.css';
 
 const MobileBottomNav = ({ activeModule }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const [showCalendarModal, setShowCalendarModal] = useState(false);
 
   const currentPath = (location.pathname || '').toLowerCase();
+
+  const irAlInicio = () => {
+    if (!user) return navigate('/');
+    const role = Number(user?.role_id ?? 0);
+    if (role === 0 || role === 1) navigate('/VistaRoot');
+    else if (role === 4 || role === 5 || role === 7 || role === 3) navigate('/VistaMarket');
+    else if (role === 2) navigate('/VistaTecnico');
+    else if (role === 6 || role === 8) navigate('/mercado-trabajos');
+    else navigate('/VistaMarket');
+  };
+
+  const isInicioActive = 
+    activeModule === 'inicio' || 
+    currentPath === '/' || 
+    currentPath === '/vistamarket' || 
+    currentPath === '/vistaroot' || 
+    currentPath === '/vistaclienteparticular' || 
+    currentPath === '/vistatecnico';
 
   const isMercadoActive = 
     activeModule === 'mercado' || 
@@ -50,9 +66,19 @@ const MobileBottomNav = ({ activeModule }) => {
     currentPath.includes('/levantamientos');
 
   return (
-    <>
-      <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil">
-        {/* 1. MUNDO / RED / MERCADO (PRIMERO) */}
+    <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil">
+        {/* 1. INICIO (CASITA) - Regresar a la vista principal / casa */}
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isInicioActive ? 'active' : ''}`} 
+          onClick={irAlInicio} 
+          title="Inicio"
+          aria-label="Inicio"
+        >
+          <Home size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
+        {/* 2. MUNDO / RED / MERCADO */}
         <button 
           type="button" 
           className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`} 
@@ -68,17 +94,6 @@ const MobileBottomNav = ({ activeModule }) => {
           aria-label="Mercado / Red"
         >
           <Globe size={22} className="vcp-mobile-nav-icon" />
-        </button>
-
-        {/* 2. CALENDARIO (EN LUGAR DE LA CASITA) */}
-        <button 
-          type="button" 
-          className={`vcp-mobile-nav-item ${showCalendarModal ? 'active' : ''}`} 
-          onClick={() => setShowCalendarModal(true)} 
-          title="Calendario y Citas"
-          aria-label="Calendario y Citas"
-        >
-          <Calendar size={22} className="vcp-mobile-nav-icon" />
         </button>
 
         {/* 3. USUARIOS / CLIENTES */}
@@ -139,13 +154,6 @@ const MobileBottomNav = ({ activeModule }) => {
           <Wrench size={22} className="vcp-mobile-nav-icon" />
         </button>
       </nav>
-
-      {/* Modal de Calendario Global */}
-      <ModalCalendarioCliente
-        isOpen={showCalendarModal}
-        onClose={() => setShowCalendarModal(false)}
-      />
-    </>
   );
 };
 

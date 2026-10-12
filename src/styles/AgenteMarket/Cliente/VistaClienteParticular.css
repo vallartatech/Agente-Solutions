@@ -18,15 +18,16 @@
   box-sizing: border-box;
 }
 
-/* ── TOP NAVIGATION BAR (APPLE LIQUID GLASS TRANSLUCENT) ── */
+/* ── TOP NAVIGATION BAR (DARK LIQUID GLASS TRANSLUCENT) ── */
 .vcp-header,
 .vcp-root .vcp-header {
   height: 82px !important;
-  background: linear-gradient(180deg,
-      rgba(20, 22, 29, 0.65) 0%,
-      rgba(15, 17, 23, 0.45) 100%) !important;
-  backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
+  background: linear-gradient(145deg,
+      rgba(15, 23, 42, 0.84) 0%,
+      rgba(10, 15, 28, 0.76) 50%,
+      rgba(15, 23, 42, 0.82) 100%) !important;
+  backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
   border-bottom: 1.5px solid rgba(255, 255, 255, 0.20) !important;
   display: flex !important;
   align-items: center !important;
@@ -35,7 +36,7 @@
   position: relative !important;
   z-index: 999999 !important; /* CRITICAL: Must be higher than main layout and badges */
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.45),
+    0 8px 32px rgba(0, 0, 0, 0.55),
     inset 0 -1px 1.5px rgba(255, 255, 255, 0.10),
     inset 0 1px 1.5px rgba(255, 255, 255, 0.25) !important;
   flex-shrink: 0 !important;
@@ -1088,16 +1089,16 @@
 }
 
 
-/* ── RIGHT PROPERTY PROFILE PANEL (APPLE ULTRA LIQUID GLASS - HIGH TRANSPARENCY) ── */
+/* ── RIGHT PROPERTY PROFILE PANEL (DARK LIQUID GLASS - HIGH CONTRAST) ── */
 .vcp-panel-side {
   position: relative;
   z-index: 10;
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.16) 0%,
-      rgba(255, 255, 255, 0.05) 50%,
-      rgba(255, 255, 255, 0.12) 100%);
-  backdrop-filter: blur(24px) saturate(190%) contrast(105%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%) contrast(105%);
+  background: linear-gradient(145deg,
+      rgba(15, 23, 42, 0.82) 0%,
+      rgba(10, 15, 28, 0.72) 50%,
+      rgba(15, 23, 42, 0.80) 100%);
+  backdrop-filter: blur(28px) saturate(200%) contrast(108%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%) contrast(108%);
   border-radius: 26px;
   margin: 0;
   padding: 16px 18px;
@@ -1106,12 +1107,12 @@
   justify-content: space-between;
   height: 100%;
   max-height: 100%;
-  border: 1.5px solid rgba(255, 255, 255, 0.38);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
   box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.45),
-    inset 0 1.5px 2px rgba(255, 255, 255, 0.75),
-    inset 0 -1px 1.5px rgba(0, 0, 0, 0.12),
-    0 0 0 1px rgba(255, 255, 255, 0.15);
+    0 24px 60px rgba(0, 0, 0, 0.60),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.35),
+    inset 0 -1px 1.5px rgba(0, 0, 0, 0.40),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
   color: #ffffff;
   box-sizing: border-box;
   animation: vcpSlidePanel 0.45s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1128,15 +1129,15 @@
 }
 
 .vcp-panel-side:hover {
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.22) 0%,
-      rgba(255, 255, 255, 0.08) 50%,
-      rgba(255, 255, 255, 0.18) 100%);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: linear-gradient(145deg,
+      rgba(15, 23, 42, 0.88) 0%,
+      rgba(10, 15, 28, 0.78) 50%,
+      rgba(15, 23, 42, 0.85) 100%);
+  border-color: rgba(255, 255, 255, 0.32);
   box-shadow:
-    0 26px 60px rgba(0, 0, 0, 0.55),
-    inset 0 2px 3px rgba(255, 255, 255, 0.9),
-    0 0 0 1px rgba(255, 255, 255, 0.25);
+    0 28px 70px rgba(0, 0, 0, 0.70),
+    inset 0 2px 3px rgba(255, 255, 255, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
 @keyframes vcpSlidePanel {
@@ -1269,8 +1270,8 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: #ffffff;
@@ -1278,7 +1279,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.35);
 }
 
 .vcp-field-content {
@@ -1296,7 +1297,7 @@
   letter-spacing: 0.8px;
   text-transform: uppercase;
   margin-bottom: 1px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .vcp-field-value {
@@ -1304,12 +1305,12 @@
   font-weight: 800;
   color: #ffffff;
   line-height: 1.25;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
 }
 
 .vcp-curp-pill {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1.5px solid rgba(255, 255, 255, 0.40);
+  background: rgba(10, 14, 26, 0.65);
+  border: 1.5px solid rgba(255, 255, 255, 0.24);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   padding: 3px 12px;
@@ -1320,7 +1321,7 @@
   color: #ffffff;
   letter-spacing: 0.5px;
   display: inline-block;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2), inset 0 1px 1.5px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 1.5px rgba(255, 255, 255, 0.35);
 }
 
 .vcp-gps-row {
@@ -1340,22 +1341,23 @@
   text-decoration: underline;
 }
 
-/* ── TABLERO DE CONTROL WIDGET (FROSTED WHITE LIQUID GLASS) ── */
+/* ── TABLERO DE CONTROL WIDGET (DARK LIQUID GLASS) ── */
 .vcp-tablero-card {
   background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.16) 0%,
-      rgba(255, 255, 255, 0.06) 50%,
-      rgba(255, 255, 255, 0.14) 100%);
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.02) 50%,
+      rgba(255, 255, 255, 0.06) 100%),
+    rgba(10, 14, 26, 0.50);
   backdrop-filter: blur(20px) saturate(190%) contrast(105%);
   -webkit-backdrop-filter: blur(20px) saturate(190%) contrast(105%);
   border-radius: 20px;
   padding: 12px 12px 14px 12px;
   margin: 6px 0 8px 0;
   box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.30),
-    inset 0 1.5px 2px rgba(255, 255, 255, 0.60),
-    inset 0 -1px 1.5px rgba(0, 0, 0, 0.12);
-  border: 1.5px solid rgba(255, 255, 255, 0.32);
+    0 12px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.25),
+    inset 0 -1px 1.5px rgba(0, 0, 0, 0.30);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1366,13 +1368,14 @@
 
 .vcp-tablero-card:hover {
   background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.22) 0%,
-      rgba(255, 255, 255, 0.10) 50%,
-      rgba(255, 255, 255, 0.18) 100%);
-  border-color: rgba(255, 255, 255, 0.50);
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0.04) 50%,
+      rgba(255, 255, 255, 0.08) 100%),
+    rgba(10, 14, 26, 0.60);
+  border-color: rgba(255, 255, 255, 0.28);
   box-shadow:
-    0 16px 38px rgba(0, 0, 0, 0.40),
-    inset 0 2px 3px rgba(255, 255, 255, 0.80);
+    0 16px 38px rgba(0, 0, 0, 0.55),
+    inset 0 2px 3px rgba(255, 255, 255, 0.35);
 }
 
 .vcp-tablero-header {
@@ -1387,8 +1390,8 @@
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   display: flex;
@@ -1396,7 +1399,7 @@
   justify-content: center;
   color: #ffffff;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .vcp-tablero-title {
@@ -1407,10 +1410,10 @@
   margin: 0;
   letter-spacing: -0.2px;
   line-height: 1.2;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
-/* 4-Stat Box Quad Grid (Uniform Frosted White Tiles) */
+/* 4-Stat Box Quad Grid (Dark Frosted Liquid Glass Tiles) */
 .vcp-tablero-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1418,8 +1421,8 @@
 }
 
 .vcp-stat-box {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
-  border: 1.5px solid rgba(255, 255, 255, 0.32);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.03) 100%), rgba(15, 23, 42, 0.45);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
   border-radius: 13px;
   padding: 8px 2px 7px 2px;
   display: flex;
@@ -1432,14 +1435,14 @@
   user-select: none;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.20), inset 0 1px 1.5px rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.30), inset 0 1px 1.5px rgba(255, 255, 255, 0.25);
 }
 
 .vcp-stat-box:hover {
   transform: translateY(-2px) scale(1.04);
-  background: rgba(255, 255, 255, 0.28);
-  border-color: rgba(255, 255, 255, 0.70);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.30), inset 0 1px 2px rgba(255, 255, 255, 0.7);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 100%), rgba(15, 23, 42, 0.60);
+  border-color: rgba(255, 255, 255, 0.38);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.40);
 }
 
 .vcp-stat-box:active {
@@ -2319,20 +2322,20 @@
   }
 
   .vcp-property-profile-inner.is-mobile-inner {
-    background: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.18) 0%,
-        rgba(255, 255, 255, 0.06) 50%,
-        rgba(255, 255, 255, 0.14) 100%) !important;
-    backdrop-filter: blur(24px) saturate(190%) contrast(105%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(190%) contrast(105%) !important;
-    border: 1.5px solid rgba(255, 255, 255, 0.38) !important;
+    background: linear-gradient(145deg,
+        rgba(15, 23, 42, 0.84) 0%,
+        rgba(10, 15, 28, 0.76) 50%,
+        rgba(15, 23, 42, 0.82) 100%) !important;
+    backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.24) !important;
     border-radius: 26px !important;
     padding: 16px 16px 18px 16px !important;
     box-shadow:
-      0 20px 50px rgba(0, 0, 0, 0.45),
-      inset 0 1.5px 2px rgba(255, 255, 255, 0.75),
-      inset 0 -1px 1.5px rgba(0, 0, 0, 0.12),
-      0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+      0 24px 60px rgba(0, 0, 0, 0.65),
+      inset 0 1.5px 2px rgba(255, 255, 255, 0.35),
+      inset 0 -1px 1.5px rgba(0, 0, 0, 0.40),
+      0 0 0 1px rgba(255, 255, 255, 0.10) !important;
     width: 100% !important;
     color: #ffffff !important;
     box-sizing: border-box !important;
@@ -2376,11 +2379,12 @@
   .vcp-root .vcp-header {
     padding: 8px 12px !important;
     z-index: 999999 !important;
-    background: linear-gradient(180deg,
-        rgba(20, 22, 29, 0.85) 0%,
-        rgba(15, 17, 23, 0.70) 100%) !important;
-    backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
+    background: linear-gradient(145deg,
+        rgba(15, 23, 42, 0.88) 0%,
+        rgba(10, 15, 28, 0.80) 50%,
+        rgba(15, 23, 42, 0.86) 100%) !important;
+    backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
     border-bottom: 1.5px solid rgba(255, 255, 255, 0.20) !important;
   }
 

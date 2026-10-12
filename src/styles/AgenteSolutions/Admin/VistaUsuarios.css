@@ -32,11 +32,14 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: linear-gradient(180deg, rgba(20, 22, 29, 0.65) 0%, rgba(15, 17, 23, 0.45) 100%) !important;
-  backdrop-filter: blur(24px) saturate(180%) contrast(105%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) contrast(105%) !important;
+  background: linear-gradient(145deg,
+      rgba(15, 23, 42, 0.84) 0%,
+      rgba(10, 15, 28, 0.76) 50%,
+      rgba(15, 23, 42, 0.82) 100%) !important;
+  backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
   border-bottom: 1.5px solid rgba(255, 255, 255, 0.20) !important;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
 }
 
 .vu-root .vcp-header-left {

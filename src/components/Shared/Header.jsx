@@ -217,13 +217,13 @@ const Header = ({ activeModule }) => {
             )}
           </button>
         </div>
-
-        {/* MODAL GLOBAL DE CALENDARIO DE CLIENTE */}
-        <ModalCalendarioCliente 
-          isOpen={mostrarCalendario} 
-          onClose={() => setMostrarCalendario(false)} 
-        />
       </header>
+
+      {/* MODAL GLOBAL DE CALENDARIO DE CLIENTE */}
+      <ModalCalendarioCliente 
+        isOpen={mostrarCalendario} 
+        onClose={() => setMostrarCalendario(false)} 
+      />
 
       {/* ── PORTAL GLOBAL DE PERFIL FLOTANTE (CLIENTE / NEGOCIO / ADMIN) ── */}
       {profileDropdownOpen && createPortal(

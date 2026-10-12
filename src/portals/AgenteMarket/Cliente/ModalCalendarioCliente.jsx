@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
@@ -909,7 +910,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="cal-modal-backdrop" onClick={onClose}>
       <div 
         className="modal-calendario-window" 
@@ -2326,7 +2327,8 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
         )}
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
