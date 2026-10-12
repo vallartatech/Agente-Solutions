@@ -94,7 +94,12 @@ const VistaPropiedades = () => {
   const isPersonalOrAutonomo = user?.role_id === 5 || user?.role_id === 4;
   const isLimitReached = isPersonalOrAutonomo && (currentCount >= maxAllowed);
 
-  const isRootOrAgenteAdmin = user?.role_id === 1 || user?.role_id === 0 || (user?.role_id === 2 && (!user?.tenant_id || user?.tenant_id === 1));
+  // Solo ROOT (Rol 0) tiene la visión global dividida entre Agente Solutions y Autónomos
+  const isRoot = Number(user?.role_id) === 0;
+  const isRootOrAgenteAdmin = isRoot;
+
+  const countAgenteSolutions = listaPropiedades.filter(p => !p.tenant_id || p.tenant_id === 1).length;
+  const countAutonomos = listaPropiedades.filter(p => p.tenant_id && p.tenant_id !== 1).length;
 
   // Lógica de filtrado manual combinando categoría y búsqueda del sidebar
   useEffect(() => {
@@ -110,7 +115,7 @@ const VistaPropiedades = () => {
         (item.address || item.direccion || '').toLowerCase().includes(termino) ||
         (item.curp || '').toLowerCase().includes(termino); // Usamos CURP como folio si aplica
 
-      // 3. Filtro por Pestaña de Origen (Solo si es Admin / Root de Agente Solutions)
+      // 3. Filtro por Pestaña de Origen (Solo si es Root)
       let coincideOrigen = true;
       if (isRootOrAgenteAdmin) {
         if (pestanaOrigen === "AGENTE_SOLUTIONS") {
@@ -252,16 +257,21 @@ const VistaPropiedades = () => {
   };
 
   return (
-    <div className="main-container bg-light">
-      {!isClient && (
-        <>
-          <div className="top-bar-orange" />
-          <div className="top-bar-black" />
-          <Header titulo="PROPIEDADES" />
-        </>
-      )}
+    <div className="vu-root">
+      {!isClient && <Header activeModule="propiedades" titulo="PROPIEDADES" />}
 
-      <section className="content-area">
+      <main className="vu-main-container">
+        {!isClient && (
+          <div className="vu-action-bar">
+            <div className="vu-page-title-badge">
+              <span style={{ fontSize: '1.05rem' }}>🏠</span>
+              <span>CATÁLOGO DE PROPIEDADES</span>
+              <span className="vu-count-pill">{listaPropiedades.length}</span>
+            </div>
+          </div>
+        )}
+
+        <section className="content-area">
         
         
         {/* --- NUEVO TABLERO COMPACTO PARA PC (Solo Clientes) --- */}
@@ -877,6 +887,7 @@ const VistaPropiedades = () => {
         tenantId={subInfo?.tenant?.id || user?.tenant_id || 1}
         userId={user?.id}
       />
+      </main>
     </div>
   );
 };

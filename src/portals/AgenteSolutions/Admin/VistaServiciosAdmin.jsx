@@ -766,7 +766,7 @@ const VistaServiciosAdmin = () => {
 
   return (
     <div className="scrum-container admin-theme">
-      <Header titulo="SERVICIOS" />
+      <Header activeModule="servicios" titulo="SERVICIOS" />
       
       <header className="scrum-header-admin" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>

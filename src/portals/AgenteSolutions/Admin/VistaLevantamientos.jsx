@@ -27,7 +27,7 @@ import { useAuth } from "../../../context/AuthContext";
 import UniversalSearch from "../../../components/Shared/UniversalSearch"; 
 import ModalCalendarioCliente from "../../AgenteMarket/Cliente/ModalCalendarioCliente";
 import NotificationBell from "../../../components/Shared/NotificationBell";
-import defaultLogo from "../../../assets/Logo4.png";
+import Header from "../../../components/Shared/Header";
 import "../../../styles/AgenteSolutions/Admin/VistaLevantamientos.css";
 
 const VistaLevantamientos = () => {
@@ -43,11 +43,7 @@ const VistaLevantamientos = () => {
   const [propiedades, setPropiedades] = useState([]);
   const [cargando, setCargando] = useState(true);
 
-  // Estados para Header y Modal Calendario
-  const [showModalCalendario, setShowModalCalendario] = useState(false);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [appLogo, setAppLogo] = useState(defaultLogo);
-  const dropdownRef = useRef(null);
+
 
   // ESTADOS PARA MODAL: SOLICITAR LEVANTAMIENTO
   const [mostrarModalSolicitar, setMostrarModalSolicitar] = useState(false);
@@ -77,37 +73,7 @@ const VistaLevantamientos = () => {
   const [motivoReprogramar, setMotivoReprogramar] = useState("");
   const [fechaSugerida, setFechaSugerida] = useState("");
 
-  // Cargar Logo de Personalización
-  useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_BASE_URL}/ui/settings/login-settings`)
-      .then(res => {
-        if (res.data?.logo_url) {
-          setAppLogo(res.data.logo_url);
-        } else if (res.data?.settings?.appLogo) {
-          setAppLogo(res.data.settings.appLogo);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
-  // Cerrar dropdown al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (
-        dropdownRef.current && 
-        !dropdownRef.current.contains(e.target) &&
-        !e.target.closest?.('.vcp-profile-dropdown')
-      ) {
-        setProfileDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside, { passive: true });
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, []);
 
   // CARGAR SERVICIOS, TÉCNICOS Y PROPIEDADES
   const cargarDatos = async () => {
@@ -340,113 +306,7 @@ const VistaLevantamientos = () => {
 
   return (
     <div className="lev-root">
-      {/* ── TOP MASTER MENU NAVBAR ── */}
-      <header className="vcp-header lev-header-nav">
-        <div className="vcp-header-left">
-          <img 
-            src={appLogo} 
-            alt="Agente Solutions Logo" 
-            className="vcp-brand-logo"
-            onClick={irAlInicio} 
-            title="Ir al Inicio"
-          />
-        </div>
-
-        {/* Navigation Links: INICIO + 5 core modules */}
-        <nav className="vcp-header-nav">
-          <button className="vcp-nav-btn" onClick={irAlInicio}>
-            INICIO
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
-            USUARIOS
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
-            REPORTE
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
-            COTIZACION
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
-            SERVICIOS
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
-            MERCADO / RED
-          </button>
-        </nav>
-
-        {/* User Profile on top right: Calendar + NotificationBell + Avatar */}
-        <div className="vcp-header-right" ref={dropdownRef}>
-          <div className="vcp-header-actions-group">
-            <button 
-              type="button"
-              className="vcp-nav-icon-btn" 
-              title="Abrir Calendario y Citas"
-              onClick={() => setShowModalCalendario(true)}
-            >
-              <CalendarDays size={18} strokeWidth={2.2} />
-            </button>
-
-            <NotificationBell />
-          </div>
-
-          <button 
-            className="vcp-avatar-btn" 
-            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            title="Opciones de perfil"
-            aria-label="Perfil"
-          >
-            {userAvatar ? (
-              <img src={userAvatar} alt="Avatar" className="vcp-avatar-img" />
-            ) : (
-              <div className="vcp-avatar-initial">{userInitial}</div>
-            )}
-          </button>
-        </div>
-      </header>
-
-      {/* ── PORTAL GLOBAL DE PERFIL FLOTANTE (ADMIN) ── */}
-      {profileDropdownOpen && createPortal(
-        <div className="vcp-profile-portal-root">
-          <div 
-            className="vcp-profile-backdrop" 
-            onClick={() => setProfileDropdownOpen(false)}
-          />
-          <div 
-            className="vcp-profile-dropdown"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="vcp-dropdown-user-header">
-              <div className="vcp-dropdown-role-pill">
-                <Shield size={12} className="vcp-dropdown-role-icon" />
-                <span>{userRoleLabel}</span>
-              </div>
-              <div className="vcp-dropdown-user-name">{userFullName}</div>
-              {user?.email && (
-                <div className="vcp-dropdown-user-email">{user.email}</div>
-              )}
-            </div>
-
-            <div className="vcp-dropdown-divider" />
-
-            <button 
-              className="vcp-dropdown-item" 
-              onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
-            >
-              <User size={16} /> Mi Perfil
-            </button>
-            <button 
-              className="vcp-dropdown-item logout" 
-              onClick={() => { 
-                setProfileDropdownOpen(false); 
-                handleCerrarSesion();
-              }}
-            >
-              <LogOut size={16} /> Cerrar Sesión
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
+      <Header activeModule="levantamientos" />
 
       {/* ── MAIN CONTENT AREA ── */}
       <main className="lev-main-container">
@@ -971,10 +831,6 @@ const VistaLevantamientos = () => {
         </div>
       )}
 
-      {/* ── MODAL: CALENDARIO ── */}
-      {showModalCalendario && (
-        <ModalCalendarioCliente onClose={() => setShowModalCalendario(false)} />
-      )}
     </div>
   );
 };

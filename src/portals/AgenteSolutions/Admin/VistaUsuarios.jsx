@@ -29,7 +29,8 @@ import {
   Briefcase,
   Building2,
   HardHat,
-  Crown
+  Crown,
+  Clock
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 import UniversalSearch from "../../../components/Shared/UniversalSearch";

@@ -744,7 +744,7 @@ const VistaCotizaciones = () => {
     <div className="cotiz-page">
       
       {/* 👇 AQUÍ ESTÁ EL NUEVO HEADER GLOBAL 👇 */}
-      {!esCliente && <Header titulo="COTIZACIONES" />}
+      {!esCliente && <Header activeModule="cotizaciones" titulo="COTIZACIONES" />}
 
 
       {/* 👆 Se eliminaron los div de las barras manuales y el tag <header> 👆 */}

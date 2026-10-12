@@ -7,6 +7,7 @@ import logo from '../../assets/Logo4.png';
 import NotificationBell from './NotificationBell';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
 import TecnicoHeader from './TecnicoHeader';
+import AdminHeader from './AdminHeader';
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
 import '../../styles/Shared/Header.css';
@@ -23,10 +24,16 @@ const MAPA_ROLES = {
   8: "TECNICO_RED"
 };
 
-const Header = ({ activeModule }) => {
-  const { user, logoutGlobal, logout } = useAuth();
-  const navigate = useNavigate();
+const Header = ({ activeModule, titulo, rolTexto, ...restProps }) => {
+  const { user } = useAuth();
   const location = useLocation();
+
+  const roleId = Number(user?.role_id);
+
+  // ROOT (0) y ADMIN (1) SIEMPRE usan AdminHeader
+  if (roleId === 0 || roleId === 1) {
+    return <AdminHeader activeModule={activeModule} titulo={titulo} rolTexto={rolTexto} {...restProps} />;
+  }
 
   const isTechnician = Boolean(
     user?.role_id === 6 || 

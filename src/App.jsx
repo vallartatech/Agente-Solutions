@@ -88,13 +88,15 @@ axios.defaults.headers.common["Accept"] = "application/json";
 
 const PropiedadesWrapper = () => {
   const { user } = useAuth();
-  if (user?.role_id === 1) return <VistaPropiedadesAdmin />;
+  const roleId = Number(user?.role_id);
+  if (roleId === 0 || roleId === 1) return <VistaPropiedadesAdmin />;
   return <VistaPropiedadesAutonomo />;
 };
 
 const DetallePropiedadWrapper = () => {
   const { user } = useAuth();
-  if (user?.role_id === 1) return <VistaDetallePropiedadAdmin />;
+  const roleId = Number(user?.role_id);
+  if (roleId === 0 || roleId === 1) return <VistaDetallePropiedadAdmin />;
   return <VistaDetallePropiedadAutonomo />;
 };
 
