@@ -65,18 +65,35 @@ const MobileBottomNav = ({ activeModule }) => {
     currentPath.includes('/trabajos-tecnico') ||
     currentPath.includes('/levantamientos');
 
+  const role = Number(user?.role_id ?? 0);
+  const userId = Number(user?.id ?? 0);
+
+  // El técnico no tiene propiedades, solo realiza trabajos
+  const esTecnico = Boolean(
+    role === 2 || 
+    role === 6 || 
+    role === 8 || 
+    role === 5 ||
+    userId === 5 ||
+    currentPath.includes('/mercado-trabajos') ||
+    currentPath.includes('/vista-tecnico') ||
+    currentPath.includes('/trabajos-tecnico')
+  );
+
   return (
     <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil">
-        {/* 1. INICIO (CASITA) - Regresar a la vista principal / casa */}
-        <button 
-          type="button" 
-          className={`vcp-mobile-nav-item ${isInicioActive ? 'active' : ''}`} 
-          onClick={irAlInicio} 
-          title="Inicio"
-          aria-label="Inicio"
-        >
-          <Home size={22} className="vcp-mobile-nav-icon" />
-        </button>
+        {/* 1. INICIO (CASITA) - Oculto para perfiles técnicos sin propiedades */}
+        {!esTecnico && (
+          <button 
+            type="button" 
+            className={`vcp-mobile-nav-item ${isInicioActive ? 'active' : ''}`} 
+            onClick={irAlInicio} 
+            title="Inicio"
+            aria-label="Inicio"
+          >
+            <Home size={22} className="vcp-mobile-nav-icon" />
+          </button>
+        )}
 
         {/* 2. MUNDO / RED / MERCADO */}
         <button 
