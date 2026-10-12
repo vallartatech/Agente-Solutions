@@ -133,7 +133,7 @@ const VistaUsuarios = () => {
     };
   }, []);
 
-  const isClientPortalUser = Number(user?.role_id) === 3;
+  const isClientPortalUser = [3, 4, 5].includes(Number(user?.role_id));
 
   const obtenerUsuarios = async () => {
     try {

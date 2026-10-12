@@ -10,6 +10,7 @@ import ModalEditarPropiedadCliente from './ModalEditarPropiedadCliente';
 import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
 import ModalCalificarTecnico from '../../../components/Shared/ModalCalificarTecnico';
 import NotificationBell from '../../../components/Shared/NotificationBell';
+import Header from '../../../components/Shared/Header';
 import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
 
@@ -820,135 +821,7 @@ const VistaClienteParticular = () => {
       <div className="vcp-hero-bg-overlay" />
 
       {/* ── TOP NAVIGATION BAR ── */}
-      <header className="vcp-header">
-        <div className="vcp-header-left">
-          <img 
-            src={appLogo} 
-            alt="Agente Logo" 
-            className="vcp-brand-logo"
-            onClick={irAlInicio} 
-            title="Ir al Inicio"
-          />
-        </div>
-
-        {/* Center Nav Links: INICIO + 5 core modules */}
-        <nav className="vcp-header-nav">
-          <button className="vcp-nav-btn active" onClick={irAlInicio} title="Inicio">
-            <Home size={18} className="vcp-nav-icon" />
-            <span className="vcp-nav-text">Inicio</span>
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')} title="Usuarios">
-            <Users size={18} className="vcp-nav-icon" />
-            <span className="vcp-nav-text">Usuarios</span>
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')} title="Reportes">
-            <FileText size={18} className="vcp-nav-icon" />
-            <span className="vcp-nav-text">Reportes</span>
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')} title="Cotizaciones">
-            <Receipt size={18} className="vcp-nav-icon" />
-            <span className="vcp-nav-text">Cotización</span>
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')} title="Servicios">
-            <Wrench size={18} className="vcp-nav-icon" />
-            <span className="vcp-nav-text">Servicios</span>
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')} title="Mercado / Red">
-            <Globe size={18} className="vcp-nav-icon" />
-            <span className="vcp-nav-text">Mercado</span>
-          </button>
-        </nav>
-
-        {/* User profile & action buttons on top right */}
-        <div className="vcp-header-right" ref={dropdownRef}>
-          <div className="vcp-header-actions-group">
-            {/* Botón Calendario */}
-            <button 
-              type="button"
-              className="vcp-header-icon-btn" 
-              title="Abrir Calendario y Citas"
-              onClick={() => setShowModalCalendario(true)}
-            >
-              <CalendarDays size={18} strokeWidth={2.2} />
-            </button>
-
-            {/* Botón Notificaciones */}
-            <NotificationBell triggerClassName="vcp-header-icon-btn" />
-          </div>
-
-          <button 
-            type="button"
-            className={`vcp-avatar-btn ${profileDropdownOpen ? 'active' : ''}`} 
-            onClick={(e) => {
-              e.stopPropagation();
-              setProfileDropdownOpen((prev) => !prev);
-            }}
-            title="Opciones de perfil"
-            aria-label="Opciones de perfil"
-          >
-            {userAvatar ? (
-              <img src={userAvatar} alt="Avatar" className="vcp-avatar-img" />
-            ) : (
-              <div className="vcp-avatar-initial">{userInitial}</div>
-            )}
-          </button>
-        </div>
-      </header>
-
-      {/* ── PORTAL GLOBAL DE PERFIL FLOTANTE (CLIENTE / PARTICULAR / NEGOCIO) ── */}
-      {profileDropdownOpen && createPortal(
-        <div className="vcp-profile-portal-root">
-          {/* Backdrop para cerrar al hacer clic o tap fuera */}
-          <div 
-            className="vcp-profile-backdrop" 
-            onClick={() => setProfileDropdownOpen(false)}
-          />
-
-          {/* Tarjeta flotante de opciones de perfil */}
-          <div 
-            className="vcp-profile-dropdown"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="vcp-dropdown-user-header">
-              <div className="vcp-dropdown-role-pill">
-                <Shield size={12} className="vcp-dropdown-role-icon" />
-                <span>{userRoleLabel}</span>
-              </div>
-              <div className="vcp-dropdown-user-name">{userFullName}</div>
-              {user?.email && (
-                <div className="vcp-dropdown-user-email">{user.email}</div>
-              )}
-            </div>
-
-            <div className="vcp-dropdown-divider" />
-
-            <button 
-              type="button"
-              className="vcp-dropdown-item" 
-              onClick={(e) => { 
-                e.stopPropagation();
-                setProfileDropdownOpen(false); 
-                navigate('/mi-perfil'); 
-              }}
-            >
-              <User size={16} /> Mi Perfil
-            </button>
-            <button 
-              type="button"
-              className="vcp-dropdown-item logout" 
-              onClick={(e) => { 
-                e.stopPropagation();
-                setProfileDropdownOpen(false); 
-                if (typeof logout === 'function') logout();
-                navigate('/', { replace: true }); 
-              }}
-            >
-              <LogOut size={16} /> Cerrar Sesión
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
+      <Header activeModule="inicio" />
 
       {/* ── MAIN SPLIT VIEW CONTAINER ── */}
       <main className="vcp-body-layout">
