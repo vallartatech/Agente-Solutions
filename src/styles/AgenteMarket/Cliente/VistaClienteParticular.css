@@ -1563,25 +1563,73 @@
   transform: translateY(0) scale(0.98);
 }
 
-/* Individual subtle white glass refinements */
+/* Distinctive Colored Liquid Glass Action Buttons */
 .vcp-btn-sos {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
-  border-color: rgba(255, 255, 255, 0.40);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.45) 0%, rgba(185, 28, 28, 0.32) 100%);
+  border: 1.5px solid rgba(254, 202, 202, 0.65);
+  box-shadow: 
+    0 8px 22px rgba(220, 38, 38, 0.38), 
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.65),
+    inset 0 -1px 1.5px rgba(0, 0, 0, 0.2);
+}
+
+.vcp-btn-sos:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.72) 0%, rgba(220, 38, 38, 0.52) 100%);
+  border-color: rgba(254, 226, 226, 0.95);
+  box-shadow: 
+    0 12px 28px rgba(220, 38, 38, 0.58), 
+    inset 0 2px 3px rgba(255, 255, 255, 0.85);
 }
 
 .vcp-btn-service {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.12) 100%);
-  border-color: rgba(255, 255, 255, 0.50);
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.48) 0%, rgba(194, 65, 12, 0.32) 100%);
+  border: 1.5px solid rgba(254, 215, 170, 0.65);
+  box-shadow: 
+    0 8px 22px rgba(242, 101, 34, 0.38), 
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.65),
+    inset 0 -1px 1.5px rgba(0, 0, 0, 0.2);
+}
+
+.vcp-btn-service:hover {
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.72) 0%, rgba(234, 88, 12, 0.52) 100%);
+  border-color: rgba(255, 237, 213, 0.95);
+  box-shadow: 
+    0 12px 28px rgba(242, 101, 34, 0.58), 
+    inset 0 2px 3px rgba(255, 255, 255, 0.85);
 }
 
 .vcp-btn-share {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
-  border-color: rgba(255, 255, 255, 0.36);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.42) 0%, rgba(2, 132, 199, 0.28) 100%);
+  border: 1.5px solid rgba(186, 230, 253, 0.65);
+  box-shadow: 
+    0 8px 22px rgba(2, 132, 199, 0.35), 
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.65),
+    inset 0 -1px 1.5px rgba(0, 0, 0, 0.2);
+}
+
+.vcp-btn-share:hover {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.68) 0%, rgba(2, 132, 199, 0.48) 100%);
+  border-color: rgba(224, 242, 254, 0.95);
+  box-shadow: 
+    0 12px 28px rgba(2, 132, 199, 0.52), 
+    inset 0 2px 3px rgba(255, 255, 255, 0.85);
 }
 
 .vcp-btn-survey {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
-  border-color: rgba(255, 255, 255, 0.36);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.42) 0%, rgba(5, 150, 105, 0.28) 100%);
+  border: 1.5px solid rgba(167, 243, 208, 0.65);
+  box-shadow: 
+    0 8px 22px rgba(5, 150, 105, 0.35), 
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.65),
+    inset 0 -1px 1.5px rgba(0, 0, 0, 0.2);
+}
+
+.vcp-btn-survey:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.68) 0%, rgba(5, 150, 105, 0.48) 100%);
+  border-color: rgba(209, 250, 229, 0.95);
+  box-shadow: 
+    0 12px 28px rgba(5, 150, 105, 0.52), 
+    inset 0 2px 3px rgba(255, 255, 255, 0.85);
 }
 
 

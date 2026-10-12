@@ -167,18 +167,19 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1.5px solid rgba(226, 232, 240, 0.9);
-  padding: 6px 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.40) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  padding: 7px 18px;
   border-radius: 24px;
   font-family: 'Outfit', sans-serif;
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.8px;
-  color: #334155;
+  color: #0f172a;
   text-transform: uppercase;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
 }
 
 .vu-title-icon {
@@ -213,32 +214,32 @@
 }
 
 .vu-search-unified .search-input-large {
-  background: rgba(255, 255, 255, 0.92) !important;
-  border: 1.5px solid rgba(226, 232, 240, 0.95) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.42) 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
   color: #0f172a !important;
-  border-radius: 16px !important;
+  border-radius: 18px !important;
   padding: 13px 20px 13px 48px !important;
   font-family: 'Plus Jakarta Sans', sans-serif !important;
   font-size: 0.92rem !important;
   font-weight: 600 !important;
   letter-spacing: 0.4px !important;
   text-transform: none !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+  backdrop-filter: blur(28px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), inset 0 1px 2px rgba(255, 255, 255, 0.9) !important;
   transition: all 0.25s ease !important;
 }
 
 .vu-search-unified .search-input-large::placeholder {
-  color: #94a3b8 !important;
+  color: #64748b !important;
   font-weight: 500 !important;
   text-transform: none !important;
 }
 
 .vu-search-unified .search-input-large:focus {
   border-color: #f26522 !important;
-  background: #ffffff !important;
-  box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.15), 0 8px 24px rgba(0, 0, 0, 0.06) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.2), 0 16px 36px rgba(0, 0, 0, 0.16) !important;
 }
 
 .vu-search-unified .search-icon-inside {
@@ -279,17 +280,20 @@
 
 /* Filter Icon Button */
 .vu-icon-btn-filter {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  color: #475569;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  color: #334155;
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
 }
 
 .vu-icon-btn-filter:hover {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.85);
   border-color: rgba(242, 101, 34, 0.6);
   color: #f26522;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
 }
 
 .vu-icon-btn-filter.open,
@@ -635,18 +639,23 @@
   min-width: 0;
 }
 
-/* ── LIQUID GLASS USERS TABLE CARD (PURE WHITE GLASS) ── */
+/* ── LIQUID GLASS USERS TABLE CARD (PRISMATIC GLASSMORPHISM) ── */
 .vu-table-card {
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  border-radius: 22px;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.62) 0%,
+      rgba(255, 255, 255, 0.32) 48%,
+      rgba(255, 255, 255, 0.52) 100%),
+    rgba(255, 255, 255, 0.30);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  border-radius: 24px;
   overflow: hidden;
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(32px) saturate(210%) contrast(104%);
+  -webkit-backdrop-filter: blur(32px) saturate(210%) contrast(104%);
   box-shadow: 
-    0 20px 45px rgba(0, 0, 0, 0.06),
-    inset 0 1px 1.5px rgba(255, 255, 255, 1),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.03);
+    0 24px 60px rgba(0, 0, 0, 0.18),
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    inset 0 2px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -2px 2px rgba(255, 255, 255, 0.25);
   position: relative;
   z-index: 2;
 }
@@ -655,9 +664,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 18px;
-  background: rgba(248, 250, 252, 0.90);
-  border-bottom: 1.5px solid rgba(226, 232, 240, 0.9);
+  padding: 14px 22px;
+  background: rgba(255, 255, 255, 0.35);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.50);
+  backdrop-filter: blur(16px);
 }
 
 .vu-table-title-group {
@@ -737,33 +747,34 @@
 }
 
 .vu-modern-table thead th {
-  background: rgba(241, 245, 249, 0.95);
-  color: #475569;
+  background: rgba(255, 255, 255, 0.40);
+  color: #1e293b;
   font-family: 'Outfit', sans-serif;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.9px;
   text-transform: uppercase;
-  padding: 18px 18px;
+  padding: 16px 18px;
   position: sticky;
   top: 0;
   z-index: 10;
-  border-bottom: 1.5px solid rgba(226, 232, 240, 0.9);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.50);
+  backdrop-filter: blur(16px);
   white-space: nowrap;
 }
 
 .vu-modern-table tbody tr {
-  border-bottom: 1px solid rgba(241, 245, 249, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
 }
 
 .vu-modern-table tbody tr:hover {
-  background: rgba(248, 250, 252, 0.95);
+  background: rgba(255, 255, 255, 0.40);
 }
 
 .vu-modern-table tbody tr.vu-row-selected {
-  background: linear-gradient(90deg, rgba(242, 101, 34, 0.12) 0%, rgba(242, 101, 34, 0.02) 100%) !important;
+  background: linear-gradient(90deg, rgba(242, 101, 34, 0.22) 0%, rgba(242, 101, 34, 0.04) 100%) !important;
   box-shadow: inset 4px 0 0 #f26522;
 }
 
@@ -1106,21 +1117,21 @@
 }
 
 .vu-sidebar-card {
-  background: linear-gradient(145deg,
-      rgba(255, 255, 255, 0.75) 0%,
-      rgba(255, 255, 255, 0.35) 45%,
-      rgba(255, 255, 255, 0.65) 100%),
-    rgba(255, 255, 255, 0.40);
-  border: 1.5px solid rgba(255, 255, 255, 0.90);
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.62) 0%,
+      rgba(255, 255, 255, 0.32) 48%,
+      rgba(255, 255, 255, 0.52) 100%),
+    rgba(255, 255, 255, 0.30);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
   border-radius: 24px;
   padding: 24px 20px;
-  backdrop-filter: blur(32px) saturate(210%) contrast(102%);
-  -webkit-backdrop-filter: blur(32px) saturate(210%) contrast(102%);
+  backdrop-filter: blur(32px) saturate(210%) contrast(104%);
+  -webkit-backdrop-filter: blur(32px) saturate(210%) contrast(104%);
   box-shadow: 
-    0 20px 50px rgba(15, 23, 42, 0.08),
-    0 4px 16px rgba(242, 101, 34, 0.06),
-    inset 0 2px 3px rgba(255, 255, 255, 1),
-    inset 0 -2px 3px rgba(203, 213, 225, 0.35);
+    0 24px 60px rgba(0, 0, 0, 0.18),
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    inset 0 2px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -2px 2px rgba(255, 255, 255, 0.25);
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -1138,19 +1149,9 @@
   left: 0;
   right: 0;
   height: 45%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0) 100%);
   pointer-events: none;
   border-radius: 24px 24px 0 0;
-}
-
-.vu-sidebar-top-accent {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #f26522, #06b6d4, #f26522);
-  background-size: 200% 100%;
 }
 
 .vu-sidebar-card-header {
@@ -1291,17 +1292,21 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  background: rgba(248, 250, 252, 0.95);
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  padding: 10px 12px;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.40);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  padding: 10px 14px;
+  border-radius: 14px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8);
   transition: all 0.2s ease;
 }
 
 .vu-sidebar-detail-item:hover {
-  background: #ffffff;
-  border-color: rgba(203, 213, 225, 0.9);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
 }
 
 .vu-sidebar-detail-icon {
@@ -1474,18 +1479,18 @@
   height: 78px;
   border-radius: 50%;
   background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.85) 0%,
-      rgba(255, 255, 255, 0.40) 50%,
-      rgba(255, 255, 255, 0.70) 100%),
-    rgba(255, 255, 255, 0.50);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 2px solid rgba(255, 255, 255, 0.95);
+      rgba(255, 255, 255, 0.70) 0%,
+      rgba(255, 255, 255, 0.25) 50%,
+      rgba(255, 255, 255, 0.55) 100%),
+    rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 2px solid rgba(255, 255, 255, 0.85);
   box-shadow: 
-    0 14px 32px rgba(242, 101, 34, 0.20),
-    0 4px 12px rgba(0, 0, 0, 0.04),
-    inset 0 2.5px 4px rgba(255, 255, 255, 1),
-    inset 0 -2px 3px rgba(203, 213, 225, 0.4);
+    0 14px 32px rgba(242, 101, 34, 0.22),
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    inset 0 2.5px 4px rgba(255, 255, 255, 0.95),
+    inset 0 -2px 3px rgba(203, 213, 225, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1559,18 +1564,16 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.85) 0%,
-      rgba(241, 245, 249, 0.65) 100%);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.50);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
   padding: 8px 16px;
   border-radius: 14px;
   font-size: 0.74rem;
   font-weight: 800;
-  color: #334155;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 1);
+  color: #1e293b;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
   margin-top: 6px;
   transition: all 0.2s ease;
 }

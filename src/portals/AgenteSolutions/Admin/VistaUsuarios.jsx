@@ -507,37 +507,6 @@ const VistaUsuarios = () => {
           </div>
         </div>
 
-        {/* Chips de Categorías Rápidas */}
-        <div className="vu-category-chips-bar">
-          {(isClientPortalUser ? [
-            { key: 'TODOS', label: 'Todos los Técnicos', icon: '👥', count: listaUsuarios.length },
-            { key: 'TECNICOS_AGENTE', label: 'Téc. Agente', icon: '🛠️', count: countTecnicosAgente },
-            { key: 'TECNICOS_RED', label: 'Téc. de la Red', icon: '🌐', count: countTecnicosRed },
-            { key: 'CALIFICADOS', label: 'Historial / Calificados', icon: '⭐', count: countCalificados },
-            { key: 'ACTIVOS', label: 'Disponibles', icon: '🟢', count: activosCount },
-          ] : [
-            { key: 'TODOS', label: 'Todos', icon: '👥', count: listaUsuarios.length },
-            { key: 'CLIENTES', label: 'Clientes', icon: '👤', count: countClientes },
-            { key: 'TECNICOS_AGENTE', label: 'Téc. Agente', icon: '🛠️', count: countTecnicosAgente },
-            { key: 'TECNICOS_RED', label: 'Téc. de la Red', icon: '🌐', count: countTecnicosRed },
-            { key: 'CONTRATISTAS', label: 'Contratistas', icon: '🏗️', count: countContratistas },
-            { key: 'AUTONOMOS', label: 'Autónomos', icon: '💼', count: countAutonomos },
-            { key: 'ADMINS', label: 'Administradores', icon: '🛡️', count: countAdmins },
-            { key: 'ACTIVOS', label: 'Activos', icon: '🟢', count: activosCount },
-            { key: 'BLOQUEADOS', label: 'Bloqueados', icon: '🔒', count: bloqueadosCount },
-          ]).map(chip => (
-            <button
-              key={chip.key}
-              type="button"
-              className={`vu-category-chip ${filtro === chip.key ? 'active' : ''}`}
-              onClick={() => setFiltro(chip.key)}
-            >
-              <span>{chip.icon}</span>
-              <span>{chip.label}</span>
-              <span className="vu-chip-count">{chip.count}</span>
-            </button>
-          ))}
-        </div>
 
         {/* Register Modal */}
         {!isClientPortalUser && (
@@ -802,7 +771,6 @@ const VistaUsuarios = () => {
           <aside className="vu-profile-sidebar-wrap">
             {selectedTecnico ? (
               <div className="vu-sidebar-card">
-                <div className="vu-sidebar-top-accent" />
 
                 {/* Header with ID & Status */}
                 <div className="vu-sidebar-card-header">
@@ -1081,7 +1049,6 @@ const VistaUsuarios = () => {
               </div>
             ) : (
               <div className="vu-sidebar-card vu-sidebar-empty">
-                <div className="vu-sidebar-top-accent" />
                 <div className="vu-sidebar-empty-pill">
                   <Sparkles size={12} className="vu-sidebar-pill-icon" />
                   <span>VISTA PREVIA</span>
