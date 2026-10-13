@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import axios from "axios";
@@ -8,7 +8,12 @@ import Header from "../../../components/Shared/Header";
 import ModalCompraEspacios from "../../../components/Shared/ModalCompraEspacios";
 import ModalRegistroInmueble from "../../../components/Shared/ModalRegistroInmueble";
 import "../../../styles/AgenteMarket/Admin/VistaPropiedades.css";
-import { X, CheckCircle, User, AlertTriangle, ListChecks, Clock, CheckCircle2, LayoutDashboard, ChevronLeft, PlusCircle } from "lucide-react";
+import "../../../styles/AgenteMarket/Cliente/DetallePropiedad.css";
+import { 
+  X, CheckCircle, User, AlertTriangle, ListChecks, Clock, CheckCircle2, 
+  LayoutDashboard, ChevronLeft, PlusCircle, FileText, Home, Wrench, 
+  MessageSquare, Camera, UserCheck, ImageIcon, Loader2 
+} from "lucide-react";
 
 const TIPOS_PROPIEDAD = [
   { label: "TODAS", icon: "🌐", title: "TODAS" },
@@ -25,11 +30,35 @@ const VistaPropiedades = () => {
   const [mostrarModalRegistroPropiedad, setMostrarModalRegistroPropiedad] = useState(false);
   const [pestanaOrigen, setPestanaOrigen] = useState("AGENTE_SOLUTIONS");
 
+  // MODAL LEVANTAMIENTO (TARJETAS INDIVIDUALES)
   const [mostrarModalServicio, setMostrarModalServicio] = useState(false);
   const [propiedadSeleccionada, setPropiedadSeleccionada] = useState(null);
   const [globalStats, setGlobalStats] = useState({ sos: 0, todo: 0, progress: 0, done: 0 });
   const [pasoModal, setPasoModal] = useState(1); 
   const [nombreResponsable, setNombreResponsable] = useState("");
+  const [tecnicosRol2, setTecnicosRol2] = useState([]);
+  const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState("");
+  const [cargandoTecnicos, setCargandoTecnicos] = useState(false);
+
+  // MODAL REPORTAR PROBLEMA (BOTÓN SUPERIOR "SOLICITAR SERVICIO")
+  const [mostrarModalReportarProblema, setMostrarModalReportarProblema] = useState(false);
+  const [propiedadReporteId, setPropiedadReporteId] = useState("");
+  const [zonasDisponibles, setZonasDisponibles] = useState([]);
+  const [loadingZonas, setLoadingZonas] = useState(false);
+  const [equiposDisponibles, setEquiposDisponibles] = useState({});
+  const [loadingEquipos, setLoadingEquipos] = useState(false);
+  const [loadingSubmitProblema, setLoadingSubmitProblema] = useState(false);
+  const [isPhotoMenuOpen, setIsPhotoMenuOpen] = useState(false);
+  const [nuevoProblema, setNuevoProblema] = useState({
+    tipo: '',
+    zona: '',
+    area_id: '',
+    equipo: '',
+    descripcion: '',
+    fotos: []
+  });
+  const cameraRef = useRef(null);
+  const galleryRef = useRef(null);
 
   // ESTADOS PARA EDICIÓN
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
@@ -164,42 +193,244 @@ const VistaPropiedades = () => {
     }
   };
 
+  const obtenerTecnicosRol2 = async () => {
+    setCargandoTecnicos(true);
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios`, { headers });
+      const todos = res.data || [];
+      const tecnicos = todos.filter(u => Number(u.role_id) === 2);
+      setTecnicosRol2(tecnicos);
+    } catch (err) {
+      console.error("Error al obtener técnicos por /usuarios:", err);
+      try {
+        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+        const resFallback = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        setTecnicosRol2(resFallback.data || []);
+      } catch (e2) {
+        console.error("Error fallback /usuarios/tecnicos:", e2);
+      }
+    } finally {
+      setCargandoTecnicos(false);
+    }
+  };
+
   const abrirModalParaPropiedad = (propiedad) => {
     setPropiedadSeleccionada(propiedad);
     setPasoModal(1); 
-    setNombreResponsable(""); 
+    setNombreResponsable("");
+    setTecnicoSeleccionado("");
+    obtenerTecnicosRol2();
     setMostrarModalServicio(true);
   };
 
-  const handleSolicitarServicio = () => {
+  const cargarZonasDePropiedad = async (propId) => {
+    if (!propId) {
+      setZonasDisponibles([]);
+      return;
+    }
+    setLoadingZonas(true);
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/properties/${propId}/areas`, { headers });
+      setZonasDisponibles(res.data || []);
+    } catch (error) {
+      console.error("Error cargando zonas:", error);
+      setZonasDisponibles([]);
+    } finally {
+      setLoadingZonas(false);
+    }
+  };
+
+  // Botón superior "SOLICITAR SERVICIO" -> Abre Modal "Reportar Problema" (Imagen 2)
+  const handleAbrirReportarProblema = () => {
     if (!listaPropiedades || listaPropiedades.length === 0) {
       Swal.fire({
         icon: 'info',
         title: 'Sin propiedades',
-        text: 'Primero debes registrar una propiedad para poder solicitar un servicio.',
+        text: 'Primero debes registrar una propiedad para poder reportar un problema o solicitar servicio.',
         confirmButtonColor: '#f26522'
       });
       return;
     }
-    if (!propiedadSeleccionada) {
-      setPropiedadSeleccionada(listaPropiedades[0]);
+    const targetId = propiedadSeleccionada?.id || listaPropiedades[0]?.id;
+    setPropiedadReporteId(targetId);
+    setNuevoProblema({ tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', fotos: [] });
+    setEquiposDisponibles({});
+    if (targetId) {
+      cargarZonasDePropiedad(targetId);
     }
-    setPasoModal(1);
-    setNombreResponsable("");
-    setMostrarModalServicio(true);
+    setMostrarModalReportarProblema(true);
   };
 
+  const handleCambioPropiedadReporte = (propId) => {
+    setPropiedadReporteId(propId);
+    setNuevoProblema(prev => ({ ...prev, zona: '', area_id: '', equipo: '' }));
+    setEquiposDisponibles({});
+    cargarZonasDePropiedad(propId);
+  };
+
+  const handleZonaChangeProblema = async (areaId) => {
+    if (areaId === 'otro') {
+      setNuevoProblema(prev => ({ 
+        ...prev, 
+        area_id: 'otro', 
+        zona: 'Otro', 
+        equipo: '' 
+      }));
+      setEquiposDisponibles({});
+      return;
+    }
+
+    let selectedArea = zonasDisponibles.find(z => z.id === parseInt(areaId));
+    if (!selectedArea) {
+      for (const zona of zonasDisponibles) {
+        const sub = (zona.sub_areas || zona.subAreas || []).find(s => s.id === parseInt(areaId));
+        if (sub) {
+          selectedArea = { ...sub, name: `${zona.name} - ${sub.name}` };
+          break;
+        }
+      }
+    }
+
+    setNuevoProblema(prev => ({ 
+      ...prev, 
+      area_id: areaId, 
+      zona: selectedArea ? selectedArea.name : '', 
+      equipo: '' 
+    }));
+    
+    if (areaId) {
+      setLoadingEquipos(true);
+      try {
+        const token = localStorage.getItem('agente_token');
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/areas/${areaId}/components`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const componentes = res.data || [];
+        const agrupados = componentes.reduce((acc, curr) => {
+          const cat = curr.category || 'General';
+          if (!acc[cat]) acc[cat] = [];
+          acc[cat].push(curr);
+          return acc;
+        }, {});
+        
+        setEquiposDisponibles(agrupados);
+      } catch (error) {
+        console.error("Error cargando equipos:", error);
+        setEquiposDisponibles({});
+      } finally {
+        setLoadingEquipos(false);
+      }
+    } else {
+      setEquiposDisponibles({});
+    }
+  };
+
+  const handleFileSelectProblema = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    setNuevoProblema(prev => ({
+      ...prev,
+      fotos: [...prev.fotos, ...files].slice(0, 2)
+    }));
+  };
+
+  const removeFotoProblema = (index) => {
+    setNuevoProblema(prev => ({
+      ...prev,
+      fotos: prev.fotos.filter((_, i) => i !== index)
+    }));
+  };
+
+  const selectPhotoSourceProblema = (source) => {
+    if (source === 'camera') {
+      cameraRef.current?.click();
+    } else {
+      galleryRef.current?.click();
+    }
+    setIsPhotoMenuOpen(false);
+  };
+
+  const handleSubmitReportarProblema = async (e) => {
+    e.preventDefault();
+    if (!propiedadReporteId) {
+      alert("Por favor selecciona una propiedad.");
+      return;
+    }
+    if (!nuevoProblema.tipo || !nuevoProblema.area_id || !nuevoProblema.descripcion) {
+      alert("Por favor completa los campos obligatorios (Tipo, Zona y Descripción).");
+      return;
+    }
+
+    setLoadingSubmitProblema(true);
+    try {
+      const token = localStorage.getItem('agente_token');
+      const formData = new FormData();
+      formData.append('property_id', propiedadReporteId);
+      formData.append('type', nuevoProblema.tipo);
+      formData.append('zone', nuevoProblema.zona);
+      formData.append('equipment', nuevoProblema.equipo || '');
+      
+      const descFinal = nuevoProblema.equipo 
+        ? `${nuevoProblema.descripcion}\n\n[EQUIPO AFECTADO]: ${nuevoProblema.equipo}`
+        : nuevoProblema.descripcion;
+      
+      formData.append('description', descFinal);
+
+      nuevoProblema.fotos.forEach((foto, index) => {
+        formData.append(`evidence_${index + 1}`, foto);
+      });
+
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/work-orders/cliente`, formData, {
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (res.data.success) {
+        Swal.fire({
+          icon: 'success',
+          title: '¡Reporte Levantado!',
+          text: 'El reporte del problema ha sido enviado exitosamente.',
+          confirmButtonColor: '#f26522'
+        });
+        setMostrarModalReportarProblema(false);
+        setNuevoProblema({ tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', fotos: [] });
+        obtenerPropiedades();
+      }
+    } catch (error) {
+      console.error("Error enviando reporte:", error);
+      alert("Hubo un error al enviar el reporte.");
+    } finally {
+      setLoadingSubmitProblema(false);
+    }
+  };
+
+  // Enviar solicitud de levantamiento con técnico (Rol 2) asignado
   const enviarLevantamiento = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('agente_token');
 
+      const techSelectedObj = tecnicosRol2.find(t => String(t.id) === String(tecnicoSeleccionado));
+      const techName = techSelectedObj ? `${techSelectedObj.first_name} ${techSelectedObj.last_name}`.trim() : null;
+
       const payload = {
         property_id: propiedadSeleccionada.id,
         title: "Levantamiento Inicial",
-        description: "Solicitud de visita técnica para registro inicial de la propiedad.",
+        description: `Solicitud de visita técnica para registro inicial de la propiedad.${techName ? ` Técnico asignado: ${techName}` : ''}`,
         priority: "Media",
-        supervisor_name: nombreResponsable.trim() !== "" ? nombreResponsable : "El propietario",
+        supervisor_name: nombreResponsable.trim() !== "" ? nombreResponsable : (techName || "El propietario"),
+        technician_id: tecnicoSeleccionado || null,
+        tecnico_id: tecnicoSeleccionado || null
       };
 
       const respuesta = await axios.post(
@@ -442,7 +673,7 @@ const VistaPropiedades = () => {
               <button
                 type="button"
                 className="btn-solicitar-servicio-bar"
-                onClick={handleSolicitarServicio}
+                onClick={handleAbrirReportarProblema}
                 style={{
                   background: 'linear-gradient(135deg, #f26522 0%, #ea580c 100%)',
                   color: '#ffffff',
@@ -685,51 +916,58 @@ const VistaPropiedades = () => {
                   Solicitar Levantamiento / Servicio
                 </h2>
 
-                {listaPropiedades.length > 1 ? (
-                  <div style={{ textAlign: "left", marginBottom: "20px" }}>
-                    <label style={{ display: "block", fontSize: "0.85rem", fontWeight: "bold", color: "#334155", marginBottom: "6px" }}>
-                      Selecciona la Propiedad:
-                    </label>
+                <p
+                  style={{
+                    color: "#64748b",
+                    fontSize: "0.95rem",
+                    marginBottom: "20px",
+                    background: "#f8fafc",
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid #e2e8f0"
+                  }}
+                >
+                  <strong style={{ color: "#334155" }}>Propiedad:</strong> {propiedadSeleccionada?.nombre_propiedad || propiedadSeleccionada?.direccion || "Sin especificar"}
+                </p>
+
+                {/* SELECTOR DE TÉCNICOS ROL 2 LIGADOS AL ADMIN */}
+                <div style={{ textAlign: "left", marginBottom: "20px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.88rem", color: "#334155", fontWeight: "bold", marginBottom: "8px" }}>
+                    <UserCheck size={18} color="#f26522" /> Técnico Asignado (Rol 2)
+                  </label>
+                  {cargandoTecnicos ? (
+                    <div style={{ color: '#64748b', fontSize: '0.88rem', padding: '10px 14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                      Cargando técnicos vinculados... ⏳
+                    </div>
+                  ) : tecnicosRol2.length > 0 ? (
                     <select
-                      value={propiedadSeleccionada?.id || ""}
-                      onChange={(e) => {
-                        const prop = listaPropiedades.find(p => p.id === Number(e.target.value));
-                        if (prop) setPropiedadSeleccionada(prop);
-                      }}
+                      value={tecnicoSeleccionado}
+                      onChange={(e) => setTecnicoSeleccionado(e.target.value)}
                       style={{
                         width: "100%",
-                        padding: "10px 14px",
+                        padding: "11px 14px",
                         borderRadius: "10px",
                         border: "1.5px solid #cbd5e1",
-                        fontSize: "0.95rem",
+                        fontSize: "0.92rem",
                         backgroundColor: "#fff",
                         color: "#1e293b",
                         fontWeight: "600",
                         outline: "none"
                       }}
                     >
-                      {listaPropiedades.map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.nombre_propiedad || p.direccion || `Propiedad #${p.id}`}
+                      <option value="">-- Seleccionar Técnico Vinculado (Rol 2) --</option>
+                      {tecnicosRol2.map(t => (
+                        <option key={t.id} value={t.id}>
+                          🔧 {t.first_name || ''} {t.last_name || ''} ({t.email})
                         </option>
                       ))}
                     </select>
-                  </div>
-                ) : (
-                  <p
-                    style={{
-                      color: "#64748b",
-                      fontSize: "0.95rem",
-                      marginBottom: "20px",
-                      background: "#f8fafc",
-                      padding: "10px 14px",
-                      borderRadius: "10px",
-                      border: "1px solid #e2e8f0"
-                    }}
-                  >
-                    <strong style={{ color: "#334155" }}>Propiedad:</strong> {propiedadSeleccionada?.nombre_propiedad || propiedadSeleccionada?.direccion || "Sin especificar"}
-                  </p>
-                )}
+                  ) : (
+                    <div style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1' }}>
+                      No hay técnicos de rol 2 vinculados actualmente a tu cuenta.
+                    </div>
+                  )}
+                </div>
 
                 <div
                   style={{
@@ -864,6 +1102,321 @@ const VistaPropiedades = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ========================================================
+          MODAL: REPORTAR PROBLEMA (ACTIVADO POR EL BOTÓN SUPERIOR)
+          ======================================================== */}
+      {mostrarModalReportarProblema && createPortal(
+        <div 
+          className="modal-overlay" 
+          onClick={() => setMostrarModalReportarProblema(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999999,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(15, 23, 42, 0.78)",
+            backdropFilter: "blur(8px)",
+            padding: "20px",
+          }}
+        >
+          <div 
+            className="modal-content" 
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: "600px",
+              width: "100%",
+              padding: "32px",
+              borderRadius: "20px",
+              backgroundColor: "white",
+              position: "relative",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+              zIndex: 10000000,
+              maxHeight: "88vh",
+              overflowY: "auto"
+            }}
+          >
+            <button 
+              className="close-modal" 
+              onClick={() => setMostrarModalReportarProblema(false)}
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "16px",
+                background: "rgba(0,0,0,0.06)",
+                border: "none",
+                borderRadius: "50%",
+                width: "34px",
+                height: "34px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "background 0.2s"
+              }}
+            >
+              <X size={20} color="#333" strokeWidth={2.8} />
+            </button>
+            <div className="modal-header">
+              <div className="modal-tag">NUEVA SOLICITUD</div>
+              <h2 style={{ fontSize: "1.8rem", fontWeight: 900, color: "#1e293b", margin: "4px 0 16px 0" }}>Reportar Problema</h2>
+            </div>
+            <form className="modal-body service-form" onSubmit={handleSubmitReportarProblema}>
+              {/* CAMPO: SELECCIÓN DE PROPIEDAD */}
+              <div className="form-group">
+                <label><Home size={16}/> Propiedad a Reportar *</label>
+                <select 
+                  required 
+                  value={propiedadReporteId}
+                  onChange={(e) => handleCambioPropiedadReporte(e.target.value)}
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    border: "1.5px solid #cbd5e1",
+                    fontSize: "0.95rem",
+                    backgroundColor: "#fff",
+                    color: "#1e293b",
+                    fontWeight: "600",
+                    outline: "none"
+                  }}
+                >
+                  <option value="">Selecciona la propiedad...</option>
+                  {listaPropiedades.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre_propiedad || p.direccion || `Propiedad #${p.id}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* CAMPO: TIPO DE SERVICIO */}
+              <div className="form-group">
+                <label><FileText size={16}/> Tipo de Servicio *</label>
+                <select 
+                  required 
+                  value={nuevoProblema.tipo}
+                  onChange={(e) => setNuevoProblema({...nuevoProblema, tipo: e.target.value})}
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    border: "1.5px solid #cbd5e1",
+                    fontSize: "0.95rem",
+                    backgroundColor: "#fff",
+                    color: "#1e293b",
+                    outline: "none"
+                  }}
+                >
+                  <option value="">Selecciona el tipo...</option>
+                  <option value="Mantenimiento">Mantenimiento Preventivo</option>
+                  <option value="Problema">Problema / Reparación</option>
+                </select>
+              </div>
+
+              {/* CAMPO: ZONA DE LA PROPIEDAD */}
+              <div className="form-group">
+                <label><Home size={16}/> Zona de la propiedad *</label>
+                <select 
+                  required 
+                  value={nuevoProblema.area_id}
+                  onChange={(e) => handleZonaChangeProblema(e.target.value)}
+                  disabled={loadingZonas || !propiedadReporteId}
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    border: "1.5px solid #cbd5e1",
+                    fontSize: "0.95rem",
+                    backgroundColor: "#fff",
+                    color: "#1e293b",
+                    outline: "none"
+                  }}
+                >
+                  <option value="">
+                    {!propiedadReporteId 
+                      ? "Primero selecciona una propiedad" 
+                      : (loadingZonas ? "Cargando zonas..." : "Seleccionar zona...")}
+                  </option>
+                  {zonasDisponibles.map(zona => {
+                    const subAreas = zona.sub_areas || zona.subAreas || [];
+                    if (subAreas.length > 0) {
+                      return (
+                        <optgroup key={`opt-${zona.id}`} label={zona.name.toUpperCase()}>
+                          <option value={zona.id}>{zona.name} (Área General)</option>
+                          {subAreas.map(sub => (
+                            <option key={`sub-${sub.id}`} value={sub.id}>
+                              {sub.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      );
+                    } else {
+                      return <option key={`zona-${zona.id}`} value={zona.id}>{zona.name}</option>;
+                    }
+                  })}
+                  <option value="otro" style={{ fontWeight: 'bold' }}>Otro (No está en la lista)</option>
+                </select>
+              </div>
+
+              {/* CAMPO: EQUIPO AFECTADO */}
+              <div className="form-group">
+                <label><Wrench size={16}/> Equipo afectado (Opcional)</label>
+                <select 
+                  value={nuevoProblema.equipo}
+                  disabled={!nuevoProblema.area_id || loadingEquipos}
+                  onChange={(e) => setNuevoProblema({...nuevoProblema, equipo: e.target.value})}
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    border: "1.5px solid #cbd5e1",
+                    fontSize: "0.95rem",
+                    backgroundColor: "#fff",
+                    color: "#1e293b",
+                    outline: "none"
+                  }}
+                >
+                  <option value="">
+                    {!nuevoProblema.area_id ? "Primero selecciona una zona" : (loadingEquipos ? "Cargando equipos..." : "Seleccionar equipo...")}
+                  </option>
+                  {Object.entries(equiposDisponibles).map(([seccion, items]) => (
+                    <optgroup key={seccion} label={seccion.toUpperCase()}>
+                      {items.map((item) => (
+                        <option key={item.id} value={`${item.sub_category} ${item.brand ? `(${item.brand})` : ''}`}>
+                          {item.sub_category} {item.brand ? `(${item.brand})` : ''} {item.model_or_color ? `- ${item.model_or_color}` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  <option value="otro">Otro (No está en la lista)</option>
+                </select>
+              </div>
+
+              {/* CAMPO: DESCRIPCIÓN */}
+              <div className="form-group">
+                <label><MessageSquare size={16}/> Descripción *</label>
+                <textarea 
+                  required 
+                  rows="4" 
+                  placeholder="Describe el problema..." 
+                  value={nuevoProblema.descripcion}
+                  onChange={(e) => setNuevoProblema({...nuevoProblema, descripcion: e.target.value})}
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    border: "1.5px solid #cbd5e1",
+                    fontSize: "0.95rem",
+                    backgroundColor: "#fff",
+                    color: "#1e293b",
+                    outline: "none",
+                    resize: "vertical"
+                  }}
+                />
+              </div>
+
+              {/* CAMPO: EVIDENCIA VISUAL */}
+              <div className="form-group">
+                <label><Camera size={16}/> Evidencia Visual (Máx 2 fotos)</label>
+                
+                <input type="file" ref={cameraRef} hidden accept="image/*" capture="environment" onChange={handleFileSelectProblema} />
+                <input type="file" ref={galleryRef} hidden accept="image/*" multiple onChange={handleFileSelectProblema} />
+
+                <div className="fotos-preview-container" style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                  {nuevoProblema.fotos.map((foto, idx) => (
+                    <div key={idx} className="foto-preview-wrapper" style={{ position: 'relative', width: '80px', height: '80px' }}>
+                      <img 
+                        src={URL.createObjectURL(foto)} 
+                        alt="preview" 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px', border: '2px solid #f26624' }} 
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => removeFotoProblema(idx)}
+                        style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#e63946', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {nuevoProblema.fotos.length < 2 && (
+                    <button 
+                      type="button" 
+                      className="btn-add-foto-placeholder"
+                      onClick={() => setIsPhotoMenuOpen(true)}
+                      style={{ width: '80px', height: '80px', border: '2px dashed #ccc', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#f9f9f9', color: '#666' }}
+                    >
+                      <PlusCircle size={24} />
+                      <span style={{ fontSize: '10px', fontWeight: 'bold', marginTop: '4px' }}>AÑADIR</span>
+                    </button>
+                  )}
+                </div>
+                
+                <small style={{ color: '#666', fontSize: '11px', marginTop: '8px', display: 'block' }}>
+                  * Puedes subir hasta 2 imágenes como evidencia del problema.
+                </small>
+              </div>
+
+              <div className="modal-footer" style={{ marginTop: "10px" }}>
+                <button 
+                  type="submit" 
+                  className="btn-modal-close" 
+                  disabled={loadingSubmitProblema}
+                  style={{
+                    width: "100%",
+                    padding: "14px 24px",
+                    background: "linear-gradient(135deg, #f26522 0%, #ea580c 100%)",
+                    color: "white",
+                    fontWeight: 900,
+                    fontSize: "1rem",
+                    borderRadius: "12px",
+                    border: "none",
+                    cursor: "pointer",
+                    boxShadow: "0 4px 15px rgba(242, 101, 34, 0.4)"
+                  }}
+                >
+                  {loadingSubmitProblema ? "Enviando..." : "Levantar Reporte"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* MODAL DE SELECCIÓN DE FOTO */}
+      {isPhotoMenuOpen && createPortal(
+        <div className="modal-overlay" onClick={() => setIsPhotoMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 10000005, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)" }}>
+          <div className="modal-content" style={{ maxWidth: '350px', width: "90%", padding: '0', backgroundColor: '#fff', borderRadius: "16px", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid #eee' }}>
+              <h3 style={{ margin: 0, color: '#f26624', fontWeight: 800 }}>Seleccionar Origen</h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <button 
+                type="button" 
+                onClick={() => selectPhotoSourceProblema('camera')}
+                style={{ background: 'transparent', border: 'none', padding: '15px', color: '#333', borderBottom: '1px solid #eee', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontWeight: 600 }}
+              >
+                <Camera size={20} /> Tomar Foto
+              </button>
+              <button 
+                type="button" 
+                onClick={() => selectPhotoSourceProblema('gallery')}
+                style={{ background: 'transparent', border: 'none', padding: '15px', color: '#333', borderBottom: '1px solid #eee', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontWeight: 600 }}
+              >
+                <ImageIcon size={20} /> Elegir de la Galería
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setIsPhotoMenuOpen(false)}
+                style={{ background: 'transparent', border: 'none', padding: '15px', color: '#666', fontSize: '1rem', cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>,
         document.body
