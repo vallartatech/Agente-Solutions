@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -7,13 +8,10 @@ import Header from "../../../components/Shared/Header";
 import ModalCompraEspacios from "../../../components/Shared/ModalCompraEspacios";
 import ModalRegistroInmueble from "../../../components/Shared/ModalRegistroInmueble";
 import "../../../styles/AgenteMarket/Admin/VistaPropiedades.css";
-import { X, CheckCircle, User, AlertTriangle, ListChecks, Clock, CheckCircle2, LayoutDashboard, ChevronLeft } from "lucide-react";
+import { X, CheckCircle, User, AlertTriangle, ListChecks, Clock, CheckCircle2, LayoutDashboard, ChevronLeft, PlusCircle } from "lucide-react";
 
 const TIPOS_PROPIEDAD = [
   { label: "TODAS", icon: "🌐", title: "TODAS" },
-  { label: "CASA", icon: "🏠", title: "CASAS REGULARES" },
-  { label: "MANSION", icon: "🏰", title: "MANSIONES" },
-  { label: "DEPARTAMENTO", icon: "🏢", title: "DEPARTAMENTOS" },
 ];
 
 const VistaPropiedades = () => {
@@ -170,6 +168,24 @@ const VistaPropiedades = () => {
     setPropiedadSeleccionada(propiedad);
     setPasoModal(1); 
     setNombreResponsable(""); 
+    setMostrarModalServicio(true);
+  };
+
+  const handleSolicitarServicio = () => {
+    if (!listaPropiedades || listaPropiedades.length === 0) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Sin propiedades',
+        text: 'Primero debes registrar una propiedad para poder solicitar un servicio.',
+        confirmButtonColor: '#f26522'
+      });
+      return;
+    }
+    if (!propiedadSeleccionada) {
+      setPropiedadSeleccionada(listaPropiedades[0]);
+    }
+    setPasoModal(1);
+    setNombreResponsable("");
     setMostrarModalServicio(true);
   };
 
@@ -415,16 +431,46 @@ const VistaPropiedades = () => {
 
         {!isClient && (
           <div className="categories-row-container">
-            <div className="categories-row">
-              {TIPOS_PROPIEDAD.map((tipo) => (
-                <button
-                  key={tipo.label}
-                  className={`cat-btn ${categoria === tipo.label ? "active" : ""}`}
-                  onClick={() => setCategoria(tipo.label)}
-                >
-                  <span className="btn-icon-small">{tipo.icon}</span> {tipo.title}
-                </button>
-              ))}
+            <div className="categories-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
+              <button
+                className={`cat-btn ${categoria === "TODAS" ? "active" : ""}`}
+                onClick={() => setCategoria("TODAS")}
+              >
+                <span className="btn-icon-small">🌐</span> TODAS
+              </button>
+
+              <button
+                type="button"
+                className="btn-solicitar-servicio-bar"
+                onClick={handleSolicitarServicio}
+                style={{
+                  background: 'linear-gradient(135deg, #f26522 0%, #ea580c 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '50px',
+                  padding: '10px 24px',
+                  fontWeight: 900,
+                  fontSize: '0.92rem',
+                  fontFamily: "'Outfit', sans-serif",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 15px rgba(242, 101, 34, 0.35)',
+                  transition: 'all 0.2s ease',
+                  letterSpacing: '0.4px'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(242, 101, 34, 0.5)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(242, 101, 34, 0.35)';
+                }}
+              >
+                <PlusCircle size={20} color="#ffffff" strokeWidth={2.8} /> SOLICITAR SERVICIO
+              </button>
             </div>
           </div>
         )}
@@ -561,7 +607,7 @@ const VistaPropiedades = () => {
       </section>
 
       {/* MODAL DE SOLICITAR LEVANTAMIENTO */}
-      {mostrarModalServicio && (
+      {mostrarModalServicio && createPortal(
         <div
           className="modal-overlay"
           onClick={() =>
@@ -570,23 +616,29 @@ const VistaPropiedades = () => {
               : cerrarModalYRecargar()
           }
           style={{
-            zIndex: 1000,
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999999,
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            backgroundColor: "rgba(0,0,0,0.6)",
+            backgroundColor: "rgba(15, 23, 42, 0.78)",
+            backdropFilter: "blur(8px)",
+            padding: "20px",
           }}
         >
           <div
             className="modal-content"
             onClick={(e) => e.stopPropagation()}
             style={{
-              maxWidth: "450px",
+              maxWidth: "480px",
               width: "100%",
-              padding: "30px",
-              borderRadius: "12px",
+              padding: "32px",
+              borderRadius: "20px",
               backgroundColor: "white",
               position: "relative",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+              zIndex: 10000000
             }}
           >
             {pasoModal === 1 && (
@@ -595,14 +647,21 @@ const VistaPropiedades = () => {
                 onClick={() => setMostrarModalServicio(false)}
                 style={{
                   position: "absolute",
-                  top: "15px",
-                  right: "15px",
-                  background: "none",
+                  top: "16px",
+                  right: "16px",
+                  background: "rgba(0,0,0,0.06)",
                   border: "none",
+                  borderRadius: "50%",
+                  width: "34px",
+                  height: "34px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   cursor: "pointer",
+                  transition: "background 0.2s"
                 }}
               >
-                <X size={24} color="#666" />
+                <X size={20} color="#333" strokeWidth={2.8} />
               </button>
             )}
 
@@ -611,34 +670,75 @@ const VistaPropiedades = () => {
                 onSubmit={enviarLevantamiento}
                 style={{ textAlign: "center" }}
               >
+                <div style={{ display: "inline-flex", padding: "6px 14px", borderRadius: "50px", background: "rgba(242, 101, 34, 0.12)", color: "#f26522", fontWeight: 800, fontSize: "0.8rem", marginBottom: "12px", letterSpacing: "0.5px" }}>
+                  NUEVO SERVICIO
+                </div>
                 <h2
                   style={{
-                    fontSize: "1.4rem",
-                    color: "#333",
-                    marginBottom: "15px",
-                    lineHeight: "1.4",
+                    fontSize: "1.35rem",
+                    color: "#1e293b",
+                    marginBottom: "16px",
+                    fontWeight: 800,
+                    lineHeight: "1.3",
                   }}
                 >
-                  ¿Desea solicitar un levantamiento para esta propiedad?
+                  Solicitar Levantamiento / Servicio
                 </h2>
-                <p
-                  style={{
-                    color: "#666",
-                    fontSize: "0.95rem",
-                    marginBottom: "25px",
-                  }}
-                >
-                  <strong>Propiedad:</strong> {propiedadSeleccionada?.direccion}
-                </p>
+
+                {listaPropiedades.length > 1 ? (
+                  <div style={{ textAlign: "left", marginBottom: "20px" }}>
+                    <label style={{ display: "block", fontSize: "0.85rem", fontWeight: "bold", color: "#334155", marginBottom: "6px" }}>
+                      Selecciona la Propiedad:
+                    </label>
+                    <select
+                      value={propiedadSeleccionada?.id || ""}
+                      onChange={(e) => {
+                        const prop = listaPropiedades.find(p => p.id === Number(e.target.value));
+                        if (prop) setPropiedadSeleccionada(prop);
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: "10px",
+                        border: "1.5px solid #cbd5e1",
+                        fontSize: "0.95rem",
+                        backgroundColor: "#fff",
+                        color: "#1e293b",
+                        fontWeight: "600",
+                        outline: "none"
+                      }}
+                    >
+                      {listaPropiedades.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre_propiedad || p.direccion || `Propiedad #${p.id}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <p
+                    style={{
+                      color: "#64748b",
+                      fontSize: "0.95rem",
+                      marginBottom: "20px",
+                      background: "#f8fafc",
+                      padding: "10px 14px",
+                      borderRadius: "10px",
+                      border: "1px solid #e2e8f0"
+                    }}
+                  >
+                    <strong style={{ color: "#334155" }}>Propiedad:</strong> {propiedadSeleccionada?.nombre_propiedad || propiedadSeleccionada?.direccion || "Sin especificar"}
+                  </p>
+                )}
 
                 <div
                   style={{
                     textAlign: "left",
                     marginBottom: "25px",
-                    backgroundColor: "#f9f9f9",
-                    padding: "15px",
-                    borderRadius: "8px",
-                    border: "1px solid #eee",
+                    backgroundColor: "#f8fafc",
+                    padding: "16px",
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
                   }}
                 >
                   <label
@@ -646,24 +746,24 @@ const VistaPropiedades = () => {
                       display: "flex",
                       alignItems: "center",
                       gap: "8px",
-                      fontSize: "0.9rem",
-                      color: "#444",
+                      fontSize: "0.88rem",
+                      color: "#334155",
                       fontWeight: "bold",
-                      marginBottom: "10px",
+                      marginBottom: "8px",
                     }}
                   >
-                    <User size={18} /> Asignar Supervisor (Opcional)
+                    <User size={18} color="#f26522" /> Asignar Supervisor (Opcional)
                   </label>
                   <p
                     style={{
-                      fontSize: "0.8rem",
-                      color: "#888",
+                      fontSize: "0.78rem",
+                      color: "#64748b",
                       marginBottom: "10px",
                       lineHeight: "1.4",
                     }}
                   >
                     Si el dueño no se encontrará en la propiedad, asigne a
-                    alguien responsable de vigilar el levantamiento.
+                    alguien responsable de atender la visita.
                   </p>
                   <input
                     type="text"
@@ -672,10 +772,12 @@ const VistaPropiedades = () => {
                     onChange={(e) => setNombreResponsable(e.target.value)}
                     style={{
                       width: "100%",
-                      padding: "10px",
-                      borderRadius: "6px",
-                      border: "1px solid #ccc",
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid #cbd5e1",
                       outline: "none",
+                      fontSize: "0.9rem",
+                      boxSizing: "border-box"
                     }}
                   />
                 </div>
@@ -683,7 +785,7 @@ const VistaPropiedades = () => {
                 <div
                   style={{
                     display: "flex",
-                    gap: "15px",
+                    gap: "12px",
                     justifyContent: "center",
                   }}
                 >
@@ -691,29 +793,30 @@ const VistaPropiedades = () => {
                     type="button"
                     onClick={() => setMostrarModalServicio(false)}
                     style={{
-                      padding: "10px 20px",
-                      borderRadius: "6px",
-                      border: "1px solid #ccc",
+                      padding: "12px 20px",
+                      borderRadius: "10px",
+                      border: "1.5px solid #cbd5e1",
                       backgroundColor: "white",
-                      color: "#555",
+                      color: "#475569",
                       fontWeight: "bold",
                       cursor: "pointer",
                       flex: 1,
                     }}
                   >
-                    NO, CANCELAR
+                    CANCELAR
                   </button>
                   <button
                     type="submit"
                     style={{
-                      padding: "10px 20px",
-                      borderRadius: "6px",
+                      padding: "12px 20px",
+                      borderRadius: "10px",
                       border: "none",
-                      backgroundColor: "#4CAF50",
+                      backgroundColor: "#f26522",
                       color: "white",
                       fontWeight: "bold",
                       cursor: "pointer",
                       flex: 1,
+                      boxShadow: "0 4px 14px rgba(242, 101, 34, 0.4)"
                     }}
                   >
                     SÍ, SOLICITAR
@@ -725,18 +828,19 @@ const VistaPropiedades = () => {
             {pasoModal === 2 && (
               <div style={{ textAlign: "center", padding: "20px 10px" }}>
                 <CheckCircle
-                  size={70}
-                  color="#4CAF50"
-                  style={{ margin: "0 auto 20px auto" }}
+                  size={64}
+                  color="#10b981"
+                  style={{ margin: "0 auto 16px auto" }}
                 />
-                <h2 style={{ color: "#333", marginBottom: "15px" }}>
+                <h2 style={{ color: "#1e293b", marginBottom: "12px", fontWeight: 800 }}>
                   ¡Levantamiento Solicitado!
                 </h2>
                 <p
                   style={{
-                    color: "#666",
+                    color: "#64748b",
                     lineHeight: "1.5",
-                    marginBottom: "30px",
+                    marginBottom: "26px",
+                    fontSize: "0.95rem"
                   }}
                 >
                   Ha solicitado un levantamiento para esta propiedad. Se le
@@ -746,13 +850,14 @@ const VistaPropiedades = () => {
                   onClick={cerrarModalYRecargar}
                   style={{
                     padding: "12px 30px",
-                    borderRadius: "6px",
+                    borderRadius: "10px",
                     border: "none",
-                    backgroundColor: "#4CAF50",
+                    backgroundColor: "#10b981",
                     color: "white",
                     fontWeight: "bold",
                     cursor: "pointer",
                     width: "100%",
+                    boxShadow: "0 4px 14px rgba(16, 185, 129, 0.4)"
                   }}
                 >
                   ENTENDIDO
@@ -760,19 +865,24 @@ const VistaPropiedades = () => {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {/* MODAL DE EDICIÓN DE PROPIEDAD */}
-      {mostrarModalEditar && (
+      {mostrarModalEditar && createPortal(
         <div
           className="modal-overlay"
           onClick={() => !editando && setMostrarModalEditar(false)}
           style={{
-            zIndex: 1100,
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999999,
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            backgroundColor: "rgba(0,0,0,0.7)",
+            backgroundColor: "rgba(15, 23, 42, 0.78)",
+            backdropFilter: "blur(8px)",
+            padding: "20px"
           }}
         >
           <div
@@ -782,10 +892,11 @@ const VistaPropiedades = () => {
               maxWidth: "450px",
               width: "100%",
               padding: "30px",
-              borderRadius: "12px",
+              borderRadius: "16px",
               backgroundColor: "white",
               position: "relative",
-              boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+              zIndex: 10000000
             }}
           >
             <button
@@ -795,19 +906,25 @@ const VistaPropiedades = () => {
                 position: "absolute",
                 top: "15px",
                 right: "15px",
-                background: "none",
+                background: "rgba(0,0,0,0.06)",
                 border: "none",
+                borderRadius: "50%",
+                width: "32px",
+                height: "32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 cursor: "pointer",
               }}
             >
-              <X size={24} color="#666" />
+              <X size={20} color="#333" strokeWidth={2.8} />
             </button>
 
             <form onSubmit={handleUpdateProperty}>
-              <h2 style={{ marginBottom: '20px', color: '#333', textAlign: 'center' }}>Editar Propiedad</h2>
+              <h2 style={{ marginBottom: '20px', color: '#1e293b', textAlign: 'center', fontWeight: 800 }}>Editar Propiedad</h2>
               
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '0.9rem' }}>Nombre de la Propiedad</label>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '0.9rem', color: '#334155' }}>Nombre de la Propiedad</label>
                 <input 
                   type="text" 
                   value={editNombre}
@@ -816,23 +933,25 @@ const VistaPropiedades = () => {
                   style={{ 
                     width: '100%', 
                     padding: '12px', 
-                    borderRadius: '6px', 
-                    border: '1px solid #ddd',
+                    borderRadius: '8px', 
+                    border: '1px solid #cbd5e1',
                     backgroundColor: 'white',
-                    color: '#333'
+                    color: '#1e293b',
+                    fontSize: '0.95rem',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
 
               <div style={{ marginBottom: '25px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '0.9rem' }}>Nueva Foto de Fachada</label>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '0.9rem', color: '#334155' }}>Nueva Foto de Fachada</label>
                 <input 
                   type="file" 
                   accept="image/*"
                   onChange={(e) => setEditFoto(e.target.files[0])}
-                  style={{ width: '100%', fontSize: '0.8rem' }}
+                  style={{ width: '100%', fontSize: '0.85rem' }}
                 />
-                <small style={{ color: '#888' }}>* Dejar vacío para mantener la foto actual.</small>
+                <small style={{ color: '#64748b' }}>* Dejar vacío para mantener la foto actual.</small>
               </div>
 
               <div style={{ display: 'flex', gap: '10px' }}>
@@ -844,9 +963,9 @@ const VistaPropiedades = () => {
                     flex: 1,
                     padding: '12px',
                     borderRadius: '8px',
-                    border: '1px solid #ccc',
-                    backgroundColor: '#f8f9fa',
-                    color: '#333',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#f8fafc',
+                    color: '#475569',
                     fontWeight: 'bold',
                     cursor: 'pointer'
                   }}
@@ -861,10 +980,11 @@ const VistaPropiedades = () => {
                     padding: '12px',
                     borderRadius: '8px',
                     border: 'none',
-                    backgroundColor: '#ff6b00',
+                    backgroundColor: '#f26522',
                     color: 'white',
                     fontWeight: 'bold',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(242, 101, 34, 0.4)'
                   }}
                 >
                   {editando ? "Guardando..." : "Guardar Cambios"}
@@ -872,7 +992,8 @@ const VistaPropiedades = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <ModalRegistroInmueble

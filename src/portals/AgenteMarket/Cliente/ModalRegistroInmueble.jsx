@@ -164,8 +164,8 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
 
         <div className="mri-header">
           <h2 className="mri-title">REGISTRO DE INMUEBLE</h2>
-          <button className="mri-close-btn" onClick={onClose} title="Cerrar ventana">
-            <X size={18} />
+          <button className="mri-close-btn" onClick={onClose} title="Cerrar ventana" aria-label="Cerrar ventana">
+            <X size={20} color="#ffffff" strokeWidth={2.8} style={{ stroke: '#ffffff', color: '#ffffff', width: '20px', height: '20px', display: 'block' }} />
           </button>
         </div>
 

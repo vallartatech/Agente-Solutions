@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -342,7 +343,7 @@ const VistaDetallePropiedad = () => {
       {/* ==========================================
           MODAL 1: DETALLE DE TRABAJO (HISTORIAL)
           ========================================== */}
-      {reporteSeleccionado && (
+      {reporteSeleccionado && createPortal(
         <div className="modal-overlay" onClick={() => setReporteSeleccionado(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="close-modal" onClick={() => setReporteSeleccionado(null)}><X /></button>
@@ -386,13 +387,14 @@ const VistaDetallePropiedad = () => {
               <button className="btn-modal-close" onClick={() => setReporteSeleccionado(null)} style={{ background: '#F26522', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>CERRAR REPORTE</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ==========================================
           MODAL 2: AGREGAR SERVICIO
           ========================================== */}
-      {mostrarModalServicio && (
+      {mostrarModalServicio && createPortal(
         <div className="modal-overlay" onClick={() => setMostrarModalServicio(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="close-modal" onClick={() => setMostrarModalServicio(false)}><X /></button>
@@ -519,13 +521,14 @@ const VistaDetallePropiedad = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ==========================================
           MODAL 3: PERFIL DE LA PROPIEDAD
           ========================================== */}
-      {mostrarPerfilPropiedad && (
+      {mostrarPerfilPropiedad && createPortal(
         <div className="modal-overlay" onClick={() => setMostrarPerfilPropiedad(false)}>
           <div className="modal-content profile-modal" onClick={e => e.stopPropagation()}>
             <button className="close-modal" onClick={() => setMostrarPerfilPropiedad(false)}><X /></button>
@@ -580,32 +583,34 @@ const VistaDetallePropiedad = () => {
                </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
+
       {/* MODAL DE SELECCIÓN DE FOTO */}
-      {isPhotoMenuOpen && (
-        <div className="modal-overlay" onClick={() => setIsPhotoMenuOpen(false)} style={{ zIndex: 2000 }}>
+      {isPhotoMenuOpen && createPortal(
+        <div className="modal-overlay" onClick={() => setIsPhotoMenuOpen(false)}>
           <div className="modal-content" style={{ maxWidth: '350px', padding: '0', backgroundColor: '#fff' }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid #eee' }}>
               <h3 style={{ margin: 0, color: '#f26624' }}>Seleccionar Origen</h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <button 
-                type="button"
+                type="button" 
                 onClick={() => selectPhotoSource('camera')}
                 style={{ background: 'transparent', border: 'none', padding: '15px', color: '#333', borderBottom: '1px solid #eee', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
               >
                 <Camera size={20} /> Tomar Foto
               </button>
               <button 
-                type="button"
+                type="button" 
                 onClick={() => selectPhotoSource('gallery')}
                 style={{ background: 'transparent', border: 'none', padding: '15px', color: '#333', borderBottom: '1px solid #eee', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
               >
                 <ImageIcon size={20} /> Elegir de la Galería
               </button>
               <button 
-                type="button"
+                type="button" 
                 onClick={() => setIsPhotoMenuOpen(false)}
                 style={{ background: 'transparent', border: 'none', padding: '15px', color: '#666', fontSize: '1rem', cursor: 'pointer' }}
               >
@@ -613,7 +618,8 @@ const VistaDetallePropiedad = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       </div>
     </div>

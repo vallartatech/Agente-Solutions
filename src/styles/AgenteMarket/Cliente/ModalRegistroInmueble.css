@@ -90,29 +90,35 @@
 
 .mri-close-btn {
   position: static;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1.5px solid rgba(255, 255, 255, 0.45);
-  color: #ffffff;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.22s ease;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.6) !important;
+  color: #ffffff !important;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.22s ease !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  z-index: 10 !important;
 }
 
 .mri-close-btn svg {
   stroke: #ffffff !important;
   color: #ffffff !important;
-  stroke-width: 2.3px !important;
-  display: block;
+  fill: none !important;
+  stroke-width: 2.8px !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: block !important;
 }
 
 .mri-close-btn:hover {
