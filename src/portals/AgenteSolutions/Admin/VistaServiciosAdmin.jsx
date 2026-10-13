@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -924,9 +925,23 @@ const VistaServiciosAdmin = () => {
       {modalVisible && tareaSeleccionada && (
         (() => {
           const activeTask = tareaSeleccionada.isBatch ? tareaSeleccionada.batchTasks[activeBatchTab] : tareaSeleccionada;
-          return (
-        <div className="modal-view-overlay" onClick={cerrarModal}>
-          <div className="modal-card-container" onClick={e => e.stopPropagation()}>
+          return createPortal(
+        <div 
+          className="modal-view-overlay" 
+          onClick={cerrarModal}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            background: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(4px)'
+          }}
+        >
+          <div className="modal-card-container" onClick={e => e.stopPropagation()} style={{ zIndex: 10000000, margin: 'auto', maxHeight: '88vh' }}>
             <div className={`modal-top-indicator ${verBitacora ? 'is-bitacora' : activeTask.estado}`}>
                <div className="indicator-content">
                   {verBitacora && <ArrowLeft size={18} className="nav-back-icon" onClick={() => setVerBitacora(false)} />}
@@ -1604,14 +1619,31 @@ const VistaServiciosAdmin = () => {
                 )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
           );
         })()
       )}
 
-      {modalSurveyVisible && (
-        <div className="modal-survey-overlay" onClick={() => setModalSurveyVisible(false)}>
-          <div className="modal-survey-card" onClick={e => e.stopPropagation()}>
+      {modalSurveyVisible && createPortal(
+        <div 
+          className="modal-survey-overlay" 
+          onClick={() => setModalSurveyVisible(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 9999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            background: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(8px)'
+          }}
+        >
+          <div className="modal-survey-card" onClick={e => e.stopPropagation()} style={{ zIndex: 10000000, margin: 'auto' }}>
             <div className="survey-header">
               <div className="survey-header-info">
                 <FileText size={24} color="#F26522" />
@@ -1756,16 +1788,31 @@ const VistaServiciosAdmin = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {imagenExpandida && (
-        <div className="zoom-overlay" onClick={() => setImagenExpandida(null)}>
+      {imagenExpandida && createPortal(
+        <div 
+          className="zoom-overlay" 
+          onClick={() => setImagenExpandida(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 10000005,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(15, 23, 42, 0.95)',
+            padding: '20px'
+          }}
+        >
           <button className="zoom-close-fixed" onClick={() => setImagenExpandida(null)}><X size={32} /></button>
           <div className="zoom-content" onClick={e => e.stopPropagation()}>
             <img src={imagenExpandida} className="image-zoomed" alt="Zoom" />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {modalChecklistVisible && tareaSeleccionada && (
@@ -2015,13 +2062,12 @@ const VistaServiciosAdmin = () => {
 
         .modal-survey-overlay {
           position: fixed;
-          top: 0;
-          left: 0;
+          inset: 0;
           width: 100vw;
           height: 100vh;
           background: rgba(0,0,0,0.85);
           backdrop-filter: blur(8px);
-          z-index: 10000;
+          z-index: 9999999 !important;
           display: flex;
           align-items: center;
           justify-content: center;

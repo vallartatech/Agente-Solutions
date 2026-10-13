@@ -36,28 +36,33 @@
 /* ESTILOS DEL MODAL */
 .rdh-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 9999999 !important;
+  padding: 24px;
+  box-sizing: border-box;
 }
 
 .rdh-modal-content {
   background-color: #f8fafc;
   width: 550px;
   max-width: 95vw;
-  max-height: 92vh; /* Evita que salga de la pantalla vertical */
+  max-height: 86vh; /* Evita que salga de la pantalla vertical */
   overflow-y: auto;  /* Permite scroll si la pantalla es muy chica */
   border-radius: 30px;
   padding: 30px 35px;
   position: relative;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.4);
   box-sizing: border-box;
+  margin: auto;
+  z-index: 10000000 !important;
 }
 
 .rdh-modal-close {

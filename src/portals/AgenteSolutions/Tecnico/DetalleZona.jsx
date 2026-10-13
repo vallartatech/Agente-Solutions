@@ -253,15 +253,36 @@ const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId }) => {
               </label>
               
               {selectedFile && (
-                <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '6px', zIndex: 20 }}>
+                <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '8px', zIndex: 100 }}>
                   <button 
                     type="button"
                     onClick={guardarNuevaFoto} 
                     disabled={subiendoFoto}
                     title="Guardar foto seleccionada"
-                    style={{ backgroundColor: '#22c55e', color: '#ffffff', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.35)' }}
+                    style={{ 
+                      backgroundColor: '#16a34a', 
+                      color: '#ffffff', 
+                      border: '2.5px solid #ffffff', 
+                      borderRadius: '50%', 
+                      width: '36px', 
+                      height: '36px', 
+                      minWidth: '36px',
+                      minHeight: '36px',
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      cursor: 'pointer', 
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                      padding: 0
+                    }}
                   >
-                    {subiendoFoto ? <Loader2 size={18} color="#ffffff" className="animate-spin" /> : <Check size={20} color="#ffffff" strokeWidth={3} />}
+                    {subiendoFoto ? (
+                      <Loader2 size={18} color="#ffffff" className="animate-spin" />
+                    ) : (
+                      <span style={{ color: '#ffffff', fontSize: '20px', fontWeight: '900', lineHeight: '1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        ✓
+                      </span>
+                    )}
                   </button>
                   <button 
                     type="button"
@@ -271,9 +292,26 @@ const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId }) => {
                     }}
                     disabled={subiendoFoto}
                     title="Cancelar y descartar foto seleccionada (X)"
-                    style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.35)' }}
+                    style={{ 
+                      backgroundColor: '#dc2626', 
+                      color: '#ffffff', 
+                      border: '2.5px solid #ffffff', 
+                      borderRadius: '50%', 
+                      width: '36px', 
+                      height: '36px', 
+                      minWidth: '36px',
+                      minHeight: '36px',
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      cursor: 'pointer', 
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                      padding: 0
+                    }}
                   >
-                    <X size={18} color="#ffffff" strokeWidth={3} />
+                    <span style={{ color: '#ffffff', fontSize: '20px', fontWeight: '900', lineHeight: '1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      ✕
+                    </span>
                   </button>
                 </div>
               )}

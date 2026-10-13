@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import "../../../styles/AgenteSolutions/Tecnico/RegistroDetalleHabitacion.css"; 
 import { Plus, ArrowLeft, ImageIcon, Loader2, Edit3, Eye, X, CheckCircle, Trash2 } from 'lucide-react';
@@ -396,13 +397,40 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
       </div>
 
       {/* MODAL PARA AGREGAR NUEVA CATEGORÍA */}
-      {isModalOpen && (
-        <div className="rdh-modal-overlay" onClick={() => {
-          setIsModalOpen(false);
-          setCreandoNuevaCategoria(false);
-          setCategoriasSeleccionadas([]);
-        }}>
-          <div className="rdh-modal-content" style={{ width: '600px', maxWidth: '95vw', padding: '30px' }} onClick={e => e.stopPropagation()}>
+      {isModalOpen && createPortal(
+        <div 
+          className="rdh-modal-overlay" 
+          onClick={() => {
+            setIsModalOpen(false);
+            setCreandoNuevaCategoria(false);
+            setCategoriasSeleccionadas([]);
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            background: 'rgba(15, 23, 42, 0.78)',
+            backdropFilter: 'blur(6px)'
+          }}
+        >
+          <div 
+            className="rdh-modal-content" 
+            style={{ 
+              width: '600px', 
+              maxWidth: '95vw', 
+              maxHeight: '86vh',
+              overflowY: 'auto',
+              padding: '30px',
+              zIndex: 10000000,
+              margin: 'auto',
+              position: 'relative'
+            }} 
+            onClick={e => e.stopPropagation()}
+          >
             <button className="rdh-modal-close" onClick={() => {
               setIsModalOpen(false);
               setCreandoNuevaCategoria(false);
@@ -570,13 +598,27 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL DE SELECCIÓN DE FOTO */}
-      {isPhotoMenuOpen && (
-        <div className="rdh-modal-overlay" onClick={() => setIsPhotoMenuOpen(false)} style={{ zIndex: 10000 }}>
-          <div className="rdh-modal-content" style={{ maxWidth: '400px', padding: '0', backgroundColor: '#1a1a1a', border: '1px solid #333' }} onClick={e => e.stopPropagation()}>
+      {isPhotoMenuOpen && createPortal(
+        <div 
+          className="rdh-modal-overlay" 
+          onClick={() => setIsPhotoMenuOpen(false)} 
+          style={{ 
+            position: 'fixed', 
+            inset: 0, 
+            zIndex: 10000005, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            background: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(4px)'
+          }}
+        >
+          <div className="rdh-modal-content" style={{ maxWidth: '400px', padding: '0', backgroundColor: '#1a1a1a', border: '1px solid #333', zIndex: 10000006, margin: 'auto' }} onClick={e => e.stopPropagation()}>
             <h3 style={{ color: '#F26522', borderBottom: '1px solid #333', margin: 0, padding: '20px', textAlign: 'center', fontSize: '1.2rem' }}>Seleccionar Foto</h3>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <button 
@@ -605,14 +647,15 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* LIGHTBOX PARA IMAGEN AMPLIADA */}
-      {imagenAmpliada && (
+      {imagenAmpliada && createPortal(
         <div 
           onClick={() => setImagenAmpliada(null)}
-          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}
+          style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.88)', zIndex: 10000010, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}
         >
           <img src={imagenAmpliada} alt="Zoom" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }} />
           <button 
@@ -621,7 +664,8 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
           >
              <X size={40} />
           </button>
-        </div>
+        </div>,
+        document.body
       )}
       </div>
     </>
