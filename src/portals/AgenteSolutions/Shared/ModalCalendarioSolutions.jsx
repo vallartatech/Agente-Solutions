@@ -27,7 +27,8 @@ import {
   Wrench,
   ExternalLink,
   Save,
-  Check
+  Check,
+  CalendarDays
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -80,18 +81,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [activePhoto, setActivePhoto] = useState(null);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
-  const [mobileModalTab, setMobileModalTab] = useState('details'); // 'details' | 'quotes'
 
   // Estados de edición de Cita / Técnico (Admins)
   const [editTecnicoId, setEditTecnicoId] = useState('');
   const [editScheduledAt, setEditScheduledAt] = useState('');
   const [savingChanges, setSavingChanges] = useState(false);
-
-  // Estados para jobs de red con cotizaciones
-  const [activeChatQuote, setActiveChatQuote] = useState(null);
-  const [clientChatInput, setClientChatInput] = useState('');
-  const [sendingClientChat, setSendingClientChat] = useState(false);
-  const chatEndRef = useRef(null);
 
   // Helper para procesar orden o servicio a un evento estándar de calendario
   const processOrderToEvent = useCallback((order, isDirectService = false) => {
@@ -129,17 +123,20 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     let timingBadge = '⏳ Por Coordinar';
     let timingRelative = 'Sin fecha agendada';
     let statusLabel = 'Horario Por Coordinar';
+    let statusType = 'uncoordinated';
 
     if (isCompleted) {
       timingCategory = 'completed';
       timingBadge = '✓ Finalizado';
       timingRelative = 'Trabajo Concluido';
       statusLabel = 'Trabajo Terminado';
+      statusType = 'confirmed';
     } else if (!hasScheduledDate) {
       timingCategory = 'uncoordinated';
       timingBadge = '⏳ Por Coordinar';
       timingRelative = 'Coordinación pendiente';
       statusLabel = '⏳ Horario Por Coordinar';
+      statusType = 'uncoordinated';
     } else if (eventDate < todayStart) {
       const diffMs = todayStart.getTime() - eventDate.getTime();
       const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
@@ -147,11 +144,13 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       timingBadge = '🚨 Atrasada';
       timingRelative = `Atrasada por ${diffDays} día${diffDays > 1 ? 's' : ''}`;
       statusLabel = `⚠️ Cita Vencida (${diffDays}d)`;
+      statusType = 'overdue';
     } else if (isToday) {
       timingCategory = 'today';
       timingBadge = '⚡ Hoy';
       timingRelative = `Hoy a las ${timeFormatted}`;
       statusLabel = `🔥 Cita Hoy (${timeFormatted})`;
+      statusType = 'today';
     } else {
       const diffMs = eventDate.getTime() - todayEnd.getTime();
       const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
@@ -159,6 +158,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       timingBadge = '📅 Próxima';
       timingRelative = diffDays <= 7 ? `En ${diffDays} día${diffDays > 1 ? 's' : ''}` : `El ${eventDate.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}`;
       statusLabel = `En ${diffDays} día${diffDays > 1 ? 's' : ''} (${timeFormatted})`;
+      statusType = 'future';
     }
 
     // Resolver técnico
@@ -223,6 +223,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       priority: order.priority || 'Normal',
       calendarDate: eventDate,
       dateKey,
+      hourIndex,
       calendarHour: hourIndex,
       calendarTime: timeFormatted,
       scheduled_at: rawScheduled,
@@ -237,6 +238,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       timingBadge,
       timingRelative,
       statusLabel,
+      statusType,
       isOverdue: timingCategory === 'overdue',
       isToday: timingCategory === 'today',
       isFuture: timingCategory === 'future',
@@ -280,7 +282,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
       // 1. Procesar todas las Work Orders del tenant
       rawOrders.forEach(wo => {
-        // Si es técnico, filtrar solo los que le corresponden o no asignados
+        // Si es técnico, filtrar solo los que le corresponden
         if (isTechnician && !isAdmin) {
           const isAssignedToMe = Number(wo.tecnico_id) === Number(user?.id) || 
             (wo.technicians && wo.technicians.some(t => Number(t.id) === Number(user?.id)));
@@ -307,7 +309,6 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         resMercado.data.data.forEach(mJob => {
           const key = `wo_${mJob.id}`;
           if (!eventMap.has(key)) {
-            // Solo añadir si es admin o si el técnico está involucrado
             if (isAdmin) {
               const ev = processOrderToEvent(mJob, false);
               eventMap.set(key, ev);
@@ -357,7 +358,6 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     setActivePhoto(job.fotos?.[0] || job.foto || null);
     setEditTecnicoId(job.tecnico_id || '');
     setEditScheduledAt(job.scheduled_at ? job.scheduled_at.substring(0, 16) : '');
-    setMobileModalTab('details');
     setShowDetailModal(true);
   };
 
@@ -458,98 +458,156 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     return null;
   }, [allEvents]);
 
-  // Generador de matriz de mes
+  // Matriz de días del mes (ARRAY PLANO idéntico a CalendarioCliente)
   const monthMatrix = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-
-    const startingDayIndex = firstDay.getDay();
-    const totalDays = lastDay.getDate();
-
-    const prevMonthLastDay = new Date(year, month, 0).getDate();
-
-    const matrix = [];
-    let week = [];
-
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const cells = [];
 
-    // Días del mes anterior
-    for (let i = startingDayIndex - 1; i >= 0; i--) {
-      const dayNum = prevMonthLastDay - i;
+    // Días del mes previo
+    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+      const dayNum = daysInPrevMonth - i;
       const prevDate = new Date(year, month - 1, dayNum);
       const dateKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`;
-      week.push({
+      cells.push({
         dayNumber: dayNum,
         dateKey,
         isCurrentMonth: false,
         isToday: dateKey === todayStr,
-        date: prevDate
+        events: filteredEvents.filter(e => e.dateKey === dateKey)
       });
     }
 
     // Días del mes actual
-    for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+    for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
       const thisDate = new Date(year, month, dayNum);
-      const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-      week.push({
+      const dateKey = `${thisDate.getFullYear()}-${String(thisDate.getMonth() + 1).padStart(2, '0')}-${String(thisDate.getDate()).padStart(2, '0')}`;
+      cells.push({
         dayNumber: dayNum,
         dateKey,
         isCurrentMonth: true,
         isToday: dateKey === todayStr,
-        date: thisDate
+        events: filteredEvents.filter(e => e.dateKey === dateKey)
       });
-
-      if (week.length === 7) {
-        matrix.push(week);
-        week = [];
-      }
     }
 
-    // Días del mes siguiente
-    if (week.length > 0) {
-      let nextDayNum = 1;
-      while (week.length < 7) {
-        const nextDate = new Date(year, month + 1, nextDayNum);
-        const dateKey = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDayNum).padStart(2, '0')}`;
-        week.push({
-          dayNumber: nextDayNum,
-          dateKey,
-          isCurrentMonth: false,
-          isToday: dateKey === todayStr,
-          date: nextDate
-        });
-        nextDayNum++;
-      }
-      matrix.push(week);
+    // Días del mes siguiente para completar la cuadrícula de 7 columnas
+    const remaining = (7 - (cells.length % 7)) % 7;
+    for (let i = 1; i <= remaining; i++) {
+      const nextDate = new Date(year, month + 1, i);
+      const dateKey = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
+      cells.push({
+        dayNumber: i,
+        dateKey,
+        isCurrentMonth: false,
+        isToday: dateKey === todayStr,
+        events: filteredEvents.filter(e => e.dateKey === dateKey)
+      });
     }
 
-    return matrix;
-  }, [currentDate]);
+    return cells;
+  }, [currentDate, filteredEvents]);
 
-  // Mini calendario
-  const miniCalDays = useMemo(() => {
-    const year = miniCalDate.getFullYear();
-    const month = miniCalDate.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const totalDays = new Date(year, month + 1, 0).getDate();
-    const prevMonthDays = new Date(year, month, 0).getDate();
+  // Días de la semana para vista 'week'
+  const weekDaysList = useMemo(() => {
+    const current = new Date(currentDate);
+    const dayOfWeek = current.getDay();
+    const sunday = new Date(current);
+    sunday.setDate(current.getDate() - dayOfWeek);
+
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     const days = [];
-    for (let i = firstDay - 1; i >= 0; i--) {
-      days.push({ dayNumber: prevMonthDays - i, isCurrentMonth: false });
-    }
-    for (let d = 1; d <= totalDays; d++) {
-      days.push({ dayNumber: d, isCurrentMonth: true });
-    }
-    while (days.length % 7 !== 0) {
-      days.push({ dayNumber: days.length - totalDays - firstDay + 1, isCurrentMonth: false });
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sunday);
+      d.setDate(sunday.getDate() + i);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      days.push({
+        dayIndex: i,
+        dayName: DAY_NAMES_MINI[i],
+        dayNumber: d.getDate(),
+        dateKey,
+        isToday: dateKey === todayStr
+      });
     }
     return days;
-  }, [miniCalDate]);
+  }, [currentDate]);
+
+  // Agrupar eventos para la vista de Agenda
+  const agendaGroupedEvents = useMemo(() => {
+    const sorted = [...filteredEvents].sort((a, b) => a.calendarDate - b.calendarDate);
+    const groups = {};
+    sorted.forEach(ev => {
+      if (!groups[ev.dateKey]) {
+        groups[ev.dateKey] = {
+          dateStr: ev.calendarDate.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+          items: []
+        };
+      }
+      groups[ev.dateKey].items.push(ev);
+    });
+    return Object.values(groups);
+  }, [filteredEvents]);
+
+  // Mini calendario matrix
+  const miniCalMatrix = useMemo(() => {
+    const year = miniCalDate.getFullYear();
+    const month = miniCalDate.getMonth();
+
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const cells = [];
+
+    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+      const dayNum = daysInPrevMonth - i;
+      const d = new Date(year, month - 1, dayNum);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      cells.push({
+        dayNum,
+        dateKey,
+        isCurrentMonth: false,
+        isToday: dateKey === todayStr,
+        hasEvents: allEvents.some(j => j.dateKey === dateKey)
+      });
+    }
+
+    for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+      const d = new Date(year, month, dayNum);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      cells.push({
+        dayNum,
+        dateKey,
+        isCurrentMonth: true,
+        isToday: dateKey === todayStr,
+        hasEvents: allEvents.some(j => j.dateKey === dateKey)
+      });
+    }
+
+    const remaining = (7 - (cells.length % 7)) % 7;
+    for (let i = 1; i <= remaining; i++) {
+      const d = new Date(year, month + 1, i);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      cells.push({
+        dayNum: i,
+        dateKey,
+        isCurrentMonth: false,
+        isToday: dateKey === todayStr,
+        hasEvents: allEvents.some(j => j.dateKey === dateKey)
+      });
+    }
+
+    return cells;
+  }, [miniCalDate, allEvents]);
 
   if (!isOpen) return null;
 
@@ -628,196 +686,291 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                 </div>
               </div>
 
-              {/* Búsqueda rápida */}
-              <div className="cal-search-box">
-                <Search size={16} className="search-icon" />
-                <input 
-                  type="text" 
-                  placeholder="Buscar servicio o cliente..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button className="search-clear-btn" onClick={() => setSearchQuery('')}>×</button>
-                )}
-              </div>
-
-              {/* Selector de Vista (Mes / Agenda) */}
-              <div className="cal-view-selector">
-                <button 
-                  className={`cal-view-btn ${currentView === 'month' ? 'active' : ''}`}
-                  onClick={() => setCurrentView('month')}
-                >
-                  Mes
-                </button>
-                <button 
-                  className={`cal-view-btn ${currentView === 'agenda' ? 'active' : ''}`}
-                  onClick={() => setCurrentView('agenda')}
-                >
-                  Agenda
-                </button>
-              </div>
-            </div>
-
-            {/* Pestañas de Filtros de Estado */}
-            <div className="cal-filter-tabs-row">
-              <div className="filter-label">Filtrar:</div>
-              <div className="filter-pills-list">
-                <button 
-                  className={`filter-pill ${selectedFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setSelectedFilter('all')}
-                >
-                  Todos ({countAll})
-                </button>
-                <button 
-                  className={`filter-pill pill-overdue ${selectedFilter === 'overdue' ? 'active' : ''}`}
-                  onClick={() => setSelectedFilter('overdue')}
-                >
-                  <span className="dot dot-red"></span> Atrasados ({countOverdue})
-                </button>
-                <button 
-                  className={`filter-pill pill-today ${selectedFilter === 'today' ? 'active' : ''}`}
-                  onClick={() => setSelectedFilter('today')}
-                >
-                  <span className="dot dot-orange"></span> Citas Hoy ({countToday})
-                </button>
-                <button 
-                  className={`filter-pill pill-future ${selectedFilter === 'future' ? 'active' : ''}`}
-                  onClick={() => setSelectedFilter('future')}
-                >
-                  <span className="dot dot-blue"></span> Próximos / Futuros ({countFuture})
-                </button>
-                <button 
-                  className={`filter-pill pill-uncoord ${selectedFilter === 'uncoordinated' ? 'active' : ''}`}
-                  onClick={() => setSelectedFilter('uncoordinated')}
-                >
-                  <span className="dot dot-amber"></span> ⏳ Por Coordinar ({countUncoordinated})
-                </button>
-              </div>
-            </div>
-
-            {/* GRID DEL CALENDARIO: VISTA MES */}
-            {currentView === 'month' && (
-              <div className="cal-grid-container">
-                {/* Cabecera de días de la semana */}
-                <div className="cal-weekdays-header">
-                  {DAY_NAMES_FULL.map((name, i) => (
-                    <div key={i} className="cal-weekday-cell">
-                      {name}
-                    </div>
-                  ))}
+              <div className="cal-controls-right">
+                {/* Búsqueda rápida */}
+                <div className="cal-search-box">
+                  <Search size={15} className="cal-search-icon" />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar servicio o cliente..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'absolute', right: '8px', color: '#94a3b8' }}
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
                 </div>
 
-                {/* Días del mes */}
-                <div className="cal-month-days-grid">
-                  {monthMatrix.map((week, wIdx) => (
-                    <div key={wIdx} className="cal-week-row">
-                      {week.map((cell, cIdx) => {
-                        const dayEvents = filteredEvents.filter(e => e.dateKey === cell.dateKey);
+                {/* Switcher de Vistas: Mes | Semana | Agenda */}
+                <div className="cal-view-selector">
+                  <button 
+                    className={`btn-view-tab ${currentView === 'month' ? 'active' : ''}`}
+                    onClick={() => setCurrentView('month')}
+                  >
+                    Mes
+                  </button>
+                  <button 
+                    className={`btn-view-tab ${currentView === 'week' ? 'active' : ''}`}
+                    onClick={() => setCurrentView('week')}
+                  >
+                    Semana
+                  </button>
+                  <button 
+                    className={`btn-view-tab ${currentView === 'agenda' ? 'active' : ''}`}
+                    onClick={() => setCurrentView('agenda')}
+                  >
+                    Agenda
+                  </button>
+                </div>
+              </div>
+            </div>
 
-                        return (
-                          <div 
-                            key={cIdx} 
-                            className={`cal-day-cell ${!cell.isCurrentMonth ? 'other-month' : ''} ${cell.isToday ? 'is-today' : ''}`}
-                            onClick={() => {
-                              if (dayEvents.length > 0) {
-                                handleEventClick(dayEvents[0]);
-                              }
-                            }}
-                          >
-                            <div className="cal-day-header">
-                              <span className="cal-day-number">{cell.dayNumber}</span>
-                              {dayEvents.length > 0 && (
-                                <span className="cal-day-event-count">{dayEvents.length}</span>
-                              )}
+            {/* Barra de Filtros y Leyenda */}
+            <div className="scheduler-legend-bar">
+              <span style={{ color: '#94a3b8', fontWeight: 800 }}>Filtrar:</span>
+              <button 
+                className={`legend-item ${selectedFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter('all')}
+              >
+                Todos ({countAll})
+              </button>
+
+              <button 
+                className={`legend-item legend-overdue ${selectedFilter === 'overdue' ? 'active' : ''} ${countOverdue > 0 ? 'has-overdue' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'overdue' ? 'all' : 'overdue')}
+                title="Citas cuya fecha programada ya pasó y no han concluido"
+              >
+                <span className="legend-dot dot-overdue"></span>
+                <span>🚨 Atrasados {countOverdue > 0 ? `(${countOverdue})` : '(0)'}</span>
+              </button>
+
+              <button 
+                className={`legend-item legend-today ${selectedFilter === 'today' ? 'active' : ''} ${countToday > 0 ? 'has-today' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'today' ? 'all' : 'today')}
+                title="Citas programadas para el día de hoy"
+              >
+                <span className="legend-dot dot-today"></span>
+                <span>⚡ Citas Hoy {countToday > 0 ? `(${countToday})` : '(0)'}</span>
+              </button>
+
+              <button 
+                className={`legend-item legend-future ${selectedFilter === 'future' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'future' ? 'all' : 'future')}
+                title="Citas agendadas para días futuros"
+              >
+                <span className="legend-dot dot-future"></span>
+                <span>📅 Próximos / Futuros {countFuture > 0 ? `(${countFuture})` : '(0)'}</span>
+              </button>
+
+              <button 
+                className={`legend-item legend-uncoordinated ${selectedFilter === 'uncoordinated' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'uncoordinated' ? 'all' : 'uncoordinated')}
+                title="Trabajos asignados sin fecha definida"
+              >
+                <span className="legend-dot dot-uncoordinated"></span>
+                <span>⏳ Por Coordinar {countUncoordinated > 0 ? `(${countUncoordinated})` : '(0)'}</span>
+              </button>
+            </div>
+
+            {/* Contenedor Canvas del Calendario */}
+            <div className="scheduler-canvas-card">
+              {loading ? (
+                <div className="cal-loading-container" style={{ padding: '60px', textAlign: 'center', color: '#cbd5e1' }}>
+                  <div className="cal-spinner"></div>
+                  <p style={{ fontWeight: 700, marginTop: '12px' }}>Cargando agenda de servicios...</p>
+                </div>
+              ) : currentView === 'month' ? (
+                /* ── VISTA MENSUAL ── */
+                <div className="cal-month-grid">
+                  <div className="cal-month-header-row">
+                    {DAY_NAMES_FULL.map((name, index) => (
+                      <div key={index} className="cal-header-cell">
+                        <span className="cal-header-day-full">{name}</span>
+                        <span className="cal-header-day-short">{name.substring(0, 3)}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="cal-month-days-grid">
+                    {monthMatrix.map((cell, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`cal-day-cell ${!cell.isCurrentMonth ? 'other-month' : ''} ${cell.isToday ? 'is-today' : ''}`}
+                        onClick={() => {
+                          if (cell.events.length > 0) {
+                            handleEventClick(cell.events[0]);
+                          }
+                        }}
+                      >
+                        <div className="cal-day-header">
+                          <span className="cal-day-number">{cell.dayNumber}</span>
+                          {cell.events.length > 0 && (
+                            <span className="cal-day-count-badge">
+                              {cell.events.length}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="cal-events-list">
+                          {cell.events.map((job) => (
+                            <div 
+                              key={job.id}
+                              className={`cal-event-chip status-${job.statusType} timing-${job.timingCategory}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEventClick(job);
+                              }}
+                              title={`${job.titulo}\n${job.timingBadge}\nHorario: ${job.calendarTime}\nCliente: ${job.cliente}\nDirección: ${job.calle || job.zona}\n(Clic para abrir todos los detalles)`}
+                            >
+                              <div className="chip-compact-row">
+                                {job.timingCategory === 'overdue' && <span className="chip-mini-dot dot-overdue"></span>}
+                                {job.timingCategory === 'today' && <span className="chip-mini-dot dot-today"></span>}
+                                {job.timingCategory === 'future' && <span className="chip-mini-dot dot-future"></span>}
+                                {job.timingCategory === 'uncoordinated' && <span className="chip-mini-dot dot-uncoordinated"></span>}
+                                {job.timingCategory === 'completed' && <span className="chip-mini-dot dot-confirmed"></span>}
+
+                                <span className="chip-compact-time">
+                                  {job.hasScheduledDate ? job.calendarTime : '⏳'}
+                                </span>
+                                <span className="chip-compact-title">
+                                  {job.titulo}
+                                </span>
+                              </div>
                             </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : currentView === 'week' ? (
+                /* ── VISTA SEMANAL CON HORAS ── */
+                <div className="cal-week-view-wrapper">
+                  <div className="cal-week-header-row">
+                    <div className="cal-header-cell" style={{ width: '60px' }}>HORA</div>
+                    {weekDaysList.map((d, i) => (
+                      <div key={i} className={`cal-week-day-header ${d.isToday ? 'is-today' : ''}`}>
+                        <div className="cal-week-day-name">{d.dayName}</div>
+                        <div className="cal-week-day-number">{d.dayNumber}</div>
+                      </div>
+                    ))}
+                  </div>
 
-                            <div className="cal-day-events-list">
-                              {dayEvents.slice(0, 3).map((job) => (
-                                <div 
-                                  key={job.id} 
-                                  className={`cal-event-pill ${job.timingCategory === 'overdue' ? 'event-overdue' : (job.timingCategory === 'today' ? 'event-today' : (job.timingCategory === 'future' ? 'event-future' : 'event-uncoord'))}`}
-                                  title={`${job.titulo} - ${job.cliente} (${job.calendarTime})`}
+                  <div className="cal-week-grid-body">
+                    {HOURS_LIST.map((hourLabel, hIdx) => {
+                      const hourNum = 8 + hIdx;
+                      return (
+                        <React.Fragment key={hIdx}>
+                          <div className="cal-week-time-label">{hourLabel}</div>
+                          {weekDaysList.map((d, dIdx) => {
+                            const matchingEvents = filteredEvents.filter(
+                              e => e.dateKey === d.dateKey && (e.hourIndex === hourNum || (!e.scheduled_at && hIdx === 2))
+                            );
+                            return (
+                              <div key={dIdx} className="cal-week-slot-cell">
+                                {matchingEvents.map(job => (
+                                  <div 
+                                    key={job.id}
+                                    className={`week-event-card status-${job.statusType} timing-${job.timingCategory}`}
+                                    onClick={() => handleEventClick(job)}
+                                  >
+                                    <div style={{ fontWeight: 800, fontSize: '0.68rem', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                      <Clock size={10} /> {job.calendarTime}
+                                      {job.timingCategory === 'overdue' && <span style={{ color: '#fca5a5' }}>[🚨 Atrasado]</span>}
+                                    </div>
+                                    <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {job.titulo}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                /* ── VISTA DE AGENDA ── */
+                <div className="cal-agenda-view">
+                  {agendaGroupedEvents.length === 0 ? (
+                    <div className="cal-empty-state">
+                      <CalendarDays size={44} color="#64748b" />
+                      <h4>No hay servicios en esta fecha</h4>
+                      <p>No se encontraron visitas técnicas ni órdenes programadas para este periodo.</p>
+                    </div>
+                  ) : (
+                    agendaGroupedEvents.map((group, gIdx) => (
+                      <div key={gIdx} className="agenda-day-group">
+                        <div className="agenda-date-header">
+                          <CalendarDays size={18} color="#FF6600" />
+                          {group.dateStr}
+                        </div>
+
+                        <div className="agenda-cards-grid">
+                          {group.items.map((job) => (
+                            <div 
+                              key={job.id}
+                              className={`agenda-item-card status-${job.statusType} timing-${job.timingCategory}`}
+                              onClick={() => handleEventClick(job)}
+                            >
+                              <div className="agenda-card-top">
+                                <div>
+                                  <h4 className="agenda-card-title">{job.titulo}</h4>
+                                  <span className="agenda-card-subtitle">{job.equipment ? `Equipo: ${job.equipment}` : job.type}</span>
+                                </div>
+                                <span className={`agenda-status-pill pill-${job.statusType} pill-timing-${job.timingCategory}`}>
+                                  {job.timingBadge}
+                                </span>
+                              </div>
+
+                              <div className="agenda-card-info">
+                                <div className="agenda-info-row">
+                                  <Clock size={13} color={job.timingCategory === 'overdue' ? '#ef4444' : '#ff6600'} />
+                                  <strong>Horario:</strong> <span style={{ color: job.timingCategory === 'overdue' ? '#fca5a5' : '#ffffff', fontWeight: 700 }}>{job.calendarTime} ({job.timingRelative})</span>
+                                </div>
+                                <div className="agenda-info-row">
+                                  <MapPin size={13} color="#94a3b8" />
+                                  <span>{job.calle || job.zona}</span>
+                                </div>
+                                <div className="agenda-info-row">
+                                  <User size={13} color="#94a3b8" />
+                                  <span>Cliente: <strong>{job.cliente}</strong></span>
+                                </div>
+                                {job.assigned_tech_name && (
+                                  <div className="agenda-info-row">
+                                    <Wrench size={13} color="#38bdf8" />
+                                    <span>Técnico: <strong style={{ color: '#38bdf8' }}>{job.assigned_tech_name}</strong></span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="agenda-card-actions">
+                                <button 
+                                  className="btn-modal-action primary"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleEventClick(job);
                                   }}
                                 >
-                                  <span className="event-time-tag">
-                                    {job.hasScheduledDate ? job.calendarTime : '⏳'}
-                                  </span>
-                                  <span className="event-title-tag">
-                                    {job.titulo}
-                                  </span>
-                                </div>
-                              ))}
-
-                              {dayEvents.length > 3 && (
-                                <div className="cal-events-more-tag">
-                                  +{dayEvents.length - 3} más
-                                </div>
-                              )}
+                                  Ver Detalles
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* VISTA AGENDA */}
-            {currentView === 'agenda' && (
-              <div className="cal-agenda-container" style={{ padding: '16px', overflowY: 'auto', maxHeight: '600px' }}>
-                {filteredEvents.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
-                    No hay citas ni servicios para los filtros seleccionados.
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {filteredEvents.map(job => (
-                      <div 
-                        key={job.id}
-                        onClick={() => handleEventClick(job)}
-                        style={{
-                          background: 'rgba(30, 41, 59, 0.7)',
-                          border: `1.5px solid ${job.isOverdue ? '#ef4444' : (job.isToday ? '#ff6600' : '#334155')}`,
-                          borderRadius: '14px',
-                          padding: '16px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          gap: '12px'
-                        }}
-                      >
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                            <span style={{ fontWeight: 800, color: '#f8fafc', fontSize: '1.05rem' }}>{job.titulo}</span>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '3px 8px', borderRadius: '12px', background: job.isOverdue ? '#ef4444' : (job.isToday ? '#ff6600' : '#0284c7'), color: '#ffffff' }}>
-                              {job.timingBadge}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>
-                            📍 {job.calle} — 🧑‍💼 {job.cliente}
-                          </div>
-                          {job.assigned_tech_name && (
-                            <div style={{ fontSize: '0.82rem', color: '#38bdf8', marginTop: '4px' }}>
-                              🧑‍🔧 Técnico: {job.assigned_tech_name}
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                          <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f97316' }}>{job.calendarTime}</div>
-                          <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{job.dateKey}</div>
+                          ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
 
           </div>
 
@@ -847,17 +1000,17 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                 {DAY_NAMES_MINI.map((d, i) => (
                   <div key={i} className="mini-day-name">{d}</div>
                 ))}
-                {miniCalDays.map((c, i) => (
+                {miniCalMatrix.map((c, i) => (
                   <div 
                     key={i} 
-                    className={`mini-day-cell ${!c.isCurrentMonth ? 'other-month' : ''}`}
+                    className={`mini-day-cell ${!c.isCurrentMonth ? 'other-month' : ''} ${c.isToday ? 'is-today' : ''} ${c.hasEvents ? 'has-events' : ''}`}
                     onClick={() => {
                       if (c.isCurrentMonth) {
-                        setCurrentDate(new Date(miniCalDate.getFullYear(), miniCalDate.getMonth(), c.dayNumber));
+                        setCurrentDate(new Date(miniCalDate.getFullYear(), miniCalDate.getMonth(), c.dayNum));
                       }
                     }}
                   >
-                    {c.dayNumber}
+                    {c.dayNum}
                   </div>
                 ))}
               </div>
