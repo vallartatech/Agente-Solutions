@@ -7,6 +7,7 @@ import {
   User, Eye, MapPin, Tag, PlusCircle, 
   Home, Wrench, MessageSquare, Camera, ImageIcon 
 } from 'lucide-react';
+import Header from '../../../components/Shared/Header';
 import '../../../styles/AgenteSolutions/Cliente/DetallePropiedad.css';
 
 const VistaDetallePropiedad = () => {
@@ -209,8 +210,10 @@ const VistaDetallePropiedad = () => {
   const { propiedad, stats, historial, cotizaciones_pendientes, avance_obra } = data;
 
   return (
-    <div className="view-container">
-      <div className="main-layout-detail">
+    <div className="detalle-propiedad-page" style={{ width: '100%', minHeight: '100vh', backgroundColor: '#fcfcfc', display: 'flex', flexDirection: 'column' }}>
+      <Header activeModule="propiedades" titulo="DETALLE PROPIEDAD" />
+      <div className="view-container">
+        <div className="main-layout-detail">
         
         {/* ==========================================
             COLUMNA IZQUIERDA (Info + Historial)
@@ -612,6 +615,7 @@ const VistaDetallePropiedad = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

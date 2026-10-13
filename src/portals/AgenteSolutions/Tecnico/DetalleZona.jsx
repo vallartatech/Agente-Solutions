@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import "../../../styles/AgenteSolutions/Tecnico/DetalleZona.css";
-import { Plus, Edit3, Trash2, ArrowLeft, Settings, Send, Home, Loader2, DoorOpen, LayoutGrid, Camera, CheckCircle, Save as SaveIcon } from 'lucide-react';
+import { Plus, Edit3, Trash2, ArrowLeft, Settings, Send, Home, Loader2, DoorOpen, LayoutGrid, Camera, CheckCircle, Check, X, Save as SaveIcon } from 'lucide-react';
 import DetalleHabitacion from './DetalleHabitacion';
 import Header from '../../../components/Shared/Header';
 import logoAgente from '../../../assets/Logo3.png';
@@ -253,13 +253,29 @@ const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId }) => {
               </label>
               
               {selectedFile && (
-                <button 
-                  onClick={guardarNuevaFoto} 
-                  disabled={subiendoFoto}
-                  style={{ position: 'absolute', top: '5px', right: '5px', backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.3)', zIndex: 10 }}
-                >
-                  {subiendoFoto ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={20} strokeWidth={3} />}
-                </button>
+                <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '6px', zIndex: 20 }}>
+                  <button 
+                    type="button"
+                    onClick={guardarNuevaFoto} 
+                    disabled={subiendoFoto}
+                    title="Guardar foto seleccionada"
+                    style={{ backgroundColor: '#22c55e', color: '#ffffff', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.35)' }}
+                  >
+                    {subiendoFoto ? <Loader2 size={18} color="#ffffff" className="animate-spin" /> : <Check size={20} color="#ffffff" strokeWidth={3} />}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setPreviewImg(zona?.image_path || null);
+                    }}
+                    disabled={subiendoFoto}
+                    title="Cancelar y descartar foto seleccionada (X)"
+                    style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.35)' }}
+                  >
+                    <X size={18} color="#ffffff" strokeWidth={3} />
+                  </button>
+                </div>
               )}
             </div>
 

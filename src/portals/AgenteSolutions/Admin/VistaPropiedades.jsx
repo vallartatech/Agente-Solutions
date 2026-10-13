@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import UniversalSearch from "../../../components/Shared/UniversalSearch"; 
 import Header from "../../../components/Shared/Header"; 
 import ModalCompraEspacios from "../../../components/Shared/ModalCompraEspacios";
+import ModalRegistroInmueble from "../../../components/Shared/ModalRegistroInmueble";
 import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
 import { X, CheckCircle, User, AlertTriangle, ListChecks, Clock, CheckCircle2, LayoutDashboard, ChevronLeft } from "lucide-react";
 
@@ -23,6 +24,7 @@ const VistaPropiedades = () => {
   const [propiedadesFiltradas, setPropiedadesFiltradas] = useState([]);
   const [subInfo, setSubInfo] = useState(null);
   const [mostrarModalCompraEspacios, setMostrarModalCompraEspacios] = useState(false);
+  const [mostrarModalRegistroPropiedad, setMostrarModalRegistroPropiedad] = useState(false);
   const [pestanaOrigen, setPestanaOrigen] = useState("AGENTE_SOLUTIONS");
 
   const [mostrarModalServicio, setMostrarModalServicio] = useState(false);
@@ -312,7 +314,7 @@ const VistaPropiedades = () => {
                   <span>🔒</span> COMPRAR ESPACIO PROPIEDAD ($79.99)
                 </button>
               ) : (
-                <button className="pc-add-btn" onClick={() => navigate("/registro-propiedades")}>
+                <button className="pc-add-btn" onClick={() => setMostrarModalRegistroPropiedad(true)}>
                    <span>+</span> AGREGAR PROPIEDAD
                 </button>
               )}
@@ -358,7 +360,7 @@ const VistaPropiedades = () => {
               ) : (
                 <button
                   className="btn-add-circle"
-                  onClick={() => navigate("/registro-propiedades")}
+                  onClick={() => setMostrarModalRegistroPropiedad(true)}
                   title="NUEVA PROPIEDAD"
                 >
                   +
@@ -880,6 +882,15 @@ const VistaPropiedades = () => {
           </div>
         </div>
       )}
+
+      <ModalRegistroInmueble
+        isOpen={mostrarModalRegistroPropiedad}
+        onClose={() => setMostrarModalRegistroPropiedad(false)}
+        onSuccess={() => {
+          obtenerPropiedades();
+        }}
+        user={user}
+      />
 
       <ModalCompraEspacios
         isOpen={mostrarModalCompraEspacios}
