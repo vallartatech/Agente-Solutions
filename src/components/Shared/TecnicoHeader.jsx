@@ -71,14 +71,31 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
   const currentPath = (location.pathname || '').toLowerCase();
   const currentView = location.state?.view;
 
-  const isPerfilActive = activeTab === 'perfil' || currentPath.includes('/mi-perfil') || currentPath.includes('/profile');
-  const isMercadoActive = !isPerfilActive && (activeTab === 'mercado' || currentView === 'mercado' || (currentPath.includes('/mercado-trabajos') && currentView !== 'tablero' && currentView !== 'usuarios'));
-  const isTableroActive = !isPerfilActive && (activeTab === 'tablero' || currentView === 'tablero' || currentPath.includes('/trabajos-tecnico') || currentPath.includes('/tablero-servicios'));
-  const isUsuariosActive = !isPerfilActive && (activeTab === 'usuarios' || currentView === 'usuarios' || currentPath.includes('/usuarios'));
+  const irAlInicio = () => {
+    if (!authUser) return navigate('/');
+    const role = Number(authUser.role_id);
+    if (role === 2) {
+      navigate('/VistaTecnico');
+    } else if (role === 6 || role === 8) {
+      if (onTabChange) {
+        onTabChange('mercado');
+      } else {
+        navigate('/mercado-trabajos', { state: { view: 'mercado' } });
+      }
+    } else {
+      navigate('/');
+    }
+  };
+
+  const isPerfilActive = currentPath === '/mi-perfil' || currentPath === '/profile';
+  const isInicioActive = !isPerfilActive && (activeTab === 'inicio' || currentPath === '/vistatecnico');
+  const isMercadoActive = !isPerfilActive && !isInicioActive && (activeTab === 'mercado' || currentView === 'mercado' || (currentPath.includes('/mercado-trabajos') && currentView !== 'tablero' && currentView !== 'usuarios'));
+  const isTableroActive = !isPerfilActive && !isInicioActive && (activeTab === 'tablero' || currentView === 'tablero' || currentPath.includes('/trabajos-tecnico') || currentPath.includes('/tablero-servicios'));
+  const isUsuariosActive = !isPerfilActive && !isInicioActive && (activeTab === 'usuarios' || currentView === 'usuarios' || currentPath.includes('/usuarios'));
 
   const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : (authUser?.first_name ? authUser.first_name.charAt(0).toUpperCase() : 'T');
   const userFullName = authUser?.name || (authUser?.first_name ? `${authUser.first_name} ${authUser.last_name || ''}`.trim() : 'TÉCNICO DE LA RED');
-  const userRole = authUser?.role_id === 6 ? 'TÉCNICO INDEPENDIENTE' : (authUser?.role_id === 8 ? 'TÉCNICO ENLACE' : 'TÉCNICO DE LA RED');
+  const userRole = authUser?.role_id === 6 ? 'TÉCNICO INDEPENDIENTE' : (authUser?.role_id === 8 ? 'TÉCNICO ENLACE' : (authUser?.role_id === 2 ? 'TÉCNICO OFICIAL AGENTE' : 'TÉCNICO DE LA RED'));
   const userAvatar = authUser?.profile_picture || authUser?.avatar_url || authUser?.avatar || null;
 
   return (
@@ -90,15 +107,25 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
             src={appLogo} 
             alt="Agente Logo" 
             className="vcp-brand-logo"
-            onClick={() => handleSelectTab('mercado')} 
-            title="Ir a Mercado de Trabajos"
+            onClick={irAlInicio} 
+            title="Ir al Inicio"
           />
         </div>
 
         {/* Center Nav Links */}
         <nav className="vcp-header-nav">
           <button 
-            type="button"
+            type="button" 
+            className={`vcp-nav-btn ${isInicioActive ? 'active' : ''}`}
+            onClick={irAlInicio}
+            title="Inicio"
+          >
+            <span className="vcp-tab-full">INICIO</span>
+            <span className="vcp-tab-short">INICIO</span>
+          </button>
+
+          <button 
+            type="button" 
             className={`vcp-nav-btn ${isMercadoActive ? 'active' : ''}`}
             onClick={() => handleSelectTab('mercado')}
             title="Mercado de solicitudes"
@@ -108,7 +135,7 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
           </button>
 
           <button 
-            type="button"
+            type="button" 
             className={`vcp-nav-btn ${isTableroActive ? 'active' : ''}`}
             onClick={() => handleSelectTab('tablero')}
             title="Trabajos aceptados"
@@ -118,7 +145,7 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
           </button>
 
           <button 
-            type="button"
+            type="button" 
             className={`vcp-nav-btn ${isUsuariosActive ? 'active' : ''}`}
             onClick={() => handleSelectTab('usuarios')}
             title="Mis clientes"
@@ -187,8 +214,16 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
               )}
             </div>
 
-            <div className="tecnico-dropdown-divider" />
-
+            <button 
+              type="button"
+              className="tecnico-dropdown-item" 
+              onClick={() => {
+                setProfileDropdownOpen(false);
+                irAlInicio();
+              }}
+            >
+              <User size={16} /> Ir a Inicio
+            </button>
             <button 
               type="button"
               className="tecnico-dropdown-item" 
