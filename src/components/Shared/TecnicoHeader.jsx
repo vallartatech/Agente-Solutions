@@ -5,6 +5,7 @@ import { CalendarDays, ShieldCheck, User, Calendar, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext';
 import defaultLogo from '../../assets/Logo4.png';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
+import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
 import NotificationBell from './NotificationBell';
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
@@ -261,11 +262,18 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
         document.body
       )}
 
-      {/* Global Calendar Modal */}
-      <ModalCalendarioCliente 
-        isOpen={showModalCalendario} 
-        onClose={() => setShowModalCalendario(false)} 
-      />
+      {/* Global Calendar Modal: 0-3 Solutions vs 4+ Market */}
+      {Number(authUser?.role_id) <= 3 ? (
+        <ModalCalendarioSolutions 
+          isOpen={showModalCalendario} 
+          onClose={() => setShowModalCalendario(false)} 
+        />
+      ) : (
+        <ModalCalendarioCliente 
+          isOpen={showModalCalendario} 
+          onClose={() => setShowModalCalendario(false)} 
+        />
+      )}
 
       {/* Responsive Bottom Dock Navigation (Only Icons) */}
       <MobileBottomNav activeModule={activeTab} />

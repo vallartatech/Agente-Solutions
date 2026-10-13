@@ -17,6 +17,7 @@ import {
 import logo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
+import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
 import '../../styles/Shared/Header.css';
@@ -233,11 +234,18 @@ const ClienteHeader = ({ activeModule }) => {
         </div>
       </header>
 
-      {/* MODAL GLOBAL DE CALENDARIO */}
-      <ModalCalendarioCliente
-        isOpen={mostrarCalendario}
-        onClose={() => setMostrarCalendario(false)}
-      />
+      {/* MODAL GLOBAL DE CALENDARIO: 0-3 Solutions vs 4+ Market */}
+      {Number(user?.role_id) <= 3 ? (
+        <ModalCalendarioSolutions
+          isOpen={mostrarCalendario}
+          onClose={() => setMostrarCalendario(false)}
+        />
+      ) : (
+        <ModalCalendarioCliente
+          isOpen={mostrarCalendario}
+          onClose={() => setMostrarCalendario(false)}
+        />
+      )}
 
       {/* PORTAL DE PERFIL FLOTANTE */}
       {profileDropdownOpen && createPortal(

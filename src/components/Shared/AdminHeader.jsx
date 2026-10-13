@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { CalendarDays, Shield, User, LogOut } from 'lucide-react'; 
 import defaultLogo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
-import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
+import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
 import '../../styles/Shared/Header.css';
@@ -209,7 +209,7 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
       </header>
 
       {/* MODAL GLOBAL DE CALENDARIO */}
-      <ModalCalendarioCliente 
+      <ModalCalendarioSolutions 
         isOpen={mostrarCalendario} 
         onClose={() => setMostrarCalendario(false)} 
       />

@@ -48,6 +48,7 @@ import FavoritosAutonomo from "./portals/AgenteMarket/Admin/FavoritosAutonomo";
 import PerfilTecnicoRed from "./portals/AgenteMarket/Admin/PerfilTecnicoRed";
 import VistaInicioMarket from "./portals/AgenteMarket/Admin/VistaInicioMarket";
 import CalendarioCliente from "./portals/AgenteMarket/Cliente/CalendarioCliente";
+import CalendarioSolutions from "./portals/AgenteSolutions/Shared/CalendarioSolutions";
 
 /* ------RUTAS DE LA VISTA DEL TECNICO ------*/
 import VistaInicioTecnico from "./portals/AgenteSolutions/Tecnico/VistaInicioTecnico";
@@ -98,6 +99,13 @@ const DetallePropiedadWrapper = () => {
   const roleId = Number(user?.role_id);
   if (roleId === 0 || roleId === 1) return <VistaDetallePropiedadAdmin />;
   return <VistaDetallePropiedadAutonomo />;
+};
+
+const CalendarioWrapper = () => {
+  const { user } = useAuth();
+  const roleId = Number(user?.role_id);
+  if (roleId <= 3) return <CalendarioSolutions />;
+  return <CalendarioCliente />;
 };
 
 const AppRoutes = () => {
@@ -223,8 +231,8 @@ const AppRoutes = () => {
       <Route path="/mi-codigo-autonomo" element={<VistaCodigoAutonomo />} />
       <Route path="/apoyo-autonomo" element={<VistaApoyoAutonomo />} />
       <Route path="/red-autonomos" element={<VistaRedAutonomo />} />
-      <Route path="/calendario-cliente" element={<CalendarioCliente />} />
-      <Route path="/calendario" element={<CalendarioCliente />} />
+      <Route path="/calendario-cliente" element={<CalendarioWrapper />} />
+      <Route path="/calendario" element={<CalendarioWrapper />} />
       <Route path="/mis-favoritos" element={<FavoritosAutonomo />} />
       <Route path="/tecnico-perfil/:id" element={<PerfilTecnicoRed />} />
       <Route path="/mercado-trabajos" element={<MercadoTrabajos />} />
