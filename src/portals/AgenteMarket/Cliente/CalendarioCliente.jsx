@@ -743,7 +743,7 @@ const CalendarioCliente = () => {
               </div>
             </div>
 
-            {upNextJob && (
+            {upNextJob ? (
               <div>
                 <div className="sidebar-section-title"><span>⚡ Próximo Servicio</span></div>
                 <div className="up-next-card">
@@ -756,6 +756,13 @@ const CalendarioCliente = () => {
                   <button className="btn-up-next-action" onClick={() => handleOpenQuotesModal(upNextJob)}>
                     <MessageCircle size={15} /> Ver Cotizaciones
                   </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="sidebar-section-title"><span>⚡ Próximo Servicio</span></div>
+                <div className="sidebar-glass-card">
+                  No tienes servicios activos por el momento.
                 </div>
               </div>
             )}

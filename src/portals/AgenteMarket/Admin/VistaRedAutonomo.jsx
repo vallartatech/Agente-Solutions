@@ -53,6 +53,93 @@ const VistaRedAutonomo = () => {
   const [activeTab, setActiveTab] = useState('en_red'); // 'en_red' | 'aceptados'
   const [mapTheme, setMapTheme] = useState(() => localStorage.getItem('agente_map_theme') || 'dark');
 
+  // Gesto táctil para subir y bajar el cajón inferior en móvil
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+  const [isDraggingSheet, setIsDraggingSheet] = useState(false);
+  const pointerStartYRef = useRef(null);
+  const currentDragYRef = useRef(0);
+  const isDraggingSheetRef = useRef(false);
+  const didDragRef = useRef(false);
+
+  const handleSheetPointerDown = (e) => {
+    if (window.innerWidth > 992) return;
+    if (e.target.closest('button, input, select, textarea, a')) return;
+    e.preventDefault();
+
+    pointerStartYRef.current = e.clientY;
+    currentDragYRef.current = 0;
+    didDragRef.current = false;
+    isDraggingSheetRef.current = true;
+    setIsDraggingSheet(true);
+
+    if (e.currentTarget?.setPointerCapture) {
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch (err) {}
+    }
+  };
+
+  const handleSheetPointerMove = (e) => {
+    if (!isDraggingSheetRef.current || pointerStartYRef.current === null) return;
+    const deltaY = e.clientY - pointerStartYRef.current;
+    currentDragYRef.current = deltaY;
+
+    if (Math.abs(deltaY) > 6) {
+      didDragRef.current = true;
+    }
+
+    if (mobileDrawerOpen) {
+      // Abierto: al arrastrar hacia abajo (deltaY > 0) se va cerrando
+      if (deltaY > 0) {
+        setDragOffsetY(deltaY);
+      } else {
+        setDragOffsetY(deltaY * 0.2); // ligera resistencia hacia arriba
+      }
+    } else {
+      // Plegado: al arrastrar hacia arriba (deltaY < 0) se va abriendo
+      if (deltaY < 0) {
+        setDragOffsetY(deltaY);
+      } else {
+        setDragOffsetY(deltaY * 0.2);
+      }
+    }
+  };
+
+  const handleSheetPointerUp = (e) => {
+    if (!isDraggingSheetRef.current) return;
+    const deltaY = currentDragYRef.current;
+
+    if (!didDragRef.current) {
+      // Toque simple (sin arrastre): alternar abrir / cerrar
+      setMobileDrawerOpen(prev => !prev);
+    } else if (mobileDrawerOpen) {
+      // Si se arrastró hacia abajo más de 45px, cerrar
+      if (deltaY > 45) {
+        setMobileDrawerOpen(false);
+      }
+    } else {
+      // Si se arrastró hacia arriba más de 40px, abrir
+      if (deltaY < -40) {
+        setMobileDrawerOpen(true);
+      }
+    }
+
+    if (e.currentTarget?.releasePointerCapture) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    }
+
+    isDraggingSheetRef.current = false;
+    pointerStartYRef.current = null;
+    currentDragYRef.current = 0;
+    setIsDraggingSheet(false);
+    setDragOffsetY(0);
+    setTimeout(() => {
+      didDragRef.current = false;
+    }, 120);
+  };
+
   // Client Chat Input State
   const [clientChatInput, setClientChatInput] = useState('');
   const [sendingClientChat, setSendingClientChat] = useState(false);
@@ -515,9 +602,21 @@ const VistaRedAutonomo = () => {
     setShowQuotesModal(true);
   };
 
+  const closeQuotesModal = () => {
+    setShowQuotesModal(false);
+    setSelectedJobForQuotes(null);
+    setActiveChatQuote(null);
+  };
+
   const enRedJobs = networkJobs.filter(j => !j.is_accepted);
   const aceptadosJobs = networkJobs.filter(j => j.is_accepted);
   const displayedJobs = activeTab === 'en_red' ? enRedJobs : aceptadosJobs;
+
+  const sidebarDragTransform = isDraggingSheet
+    ? mobileDrawerOpen
+      ? `translateY(${Math.max(0, dragOffsetY)}px)`
+      : `translateY(calc(100% - 68px + ${Math.min(0, dragOffsetY)}px))`
+    : undefined;
 
   return (
     <div className="mercado-container">
@@ -535,6 +634,14 @@ const VistaRedAutonomo = () => {
             <><List size={16} /> Ver Lista ({displayedJobs.length})</>
           )}
         </button>
+
+        {/* Backdrop para cerrar el cajón al tocar el mapa en móvil */}
+        {mobileDrawerOpen && (
+          <div 
+            className="mercado-mobile-drawer-backdrop"
+            onClick={() => setMobileDrawerOpen(false)}
+          />
+        )}
 
         {/* ─── Map Section ─── */}
         <div className="mercado-map-section">
@@ -642,8 +749,15 @@ const VistaRedAutonomo = () => {
           )}
         </div>
 
-        {/* ─── Sidebar (Tipo Uber) ─── */}
-        <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        {/* ─── Sidebar (Tipo Uber) con soporte de arrastre táctil ─── */}
+        <div 
+          className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} ${isDraggingSheet ? 'is-dragging' : ''}`}
+          style={
+            isDraggingSheet && sidebarDragTransform
+              ? { '--sidebar-drag-transform': sidebarDragTransform }
+              : undefined
+          }
+        >
           
           {/* Pestaña lateral con flecha para ocultar / mostrar (Edge Tab) */}
           <button
@@ -660,10 +774,16 @@ const VistaRedAutonomo = () => {
             )}
           </button>
 
-          <div className="mercado-sidebar-header">
+          <div 
+            className="mercado-sidebar-header"
+            onPointerDown={handleSheetPointerDown}
+            onPointerMove={handleSheetPointerMove}
+            onPointerUp={handleSheetPointerUp}
+            onPointerCancel={handleSheetPointerUp}
+          >
             <div 
               className="mercado-mobile-drag-handle" 
-              onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)} 
+              title={mobileDrawerOpen ? "Desliza hacia abajo o toca para plegar" : "Desliza hacia arriba o toca para abrir"}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 className="mercado-sidebar-subtitle" style={{ margin: 0, fontSize: '18px', fontWeight: '900' }}>Trabajos en Red</h2>
@@ -728,7 +848,7 @@ const VistaRedAutonomo = () => {
               return (
                 <div
                   key={job.id}
-                  className={`mercado-job-card ${job.is_accepted ? 'accepted-job' : ''} ${selectedJobForQuotes?.id === job.id ? 'active' : ''}`}
+                  className={`mercado-job-card ${job.is_accepted ? 'accepted-job' : ''}`}
                   onClick={() => openQuotesModal(job)}
                 >
                   <div className="mercado-card-inner-flex">
@@ -749,11 +869,11 @@ const VistaRedAutonomo = () => {
                           <span>{job.zona}</span>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                           {job.is_urgent ? (
-                            <span className="mercado-urgency-badge urgent">⚡ Urgente</span>
+                            <span className="mercado-urgency-badge urgent" style={{ whiteSpace: 'nowrap' }}>⚡ Urgente</span>
                           ) : (job.scheduled_at || job.priority === 'Programado') ? (
-                            <span className="mercado-urgency-badge scheduled">📅 Programado</span>
+                            <span className="mercado-urgency-badge scheduled" style={{ whiteSpace: 'nowrap' }}>📅 Programado</span>
                           ) : null}
                           <span className={`mercado-job-badge ${job.is_accepted ? 'badge-accepted' : 'badge-pending'}`}>
                             {job.is_accepted ? 'Asignado a Técnico' : job.estado}
@@ -763,6 +883,11 @@ const VistaRedAutonomo = () => {
 
                       {/* Titulo */}
                       <h4 className="mercado-job-card-title">{job.titulo}</h4>
+
+                      {/* Descripcion (igual que en Mercado de Trabajos) */}
+                      {job.descripcion && (
+                        <p className="mercado-job-card-desc">{job.descripcion}</p>
+                      )}
 
                       {/* Técnico asignado si aplica */}
                       {job.is_accepted && job.assigned_tech_name && (
@@ -805,8 +930,8 @@ const VistaRedAutonomo = () => {
                         </div>
                       )}
 
-                      {/* Footer */}
-                      <div className="mercado-job-card-footer" style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.10)' }}>
+                      {/* Footer sin la línea divisoria incómoda */}
+                      <div className="mercado-job-card-footer" style={{ borderTop: 'none', paddingTop: '4px', marginTop: '6px' }}>
                         <span className="mercado-ofertas-count" style={{ color: job.is_accepted ? '#22c55e' : '#f26522' }}>
                           {job.is_accepted ? '✓ Asignación Activa' : `${job.cotizaciones} ${job.cotizaciones === 1 ? 'oferta recibida' : 'ofertas recibidas'}`}
                         </span>
@@ -864,11 +989,11 @@ const VistaRedAutonomo = () => {
 
       {/* ─── MODAL DE DETALLE DE PUBLICACIÓN Y COTIZACIONES (DISEÑO PREMIUM UNIFICADO) ─── */}
       {showQuotesModal && selectedJobForQuotes && (
-        <div className="mercado-modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowQuotesModal(false)}>
+        <div className="mercado-modal-overlay" onClick={(e) => e.target === e.currentTarget && closeQuotesModal()}>
           <div className="mercado-premium-modal" style={{ maxWidth: '1080px' }}>
             <div className="mercado-premium-header">
               <h2>📋 Detalle de Publicación y Cotizaciones</h2>
-              <span className="mercado-modal-close" onClick={() => setShowQuotesModal(false)}>×</span>
+              <span className="mercado-modal-close" onClick={closeQuotesModal}>×</span>
             </div>
 
             <div className="mercado-premium-body">
@@ -1480,7 +1605,7 @@ const VistaRedAutonomo = () => {
                 </button>
               )}
 
-              <button className="mercado-btn-cancel" onClick={() => setShowQuotesModal(false)}>Cerrar</button>
+              <button className="mercado-btn-cancel" onClick={closeQuotesModal}>Cerrar</button>
             </div>
           </div>
         </div>

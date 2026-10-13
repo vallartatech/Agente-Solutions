@@ -442,4 +442,115 @@
   animation: livePulse 1.2s infinite;
 }
 
+/* Badge de Urgencia y Programado dentro de las cards de red */
+.mercado-urgency-badge {
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  letter-spacing: 0.2px;
+}
 
+.mercado-urgency-badge.urgent {
+  color: #f97316;
+}
+
+.mercado-urgency-badge.scheduled {
+  color: #38bdf8;
+}
+
+/* ========================================================
+   SOPORTE TÁCTIL Y GESTO DE ARRASTRE MÓVIL (TIPO UBER/DRAWER)
+   ======================================================== */
+.mercado-mobile-drawer-backdrop {
+  display: none;
+}
+
+@media (max-width: 992px) {
+  /* Fondo semitransparente detrás del cajón abierto */
+  .mercado-mobile-drawer-backdrop {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 38;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    animation: fadeInBackdrop 0.22s ease-out forwards;
+  }
+
+  @keyframes fadeInBackdrop {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Durante el arrastre manual con el dedo: desactivar transición y usar transform dinámico */
+  .mercado-container .mercado-content .mercado-sidebar.is-dragging,
+  .mercado-container .mercado-content .mercado-sidebar.mobile-open.is-dragging {
+    transition: none !important;
+    transform: var(--sidebar-drag-transform) !important;
+    will-change: transform;
+  }
+
+  /* Tirador táctil mejorado (la línea sobre Publicar Problema) */
+  .mercado-mobile-drag-handle {
+    display: block !important;
+    width: 48px !important;
+    height: 5px !important;
+    background: rgba(255, 255, 255, 0.38) !important;
+    border-radius: 12px !important;
+    margin: 2px auto 10px !important;
+    cursor: grab !important;
+    touch-action: none !important;
+    transition: background 0.2s ease, width 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease !important;
+  }
+
+  .mercado-sidebar.is-dragging .mercado-mobile-drag-handle,
+  .mercado-mobile-drag-handle:active {
+    cursor: grabbing !important;
+    background: #f26522 !important;
+    width: 60px !important;
+    transform: scaleY(1.2);
+    box-shadow: 0 0 12px rgba(242, 101, 34, 0.7) !important;
+  }
+
+  .mercado-sidebar-header {
+    touch-action: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    cursor: grab;
+  }
+
+  .mercado-sidebar.is-dragging .mercado-sidebar-header {
+    cursor: grabbing;
+  }
+}
+
+/* ========================================================
+   UNIFICACIÓN VISUAL HOMOGÉNEA DE CARDS EN VISTA RED AUTÓNOMO
+   ======================================================== */
+.mercado-sidebar .mercado-job-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+  animation: none !important;
+}
+
+.mercado-sidebar .mercado-job-card:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.30) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.22) !important;
+}
+
+.mercado-sidebar .mercado-job-card.active {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+}

@@ -932,7 +932,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
             </div>
           </div>
 
-          <div className="modal-cal-actions">
+          <div className="modal-cal-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
             <button 
               className="btn-modal-quick-new"
               onClick={() => setShowNewServiceModal(true)}
@@ -1353,7 +1353,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
                   </button>
                 </div>
               ) : (
-                <div style={{ padding: '16px', background: '#161f30', borderRadius: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>
+                <div className="sidebar-glass-card">
                   No tienes servicios activos por el momento.
                 </div>
               )}
@@ -1368,16 +1368,9 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
                 {networkJobs.slice(0, 4).map((job) => (
                   <div 
                     key={job.id}
+                    className="sidebar-summary-card"
                     style={{
-                      background: '#161f30',
-                      borderRadius: '8px',
-                      padding: '10px 12px',
-                      cursor: 'pointer',
-                      borderLeft: `3.5px solid ${job.timingCategory === 'overdue' ? '#ef4444' : (job.timingCategory === 'today' ? '#ff6600' : (job.timingCategory === 'future' ? '#06b6d4' : '#f59e0b'))}`,
-                      fontSize: '0.78rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '3px'
+                      borderLeft: `3.5px solid ${job.timingCategory === 'overdue' ? '#ef4444' : (job.timingCategory === 'today' ? '#ff6600' : (job.timingCategory === 'future' ? '#06b6d4' : '#f59e0b'))}`
                     }}
                     onClick={() => handleEventClick(job)}
                   >
