@@ -68,22 +68,17 @@ const MobileBottomNav = ({ activeModule }) => {
   const role = Number(user?.role_id ?? 0);
   const userId = Number(user?.id ?? 0);
 
-  // El técnico no tiene propiedades, solo realiza trabajos
-  const esTecnico = Boolean(
-    role === 2 || 
+  // Ocultar inicio exclusivamente para técnico independiente sin pantalla de propiedades (ID 5 / Roles 6 y 8)
+  const ocultarInicioCasita = Boolean(
+    userId === 5 || 
     role === 6 || 
-    role === 8 || 
-    role === 5 ||
-    userId === 5 ||
-    currentPath.includes('/mercado-trabajos') ||
-    currentPath.includes('/vista-tecnico') ||
-    currentPath.includes('/trabajos-tecnico')
+    role === 8
   );
 
   return (
     <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil">
-        {/* 1. INICIO (CASITA) - Oculto para perfiles técnicos sin propiedades */}
-        {!esTecnico && (
+        {/* 1. INICIO (CASITA) - Oculto solo para perfiles independientes de la red sin pantalla principal */}
+        {!ocultarInicioCasita && (
           <button 
             type="button" 
             className={`vcp-mobile-nav-item ${isInicioActive ? 'active' : ''}`} 

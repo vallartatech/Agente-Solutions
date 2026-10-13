@@ -26,7 +26,8 @@ const Header = ({ activeModule, titulo, rolTexto, ...restProps }) => {
   );
 
   if (isTechnician) {
-    return <TecnicoHeader activeTab={activeModule || 'tablero'} />;
+    const isVistaTecnico = location.pathname.toLowerCase() === '/vistatecnico';
+    return <TecnicoHeader activeTab={activeModule || (isVistaTecnico ? 'inicio' : 'tablero')} />;
   }
 
   // Clientes y Autónomos (3, 4, 5, 7) usan ClienteHeader

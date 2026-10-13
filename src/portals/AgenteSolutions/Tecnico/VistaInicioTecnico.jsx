@@ -8,11 +8,9 @@ const VistaInicioTecnico = () => {
 
   return (
     <div className="main-container">
-      <div className="top-bar-orange"></div>
-      <div className="top-bar-black"></div>
+      <Header activeModule="inicio" rolTexto="TÉCNICO INTERNO" />
 
       <div className="content-wrapper">
-        <Header rolTexto="TÉCNICO INTERNO" />
 
         <div className="search-container">
           <div className="search-bar">

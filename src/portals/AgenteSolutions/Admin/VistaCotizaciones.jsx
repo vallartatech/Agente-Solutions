@@ -757,7 +757,8 @@ const VistaCotizaciones = () => {
             <button 
               onClick={() => {
                 const session = JSON.parse(localStorage.getItem('agente_session') || '{}');
-                if (session?.userData?.role_id === 8) {
+                const rId = Number(session?.userData?.role_id);
+                if (rId === 2 || rId === 8) {
                   navigate('/VistaTecnico');
                   return;
                 }
