@@ -39,6 +39,7 @@ const VistaPropiedades = () => {
   const [tecnicosRol2, setTecnicosRol2] = useState([]);
   const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState("");
   const [cargandoTecnicos, setCargandoTecnicos] = useState(false);
+  const [enviandoServicio, setEnviandoServicio] = useState(false);
 
   // MODAL REPORTAR PROBLEMA (BOTÓN SUPERIOR "SOLICITAR SERVICIO")
   const [mostrarModalReportarProblema, setMostrarModalReportarProblema] = useState(false);
@@ -420,18 +421,21 @@ const VistaPropiedades = () => {
   // Enviar solicitud de levantamiento con técnico (Rol 2) asignado
   const enviarLevantamiento = async (e) => {
     e.preventDefault();
+    if (enviandoServicio) return;
+    setEnviandoServicio(true);
+
     try {
-      const token = localStorage.getItem('agente_token');
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
 
       const techSelectedObj = tecnicosRol2.find(t => String(t.id) === String(tecnicoSeleccionado));
       const techName = techSelectedObj ? `${techSelectedObj.first_name} ${techSelectedObj.last_name}`.trim() : null;
 
       const payload = {
-        property_id: propiedadSeleccionada.id,
+        property_id: propiedadSeleccionada?.id,
         title: "Levantamiento Inicial",
         description: `Solicitud de visita técnica para registro inicial de la propiedad.${techName ? ` Técnico asignado: ${techName}` : ''}`,
         priority: "Media",
-        supervisor_name: nombreResponsable.trim() !== "" ? nombreResponsable : (techName || "El propietario"),
+        supervisor_name: (nombreResponsable && nombreResponsable.trim() !== "") ? nombreResponsable.trim() : (techName || "El propietario"),
         technician_id: tecnicoSeleccionado || null,
         tecnico_id: tecnicoSeleccionado || null
       };
@@ -446,12 +450,17 @@ const VistaPropiedades = () => {
         }
       );
 
-      if (respuesta.data.success) {
+      if (respuesta.data && (respuesta.data.success || respuesta.status === 200 || respuesta.status === 201)) {
         setPasoModal(2); 
+      } else {
+        alert(respuesta.data?.message || "No se pudo crear la solicitud de servicio.");
       }
     } catch (error) {
       console.error("Error al reportar:", error);
-      alert("Hubo un error al solicitar el servicio.");
+      const msg = error.response?.data?.message || error.message || "Hubo un error al solicitar el servicio.";
+      alert(msg);
+    } finally {
+      setEnviandoServicio(false);
     }
   };
 
@@ -1053,19 +1062,20 @@ const VistaPropiedades = () => {
                   </button>
                   <button
                     type="submit"
+                    disabled={enviandoServicio}
                     style={{
                       padding: "12px 20px",
                       borderRadius: "10px",
                       border: "none",
-                      backgroundColor: "#f26522",
+                      backgroundColor: enviandoServicio ? "#94a3b8" : "#f26522",
                       color: "white",
                       fontWeight: "bold",
-                      cursor: "pointer",
+                      cursor: enviandoServicio ? "not-allowed" : "pointer",
                       flex: 1,
-                      boxShadow: "0 4px 14px rgba(242, 101, 34, 0.4)"
+                      boxShadow: enviandoServicio ? "none" : "0 4px 14px rgba(242, 101, 34, 0.4)"
                     }}
                   >
-                    SÍ, SOLICITAR
+                    {enviandoServicio ? "SOLICITANDO..." : "SÍ, SOLICITAR"}
                   </button>
                 </div>
               </form>
