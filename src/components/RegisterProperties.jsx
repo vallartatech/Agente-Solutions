@@ -269,11 +269,11 @@ const RegisterProperties = () => {
   return (
     <div className="register-viewport">
       {/* BOTÓN REGRESAR */}
-      <div style={{ width: '95%', maxWidth: '1200px', display: 'flex', justifyContent: 'flex-start', marginBottom: '15px' }}>
+      <div style={{ width: '95%', maxWidth: '1100px', display: 'flex', justifyContent: 'flex-start', marginBottom: '18px' }}>
         <button 
           type="button"
           onClick={() => navigate(-1)} 
-          style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#F26522', color: 'white', padding: '8px 25px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
+          className="btn-regresar-glass"
         >
           <ChevronLeft size={18} />
           <span>REGRESAR</span>
@@ -281,7 +281,8 @@ const RegisterProperties = () => {
       </div>
 
       <div className="form-card">
-        <form onSubmit={handleRegistro}>
+        <div className="form-top-accent-bar" />
+        <form onSubmit={handleRegistro} className="form-inner">
           <h2 className="register-form-title">REGISTRO DE INMUEBLE</h2>
 
           <div className="form-grid">
@@ -304,17 +305,11 @@ const RegisterProperties = () => {
               <label className="input-label">
                 <ImageIcon size={18} /> Foto de la Fachada:
               </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '5px' }}>
+              <div className="photo-selection-row">
                 <button 
                     type="button"
                     onClick={openPhotoMenu}
-                    style={{ 
-                        backgroundColor: '#333', color: 'white', padding: '8px 15px', 
-                        borderRadius: '5px', cursor: 'pointer', fontSize: '0.9rem',
-                        border: 'none', transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '8px'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#555'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#333'}
+                    className="btn-photo-glass"
                 >
                     <Camera size={16} /> Seleccionar Archivo
                 </button>
@@ -338,10 +333,10 @@ const RegisterProperties = () => {
                     <img 
                         src={fotoPreview} 
                         alt="Vista previa" 
-                        style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #555' }} 
+                        className="photo-preview-thumb"
                     />
                 ) : (
-                    <span style={{ color: '#888', fontSize: '0.9rem' }}>Ninguna imagen seleccionada</span>
+                    <span className="photo-preview-placeholder">Ninguna imagen seleccionada</span>
                 )}
               </div>
             </div>
@@ -358,6 +353,11 @@ const RegisterProperties = () => {
               >
                 <option value="Casa">CASA</option>
                 <option value="Departamento">DEPARTAMENTO</option>
+                <option value="Mansión">MANSIÓN</option>
+                <option value="Oficina">OFICINA</option>
+                <option value="Bodega">BODEGA</option>
+                <option value="Terreno">TERRENO</option>
+                <option value="Local Comercial">LOCAL COMERCIAL</option>
               </select>
             </div>
 
@@ -508,17 +508,7 @@ const RegisterProperties = () => {
 
       {isDetecting && (
          <div className="map-modal-overlay">
-         <div
-           style={{
-             backgroundColor: "#ffffff",
-             padding: "50px",
-             borderRadius: "15px",
-             textAlign: "center",
-             border: "2px solid #F26522",
-             maxWidth: "400px",
-             boxShadow: "0 0 30px rgba(242, 101, 34, 0.3)",
-           }}
-         >
+         <div className="gps-detecting-card">
            <svg //////Animación del Reloj
              aria-label="loader being flipped clockwise and circled by three white curves fading in and out"
              role="img"
@@ -704,8 +694,10 @@ const RegisterProperties = () => {
            <h2
              style={{
                color: "white",
-               fontSize: "1.5rem",
-               marginBottom: "15px",
+               fontSize: "1.4rem",
+               fontFamily: "'Outfit', sans-serif",
+               fontWeight: 900,
+               marginBottom: "12px",
              }}
            >
              ESPERA UN MOMENTO
@@ -713,9 +705,10 @@ const RegisterProperties = () => {
 
            <p
              style={{
-               color: "#070000",
-               fontSize: "1.1rem",
+               color: "#e2e8f0",
+               fontSize: "1rem",
                lineHeight: "1.5",
+               fontFamily: "'Outfit', sans-serif",
              }}
            >
              Espera{" "}
@@ -723,8 +716,8 @@ const RegisterProperties = () => {
                style={{
                  color: "#F26522",
                  fontWeight: "900",
-                 fontSize: "1.8rem",
-                 margin: "0 8px",
+                 fontSize: "1.6rem",
+                 margin: "0 6px",
                }}
              >
                {contador}
@@ -811,29 +804,29 @@ const RegisterProperties = () => {
 
       {isPhotoMenuOpen && (
         <div className="map-modal-overlay" onClick={() => setIsPhotoMenuOpen(false)}>
-          <div className="map-modal-content" style={{ maxWidth: '400px', padding: '0', backgroundColor: '#1a1a1a', border: '1px solid #333' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ color: '#F26522', borderBottom: '1px solid #333', margin: 0, padding: '20px', textAlign: 'center', fontSize: '1.2rem' }}>Actualizar Foto</h3>
+          <div className="map-modal-content" style={{ maxWidth: '380px', padding: '0', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: '#F26522', borderBottom: '1px solid rgba(255,255,255,0.15)', margin: 0, padding: '18px', textAlign: 'center', fontSize: '1.15rem', fontFamily: "'Outfit', sans-serif", fontWeight: 800 }}>Actualizar Foto</h3>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <button 
                 onClick={() => selectPhotoSource('camera')}
-                style={{ background: 'transparent', border: 'none', padding: '15px', color: 'white', borderBottom: '1px solid #333', fontSize: '1rem', cursor: 'pointer', transition: 'background 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
+                style={{ background: 'transparent', border: 'none', padding: '16px', color: 'white', borderBottom: '1px solid rgba(255,255,255,0.1)', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 📷 Tomar Foto
               </button>
               <button 
                 onClick={() => selectPhotoSource('gallery')}
-                style={{ background: 'transparent', border: 'none', padding: '15px', color: 'white', borderBottom: '1px solid #333', fontSize: '1rem', cursor: 'pointer', transition: 'background 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
+                style={{ background: 'transparent', border: 'none', padding: '16px', color: 'white', borderBottom: '1px solid rgba(255,255,255,0.1)', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 🖼️ Elegir de la Galería
               </button>
               <button 
                 onClick={() => setIsPhotoMenuOpen(false)}
-                style={{ background: 'transparent', border: 'none', padding: '15px', color: '#a0a0a0', fontSize: '1rem', cursor: 'pointer', transition: 'background 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
+                style={{ background: 'transparent', border: 'none', padding: '14px', color: '#94a3b8', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 Cancelar

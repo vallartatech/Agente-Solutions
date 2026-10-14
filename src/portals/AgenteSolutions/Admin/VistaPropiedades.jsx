@@ -80,6 +80,8 @@ const VistaPropiedades = () => {
   // ROLE CHECK
   const user = JSON.parse(localStorage.getItem('agente_session') || '{}')?.userData;
   const isClient = user?.role_id === 3;
+  const isRoot = Number(user?.role_id) === 0;
+  const isAgenteAdmin = Number(user?.role_id) === 1;
 
   useEffect(() => {
     obtenerPropiedades();
@@ -102,7 +104,15 @@ const VistaPropiedades = () => {
         })
       ]);
 
-      setListaPropiedades(propsRes.data);
+      const rawProps = Array.isArray(propsRes.data) ? propsRes.data : [];
+      
+      // Para Administrador (Rol 1): aislar y mostrar únicamente las de su propio sistema base
+      const userTenantId = Number(user?.tenant_id || 1);
+      const propsData = isAgenteAdmin
+        ? rawProps.filter(p => !p.tenant_id || Number(p.tenant_id) === 1 || Number(p.tenant_id) === userTenantId)
+        : rawProps;
+
+      setListaPropiedades(propsData);
       setGlobalStats(statsRes.data);
 
       if (user?.role_id === 5 || user?.role_id === 4) {
@@ -125,11 +135,10 @@ const VistaPropiedades = () => {
   const isLimitReached = isPersonalOrAutonomo && (currentCount >= maxAllowed);
 
   // Solo ROOT (Rol 0) tiene la visión global dividida entre Agente Solutions y Autónomos
-  const isRoot = Number(user?.role_id) === 0;
   const isRootOrAgenteAdmin = isRoot;
 
-  const countAgenteSolutions = listaPropiedades.filter(p => !p.tenant_id || p.tenant_id === 1).length;
-  const countAutonomos = listaPropiedades.filter(p => p.tenant_id && p.tenant_id !== 1).length;
+  const countAgenteSolutions = listaPropiedades.filter(p => !p.tenant_id || Number(p.tenant_id) === 1).length;
+  const countAutonomos = listaPropiedades.filter(p => p.tenant_id && Number(p.tenant_id) !== 1).length;
 
   // Lógica de filtrado manual combinando categoría y búsqueda del sidebar
   useEffect(() => {
@@ -147,11 +156,11 @@ const VistaPropiedades = () => {
 
       // 3. Filtro por Pestaña de Origen (Solo si es Root)
       let coincideOrigen = true;
-      if (isRootOrAgenteAdmin) {
+      if (isRoot) {
         if (pestanaOrigen === "AGENTE_SOLUTIONS") {
-          coincideOrigen = !item.tenant_id || item.tenant_id === 1;
+          coincideOrigen = !item.tenant_id || Number(item.tenant_id) === 1;
         } else if (pestanaOrigen === "AUTONOMOS") {
-          coincideOrigen = item.tenant_id && item.tenant_id !== 1;
+          coincideOrigen = item.tenant_id && Number(item.tenant_id) !== 1;
         }
       }
 
@@ -740,9 +749,17 @@ const VistaPropiedades = () => {
             propiedadesFiltradas.map((p) => (
               <div key={p.id} className="property-card" style={{ position: 'relative' }}>
                 
-                {p.tenant_id && p.tenant_id !== 1 && (
+                {/* Si es Root y la propiedad es de un autónomo externo */}
+                {isRoot && p.tenant_id && Number(p.tenant_id) !== 1 && (
                   <div style={{ position: 'absolute', top: 10, right: 10, background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: 'white', padding: '5px 10px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 'bold', zIndex: 10, display: 'flex', alignItems: 'center', gap: '5px', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
                     🏢 {p.tenant_name || p.propietario || 'Autónomo'}
+                  </div>
+                )}
+
+                {/* Si la propiedad tiene cliente o empresa registrada en el sistema de Agente Solutions */}
+                {(!p.tenant_id || Number(p.tenant_id) === 1) && (p.cliente || p.client_name || p.company_name || p.empresa || p.propietario) && (
+                  <div style={{ position: 'absolute', top: 10, right: 10, background: 'linear-gradient(135deg, #f26522 0%, #ea580c 100%)', color: 'white', padding: '5px 10px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 'bold', zIndex: 10, display: 'flex', alignItems: 'center', gap: '5px', boxShadow: '0 2px 8px rgba(242,101,34,0.4)' }}>
+                    🏢 {p.cliente || p.client_name || p.company_name || p.empresa || p.propietario}
                   </div>
                 )}
 

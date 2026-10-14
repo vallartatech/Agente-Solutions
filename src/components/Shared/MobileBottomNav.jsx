@@ -3,12 +3,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   Home,
-  Globe,
   Users,
   Briefcase,
+  Building2,
+  ClipboardList,
   FileText,
   Receipt,
-  Wrench
+  Wrench,
+  Globe
 } from 'lucide-react';
 import '../../styles/Shared/MobileBottomNav.css';
 
@@ -19,8 +21,10 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
 
   const currentPath = (location.pathname || '').toLowerCase();
   const currentView = location.state?.view;
-  const role = Number(user?.role_id ?? 0);
+  const role = Number(user?.role_id ?? 1);
   const userId = Number(user?.id ?? 0);
+  const isRoot = role === 0;
+  const isAdminRole1 = role === 1;
 
   const irAlInicio = () => {
     if (!user) return navigate('/');
@@ -48,8 +52,9 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
   const isInicioActive = !isPerfilActive && (
     activeModule === 'inicio' || 
     currentPath === '/' || 
-    currentPath === '/vistamarket' || 
     currentPath === '/vistaroot' || 
+    currentPath === '/vistaadmin' ||
+    currentPath === '/vistamarket' ||
     currentPath === '/vistaclienteparticular' || 
     currentPath === '/vistatecnico'
   );
@@ -76,6 +81,17 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
     currentPath.includes('/vista-tecnicos')
   );
 
+  const isPropiedadesActive = !isPerfilActive && !isInicioActive && (
+    activeModule === 'propiedades' || 
+    currentPath.includes('/propiedades') || 
+    currentPath.includes('/detalle-propiedad')
+  );
+
+  const isLevantamientosActive = !isPerfilActive && !isInicioActive && (
+    activeModule === 'levantamientos' || 
+    currentPath.includes('/levantamientos')
+  );
+
   const isReportesActive = !isPerfilActive && !isInicioActive && (
     activeModule === 'reportes' || 
     currentPath.includes('/reporte') || 
@@ -93,7 +109,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
     activeModule === 'servicios' || 
     currentPath.includes('/tablero-servicios') || 
     currentPath.includes('/servicios') || 
-    currentPath.includes('/levantamientos')
+    currentPath.includes('/trabajos-tecnico')
   );
 
   // Determinar si es técnico (Rol 2 Oficial, 6, 8 o pantallas de técnico)
@@ -113,18 +129,15 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
     role === 8
   );
 
-  // ═══════════════════════════════════════════════════════════════
-  // BARRA DE NAVEGACIÓN RESPONSIVA PARA TÉCNICOS (ROL 2, 6, 8)
+  // 1. CASO TÉCNICO (ROL 2, 6, 8):
   // Conserva exactamente las 4 opciones de la primera imagen:
   // 1. INICIO
   // 2. MERCADO (SOLICITUDES)
   // 3. TRABAJOS ACEPTADOS
   // 4. MIS CLIENTES
-  // ═══════════════════════════════════════════════════════════════
   if (isTechnician) {
     return (
       <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Técnico">
-        {/* 1. INICIO */}
         {!ocultarInicioCasita && (
           <button 
             type="button" 
@@ -137,7 +150,6 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           </button>
         )}
 
-        {/* 2. MERCADO (SOLICITUDES) */}
         <button 
           type="button" 
           className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`} 
@@ -148,7 +160,6 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           <Globe size={22} className="vcp-mobile-nav-icon" />
         </button>
 
-        {/* 3. TRABAJOS ACEPTADOS */}
         <button 
           type="button" 
           className={`vcp-mobile-nav-item ${isTableroActive ? 'active' : ''}`} 
@@ -159,7 +170,6 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           <Briefcase size={22} className="vcp-mobile-nav-icon" />
         </button>
 
-        {/* 4. MIS CLIENTES */}
         <button 
           type="button" 
           className={`vcp-mobile-nav-item ${isUsuariosActive ? 'active' : ''}`} 
@@ -173,12 +183,99 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // BARRA DE NAVEGACIÓN RESPONSIVA PREDETERMINADA (ADMIN / CLIENTE)
-  // ═══════════════════════════════════════════════════════════════
+  // 2. CASO ADMINISTRADOR (ROL 1) O ROOT (ROL 0):
+  // Módulos del header superior de administrador
+  if (isAdminRole1 || isRoot) {
+    return (
+      <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Administrador">
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isInicioActive ? 'active' : ''}`} 
+          onClick={irAlInicio} 
+          title="Inicio"
+          aria-label="Inicio"
+        >
+          <Home size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isUsuariosActive ? 'active' : ''}`} 
+          onClick={() => navigate('/usuarios')} 
+          title="Usuarios"
+          aria-label="Usuarios"
+        >
+          <Users size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isPropiedadesActive ? 'active' : ''}`} 
+          onClick={() => navigate('/propiedades')} 
+          title="Propiedades"
+          aria-label="Propiedades"
+        >
+          <Building2 size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isLevantamientosActive ? 'active' : ''}`} 
+          onClick={() => navigate('/levantamientos')} 
+          title="Levantamientos"
+          aria-label="Levantamientos"
+        >
+          <ClipboardList size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isReportesActive ? 'active' : ''}`} 
+          onClick={() => navigate('/reportes-globales')} 
+          title="Reportes"
+          aria-label="Reportes"
+        >
+          <FileText size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isCotizacionesActive ? 'active' : ''}`} 
+          onClick={() => navigate('/vista-cotizaciones')} 
+          title="Cotizaciones"
+          aria-label="Cotizaciones"
+        >
+          <Receipt size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isServiciosActive ? 'active' : ''}`} 
+          onClick={() => navigate('/tablero-servicios')} 
+          title="Servicios"
+          aria-label="Servicios"
+        >
+          <Wrench size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
+        {isRoot && (
+          <button 
+            type="button" 
+            className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`} 
+            onClick={() => navigate('/red-autonomos')} 
+            title="Mercado / Red"
+            aria-label="Mercado / Red"
+          >
+            <Globe size={22} className="vcp-mobile-nav-icon" />
+          </button>
+        )}
+      </nav>
+    );
+  }
+
+  // 3. CASO DEFAULT (CLIENTES / AUTÓNOMOS)
   return (
     <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil">
-      {/* 1. INICIO (CASITA) */}
       {!ocultarInicioCasita && (
         <button 
           type="button" 
@@ -191,7 +288,6 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         </button>
       )}
 
-      {/* 2. MUNDO / RED / MERCADO */}
       <button 
         type="button" 
         className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`} 
@@ -208,7 +304,6 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         <Globe size={22} className="vcp-mobile-nav-icon" />
       </button>
 
-      {/* 3. USUARIOS / CLIENTES */}
       <button 
         type="button" 
         className={`vcp-mobile-nav-item ${isUsuariosActive ? 'active' : ''}`} 
@@ -225,7 +320,6 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         <Users size={22} className="vcp-mobile-nav-icon" />
       </button>
 
-      {/* 4. REPORTES */}
       <button 
         type="button" 
         className={`vcp-mobile-nav-item ${isReportesActive ? 'active' : ''}`} 
@@ -236,7 +330,6 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         <FileText size={22} className="vcp-mobile-nav-icon" />
       </button>
 
-      {/* 5. COTIZACIONES */}
       <button 
         type="button" 
         className={`vcp-mobile-nav-item ${isCotizacionesActive ? 'active' : ''}`} 
@@ -247,7 +340,6 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         <Receipt size={22} className="vcp-mobile-nav-icon" />
       </button>
 
-      {/* 6. SERVICIOS / TABLERO */}
       <button 
         type="button" 
         className={`vcp-mobile-nav-item ${isServiciosActive ? 'active' : ''}`} 
