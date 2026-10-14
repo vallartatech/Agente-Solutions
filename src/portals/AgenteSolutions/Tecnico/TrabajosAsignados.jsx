@@ -144,23 +144,31 @@ const TrabajosAsignados = () => {
                 <tbody>
                   {pendientes.length > 0 ? (
                     pendientes.map((s) => (
-                      <tr key={s.id}>
-                        <td>
-                          <strong>{s.property_name}</strong>
+                      <tr key={s.id} className="card-trabajo-item">
+                        <td className="cell-propiedad">
+                          <strong className="propiedad-nombre">{s.property_name}</strong>
+                          <span className={`badge ${s.priority} badge-mobile-only`}>
+                            {s.priority}
+                          </span>
                         </td>
-                        <td>{s.address}</td>
-                        <td>
+                        <td className="cell-direccion">
+                          <span className="direccion-texto">
+                            <MapPin size={15} className="pin-icon-mobile" />
+                            {s.address}
+                          </span>
+                        </td>
+                        <td className="cell-prioridad">
                           <span className={`badge ${s.priority}`}>
                             {s.priority}
                           </span>
                         </td>
-                        <td className="btns-accion">
+                        <td className="btns-accion cell-acciones">
                           <button
                             className="btn-action map"
                             title="Ver en Google Maps"
                             onClick={() => abrirMapa(s.coordinates || s.coordenadas, s.address)}
                           >
-                            <MapPin size={18} />
+                            <MapPin size={17} />
                             <span>Mapa</span>
                           </button>
 
@@ -169,8 +177,8 @@ const TrabajosAsignados = () => {
                             title="Iniciar Levantamiento de Zonas"
                             onClick={() => irARegistro(s)}
                           >
-                            <LayoutGrid size={18} />
-                            <span>Empezar levantamiento:</span>
+                            <LayoutGrid size={17} />
+                            <span>Levantamiento</span>
                           </button>
 
                           <button
@@ -178,7 +186,7 @@ const TrabajosAsignados = () => {
                             title="Ver Información Completa"
                             onClick={() => verDetalle(s)}
                           >
-                            <Eye size={18} />
+                            <Eye size={17} />
                             <span>Detalles</span>
                           </button>
                         </td>
@@ -216,20 +224,31 @@ const TrabajosAsignados = () => {
                 </thead>
                 <tbody>
                   {finalizados.map((s) => (
-                    <tr key={s.id} className="row-finalizado">
-                      <td>{s.property_name}</td>
-                      <td>
-                        {new Date(
-                          s.real_end || s.updated_at,
-                        ).toLocaleDateString()}
+                    <tr key={s.id} className="row-finalizado card-trabajo-item">
+                      <td className="cell-propiedad">
+                        <strong className="propiedad-nombre">{s.property_name}</strong>
+                        <span className="badge Baja badge-mobile-only">
+                          {s.status}
+                        </span>
                       </td>
-                      <td>{s.status}</td>
-                      <td>
+                      <td className="cell-direccion">
+                        <span className="direccion-texto">
+                          <Clock size={15} className="pin-icon-mobile" />
+                          {new Date(
+                            s.real_end || s.updated_at,
+                          ).toLocaleDateString()}
+                        </span>
+                      </td>
+                      <td className="cell-prioridad">
+                        <span className="badge Baja">{s.status}</span>
+                      </td>
+                      <td className="btns-accion cell-acciones">
                         <button
                           className="btn-action view"
                           onClick={() => navigate(`/detalle-reporte/${s.id}`)}
+                          style={{ width: '100%', justifyContent: 'center' }}
                         >
-                          <Eye size={18} />
+                          <Eye size={17} />
                           <span>Ver detalles</span>
                         </button>
                       </td>

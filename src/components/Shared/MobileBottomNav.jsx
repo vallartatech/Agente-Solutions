@@ -129,15 +129,66 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
     role === 8
   );
 
-  // 1. CASO TÉCNICO (ROL 2, 6, 8):
-  // Conserva exactamente las 4 opciones de la primera imagen:
-  // 1. INICIO
-  // 2. MERCADO (SOLICITUDES)
-  // 3. TRABAJOS ACEPTADOS
-  // 4. MIS CLIENTES
+  // 1. CASO TÉCNICO OFICIAL AGENTE (ROL 2):
+  // Opciones sincronizadas con las 3 tarjetas de su portal (Trabajos, Levantamientos, Cotizaciones)
+  if (role === 2) {
+    const isTrabajosActive = !isPerfilActive && !isInicioActive && (activeModule === 'trabajos' || currentPath.includes('/trabajos-tecnico'));
+    const isLevantamientosActive = !isPerfilActive && !isInicioActive && (activeModule === 'levantamientos' || currentPath.includes('/trabajos-asignados') || currentPath.includes('/registrozonas') || currentPath.includes('/detallehabitacion'));
+    const isCotizacionesActive = !isPerfilActive && !isInicioActive && (activeModule === 'cotizaciones' || currentPath.includes('/vista-cotizaciones') || currentPath.includes('/cotizacion'));
+
+    return (
+      <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Técnico Oficial">
+        {/* 1. INICIO */}
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isInicioActive ? 'active' : ''}`} 
+          onClick={irAlInicio} 
+          title="Inicio"
+          aria-label="Inicio"
+        >
+          <Home size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
+        {/* 2. TRABAJOS */}
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isTrabajosActive ? 'active' : ''}`} 
+          onClick={() => navigate('/trabajos-tecnico')} 
+          title="Trabajos"
+          aria-label="Trabajos"
+        >
+          <Wrench size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
+        {/* 3. LEVANTAMIENTOS */}
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isLevantamientosActive ? 'active' : ''}`} 
+          onClick={() => navigate('/trabajos-asignados')} 
+          title="Levantamientos"
+          aria-label="Levantamientos"
+        >
+          <ClipboardList size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
+        {/* 4. COTIZACIONES */}
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isCotizacionesActive ? 'active' : ''}`} 
+          onClick={() => navigate('/vista-cotizaciones')} 
+          title="Cotizaciones"
+          aria-label="Cotizaciones"
+        >
+          <Receipt size={22} className="vcp-mobile-nav-icon" />
+        </button>
+      </nav>
+    );
+  }
+
+  // CASO TÉCNICOS DE LA RED (ROLES 6 Y 8):
   if (isTechnician) {
     return (
-      <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Técnico">
+      <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Técnico Red">
         {!ocultarInicioCasita && (
           <button 
             type="button" 

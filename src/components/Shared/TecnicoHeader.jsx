@@ -88,14 +88,20 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
     }
   };
 
+  const isRol2 = Number(authUser?.role_id) === 2;
+
   const isPerfilActive = currentPath === '/mi-perfil' || currentPath === '/profile';
   const isInicioActive = !isPerfilActive && (activeTab === 'inicio' || currentPath === '/vistatecnico');
+  const isTrabajosActive = !isPerfilActive && !isInicioActive && (activeTab === 'trabajos' || currentPath.includes('/trabajos-tecnico'));
+  const isLevantamientosActive = !isPerfilActive && !isInicioActive && (activeTab === 'levantamientos' || currentPath.includes('/trabajos-asignados') || currentPath.includes('/registrozonas') || currentPath.includes('/detallehabitacion'));
+  const isCotizacionesActive = !isPerfilActive && !isInicioActive && (activeTab === 'cotizaciones' || currentPath.includes('/vista-cotizaciones') || currentPath.includes('/cotizacion'));
+
   const isMercadoActive = !isPerfilActive && !isInicioActive && (activeTab === 'mercado' || currentView === 'mercado' || (currentPath.includes('/mercado-trabajos') && currentView !== 'tablero' && currentView !== 'usuarios'));
-  const isTableroActive = !isPerfilActive && !isInicioActive && (activeTab === 'tablero' || currentView === 'tablero' || currentPath.includes('/trabajos-tecnico') || currentPath.includes('/tablero-servicios'));
+  const isTableroActive = !isPerfilActive && !isInicioActive && (activeTab === 'tablero' || currentView === 'tablero' || currentPath.includes('/tablero-servicios'));
   const isUsuariosActive = !isPerfilActive && !isInicioActive && (activeTab === 'usuarios' || currentView === 'usuarios' || currentPath.includes('/usuarios'));
 
   const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : (authUser?.first_name ? authUser.first_name.charAt(0).toUpperCase() : 'T');
-  const userFullName = authUser?.name || (authUser?.first_name ? `${authUser.first_name} ${authUser.last_name || ''}`.trim() : 'TÉCNICO DE LA RED');
+  const userFullName = authUser?.name || (authUser?.first_name ? `${authUser.first_name} ${authUser.last_name || ''}`.trim() : 'TÉCNICO OFICIAL');
   const userRole = authUser?.role_id === 6 ? 'TÉCNICO INDEPENDIENTE' : (authUser?.role_id === 8 ? 'TÉCNICO ENLACE' : (authUser?.role_id === 2 ? 'TÉCNICO OFICIAL AGENTE' : 'TÉCNICO DE LA RED'));
   const userAvatar = authUser?.profile_picture || authUser?.avatar_url || authUser?.avatar || null;
 
@@ -115,46 +121,93 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
 
         {/* Center Nav Links */}
         <nav className="vcp-header-nav">
-          <button 
-            type="button" 
-            className={`vcp-nav-btn ${isInicioActive ? 'active' : ''}`}
-            onClick={irAlInicio}
-            title="Inicio"
-          >
-            <span className="vcp-tab-full">INICIO</span>
-            <span className="vcp-tab-short">INICIO</span>
-          </button>
+          {isRol2 ? (
+            /* Menú para Técnico Oficial Rol 2 (Coincide con sus 3 tarjetas operativas) */
+            <>
+              <button 
+                type="button" 
+                className={`vcp-nav-btn ${isInicioActive ? 'active' : ''}`}
+                onClick={() => navigate('/VistaTecnico')}
+                title="Inicio"
+              >
+                <span className="vcp-tab-full">INICIO</span>
+                <span className="vcp-tab-short">INICIO</span>
+              </button>
 
-          <button 
-            type="button" 
-            className={`vcp-nav-btn ${isMercadoActive ? 'active' : ''}`}
-            onClick={() => handleSelectTab('mercado')}
-            title="Mercado de solicitudes"
-          >
-            <span className="vcp-tab-full">MERCADO (SOLICITUDES)</span>
-            <span className="vcp-tab-short">MERCADO</span>
-          </button>
+              <button 
+                type="button" 
+                className={`vcp-nav-btn ${isTrabajosActive ? 'active' : ''}`}
+                onClick={() => navigate('/trabajos-tecnico')}
+                title="Trabajos"
+              >
+                <span className="vcp-tab-full">TRABAJOS</span>
+                <span className="vcp-tab-short">TRABAJOS</span>
+              </button>
 
-          <button 
-            type="button" 
-            className={`vcp-nav-btn ${isTableroActive ? 'active' : ''}`}
-            onClick={() => handleSelectTab('tablero')}
-            title="Trabajos aceptados"
-          >
-            <span className="vcp-tab-full">TRABAJOS ACEPTADOS{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
-            <span className="vcp-tab-short">ACEPTADOS{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
-          </button>
+              <button 
+                type="button" 
+                className={`vcp-nav-btn ${isLevantamientosActive ? 'active' : ''}`}
+                onClick={() => navigate('/trabajos-asignados')}
+                title="Levantamientos"
+              >
+                <span className="vcp-tab-full">LEVANTAMIENTOS</span>
+                <span className="vcp-tab-short">LEVANTAMIENTOS</span>
+              </button>
 
-          <button 
-            type="button" 
-            className={`vcp-nav-btn ${isUsuariosActive ? 'active' : ''}`}
-            onClick={() => handleSelectTab('usuarios')}
-            title="Mis clientes"
-          >
-            <span className="vcp-tab-full">MIS CLIENTES{liveUsersCount > 0 ? ` (${liveUsersCount})` : ''}</span>
-            <span className="vcp-tab-short">CLIENTES{liveUsersCount > 0 ? ` (${liveUsersCount})` : ''}</span>
-          </button>
+              <button 
+                type="button" 
+                className={`vcp-nav-btn ${isCotizacionesActive ? 'active' : ''}`}
+                onClick={() => navigate('/vista-cotizaciones')}
+                title="Cotizaciones"
+              >
+                <span className="vcp-tab-full">COTIZACIONES</span>
+                <span className="vcp-tab-short">COTIZACIONES</span>
+              </button>
+            </>
+          ) : (
+            /* Menú para Técnicos Independientes de la Red (Roles 6 y 8) */
+            <>
+              <button 
+                type="button" 
+                className={`vcp-nav-btn ${isInicioActive ? 'active' : ''}`}
+                onClick={irAlInicio}
+                title="Inicio"
+              >
+                <span className="vcp-tab-full">INICIO</span>
+                <span className="vcp-tab-short">INICIO</span>
+              </button>
 
+              <button 
+                type="button" 
+                className={`vcp-nav-btn ${isMercadoActive ? 'active' : ''}`}
+                onClick={() => handleSelectTab('mercado')}
+                title="Mercado de solicitudes"
+              >
+                <span className="vcp-tab-full">MERCADO (SOLICITUDES)</span>
+                <span className="vcp-tab-short">MERCADO</span>
+              </button>
+
+              <button 
+                type="button" 
+                className={`vcp-nav-btn ${isTableroActive ? 'active' : ''}`}
+                onClick={() => handleSelectTab('tablero')}
+                title="Trabajos aceptados"
+              >
+                <span className="vcp-tab-full">TRABAJOS ACEPTADOS{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
+                <span className="vcp-tab-short">ACEPTADOS{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
+              </button>
+
+              <button 
+                type="button" 
+                className={`vcp-nav-btn ${isUsuariosActive ? 'active' : ''}`}
+                onClick={() => handleSelectTab('usuarios')}
+                title="Mis clientes"
+              >
+                <span className="vcp-tab-full">MIS CLIENTES{liveUsersCount > 0 ? ` (${liveUsersCount})` : ''}</span>
+                <span className="vcp-tab-short">CLIENTES{liveUsersCount > 0 ? ` (${liveUsersCount})` : ''}</span>
+              </button>
+            </>
+          )}
         </nav>
 
         {/* User profile avatar section & action icons */}

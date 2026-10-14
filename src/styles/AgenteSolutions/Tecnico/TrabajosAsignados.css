@@ -458,12 +458,159 @@
   font-size: 1rem;
 }
 
+.badge-mobile-only {
+  display: none;
+}
+
+.pin-icon-mobile {
+  display: none;
+}
+
 @media (max-width: 768px) {
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-  
   .trabajos-container {
+    padding: 1rem 0.8rem 90px 0.8rem;
+  }
+
+  .top-actions {
+    margin-bottom: 1rem;
+  }
+
+  .tabs-container {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.2rem;
+    border-bottom: 2px solid #e2e8f0;
+    width: 100%;
+  }
+
+  .tab-btn {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 0.75rem 0.4rem;
+    font-size: 0.88rem;
+    white-space: nowrap;
+    gap: 0.35rem;
+  }
+
+  .seccion-trabajos {
+    padding: 1rem 0.8rem;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+  }
+
+  .titulo-seccion {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .titulo-seccion h2 {
+    font-size: 1.1rem;
+  }
+
+  /* Transformar tabla a tarjetas limpias en móviles */
+  .tabla-wrapper {
+    overflow-x: visible;
+  }
+
+  .tabla-general,
+  .tabla-general tbody,
+  .tabla-general tr,
+  .tabla-general td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .tabla-general thead {
+    display: none;
+  }
+
+  .card-trabajo-item {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    margin-bottom: 1rem;
     padding: 1rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+  }
+
+  .card-trabajo-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+  }
+
+  .tabla-general td {
+    padding: 0.3rem 0;
+    border-bottom: none;
+  }
+
+  .cell-propiedad {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding-bottom: 0.5rem !important;
+    border-bottom: 1px dashed #e2e8f0 !important;
+    margin-bottom: 0.4rem !important;
+  }
+
+  .propiedad-nombre {
+    font-size: 1.05rem;
+    color: #0f172a;
+    font-weight: 800;
+  }
+
+  .badge-mobile-only {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
+  .cell-direccion {
+    padding: 0.4rem 0 !important;
+  }
+
+  .direccion-texto {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    color: #475569;
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+
+  .pin-icon-mobile {
+    display: inline-block;
+    color: #f26624;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* Ocultar la celda de prioridad estándar porque ya se muestra en la cabecera */
+  .cell-prioridad {
+    display: none !important;
+  }
+
+  .cell-acciones {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+    margin-top: 0.75rem !important;
+    padding-top: 0.75rem !important;
+    border-top: 1px solid #f1f5f9 !important;
+  }
+
+  .btn-action {
+    padding: 0.6rem 0.3rem !important;
+    font-size: 0.78rem !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.2px !important;
+  }
+
+  .info-grid-formal {
+    grid-template-columns: 1fr;
+    padding: 1.25rem;
+    gap: 1rem;
   }
 }
