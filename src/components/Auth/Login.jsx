@@ -372,12 +372,14 @@ const LoginAgente = () => {
         phone_number,
         birth_date,
         role_id,
+        tenant_id,
         profile_picture,
         cover_picture,
         created_at
       } = user;
 
       loginGlobal({
+        ...user,
         id,
         first_name,
         last_name,
@@ -385,6 +387,7 @@ const LoginAgente = () => {
         phone_number,
         birth_date,
         role_id,
+        tenant_id: user?.tenant_id,
         profile_picture,
         cover_picture,
         created_at

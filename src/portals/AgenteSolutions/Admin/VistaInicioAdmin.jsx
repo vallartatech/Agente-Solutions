@@ -104,9 +104,7 @@ const VistaInicioAdmin = () => {
       });
 
       const allList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-      // Rol 1: Aislar únicamente las propiedades registradas en el sistema base de Agente Solutions
-      const userTenantId = Number(user?.tenant_id || 1);
-      const list = allList.filter(p => !p.tenant_id || Number(p.tenant_id) === 1 || Number(p.tenant_id) === userTenantId);
+      const list = allList;
 
       if (list.length > 0) {
         setPropiedades(list);

@@ -28,7 +28,7 @@ const VistaPropiedades = () => {
   const [subInfo, setSubInfo] = useState(null);
   const [mostrarModalCompraEspacios, setMostrarModalCompraEspacios] = useState(false);
   const [mostrarModalRegistroPropiedad, setMostrarModalRegistroPropiedad] = useState(false);
-  const [pestanaOrigen, setPestanaOrigen] = useState("AGENTE_SOLUTIONS");
+  const [pestanaOrigen, setPestanaOrigen] = useState("TODOS");
 
   // MODAL LEVANTAMIENTO (TARJETAS INDIVIDUALES)
   const [mostrarModalServicio, setMostrarModalServicio] = useState(false);
@@ -105,14 +105,7 @@ const VistaPropiedades = () => {
       ]);
 
       const rawProps = Array.isArray(propsRes.data) ? propsRes.data : [];
-      
-      // Para Administrador (Rol 1): aislar y mostrar únicamente las de su propio sistema base
-      const userTenantId = Number(user?.tenant_id || 1);
-      const propsData = isAgenteAdmin
-        ? rawProps.filter(p => !p.tenant_id || Number(p.tenant_id) === 1 || Number(p.tenant_id) === userTenantId)
-        : rawProps;
-
-      setListaPropiedades(propsData);
+      setListaPropiedades(rawProps);
       setGlobalStats(statsRes.data);
 
       if (user?.role_id === 5 || user?.role_id === 4) {
@@ -161,6 +154,8 @@ const VistaPropiedades = () => {
           coincideOrigen = !item.tenant_id || Number(item.tenant_id) === 1;
         } else if (pestanaOrigen === "AUTONOMOS") {
           coincideOrigen = item.tenant_id && Number(item.tenant_id) !== 1;
+        } else if (pestanaOrigen === "TODOS") {
+          coincideOrigen = true;
         }
       }
 
@@ -645,6 +640,22 @@ const VistaPropiedades = () => {
         {isRootOrAgenteAdmin && (
           <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '18px', flexWrap: 'wrap', padding: '0 10px' }}>
             <button
+              onClick={() => { setPestanaOrigen("TODOS"); setCategoria("TODAS"); }}
+              style={{
+                padding: '11px 22px', borderRadius: '50px', fontWeight: 900, fontSize: '0.88rem',
+                border: pestanaOrigen === "TODOS" ? '2px solid #10b981' : '2px solid #334155',
+                background: pestanaOrigen === "TODOS" ? 'linear-gradient(135deg, #10b981 0%, #047857 100%)' : '#1e293b',
+                color: '#fff', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px',
+                boxShadow: pestanaOrigen === "TODOS" ? '0 6px 20px rgba(16,185,129,0.4)' : 'none'
+              }}
+            >
+              <span>🌐 TODAS EN SISTEMA</span>
+              <span style={{ background: pestanaOrigen === "TODOS" ? 'rgba(0,0,0,0.25)' : '#334155', padding: '2px 9px', borderRadius: '20px', fontSize: '0.8rem' }}>
+                {listaPropiedades.length}
+              </span>
+            </button>
+
+            <button
               onClick={() => { setPestanaOrigen("AGENTE_SOLUTIONS"); setCategoria("TODAS"); }}
               style={{
                 padding: '11px 22px', borderRadius: '50px', fontWeight: 900, fontSize: '0.88rem',
@@ -673,22 +684,6 @@ const VistaPropiedades = () => {
               <span>🏢 AUTÓNOMOS & EMPRESAS</span>
               <span style={{ background: pestanaOrigen === "AUTONOMOS" ? 'rgba(0,0,0,0.25)' : '#334155', padding: '2px 9px', borderRadius: '20px', fontSize: '0.8rem' }}>
                 {countAutonomos}
-              </span>
-            </button>
-
-            <button
-              onClick={() => { setPestanaOrigen("TODOS"); setCategoria("TODAS"); }}
-              style={{
-                padding: '11px 22px', borderRadius: '50px', fontWeight: 900, fontSize: '0.88rem',
-                border: pestanaOrigen === "TODOS" ? '2px solid #10b981' : '2px solid #334155',
-                background: pestanaOrigen === "TODOS" ? 'linear-gradient(135deg, #10b981 0%, #047857 100%)' : '#1e293b',
-                color: '#fff', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px',
-                boxShadow: pestanaOrigen === "TODOS" ? '0 6px 20px rgba(16,185,129,0.4)' : 'none'
-              }}
-            >
-              <span>🌐 TODAS EN SISTEMA</span>
-              <span style={{ background: pestanaOrigen === "TODOS" ? 'rgba(0,0,0,0.25)' : '#334155', padding: '2px 9px', borderRadius: '20px', fontSize: '0.8rem' }}>
-                {listaPropiedades.length}
               </span>
             </button>
           </div>
