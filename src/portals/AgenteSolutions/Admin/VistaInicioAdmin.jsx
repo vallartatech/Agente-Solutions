@@ -163,10 +163,20 @@ const VistaInicioAdmin = () => {
 
   const getPropImage = (prop) => {
     if (!prop) return defaultPropImg;
-    const img = prop.imagen || prop.foto || prop.photo_url || prop.image_url;
-    if (img) {
-      if (img.startsWith('http') || img.startsWith('data:')) return img;
-      return `${import.meta.env.VITE_API_BASE_URL}/storage/${img}`;
+    const img = 
+      prop.foto_url || 
+      prop.facade_photo_path || 
+      prop.foto_fachada || 
+      prop.imagen || 
+      prop.foto || 
+      prop.photo_url || 
+      prop.image_url || 
+      prop.imagen_url ||
+      prop.image;
+
+    if (img && typeof img === 'string' && img.trim() !== '') {
+      if (img.startsWith('http') || img.startsWith('data:') || img.startsWith('blob:')) return img;
+      return `${import.meta.env.VITE_API_BASE_URL}/storage/${img.replace(/^\/+/, '')}`;
     }
     return defaultPropImg;
   };
@@ -175,6 +185,20 @@ const VistaInicioAdmin = () => {
 
   const extractPropertyGps = (prop) => {
     if (!prop) return null;
+
+    // Si viene la cadena 'coordenadas' o 'coordinates' ("20.9673, -89.5925") desde la base de datos
+    const coordStr = prop.coordenadas || prop.coordinates;
+    if (coordStr && typeof coordStr === 'string' && coordStr.includes(',')) {
+      const parts = coordStr.split(',');
+      if (parts.length === 2) {
+        const lat = parseFloat(parts[0].trim());
+        const lng = parseFloat(parts[1].trim());
+        if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && (lat !== 0 || lng !== 0)) {
+          return { lat, lng, formatted: `${lat.toFixed(4)}, ${lng.toFixed(4)}` };
+        }
+      }
+    }
+
     const candidates = [prop.lat, prop.latitude, prop.latitud];
     const lngCandidates = [prop.lng, prop.longitude, prop.longitud];
     for (let i = 0; i < candidates.length; i++) {
@@ -208,11 +232,14 @@ const VistaInicioAdmin = () => {
     setTimeout(() => setCopiedToast(false), 2000);
   };
 
-  const clientNameDisplay = activeProperty?.cliente?.nombre 
+  const clientNameDisplay = activeProperty?.propietario
+    || activeProperty?.cliente?.nombre 
     || activeProperty?.cliente?.name 
     || activeProperty?.client_name 
+    || activeProperty?.empresa
+    || activeProperty?.company_name
     || activeProperty?.cliente 
-    || userFullName;
+    || 'Agente Solutions';
 
   return (
     <div className="vcp-root">
@@ -245,7 +272,7 @@ const VistaInicioAdmin = () => {
             {/* Título de la Propiedad */}
             <div className="vcp-prop-header-block">
               <div className="vcp-prop-owner-tag">
-                {activeProperty?.tipo || 'RESIDENCIAL'} • ID #{activeProperty?.id || '01'}
+                {activeProperty?.tipo || 'RESIDENCIAL'} • 🏢 {clientNameDisplay} • ID #{activeProperty?.id || '01'}
               </div>
 
               <div className="vcp-title-edit-row">
@@ -279,13 +306,17 @@ const VistaInicioAdmin = () => {
                       key={prop.id || idx}
                       className={`vcp-thumb-card ${isActive ? 'active' : ''}`}
                       onClick={() => setSelectedPropId(prop.id)}
-                      title={`Haz clic para ver:\n${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
+                      title={`Haz clic para ver:\n${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}\n🏢 ${prop.propietario || prop.cliente || 'Agente Solutions'}`}
                     >
                       <img 
                         src={thumbImg} 
                         alt={prop.nombre_propiedad || 'Propiedad'} 
                         className="vcp-thumb-img" 
                         draggable={false}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = defaultPropImg;
+                        }}
                       />
                       {isActive && (
                         <div className="vcp-thumb-main-badge" title="Propiedad Activa en Pantalla">
@@ -336,15 +367,15 @@ const VistaInicioAdmin = () => {
 
             {/* Lista de Campos Técnicos */}
             <div className="vcp-fields-list">
-              {/* Cliente Asociado */}
+              {/* Empresa o Titular */}
               <div className="vcp-field-item">
                 <div className="vcp-field-icon-wrap">
-                  <User size={16} />
+                  <Building2 size={16} />
                 </div>
                 <div className="vcp-field-content">
-                  <span className="vcp-field-label">CLIENTE / TITULAR</span>
-                  <span className="vcp-field-value">
-                    {clientNameDisplay}
+                  <span className="vcp-field-label">EMPRESA / TITULAR</span>
+                  <span className="vcp-field-value" style={{ fontWeight: 800, color: '#f26522' }}>
+                    🏢 {clientNameDisplay}
                   </span>
                 </div>
               </div>
