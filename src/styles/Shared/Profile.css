@@ -1221,23 +1221,40 @@ html, body {
   position: absolute;
   top: 16px;
   right: 16px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  background: rgba(30, 41, 59, 0.90);
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  max-width: 36px;
+  max-height: 36px;
+  padding: 0 !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   cursor: pointer;
+  z-index: 25;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .profile-modal-close-btn:hover {
   background: #ef4444;
   border-color: #ef4444;
   transform: scale(1.08);
+}
+
+.profile-modal-close-btn svg {
+  display: block !important;
+  width: 20px !important;
+  height: 20px !important;
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  stroke-width: 2.5px !important;
+  pointer-events: none;
 }
 
 .profile-modal-title {
@@ -1260,13 +1277,17 @@ html, body {
 .profile-form-row {
   display: flex;
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .profile-form-group {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  box-sizing: border-box;
 }
 
 .profile-form-group label {
@@ -1286,7 +1307,15 @@ html, body {
   font-size: 0.90rem;
   color: #ffffff;
   outline: none;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.profile-form-group input[type="date"] {
+  color-scheme: dark;
 }
 
 .profile-form-group input:focus {
@@ -1888,6 +1917,86 @@ html, body {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 6px !important;
     max-height: 240px !important;
+  }
+
+  /* ── MODALES RESPONSIVOS Y AJUSTE DE INPUTS EN MÓVIL ── */
+  .profile-modal-backdrop {
+    padding: 12px !important;
+    align-items: center !important;
+  }
+
+  .profile-modal-liquid-card {
+    padding: 22px 16px !important;
+    border-radius: 20px !important;
+    max-height: 90vh !important;
+    max-height: 90dvh !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .profile-modal-title {
+    font-size: 1.05rem !important;
+    padding-right: 42px !important; /* Espacio para que no choque con la X */
+  }
+
+  .profile-modal-close-btn {
+    top: 14px !important;
+    right: 14px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+
+  .profile-form-row {
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .profile-form-group {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .profile-form-group input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    font-size: 0.90rem !important;
+  }
+
+  .profile-form-group input[type="date"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    color-scheme: dark;
+  }
+
+  .profile-modal-specs-list {
+    max-height: 160px !important;
+    overflow-y: auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .profile-spec-toggle-btn {
+    font-size: 0.74rem !important;
+    padding: 6px 10px !important;
+  }
+
+  .profile-modal-actions {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .profile-modal-actions button {
+    width: 100% !important;
+    padding: 12px !important;
   }
 }
 

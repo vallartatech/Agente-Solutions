@@ -20,7 +20,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   Award,
-  Briefcase
+  Briefcase,
+  Home
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
@@ -50,6 +51,7 @@ const DEFAULT_COVER = 'https://images.unsplash.com/photo-1581092160607-ee22621dd
 const PerfilTecnico = () => {
   const { user, loginGlobal, logoutGlobal } = useAuth();
   const navigate = useNavigate();
+  const isRol2 = Number(user?.role_id) === 2;
 
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
@@ -319,25 +321,88 @@ const PerfilTecnico = () => {
             src={logo} 
             alt="Agente Solutions" 
             className="profile-brand-logo"
-            onClick={() => navigate('/mercado-trabajos')} 
-            title="Ir al Mercado de Trabajos"
+            onClick={() => navigate(isRol2 ? '/VistaTecnico' : '/mercado-trabajos')} 
+            title={isRol2 ? "Ir a Inicio" : "Ir al Mercado de Trabajos"}
           />
         </div>
 
         {/* Center Nav Links: TÉCNICO NAVIGATION */}
         <nav className="vcp-header-nav profile-topbar-nav">
-          <button className="vcp-nav-btn" onClick={() => navigate('/mercado-trabajos', { state: { view: 'mercado' } })}>
-            MERCADO (SOLICITUDES)
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/mercado-trabajos', { state: { view: 'tablero' } })}>
-            TRABAJOS ACEPTADOS
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/mercado-trabajos', { state: { view: 'usuarios' } })}>
-            MIS CLIENTES
-          </button>
-          <button className="vcp-nav-btn active" onClick={() => navigate('/mi-perfil')}>
-            MI PERFIL
-          </button>
+          {isRol2 ? (
+            <>
+              <button 
+                type="button" 
+                className="vcp-nav-btn" 
+                onClick={() => navigate('/VistaTecnico')}
+                title="Inicio"
+              >
+                INICIO
+              </button>
+              <button 
+                type="button" 
+                className="vcp-nav-btn" 
+                onClick={() => navigate('/trabajos-tecnico')}
+                title="Trabajos"
+              >
+                TRABAJOS
+              </button>
+              <button 
+                type="button" 
+                className="vcp-nav-btn" 
+                onClick={() => navigate('/trabajos-asignados')}
+                title="Levantamientos"
+              >
+                LEVANTAMIENTOS
+              </button>
+              <button 
+                type="button" 
+                className="vcp-nav-btn" 
+                onClick={() => navigate('/vista-cotizaciones')}
+                title="Cotizaciones"
+              >
+                COTIZACIONES
+              </button>
+              <button 
+                type="button" 
+                className="vcp-nav-btn active" 
+                onClick={() => navigate('/mi-perfil')}
+                title="Mi Perfil"
+              >
+                MI PERFIL
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                type="button" 
+                className="vcp-nav-btn" 
+                onClick={() => navigate('/mercado-trabajos', { state: { view: 'mercado' } })}
+              >
+                MERCADO (SOLICITUDES)
+              </button>
+              <button 
+                type="button" 
+                className="vcp-nav-btn" 
+                onClick={() => navigate('/mercado-trabajos', { state: { view: 'tablero' } })}
+              >
+                TRABAJOS ACEPTADOS
+              </button>
+              <button 
+                type="button" 
+                className="vcp-nav-btn" 
+                onClick={() => navigate('/mercado-trabajos', { state: { view: 'usuarios' } })}
+              >
+                MIS CLIENTES
+              </button>
+              <button 
+                type="button" 
+                className="vcp-nav-btn active" 
+                onClick={() => navigate('/mi-perfil')}
+              >
+                MI PERFIL
+              </button>
+            </>
+          )}
         </nav>
 
         {/* Right Actions & User Profile */}
@@ -408,12 +473,24 @@ const PerfilTecnico = () => {
             <div className="vcp-dropdown-divider" />
 
             <button 
+              type="button"
+              className="profile-dropdown-item vcp-dropdown-item" 
+              onClick={() => { 
+                setProfileDropdownOpen(false); 
+                navigate(isRol2 ? '/VistaTecnico' : '/mercado-trabajos'); 
+              }}
+            >
+              <Home size={16} /> Ir a Inicio
+            </button>
+            <button 
+              type="button"
               className="profile-dropdown-item vcp-dropdown-item" 
               onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
             >
               <User size={16} /> Mi Perfil
             </button>
             <button 
+              type="button"
               className="profile-dropdown-item logout vcp-dropdown-item" 
               onClick={() => { 
                 setProfileDropdownOpen(false); 
@@ -669,8 +746,13 @@ const PerfilTecnico = () => {
       {isModalOpen && (
         <div className="profile-modal-backdrop" onClick={() => setIsModalOpen(false)}>
           <div className="profile-modal-liquid-card" onClick={e => e.stopPropagation()}>
-            <button className="profile-modal-close-btn" onClick={() => setIsModalOpen(false)}>
-              <X size={18} />
+            <button 
+              type="button" 
+              className="profile-modal-close-btn" 
+              onClick={() => setIsModalOpen(false)}
+              aria-label="Cerrar modal"
+            >
+              <X size={20} strokeWidth={2.5} color="#ffffff" />
             </button>
             
             <h3 className="profile-modal-title">
@@ -746,8 +828,13 @@ const PerfilTecnico = () => {
       {isDeleteModalOpen && (
         <div className="profile-modal-backdrop" onClick={() => setIsDeleteModalOpen(false)}>
           <div className="profile-modal-liquid-card delete-card" onClick={e => e.stopPropagation()}>
-            <button className="profile-modal-close-btn" onClick={() => setIsDeleteModalOpen(false)}>
-              <X size={18} />
+            <button 
+              type="button" 
+              className="profile-modal-close-btn" 
+              onClick={() => setIsDeleteModalOpen(false)}
+              aria-label="Cerrar modal"
+            >
+              <X size={20} strokeWidth={2.5} color="#ffffff" />
             </button>
             <h3 className="profile-modal-title" style={{ color: '#ef4444' }}>
               <Trash2 size={20} /> Eliminar Cuenta
@@ -800,6 +887,14 @@ const PerfilTecnico = () => {
       {isPhotoMenuOpen && (
         <div className="profile-modal-backdrop" onClick={() => setIsPhotoMenuOpen(false)}>
           <div className="profile-modal-liquid-card photo-card" onClick={e => e.stopPropagation()}>
+            <button 
+              type="button" 
+              className="profile-modal-close-btn" 
+              onClick={() => setIsPhotoMenuOpen(false)}
+              aria-label="Cerrar modal"
+            >
+              <X size={20} strokeWidth={2.5} color="#ffffff" />
+            </button>
             <h3 className="profile-modal-title" style={{ textAlign: 'center' }}>
               Actualizar Imagen
             </h3>
