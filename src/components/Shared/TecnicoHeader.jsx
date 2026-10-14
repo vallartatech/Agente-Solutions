@@ -276,7 +276,7 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
       )}
 
       {/* Responsive Bottom Dock Navigation (Only Icons) */}
-      <MobileBottomNav activeModule={activeTab} />
+      <MobileBottomNav activeModule={activeTab} onTabChange={onTabChange} />
     </>
   );
 };

@@ -267,4 +267,8 @@
   .menu-grid {
     grid-template-columns: 1fr !important; 
   }
+
+  .content-wrapper {
+    padding-bottom: 80px;
+  }
 }
