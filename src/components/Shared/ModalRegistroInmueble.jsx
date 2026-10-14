@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import {
   Type,
@@ -169,15 +170,19 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
     }
   };
 
-  return (
+  return createPortal(
     <div className="mri-overlay" onClick={onClose}>
       <div className="mri-card" onClick={e => e.stopPropagation()}>
-        <div className="mri-top-orange-bar" />
+        {/* Mobile grabber pill */}
+        <div className="mri-grabber" />
 
         <div className="mri-header">
-          <h2 className="mri-title">REGISTRO DE INMUEBLE</h2>
-          <button className="mri-close-btn" onClick={onClose} title="Cerrar ventana" aria-label="Cerrar ventana">
-            <X size={20} color="#ffffff" strokeWidth={2.8} style={{ stroke: '#ffffff', color: '#ffffff', width: '20px', height: '20px', display: 'block' }} />
+          <div className="mri-header-text">
+            <span className="mri-tag">NUEVA PROPIEDAD</span>
+            <h2 className="mri-title">Registrar Propiedad</h2>
+          </div>
+          <button className="mri-close-btn" onClick={onClose} title="Cerrar ventana" aria-label="Cerrar ventana" type="button">
+            <X size={18} color="#ffffff" strokeWidth={2.6} />
           </button>
         </div>
 
@@ -380,22 +385,25 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
             </div>
           )}
 
-          <button
-            type="submit"
-            className="mri-submit-btn"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" /> GUARDANDO PROPIEDAD...
-              </>
-            ) : (
-              'GUARDAR PROPIEDAD'
-            )}
-          </button>
+          <div className="mri-footer-sticky">
+            <button
+              type="submit"
+              className="mri-submit-btn"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" /> GUARDANDO PROPIEDAD...
+                </>
+              ) : (
+                'GUARDAR PROPIEDAD'
+              )}
+            </button>
+          </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

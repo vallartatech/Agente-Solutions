@@ -11,7 +11,7 @@ import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
 import "../../../styles/AgenteSolutions/Cliente/DetallePropiedad.css";
 import { 
   X, CheckCircle, User, AlertTriangle, ListChecks, Clock, CheckCircle2, 
-  LayoutDashboard, ChevronLeft, PlusCircle, FileText, Home, Wrench, 
+  LayoutDashboard, ChevronLeft, PlusCircle, Plus, Globe, FileText, Home, Wrench, 
   MessageSquare, Camera, UserCheck, ImageIcon, Loader2 
 } from "lucide-react";
 
@@ -591,8 +591,9 @@ const VistaPropiedades = () => {
         )}
 
         {/* Solo para Admin / Autónomo: Buscador y Botón Circular */}
+        {/* Solo para Admin / Autónomo: Buscador Centrado y Simétrico */}
         {!isClient && (
-           <div className="search-header-flex" style={{ flexWrap: 'wrap', gap: '14px' }}>
+           <div className="search-header-flex">
               <div className="search-container-center">
                 <UniversalSearch
                   type="PROPIEDADES"
@@ -602,38 +603,6 @@ const VistaPropiedades = () => {
                   placeholder="PROPIEDADES"
                 />
               </div>
-
-              {isLimitReached ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <button
-                    className="btn-add-circle"
-                    disabled
-                    style={{ backgroundColor: '#64748b', borderColor: '#475569', cursor: 'not-allowed', opacity: 0.5 }}
-                    title="Límite de propiedades alcanzado"
-                  >
-                    +
-                  </button>
-                  <button
-                    onClick={() => setMostrarModalCompraEspacios(true)}
-                    style={{
-                      padding: '12px 20px', borderRadius: '50px', border: '2px solid #FF6600',
-                      background: 'linear-gradient(135deg, #FF6600 0%, #d94e00 100%)', color: '#FFFFFF',
-                      fontWeight: 900, cursor: 'pointer', fontSize: '0.88rem',
-                      boxShadow: '0 6px 20px rgba(255,102,0,0.5)', display: 'flex', alignItems: 'center', gap: '8px'
-                    }}
-                  >
-                    🔒 REQUIERE NUEVA PROPIEDAD: COMPRAR ESPACIO ($79.99 c/u)
-                  </button>
-                </div>
-              ) : (
-                <button
-                  className="btn-add-circle"
-                  onClick={() => setMostrarModalRegistroPropiedad(true)}
-                  title="NUEVA PROPIEDAD"
-                >
-                  +
-                </button>
-              )}
            </div>
         )}
 
@@ -691,45 +660,52 @@ const VistaPropiedades = () => {
 
         {!isClient && (
           <div className="categories-row-container">
-            <div className="categories-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            <div className="categories-row">
+              {/* Botón 1: NUEVA PROPIEDAD (+) con icono blanco */}
+              {isLimitReached ? (
+                <button
+                  className="btn-add-action-bar"
+                  onClick={() => setMostrarModalCompraEspacios(true)}
+                  title="Comprar Espacio"
+                  type="button"
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', color: '#ffffff' }}>
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  className="btn-add-action-bar"
+                  onClick={() => setMostrarModalRegistroPropiedad(true)}
+                  title="Nueva Propiedad"
+                  type="button"
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', color: '#ffffff' }}>
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+              )}
+
+              {/* Botón 2: TODAS con icono Globe blanco */}
               <button
-                className={`cat-btn ${categoria === "TODAS" ? "active" : ""}`}
+                className={`cat-btn-filter ${categoria === "TODAS" ? "active" : ""}`}
                 onClick={() => setCategoria("TODAS")}
+                type="button"
               >
-                <span className="btn-icon-small">🌐</span> TODAS
+                <Globe size={17} color="#ffffff" strokeWidth={2.4} />
+                <span>TODAS</span>
               </button>
 
+              {/* Botón 3: SOLICITAR SERVICIO con icono PlusCircle blanco */}
               <button
                 type="button"
                 className="btn-solicitar-servicio-bar"
                 onClick={handleAbrirReportarProblema}
-                style={{
-                  background: 'linear-gradient(135deg, #f26522 0%, #ea580c 100%)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '50px',
-                  padding: '10px 24px',
-                  fontWeight: 900,
-                  fontSize: '0.92rem',
-                  fontFamily: "'Outfit', sans-serif",
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 15px rgba(242, 101, 34, 0.35)',
-                  transition: 'all 0.2s ease',
-                  letterSpacing: '0.4px'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(242, 101, 34, 0.5)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(242, 101, 34, 0.35)';
-                }}
               >
-                <PlusCircle size={20} color="#ffffff" strokeWidth={2.8} /> SOLICITAR SERVICIO
+                <PlusCircle size={18} color="#ffffff" strokeWidth={2.6} />
+                <span>SOLICITAR SERVICIO</span>
               </button>
             </div>
           </div>
@@ -1146,87 +1122,57 @@ const VistaPropiedades = () => {
       )}
 
       {/* ========================================================
-          MODAL: REPORTAR PROBLEMA (ACTIVADO POR EL BOTÓN SUPERIOR)
+          MODAL REPORTAR PROBLEMA (BOTÓN SUPERIOR "SOLICITAR SERVICIO")
+          DISEÑO: LIQUID GLASS GRIS (clases rp-* en VistaPropiedades.css)
           ======================================================== */}
       {mostrarModalReportarProblema && createPortal(
         <div 
-          className="modal-overlay" 
+          className="rp-overlay" 
           onClick={() => setMostrarModalReportarProblema(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999999,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "rgba(15, 23, 42, 0.78)",
-            backdropFilter: "blur(8px)",
-            padding: "20px",
-          }}
         >
           <div 
-            className="modal-content" 
+            className="rp-modal" 
             onClick={e => e.stopPropagation()}
-            style={{
-              maxWidth: "600px",
-              width: "100%",
-              padding: "32px",
-              borderRadius: "20px",
-              backgroundColor: "white",
-              position: "relative",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-              zIndex: 10000000,
-              maxHeight: "88vh",
-              overflowY: "auto"
-            }}
           >
-            <button 
-              className="close-modal" 
-              onClick={() => setMostrarModalReportarProblema(false)}
-              style={{
-                position: "absolute",
-                top: "16px",
-                right: "16px",
-                background: "rgba(0,0,0,0.06)",
-                border: "none",
-                borderRadius: "50%",
-                width: "34px",
-                height: "34px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                transition: "background 0.2s"
-              }}
-            >
-              <X size={20} color="#333" strokeWidth={2.8} />
-            </button>
-            <div className="modal-header">
-              <div className="modal-tag">NUEVA SOLICITUD</div>
-              <h2 style={{ fontSize: "1.8rem", fontWeight: 900, color: "#1e293b", margin: "4px 0 16px 0" }}>Reportar Problema</h2>
+            <div className="rp-grabber" />
+            <div className="rp-header">
+              <div className="rp-header-text">
+                <span className="rp-tag">NUEVA SOLICITUD</span>
+                <h2 className="rp-title">Reportar Problema</h2>
+              </div>
+              <button 
+                type="button"
+                className="rp-close" 
+                onClick={() => setMostrarModalReportarProblema(false)}
+                aria-label="Cerrar"
+              >
+                <X size={18} color="#ffffff" strokeWidth={2.6} />
+              </button>
             </div>
-            <form className="modal-body service-form" onSubmit={handleSubmitReportarProblema}>
+            <form className="rp-form" onSubmit={handleSubmitReportarProblema}>
               {/* CAMPO: SELECCIÓN DE PROPIEDAD */}
-              <div className="form-group">
-                <label><Home size={16}/> Propiedad a Reportar *</label>
+              <div className="rp-group">
+                <label className="rp-label">
+                  <Home size={16} color="#ff8c42"/> Propiedad a Reportar *
+                </label>
                 <select 
                   required 
                   value={propiedadReporteId}
                   onChange={(e) => handleCambioPropiedadReporte(e.target.value)}
                   style={{
-                    padding: "12px 14px",
-                    borderRadius: "10px",
-                    border: "1.5px solid #cbd5e1",
-                    fontSize: "0.95rem",
-                    backgroundColor: "#fff",
-                    color: "#1e293b",
+                    padding: "11px 14px",
+                    borderRadius: "12px",
+                    border: "1.5px solid rgba(255, 255, 255, 0.18)",
+                    fontSize: "0.92rem",
+                    backgroundColor: "rgba(255, 255, 255, 0.08)",
+                    color: "#ffffff",
                     fontWeight: "600",
                     outline: "none"
                   }}
                 >
-                  <option value="">Selecciona la propiedad...</option>
+                  <option value="" style={{ backgroundColor: "#1e2430", color: "#ffffff" }}>Selecciona la propiedad...</option>
                   {listaPropiedades.map(p => (
-                    <option key={p.id} value={p.id}>
+                    <option key={p.id} value={p.id} style={{ backgroundColor: "#1e2430", color: "#ffffff" }}>
                       {p.nombre_propiedad || p.direccion || `Propiedad #${p.id}`}
                     </option>
                   ))}
@@ -1234,47 +1180,54 @@ const VistaPropiedades = () => {
               </div>
 
               {/* CAMPO: TIPO DE SERVICIO */}
-              <div className="form-group">
-                <label><FileText size={16}/> Tipo de Servicio *</label>
+              <div className="rp-group">
+                <label className="rp-label">
+                  <FileText size={16} color="#ff8c42"/> Tipo de Servicio *
+                </label>
                 <select 
                   required 
                   value={nuevoProblema.tipo}
                   onChange={(e) => setNuevoProblema({...nuevoProblema, tipo: e.target.value})}
                   style={{
-                    padding: "12px 14px",
-                    borderRadius: "10px",
-                    border: "1.5px solid #cbd5e1",
-                    fontSize: "0.95rem",
-                    backgroundColor: "#fff",
-                    color: "#1e293b",
+                    padding: "11px 14px",
+                    borderRadius: "12px",
+                    border: "1.5px solid rgba(255, 255, 255, 0.18)",
+                    fontSize: "0.92rem",
+                    backgroundColor: "rgba(255, 255, 255, 0.08)",
+                    color: "#ffffff",
+                    fontWeight: "600",
                     outline: "none"
                   }}
                 >
-                  <option value="">Selecciona el tipo...</option>
-                  <option value="Mantenimiento">Mantenimiento Preventivo</option>
-                  <option value="Problema">Problema / Reparación</option>
+                  <option value="" style={{ backgroundColor: "#1e2430", color: "#ffffff" }}>Selecciona el tipo...</option>
+                  <option value="Mantenimiento" style={{ backgroundColor: "#1e2430", color: "#ffffff" }}>Mantenimiento Preventivo</option>
+                  <option value="Problema" style={{ backgroundColor: "#1e2430", color: "#ffffff" }}>Problema / Reparación</option>
                 </select>
               </div>
 
               {/* CAMPO: ZONA DE LA PROPIEDAD */}
-              <div className="form-group">
-                <label><Home size={16}/> Zona de la propiedad *</label>
+              <div className="rp-group">
+                <label className="rp-label">
+                  <Home size={16} color="#ff8c42"/> Zona de la propiedad *
+                </label>
                 <select 
                   required 
                   value={nuevoProblema.area_id}
                   onChange={(e) => handleZonaChangeProblema(e.target.value)}
                   disabled={loadingZonas || !propiedadReporteId}
                   style={{
-                    padding: "12px 14px",
-                    borderRadius: "10px",
-                    border: "1.5px solid #cbd5e1",
-                    fontSize: "0.95rem",
-                    backgroundColor: "#fff",
-                    color: "#1e293b",
-                    outline: "none"
+                    padding: "11px 14px",
+                    borderRadius: "12px",
+                    border: "1.5px solid rgba(255, 255, 255, 0.18)",
+                    fontSize: "0.92rem",
+                    backgroundColor: "rgba(255, 255, 255, 0.08)",
+                    color: "#ffffff",
+                    fontWeight: "600",
+                    outline: "none",
+                    opacity: (loadingZonas || !propiedadReporteId) ? 0.6 : 1
                   }}
                 >
-                  <option value="">
+                  <option value="" style={{ backgroundColor: "#1e2430", color: "#ffffff" }}>
                     {!propiedadReporteId 
                       ? "Primero selecciona una propiedad" 
                       : (loadingZonas ? "Cargando zonas..." : "Seleccionar zona...")}
@@ -1283,72 +1236,78 @@ const VistaPropiedades = () => {
                     const subAreas = zona.sub_areas || zona.subAreas || [];
                     if (subAreas.length > 0) {
                       return (
-                        <optgroup key={`opt-${zona.id}`} label={zona.name.toUpperCase()}>
-                          <option value={zona.id}>{zona.name} (Área General)</option>
+                        <optgroup key={`opt-${zona.id}`} label={zona.name.toUpperCase()} style={{ backgroundColor: "#1e2430", color: "#ff8c42" }}>
+                          <option value={zona.id} style={{ backgroundColor: "#1e2430", color: "#ffffff" }}>{zona.name} (Área General)</option>
                           {subAreas.map(sub => (
-                            <option key={`sub-${sub.id}`} value={sub.id}>
+                            <option key={`sub-${sub.id}`} value={sub.id} style={{ backgroundColor: "#1e2430", color: "#ffffff" }}>
                               {sub.name}
                             </option>
                           ))}
                         </optgroup>
                       );
                     } else {
-                      return <option key={`zona-${zona.id}`} value={zona.id}>{zona.name}</option>;
+                      return <option key={`zona-${zona.id}`} value={zona.id} style={{ backgroundColor: "#1e2430", color: "#ffffff" }}>{zona.name}</option>;
                     }
                   })}
-                  <option value="otro" style={{ fontWeight: 'bold' }}>Otro (No está en la lista)</option>
+                  <option value="otro" style={{ backgroundColor: "#1e2430", color: "#ff8c42", fontWeight: 'bold' }}>Otro (No está en la lista)</option>
                 </select>
               </div>
 
               {/* CAMPO: EQUIPO AFECTADO */}
-              <div className="form-group">
-                <label><Wrench size={16}/> Equipo afectado (Opcional)</label>
+              <div className="rp-group">
+                <label className="rp-label">
+                  <Wrench size={16} color="#ff8c42"/> Equipo afectado (Opcional)
+                </label>
                 <select 
                   value={nuevoProblema.equipo}
                   disabled={!nuevoProblema.area_id || loadingEquipos}
                   onChange={(e) => setNuevoProblema({...nuevoProblema, equipo: e.target.value})}
                   style={{
-                    padding: "12px 14px",
-                    borderRadius: "10px",
-                    border: "1.5px solid #cbd5e1",
-                    fontSize: "0.95rem",
-                    backgroundColor: "#fff",
-                    color: "#1e293b",
-                    outline: "none"
+                    padding: "11px 14px",
+                    borderRadius: "12px",
+                    border: "1.5px solid rgba(255, 255, 255, 0.18)",
+                    fontSize: "0.92rem",
+                    backgroundColor: "rgba(255, 255, 255, 0.08)",
+                    color: "#ffffff",
+                    fontWeight: "600",
+                    outline: "none",
+                    opacity: (!nuevoProblema.area_id || loadingEquipos) ? 0.6 : 1
                   }}
                 >
-                  <option value="">
+                  <option value="" style={{ backgroundColor: "#1e2430", color: "#ffffff" }}>
                     {!nuevoProblema.area_id ? "Primero selecciona una zona" : (loadingEquipos ? "Cargando equipos..." : "Seleccionar equipo...")}
                   </option>
                   {Object.entries(equiposDisponibles).map(([seccion, items]) => (
-                    <optgroup key={seccion} label={seccion.toUpperCase()}>
+                    <optgroup key={seccion} label={seccion.toUpperCase()} style={{ backgroundColor: "#1e2430", color: "#ff8c42" }}>
                       {items.map((item) => (
-                        <option key={item.id} value={`${item.sub_category} ${item.brand ? `(${item.brand})` : ''}`}>
+                        <option key={item.id} value={`${item.sub_category} ${item.brand ? `(${item.brand})` : ''}`} style={{ backgroundColor: "#1e2430", color: "#ffffff" }}>
                           {item.sub_category} {item.brand ? `(${item.brand})` : ''} {item.model_or_color ? `- ${item.model_or_color}` : ''}
                         </option>
                       ))}
                     </optgroup>
                   ))}
-                  <option value="otro">Otro (No está en la lista)</option>
+                  <option value="otro" style={{ backgroundColor: "#1e2430", color: "#ff8c42" }}>Otro (No está en la lista)</option>
                 </select>
               </div>
 
               {/* CAMPO: DESCRIPCIÓN */}
-              <div className="form-group">
-                <label><MessageSquare size={16}/> Descripción *</label>
+              <div className="rp-group">
+                <label className="rp-label">
+                  <MessageSquare size={16} color="#ff8c42"/> Descripción *
+                </label>
                 <textarea 
                   required 
-                  rows="4" 
-                  placeholder="Describe el problema..." 
+                  rows="3" 
+                  placeholder="Describe detalladamente el problema..." 
                   value={nuevoProblema.descripcion}
                   onChange={(e) => setNuevoProblema({...nuevoProblema, descripcion: e.target.value})}
                   style={{
-                    padding: "12px 14px",
-                    borderRadius: "10px",
-                    border: "1.5px solid #cbd5e1",
-                    fontSize: "0.95rem",
-                    backgroundColor: "#fff",
-                    color: "#1e293b",
+                    padding: "11px 14px",
+                    borderRadius: "12px",
+                    border: "1.5px solid rgba(255, 255, 255, 0.18)",
+                    fontSize: "0.92rem",
+                    backgroundColor: "rgba(255, 255, 255, 0.08)",
+                    color: "#ffffff",
                     outline: "none",
                     resize: "vertical"
                   }}
@@ -1356,15 +1315,17 @@ const VistaPropiedades = () => {
               </div>
 
               {/* CAMPO: EVIDENCIA VISUAL */}
-              <div className="form-group">
-                <label><Camera size={16}/> Evidencia Visual (Máx 2 fotos)</label>
+              <div className="rp-group">
+                <label className="rp-label">
+                  <Camera size={16} color="#ff8c42"/> Evidencia Visual (Máx 2 fotos)
+                </label>
                 
                 <input type="file" ref={cameraRef} hidden accept="image/*" capture="environment" onChange={handleFileSelectProblema} />
                 <input type="file" ref={galleryRef} hidden accept="image/*" multiple onChange={handleFileSelectProblema} />
 
-                <div className="fotos-preview-container" style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                <div className="fotos-preview-container" style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap' }}>
                   {nuevoProblema.fotos.map((foto, idx) => (
-                    <div key={idx} className="foto-preview-wrapper" style={{ position: 'relative', width: '80px', height: '80px' }}>
+                    <div key={idx} className="foto-preview-wrapper" style={{ position: 'relative', width: '74px', height: '74px' }}>
                       <img 
                         src={URL.createObjectURL(foto)} 
                         alt="preview" 
@@ -1373,9 +1334,9 @@ const VistaPropiedades = () => {
                       <button 
                         type="button"
                         onClick={() => removeFotoProblema(idx)}
-                        style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#e63946', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#e63946', color: 'white', border: 'none', borderRadius: '50%', width: '22px', height: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
-                        <X size={14} />
+                        <X size={13} />
                       </button>
                     </div>
                   ))}
@@ -1385,35 +1346,49 @@ const VistaPropiedades = () => {
                       type="button" 
                       className="btn-add-foto-placeholder"
                       onClick={() => setIsPhotoMenuOpen(true)}
-                      style={{ width: '80px', height: '80px', border: '2px dashed #ccc', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#f9f9f9', color: '#666' }}
+                      style={{
+                        width: '74px',
+                        height: '74px',
+                        border: '2px dashed rgba(255, 255, 255, 0.28)',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        color: '#f1f5f9',
+                        transition: 'all 0.2s'
+                      }}
                     >
-                      <PlusCircle size={24} />
-                      <span style={{ fontSize: '10px', fontWeight: 'bold', marginTop: '4px' }}>AÑADIR</span>
+                      <PlusCircle size={22} color="#ff8c42" />
+                      <span style={{ fontSize: '10px', fontWeight: 'bold', marginTop: '4px', letterSpacing: '0.4px' }}>AÑADIR</span>
                     </button>
                   )}
                 </div>
                 
-                <small style={{ color: '#666', fontSize: '11px', marginTop: '8px', display: 'block' }}>
+                <small style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px', display: 'block' }}>
                   * Puedes subir hasta 2 imágenes como evidencia del problema.
                 </small>
               </div>
 
-              <div className="modal-footer" style={{ marginTop: "10px" }}>
+              <div className="rp-footer">
                 <button 
                   type="submit" 
                   className="btn-modal-close" 
                   disabled={loadingSubmitProblema}
                   style={{
                     width: "100%",
-                    padding: "14px 24px",
+                    padding: "13px 20px",
                     background: "linear-gradient(135deg, #f26522 0%, #ea580c 100%)",
-                    color: "white",
+                    color: "#ffffff",
                     fontWeight: 900,
-                    fontSize: "1rem",
-                    borderRadius: "12px",
+                    fontSize: "0.98rem",
+                    borderRadius: "14px",
                     border: "none",
                     cursor: "pointer",
-                    boxShadow: "0 4px 15px rgba(242, 101, 34, 0.4)"
+                    boxShadow: "0 4px 18px rgba(242, 101, 34, 0.45)",
+                    transition: "all 0.2s"
                   }}
                 >
                   {loadingSubmitProblema ? "Enviando..." : "Levantar Reporte"}
@@ -1427,30 +1402,58 @@ const VistaPropiedades = () => {
 
       {/* MODAL DE SELECCIÓN DE FOTO */}
       {isPhotoMenuOpen && createPortal(
-        <div className="modal-overlay" onClick={() => setIsPhotoMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 10000005, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)" }}>
-          <div className="modal-content" style={{ maxWidth: '350px', width: "90%", padding: '0', backgroundColor: '#fff', borderRadius: "16px", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid #eee' }}>
-              <h3 style={{ margin: 0, color: '#f26624', fontWeight: 800 }}>Seleccionar Origen</h3>
+        <div 
+          className="modal-overlay" 
+          onClick={() => setIsPhotoMenuOpen(false)} 
+          style={{ 
+            position: "fixed", 
+            inset: 0, 
+            zIndex: 10000005, 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center", 
+            background: "rgba(10, 15, 25, 0.75)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            padding: "16px"
+          }}
+        >
+          <div 
+            className="modal-content liquid-glass-modal" 
+            style={{ 
+              maxWidth: '340px', 
+              width: "90%", 
+              padding: '0', 
+              background: "linear-gradient(135deg, rgba(30, 41, 59, 0.94) 0%, rgba(15, 23, 42, 0.98) 100%)", 
+              borderRadius: "20px", 
+              overflow: "hidden",
+              border: "1.5px solid rgba(255, 255, 255, 0.18)",
+              boxShadow: "0 25px 60px rgba(0, 0, 0, 0.7)"
+            }} 
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ padding: '18px', textAlign: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.12)' }}>
+              <h3 style={{ margin: 0, color: '#ff8c42', fontWeight: 800, fontSize: '1.1rem' }}>Seleccionar Origen</h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <button 
                 type="button" 
                 onClick={() => selectPhotoSourceProblema('camera')}
-                style={{ background: 'transparent', border: 'none', padding: '15px', color: '#333', borderBottom: '1px solid #eee', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontWeight: 600 }}
+                style={{ background: 'transparent', border: 'none', padding: '14px', color: '#ffffff', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontWeight: 700 }}
               >
-                <Camera size={20} /> Tomar Foto
+                <Camera size={19} color="#ff8c42" /> Tomar Foto
               </button>
               <button 
                 type="button" 
                 onClick={() => selectPhotoSourceProblema('gallery')}
-                style={{ background: 'transparent', border: 'none', padding: '15px', color: '#333', borderBottom: '1px solid #eee', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontWeight: 600 }}
+                style={{ background: 'transparent', border: 'none', padding: '14px', color: '#ffffff', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontWeight: 700 }}
               >
-                <ImageIcon size={20} /> Elegir de la Galería
+                <ImageIcon size={19} color="#ff8c42" /> Elegir de la Galería
               </button>
               <button 
                 type="button" 
                 onClick={() => setIsPhotoMenuOpen(false)}
-                style={{ background: 'transparent', border: 'none', padding: '15px', color: '#666', fontSize: '1rem', cursor: 'pointer' }}
+                style={{ background: 'transparent', border: 'none', padding: '14px', color: '#94a3b8', fontSize: '0.9rem', cursor: 'pointer', fontWeight: 600 }}
               >
                 Cancelar
               </button>

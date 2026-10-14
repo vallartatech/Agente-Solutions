@@ -376,14 +376,6 @@
   }
 
   .vcp-header-nav {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .vcp-nav-btn {
-    padding: 5px 8px;
-    font-size: 0.72rem;
+    display: none !important;
   }
 }

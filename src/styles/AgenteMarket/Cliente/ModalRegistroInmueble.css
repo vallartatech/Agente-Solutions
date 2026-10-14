@@ -1,257 +1,277 @@
 /* ==========================================================================
-   MODAL REGISTRO DE INMUEBLE - CLIENTE PARTICULAR (APPLE ULTRA LIQUID GLASS)
+   MODAL REGISTRO DE INMUEBLE - LIQUID GLASS (EXACT MATCH IMAGE 3)
    ========================================================================== */
 
 .mri-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.62);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  z-index: 99999999 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 99999999 !important;
   padding: 16px;
+  background: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: mriFade 0.22s ease;
   box-sizing: border-box;
-  animation: mriFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes mriFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .mri-card {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.06) 50%,
-    rgba(255, 255, 255, 0.14) 100%
-  );
-  backdrop-filter: blur(28px) saturate(200%) contrast(105%);
-  -webkit-backdrop-filter: blur(28px) saturate(200%) contrast(105%);
-  border-radius: 26px;
-  border: 1.5px solid rgba(255, 255, 255, 0.38);
-  width: 100%;
-  max-width: 720px;
-  max-height: 90vh;
-  max-height: 90dvh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 
-    0 30px 70px rgba(0, 0, 0, 0.65),
-    inset 0 1.5px 2px rgba(255, 255, 255, 0.75),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.12),
-    0 0 0 1px rgba(255, 255, 255, 0.15);
   position: relative;
-  overflow: hidden;
-  box-sizing: border-box;
-  animation: mriZoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes mriZoomIn {
-  from { opacity: 0; transform: scale(0.94) translateY(16px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-/* Orange top highlight line */
-.mri-top-orange-bar {
-  height: 5px;
   width: 100%;
-  background: linear-gradient(90deg, #f26522 0%, #ff8c42 50%, #f26522 100%);
-  box-shadow: 0 0 16px rgba(242, 101, 34, 0.6);
-  flex-shrink: 0;
+  max-width: 480px;
+  max-height: 88vh;
+  max-height: 88dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 22px;
+  border-radius: 26px;
+  background: linear-gradient(160deg, rgba(72, 78, 90, 0.72) 0%, rgba(38, 42, 50, 0.86) 100%);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  text-align: left;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  animation: mriPop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
+.mri-card::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Grabber for bottom sheet mobile */
+.mri-grabber {
+  display: none;
+}
+
+/* Sticky modern header */
 .mri-header {
-  padding: 16px 22px 14px 22px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  margin: 0 -22px 16px;
+  padding: 20px 22px 14px;
+  background: linear-gradient(180deg, rgba(58, 63, 74, 0.96) 0%, rgba(58, 63, 74, 0.82) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   box-sizing: border-box;
+}
+
+.mri-header-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mri-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 140, 66, 0.18);
+  border: 1px solid rgba(255, 140, 66, 0.4);
+  color: #ffb27a;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .mri-title {
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.25rem;
-  font-weight: 900;
-  color: #ffffff;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
   margin: 0;
+  color: #ffffff;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.3px;
   text-align: left;
-  flex: 1;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
-  line-height: 1.25;
 }
 
 .mri-close-btn {
-  position: static;
-  background: rgba(255, 255, 255, 0.22) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.6) !important;
-  color: #ffffff !important;
-  width: 38px !important;
-  height: 38px !important;
-  min-width: 38px !important;
-  border-radius: 50% !important;
+  flex-shrink: 0;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  cursor: pointer !important;
-  transition: all 0.22s ease !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-  flex-shrink: 0 !important;
   padding: 0 !important;
-  line-height: 1 !important;
-  z-index: 10 !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+  color: #ffffff !important;
+}
+
+.mri-close-btn:hover {
+  background: rgba(255, 255, 255, 0.24) !important;
+  transform: rotate(90deg);
 }
 
 .mri-close-btn svg {
   stroke: #ffffff !important;
   color: #ffffff !important;
   fill: none !important;
-  stroke-width: 2.8px !important;
-  width: 20px !important;
-  height: 20px !important;
   display: block !important;
-}
-
-.mri-close-btn:hover {
-  background: #ef4444;
-  border-color: #ff6b6b;
-  color: #ffffff;
-  transform: rotate(90deg) scale(1.08);
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.6);
 }
 
 /* Form body */
 .mri-body {
-  padding: 16px 28px 26px 28px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.mri-body::-webkit-scrollbar {
+  display: none !important;
 }
 
 .mri-form-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 14px;
-  margin-top: 6px;
+  width: 100%;
 }
 
-.mri-field-full {
-  grid-column: span 3;
-}
-
-.mri-field-two-thirds {
-  grid-column: span 2;
-}
-
+.mri-field-full,
+.mri-field-two-thirds,
 .mri-field-one-third {
-  grid-column: span 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
 }
 
 .mri-label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: #f1f5f9;
-  letter-spacing: 0.4px;
-  margin-bottom: 6px;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-align: left;
+  line-height: 1.3;
 }
 
 .mri-label svg {
-  color: #ff8c42;
+  color: #ff8c42 !important;
+  stroke: #ff8c42 !important;
   flex-shrink: 0;
 }
 
-.mri-input, .mri-select {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.10);
-  border: 1.5px solid rgba(255, 255, 255, 0.24);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 12px;
-  color: #ffffff;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.88rem;
-  font-weight: 600;
-  padding: 10px 14px;
+.mri-input,
+.mri-select {
+  width: 100% !important;
   box-sizing: border-box;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 0;
+  padding: 12px 14px !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  background-color: rgba(255, 255, 255, 0.07) !important;
+  color: #ffffff !important;
+  font-family: inherit;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   outline: none;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.12);
-}
-
-.mri-select option {
-  background: #1b1f2b;
-  color: #ffffff;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .mri-input::placeholder {
-  color: rgba(226, 232, 240, 0.45);
-  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
 }
 
-.mri-input:focus, .mri-select:focus {
-  border-color: #f26522;
-  background: rgba(255, 255, 255, 0.16);
-  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.35), inset 0 1px 2px rgba(0, 0, 0, 0.2);
+.mri-input:focus,
+.mri-select:focus {
+  border-color: rgba(255, 140, 66, 0.7) !important;
+  background-color: rgba(255, 255, 255, 0.11) !important;
+  box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.18) !important;
+}
+
+.mri-select option,
+.mri-select optgroup {
+  background-color: #2c3038;
+  color: #ffffff;
 }
 
 /* File upload row */
 .mri-file-wrapper {
   display: flex;
   align-items: center;
-  gap: 14px;
-  background: rgba(255, 255, 255, 0.10);
-  border: 1.5px solid rgba(255, 255, 255, 0.24);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 12px;
-  padding: 8px 12px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  gap: 12px;
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.mri-file-wrapper:focus-within {
+  border-color: rgba(255, 140, 66, 0.7);
+  box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.18);
 }
 
 .mri-file-btn {
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: #ffffff;
-  padding: 8px 14px;
-  border-radius: 9px;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.80rem;
-  font-weight: 800;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .mri-file-btn:hover {
-  background: #f26522;
-  border-color: #ff7836;
-  transform: scale(1.03);
-  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.4);
+  background: rgba(255, 140, 66, 0.25);
+  border-color: rgba(255, 140, 66, 0.5);
+  color: #ffffff;
 }
 
 .mri-file-name {
-  font-size: 0.80rem;
-  font-weight: 600;
-  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -259,90 +279,89 @@
 }
 
 .mri-photo-preview {
-  width: 44px;
+  width: 42px;
   height: 38px;
   border-radius: 8px;
   object-fit: cover;
-  border: 1.5px solid #f26522;
+  border: 1px solid #f26522;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* GPS Location Widget */
 .mri-gps-widget {
-  background: rgba(255, 255, 255, 0.10);
-  border: 1.5px solid rgba(255, 255, 255, 0.24);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 14px;
-  padding: 10px 16px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
 }
 
 .mri-gps-left {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .mri-gps-icon {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
-  background: rgba(242, 101, 34, 0.22);
-  border: 1px solid rgba(242, 101, 34, 0.45);
+  background: rgba(255, 140, 66, 0.18);
+  border: 1px solid rgba(255, 140, 66, 0.35);
   color: #ff8c42;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.25);
 }
 
 .mri-gps-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .mri-gps-label {
   font-size: 0.65rem;
   font-weight: 800;
-  color: #cbd5e1;
-  letter-spacing: 0.8px;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .mri-gps-val {
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-size: 0.80rem;
+  font-weight: 600;
   color: #ffffff;
   font-family: monospace;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mri-gps-val.empty {
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.45);
   font-style: italic;
-  font-family: 'Outfit', sans-serif;
+  font-family: inherit;
 }
 
 .mri-gps-btn {
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: #ffffff;
-  padding: 8px 16px;
+  padding: 8px 14px;
   border-radius: 10px;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.6px;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
   cursor: pointer;
   display: inline-flex;
@@ -350,44 +369,55 @@
   gap: 6px;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-.mri-gps-btn:hover {
-  background: #f26522;
-  border-color: #ff7836;
-  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.5);
-  transform: translateY(-1px);
+.mri-gps-btn:hover:not(:disabled) {
+  background: rgba(255, 140, 66, 0.25);
+  border-color: rgba(255, 140, 66, 0.5);
 }
 
-/* Submit Button */
+.mri-gps-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Sticky Footer */
+.mri-footer-sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin: 4px -22px 0;
+  padding: 14px 22px 22px;
+  background: linear-gradient(0deg, rgba(38, 42, 50, 0.98) 65%, rgba(38, 42, 50, 0));
+  box-sizing: border-box;
+}
+
 .mri-submit-btn {
-  background: linear-gradient(135deg, rgba(242, 101, 34, 0.95) 0%, rgba(217, 78, 0, 0.95) 100%);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  color: #ffffff;
   width: 100%;
-  padding: 13px 20px;
-  border-radius: 14px;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 900;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  cursor: pointer;
-  margin-top: 18px;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 8px 25px rgba(242, 101, 34, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(242, 101, 34, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  box-sizing: border-box;
 }
 
 .mri-submit-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(242, 101, 34, 0.75), inset 0 1px 2px rgba(255, 255, 255, 0.7);
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow: 0 12px 28px rgba(242, 101, 34, 0.55);
 }
 
 .mri-submit-btn:disabled {
@@ -398,10 +428,10 @@
 /* Message alert */
 .mri-msg {
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 0.82rem;
   font-weight: 700;
-  margin-top: 12px;
+  margin-top: 6px;
   text-align: center;
 }
 
@@ -409,128 +439,80 @@
   background: rgba(239, 68, 68, 0.25);
   border: 1px solid rgba(239, 68, 68, 0.5);
   color: #fee2e2;
-  backdrop-filter: blur(10px);
 }
 
 .mri-msg.success {
   background: rgba(74, 222, 128, 0.25);
   border: 1px solid rgba(74, 222, 128, 0.5);
   color: #f0fdf4;
-  backdrop-filter: blur(10px);
 }
 
-@media (max-width: 768px) {
+/* Animations */
+@keyframes mriFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mriPop {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes mriSheet {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* ==========================================================================
+   MOBILE BOTTOM SHEET (< 600px) - EXACT MATCH IMAGE 3
+   ========================================================================== */
+@media (max-width: 600px) {
   .mri-overlay {
-    padding: 8px;
-    align-items: center;
+    align-items: flex-end;
+    padding: 0 0 62px 0 !important;
   }
 
   .mri-card {
-    max-height: calc(100dvh - 16px);
-    max-height: calc(100vh - 16px);
-    border-radius: 20px;
-    width: 100%;
+    max-width: 100%;
+    max-height: calc(88vh - 62px);
+    max-height: calc(88dvh - 62px);
+    padding: 0 18px;
+    border-radius: 26px 26px 18px 18px;
+    animation: mriSheet 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .mri-grabber {
+    display: block;
+    width: 40px;
+    height: 5px;
+    margin: 8px auto 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.35);
   }
 
   .mri-header {
-    padding: 12px 14px;
-    gap: 10px;
+    top: 0;
+    margin: 0 -18px 14px;
+    padding: 12px 18px 12px;
   }
 
   .mri-title {
-    font-size: 1.05rem;
-    letter-spacing: 0.5px;
-  }
-
-  .mri-close-btn {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-  }
-
-  .mri-body {
-    padding: 12px 14px 24px 14px;
+    font-size: 1.2rem;
   }
 
   .mri-form-grid {
-    grid-template-columns: 1fr;
     gap: 12px;
-  }
-
-  .mri-field-full,
-  .mri-field-two-thirds,
-  .mri-field-one-third {
-    grid-column: span 1;
-  }
-
-  .mri-label {
-    font-size: 0.78rem;
-    gap: 5px;
   }
 
   .mri-input,
   .mri-select {
-    padding: 10px 12px;
-    font-size: 0.88rem;
-    border-radius: 11px;
-    width: 100%;
-    box-sizing: border-box;
+    font-size: 16px !important; /* Prevents auto zoom in iOS Safari */
+    padding: 11px 13px !important;
   }
 
-  .mri-file-wrapper {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 10px;
-    box-sizing: border-box;
-    width: 100%;
-  }
-
-  .mri-file-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 9px 12px;
-    font-size: 0.82rem;
-  }
-
-  .mri-photo-preview {
-    align-self: center;
-    width: 50px;
-    height: 42px;
-  }
-
-  .mri-file-name {
-    width: 100%;
-    white-space: normal;
-    text-align: center;
-    word-break: break-all;
-    font-size: 0.76rem;
-  }
-
-  .mri-gps-widget {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 12px;
-    box-sizing: border-box;
-    width: 100%;
-  }
-
-  .mri-gps-left {
-    width: 100%;
-  }
-
-  .mri-gps-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 10px 14px;
-  }
-
-  .mri-submit-btn {
-    padding: 12px 16px;
-    font-size: 0.88rem;
-    margin-top: 14px;
-    margin-bottom: 6px;
-    border-radius: 12px;
+  .mri-footer-sticky {
+    bottom: 0;
+    margin: 2px -18px 0;
+    padding: 12px 18px calc(18px + env(safe-area-inset-bottom));
   }
 }
