@@ -205,7 +205,9 @@ const VistaPropiedades = () => {
       
       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios`, { headers });
       const todos = res.data || [];
-      const tecnicos = todos.filter(u => Number(u.role_id) === 2);
+      const tecnicos = todos
+        .filter(u => Number(u.role_id) === 2)
+        .map(u => ({ ...u, id: String(u.id).replace(/^u_/, '') }));
       setTecnicosRol2(tecnicos);
     } catch (err) {
       console.error("Error al obtener técnicos por /usuarios:", err);
@@ -214,7 +216,11 @@ const VistaPropiedades = () => {
         const resFallback = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
-        setTecnicosRol2(resFallback.data || []);
+        const tecnicosFallback = (resFallback.data || []).map(u => ({
+          ...u,
+          id: String(u.id).replace(/^u_/, '')
+        }));
+        setTecnicosRol2(tecnicosFallback);
       } catch (e2) {
         console.error("Error fallback /usuarios/tecnicos:", e2);
       }
@@ -427,7 +433,9 @@ const VistaPropiedades = () => {
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
 
-      const techSelectedObj = tecnicosRol2.find(t => String(t.id) === String(tecnicoSeleccionado));
+      const rawCleanId = tecnicoSeleccionado ? String(tecnicoSeleccionado).replace(/^u_/, '') : null;
+      const cleanTechId = rawCleanId ? Number(rawCleanId) : null;
+      const techSelectedObj = tecnicosRol2.find(t => String(t.id).replace(/^u_/, '') === String(rawCleanId));
       const techName = techSelectedObj ? `${techSelectedObj.first_name} ${techSelectedObj.last_name}`.trim() : null;
 
       const payload = {
@@ -436,8 +444,8 @@ const VistaPropiedades = () => {
         description: `Solicitud de visita técnica para registro inicial de la propiedad.${techName ? ` Técnico asignado: ${techName}` : ''}`,
         priority: "Media",
         supervisor_name: (nombreResponsable && nombreResponsable.trim() !== "") ? nombreResponsable.trim() : (techName || "El propietario"),
-        technician_id: tecnicoSeleccionado || null,
-        tecnico_id: tecnicoSeleccionado || null
+        technician_id: cleanTechId,
+        tecnico_id: cleanTechId
       };
 
       const respuesta = await axios.post(
