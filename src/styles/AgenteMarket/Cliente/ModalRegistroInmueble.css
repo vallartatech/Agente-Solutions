@@ -464,36 +464,66 @@
 }
 
 /* ==========================================================================
-   MOBILE BOTTOM SHEET (< 600px) - EXACT MATCH IMAGE 3
+   MOBILE BOTTOM SHEET (< 600px) - PANEL ASOMADO DESDE ABAJO
    ========================================================================== */
 @media (max-width: 600px) {
   .mri-overlay {
-    align-items: flex-end;
-    padding: 0 0 62px 0 !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 !important;
   }
 
   .mri-card {
-    max-width: 100%;
-    max-height: calc(88vh - 62px);
-    max-height: calc(88dvh - 62px);
-    padding: 0 18px;
-    border-radius: 26px 26px 18px 18px;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 90vh !important;
+    max-height: 90dvh !important;
+    padding: 0 18px !important;
+    border-radius: 26px 26px 0 0 !important;
+    border-bottom: none !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
     animation: mriSheet 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box !important;
+    touch-action: pan-y;
+  }
+
+  .mri-grabber-area {
+    width: 100%;
+    padding: 12px 0 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .mri-grabber-area:active {
+    cursor: grabbing;
   }
 
   .mri-grabber {
     display: block;
-    width: 40px;
+    width: 48px;
     height: 5px;
-    margin: 8px auto 0;
+    margin: 0 auto;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    transition: background-color 0.2s, transform 0.2s;
+  }
+
+  .mri-grabber-area:hover .mri-grabber {
+    background: rgba(255, 255, 255, 0.7);
   }
 
   .mri-header {
     top: 0;
     margin: 0 -18px 14px;
-    padding: 12px 18px 12px;
+    padding: 10px 18px 12px;
   }
 
   .mri-title {
@@ -513,6 +543,6 @@
   .mri-footer-sticky {
     bottom: 0;
     margin: 2px -18px 0;
-    padding: 12px 18px calc(18px + env(safe-area-inset-bottom));
+    padding: 12px 18px calc(18px + env(safe-area-inset-bottom)) !important;
   }
 }

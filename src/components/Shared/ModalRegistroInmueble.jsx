@@ -59,6 +59,41 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
 
+  // Gesto táctil: Arrastrar hacia abajo para cerrar (Swipe down to dismiss)
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchStartY = useRef(0);
+
+  const handleTouchStart = (e) => {
+    if (e.target.closest('button, input, select, textarea, a')) return;
+    touchStartY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStartY.current) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartY.current;
+    if (deltaY > 0) {
+      setDragY(deltaY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartY.current) return;
+    setIsDragging(false);
+    if (dragY > 80) {
+      setDragY(window.innerHeight);
+      setTimeout(() => {
+        onClose();
+        setDragY(0);
+      }, 200);
+    } else {
+      setDragY(0);
+    }
+    touchStartY.current = 0;
+  };
+
   if (!isOpen) return null;
 
   const handleChange = (e) => {
@@ -172,11 +207,30 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
 
   return createPortal(
     <div className="mri-overlay" onClick={onClose}>
-      <div className="mri-card" onClick={e => e.stopPropagation()}>
-        {/* Mobile grabber pill */}
-        <div className="mri-grabber" />
+      <div 
+        className="mri-card" 
+        onClick={e => e.stopPropagation()}
+        style={{
+          transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
+          transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+        }}
+      >
+        {/* Mobile grabber pill táctil */}
+        <div 
+          className="mri-grabber-area"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="mri-grabber" />
+        </div>
 
-        <div className="mri-header">
+        <div 
+          className="mri-header"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <div className="mri-header-text">
             <span className="mri-tag">NUEVA PROPIEDAD</span>
             <h2 className="mri-title">Registrar Propiedad</h2>

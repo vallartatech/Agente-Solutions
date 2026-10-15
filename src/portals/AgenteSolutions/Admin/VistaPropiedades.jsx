@@ -61,6 +61,41 @@ const VistaPropiedades = () => {
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
 
+  // Gesto táctil: Arrastrar hacia abajo para cerrar modal Reportar Problema
+  const [rpDragY, setRpDragY] = useState(0);
+  const [isRpDragging, setIsRpDragging] = useState(false);
+  const touchRpStartY = useRef(0);
+
+  const handleRpTouchStart = (e) => {
+    if (e.target.closest('button, input, select, textarea, a')) return;
+    touchRpStartY.current = e.touches[0].clientY;
+    setIsRpDragging(true);
+  };
+
+  const handleRpTouchMove = (e) => {
+    if (!touchRpStartY.current) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchRpStartY.current;
+    if (deltaY > 0) {
+      setRpDragY(deltaY);
+    }
+  };
+
+  const handleRpTouchEnd = () => {
+    if (!touchRpStartY.current) return;
+    setIsRpDragging(false);
+    if (rpDragY > 80) {
+      setRpDragY(window.innerHeight);
+      setTimeout(() => {
+        setMostrarModalReportarProblema(false);
+        setRpDragY(0);
+      }, 200);
+    } else {
+      setRpDragY(0);
+    }
+    touchRpStartY.current = 0;
+  };
+
   // ESTADOS PARA EDICIÓN
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [propiedadAEditar, setPropiedadAEditar] = useState(null);
@@ -1133,9 +1168,27 @@ const VistaPropiedades = () => {
           <div 
             className="rp-modal" 
             onClick={e => e.stopPropagation()}
+            style={{
+              transform: rpDragY > 0 ? `translateY(${rpDragY}px)` : undefined,
+              transition: isRpDragging ? 'none' : 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
           >
-            <div className="rp-grabber" />
-            <div className="rp-header">
+            {/* Mobile grabber pill táctil */}
+            <div 
+              className="rp-grabber-area"
+              onTouchStart={handleRpTouchStart}
+              onTouchMove={handleRpTouchMove}
+              onTouchEnd={handleRpTouchEnd}
+            >
+              <div className="rp-grabber" />
+            </div>
+
+            <div 
+              className="rp-header"
+              onTouchStart={handleRpTouchStart}
+              onTouchMove={handleRpTouchMove}
+              onTouchEnd={handleRpTouchEnd}
+            >
               <div className="rp-header-text">
                 <span className="rp-tag">NUEVA SOLICITUD</span>
                 <h2 className="rp-title">Reportar Problema</h2>
