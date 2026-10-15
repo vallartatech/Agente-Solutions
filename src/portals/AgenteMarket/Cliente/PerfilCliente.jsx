@@ -18,7 +18,8 @@ import {
   ExternalLink,
   CalendarDays,
   LogOut,
-  Plus
+  Plus,
+  Home
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
@@ -293,31 +294,83 @@ const PerfilCliente = () => {
             src={logo} 
             alt="Agente Solutions" 
             className="profile-brand-logo"
-            onClick={() => navigate('/VistaMarket')} 
-            title="Ir al Portal de Propiedades"
+            onClick={() => {
+              if (showAdminNav) navigate('/VistaRoot');
+              else if (roleId === 2) navigate('/VistaTecnico');
+              else navigate('/VistaMarket');
+            }} 
+            title="Ir al Inicio"
           />
         </div>
 
-        {/* Center Nav Links: Conservar los 6 módulos como en VistaMarket y Usuarios */}
+        {/* Center Nav Links: Sincronizado exactamente con AdminHeader para Rol 1/0 */}
         <nav className="vcp-header-nav profile-topbar-nav">
-          <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
-            INICIO
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
-            USUARIOS
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
-            REPORTE
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
-            COTIZACION
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
-            SERVICIOS
-          </button>
-          <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
-            MERCADO / RED
-          </button>
+          {showAdminNav ? (
+            <>
+              <button className="vcp-nav-btn" onClick={() => navigate('/VistaRoot')}>
+                INICIO
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
+                USUARIOS
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/propiedades')}>
+                PROPIEDADES
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/levantamientos')}>
+                LEVANTAMIENTOS
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
+                REPORTE
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
+                COTIZACION
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
+                SERVICIOS
+              </button>
+              {roleId === 0 && (
+                <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
+                  MERCADO / RED
+                </button>
+              )}
+            </>
+          ) : roleId === 2 ? (
+            <>
+              <button className="vcp-nav-btn" onClick={() => navigate('/VistaTecnico')}>
+                INICIO
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/trabajos-tecnico')}>
+                TRABAJOS
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/levantamiento-propiedad')}>
+                LEVANTAMIENTOS
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
+                COTIZACIONES
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
+                INICIO
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
+                USUARIOS
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
+                REPORTE
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
+                COTIZACION
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
+                SERVICIOS
+              </button>
+              <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
+                MERCADO / RED
+              </button>
+            </>
+          )}
         </nav>
 
         {/* Right Actions & User Profile */}
@@ -387,6 +440,17 @@ const PerfilCliente = () => {
 
             <div className="vcp-dropdown-divider" />
 
+            <button 
+              className="profile-dropdown-item vcp-dropdown-item" 
+              onClick={() => { 
+                setProfileDropdownOpen(false); 
+                if (showAdminNav) navigate('/VistaRoot');
+                else if (roleId === 2) navigate('/VistaTecnico');
+                else navigate('/VistaMarket');
+              }}
+            >
+              <Home size={16} /> Ir a Inicio
+            </button>
             <button 
               className="profile-dropdown-item vcp-dropdown-item" 
               onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}

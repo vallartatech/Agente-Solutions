@@ -41,7 +41,7 @@
 /* UniversalSearch styles are now handled globally in UniversalSearch.css */
 
 .btn-add-circle {
-    display: none;
+    display: none !important;
 }
 
 .categories-row-container {
@@ -85,6 +85,13 @@
     background: linear-gradient(135deg, #ff7a3d 0%, #f26522 100%);
     transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(242, 101, 34, 0.48);
+}
+
+.btn-add-action-bar svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+    stroke-width: 3px !important;
+    display: block !important;
 }
 
 /* Botón 2: Filtro TODAS */
