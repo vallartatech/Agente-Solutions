@@ -1,5 +1,5 @@
 /* RESET Y ESTRUCTURA */
-body, html { margin: 0; padding: 0; overflow: hidden; height: 100%; }
+body, html { margin: 0; padding: 0; }
 .tt-container { display: flex; height: 100vh; font-family: 'Arial Black', sans-serif; background-color: white; }
 
 /* SIDEBAR MÁS COMPACTO */

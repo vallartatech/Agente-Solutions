@@ -189,7 +189,8 @@
 
 .dh-bottom-grid { background-color: #d1d1d1; border-radius: 25px; padding: 20px; margin-top: 20px; display: flex; flex-direction: column; gap: 20px; }
 .dh-mantenimiento-header { display: flex; justify-content: space-between; align-items: center; }
-.dh-btn-plus-small { background-color: #f26624; border: none; width: 50px; height: 40px; border-radius: 20px; color: white; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+.dh-btn-plus-small { background-color: #f26624; border: none; width: 50px; height: 40px; border-radius: 20px; color: white; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; flex-shrink: 0; }
+.dh-btn-plus-small svg { flex-shrink: 0; width: 24px; height: 24px; stroke: #ffffff; display: block; }
 
 .dh-pills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
 .dh-category-pill { padding: 12px; border-radius: 20px; font-weight: 900; font-style: italic; font-size: 14px; border: none; text-align: center; transition: background-color 0.3s; }

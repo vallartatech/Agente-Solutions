@@ -1,5 +1,5 @@
 /* RESET GLOBAL */
-body, html { margin: 0; padding: 0; overflow: hidden; height: 100%; font-family: 'Arial Black', sans-serif; }
+body, html { margin: 0; padding: 0; font-family: 'Arial Black', sans-serif; }
 .tt-container { display: flex; height: 100vh; background-color: white; }
 
 /* SIDEBAR */
