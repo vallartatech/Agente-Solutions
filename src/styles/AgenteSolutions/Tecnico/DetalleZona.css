@@ -370,7 +370,9 @@
 /* --- RESPONSIVIDAD PARA CELULAR --- */
 @media (max-width: 768px) {
   .dz-body-wrapper {
-    padding: 15px !important;
+    padding: 15px 15px calc(115px + env(safe-area-inset-bottom, 24px)) !important;
+    min-height: 100dvh !important;
+    box-sizing: border-box !important;
   }
 
   .dz-main-card {

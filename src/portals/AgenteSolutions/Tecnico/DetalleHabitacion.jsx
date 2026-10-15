@@ -326,8 +326,8 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-            <div className="dh-bottom-grid" style={{ flex: 2, marginTop: 0 }}>
+          <div className="dh-bottom-row-layout">
+            <div className="dh-bottom-grid">
               <div className="dh-mantenimiento-header">
                 <span className="dh-label-italic" style={{color: '#333'}}>LISTA DE MANTENIMIENTO</span>
                 <button className="dh-btn-plus-small" onClick={() => setIsModalOpen(true)}>
@@ -362,8 +362,8 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
               </div>
             </div>
 
-            <div className="dh-footer-actions" style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <button className="dh-btn-save-3d" onClick={actualizarZona} disabled={actualizando} style={{ width: '100%', minHeight: '80px', borderRadius: '40px' }}>
+            <div className="dh-footer-actions">
+              <button className="dh-btn-save-3d dh-btn-save-zone" onClick={actualizarZona} disabled={actualizando}>
                 {actualizando ? <Loader2 className="animate-spin" size={24} /> : 'GUARDAR ZONA'}
               </button>
               
@@ -371,22 +371,14 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
                 <button 
                   onClick={finalizarLevantamiento}
                   disabled={actualizando}
-                  style={{ 
-                    width: '100%', minHeight: '80px', borderRadius: '40px', background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)', 
-                    color: '#fff', fontWeight: 'bold', fontSize: '13px', fontStyle: 'italic', border: 'none', cursor: 'pointer', 
-                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 6px 0px #15803d' 
-                  }}
+                  className="dh-btn-finalizar-3d"
                 >
                   <CheckCircle size={22} /> FINALIZAR LEVANTAMIENTO
                 </button>
               ) : isClient ? (
                 <button 
                   onClick={finalizarRegistroCliente}
-                  style={{ 
-                    width: '100%', minHeight: '80px', borderRadius: '40px', background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)', 
-                    color: '#fff', fontWeight: 'bold', fontSize: '13px', fontStyle: 'italic', border: 'none', cursor: 'pointer', 
-                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 6px 0px #15803d' 
-                  }}
+                  className="dh-btn-finalizar-3d"
                 >
                   <CheckCircle size={22} /> FINALIZAR MI REGISTRO
                 </button>

@@ -334,7 +334,10 @@
 /* --- RESPONSIVIDAD PARA CELULAR --- */
 @media (max-width: 768px) {
   .rz-body-wrapper {
-    padding: 15px;
+    padding: 15px 15px calc(115px + env(safe-area-inset-bottom, 24px)) !important;
+    height: auto !important;
+    min-height: calc(100dvh - 70px) !important;
+    box-sizing: border-box !important;
   }
 
   .rz-top-info-row {
