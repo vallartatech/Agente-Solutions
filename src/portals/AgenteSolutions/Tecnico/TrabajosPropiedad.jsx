@@ -16,6 +16,7 @@ import {
   Plus, Trash2, Upload, Calculator, Calendar, MessageCircle, Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
+import { reportarUbicacion } from "../../../components/Shared/ubicacionService";
 
 const TrabajoPropiedad = () => {
   const { user } = useAuth();
@@ -222,6 +223,9 @@ const TrabajoPropiedad = () => {
       await axios.put(`${import.meta.env.VITE_API_BASE_URL}/work-orders/${realId}/status`, {
         status: 'Listo'
       });
+
+      // Registrar dónde se finalizó (solo si el técnico aceptó compartir su ubicación)
+      reportarUbicacion('job_update', Number(realId) || null);
 
       // Enviar notificación al Admin
       try {
