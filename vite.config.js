@@ -6,18 +6,13 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       injectRegister: 'auto',
 
       workbox: {
-        // Tu regla para el peso máximo de archivos
         maximumFileSizeToCacheInBytes: 4000000,
-
-        // 👇 NUEVAS REGLAS PARA FORZAR ACTUALIZACIÓN 👇
-        cleanupOutdatedCaches: true, // Borra la caché de versiones viejas en el celular
-        skipWaiting: true,           // Obliga al nuevo Service Worker a activarse de inmediato
-        clientsClaim: true           // Obliga a las pestañas abiertas a usar la versión nueva
-        // 👆 👆 👆
+        cleanupOutdatedCaches: true,
+        clientsClaim: true
       },
 
       manifest: {

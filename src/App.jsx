@@ -13,6 +13,7 @@ import ActivacionCuenta from "./components/Auth/ActivacionCuenta";
 import CustomizeLogin from "./components/Auth/CustomizeLogin";
 import AssignServiceForm from "./components/AssignServiceForm";
 import VistaNotificaciones from "./components/Shared/VistaNotificaciones";
+import UpdateModal from "./components/Shared/UpdateModal";
 import RegistroZonas from "./portals/AgenteSolutions/Tecnico/RegistroZonas";
 import CheckEmail from "./components/Auth/CheckEmail";
 import VerifyEmail from "./components/Auth/VerifyEmail";
@@ -280,6 +281,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <AppRoutes />
+        <UpdateModal />
       </BrowserRouter>
     </AuthProvider>
   );
