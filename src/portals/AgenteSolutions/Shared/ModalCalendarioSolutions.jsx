@@ -10,6 +10,7 @@ import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Clock,
   MapPin,
   User,
@@ -56,6 +57,62 @@ const formatNoticeDate = (dateKey) => {
 };
 
 const NOTICE_TITLE_MAX = 60;
+
+// "26 abr – 2 may 2026" / "4 – 10 oct 2026"
+const weekRangeLabel = (start, end) => {
+  const month = (d) => d.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '');
+  if (start.getMonth() === end.getMonth()) {
+    return `${start.getDate()} – ${end.getDate()} ${month(end)} ${end.getFullYear()}`;
+  }
+  const startYear = start.getFullYear() !== end.getFullYear() ? ` ${start.getFullYear()}` : '';
+  return `${start.getDate()} ${month(start)}${startYear} – ${end.getDate()} ${month(end)} ${end.getFullYear()}`;
+};
+
+const isLeapYear = (yr) => (yr % 4 === 0 && yr % 100 !== 0) || yr % 400 === 0;
+
+// Evento de calendario para el cumpleaños de `bday` en el año `yr`
+// (29 de febrero cae el 28 en años no bisiestos)
+const buildBirthdayEvent = (bday, yr) => {
+  const day = bday.month === 2 && bday.day === 29 && !isLeapYear(yr) ? 28 : bday.day;
+  const bdayDate = new Date(yr, bday.month - 1, day, 9, 0, 0);
+  const dateKey = toLocalDateKey(bdayDate);
+  return {
+    id: `bday_${bday.user_id}_${yr}`,
+    isBirthday: true,
+    bdayUser: bday,
+    titulo: `🎂 Cumpleaños de ${bday.name}`,
+    type: 'cumpleanos',
+    color: '#ec4899',
+    descripcion: `¡Cumpleaños de ${bday.name}! Felicitaciones del equipo Agente Solutions.`,
+    calendarDate: bdayDate,
+    dateKey,
+    hourIndex: 9,
+    calendarHour: 9,
+    calendarTime: 'Todo el día',
+    scheduled_at: null,
+    hasScheduledDate: false,
+    assigned_tech_name: '',
+    cliente: bday.name,
+    statusType: 'birthday',
+    timingCategory: 'birthday',
+    timingBadge: '🎂 Cumpleaños',
+    timingRelative: `Cumpleaños de ${bday.name}`,
+    statusLabel: `🎂 ${bday.name}`,
+    isOverdue: false,
+    isToday: dateKey === toLocalDateKey(new Date()),
+    isFuture: false,
+    isUncoordinated: false,
+    isCompleted: false,
+  };
+};
+
+// Próximo cumpleaños a partir de hoy (este año si no ha pasado, si no el siguiente)
+const buildNextBirthdayEvent = (bday) => {
+  const todayKey = toLocalDateKey(new Date());
+  const thisYear = new Date().getFullYear();
+  const event = buildBirthdayEvent(bday, thisYear);
+  return event.dateKey >= todayKey ? event : buildBirthdayEvent(bday, thisYear + 1);
+};
 
 const emptyNoticeForm = (dateKey = null) => {
   const today = toLocalDateKey(new Date());
@@ -352,46 +409,10 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const allEvents = useMemo(() => {
     const list = [...workOrdersList, ...noticesList];
     const currentYear = currentDate.getFullYear();
-    const now = new Date();
-    const todayDateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     // Proyectar cumpleaños en el año actual y adyacentes
     [currentYear - 1, currentYear, currentYear + 1].forEach(yr => {
-      birthdaysList.forEach(bday => {
-        const monthStr = String(bday.month).padStart(2, '0');
-        const dayStr = String(bday.day).padStart(2, '0');
-        const dateKey = `${yr}-${monthStr}-${dayStr}`;
-        const bdayDate = new Date(yr, bday.month - 1, bday.day, 9, 0, 0);
-
-        list.push({
-          id: `bday_${bday.user_id}_${yr}`,
-          isBirthday: true,
-          bdayUser: bday,
-          titulo: `🎂 Cumpleaños de ${bday.name}`,
-          type: 'cumpleanos',
-          color: '#ec4899',
-          descripcion: `¡Hoy es el cumpleaños de ${bday.name}! Felicitaciones del equipo Agente Solutions.`,
-          calendarDate: bdayDate,
-          dateKey,
-          hourIndex: 9,
-          calendarHour: 9,
-          calendarTime: 'Todo el día',
-          scheduled_at: null,
-          hasScheduledDate: false,
-          assigned_tech_name: '',
-          cliente: bday.name,
-          statusType: 'birthday',
-          timingCategory: 'birthday',
-          timingBadge: '🎂 Cumpleaños',
-          timingRelative: `Cumpleaños de ${bday.name}`,
-          statusLabel: `🎂 ${bday.name}`,
-          isOverdue: false,
-          isToday: dateKey === todayDateKey,
-          isFuture: false,
-          isUncoordinated: false,
-          isCompleted: false,
-        });
-      });
+      birthdaysList.forEach(bday => list.push(buildBirthdayEvent(bday, yr)));
     });
 
     return list;
@@ -510,14 +531,49 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     }
   }, [isOpen]);
 
-  // Selección de día / navegación
+  // Selección de día / navegación: en Semana las flechas avanzan 7 días, en Mes un mes
   const handlePrevMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    setCurrentDate(prev => currentView === 'week'
+      ? new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() - 7)
+      : new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    setCurrentDate(prev => currentView === 'week'
+      ? new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() + 7)
+      : new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
+
+  // Selector de mes/año al tocar el título
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
+  const monthPickerRef = useRef(null);
+
+  const toggleMonthPicker = () => {
+    setPickerYear(currentDate.getFullYear());
+    setShowMonthPicker(prev => !prev);
+  };
+
+  const handlePickMonth = (monthIndex) => {
+    const picked = new Date(pickerYear, monthIndex, 1);
+    setCurrentDate(picked);
+    setMiniCalDate(picked);
+    setShowMonthPicker(false);
+  };
+
+  useEffect(() => {
+    if (!showMonthPicker) return;
+    const onPointerDown = (e) => {
+      if (monthPickerRef.current && !monthPickerRef.current.contains(e.target)) setShowMonthPicker(false);
+    };
+    const onKeyDown = (e) => { if (e.key === 'Escape') setShowMonthPicker(false); };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [showMonthPicker]);
 
   const handleToday = () => {
     const now = new Date();
@@ -837,9 +893,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     }
   };
 
-  // Filtrado de eventos
-  const filteredEvents = useMemo(() => {
-    let result = [...allEvents];
+  // Filtrado de eventos (chips de filtro + búsqueda)
+  const applyFilters = useCallback((events) => {
+    let result = [...events];
 
     if (selectedFilter === 'notices') result = result.filter(e => e.isNotice);
     else if (selectedFilter === 'birthdays') result = result.filter(e => e.isBirthday);
@@ -862,7 +918,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     }
 
     return result;
-  }, [allEvents, selectedFilter, searchQuery]);
+  }, [selectedFilter, searchQuery]);
+
+  const filteredEvents = useMemo(() => applyFilters(allEvents), [allEvents, applyFilters]);
 
   // Contadores
   const countAll = allEvents.length;
@@ -960,6 +1018,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       days.push({
         dayIndex: i,
+        date: d,
         dayName: DAY_NAMES_MINI[i],
         dayNumber: d.getDate(),
         dateKey,
@@ -969,21 +1028,44 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     return days;
   }, [currentDate]);
 
-  // Agrupar eventos para la vista de Agenda
+  // Agenda: solo de hoy en adelante. Los trabajos pendientes con fecha pasada (atrasados o
+  // por coordinar, que usan su fecha de creación) se agrupan arriba, y cada cumpleaños
+  // aparece una sola vez, en su próxima fecha.
   const agendaGroupedEvents = useMemo(() => {
-    const sorted = [...filteredEvents].sort((a, b) => a.calendarDate - b.calendarDate);
-    const groups = {};
-    sorted.forEach(ev => {
-      if (!groups[ev.dateKey]) {
-        groups[ev.dateKey] = {
-          dateStr: ev.calendarDate.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+    const todayKey = toLocalDateKey(new Date());
+    const isPendingPast = (e) => e.dateKey < todayKey && !e.isCompleted && (e.isOverdue || e.isUncoordinated);
+    const base = [
+      ...workOrdersList.filter(e => e.dateKey >= todayKey || isPendingPast(e)),
+      ...noticesList.filter(e => e.dateKey >= todayKey),
+      ...birthdaysList.map(buildNextBirthdayEvent)
+    ];
+    const sorted = applyFilters(base).sort((a, b) => a.calendarDate - b.calendarDate);
+
+    const groups = [];
+    const overdue = sorted.filter(e => isPendingPast(e) && e.isOverdue);
+    const uncoordinated = sorted.filter(e => isPendingPast(e) && !e.isOverdue);
+    if (overdue.length > 0) {
+      groups.push({ key: 'overdue', isOverdueGroup: true, dateStr: `Atrasados (${overdue.length})`, items: overdue });
+    }
+    if (uncoordinated.length > 0) {
+      groups.push({ key: 'uncoordinated', isOverdueGroup: true, dateStr: `Por coordinar (${uncoordinated.length})`, items: uncoordinated });
+    }
+
+    const byDate = {};
+    sorted.filter(e => e.dateKey >= todayKey).forEach(ev => {
+      if (!byDate[ev.dateKey]) {
+        const label = ev.calendarDate.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        byDate[ev.dateKey] = {
+          key: ev.dateKey,
+          dateStr: ev.dateKey === todayKey ? `Hoy · ${label}` : label,
           items: []
         };
+        groups.push(byDate[ev.dateKey]);
       }
-      groups[ev.dateKey].items.push(ev);
+      byDate[ev.dateKey].items.push(ev);
     });
-    return Object.values(groups);
-  }, [filteredEvents]);
+    return groups;
+  }, [workOrdersList, noticesList, birthdaysList, applyFilters]);
 
   // Mini calendario matrix
   const miniCalMatrix = useMemo(() => {
@@ -1117,19 +1199,80 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   Hoy
                 </button>
 
-                <div className="cal-arrows">
-                  <button className="btn-cal-arrow" onClick={handlePrevMonth} title="Mes anterior">
-                    <ChevronLeft size={18} />
-                  </button>
-                  <button className="btn-cal-arrow" onClick={handleNextMonth} title="Mes siguiente">
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
+                {currentView !== 'agenda' && (
+                  <div className="cal-arrows">
+                    <button className="btn-cal-arrow" onClick={handlePrevMonth} title={currentView === 'week' ? 'Semana anterior' : 'Mes anterior'}>
+                      <ChevronLeft size={18} />
+                    </button>
+                    <button className="btn-cal-arrow" onClick={handleNextMonth} title={currentView === 'week' ? 'Semana siguiente' : 'Mes siguiente'}>
+                      <ChevronRight size={18} />
+                    </button>
+                  </div>
+                )}
 
-                <div className="cal-current-title">
-                  <CalendarIcon size={18} color="#FF6600" />
-                  <span>{MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}</span>
-                </div>
+                {currentView === 'agenda' ? (
+                  <div className="cal-current-title">
+                    <CalendarIcon size={18} color="#FF6600" />
+                    <span>Próximos eventos</span>
+                  </div>
+                ) : (
+                  <div className="cal-title-picker" ref={monthPickerRef}>
+                    <button
+                      type="button"
+                      className={`cal-current-title cal-title-btn ${showMonthPicker ? 'open' : ''}`}
+                      onClick={toggleMonthPicker}
+                      aria-haspopup="dialog"
+                      aria-expanded={showMonthPicker}
+                      title="Elegir mes y año"
+                    >
+                      <CalendarIcon size={18} color="#FF6600" />
+                      <span>
+                        {currentView === 'week' && weekDaysList.length === 7
+                          ? weekRangeLabel(weekDaysList[0].date, weekDaysList[6].date)
+                          : `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
+                      </span>
+                      <ChevronDown size={16} className="cal-title-caret" />
+                    </button>
+
+                    {showMonthPicker && (
+                      <div className="cal-month-picker" role="dialog" aria-label="Elegir mes y año">
+                        <div className="cal-month-picker-year">
+                          <button type="button" onClick={() => setPickerYear(y => y - 1)} aria-label="Año anterior">
+                            <ChevronLeft size={16} />
+                          </button>
+                          <span>{pickerYear}</span>
+                          <button type="button" onClick={() => setPickerYear(y => y + 1)} aria-label="Año siguiente">
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+                        <div className="cal-month-picker-grid">
+                          {MONTH_NAMES.map((name, idx) => {
+                            const now = new Date();
+                            const isSelected = idx === currentDate.getMonth() && pickerYear === currentDate.getFullYear();
+                            const isCurrent = idx === now.getMonth() && pickerYear === now.getFullYear();
+                            return (
+                              <button
+                                key={name}
+                                type="button"
+                                className={`cal-month-picker-item ${isSelected ? 'selected' : ''} ${isCurrent ? 'current' : ''}`}
+                                onClick={() => handlePickMonth(idx)}
+                              >
+                                {name.substring(0, 3)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button
+                          type="button"
+                          className="cal-month-picker-today"
+                          onClick={() => { handleToday(); setShowMonthPicker(false); }}
+                        >
+                          Ir a hoy
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="cal-controls-right">
@@ -1329,7 +1472,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                 /* ── VISTA SEMANAL CON HORAS ── */
                 <div className="cal-week-view-wrapper">
                   <div className="cal-week-header-row">
-                    <div className="cal-header-cell" style={{ width: '60px' }}>HORA</div>
+                    <div className="cal-header-cell cal-week-hour-head">HORA</div>
                     {weekDaysList.map((d, i) => (
                       <div key={i} className={`cal-week-day-header ${d.isToday ? 'is-today' : ''}`}>
                         <div className="cal-week-day-name">{d.dayName}</div>
@@ -1339,29 +1482,52 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   </div>
 
                   <div className="cal-week-grid-body">
+                    {/* Fila "Todo el día": cumpleaños, avisos sin hora y trabajos sin fecha agendada */}
+                    <div className="cal-week-time-label cal-week-allday-label">Todo el día</div>
+                    {weekDaysList.map((d, dIdx) => (
+                      <div key={`allday-${dIdx}`} className={`cal-week-slot-cell cal-week-allday-cell ${d.isToday ? 'is-today' : ''}`}>
+                        {filteredEvents.filter(e => e.dateKey === d.dateKey && !e.scheduled_at).map(job => (
+                          <div
+                            key={job.id}
+                            className={`week-event-card status-${job.statusType} timing-${job.timingCategory}`}
+                            style={job.isNotice ? { borderLeftColor: job.color, background: `${job.color}25` } : (job.isBirthday ? { borderLeftColor: '#ec4899', background: 'rgba(236,72,153,0.25)' } : {})}
+                            onClick={() => handleEventClick(job)}
+                            title={job.titulo}
+                          >
+                            <div className="week-event-title">{job.titulo}</div>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+
                     {HOURS_LIST.map((hourLabel, hIdx) => {
                       const hourNum = 8 + hIdx;
+                      const firstHour = 8;
+                      const lastHour = 8 + HOURS_LIST.length - 1;
+                      // Las citas fuera del rango visible se acomodan en la primera/última fila
+                      const slotHour = (h) => Math.min(Math.max(h, firstHour), lastHour);
                       return (
                         <React.Fragment key={hIdx}>
                           <div className="cal-week-time-label">{hourLabel}</div>
                           {weekDaysList.map((d, dIdx) => {
                             const matchingEvents = filteredEvents.filter(
-                              e => e.dateKey === d.dateKey && (e.hourIndex === hourNum || (!e.scheduled_at && hIdx === 2))
+                              e => e.dateKey === d.dateKey && e.scheduled_at && slotHour(e.hourIndex) === hourNum
                             );
                             return (
-                              <div key={dIdx} className="cal-week-slot-cell">
+                              <div key={dIdx} className={`cal-week-slot-cell ${d.isToday ? 'is-today' : ''}`}>
                                 {matchingEvents.map(job => (
                                   <div 
                                     key={job.id}
                                     className={`week-event-card status-${job.statusType} timing-${job.timingCategory}`}
                                     style={job.isNotice ? { borderLeftColor: job.color, background: `${job.color}25` } : (job.isBirthday ? { borderLeftColor: '#ec4899', background: 'rgba(236,72,153,0.25)' } : {})}
                                     onClick={() => handleEventClick(job)}
+                                    title={job.titulo}
                                   >
-                                    <div style={{ fontWeight: 800, fontSize: '0.68rem', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                      {job.isBirthday ? '🎂' : (job.isNotice ? (job.type === 'fumigacion' ? '🐜' : '📢') : <Clock size={10} />)} {job.calendarTime}
-                                      {job.timingCategory === 'overdue' && <span style={{ color: '#fca5a5' }}>[🚨 Atrasado]</span>}
+                                    <div className="week-event-time">
+                                      {job.isNotice ? (job.type === 'fumigacion' ? '🐜' : '📢') : <Clock size={10} />} {job.calendarTime}
+                                      {job.timingCategory === 'overdue' && <span style={{ color: '#fca5a5' }}>🚨</span>}
                                     </div>
-                                    <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <div className="week-event-title">
                                       {job.titulo}
                                     </div>
                                   </div>
@@ -1380,14 +1546,16 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   {agendaGroupedEvents.length === 0 ? (
                     <div className="cal-empty-state">
                       <CalendarDays size={44} color="#64748b" />
-                      <h4>No hay servicios en esta fecha</h4>
-                      <p>No se encontraron visitas técnicas ni órdenes programadas para este periodo.</p>
+                      <h4>No hay eventos próximos</h4>
+                      <p>No hay visitas, avisos ni cumpleaños de hoy en adelante.</p>
                     </div>
                   ) : (
-                    agendaGroupedEvents.map((group, gIdx) => (
-                      <div key={gIdx} className="agenda-day-group">
-                        <div className="agenda-date-header">
-                          <CalendarDays size={18} color="#FF6600" />
+                    agendaGroupedEvents.map((group) => (
+                      <div key={group.key} className="agenda-day-group">
+                        <div className={`agenda-date-header ${group.isOverdueGroup ? 'is-overdue-group' : ''}`}>
+                          {group.isOverdueGroup
+                            ? <AlertTriangle size={18} color="#ef4444" />
+                            : <CalendarDays size={18} color="#FF6600" />}
                           {group.dateStr}
                         </div>
 

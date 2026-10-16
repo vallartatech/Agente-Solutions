@@ -1266,3 +1266,263 @@
     display: none;
   }
 }
+
+/* ── CALENDARIO SOLUTIONS: SELECTOR DE MES/AÑO EN EL TÍTULO ── */
+.cal-solutions .cal-title-picker {
+  position: relative;
+}
+
+/* padding/border propios: anulan los estilos globales de button de index.css */
+.cal-solutions .cal-title-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #ffffff;
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.cal-solutions .cal-title-btn:hover,
+.cal-solutions .cal-title-btn.open {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.cal-solutions .cal-title-caret {
+  color: #94a3b8;
+  transition: transform 0.2s;
+}
+
+.cal-solutions .cal-title-btn.open .cal-title-caret {
+  transform: rotate(180deg);
+}
+
+.cal-solutions .cal-month-picker {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  width: 280px;
+  max-width: calc(100vw - 32px);
+  padding: 14px;
+  border-radius: 16px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55);
+  animation: calPickerIn 0.16s ease-out;
+}
+
+@keyframes calPickerIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cal-solutions .cal-month-picker-year {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cal-solutions .cal-month-picker-year span {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.cal-solutions .cal-month-picker-year button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.cal-solutions .cal-month-picker-year button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.cal-solutions .cal-month-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.cal-solutions .cal-month-picker-item {
+  padding: 9px 4px;
+  margin: 0;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cal-solutions .cal-month-picker-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cal-solutions .cal-month-picker-item.current {
+  border-color: rgba(255, 102, 0, 0.55);
+  color: #fdba74;
+}
+
+.cal-solutions .cal-month-picker-item.selected {
+  background: #ff6600;
+  border-color: #ff6600;
+  color: #ffffff;
+}
+
+.cal-solutions .cal-month-picker-today {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: #cbd5e1;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cal-solutions .cal-month-picker-today:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+/* ── CALENDARIO SOLUTIONS: VISTA SEMANA ALINEADA ──
+   Encabezado y cuerpo comparten las mismas columnas (minmax(0,1fr) evita que un título
+   largo ensanche su día) y un solo contenedor de scroll, así la barra no desfasa columnas. */
+.cal-solutions .cal-week-view-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.cal-solutions .cal-week-header-row,
+.cal-solutions .cal-week-grid-body {
+  grid-template-columns: 72px repeat(7, minmax(0, 1fr));
+}
+
+.cal-solutions .cal-week-header-row {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+}
+
+.cal-solutions .cal-week-hour-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cal-solutions .cal-week-grid-body {
+  max-height: none;
+  overflow: visible;
+}
+
+.cal-solutions .cal-week-time-label {
+  padding: 10px 8px;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.cal-solutions .cal-week-slot-cell {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cal-solutions .cal-week-slot-cell.is-today {
+  background: rgba(255, 102, 0, 0.05);
+}
+
+.cal-solutions .cal-week-allday-label {
+  font-size: 0.66rem;
+  line-height: 1.2;
+  white-space: normal;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cal-solutions .cal-week-allday-cell {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cal-solutions .week-event-card {
+  min-width: 0;
+  padding: 4px 6px;
+}
+
+.cal-solutions .week-event-card:hover {
+  transform: none;
+}
+
+.cal-solutions .week-event-time {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.cal-solutions .week-event-title {
+  font-weight: 700;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+  .cal-solutions .cal-week-view-wrapper {
+    max-height: 70vh;
+  }
+
+  /* En celular la semana conserva un ancho mínimo legible y se desliza de lado */
+  .cal-solutions .cal-week-header-row,
+  .cal-solutions .cal-week-grid-body {
+    min-width: 640px;
+    grid-template-columns: 56px repeat(7, minmax(0, 1fr));
+  }
+}
+
+/* ── CALENDARIO SOLUTIONS: AGENDA ── */
+.cal-solutions .cal-agenda-view {
+  flex: 1;
+  min-height: 0;
+}
+
+.cal-solutions .agenda-date-header {
+  text-transform: capitalize;
+}
+
+.cal-solutions .agenda-date-header.is-overdue-group {
+  color: #fca5a5;
+  text-transform: none;
+}
