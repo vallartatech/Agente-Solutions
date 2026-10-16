@@ -20,7 +20,7 @@ export const obtenerEstadoUbicacion = () => {
       .then(res => res.data)
       .catch(() => {
         estadoPromise = null;
-        return { tracked_role: false, consent: false, can_view_map: false, viewers: [] };
+        return { tracked_role: false, consent: false, can_view_map: false };
       });
   }
   return estadoPromise;

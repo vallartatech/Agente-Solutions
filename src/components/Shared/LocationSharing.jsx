@@ -27,8 +27,6 @@ const distanciaMetros = (a, b) => {
   return 2 * R * Math.asin(Math.sqrt(h));
 };
 
-const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
 const LocationSharing = () => {
   const { user } = useAuth();
   const isTracked = TRACKED_ROLES.includes(Number(user?.role_id));
@@ -55,19 +53,11 @@ const LocationSharing = () => {
       if (at && Date.now() - at < ASK_AGAIN_DAYS * 86400000) return;
     } catch { /* almacenamiento bloqueado: se pregunta igual */ }
 
-    const viewers = (estado.viewers || []).map(escapeHtml);
     const timer = setTimeout(() => {
       Swal.fire({
-        icon: 'question',
-        title: '¿Compartir tu ubicación?',
-        html: `
-          <div style="text-align:left;font-size:0.92rem;line-height:1.55;color:#334155">
-            <p style="margin:0 0 10px">Para coordinar visitas y emergencias, el equipo puede ver tu ubicación
-            <strong>solo mientras tengas la app abierta</strong> y en momentos clave (como al finalizar un trabajo).</p>
-            ${viewers.length ? `<p style="margin:0 0 6px"><strong>Podrán verla:</strong></p>
-            <ul style="margin:0 0 10px;padding-left:20px">${viewers.map(v => `<li>${v}</li>`).join('')}</ul>` : ''}
-            <p style="margin:0;color:#64748b;font-size:0.84rem">Puedes dejar de compartir cuando quieras desde el indicador 📍.</p>
-          </div>`,
+        icon: 'info',
+        title: 'Comparte tu ubicación',
+        text: 'Necesitas compartir tu ubicación para usar la app.',
         showCancelButton: true,
         confirmButtonText: 'Compartir',
         cancelButtonText: 'Ahora no',
@@ -178,15 +168,8 @@ const LocationSharing = () => {
             <X size={16} />
           </button>
           <strong>Compartiendo tu ubicación</strong>
-          <p>Solo mientras la app está abierta y al finalizar trabajos.</p>
           {gpsError === 'denied' && (
             <p className="loc-share-warn">Tu navegador bloqueó el GPS. Actívalo en el candado 🔒 de la barra de direcciones.</p>
-          )}
-          {estado.viewers?.length > 0 && (
-            <>
-              <span className="loc-share-label">Pueden verla:</span>
-              <ul>{estado.viewers.map(v => <li key={v}>{v}</li>)}</ul>
-            </>
           )}
           <button type="button" className="loc-share-stop" onClick={handleStop}>
             <MapPinOff size={15} /> Dejar de compartir
