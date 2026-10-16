@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow, Polyline } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindow, Polyline } from '@react-google-maps/api';
 import { Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import '../../../styles/AgenteSolutions/Admin/VistaMapaEquipo.css';
@@ -54,19 +54,28 @@ const initials = (name) => name
 
 const MAX_FIT_ZOOM = 16;
 
-// Marcador redondo con iniciales y color de estado
-const markerIcon = (name, color, selected) => {
-  const size = selected ? 46 : 38;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 46 46">
-    <circle cx="23" cy="23" r="20" fill="${color}" stroke="#ffffff" stroke-width="${selected ? 4 : 3}"/>
-    <text x="23" y="28" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">${initials(name)}</text>
-  </svg>`;
-  return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new window.google.maps.Size(size, size),
-    anchor: new window.google.maps.Point(size / 2, size / 2)
-  };
+// Marcador HTML: foto redonda (o iniciales) con borde del color de estado.
+// Si la foto no carga, vuelve a las iniciales.
+const PersonMarker = ({ member, color, selected, onClick }) => {
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const showPhoto = member.profile_picture && !photoFailed;
+  return (
+    <button
+      type="button"
+      className={`vme-marker ${selected ? 'selected' : ''} ${member.online ? 'online' : ''}`}
+      style={{ '--vme-marker-color': color, background: showPhoto ? '#ffffff' : color }}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      title={member.name}
+    >
+      {showPhoto
+        ? <img src={member.profile_picture} alt="" onError={() => setPhotoFailed(true)} />
+        : <span>{initials(member.name)}</span>}
+    </button>
+  );
 };
+
+// Centra el marcador sobre la coordenada
+const centerOverlay = (width, height) => ({ x: -(width / 2), y: -(height / 2) });
 
 const VistaMapaEquipo = () => {
   const { isLoaded, loadError } = useJsApiLoader({
@@ -305,14 +314,20 @@ const VistaMapaEquipo = () => {
               )}
 
               {onMap.map(m => (
-                <Marker
+                <OverlayViewF
                   key={m.id}
                   position={{ lat: m.last_location.lat, lng: m.last_location.lng }}
-                  icon={markerIcon(m.name, STATUS[statusOf(m)].color, m.id === selectedId)}
+                  mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                  getPixelPositionOffset={centerOverlay}
                   zIndex={m.id === selectedId ? 1000 : (m.online ? 500 : 100)}
-                  title={m.name}
-                  onClick={() => { setSelectedId(m.id); setInfoOpen(true); }}
-                />
+                >
+                  <PersonMarker
+                    member={m}
+                    color={STATUS[statusOf(m)].color}
+                    selected={m.id === selectedId}
+                    onClick={() => { setSelectedId(m.id); setInfoOpen(true); }}
+                  />
+                </OverlayViewF>
               ))}
 
               {selected?.last_location && infoOpen && (
