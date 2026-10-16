@@ -92,11 +92,33 @@ const VistaLevantamientos = () => {
       }
 
       const respuestas = await Promise.all(peticiones);
-      setServicios(respuestas[0].data || []);
-      setPropiedades(respuestas[1].data || []);
+      const rawServicios = respuestas[0]?.data || [];
+      const rawPropiedades = respuestas[1]?.data || [];
+      const rawTecnicos = (!isClient && respuestas[2]) ? (respuestas[2]?.data || []) : [];
 
-      if (!isClient && respuestas[2]) {
-        setTecnicos(respuestas[2].data || []);
+      // Filtrar servicios para el ecosistema / perfil actual:
+      // 1. Debe tener una propiedad existente y activa (no huérfana)
+      // 2. Si no es ROOT (role_id !== 0): solo levantamientos de sus propiedades o asignados a sus técnicos
+      let serviciosPropios = rawServicios.filter(s => s.property_id && s.propiedad_nombre && s.propiedad_nombre !== 'N/A');
+
+      if (user?.role_id !== 0) {
+        const misPropiedadesIds = new Set(rawPropiedades.map(p => Number(p.id)));
+        const misTecnicosIds = new Set(rawTecnicos.map(t => Number(String(t.id).replace(/^u_/, ''))));
+
+        serviciosPropios = serviciosPropios.filter(s => {
+          const coincidePropiedad = s.property_id && misPropiedadesIds.has(Number(s.property_id));
+          const coincideTecnico = s.assigned_to && misTecnicosIds.has(Number(s.assigned_to));
+          const coincideTenant = user?.tenant_id && s.tenant_id && Number(s.tenant_id) === Number(user.tenant_id);
+
+          return coincidePropiedad || coincideTecnico || coincideTenant;
+        });
+      }
+
+      setServicios(serviciosPropios);
+      setPropiedades(rawPropiedades);
+
+      if (!isClient && rawTecnicos) {
+        setTecnicos(rawTecnicos);
       }
     } catch (error) {
       console.error("Error al cargar datos:", error);
@@ -375,126 +397,253 @@ const VistaLevantamientos = () => {
           />
         </div>
 
-        {/* ── LIQUID GLASS TABLE ── */}
-        <div className="lev-table-card">
-          <div className="lev-table-responsive-wrapper">
-            <table className="lev-modern-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>PROPIEDAD</th>
-                  <th>PRIORIDAD</th>
-                  {tabActual === "PENDIENTES" ? <th>ESTADO</th> : <th>TÉCNICO</th>}
-                  <th>ACCIONES</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cargando ? (
+        {/* ── DESKTOP TABLE VIEW (> 768px) ── */}
+        <div className="lev-desktop-table-container">
+          <div className="lev-table-card">
+            <div className="lev-table-responsive-wrapper">
+              <table className="lev-modern-table">
+                <thead>
                   <tr>
-                    <td colSpan="5" className="lev-empty-state">
-                      <div className="vu-spinner" style={{ margin: '0 auto 10px auto' }}></div>
-                      <span>Cargando levantamientos...</span>
-                    </td>
+                    <th>ID</th>
+                    <th>PROPIEDAD</th>
+                    <th>PRIORIDAD</th>
+                    {tabActual === "PENDIENTES" ? <th>ESTADO</th> : <th>TÉCNICO</th>}
+                    <th>ACCIONES</th>
                   </tr>
-                ) : serviciosFiltrados.length > 0 ? (
-                  serviciosFiltrados.map((s) => (
-                    <tr key={s.id}>
-                      {/* ID */}
-                      <td>
-                        <span className="lev-id-badge">#{s.id || "0"}</span>
-                      </td>
-
-                      {/* Propiedad */}
-                      <td className="lev-prop-cell" onClick={() => verDetallesPropiedad(s)}>
-                        <span className="lev-prop-name">
-                          {s.title === "Levantamiento Inicial" && s.cliente_nombre 
-                            ? `Levantamiento de ${s.cliente_nombre}` 
-                            : (s.propiedad_nombre || s.title)}
-                        </span>
-                        {s.direccion && <span className="lev-prop-client">{s.direccion}</span>}
-                      </td>
-
-                      {/* Prioridad */}
-                      <td>
-                        <span className={`lev-prio-badge lev-prio-${(s.priority || 'media').toLowerCase()}`}>
-                          {s.priority || "Media"}
-                        </span>
-                      </td>
-
-                      {/* Estado / Técnico */}
-                      <td>
-                        {tabActual === "PENDIENTES" ? (
-                          <span className={`lev-status-chip ${
-                            s.status === 'Reprogramación Solicitada' ? 'reschedule' :
-                            s.status === 'Visita Confirmada' ? 'confirmed' :
-                            s.assigned_to ? 'programmed' : 'pending'
-                          }`}>
-                            {s.status === 'Reprogramación Solicitada' ? 'Pide Reprogramar' :
-                             s.status === 'Visita Confirmada' ? 'Confirmada' :
-                             s.assigned_to ? 'Programado' : 'Por Asignar'}
-                          </span>
-                        ) : (
-                          <span style={{ fontWeight: '700', color: '#e2e8f0' }}>
-                            {s.tecnico_nombre || "Técnico Agente"}
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Acciones */}
-                      <td>
-                        {tabActual === "REALIZADOS" ? (
-                          <button 
-                            type="button"
-                            className="lev-btn-table-action report"
-                            onClick={() => navigate(`/detalle-reporte/${s.id}`)}
-                          >
-                            <FileText size={14} />
-                            <span>Ver Reporte</span>
-                          </button>
-                        ) : isClient ? (
-                          <button 
-                            type="button"
-                            className="lev-btn-table-action view-details"
-                            onClick={() => {
-                              if (s.assigned_to && s.status !== 'Reprogramación Solicitada' && s.status !== 'Visita Confirmada') {
-                                abrirDetallesCliente(s);
-                              }
-                            }}
-                            disabled={!s.assigned_to || s.status === 'Reprogramación Solicitada' || s.status === 'Visita Confirmada'}
-                          >
-                            {s.status === 'Reprogramación Solicitada' ? 'Reprogramando' :
-                             s.status === 'Visita Confirmada' ? 'Cita Confirmada' :
-                             s.assigned_to ? 'Ver Cita' : 'En Revisión'}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="lev-btn-table-action schedule"
-                            onClick={() => abrirAsignacion(s)}
-                          >
-                            <CalendarDays size={14} />
-                            <span>Programar</span>
-                          </button>
-                        )}
+                </thead>
+                <tbody>
+                  {cargando ? (
+                    <tr>
+                      <td colSpan="5" className="lev-empty-state">
+                        <div className="vu-spinner" style={{ margin: '0 auto 10px auto' }}></div>
+                        <span>Cargando levantamientos...</span>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" className="lev-empty-state">
-                      <ClipboardList size={36} className="lev-empty-icon" />
-                      <p className="lev-empty-title">
-                        {isClient ? "Aún no has solicitado ningún levantamiento" : "No hay servicios en esta sección"}
-                      </p>
-                      <p className="lev-empty-desc">
-                        Haz clic en "SOLICITAR LEVANTAMIENTO" para crear una nueva visita técnica.
-                      </p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  ) : serviciosFiltrados.length > 0 ? (
+                    serviciosFiltrados.map((s) => (
+                      <tr key={s.id}>
+                        {/* ID */}
+                        <td>
+                          <span className="lev-id-badge">#{s.id || "0"}</span>
+                        </td>
+
+                        {/* Propiedad */}
+                        <td className="lev-prop-cell" onClick={() => verDetallesPropiedad(s)}>
+                          <span className="lev-prop-name">
+                            {s.title === "Levantamiento Inicial" && s.cliente_nombre 
+                              ? `Levantamiento de ${s.cliente_nombre}` 
+                              : (s.propiedad_nombre || s.title)}
+                          </span>
+                          {s.direccion && <span className="lev-prop-client">{s.direccion}</span>}
+                        </td>
+
+                        {/* Prioridad */}
+                        <td>
+                          <span className={`lev-prio-badge lev-prio-${(s.priority || 'media').toLowerCase()}`}>
+                            {s.priority || "Media"}
+                          </span>
+                        </td>
+
+                        {/* Estado / Técnico */}
+                        <td>
+                          {tabActual === "PENDIENTES" ? (
+                            <span className={`lev-status-chip ${
+                              s.status === 'Reprogramación Solicitada' ? 'reschedule' :
+                              s.status === 'Visita Confirmada' ? 'confirmed' :
+                              s.assigned_to ? 'programmed' : 'pending'
+                            }`}>
+                              {s.status === 'Reprogramación Solicitada' ? 'Pide Reprogramar' :
+                               s.status === 'Visita Confirmada' ? 'Confirmada' :
+                               s.assigned_to ? 'Programado' : 'Por Asignar'}
+                            </span>
+                          ) : (
+                            <span style={{ fontWeight: '700', color: '#e2e8f0' }}>
+                              {s.tecnico_nombre || "Técnico Agente"}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Acciones */}
+                        <td>
+                          {tabActual === "REALIZADOS" ? (
+                            <button 
+                              type="button"
+                              className="lev-btn-table-action report"
+                              onClick={() => navigate(`/detalle-reporte/${s.id}`)}
+                            >
+                              <FileText size={14} />
+                              <span>Ver Reporte</span>
+                            </button>
+                          ) : isClient ? (
+                            <button 
+                              type="button"
+                              className="lev-btn-table-action view-details"
+                              onClick={() => {
+                                if (s.assigned_to && s.status !== 'Reprogramación Solicitada' && s.status !== 'Visita Confirmada') {
+                                  abrirDetallesCliente(s);
+                                }
+                              }}
+                              disabled={!s.assigned_to || s.status === 'Reprogramación Solicitada' || s.status === 'Visita Confirmada'}
+                            >
+                              {s.status === 'Reprogramación Solicitada' ? 'Reprogramando' :
+                               s.status === 'Visita Confirmada' ? 'Cita Confirmada' :
+                               s.assigned_to ? 'Ver Cita' : 'En Revisión'}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="lev-btn-table-action schedule"
+                              onClick={() => abrirAsignacion(s)}
+                            >
+                              <CalendarDays size={14} />
+                              <span>Programar</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="lev-empty-state">
+                        <ClipboardList size={36} className="lev-empty-icon" />
+                        <p className="lev-empty-title">
+                          {isClient ? "Aún no has solicitado ningún levantamiento" : "No hay servicios en esta sección"}
+                        </p>
+                        <p className="lev-empty-desc">
+                          Haz clic en "SOLICITAR LEVANTAMIENTO" para crear una nueva visita técnica.
+                        </p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
+        </div>
+
+        {/* ── MOBILE CARDS VIEW (<= 768px) ── */}
+        <div className="lev-mobile-cards-container">
+          {cargando ? (
+            <div className="lev-mobile-card lev-mobile-empty-card">
+              <div className="vu-spinner" style={{ margin: '0 auto 10px auto' }}></div>
+              <span>Cargando levantamientos...</span>
+            </div>
+          ) : serviciosFiltrados.length > 0 ? (
+            serviciosFiltrados.map((s) => (
+              <div className="lev-mobile-card" key={`mob-${s.id}`}>
+                {/* Header: ID, Estado, Prioridad */}
+                <div className="lev-mobile-card-top">
+                  <span className="lev-id-badge">#{s.id || "0"}</span>
+
+                  <div className="lev-mobile-card-chips">
+                    {tabActual === "PENDIENTES" ? (
+                      <span className={`lev-status-chip ${
+                        s.status === 'Reprogramación Solicitada' ? 'reschedule' :
+                        s.status === 'Visita Confirmada' ? 'confirmed' :
+                        s.assigned_to ? 'programmed' : 'pending'
+                      }`}>
+                        {s.status === 'Reprogramación Solicitada' ? 'Pide Reprogramar' :
+                         s.status === 'Visita Confirmada' ? 'Confirmada' :
+                         s.assigned_to ? 'Programado' : 'Por Asignar'}
+                      </span>
+                    ) : (
+                      <span className="lev-status-chip confirmed">
+                        Finalizado
+                      </span>
+                    )}
+
+                    <span className={`lev-prio-badge lev-prio-${(s.priority || 'media').toLowerCase()}`}>
+                      {s.priority || "Media"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Property Info */}
+                <div className="lev-mobile-card-body" onClick={() => verDetallesPropiedad(s)}>
+                  <div className="lev-mobile-card-prop-name">
+                    <Building size={16} className="lev-mobile-card-icon" />
+                    <span>
+                      {s.title === "Levantamiento Inicial" && s.cliente_nombre 
+                        ? `Levantamiento de ${s.cliente_nombre}` 
+                        : (s.propiedad_nombre || s.title)}
+                    </span>
+                  </div>
+
+                  {s.direccion && (
+                    <div className="lev-mobile-card-prop-address">
+                      <MapPin size={14} className="lev-mobile-card-icon-pin" />
+                      <span>{s.direccion}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Meta details: Técnico asignado / Fecha */}
+                <div className="lev-mobile-card-meta">
+                  <div className="lev-mobile-card-meta-item">
+                    <UserCheck size={14} />
+                    <span>
+                      {s.tecnico_nombre || (s.assigned_to ? "Técnico Asignado" : "Por Asignar")}
+                    </span>
+                  </div>
+
+                  {s.fecha_programada && (
+                    <div className="lev-mobile-card-meta-item">
+                      <CalendarDays size={14} />
+                      <span>{new Date(s.fecha_programada).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom Action Button */}
+                <div className="lev-mobile-card-footer">
+                  {tabActual === "REALIZADOS" ? (
+                    <button 
+                      type="button"
+                      className="lev-btn-table-action report lev-btn-mobile-full"
+                      onClick={() => navigate(`/detalle-reporte/${s.id}`)}
+                    >
+                      <FileText size={16} />
+                      <span>Ver Reporte</span>
+                    </button>
+                  ) : isClient ? (
+                    <button 
+                      type="button"
+                      className="lev-btn-table-action view-details lev-btn-mobile-full"
+                      onClick={() => {
+                        if (s.assigned_to && s.status !== 'Reprogramación Solicitada' && s.status !== 'Visita Confirmada') {
+                          abrirDetallesCliente(s);
+                        }
+                      }}
+                      disabled={!s.assigned_to || s.status === 'Reprogramación Solicitada' || s.status === 'Visita Confirmada'}
+                    >
+                      {s.status === 'Reprogramación Solicitada' ? 'Reprogramando' :
+                       s.status === 'Visita Confirmada' ? 'Cita Confirmada' :
+                       s.assigned_to ? 'Ver Cita' : 'En Revisión'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="lev-btn-table-action schedule lev-btn-mobile-full"
+                      onClick={() => abrirAsignacion(s)}
+                    >
+                      <CalendarDays size={16} />
+                      <span>Programar Visita</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="lev-mobile-card lev-mobile-empty-card">
+              <ClipboardList size={36} className="lev-empty-icon" />
+              <p className="lev-empty-title">
+                {isClient ? "Aún no has solicitado ningún levantamiento" : "No hay servicios en esta sección"}
+              </p>
+              <p className="lev-empty-desc">
+                Haz clic en "SOLICITAR LEVANTAMIENTO" para crear una nueva visita técnica.
+              </p>
+            </div>
+          )}
         </div>
 
       </main>

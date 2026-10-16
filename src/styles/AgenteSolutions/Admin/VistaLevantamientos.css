@@ -160,10 +160,14 @@
   transform: translateY(-2px);
 }
 
-@media (max-width: 768px) {
-  .lev-filter-grid {
-    grid-template-columns: 1fr;
-  }
+/* ── DESKTOP & MOBILE CONTAINERS DEFAULT ── */
+.lev-desktop-table-container {
+  display: block;
+  width: 100%;
+}
+
+.lev-mobile-cards-container {
+  display: none;
 }
 
 /* ── SEARCH WRAPPER ── */
@@ -564,3 +568,188 @@
   font-size: 0.85rem;
   color: #94a3b8;
 }
+
+/* ==========================================================================
+   MOBILE RESPONSIVENESS (<= 768px)
+   Enhanced Mobile Cards Layout & Touch Targets
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .lev-main-container {
+    padding: 16px 14px calc(115px + env(safe-area-inset-bottom, 24px)) 14px;
+    gap: 14px;
+  }
+
+  .lev-action-bar {
+    margin-bottom: 2px;
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  .lev-btn-regresar {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+  }
+
+  .lev-page-title-badge {
+    padding: 7px 12px;
+    font-size: 0.74rem;
+    gap: 6px;
+    letter-spacing: 0.4px;
+  }
+
+  .lev-filter-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .lev-filter-pill {
+    padding: 11px 8px;
+    font-size: 0.78rem;
+    gap: 6px;
+    border-radius: 12px;
+  }
+
+  .lev-action-pill-solicitar {
+    grid-column: 1 / -1;
+    padding: 13px 14px;
+    font-size: 0.88rem;
+  }
+
+  /* Switch from Table to Mobile Cards */
+  .lev-desktop-table-container {
+    display: none !important;
+  }
+
+  .lev-mobile-cards-container {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .lev-mobile-card {
+    background: rgba(18, 24, 38, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    padding: 16px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-sizing: border-box;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .lev-mobile-card:active {
+    transform: scale(0.99);
+  }
+
+  .lev-mobile-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lev-mobile-card-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .lev-mobile-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .lev-mobile-card-body:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .lev-mobile-card-prop-name {
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lev-mobile-card-icon {
+    color: #F26522;
+    flex-shrink: 0;
+  }
+
+  .lev-mobile-card-prop-address {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.35;
+  }
+
+  .lev-mobile-card-icon-pin {
+    color: #F26522;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .lev-mobile-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    font-size: 0.78rem;
+    color: #cbd5e1;
+    font-weight: 700;
+  }
+
+  .lev-mobile-card-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .lev-mobile-card-footer {
+    margin-top: 2px;
+  }
+
+  .lev-btn-mobile-full {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 12px 14px !important;
+    font-size: 0.92rem !important;
+    border-radius: 12px !important;
+  }
+
+  .lev-mobile-empty-card {
+    background: rgba(18, 24, 38, 0.75);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 18px;
+    text-align: center;
+    padding: 36px 16px;
+  }
+
+  .lev-modal-card {
+    padding: 20px 16px;
+    border-radius: 20px;
+    max-height: 85vh;
+  }
+}
+
