@@ -32,8 +32,43 @@ import {
   CalendarDays,
   Trash2,
   Bell,
-  BellRing
+  BellRing,
+  Megaphone,
+  Users
 } from 'lucide-react';
+
+// Fecha local YYYY-MM-DD (toISOString usa UTC y en la noche de México ya marca el día siguiente)
+const toLocalDateKey = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+// "Viernes 16 de octubre": mismo formato que usa el backend en la notificación push
+const formatNoticeDate = (dateKey) => {
+  if (!dateKey) return '';
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const text = new Date(y, m - 1, d)
+    .toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
+    .replace(',', '');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
+
+const NOTICE_TITLE_MAX = 60;
+
+const emptyNoticeForm = (dateKey = null) => {
+  const today = toLocalDateKey(new Date());
+  const key = dateKey || today;
+  const tomorrow = toLocalDateKey(new Date(Date.now() + 24 * 60 * 60 * 1000));
+  return {
+    title: '',
+    event_date: key,
+    dateMode: key === today ? 'today' : key === tomorrow ? 'tomorrow' : 'other',
+    description: '',
+    important: false
+  };
+};
 
 const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -93,15 +128,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const [showCreateNoticeModal, setShowCreateNoticeModal] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState(null);
   const [submittingNotice, setSubmittingNotice] = useState(false);
-  const [noticeForm, setNoticeForm] = useState({
-    title: '',
-    event_date: new Date().toISOString().split('T')[0],
-    start_time: '',
-    type: 'fumigacion',
-    description: '',
-    color: '#10b981',
-    notify_team: true
-  });
+  const [noticeForm, setNoticeForm] = useState(() => emptyNoticeForm());
 
   // Estados de edición de Cita / Técnico (Admins)
   const [editTecnicoId, setEditTecnicoId] = useState('');
@@ -280,7 +307,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
     const type = notice.type || 'aviso';
     let badge = '📢 Aviso';
-    if (type === 'fumigacion') badge = '🐜 Fumigación';
+    if (type === 'importante') badge = '🔴 Importante';
+    else if (type === 'fumigacion') badge = '🐜 Fumigación';
     else if (type === 'reunion') badge = '👥 Reunión';
     else if (type === 'mantenimiento') badge = '🔧 Mantto.';
     else if (type === 'otro') badge = '📌 Evento';
@@ -540,15 +568,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
   // Gestión de Avisos y Fumigaciones
   const handleOpenCreateNotice = (customDate = null) => {
-    setNoticeForm({
-      title: '',
-      event_date: customDate || new Date().toISOString().split('T')[0],
-      start_time: '',
-      type: 'fumigacion',
-      description: '',
-      color: '#10b981',
-      notify_team: true
-    });
+    setNoticeForm(emptyNoticeForm(typeof customDate === 'string' ? customDate : null));
     setShowCreateNoticeModal(true);
   };
 
@@ -576,14 +596,15 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
+      // Todo aviso se notifica siempre a todo el equipo
       const payload = {
         title: noticeForm.title.trim(),
         event_date: noticeForm.event_date,
-        start_time: noticeForm.start_time || null,
-        type: noticeForm.type,
+        start_time: null,
+        type: noticeForm.important ? 'importante' : 'aviso',
         description: noticeForm.description?.trim() || null,
-        color: noticeForm.color,
-        notify_team: noticeForm.notify_team
+        color: noticeForm.important ? '#ef4444' : '#f97316',
+        notify_team: true
       };
 
       const res = await axios.post(
@@ -606,20 +627,20 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
         // El backend informa si OneSignal realmente aceptó el envío
         const push = res.data?.push;
-        if (noticeForm.notify_team && push && !push.sent) {
+        if (push && !push.sent) {
           Swal.fire({
             icon: 'warning',
-            title: 'Aviso guardado, push no enviada',
-            text: `El aviso ya está en el calendario y en la campanita, pero OneSignal no envió la notificación: ${push.error || 'ningún dispositivo del equipo está suscrito.'}`,
+            title: 'Aviso publicado, push no enviada',
+            text: `El aviso ya está en el calendario y en la campanita del equipo, pero OneSignal no envió la notificación: ${push.error || 'ningún dispositivo del equipo está suscrito.'}`,
             confirmButtonColor: '#f97316'
           });
         } else {
           Swal.fire({
             icon: 'success',
-            title: '¡Aviso Publicado!',
-            text: noticeForm.notify_team
-              ? `El evento se guardó en el calendario y se envió la notificación push${push?.subscribed != null ? ` a ${push.subscribed} de ${push.recipients} miembros del equipo` : ' al equipo'}.`
-              : 'El evento se ha guardado correctamente en el calendario.',
+            title: '¡Aviso enviado!',
+            text: push?.subscribed != null
+              ? `Se notificó a ${push.subscribed} de ${push.recipients} miembros del equipo en su celular o computadora.`
+              : 'El aviso se publicó y se notificó a todo el equipo.',
             timer: 2600,
             showConfirmButton: false
           });
@@ -1769,180 +1790,167 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
           </div>
         )}
 
-        {/* ── MODAL SUBMODAL: CREAR AVISO O FUMIGACIÓN ── */}
-        {showCreateNoticeModal && (
-          <div 
-            className="solutions-submodal-overlay"
-            onClick={() => setShowCreateNoticeModal(false)}
-          >
-            <div 
-              className="solutions-submodal-window"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="submodal-header">
-                <div className="submodal-title-row">
-                  <div className="submodal-icon-badge" style={{ background: noticeForm.color }}>
-                    <CalendarDays size={20} color="#ffffff" />
+        {/* ── MODAL SUBMODAL: CREAR AVISO (siempre se notifica a todo el equipo) ── */}
+        {showCreateNoticeModal && (() => {
+          const todayKey = toLocalDateKey(new Date());
+          const tomorrowKey = toLocalDateKey(new Date(Date.now() + 24 * 60 * 60 * 1000));
+          const setDateMode = (mode) => setNoticeForm(prev => ({
+            ...prev,
+            dateMode: mode,
+            event_date: mode === 'today' ? todayKey : mode === 'tomorrow' ? tomorrowKey : prev.event_date
+          }));
+          const titleLength = noticeForm.title.length;
+          const previewTitle = `${noticeForm.important ? '🔴' : '📅'} ${noticeForm.title.trim() || 'Título del aviso'}`;
+          const previewBody = `${formatNoticeDate(noticeForm.event_date)}${noticeForm.description.trim() ? ` · ${noticeForm.description.trim()}` : ''}`;
+          const closeModal = () => { if (!submittingNotice) setShowCreateNoticeModal(false); };
+
+          return (
+            <div className="solutions-submodal-overlay nq-overlay" onClick={closeModal}>
+              <div
+                className={`nq-window ${noticeForm.important ? 'is-important' : ''}`}
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-labelledby="nq-title"
+              >
+                <div className="nq-header">
+                  <div className="nq-header-icon">
+                    <Megaphone size={20} color="#ffffff" />
                   </div>
-                  <div>
-                    <h3>Publicar Aviso o Evento</h3>
-                    <p>Se mostrará en el calendario de todo el equipo (Admins y Técnicos)</p>
+                  <div className="nq-header-text">
+                    <h3 id="nq-title">Nuevo aviso</h3>
+                    <p>Le llegará al instante a todo el equipo</p>
                   </div>
+                  <button type="button" className="nq-close" onClick={closeModal} aria-label="Cerrar">
+                    <X size={18} />
+                  </button>
                 </div>
-                <button 
-                  className="btn-submodal-close"
-                  onClick={() => setShowCreateNoticeModal(false)}
-                >
-                  <X size={18} />
-                </button>
-              </div>
 
-              <form onSubmit={handleCreateNotice}>
-                <div className="submodal-body">
-                  {/* Tipo de Evento */}
-                  <div className="notice-field">
-                    <label>Tipo de Evento</label>
-                    <div className="notice-type-grid">
-                      {[
-                        { key: 'fumigacion', label: '🐜 Fumigación', color: '#10b981' },
-                        { key: 'aviso', label: '📢 Aviso', color: '#f97316' },
-                        { key: 'reunion', label: '👥 Reunión', color: '#3b82f6' },
-                        { key: 'mantenimiento', label: '🔧 Mantto.', color: '#8b5cf6' },
-                        { key: 'otro', label: '📌 Otro', color: '#06b6d4' }
-                      ].map(t => (
-                        <button
-                          key={t.key}
-                          type="button"
-                          className={`notice-type-pill ${noticeForm.type === t.key ? 'active' : ''}`}
-                          onClick={() => setNoticeForm(prev => ({ ...prev, type: t.key, color: t.color }))}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Título */}
-                  <div className="notice-field">
-                    <label>Título del Evento *</label>
-                    <input 
-                      type="text"
-                      className="notice-input"
-                      placeholder="Ej: Fumigación general de oficinas, Junta técnica..."
-                      value={noticeForm.title}
-                      onChange={(e) => setNoticeForm(prev => ({ ...prev, title: e.target.value }))}
-                      required
-                    />
-                  </div>
-
-                  {/* Fecha y Hora */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div className="notice-field">
-                      <label>Fecha del Evento *</label>
-                      <input 
-                        type="date"
-                        className="notice-input"
-                        value={noticeForm.event_date}
-                        onChange={(e) => setNoticeForm(prev => ({ ...prev, event_date: e.target.value }))}
+                <form className="nq-form" onSubmit={handleCreateNotice}>
+                  <div className="nq-body">
+                    <div className="nq-field">
+                      <div className="nq-label-row">
+                        <label htmlFor="nq-input-title">¿Qué quieres avisar?</label>
+                        <span className={`nq-counter ${titleLength >= NOTICE_TITLE_MAX ? 'is-max' : ''}`}>
+                          {titleLength}/{NOTICE_TITLE_MAX}
+                        </span>
+                      </div>
+                      <input
+                        id="nq-input-title"
+                        type="text"
+                        className="nq-input"
+                        placeholder="Ej: Fumigación general de oficinas"
+                        maxLength={NOTICE_TITLE_MAX}
+                        value={noticeForm.title}
+                        onChange={(e) => setNoticeForm(prev => ({ ...prev, title: e.target.value }))}
+                        autoFocus
                         required
                       />
                     </div>
-                    <div className="notice-field">
-                      <label>Hora (Opcional)</label>
-                      <input 
-                        type="time"
-                        className="notice-input"
-                        value={noticeForm.start_time}
-                        onChange={(e) => setNoticeForm(prev => ({ ...prev, start_time: e.target.value }))}
+
+                    <div className="nq-field">
+                      <label>¿Cuándo?</label>
+                      <div className="nq-date-chips">
+                        <button type="button" className={`nq-chip ${noticeForm.dateMode === 'today' ? 'active' : ''}`} onClick={() => setDateMode('today')}>
+                          Hoy
+                        </button>
+                        <button type="button" className={`nq-chip ${noticeForm.dateMode === 'tomorrow' ? 'active' : ''}`} onClick={() => setDateMode('tomorrow')}>
+                          Mañana
+                        </button>
+                        <button type="button" className={`nq-chip ${noticeForm.dateMode === 'other' ? 'active' : ''}`} onClick={() => setDateMode('other')}>
+                          <CalendarDays size={15} /> Otra fecha
+                        </button>
+                      </div>
+                      {noticeForm.dateMode === 'other' && (
+                        <input
+                          type="date"
+                          className="nq-input nq-date-input"
+                          min={todayKey}
+                          value={noticeForm.event_date}
+                          onChange={(e) => setNoticeForm(prev => ({ ...prev, event_date: e.target.value }))}
+                          required
+                        />
+                      )}
+                      <span className="nq-date-hint">{formatNoticeDate(noticeForm.event_date)}</span>
+                    </div>
+
+                    <div className="nq-field">
+                      <label htmlFor="nq-input-details">Detalles <span className="nq-optional">(opcional)</span></label>
+                      <textarea
+                        id="nq-input-details"
+                        className="nq-input nq-textarea"
+                        placeholder="Ej: Despejar escritorios y guardar alimentos antes de las 18:00 hrs"
+                        maxLength={500}
+                        value={noticeForm.description}
+                        onChange={(e) => setNoticeForm(prev => ({ ...prev, description: e.target.value }))}
                       />
                     </div>
-                  </div>
 
-                  {/* Color del Evento */}
-                  <div className="notice-field">
-                    <label>Color Identificador</label>
-                    <div className="notice-color-grid">
-                      {['#10b981', '#f97316', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#eab308'].map(c => (
-                        <div 
-                          key={c}
-                          className={`notice-color-dot ${noticeForm.color === c ? 'active' : ''}`}
-                          style={{ background: c }}
-                          onClick={() => setNoticeForm(prev => ({ ...prev, color: c }))}
-                        >
-                          {noticeForm.color === c && <Check size={16} color="#ffffff" strokeWidth={3} />}
+                    <button
+                      type="button"
+                      className={`nq-important ${noticeForm.important ? 'active' : ''}`}
+                      onClick={() => setNoticeForm(prev => ({ ...prev, important: !prev.important }))}
+                      aria-pressed={noticeForm.important}
+                    >
+                      <span className="nq-important-check">{noticeForm.important && <Check size={14} strokeWidth={3} />}</span>
+                      <span className="nq-important-text">
+                        <strong>Marcar como importante</strong>
+                        <small>Se destaca en rojo en el calendario y en la notificación</small>
+                      </span>
+                      <AlertTriangle size={18} className="nq-important-icon" />
+                    </button>
+
+                    <div className="nq-preview">
+                      <span className="nq-preview-label">Así le llegará al equipo</span>
+                      <div className="nq-preview-card">
+                        <img src="/Logo_192.png" alt="" className="nq-preview-logo" />
+                        <div className="nq-preview-content">
+                          <div className="nq-preview-app">Agente Solutions · ahora</div>
+                          <div className="nq-preview-title">{previewTitle}</div>
+                          <div className="nq-preview-body">{previewBody}</div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Descripción */}
-                  <div className="notice-field">
-                    <label>Detalles o Indicaciones</label>
-                    <textarea 
-                      className="notice-textarea"
-                      placeholder="Ej: Despejar escritorios y guardar alimentos antes de las 18:00 hrs..."
-                      value={noticeForm.description}
-                      onChange={(e) => setNoticeForm(prev => ({ ...prev, description: e.target.value }))}
-                    />
-                  </div>
-
-                  {/* Switch de Notificación Push */}
-                  <div 
-                    className="notice-toggle-card"
-                    onClick={() => setNoticeForm(prev => ({ ...prev, notify_team: !prev.notify_team }))}
-                  >
-                    <div className="notice-toggle-text">
-                      <span className="notice-toggle-title">🔔 Notificar al Equipo (Push)</span>
-                      <span className="notice-toggle-sub">Envía alerta instantánea a celulares y computadoras del equipo vía OneSignal</span>
-                    </div>
-                    <div className={`notice-switch ${noticeForm.notify_team ? 'on' : ''}`}>
-                      <div className="notice-switch-knob" />
-                    </div>
-                  </div>
-
-                  {/* Alerta de activación Push si el dispositivo no tiene permisos concedidos */}
-                  {noticeForm.notify_team && typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && (
-                    <div className="notice-push-warning-box">
-                      <div className="notice-push-warning-text">
-                        <BellRing size={16} color="#f97316" />
-                        <span>Este celular o navegador aún no tiene activadas las notificaciones Push.</span>
                       </div>
-                      <button
-                        type="button"
-                        className="notice-push-quick-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRequestPushPermission();
-                        }}
-                      >
-                        Activar en mi Celular
+                    </div>
+
+                    {typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && (
+                      <div className="notice-push-warning-box">
+                        <div className="notice-push-warning-text">
+                          <BellRing size={16} color="#f97316" />
+                          <span>Tu dispositivo aún no recibe notificaciones. El equipo sí recibirá el aviso.</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="notice-push-quick-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRequestPushPermission();
+                          }}
+                        >
+                          Activar en mi dispositivo
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="nq-footer">
+                    <div className="nq-footer-note">
+                      <Users size={15} />
+                      <span>Se notificará a <strong>todo el equipo</strong> (administradores y técnicos)</span>
+                    </div>
+                    <div className="nq-footer-actions">
+                      <button type="button" className="nq-btn-cancel" onClick={closeModal} disabled={submittingNotice}>
+                        Cancelar
+                      </button>
+                      <button type="submit" className="nq-btn-submit" disabled={submittingNotice || !noticeForm.title.trim()}>
+                        <Send size={16} />
+                        <span>{submittingNotice ? 'Enviando…' : 'Publicar y notificar'}</span>
                       </button>
                     </div>
-                  )}
-                </div>
-
-                <div className="submodal-footer">
-                  <button 
-                    type="button"
-                    className="btn-submodal-cancel"
-                    onClick={() => setShowCreateNoticeModal(false)}
-                    disabled={submittingNotice}
-                  >
-                    Cancelar
-                  </button>
-                  <button 
-                    type="submit"
-                    className="btn-submodal-submit"
-                    disabled={submittingNotice}
-                  >
-                    <Send size={16} />
-                    <span>{submittingNotice ? 'Publicando...' : 'Publicar Evento'}</span>
-                  </button>
-                </div>
-              </form>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ── MODAL SUBMODAL: DETALLE Y ELIMINACIÓN DE AVISO ── */}
         {selectedNotice && (
