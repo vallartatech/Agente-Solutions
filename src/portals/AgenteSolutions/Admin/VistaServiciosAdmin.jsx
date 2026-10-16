@@ -1,17 +1,20 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Clock, CheckCircle2, Circle, X, UserCircle, Calendar, 
-  ArrowLeft, Camera, Layout, FileText, Maximize2, AlertTriangle, ChevronLeft, Timer, Settings, RotateCw, Trash2
+  ArrowLeft, Camera, Layout, FileText, Maximize2, AlertTriangle, Timer, Settings, Filter
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
+import CasaLoader from '../../../components/Shared/CasaLoader';
 import ModalAsignarChecklist from '../../../components/Modals/ModalAsignarChecklist';
 import ModalCrearCotizacion from '../../../components/Shared/ModalCrearCotizacion';
 import ModalConfirmarPagoEfectivo from '../../../components/Modals/ModalConfirmarPagoEfectivo';
 import UniversalSearch from '../../../components/Shared/UniversalSearch';
 import '../../../styles/AgenteSolutions/Cliente/TableroScrum.css'; // Reutilizamos estilos
+import '../../../styles/Shared/ToolbarAcciones.css';
+import '../../../styles/AgenteSolutions/Admin/VistaServiciosAdmin.css';
 
 const VistaServiciosAdmin = () => {
   const navigate = useNavigate();
@@ -324,39 +327,24 @@ const VistaServiciosAdmin = () => {
     return null;
   }, [cotizacionesData, tareaSeleccionada]);
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isDeletingServices, setIsDeletingServices] = useState(false);
+  // FILTRO ACTIVOS / FINALIZADOS JUNTO AL BUSCADOR
+  const [filtroSeccionAbierto, setFiltroSeccionAbierto] = useState(false);
+  const filtroSeccionRef = useRef(null);
 
-  const handleResetAllServices = async () => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar todos los servicios de prueba de la base de datos para comenzar desde cero?")) {
-      return;
-    }
-    setIsDeletingServices(true);
-    try {
-      const token = localStorage.getItem('token') || localStorage.getItem('agente_token');
-      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/work-orders/reset-all-services`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-      alert("¡Servicios de prueba eliminados con éxito de la base de datos!");
-      await cargarTodo();
-    } catch (e) {
-      console.error(e);
-      alert("Error al limpiar los servicios: " + (e.response?.data?.message || e.message));
-    } finally {
-      setIsDeletingServices(false);
-    }
-  };
-
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await cargarTodo();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setTimeout(() => setIsRefreshing(false), 500);
-    }
-  };
+  useEffect(() => {
+    if (!filtroSeccionAbierto) return;
+    const handleClickOutside = (e) => {
+      if (filtroSeccionRef.current && !filtroSeccionRef.current.contains(e.target)) {
+        setFiltroSeccionAbierto(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [filtroSeccionAbierto]);
 
   useEffect(() => {
     cargarTodo();
@@ -567,7 +555,12 @@ const VistaServiciosAdmin = () => {
     return agrupadas;
   }, [tareasFiltradas]);
 
-  if (loading) return <div className="loading-screen">Cargando Tablero de Servicios...</div>;
+  if (loading) return (
+    <div className="scrum-container admin-theme sv-glass-page">
+      <Header activeModule="servicios" titulo="SERVICIOS" />
+      <CasaLoader texto="Cargando servicios..." />
+    </div>
+  );
 
   const cambiarSeccionTab = (nuevaSeccion) => {
     setSeccionTab(nuevaSeccion);
@@ -612,10 +605,10 @@ const VistaServiciosAdmin = () => {
             <span className="column-badge">{tareasFiltradasCol.length}</span>
           </div>
           {colId === 'todo' && (
-            <select 
-              value={filtroFecha} 
+            <select
+              className="sv-date-filter"
+              value={filtroFecha}
               onChange={(e) => setFiltroFecha(e.target.value)}
-              style={{ border: '1px solid #cbd5e1', background: 'white', outline: 'none', fontSize: '0.75rem', fontWeight: 'bold', color: '#f26522', cursor: 'pointer', padding: '6px 8px', borderRadius: '8px', width: '100%' }}
             >
               <option value="todas">Todas las fechas</option>
               <option value="hoy">Solo Hoy</option>
@@ -746,17 +739,7 @@ const VistaServiciosAdmin = () => {
               </div>
             ))
           ) : (
-            <div className="empty-column-message" style={{ 
-              textAlign: 'center', 
-              padding: '40px 20px', 
-              color: '#999', 
-              fontSize: '0.9rem',
-              fontStyle: 'italic',
-              background: 'rgba(255,255,255,0.5)',
-              borderRadius: '15px',
-              margin: '10px',
-              border: '1px dashed #ccc'
-            }}>
+            <div className="empty-column-message">
               <p>No hay servicios en {titulo.toLowerCase()}</p>
             </div>
           )}
@@ -766,117 +749,76 @@ const VistaServiciosAdmin = () => {
   };
 
   return (
-    <div className="scrum-container admin-theme">
+    <div className="scrum-container admin-theme sv-glass-page">
       <Header activeModule="servicios" titulo="SERVICIOS" />
       
-      <header className="scrum-header-admin" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <button 
-            className="btn-back-dashboard" 
-            onClick={() => navigate(-1)}
-            style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#F26522', color: 'white', padding: '8px 25px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
-          >
-            <ChevronLeft size={20} /> REGRESAR
-          </button>
-          <h2 style={{ fontStyle: 'italic', fontWeight: '900', margin: 0 }}>GESTIÓN GLOBAL DE SERVICIOS</h2>
+      {/* ── BARRA DE TÍTULO ── */}
+      <div className="sv-action-bar">
+        <div className="sv-page-title-badge">
+          <Layout size={18} className="sv-title-icon" />
+          <span>GESTIÓN GLOBAL DE SERVICIOS</span>
+          <span className="sv-count-pill">{tareasFiltradas.length}</span>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* BOTÓN LIMPIAR SERVICIOS (BD) */}
-          <button
-            onClick={handleResetAllServices}
-            disabled={isDeletingServices}
-            style={{
-              background: '#dc2626',
-              color: 'white',
-              border: 'none',
-              padding: '10px 18px',
-              borderRadius: '18px',
-              fontWeight: '800',
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 14px rgba(220, 38, 38, 0.35)',
-              opacity: isDeletingServices ? 0.6 : 1,
-              transition: 'all 0.2s ease-in-out'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            title="Borrar todos los servicios de prueba de la base de datos"
-          >
-            <Trash2 size={18} />
-            <span>{isDeletingServices ? 'Borrando...' : 'Limpiar Servicios (BD)'}</span>
-          </button>
-
-          {/* BOTÓN ACTUALIZAR PROMINENTE CON ICONO */}
-          <button
-            onClick={handleManualRefresh}
-            disabled={isRefreshing}
-            style={{
-              background: '#F26522',
-              color: 'white',
-              border: 'none',
-              padding: '10px 24px',
-              borderRadius: '18px',
-              fontWeight: '900',
-              fontSize: '1rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              boxShadow: '0 4px 14px rgba(242, 101, 34, 0.35)',
-              transition: 'all 0.2s ease-in-out',
-              opacity: isRefreshing ? 0.75 : 1
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <RotateCw 
-              size={20} 
-              style={{ 
-                animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
-                transition: 'transform 0.3s'
-              }} 
-            />
-            <span>{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Buscador Universal */}
-      <div className="search-bar-admin-wrapper" style={{ marginBottom: '20px', padding: '0 5px' }}>
-        <UniversalSearch 
-          data={tareasData}
-          setFilteredData={setTareasFiltradas}
-          placeholder="BUSCAR POR FOLIO, CLIENTE, PROPIEDAD O DESCRIPCIÓN DE SERVICIO..."
-          type="TECNICO_TABLERO"
-        />
       </div>
 
-      {/* Pestañas Principales (Activos vs Finalizados/Rechazados) */}
-      <div className="main-tabs-container">
-        <button 
-          className={`main-tab-btn ${seccionTab === 'activos' ? 'active' : ''}`}
-          onClick={() => cambiarSeccionTab('activos')}
-        >
-          <span className="main-tab-icon">⚡</span>
-          <span className="main-tab-text">Servicios Activos</span>
-          <span className="main-tab-count">
-            {tareasFiltradas.filter(t => ['sos', 'unassigned', 'todo', 'progress'].includes(t.estado)).length}
-          </span>
-        </button>
-        <button 
-          className={`main-tab-btn ${seccionTab === 'finalizados' ? 'active' : ''}`}
-          onClick={() => cambiarSeccionTab('finalizados')}
-        >
-          <span className="main-tab-icon">📋</span>
-          <span className="main-tab-text">Finalizados y Rechazados</span>
-          <span className="main-tab-count">
-            {tareasFiltradas.filter(t => ['done', 'rejected'].includes(t.estado)).length}
-          </span>
-        </button>
+      {/* ── BARRA UNIFICADA: BUSCADOR + FILTRO DE SECCIÓN ── */}
+      <div className="tb-toolbar sv-toolbar">
+        <div className="tb-toolbar-search">
+          <UniversalSearch
+            data={tareasData}
+            setFilteredData={setTareasFiltradas}
+            placeholder="BUSCAR POR FOLIO, CLIENTE, PROPIEDAD O DESCRIPCIÓN..."
+            type="TECNICO_TABLERO"
+          />
+        </div>
+
+        {/* Filtro: Servicios activos / Finalizados y rechazados */}
+        <div className="tb-actions-wrapper" ref={filtroSeccionRef}>
+          <button
+            type="button"
+            className={`sv-icon-btn sv-filter-btn ${filtroSeccionAbierto ? 'open' : ''} ${seccionTab !== 'activos' ? 'filtered' : ''}`}
+            onClick={() => setFiltroSeccionAbierto(v => !v)}
+            title={seccionTab === 'activos' ? 'Mostrando: servicios activos' : 'Mostrando: finalizados y rechazados'}
+            aria-label="Filtrar servicios"
+            aria-expanded={filtroSeccionAbierto}
+          >
+            <Filter size={20} />
+            {seccionTab !== 'activos' && <span className="sv-filter-indicator" />}
+          </button>
+
+          {filtroSeccionAbierto && (
+            <div className="tb-actions-menu">
+              <button
+                type="button"
+                className={`tb-actions-item ${seccionTab === 'activos' ? 'selected' : ''}`}
+                onClick={() => { cambiarSeccionTab('activos'); setFiltroSeccionAbierto(false); }}
+              >
+                <span className="tb-actions-icon orange"><Timer size={16} /></span>
+                <span>Servicios activos</span>
+                <span className="tb-actions-badge">
+                  {tareasFiltradas.filter(t => ['sos', 'unassigned', 'todo', 'progress'].includes(t.estado)).length}
+                </span>
+              </button>
+              <button
+                type="button"
+                className={`tb-actions-item ${seccionTab === 'finalizados' ? 'selected' : ''}`}
+                onClick={() => { cambiarSeccionTab('finalizados'); setFiltroSeccionAbierto(false); }}
+              >
+                <span className="tb-actions-icon green"><CheckCircle2 size={16} /></span>
+                <span>Finalizados y rechazados</span>
+                <span className="tb-actions-badge">
+                  {tareasFiltradas.filter(t => ['done', 'rejected'].includes(t.estado)).length}
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Indicador de la sección que se está viendo */}
+      <div className="sv-seccion-chip">
+        {seccionTab === 'activos' ? <Timer size={14} /> : <CheckCircle2 size={14} />}
+        <span>{seccionTab === 'activos' ? 'SERVICIOS ACTIVOS' : 'FINALIZADOS Y RECHAZADOS'}</span>
       </div>
 
       {(() => {
@@ -926,8 +868,8 @@ const VistaServiciosAdmin = () => {
         (() => {
           const activeTask = tareaSeleccionada.isBatch ? tareaSeleccionada.batchTasks[activeBatchTab] : tareaSeleccionada;
           return createPortal(
-        <div 
-          className="modal-view-overlay" 
+        <div
+          className="modal-view-overlay sv-modal-overlay"
           onClick={cerrarModal}
           style={{
             position: 'fixed',
@@ -941,7 +883,7 @@ const VistaServiciosAdmin = () => {
             backdropFilter: 'blur(4px)'
           }}
         >
-          <div className="modal-card-container" onClick={e => e.stopPropagation()} style={{ zIndex: 10000000, margin: 'auto', maxHeight: '88vh' }}>
+          <div className="modal-card-container sv-modal-card" onClick={e => e.stopPropagation()} style={{ zIndex: 10000000, margin: 'auto', maxHeight: '88vh' }}>
             <div className={`modal-top-indicator ${verBitacora ? 'is-bitacora' : activeTask.estado}`}>
                <div className="indicator-content">
                   {verBitacora && <ArrowLeft size={18} className="nav-back-icon" onClick={() => setVerBitacora(false)} />}

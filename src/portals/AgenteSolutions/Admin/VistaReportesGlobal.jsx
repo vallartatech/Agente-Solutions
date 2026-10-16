@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Shared/Header';
+import CasaLoader from '../../../components/Shared/CasaLoader';
 import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import { useAuth } from '../../../context/AuthContext';
 import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Upload, CheckCircle2, Pencil, Calendar, ClipboardList, Image as ImageIcon } from 'lucide-react';
@@ -367,23 +368,8 @@ const VistaReportesGlobal = () => {
       <Header activeModule="reportes" />
 
       <main className="rg-main-container">
-        {/* TÍTULO Y BOTÓN REGRESAR */}
+        {/* TÍTULO */}
         <div className="rg-action-bar">
-          <button
-            type="button"
-            className="rg-btn-regresar"
-            onClick={() => {
-              if (isTech) {
-                navigate('/mercado-trabajos', { state: { view: 'tablero' } });
-              } else {
-                navigate(-1);
-              }
-            }}
-          >
-            <ChevronLeft size={18} />
-            <span>REGRESAR</span>
-          </button>
-
           <div className="rg-page-title-badge">
             <FileText size={18} className="rg-title-icon" />
             <span>{pageHeading}</span>
@@ -410,9 +396,7 @@ const VistaReportesGlobal = () => {
         </div>
 
         {loading ? (
-          <div className="rg-glass-card rg-empty-state">
-            <p className="rg-empty-title">Cargando evidencias de los trabajos...</p>
-          </div>
+          <CasaLoader texto="Cargando reportes..." />
         ) : propiedadesConReportes.length === 0 ? (
           <div className="rg-glass-card rg-empty-state">
             <p className="rg-empty-title">

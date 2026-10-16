@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { 
-  ChevronLeft, 
   User, 
   LogOut, 
   CalendarDays, 
@@ -29,6 +28,7 @@ import UniversalSearch from "../../../components/Shared/UniversalSearch";
 import ModalCalendarioCliente from "../../AgenteMarket/Cliente/ModalCalendarioCliente";
 import NotificationBell from "../../../components/Shared/NotificationBell";
 import Header from "../../../components/Shared/Header";
+import CasaLoader from "../../../components/Shared/CasaLoader";
 import "../../../styles/AgenteSolutions/Admin/VistaLevantamientos.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 
@@ -356,16 +356,6 @@ const VistaLevantamientos = () => {
         
         {/* Top Action Bar */}
         <div className="lev-action-bar">
-          <button 
-            type="button"
-            className="lev-btn-regresar" 
-            onClick={() => navigate(-1)} 
-            title="Volver a la vista anterior"
-          >
-            <ChevronLeft size={19} strokeWidth={2.8} />
-            <span>REGRESAR</span>
-          </button>
-
           <div className="lev-page-title-badge">
             <ClipboardList size={18} className="lev-title-icon" />
             <span>DIRECTORIO DE LEVANTAMIENTOS</span>
@@ -449,9 +439,8 @@ const VistaLevantamientos = () => {
                 <tbody>
                   {cargando ? (
                     <tr>
-                      <td colSpan="5" className="lev-empty-state">
-                        <div className="vu-spinner" style={{ margin: '0 auto 10px auto' }}></div>
-                        <span>Cargando levantamientos...</span>
+                      <td colSpan="5">
+                        <CasaLoader texto="Cargando levantamientos..." fondoOscuro />
                       </td>
                     </tr>
                   ) : serviciosFiltrados.length > 0 ? (
@@ -559,10 +548,7 @@ const VistaLevantamientos = () => {
         {/* ── MOBILE CARDS VIEW (<= 768px) ── */}
         <div className="lev-mobile-cards-container">
           {cargando ? (
-            <div className="lev-mobile-card lev-mobile-empty-card">
-              <div className="vu-spinner" style={{ margin: '0 auto 10px auto' }}></div>
-              <span>Cargando levantamientos...</span>
-            </div>
+            <CasaLoader texto="Cargando levantamientos..." />
           ) : serviciosFiltrados.length > 0 ? (
             serviciosFiltrados.map((s) => (
               <div className="lev-mobile-card" key={`mob-${s.id}`}>

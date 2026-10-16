@@ -7,6 +7,7 @@ import UniversalSearch from "../../../components/Shared/UniversalSearch";
 import Header from "../../../components/Shared/Header"; 
 import ModalCompraEspacios from "../../../components/Shared/ModalCompraEspacios";
 import ModalRegistroInmueble from "../../../components/Shared/ModalRegistroInmueble";
+import CasaLoader from "../../../components/Shared/CasaLoader";
 import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
 import "../../../styles/AgenteSolutions/Cliente/DetallePropiedad.css";
 import "../../../styles/Shared/LiquidGlass.css";
@@ -829,9 +830,7 @@ const VistaPropiedades = () => {
 
         <div className="properties-grid">
           {cargando ? (
-            <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '50px', color: '#666' }}>
-              Cargando propiedades... ⏳
-            </div>
+            <CasaLoader texto="Cargando propiedades..." />
           ) : propiedadesFiltradas.length > 0 ? (
             propiedadesFiltradas.map((p) => (
               <div key={p.id} className="property-card" style={{ position: 'relative' }}>

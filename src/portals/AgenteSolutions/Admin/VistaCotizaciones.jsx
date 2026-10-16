@@ -6,12 +6,13 @@ import "../../../styles/AgenteSolutions/Admin/VistaCotizaciones.css";
 import "../../../styles/AgenteSolutions/Tecnico/MercadoTrabajos.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 import Header from "../../../components/Shared/Header";
+import CasaLoader from "../../../components/Shared/CasaLoader";
 import AssignWorkModal from "../../../components/Modals/AssignWorkModal";
 import { 
   Plus, Search, Filter, Calendar, 
   ArrowUpDown, FileText, Upload, 
   MoreVertical, Eye, CheckCircle, 
-  XCircle, Clock, ChevronDown, ChevronLeft, ChevronRight,
+  XCircle, Clock, ChevronDown, ChevronRight,
   User, Wrench, Truck, Layout, Home, Phone, MapPin, ShoppingCart, RefreshCw,
   MessageCircle, Maximize2, Image as ImageIcon, Send
 } from 'lucide-react';
@@ -952,34 +953,8 @@ const VistaCotizaciones = () => {
 
       <main className="cotiz-main-content" style={esCliente ? { padding: '20px 0', width: '100%', maxWidth: '1000px', margin: '0 auto' } : {}}>
         
-        {/* ── BARRA DE TÍTULO: REGRESAR + TÍTULO ── */}
+        {/* ── BARRA DE TÍTULO ── */}
         <div className="cotiz-action-bar">
-          <button
-            type="button"
-            className="cotiz-btn-regresar"
-            onClick={() => {
-              const session = JSON.parse(localStorage.getItem('agente_session') || '{}');
-              const rId = Number(session?.userData?.role_id);
-              if (rId === 2 || rId === 8) {
-                navigate('/VistaTecnico');
-                return;
-              }
-              if (esTecnico) {
-                navigate('/trabajos-tecnico');
-                return;
-              }
-              const pId = new URLSearchParams(window.location.search).get('propertyId');
-              if (pId) {
-                window.location.href = `/DetallePropiedad/${pId}`;
-              } else {
-                window.location.href = '/propiedades';
-              }
-            }}
-          >
-            <ChevronLeft size={18} />
-            <span>REGRESAR</span>
-          </button>
-
           <div className="cotiz-page-title-badge">
             <FileText size={18} className="cotiz-title-icon" />
             <span>COTIZACIONES</span>
@@ -1118,7 +1093,7 @@ const VistaCotizaciones = () => {
         {/* ── PORTAL ADMIN / TÉCNICO: UNA TARJETA POR PROPIEDAD ── */}
         {!esCliente && (
           cargando ? (
-            <div className="cotiz-glass-card cotiz-empty-state">Cargando cotizaciones...</div>
+            <CasaLoader texto="Cargando cotizaciones..." />
           ) : propiedadesCotizadas.length === 0 ? (
             <div className="cotiz-glass-card cotiz-empty-state">No se encontraron resultados</div>
           ) : (
@@ -1173,7 +1148,7 @@ const VistaCotizaciones = () => {
             </thead>
             <tbody>
   {cargando ? (
-    <tr><td colSpan="4" className="no-data">Cargando cotizaciones...</td></tr>
+    <tr><td colSpan="5"><CasaLoader texto="Cargando cotizaciones..." /></td></tr>
   ) : cotizacionesVisibles.length > 0 ? (
     cotizacionesVisibles
       .map((c) => (
