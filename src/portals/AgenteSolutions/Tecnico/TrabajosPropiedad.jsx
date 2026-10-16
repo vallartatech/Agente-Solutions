@@ -227,17 +227,7 @@ const TrabajoPropiedad = () => {
       // Registrar dónde se finalizó (solo si el técnico aceptó compartir su ubicación)
       reportarUbicacion('job_update', Number(realId) || null);
 
-      // Enviar notificación al Admin
-      try {
-        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/notifications/send-to-admin`, {
-          title: "Trabajo Finalizado",
-          message: `El Técnico ${user?.name || ''} finalizó el trabajo en la propiedad ${data?.propiedad_nombre || ''}.`,
-          type: "work_order_finished",
-          work_order_id: realId
-        });
-      } catch (notifError) {
-        console.warn("No se pudo enviar la notificación o el backend ya se encarga de esto:", notifError);
-      }
+      // El aviso al admin (campanita + push) lo envía el backend al cambiar el estado a "Listo"
 
       setShowModalFinalizar(true);
     } catch (error) {

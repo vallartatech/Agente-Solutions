@@ -1724,24 +1724,7 @@ const MercadoTrabajos = () => {
         console.warn("Error updating status:", err1);
       }
 
-      try {
-        await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/notifications/send-to-admin`,
-          {
-            title: "Trabajo Finalizado con Evidencias",
-            message: `El Técnico ${authUser?.name || ''} finalizó el trabajo en ${selectedBoardJob.property_name || selectedBoardJob.lugar || ''} con ${photoCount} evidencias registradas.`,
-            type: "work_order_finished",
-            data: {
-              work_order_id: selectedBoardJob.id,
-              technician_id: authUser?.id,
-              property: selectedBoardJob.property_name || selectedBoardJob.lugar || ''
-            }
-          },
-          { headers }
-        );
-      } catch (err2) {
-        console.warn("Error sending notification:", err2);
-      }
+      // El aviso al admin (campanita + push) lo envía el backend al cambiar el estado a "Listo"
 
       setAcceptedJobs(prev => prev.map(j => j.id === selectedBoardJob.id ? { ...j, status: 'Listo' } : j));
       handleSetStage(6);
