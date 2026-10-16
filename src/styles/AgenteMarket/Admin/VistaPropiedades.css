@@ -65,32 +65,40 @@
 
 /* Botón 1: Acción NUEVA PROPIEDAD (+) */
 .btn-add-action-bar {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 4px 14px rgba(242, 101, 34, 0.35);
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 0 !important;
+    border-radius: 14px !important;
+    background: linear-gradient(135deg, #f26522 0%, #ea580c 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 4px 14px rgba(242, 101, 34, 0.35) !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    line-height: 0 !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .btn-add-action-bar:hover {
-    background: linear-gradient(135deg, #ff7a3d 0%, #f26522 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(242, 101, 34, 0.48);
+    background: linear-gradient(135deg, #ff7a3d 0%, #f26522 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 18px rgba(242, 101, 34, 0.48) !important;
 }
 
 .btn-add-action-bar svg {
     color: #ffffff !important;
     stroke: #ffffff !important;
-    stroke-width: 3px !important;
+    stroke-width: 3.5px !important;
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    flex-shrink: 0 !important;
     display: block !important;
 }
 
@@ -349,10 +357,19 @@
     }
 
     .btn-add-action-bar {
-        width: 40px;
-        height: 40px;
-        min-width: 40px;
-        border-radius: 12px;
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        padding: 0 !important;
+        border-radius: 12px !important;
+    }
+
+    .btn-add-action-bar svg {
+        width: 22px !important;
+        height: 22px !important;
+        min-width: 22px !important;
+        min-height: 22px !important;
     }
 
     .cat-btn-filter {
@@ -377,10 +394,19 @@
     }
 
     .btn-add-action-bar {
-        width: 38px;
-        height: 38px;
-        min-width: 38px;
-        border-radius: 10px;
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        min-height: 38px !important;
+        padding: 0 !important;
+        border-radius: 10px !important;
+    }
+
+    .btn-add-action-bar svg {
+        width: 20px !important;
+        height: 20px !important;
+        min-width: 20px !important;
+        min-height: 20px !important;
     }
 
     .cat-btn-filter {

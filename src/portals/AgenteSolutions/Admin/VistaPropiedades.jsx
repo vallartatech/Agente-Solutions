@@ -702,8 +702,9 @@ const VistaPropiedades = () => {
                   onClick={() => setMostrarModalCompraEspacios(true)}
                   title="Comprar Espacio"
                   type="button"
+                  style={{ padding: 0 }}
                 >
-                  <Plus size={22} color="#ffffff" strokeWidth={3} />
+                  <Plus size={24} color="#ffffff" strokeWidth={3.5} />
                 </button>
               ) : (
                 <button
@@ -711,8 +712,9 @@ const VistaPropiedades = () => {
                   onClick={() => setMostrarModalRegistroPropiedad(true)}
                   title="Nueva Propiedad"
                   type="button"
+                  style={{ padding: 0 }}
                 >
-                  <Plus size={22} color="#ffffff" strokeWidth={3} />
+                  <Plus size={24} color="#ffffff" strokeWidth={3.5} />
                 </button>
               )}
               <button
