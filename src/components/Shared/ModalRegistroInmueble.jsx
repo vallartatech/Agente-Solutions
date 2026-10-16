@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/AgenteMarket/Cliente/ModalRegistroInmueble.css';
+import '../../styles/Shared/LiquidGlass.css';
 
 const TIPOS_INMUEBLE = [
   { value: 'Casa', label: 'CASA' },

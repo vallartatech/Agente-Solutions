@@ -40,6 +40,11 @@
 
 /* UniversalSearch styles are now handled globally in UniversalSearch.css */
 
+/* Barra unificada (estilos en Shared/ToolbarAcciones.css) */
+.search-container-center.tb-toolbar {
+    max-width: 520px;
+}
+
 .btn-add-circle {
     display: none !important;
 }
@@ -789,6 +794,125 @@
     opacity: 0;
     visibility: hidden;
     transform: translateY(10px);
+}
+
+/* --- MENÚ ⋮ DE TARJETA (SOLO MÓVIL) --- */
+.btn-card-menu {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    /* En móvil no hay hover: ocultamos el overlay y usamos el menú ⋮ */
+    .property-overlay {
+        display: none !important;
+    }
+
+    .property-card:hover {
+        transform: none;
+    }
+
+    .property-card:hover .property-image {
+        filter: none;
+    }
+
+    .property-card:hover .property-name-bar {
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+    }
+
+    .property-name-bar {
+        padding: 6px 52px;
+    }
+
+    .btn-card-menu {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .btn-card-menu.active,
+    .btn-card-menu:active {
+        background: #f26522;
+    }
+}
+
+.card-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    background: transparent;
+}
+
+.card-menu-dropdown {
+    position: fixed;
+    z-index: 9999;
+    min-width: 240px;
+    max-width: calc(100vw - 32px);
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
+    padding: 6px;
+    animation: cardMenuIn 0.15s ease-out;
+}
+
+@keyframes cardMenuIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.card-menu-title {
+    padding: 8px 12px 6px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 12px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #1e293b;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.card-menu-item:active {
+    background: #f1f5f9;
+}
+
+.card-menu-item.danger {
+    color: #ef4444;
+}
+
+.card-menu-divider {
+    height: 1px;
+    margin: 4px 8px;
+    background: #e2e8f0;
 }
 
 /* --- ESTILOS COMPATIBLES CON EL TEMA SAAS DE VISTA USUARIOS (vu-root) --- */

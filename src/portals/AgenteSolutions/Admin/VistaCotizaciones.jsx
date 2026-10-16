@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import "../../../styles/AgenteSolutions/Admin/VistaCotizaciones.css";
 import "../../../styles/AgenteSolutions/Tecnico/MercadoTrabajos.css";
+import "../../../styles/Shared/ToolbarAcciones.css";
 import Header from "../../../components/Shared/Header";
 import AssignWorkModal from "../../../components/Modals/AssignWorkModal";
 import { 
   Plus, Search, Filter, Calendar, 
   ArrowUpDown, FileText, Upload, 
   MoreVertical, Eye, CheckCircle, 
-  XCircle, Clock, ChevronDown, ChevronLeft,
+  XCircle, Clock, ChevronDown, ChevronLeft, ChevronRight,
   User, Wrench, Truck, Layout, Home, Phone, MapPin, ShoppingCart, RefreshCw,
   MessageCircle, Maximize2, Image as ImageIcon, Send
 } from 'lucide-react';
@@ -138,7 +140,28 @@ const VistaCotizaciones = () => {
   const [filtroOrigen, setFiltroOrigen] = useState('todos'); // 'todos' | 'admin' | 'tecnicos' | 'proveedores'
   const [cotizacionesFiltradas, setCotizacionesFiltradas] = useState([]);
   const [esTecnico, setEsTecnico] = useState(false);
-  
+
+  const [propiedadCotizKey, setPropiedadCotizKey] = useState(null);
+
+  // MENÚ DE FILTROS JUNTO AL BUSCADOR (estado, origen, tipo y orden por monto)
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+  const filtrosRef = useRef(null);
+
+  useEffect(() => {
+    if (!filtrosAbiertos) return;
+    const handleClickOutside = (e) => {
+      if (filtrosRef.current && !filtrosRef.current.contains(e.target)) {
+        setFiltrosAbiertos(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [filtrosAbiertos]);
+
   const [mensajeChat, setMensajeChat] = useState('');
   const [enviandoMensaje, setEnviandoMensaje] = useState(false);
 
@@ -740,8 +763,186 @@ const VistaCotizaciones = () => {
     );
   };
 
+  // Cotizaciones visibles con filtros de tipo/origen y orden por monto aplicados
+  const cotizacionesVisibles = cotizacionesFiltradas
+    .filter(c => {
+      const coincideTipo =
+        filtroTipo === 'todos' ||
+        (filtroTipo === 'manual' && c.type !== 'archivo') ||
+        (filtroTipo === 'archivo' && c.type === 'archivo');
+
+      const coincideOrigen =
+        filtroOrigen === 'todos' ||
+        (filtroOrigen === 'admin' && (c.created_by_role === 'Admin' || (!c.created_by_role && !c.tecnico))) ||
+        (filtroOrigen === 'tecnicos' && c.created_by_role === 'Técnico') ||
+        (filtroOrigen === 'proveedores' && c.created_by_role === 'Proveedor');
+
+      return coincideTipo && coincideOrigen;
+    })
+    .sort((a, b) => {
+      if (!ordenMonto) return 0;
+      const valA = parseFloat(a.total) || 0;
+      const valB = parseFloat(b.total) || 0;
+      return ordenMonto === 'asc' ? valA - valB : valB - valA;
+    });
+
+  // Agrupar por propiedad: una tarjeta por propiedad con sus cotizaciones
+  const propiedadesCotizadas = Object.values(
+    cotizacionesVisibles.reduce((acc, c) => {
+      const nombre = c.propiedad_nombre && c.propiedad_nombre !== 'N/A' ? c.propiedad_nombre : 'SIN PROPIEDAD';
+      const key = `${nombre}|${c.cliente || ''}`;
+      if (!acc[key]) {
+        acc[key] = {
+          key,
+          nombre,
+          cliente: c.cliente,
+          telefono: c.cliente_telefono || c.telefono_cliente || c.telefono || null,
+          direccion: c.propiedad_direccion || null,
+          foto: null,
+          cotizaciones: []
+        };
+      }
+      if (!acc[key].foto && c.foto_fachada) acc[key].foto = c.foto_fachada;
+      acc[key].cotizaciones.push(c);
+      return acc;
+    }, {})
+  );
+
+  const propiedadCotizSeleccionada = propiedadesCotizadas.find(p => p.key === propiedadCotizKey) || null;
+
+  const formatearMonto = (c) => c.type === 'archivo'
+    ? 'Ver Archivo'
+    : `$${calcularMontoFinalNum(c).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const renderEstadoBadge = (c) => {
+    const statusLower = String(c.status || c.estado || '').toLowerCase();
+    if (statusLower.includes('recotiza') || c.recotizacionSolicitada) {
+      return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b', fontSize: '0.65rem', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>🔄 RECOTIZACIÓN SOLICITADA</span>;
+    }
+    if ((c.cash_requested && !c.cash_confirmed) || statusLower.includes('efectivo solicitado')) {
+      return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b', fontSize: '0.65rem', fontWeight: 'bold' }}>💵 EFECTIVO PENDIENTE</span>;
+    }
+    if (c.cash_confirmed || statusLower.includes('pagado (efectivo)') || statusLower.includes('anticipo pagado')) {
+      if (statusLower.includes('anticipo') || c.cash_amount_type === 'advance') {
+        return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#dcfce7', color: '#047857', border: '1px solid #10b981', fontSize: '0.65rem', fontWeight: '800' }}>💵 ANTICIPO 60% (EFECTIVO)</span>;
+      }
+      return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#dcfce7', color: '#047857', border: '1px solid #10b981', fontSize: '0.65rem', fontWeight: '800' }}>💵 PAGADA EN EFECTIVO</span>;
+    }
+    if (statusLower.includes('rechazad')) {
+      return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#fee2e2', color: '#ef4444', fontSize: '0.65rem', fontWeight: 'bold' }}>RECHAZADA</span>;
+    }
+    if (statusLower.includes('pagad') || statusLower.includes('pago en revisión')) {
+      return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#dcfce7', color: '#16a34a', fontSize: '0.65rem', fontWeight: 'bold' }}>PAGADA</span>;
+    }
+    if (statusLower.includes('por pagar') || statusLower.includes('aprobad') || statusLower === 'procesada por admin' || statusLower.includes('aceptad') || statusLower.includes('validado')) {
+      return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#fef3c7', color: '#d97706', fontSize: '0.65rem', fontWeight: 'bold' }}>POR PAGAR</span>;
+    }
+    if (isCotizacionEnCarrito(c)) {
+      return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#dcfce7', color: '#16a34a', border: '1px solid #10b981', fontSize: '0.65rem', fontWeight: 'bold' }}>🛒 EN CARRITO</span>;
+    }
+    return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#e0f2fe', color: '#0284c7', fontSize: '0.65rem', fontWeight: 'bold' }}>PENDIENTE</span>;
+  };
+
+  const renderLoteBadge = (c) => (c.is_unified_batch || (c.related_service_ids && c.related_service_ids.length > 0) || (typeof c.concept === 'string' ? c.concept.includes('isUnifiedBatch') : c.concept?.isUnifiedBatch)) && (
+    <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#1e293b', color: '#fff', border: '1px solid #F26522', fontSize: '0.65rem', fontWeight: '800', marginTop: '2px' }}>
+      📦 UNIFICADA (LOTE)
+    </span>
+  );
+
+  const renderOrigenTag = (c) => c.created_by_role === 'Técnico' ? (
+    <div className="origin-tag-mini">
+      <Wrench size={10} /> TÉCNICO: {c.tecnico}
+    </div>
+  ) : (
+    <div className="origin-tag-mini admin">
+      <User size={10} /> ADMINISTRATIVO
+    </div>
+  );
+
+  // Botones de acción de una cotización. "antesDeModal" cierra el panel de propiedad
+  // antes de abrir modales que no son el detalle (crear / asignar).
+  const renderAcciones = (c, antesDeModal = () => {}) => (
+    <div className="cotiz-actions-cell">
+      <button
+        className={`btn-view-detail ${isCotizacionEnCarrito(c) ? 'en-carrito' : ''}`}
+        onClick={() => setCotizacionSeleccionada(c)}
+        style={isCotizacionEnCarrito(c) ? {
+          background: '#10b981',
+          boxShadow: '0 4px 10px rgba(16, 185, 129, 0.3)',
+          fontSize: 'clamp(0.7rem, 2vw, 0.9rem)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px'
+        } : { fontSize: 'clamp(0.7rem, 2vw, 0.9rem)' }}
+      >
+        {isCotizacionEnCarrito(c) ? '🛒 EN CARRITO' : '👁️ VER'}
+      </button>
+      {/* Botón para recotizar si fue solicitada recotización */}
+      {!esCliente && (c.status?.toLowerCase().includes('recotiza') || c.estado?.toLowerCase().includes('recotiza') || c.recotizacionSolicitada) && (
+        <button
+          className="btn-view-detail"
+          style={{ background: '#f26624', color: 'white', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+          onClick={() => {
+            antesDeModal();
+            setCotizacionParaAsignar(c);
+            setShowCreateModal(true);
+          }}
+        >
+          <RefreshCw size={13} /> RECOTIZAR
+        </button>
+      )}
+      {/* Botón para editar si está rechazada */}
+      {!esCliente && c.status === 'Rechazado' && (
+        <button
+          className="btn-view-detail"
+          style={{ background: '#3b82f6', color: 'white', border: 'none' }}
+          onClick={() => {
+            antesDeModal();
+            setCotizacionParaAsignar(c);
+            setShowCreateModal(true);
+          }}
+        >
+          ✏️ RE-EDITAR
+        </button>
+      )}
+      {/* Solo mostrar acciones de asignación si es admin y está aprobada */}
+      {!esCliente && !esTecnico && filtro === 'Aprobado' && (
+        c.tecnico ? (
+          // Mostrar cuando YA está asignado
+          <>
+            <span style={{ fontWeight: 'bold', color: '#2e7d32', margin: '0 2px', fontSize: 'clamp(0.7rem, 1.5vw, 0.8rem)' }}>✓ Asignado</span>
+            <button
+              className="btn-view-detail"
+              style={{ background: '#fb8c00', fontSize: 'clamp(0.7rem, 2vw, 0.9rem)' }}
+              onClick={() => {
+                antesDeModal();
+                setCotizacionParaAsignar(c);
+                setShowAssignModal(true);
+              }}
+            >
+              🔄
+            </button>
+          </>
+        ) : (
+          // Mostrar cuando NO está asignado
+          <button
+            className="btn-view-detail"
+            style={{ background: '#2e7d32', fontSize: 'clamp(0.7rem, 2vw, 0.9rem)' }}
+            onClick={() => {
+              antesDeModal();
+              setCotizacionParaAsignar(c);
+              setShowAssignModal(true);
+            }}
+          >
+            🛠️
+          </button>
+        )
+      )}
+    </div>
+  );
+
   return (
-    <div className="cotiz-page">
+    <div className={`cotiz-page ${!esCliente ? 'cotiz-glass-page' : ''}`}>
       
       {/* 👇 AQUÍ ESTÁ EL NUEVO HEADER GLOBAL 👇 */}
       {!esCliente && <Header activeModule="cotizaciones" titulo="COTIZACIONES" />}
@@ -751,57 +952,45 @@ const VistaCotizaciones = () => {
 
       <main className="cotiz-main-content" style={esCliente ? { padding: '20px 0', width: '100%', maxWidth: '1000px', margin: '0 auto' } : {}}>
         
-        <div className="cotiz-header-actions" style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'stretch', width: '100%' }}>
-          
-          <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-            <button 
-              onClick={() => {
-                const session = JSON.parse(localStorage.getItem('agente_session') || '{}');
-                const rId = Number(session?.userData?.role_id);
-                if (rId === 2 || rId === 8) {
-                  navigate('/VistaTecnico');
-                  return;
-                }
-                if (esTecnico) {
-                  navigate('/trabajos-tecnico');
-                  return;
-                }
-                const pId = new URLSearchParams(window.location.search).get('propertyId');
-                if (pId) {
-                  window.location.href = `/DetallePropiedad/${pId}`;
-                } else {
-                  window.location.href = '/propiedades';
-                }
-              }} 
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#F26522', color: 'white', padding: '8px 25px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
-            >
-              <ChevronLeft size={18} />
-              <span>REGRESAR</span>
-            </button>
+        {/* ── BARRA DE TÍTULO: REGRESAR + TÍTULO ── */}
+        <div className="cotiz-action-bar">
+          <button
+            type="button"
+            className="cotiz-btn-regresar"
+            onClick={() => {
+              const session = JSON.parse(localStorage.getItem('agente_session') || '{}');
+              const rId = Number(session?.userData?.role_id);
+              if (rId === 2 || rId === 8) {
+                navigate('/VistaTecnico');
+                return;
+              }
+              if (esTecnico) {
+                navigate('/trabajos-tecnico');
+                return;
+              }
+              const pId = new URLSearchParams(window.location.search).get('propertyId');
+              if (pId) {
+                window.location.href = `/DetallePropiedad/${pId}`;
+              } else {
+                window.location.href = '/propiedades';
+              }
+            }}
+          >
+            <ChevronLeft size={18} />
+            <span>REGRESAR</span>
+          </button>
 
-            {!esCliente && (
-              (() => {
-                const session = JSON.parse(localStorage.getItem('agente_session') || '{}');
-                if (session?.userData?.role_id === 8) {
-                  return (
-                    <button className="btn-new-cotiz-v2" onClick={() => navigate('/mercado-trabajos')}>
-                      <Plus size={18} />
-                      <span>EXPLORAR RED DE TRABAJOS</span>
-                    </button>
-                  );
-                }
-                return (
-                  <button className="btn-new-cotiz-v2" onClick={() => setShowCreateModal(true)}>
-                    <Plus size={18} />
-                    <span>NUEVA COTIZACIÓN</span>
-                  </button>
-                );
-              })()
-            )}
+          <div className="cotiz-page-title-badge">
+            <FileText size={18} className="cotiz-title-icon" />
+            <span>COTIZACIONES</span>
+            <span className="cotiz-count-pill">{cotizaciones.length}</span>
           </div>
+        </div>
 
-          <div className="search-wrapper-full" style={{ width: '100%' }}>
-            <UniversalSearch 
+        {/* ── BARRA UNIFICADA: BUSCADOR + FILTROS + NUEVA COTIZACIÓN ── */}
+        <div className="tb-toolbar cotiz-toolbar">
+          <div className="tb-toolbar-search">
+            <UniversalSearch
               data={(() => {
                 const searchParams = new URLSearchParams(location.search);
                 const filterPropId = searchParams.get('propertyId');
@@ -809,79 +998,168 @@ const VistaCotizaciones = () => {
                 return cotizaciones.filter(c => String(c.property_id) === String(filterPropId) || String(c.propiedad_id) === String(filterPropId) || String(c.propertyId) === String(filterPropId));
               })()}
               setFilteredData={setCotizacionesFiltradas}
-              placeholder="Buscar por folio, cliente, propiedad, técnico, dirección o teléfono..."
+              placeholder="BUSCAR POR FOLIO, CLIENTE, PROPIEDAD, TÉCNICO..."
               filtroActual={filtro}
               type="COTIZACIONES"
             />
           </div>
-        </div>
 
-        <div className="cotiz-filters-row">
-          <div className="cotiz-tabs-pills">
-            <button className={`cotiz-pill ${filtro === 'Todas' ? 'active' : ''}`} onClick={() => setFiltro('Todas')}>
-              <Clock size={16} /> TODAS
-            </button>
-            <button className={`cotiz-pill ${filtro === 'Por Pagar' ? 'active' : ''}`} onClick={() => setFiltro('Por Pagar')}>
-              <Clock size={16} /> POR PAGAR
-            </button>
-            <button className={`cotiz-pill ${filtro === 'Rechazadas' ? 'active' : ''}`} onClick={() => setFiltro('Rechazadas')}>
-              <XCircle size={16} /> RECHAZADAS
-            </button>
-            <button className={`cotiz-pill ${filtro === 'Pagadas' ? 'active' : ''}`} onClick={() => setFiltro('Pagadas')} style={{ background: filtro === 'Pagadas' ? '#e8f5e9' : 'transparent', color: filtro === 'Pagadas' ? '#1b8a5a' : '#64748b', borderColor: filtro === 'Pagadas' ? '#c8e6c9' : '#e2e8f0' }}>
-              <CheckCircle size={16} /> PAGADAS
-            </button>
-            <button 
-              className={`cotiz-pill ${filtro === 'Recotizaciones' ? 'active' : ''}`} 
-              onClick={() => setFiltro('Recotizaciones')} 
-              style={{ 
-                background: filtro === 'Recotizaciones' ? '#fff7ed' : 'transparent', 
-                color: filtro === 'Recotizaciones' ? '#f26624' : '#64748b', 
-                borderColor: filtro === 'Recotizaciones' ? '#ffedd5' : '#e2e8f0',
-                fontWeight: 'bold',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <RefreshCw size={16} /> RECOTIZACIONES
-            </button>
+          {/* Botón Filtros con menú desplegable */}
+          <div className="tb-actions-wrapper" ref={filtrosRef}>
+            {(() => {
+              const hayFiltros = filtro !== 'Todas' || filtroOrigen !== 'todos' || filtroTipo !== 'todos' || ordenMonto !== null;
+              return (
+                <button
+                  type="button"
+                  className={`cotiz-filter-btn ${filtrosAbiertos ? 'open' : ''} ${hayFiltros ? 'filtered' : ''}`}
+                  onClick={() => setFiltrosAbiertos(v => !v)}
+                  title="Filtrar cotizaciones"
+                  aria-label="Filtrar cotizaciones"
+                  aria-expanded={filtrosAbiertos}
+                >
+                  <Filter size={20} />
+                  {hayFiltros && <span className="cotiz-filter-indicator" />}
+                </button>
+              );
+            })()}
+
+            {filtrosAbiertos && (
+              <div className="tb-actions-menu cotiz-filter-menu">
+                <span className="cotiz-filter-section">ESTADO</span>
+                {[
+                  { value: 'Todas', label: 'Todas', icon: <Layout size={15} /> },
+                  { value: 'Por Pagar', label: 'Por pagar', icon: <Clock size={15} /> },
+                  { value: 'Rechazadas', label: 'Rechazadas', icon: <XCircle size={15} /> },
+                  { value: 'Pagadas', label: 'Pagadas', icon: <CheckCircle size={15} /> },
+                  { value: 'Recotizaciones', label: 'Recotizaciones', icon: <RefreshCw size={15} /> },
+                ].map(op => (
+                  <button
+                    key={op.value}
+                    type="button"
+                    className={`tb-actions-item ${filtro === op.value ? 'selected' : ''}`}
+                    onClick={() => { setFiltro(op.value); setFiltrosAbiertos(false); }}
+                  >
+                    <span className="cotiz-filter-icon">{op.icon}</span>
+                    <span>{op.label}</span>
+                  </button>
+                ))}
+
+                {!esCliente && !esTecnico && (
+                  <>
+                    <span className="cotiz-filter-section">CREADA POR</span>
+                    {[
+                      { value: 'todos', label: 'Todos', icon: <Layout size={15} /> },
+                      { value: 'admin', label: 'Admin', icon: <User size={15} /> },
+                      { value: 'tecnicos', label: 'Técnicos', icon: <Wrench size={15} /> },
+                      { value: 'proveedores', label: 'Proveedores', icon: <Truck size={15} /> },
+                    ].map(op => (
+                      <button
+                        key={op.value}
+                        type="button"
+                        className={`tb-actions-item ${filtroOrigen === op.value ? 'selected' : ''}`}
+                        onClick={() => { setFiltroOrigen(op.value); setFiltrosAbiertos(false); }}
+                      >
+                        <span className="cotiz-filter-icon">{op.icon}</span>
+                        <span>{op.label}</span>
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                <span className="cotiz-filter-section">TIPO Y ORDEN</span>
+                <div className="cotiz-filter-inline">
+                  {[
+                    { value: 'todos', label: 'Todos' },
+                    { value: 'manual', label: 'Manual' },
+                    { value: 'archivo', label: 'Archivo' },
+                  ].map(op => (
+                    <button
+                      key={op.value}
+                      type="button"
+                      className={`cotiz-filter-chip ${filtroTipo === op.value ? 'selected' : ''}`}
+                      onClick={() => setFiltroTipo(op.value)}
+                    >
+                      {op.label}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className={`tb-actions-item ${ordenMonto ? 'selected' : ''}`}
+                  onClick={() => setOrdenMonto(prev => prev === 'asc' ? 'desc' : (prev === 'desc' ? null : 'asc'))}
+                >
+                  <span className="cotiz-filter-icon"><ArrowUpDown size={15} /></span>
+                  <span>Monto {ordenMonto === 'asc' ? '(Min-Max)' : (ordenMonto === 'desc' ? '(Max-Min)' : '(sin orden)')}</span>
+                </button>
+              </div>
+            )}
           </div>
 
-          {!esCliente && !esTecnico && (
-            <div className="cotiz-tabs-pills origin-pills">
-              <button className={`cotiz-pill mini ${filtroOrigen === 'todos' ? 'active' : ''}`} onClick={() => setFiltroOrigen('todos')}>TODOS</button>
-              <button className={`cotiz-pill mini ${filtroOrigen === 'admin' ? 'active' : ''}`} onClick={() => setFiltroOrigen('admin')}>
-                 <User size={14} /> ADMIN
-              </button>
-              <button className={`cotiz-pill mini ${filtroOrigen === 'tecnicos' ? 'active' : ''}`} onClick={() => setFiltroOrigen('tecnicos')}>
-                 <Wrench size={14} /> TÉCNICOS
-              </button>
-              <button className={`cotiz-pill mini ${filtroOrigen === 'proveedores' ? 'active' : ''}`} onClick={() => setFiltroOrigen('proveedores')}>
-                 <Truck size={14} /> PROVEEDORES
-              </button>
-            </div>
+          {/* Botón Nueva cotización (o Explorar red para técnicos de la red) */}
+          {!esCliente && (
+            (() => {
+              const session = JSON.parse(localStorage.getItem('agente_session') || '{}');
+              const esRed = session?.userData?.role_id === 8;
+              return (
+                <button
+                  type="button"
+                  className="tb-actions-btn"
+                  onClick={() => esRed ? navigate('/mercado-trabajos') : setShowCreateModal(true)}
+                  title={esRed ? 'Explorar red de trabajos' : 'Nueva cotización'}
+                  aria-label={esRed ? 'Explorar red de trabajos' : 'Nueva cotización'}
+                >
+                  <Plus size={20} />
+                </button>
+              );
+            })()
           )}
-
-          <div className="cotiz-advanced-filters">
-            <div className="filter-group">
-              <Filter size={14} />
-              <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
-                <option value="todos">Todos los tipos</option>
-                <option value="manual">Manual</option>
-                <option value="archivo">Archivo</option>
-              </select>
-            </div>
-            
-            <button 
-              className={`sort-btn ${ordenMonto ? 'active' : ''}`} 
-              onClick={() => setOrdenMonto(prev => prev === 'asc' ? 'desc' : (prev === 'desc' ? null : 'asc'))}
-            >
-              <ArrowUpDown size={14} />
-              Monto {ordenMonto === 'asc' ? '(Min-Max)' : (ordenMonto === 'desc' ? '(Max-Min)' : '')}
-            </button>
-          </div>
         </div>
 
+        {/* ── PORTAL ADMIN / TÉCNICO: UNA TARJETA POR PROPIEDAD ── */}
+        {!esCliente && (
+          cargando ? (
+            <div className="cotiz-glass-card cotiz-empty-state">Cargando cotizaciones...</div>
+          ) : propiedadesCotizadas.length === 0 ? (
+            <div className="cotiz-glass-card cotiz-empty-state">No se encontraron resultados</div>
+          ) : (
+            <div className="cotiz-prop-grid">
+              {propiedadesCotizadas.map(prop => (
+                <button
+                  key={prop.key}
+                  type="button"
+                  className="cotiz-glass-card cotiz-prop-card"
+                  onClick={() => setPropiedadCotizKey(prop.key)}
+                >
+                  <div className="cotiz-prop-photo">
+                    {prop.foto ? (
+                      <img src={prop.foto} alt={prop.nombre} />
+                    ) : (
+                      <div className="cotiz-prop-photo-empty"><Home size={34} /></div>
+                    )}
+                    <span className="cotiz-prop-count">
+                      <FileText size={13} /> {prop.cotizaciones.length} {prop.cotizaciones.length === 1 ? 'COTIZACIÓN' : 'COTIZACIONES'}
+                    </span>
+                  </div>
+                  <div className="cotiz-prop-body">
+                    <div className="cotiz-prop-name">
+                      <Home size={17} />
+                      <h3>{prop.nombre}</h3>
+                    </div>
+                    <div className="cotiz-prop-meta">
+                      <span><User size={13} /> {prop.cliente || 'Sin cliente'}</span>
+                      {prop.telefono && <span><Phone size={13} /> {prop.telefono}</span>}
+                    </div>
+                    <span className="cotiz-prop-cta">
+                      Ver cotizaciones <ChevronRight size={16} />
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )
+        )}
+
+        {esCliente && (
         <div className="cotiz-table-container" style={esCliente ? { width: '100%' } : {}}>
           <table className="cotiz-data-table">
             <thead>
@@ -896,66 +1174,15 @@ const VistaCotizaciones = () => {
             <tbody>
   {cargando ? (
     <tr><td colSpan="4" className="no-data">Cargando cotizaciones...</td></tr>
-  ) : cotizacionesFiltradas.length > 0 ? (
-    cotizacionesFiltradas
-      .filter(c => {
-        const coincideTipo = 
-          filtroTipo === 'todos' || 
-          (filtroTipo === 'manual' && c.type !== 'archivo') || 
-          (filtroTipo === 'archivo' && c.type === 'archivo');
-          
-        const coincideOrigen = 
-          filtroOrigen === 'todos' ||
-          (filtroOrigen === 'admin' && (c.created_by_role === 'Admin' || (!c.created_by_role && !c.tecnico))) ||
-          (filtroOrigen === 'tecnicos' && c.created_by_role === 'Técnico') ||
-          (filtroOrigen === 'proveedores' && c.created_by_role === 'Proveedor');
-
-        return coincideTipo && coincideOrigen;
-      })
-      .sort((a, b) => {
-        if (!ordenMonto) return 0;
-        const valA = parseFloat(a.total) || 0;
-        const valB = parseFloat(b.total) || 0;
-        return ordenMonto === 'asc' ? valA - valB : valB - valA;
-      })
+  ) : cotizacionesVisibles.length > 0 ? (
+    cotizacionesVisibles
       .map((c) => (
       <tr key={c.id} style={c.status === 'Rechazado' ? { backgroundColor: '#fff5f5', borderLeft: '4px solid #ef4444' } : {}}>
         <td className="bold-folio" data-label="FOLIO">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
             <span>{c.folio}</span>
-            {(() => {
-              const statusLower = String(c.status || c.estado || '').toLowerCase();
-              if (statusLower.includes('recotiza') || c.recotizacionSolicitada) {
-                return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b', fontSize: '0.65rem', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>🔄 RECOTIZACIÓN SOLICITADA</span>;
-              }
-              if ((c.cash_requested && !c.cash_confirmed) || statusLower.includes('efectivo solicitado')) {
-                return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b', fontSize: '0.65rem', fontWeight: 'bold' }}>💵 EFECTIVO PENDIENTE</span>;
-              }
-              if (c.cash_confirmed || statusLower.includes('pagado (efectivo)') || statusLower.includes('anticipo pagado')) {
-                if (statusLower.includes('anticipo') || c.cash_amount_type === 'advance') {
-                  return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#dcfce7', color: '#047857', border: '1px solid #10b981', fontSize: '0.65rem', fontWeight: '800' }}>💵 ANTICIPO 60% (EFECTIVO)</span>;
-                }
-                return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#dcfce7', color: '#047857', border: '1px solid #10b981', fontSize: '0.65rem', fontWeight: '800' }}>💵 PAGADA EN EFECTIVO</span>;
-              }
-              if (statusLower.includes('rechazad')) {
-                return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#fee2e2', color: '#ef4444', fontSize: '0.65rem', fontWeight: 'bold' }}>RECHAZADA</span>;
-              }
-              if (statusLower.includes('pagad') || statusLower.includes('pago en revisión')) {
-                return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#dcfce7', color: '#16a34a', fontSize: '0.65rem', fontWeight: 'bold' }}>PAGADA</span>;
-              }
-              if (statusLower.includes('por pagar') || statusLower.includes('aprobad') || statusLower === 'procesada por admin' || statusLower.includes('aceptad') || statusLower.includes('validado')) {
-                return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#fef3c7', color: '#d97706', fontSize: '0.65rem', fontWeight: 'bold' }}>POR PAGAR</span>;
-              }
-              if (isCotizacionEnCarrito(c)) {
-                return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#dcfce7', color: '#16a34a', border: '1px solid #10b981', fontSize: '0.65rem', fontWeight: 'bold' }}>🛒 EN CARRITO</span>;
-              }
-              return <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#e0f2fe', color: '#0284c7', fontSize: '0.65rem', fontWeight: 'bold' }}>PENDIENTE</span>;
-            })()}
-            {(c.is_unified_batch || (c.related_service_ids && c.related_service_ids.length > 0) || (typeof c.concept === 'string' ? c.concept.includes('isUnifiedBatch') : c.concept?.isUnifiedBatch)) && (
-              <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#1e293b', color: '#fff', border: '1px solid #F26522', fontSize: '0.65rem', fontWeight: '800', marginTop: '2px' }}>
-                📦 UNIFICADA (LOTE)
-              </span>
-            )}
+            {renderEstadoBadge(c)}
+            {renderLoteBadge(c)}
             {c.propiedad_nombre && c.propiedad_nombre !== 'N/A' && (
               <span style={{ fontSize: '0.78rem', color: '#f26624', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                 <Home size={12} /> {c.propiedad_nombre}
@@ -980,15 +1207,7 @@ const VistaCotizaciones = () => {
                   </span>
                 )}
               </div>
-              {c.created_by_role === 'Técnico' ? (
-                <div className="origin-tag-mini">
-                  <Wrench size={10} /> TÉCNICO: {c.tecnico}
-                </div>
-              ) : (
-                <div className="origin-tag-mini admin">
-                  <User size={10} /> ADMINISTRATIVO
-                </div>
-              )}
+              {renderOrigenTag(c)}
             </div>
           </td>
         )}
@@ -996,79 +1215,7 @@ const VistaCotizaciones = () => {
           {c.type === 'archivo' ? 'Ver Archivo' : `$${calcularMontoFinalNum(c).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
         </td>
         <td data-label="ACCIONES">
-          <div className="cotiz-actions-cell">
-            <button 
-              className={`btn-view-detail ${isCotizacionEnCarrito(c) ? 'en-carrito' : ''}`} 
-              onClick={() => setCotizacionSeleccionada(c)} 
-              style={isCotizacionEnCarrito(c) ? { 
-                background: '#10b981', 
-                boxShadow: '0 4px 10px rgba(16, 185, 129, 0.3)', 
-                fontSize: 'clamp(0.7rem, 2vw, 0.9rem)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              } : { fontSize: 'clamp(0.7rem, 2vw, 0.9rem)' }}
-            >
-              {isCotizacionEnCarrito(c) ? '🛒 EN CARRITO' : '👁️ VER'}
-            </button>
-            {/* Botón para recotizar si fue solicitada recotización */}
-            {!esCliente && (c.status?.toLowerCase().includes('recotiza') || c.estado?.toLowerCase().includes('recotiza') || c.recotizacionSolicitada) && (
-              <button 
-                className="btn-view-detail" 
-                style={{ background: '#f26624', color: 'white', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                onClick={() => {
-                  setCotizacionParaAsignar(c); 
-                  setShowCreateModal(true);
-                }}
-              >
-                <RefreshCw size={13} /> RECOTIZAR
-              </button>
-            )}
-            {/* Botón para editar si está rechazada */}
-            {!esCliente && c.status === 'Rechazado' && (
-              <button 
-                className="btn-view-detail" 
-                style={{ background: '#3b82f6', color: 'white', border: 'none' }}
-                onClick={() => {
-                  setCotizacionParaAsignar(c); 
-                  setShowCreateModal(true);
-                }}
-              >
-                ✏️ RE-EDITAR
-              </button>
-            )}
-            {/* Solo mostrar acciones de asignación si es admin y está aprobada */}
-            {!esCliente && !esTecnico && filtro === 'Aprobado' && (
-              c.tecnico ? (
-                // Mostrar cuando YA está asignado
-                <>
-                  <span style={{ fontWeight: 'bold', color: '#2e7d32', margin: '0 2px', fontSize: 'clamp(0.7rem, 1.5vw, 0.8rem)' }}>✓ Asignado</span>
-                  <button
-                    className="btn-view-detail"
-                    style={{ background: '#fb8c00', fontSize: 'clamp(0.7rem, 2vw, 0.9rem)' }}
-                    onClick={() => {
-                      setCotizacionParaAsignar(c);
-                      setShowAssignModal(true);
-                    }}
-                  >
-                    🔄
-                  </button>
-                </>
-              ) : (
-                // Mostrar cuando NO está asignado
-                <button
-                  className="btn-view-detail"
-                  style={{ background: '#2e7d32', fontSize: 'clamp(0.7rem, 2vw, 0.9rem)' }}
-                  onClick={() => {
-                    setCotizacionParaAsignar(c);
-                    setShowAssignModal(true);
-                  }}
-                >
-                  🛠️
-                </button>
-              )
-            )}
-          </div>
+          {renderAcciones(c)}
         </td>
       </tr>
     ))
@@ -1080,10 +1227,76 @@ const VistaCotizaciones = () => {
 </tbody>
           </table>
         </div>
+        )}
       </main>
 
+      {/* ── PANEL DE PROPIEDAD: FOTO + COTIZACIONES DE LA PROPIEDAD ── */}
+      {propiedadCotizSeleccionada && !esCliente && createPortal(
+        <div className="cotiz-sheet-overlay" onClick={() => setPropiedadCotizKey(null)}>
+          <div className="cotiz-sheet" onClick={e => e.stopPropagation()}>
+            <div className="cotiz-sheet-grabber" />
+
+            <div className="cotiz-sheet-header">
+              <div className="cotiz-sheet-header-text">
+                <span className="cotiz-sheet-tag">
+                  {propiedadCotizSeleccionada.cotizaciones.length} {propiedadCotizSeleccionada.cotizaciones.length === 1 ? 'COTIZACIÓN' : 'COTIZACIONES'}
+                </span>
+                <h2>{propiedadCotizSeleccionada.nombre}</h2>
+              </div>
+              <button type="button" className="cotiz-sheet-close" onClick={() => setPropiedadCotizKey(null)} aria-label="Cerrar">
+                <XCircle size={20} />
+              </button>
+            </div>
+
+            {propiedadCotizSeleccionada.foto && (
+              <div className="cotiz-sheet-photo">
+                <img src={propiedadCotizSeleccionada.foto} alt={propiedadCotizSeleccionada.nombre} />
+              </div>
+            )}
+
+            <div className="cotiz-sheet-info">
+              <span><User size={15} /> <strong>Cliente / Dueño:</strong> {propiedadCotizSeleccionada.cliente || 'Sin cliente'}</span>
+              {propiedadCotizSeleccionada.telefono && (
+                <span><Phone size={15} /> <strong>Teléfono:</strong> {propiedadCotizSeleccionada.telefono}</span>
+              )}
+              {propiedadCotizSeleccionada.direccion && (
+                <span><MapPin size={15} /> <strong>Dirección:</strong> {propiedadCotizSeleccionada.direccion}</span>
+              )}
+            </div>
+
+            <div className="cotiz-sheet-list">
+              {propiedadCotizSeleccionada.cotizaciones.map(c => (
+                <div key={c.id} className={`cotiz-quote-card ${c.status === 'Rechazado' ? 'rechazada' : ''}`}>
+                  <div className="cotiz-quote-top">
+                    <div className="cotiz-quote-folio">
+                      <span className="cotiz-quote-folio-text">{c.folio}</span>
+                      <div className="cotiz-quote-badges">
+                        {renderEstadoBadge(c)}
+                        {renderLoteBadge(c)}
+                      </div>
+                    </div>
+                    <span className="cotiz-quote-total">{formatearMonto(c)}</span>
+                  </div>
+
+                  <div className="cotiz-quote-meta">
+                    <span><Calendar size={13} /> {c.created_at ? new Date(c.created_at).toLocaleDateString('es-MX') : c.fecha || '---'}</span>
+                    {renderOrigenTag(c)}
+                  </div>
+
+                  {renderAcciones(c, () => setPropiedadCotizKey(null))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {cotizacionSeleccionada && (
-        <div className="mercado-modal-overlay" onClick={() => setCotizacionSeleccionada(null)}>
+        <div
+          className={`mercado-modal-overlay ${!(cotizacionSeleccionada.is_network_quote || String(cotizacionSeleccionada.folio || '').startsWith('RED-')) ? 'cotiz-detail-overlay' : ''}`}
+          onClick={() => setCotizacionSeleccionada(null)}
+        >
           {cotizacionSeleccionada.is_network_quote || String(cotizacionSeleccionada.folio || '').startsWith('RED-') ? (
             /* ─── MODAL PREMIUM 2-COLUMNAS PARA COTIZACIONES DE LA RED (RED-XXX) ─── */
             <div className="mercado-premium-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '920px' }}>
@@ -1310,14 +1523,28 @@ const VistaCotizaciones = () => {
             </div>
           ) : (
             /* ─── MODAL ESTÁNDAR ─── */
-            <div className="modal-box-card" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
-              
-              <div className="modal-header-dark" style={{ flexShrink: 0 }}>
-                  <span>DETALLE DE COTIZACIÓN {cotizacionSeleccionada.folio}</span>
-                  <button className="modal-close-icon" onClick={() => { setCotizacionSeleccionada(null); setRechazando(false); setMotivoRechazo(''); }}>&times;</button>
+            <div className="modal-box-card cotiz-detail-sheet" onClick={e => e.stopPropagation()}>
+              <div className="cotiz-sheet-grabber" />
+
+              <div className="modal-header-dark cotiz-detail-header">
+                <div className="cotiz-sheet-header-text">
+                  <div className="cotiz-detail-header-badges">
+                    <span className="cotiz-sheet-tag">DETALLE DE COTIZACIÓN</span>
+                    {renderEstadoBadge(cotizacionSeleccionada)}
+                  </div>
+                  <h2>{cotizacionSeleccionada.folio}</h2>
+                </div>
+                <button
+                  type="button"
+                  className="cotiz-sheet-close"
+                  aria-label="Cerrar"
+                  onClick={() => { setCotizacionSeleccionada(null); setRechazando(false); setMotivoRechazo(''); }}
+                >
+                  <XCircle size={20} />
+                </button>
               </div>
-              
-              <div className="modal-body-content" style={{ overflowY: 'auto', flexGrow: 1 }}>
+
+              <div className="modal-body-content cotiz-detail-body">
                 
                 {cotizacionSeleccionada.created_by_role === 'Técnico' && !esCliente && (
                   <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', borderLeft: '4px solid #f26624', marginBottom: '15px' }}>
@@ -1327,64 +1554,43 @@ const VistaCotizaciones = () => {
                   </div>
                 )}
                 
-                <div style={{ display: 'flex', gap: '20px', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px', flexWrap: 'wrap' }}>
-                  {cotizacionSeleccionada.foto_fachada && (
-                    <div style={{ 
-                      width: '120px', 
-                      height: '120px', 
-                      borderRadius: '8px', 
-                      overflow: 'hidden', 
-                      border: '1px solid #cbd5e1', 
-                      flexShrink: 0 
-                    }}>
-                      <img 
-                        src={cotizacionSeleccionada.foto_fachada} 
-                        alt="Fachada de la propiedad" 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                    </div>
-                  )}
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      <User size={16} color="#64748b" style={{ flexShrink: 0 }} />
-                      <span style={{ fontSize: '0.92rem', color: '#334155' }}>
-                        <strong>Cliente / Dueño:</strong> {cotizacionSeleccionada.cliente}
-                      </span>
-                      {(cotizacionSeleccionada.cliente_telefono || cotizacionSeleccionada.telefono_cliente || cotizacionSeleccionada.telefono) && (
-                        <span style={{ fontSize: '0.8rem', color: '#f26624', background: 'rgba(242,102,36,0.08)', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(242,102,36,0.15)', display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: '600' }}>
-                          <Phone size={11} /> {cotizacionSeleccionada.cliente_telefono || cotizacionSeleccionada.telefono_cliente || cotizacionSeleccionada.telefono}
-                        </span>
-                      )}
-                    </div>
-                    {cotizacionSeleccionada.propiedad_nombre && cotizacionSeleccionada.propiedad_nombre !== 'N/A' && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Home size={16} color="#64748b" style={{ flexShrink: 0 }} />
-                        <span style={{ fontSize: '0.92rem', color: '#334155' }}>
-                          <strong>Propiedad:</strong> {cotizacionSeleccionada.propiedad_nombre}
-                        </span>
-                      </div>
-                    )}
-                    {cotizacionSeleccionada.propiedad_direccion && cotizacionSeleccionada.propiedad_direccion !== 'N/A' && (
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                        <MapPin size={16} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
-                        <span style={{ fontSize: '0.88rem', color: '#475569' }}>
-                          <strong>Dirección:</strong> {cotizacionSeleccionada.propiedad_direccion}
-                        </span>
-                      </div>
-                    )}
-                    {cotizacionSeleccionada.tecnico && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Wrench size={16} color="#64748b" style={{ flexShrink: 0 }} />
-                        <span style={{ fontSize: '0.92rem', color: '#334155' }}>
-                          <strong>Técnico Responsable:</strong> {cotizacionSeleccionada.tecnico}
-                        </span>
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', color: '#64748b', marginTop: '4px', borderTop: '1px solid #e2e8f0', paddingTop: '8px' }}>
-                      <span>📅 <strong>Fecha de Creación:</strong> {cotizacionSeleccionada.fecha}</span>
-                    </div>
+                {cotizacionSeleccionada.foto_fachada && (
+                  <div className="cotiz-sheet-photo">
+                    <img
+                      src={cotizacionSeleccionada.foto_fachada}
+                      alt="Fachada de la propiedad"
+                      onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+                    />
                   </div>
+                )}
+
+                <div className="cotiz-sheet-info">
+                  <span>
+                    <User size={15} /> <strong>Cliente / Dueño:</strong> {cotizacionSeleccionada.cliente}
+                  </span>
+                  {(cotizacionSeleccionada.cliente_telefono || cotizacionSeleccionada.telefono_cliente || cotizacionSeleccionada.telefono) && (
+                    <span>
+                      <Phone size={15} /> <strong>Teléfono:</strong> {cotizacionSeleccionada.cliente_telefono || cotizacionSeleccionada.telefono_cliente || cotizacionSeleccionada.telefono}
+                    </span>
+                  )}
+                  {cotizacionSeleccionada.propiedad_nombre && cotizacionSeleccionada.propiedad_nombre !== 'N/A' && (
+                    <span>
+                      <Home size={15} /> <strong>Propiedad:</strong> {cotizacionSeleccionada.propiedad_nombre}
+                    </span>
+                  )}
+                  {cotizacionSeleccionada.propiedad_direccion && cotizacionSeleccionada.propiedad_direccion !== 'N/A' && (
+                    <span>
+                      <MapPin size={15} /> <strong>Dirección:</strong> {cotizacionSeleccionada.propiedad_direccion}
+                    </span>
+                  )}
+                  {cotizacionSeleccionada.tecnico && (
+                    <span>
+                      <Wrench size={15} /> <strong>Técnico responsable:</strong> {cotizacionSeleccionada.tecnico}
+                    </span>
+                  )}
+                  <span className="cotiz-sheet-info-divider">
+                    <Calendar size={15} /> <strong>Fecha de creación:</strong> {cotizacionSeleccionada.fecha}
+                  </span>
                 </div>
 
                 {cotizacionSeleccionada.type === 'archivo' ? (
@@ -1533,7 +1739,7 @@ const VistaCotizaciones = () => {
                     : parseFloat(cotizacionSeleccionada.total || 0);
 
                   return (
-                    <div className="modal-total-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', padding: '15px', background: '#f8fafc', borderTop: '2px solid #e2e8f0', marginTop: '20px' }}>
+                    <div className="modal-total-section cotiz-detail-total">
                       {esTecnico ? (
                         <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#1e293b' }}>
                           TOTAL DEL TRABAJO: ${(baseMonto > 0 ? baseMonto : parseFloat(cotizacionSeleccionada.total || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1576,18 +1782,18 @@ const VistaCotizaciones = () => {
                 })()}
 
                 {cotizacionSeleccionada.observations && (
-                  <div style={{ padding: '15px', background: '#f5f5f5', borderRadius: '8px', marginTop: '15px', borderLeft: '4px solid #ff8800' }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '0.95rem', color: '#333' }}>Mensajes al Cliente:</h4>
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#555', whiteSpace: 'pre-wrap' }}>
+                  <div className="cotiz-detail-note">
+                    <h4>Mensajes al cliente</h4>
+                    <p>
                       {cotizacionSeleccionada.observations}
                     </p>
                   </div>
                 )}
 
                 {!esCliente && cotizacionSeleccionada.internal_observations && (
-                  <div style={{ padding: '15px', background: '#fff9c4', borderRadius: '8px', marginTop: '15px', borderLeft: '4px solid #fbc02d' }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '0.95rem', color: '#f57f17' }}>Comentarios Internos:</h4>
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#5d4037', whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
+                  <div className="cotiz-detail-note interna">
+                    <h4>Comentarios internos</h4>
+                    <p>
                       {cotizacionSeleccionada.internal_observations}
                     </p>
                   </div>
@@ -1640,9 +1846,9 @@ const VistaCotizaciones = () => {
                 )}
                 
                 {/* --- SECCIÓN DE CHAT DE NEGOCIACIÓN --- */}
-                <div style={{ padding: '15px', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '15px' }}>
-                  <h4 style={{ margin: '0 0 15px 0', fontSize: '1rem', color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    💬 Conversación de la Cotización
+                <div className="cotiz-detail-chat">
+                  <h4>
+                    <MessageCircle size={17} /> Conversación de la cotización
                   </h4>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto', marginBottom: '15px', paddingRight: '5px' }}>
@@ -1673,22 +1879,22 @@ const VistaCotizaciones = () => {
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <input 
-                      type="text" 
-                      placeholder="Escribe un mensaje para negociar o aclarar dudas..." 
-                      style={{ flex: 1, padding: '12px 18px', borderRadius: '24px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.9rem', background: '#f8fafc', color: '#0f172a' }}
+                  <div className="cotiz-detail-chat-input">
+                    <input
+                      type="text"
+                      placeholder="Escribe un mensaje..." 
                       value={mensajeChat}
                       onChange={e => setMensajeChat(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') enviarMensajeChat(); }}
                       disabled={enviandoMensaje}
                     />
-                    <button 
-                      style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', padding: '0 24px', borderRadius: '24px', fontWeight: '800', cursor: 'pointer', opacity: enviandoMensaje || !mensajeChat.trim() ? 0.5 : 1, boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', transition: 'transform 0.2s' }}
+                    <button
+                      type="button"
+                      aria-label="Enviar mensaje"
                       onClick={enviarMensajeChat}
                       disabled={enviandoMensaje || !mensajeChat.trim()}
                     >
-                      {enviandoMensaje ? '...' : 'ENVIAR'}
+                      {enviandoMensaje ? '...' : <Send size={18} />}
                     </button>
                   </div>
                 </div>
@@ -1917,7 +2123,7 @@ const VistaCotizaciones = () => {
                   })()}
 
             </div>
-            <div className="modal-footer-btns" style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+            <div className="modal-footer-btns cotiz-detail-footer">
                   
                   {/* SECCIÓN ESPECIAL ADMIN: ACCIONES DE GENERACIÓN / DERIVACIÓN */}
                   {!esCliente && !esTecnico && (
@@ -2272,15 +2478,15 @@ const VistaCotizaciones = () => {
                     )}
                     <button 
                       className="btn-modal-close-premium" 
-                      style={{ 
-                        minHeight: '42px', 
-                        padding: '8px 14px', 
-                        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', 
-                        color: '#f8fafc', 
-                        border: '1px solid #334155',
+                      style={{
+                        minHeight: '42px',
+                        padding: '8px 14px',
+                        background: 'rgba(255, 255, 255, 0.75)',
+                        color: '#0f172a',
+                        border: '1.5px solid rgba(15, 23, 42, 0.12)',
                         fontSize: '0.9rem',
-                        fontWeight: '700'
-                      }} 
+                        fontWeight: '800'
+                      }}
                       onClick={() => { setCotizacionSeleccionada(null); setRechazando(false); setMotivoRechazo(''); }}
                     >
                       CERRAR

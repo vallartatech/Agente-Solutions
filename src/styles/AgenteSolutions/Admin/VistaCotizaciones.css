@@ -905,3 +905,935 @@
 .spin-slow {
   animation: spinSlow 8s linear infinite;
 }
+
+/* ==========================================================================
+   REDISEÑO WHITE LIQUID GLASS (mismo lenguaje que Usuarios / Reportes)
+   Solo aplica en el portal admin/técnico (.cotiz-glass-page)
+   ========================================================================== */
+.cotiz-glass-page {
+    background: url('../../../assets/geometric-poly-bg.png') center center / cover no-repeat fixed;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.cotiz-glass-page .cotiz-main-content {
+    gap: 16px;
+}
+
+/* ── BARRA DE TÍTULO ── */
+.cotiz-action-bar,
+.cotiz-toolbar {
+    width: 100%;
+    max-width: 1050px;
+}
+
+.cotiz-action-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.cotiz-btn-regresar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 24px;
+    border: 1.5px solid rgba(242, 101, 34, 0.45);
+    background: rgba(242, 101, 34, 0.12);
+    color: #ea580c;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    cursor: pointer;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    transition: all 0.2s ease;
+}
+
+.cotiz-btn-regresar:hover {
+    background: rgba(242, 101, 34, 0.22);
+    border-color: #f26522;
+}
+
+.cotiz-page-title-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.40) 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.75);
+    padding: 7px 18px;
+    border-radius: 24px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    color: #0f172a;
+    backdrop-filter: blur(24px) saturate(190%);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
+}
+
+.cotiz-title-icon { color: #f26522; }
+
+.cotiz-count-pill {
+    background: #f26522;
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.74rem;
+    font-weight: 900;
+    box-shadow: 0 0 10px rgba(242, 101, 34, 0.35);
+}
+
+/* ── BOTÓN FILTROS (igual al filtro de Usuarios) ── */
+.cotiz-filter-btn {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    padding: 0;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #334155;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1.5px solid rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(20px) saturate(190%);
+    -webkit-backdrop-filter: blur(20px) saturate(190%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cotiz-filter-btn:hover,
+.cotiz-filter-btn.open {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: rgba(242, 101, 34, 0.6);
+    color: #f26522;
+}
+
+.cotiz-filter-btn.filtered { color: #f26522; }
+
+.cotiz-filter-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f26522;
+    box-shadow: 0 0 8px rgba(242, 101, 34, 0.7);
+}
+
+/* ── MENÚ DE FILTROS ── */
+.cotiz-filter-menu {
+    min-width: 250px;
+    max-height: 70vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.cotiz-filter-menu::-webkit-scrollbar { display: none; }
+
+.cotiz-filter-section {
+    padding: 8px 10px 2px;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    color: #94a3b8;
+}
+
+.cotiz-filter-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(15, 23, 42, 0.06);
+    color: #334155;
+}
+
+.tb-actions-item.selected .cotiz-filter-icon {
+    background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+    color: #ffffff;
+}
+
+.cotiz-filter-inline {
+    display: flex;
+    gap: 6px;
+    padding: 4px 6px;
+}
+
+.cotiz-filter-chip {
+    flex: 1;
+    padding: 7px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    background: rgba(15, 23, 42, 0.04);
+    color: #334155;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cotiz-filter-chip.selected {
+    background: rgba(242, 101, 34, 0.12);
+    border-color: rgba(242, 101, 34, 0.4);
+    color: #ea580c;
+}
+
+/* ── TABLA / TARJETAS EN VIDRIO ── */
+.cotiz-glass-page .cotiz-table-container {
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.62) 0%,
+        rgba(255, 255, 255, 0.32) 48%,
+        rgba(255, 255, 255, 0.52) 100%),
+      rgba(255, 255, 255, 0.30);
+    border: 1.5px solid rgba(255, 255, 255, 0.75);
+    border-radius: 24px;
+    backdrop-filter: blur(32px) saturate(210%) contrast(104%);
+    -webkit-backdrop-filter: blur(32px) saturate(210%) contrast(104%);
+    box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.18),
+        0 4px 16px rgba(0, 0, 0, 0.06),
+        inset 0 2px 2px rgba(255, 255, 255, 0.95);
+    margin-top: 0;
+}
+
+.cotiz-glass-page .cotiz-data-table th {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: #0f172a;
+    font-family: 'Outfit', sans-serif;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.cotiz-glass-page .cotiz-data-table td {
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    color: #1e293b;
+}
+
+.cotiz-glass-page .cotiz-data-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.45);
+}
+
+@media (max-width: 900px) {
+    .cotiz-glass-page .cotiz-main-content {
+        padding: 12px 3% calc(100px + env(safe-area-inset-bottom));
+        gap: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* En móvil el contenedor es transparente y cada fila es una tarjeta de vidrio */
+    .cotiz-glass-page .cotiz-table-container {
+        max-height: none;
+        overflow: visible;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .cotiz-glass-page .cotiz-data-table tr {
+        margin-bottom: 14px;
+        border-radius: 18px;
+        border: 1.5px solid rgba(255, 255, 255, 0.75);
+        background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.7) 0%,
+            rgba(255, 255, 255, 0.45) 100%);
+        backdrop-filter: blur(28px) saturate(200%);
+        -webkit-backdrop-filter: blur(28px) saturate(200%);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
+    }
+
+    .cotiz-glass-page .cotiz-data-table td[data-label="ACCIONES"] {
+        border-top: 1px solid rgba(15, 23, 42, 0.08);
+    }
+}
+
+@media (max-width: 640px) {
+    .cotiz-page-title-badge {
+        font-size: 0.72rem;
+        padding: 5px 12px;
+    }
+
+    .cotiz-btn-regresar {
+        font-size: 0.72rem;
+        padding: 6px 12px;
+    }
+
+    .cotiz-filter-btn {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        border-radius: 12px;
+    }
+
+    .cotiz-filter-menu {
+        right: -52px;
+    }
+}
+
+/* ==========================================================================
+   COTIZACIONES AGRUPADAS POR PROPIEDAD (tarjetas + panel)
+   ========================================================================== */
+.cotiz-glass-card {
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.62) 0%,
+        rgba(255, 255, 255, 0.32) 48%,
+        rgba(255, 255, 255, 0.52) 100%),
+      rgba(255, 255, 255, 0.30);
+    border: 1.5px solid rgba(255, 255, 255, 0.75);
+    border-radius: 24px;
+    backdrop-filter: blur(32px) saturate(210%) contrast(104%);
+    -webkit-backdrop-filter: blur(32px) saturate(210%) contrast(104%);
+    box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.18),
+        0 4px 16px rgba(0, 0, 0, 0.06),
+        inset 0 2px 2px rgba(255, 255, 255, 0.95);
+}
+
+.cotiz-empty-state {
+    width: 100%;
+    max-width: 1050px;
+    padding: 36px 20px;
+    text-align: center;
+    font-weight: 700;
+    color: #334155;
+    box-sizing: border-box;
+}
+
+.cotiz-prop-grid {
+    width: 100%;
+    max-width: 1050px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+}
+
+.cotiz-prop-card {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    color: inherit;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
+}
+
+.cotiz-prop-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(242, 101, 34, 0.5);
+}
+
+.cotiz-prop-photo {
+    position: relative;
+    height: 170px;
+    margin: 10px 10px 0;
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.08);
+}
+
+.cotiz-prop-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.cotiz-prop-photo-empty {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+}
+
+.cotiz-prop-count {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.72);
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.cotiz-prop-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px 16px;
+}
+
+.cotiz-prop-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.cotiz-prop-name svg { color: #f26522; flex-shrink: 0; }
+
+.cotiz-prop-name h3 {
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cotiz-prop-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.cotiz-prop-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cotiz-prop-meta svg { color: #94a3b8; }
+
+.cotiz-prop-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #f26522;
+}
+
+/* ── PANEL DE PROPIEDAD ──
+   z-index sobre la barra inferior (9999) y debajo del detalle de cotización (1000005) */
+.cotiz-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(6, 8, 12, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-sizing: border-box;
+    animation: cotizOverlayIn 0.2s ease;
+}
+
+@keyframes cotizOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+.cotiz-sheet {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 22px 22px;
+    border-radius: 26px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.86) 0%, rgba(248, 250, 252, 0.78) 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3), inset 0 2px 2px rgba(255, 255, 255, 0.95);
+    color: #0f172a;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    scrollbar-width: none;
+    box-sizing: border-box;
+    animation: cotizSheetPop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cotiz-sheet::-webkit-scrollbar { display: none; }
+
+@keyframes cotizSheetPop {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes cotizSheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.cotiz-sheet-grabber { display: none; }
+
+.cotiz-sheet-header {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 -22px 14px;
+    padding: 20px 22px 14px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.cotiz-sheet-header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.cotiz-sheet-header-text h2 {
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+}
+
+.cotiz-sheet-tag {
+    align-self: flex-start;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(242, 101, 34, 0.12);
+    border: 1px solid rgba(242, 101, 34, 0.35);
+    color: #ea580c;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.cotiz-sheet-close {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.06);
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    color: #334155;
+    cursor: pointer;
+}
+
+.cotiz-sheet-close:hover {
+    background: rgba(242, 101, 34, 0.15);
+    color: #ea580c;
+}
+
+.cotiz-sheet-photo {
+    height: 200px;
+    margin-bottom: 14px;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1);
+}
+
+.cotiz-sheet-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.cotiz-sheet-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1.5px solid rgba(255, 255, 255, 0.9);
+    font-size: 0.84rem;
+    color: #334155;
+}
+
+.cotiz-sheet-info span {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.cotiz-sheet-info svg { color: #64748b; flex-shrink: 0; margin-top: 1px; }
+.cotiz-sheet-info strong { color: #0f172a; }
+
+.cotiz-sheet-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cotiz-quote-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1.5px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.07), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+}
+
+.cotiz-quote-card.rechazada { border-left: 4px solid #ef4444; }
+
+.cotiz-quote-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.cotiz-quote-folio {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.cotiz-quote-folio-text {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.cotiz-quote-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.cotiz-quote-total {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: #0f172a;
+    white-space: nowrap;
+}
+
+.cotiz-quote-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.cotiz-quote-meta > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cotiz-quote-card .cotiz-actions-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.cotiz-quote-card .cotiz-actions-cell .btn-view-detail {
+    flex: 1;
+    border-radius: 12px;
+}
+
+@media (max-width: 640px) {
+    .cotiz-prop-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .cotiz-glass-card { border-radius: 18px; }
+
+    .cotiz-prop-photo { height: 150px; }
+
+    .cotiz-sheet-overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .cotiz-sheet {
+        max-width: 100%;
+        padding: 0 16px calc(18px + env(safe-area-inset-bottom));
+        border-radius: 26px 26px 0 0;
+        border-bottom: none;
+        animation: cotizSheetUp 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .cotiz-sheet-grabber {
+        display: block;
+        width: 48px;
+        height: 5px;
+        margin: 10px auto 0;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.2);
+    }
+
+    .cotiz-sheet-header {
+        margin: 0 -16px 14px;
+        padding: 12px 16px;
+    }
+
+    .cotiz-sheet-header-text h2 { font-size: 1.15rem; }
+
+    .cotiz-sheet-photo { height: 170px; }
+}
+
+/* ==========================================================================
+   MODAL DETALLE DE COTIZACIÓN (estándar) - MISMO DISEÑO QUE EL PANEL DE PROPIEDAD
+   ========================================================================== */
+.cotiz-detail-overlay {
+    background: rgba(6, 8, 12, 0.4) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+}
+
+.modal-box-card.cotiz-detail-sheet {
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    max-height: 90dvh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 26px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.84) 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3), inset 0 2px 2px rgba(255, 255, 255, 0.95);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #0f172a;
+    animation: cotizSheetPop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cotiz-detail-sheet .cotiz-detail-header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 22px 14px;
+    background: rgba(255, 255, 255, 0.82);
+    color: #0f172a;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.cotiz-detail-header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.cotiz-detail-sheet .cotiz-detail-body {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 16px 22px;
+    color: #334155;
+    scrollbar-width: none;
+}
+
+.cotiz-detail-sheet .cotiz-detail-body::-webkit-scrollbar { display: none; }
+
+.cotiz-sheet-info-divider {
+    padding-top: 8px;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    color: #64748b;
+}
+
+/* Bloque de totales como tarjeta */
+.cotiz-detail-sheet .cotiz-detail-total {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1.5px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    color: #0f172a;
+}
+
+.cotiz-detail-sheet .cotiz-detail-total h3 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    color: #ea580c;
+}
+
+/* Notas: mensajes al cliente / comentarios internos */
+.cotiz-detail-note {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1.5px solid rgba(255, 255, 255, 0.9);
+    border-left: 4px solid #f26522;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.cotiz-detail-note.interna { border-left-color: #0f172a; }
+
+.cotiz-detail-note h4 {
+    margin: 0 0 6px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #ea580c;
+}
+
+.cotiz-detail-note.interna h4 { color: #0f172a; }
+
+.cotiz-detail-note p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #334155;
+    white-space: pre-wrap;
+}
+
+/* Conversación */
+.cotiz-detail-chat {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1.5px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.cotiz-detail-chat h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.cotiz-detail-chat h4 svg { color: #f26522; }
+
+.cotiz-detail-chat-input {
+    display: flex;
+    gap: 8px;
+}
+
+.cotiz-detail-chat-input input {
+    flex: 1;
+    min-width: 0;
+    padding: 11px 16px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(15, 23, 42, 0.12);
+    background: rgba(255, 255, 255, 0.8);
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cotiz-detail-chat-input input:focus {
+    border-color: #f26522;
+    box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.18);
+}
+
+.cotiz-detail-chat-input button {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(242, 101, 34, 0.35);
+}
+
+.cotiz-detail-chat-input button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Pie fijo con acciones */
+.cotiz-detail-sheet .cotiz-detail-footer {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 12px 22px 18px;
+    background: rgba(255, 255, 255, 0.82);
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.cotiz-detail-sheet .cotiz-detail-footer button {
+    border-radius: 14px !important;
+}
+
+@media (max-width: 640px) {
+    .modal-box-card.cotiz-detail-sheet {
+        max-width: 100%;
+        border-radius: 26px 26px 0 0;
+        border-bottom: none;
+        animation: cotizSheetUp 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .cotiz-detail-sheet .cotiz-detail-header {
+        padding: 10px 16px 12px;
+    }
+
+    .cotiz-detail-sheet .cotiz-detail-body {
+        padding: 14px 16px;
+    }
+
+    .cotiz-detail-sheet .cotiz-detail-footer {
+        padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+    }
+
+    .cotiz-detail-chat-input input { font-size: 16px; } /* evita zoom en iOS */
+}

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Shared/Header';
 import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import { useAuth } from '../../../context/AuthContext';
-import { Search, MapPin, Calendar, FileText, ChevronLeft, Plus, Edit, Trash2, X, Upload, CheckCircle2, AlertTriangle, Eye, Pencil } from 'lucide-react';
+import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Upload, CheckCircle2, Pencil, Calendar, ClipboardList, Image as ImageIcon } from 'lucide-react';
 import Swal from 'sweetalert2';
+import '../../../styles/Shared/UniversalSearch.css';
+import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteSolutions/Admin/VistaReportesGlobal.css';
 
 const STAGES = [
@@ -14,7 +17,6 @@ const STAGES = [
     title: '1. ANTES DE INICIAR',
     tag: '[ANTES]',
     required: true,
-    badgeColor: '#e11d48',
     placeholder: 'Escribe la descripción de las condiciones iniciales...'
   },
   {
@@ -22,7 +24,6 @@ const STAGES = [
     title: '2. DURANTE EL PROCESO',
     tag: '[DURANTE]',
     required: true,
-    badgeColor: '#ea580c',
     placeholder: 'Escribe la descripción del avance o procedimiento en proceso...'
   },
   {
@@ -30,7 +31,6 @@ const STAGES = [
     title: '3. DESPUÉS DE FINALIZAR',
     tag: '[DESPUÉS]',
     required: true,
-    badgeColor: '#16a34a',
     placeholder: 'Escribe la descripción del resultado final tras concluir...'
   },
   {
@@ -38,10 +38,18 @@ const STAGES = [
     title: '4. ADICIONAL / EXTRA',
     tag: '[EXTRA]',
     required: false,
-    badgeColor: '#64748b',
     placeholder: 'Observaciones o evidencia adicional (opcional)...'
   }
 ];
+
+// Resuelve la foto de fachada de la propiedad (URL absoluta o ruta de storage)
+const resolverFotoPropiedad = (prop) => {
+  const raw = prop?.facade_photo_url || prop?.foto_url || prop?.facade_photo_path || prop?.facade_photo || prop?.foto_fachada || null;
+  if (!raw || typeof raw !== 'string') return null;
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  const hostBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+  return `${hostBase}/storage/${raw.replace(/^\//, '')}`;
+};
 
 const VistaReportesGlobal = () => {
   const { user } = useAuth();
@@ -63,6 +71,8 @@ const VistaReportesGlobal = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [zoomImage, setZoomImage] = useState(null);
+  const [selectedPropKey, setSelectedPropKey] = useState(null);
+  const [selectedGroupKey, setSelectedGroupKey] = useState(null);
 
   useEffect(() => {
     fetchReportesYCotizaciones();
@@ -252,16 +262,116 @@ const VistaReportesGlobal = () => {
 
   const pageHeading = isTech ? 'MIS REPORTES TÉCNICOS' : 'GALERÍA GLOBAL DE REPORTES';
 
+  // Agrupar reportes por trabajo (propiedad + servicio/orden)
+  const grupos = Object.entries(
+    filteredReportes.reduce((acc, r) => {
+      const prop = r.service?.property || r.work_order?.property || r.workOrder?.property;
+      const propName = prop?.property_name || 'PROPIEDAD SIN NOMBRE';
+      const curp = prop?.custom_curp || 'SIN CURP';
+      const owner = prop?.client?.name || 'Usuario';
+
+      const isService = !!r.service?.property;
+      const serviceData = isService ? r.service : (r.work_order || r.workOrder || r.service);
+      const tituloTrabajo = serviceData?.title || serviceData?.type || r.title || 'Mantenimiento';
+      const trabajoId = r.service_id || r.work_order_id || r.id || 'general';
+      const tipo = (r.work_order_id || r.workOrder) ? 'work_order' : 'servicio';
+
+      const groupKey = `${propName}|${curp}|${owner}|${trabajoId}|${tipo}|${tituloTrabajo}`;
+
+      if (!acc[groupKey]) acc[groupKey] = [];
+      acc[groupKey].push(r);
+      return acc;
+    }, {})
+  ).map(([groupKey, reports]) => {
+    const [nombre, curp, dueno, trabajoId, tipo, tituloTrabajo] = groupKey.split('|');
+    const first = reports[0];
+    const prop = first.service?.property || first.work_order?.property || first.workOrder?.property;
+    const etapasRegistradas = STAGES.filter(st => getReportForStage(reports, st)).length;
+    const foto = resolverFotoPropiedad(prop) || first.image_url || first.image_path || null;
+
+    // Fecha de ejecución: la del servicio/orden si existe; si no, la evidencia más reciente
+    const serviceData = tipo === 'servicio' ? first.service : (first.work_order || first.workOrder || first.service);
+    const fechasReportes = reports.map(r => r.created_at).filter(Boolean).sort();
+    const fechaRaw = serviceData?.completed_at || serviceData?.fecha_ejecucion || serviceData?.fecha_programada
+      || serviceData?.scheduled_date || fechasReportes[fechasReportes.length - 1] || null;
+    const fechaDate = fechaRaw ? new Date(fechaRaw) : null;
+    const fechaValida = fechaDate && !isNaN(fechaDate.getTime());
+
+    return {
+      groupKey, nombre, curp, dueno, trabajoId, tipo, tituloTrabajo, reports, foto, etapasRegistradas,
+      propKey: `${nombre}|${curp}|${dueno}`,
+      fechaTs: fechaValida ? fechaDate.getTime() : 0,
+      fechaTexto: fechaValida
+        ? fechaDate.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+        : 'Sin fecha'
+    };
+  });
+
+  // Agrupar trabajos por propiedad: una tarjeta por propiedad, servicios ordenados por fecha
+  const propiedadesConReportes = Object.values(
+    grupos.reduce((acc, g) => {
+      if (!acc[g.propKey]) {
+        acc[g.propKey] = { propKey: g.propKey, nombre: g.nombre, curp: g.curp, dueno: g.dueno, foto: g.foto, servicios: [] };
+      }
+      acc[g.propKey].servicios.push(g);
+      return acc;
+    }, {})
+  ).map(p => ({ ...p, servicios: [...p.servicios].sort((a, b) => a.fechaTs - b.fechaTs) }));
+
+  const propiedadSeleccionada = propiedadesConReportes.find(p => p.propKey === selectedPropKey) || null;
+  const grupoSeleccionado = propiedadSeleccionada?.servicios.find(g => g.groupKey === selectedGroupKey) || null;
+  const numeroServicio = grupoSeleccionado ? propiedadSeleccionada.servicios.indexOf(grupoSeleccionado) + 1 : 0;
+
+  const cerrarPanel = () => {
+    setSelectedPropKey(null);
+    setSelectedGroupKey(null);
+  };
+
+  const getCotizacionAsociada = (grupo) => cotizaciones.find(c =>
+    (grupo.tipo === 'work_order' && c.work_order_id === parseInt(grupo.trabajoId)) ||
+    (grupo.tipo === 'servicio' && c.service_id === parseInt(grupo.trabajoId))
+  );
+
+  const abrirCotizacion = (cotizacion) => {
+    localStorage.setItem('cotizacion_para_imprimir', JSON.stringify(cotizacion));
+    navigate('/imprimir-cotizacion');
+  };
+
+  const abrirReporteOficial = ({ reports, tipo, trabajoId, dueno, nombre, curp, tituloTrabajo }) => {
+    const firstReport = reports[0];
+    const isService = tipo === 'servicio';
+    const serviceData = isService ? firstReport.service : (firstReport.work_order || firstReport.workOrder || firstReport.service);
+    const prop = serviceData?.property;
+
+    navigate(`/reporte-trabajo-admin/${tipo}-${trabajoId}`, {
+      state: {
+        trabajoId: `${tipo}-${trabajoId}`,
+        servicio: {
+          cliente_nombre: dueno,
+          cliente_email: prop?.client?.email || '',
+          cliente_telefono: prop?.client?.phone || '',
+          direccion: prop?.address || serviceData?.address || '',
+          propiedad_nombre: nombre,
+          tipoPropiedad: prop?.type || serviceData?.tipoPropiedad || 'CASA',
+          identificador_curp: curp,
+          titulo: tituloTrabajo,
+          descripcion: serviceData?.description
+        },
+        imagenes: reports.map(r => r.image_url || r.image_path).filter(Boolean)
+      }
+    });
+  };
+
   return (
-    <div className="global-reports-wrapper">
+    <div className="rg-root">
       <Header activeModule="reportes" />
 
-      <div className="global-reports-container">
-        {/* TITULO Y BOTÓN REGRESAR */}
-        <div className="reportes-topbar-row">
-          <button 
+      <main className="rg-main-container">
+        {/* TÍTULO Y BOTÓN REGRESAR */}
+        <div className="rg-action-bar">
+          <button
             type="button"
-            className="reportes-btn-regresar"
+            className="rg-btn-regresar"
             onClick={() => {
               if (isTech) {
                 navigate('/mercado-trabajos', { state: { view: 'tablero' } });
@@ -273,303 +383,305 @@ const VistaReportesGlobal = () => {
             <ChevronLeft size={18} />
             <span>REGRESAR</span>
           </button>
-          <h2 className="reportes-title-heading">{pageHeading}</h2>
+
+          <div className="rg-page-title-badge">
+            <FileText size={18} className="rg-title-icon" />
+            <span>{pageHeading}</span>
+            <span className="rg-count-pill">{propiedadesConReportes.length}</span>
+          </div>
         </div>
 
-        {/* BUSCADOR */}
-        <div className="report-filters">
-          <div className="report-search-wrap">
-            <Search size={18} style={{ position: 'absolute', left: '15px', top: '12px', color: '#94a3b8' }} />
-            <input 
-              type="text" 
-              className="report-search-input"
-              placeholder="Buscar por propiedad, cliente o descripción..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        {/* BUSCADOR (mismo estilo que Usuarios) */}
+        <div className="tb-toolbar">
+          <div className="tb-toolbar-search">
+            <div className="search-wrapper-full">
+              <div className="search-input-container">
+                <Search size={18} className="search-icon-inside" />
+                <input
+                  type="text"
+                  className="search-input-large"
+                  placeholder="BUSCAR POR PROPIEDAD, CLIENTE O DESCRIPCIÓN..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         {loading ? (
-          <p style={{ textAlign: 'center', marginTop: '50px', fontSize: '16px', fontWeight: 'bold', color: '#F26522' }}>
-            Cargando evidencias de los trabajos...
-          </p>
-        ) : filteredReportes.length === 0 ? (
-          <div style={{ textAlign: 'center', marginTop: '50px', color: '#64748b', padding: '30px 20px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-            <p style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 6px', color: '#1e293b' }}>
+          <div className="rg-glass-card rg-empty-state">
+            <p className="rg-empty-title">Cargando evidencias de los trabajos...</p>
+          </div>
+        ) : propiedadesConReportes.length === 0 ? (
+          <div className="rg-glass-card rg-empty-state">
+            <p className="rg-empty-title">
               {searchTerm ? 'No se encontraron coincidencias para tu búsqueda.' : (isTech ? 'Aún no tienes evidencias o reportes registrados.' : 'Aún no hay reportes subidos por los técnicos.')}
             </p>
-            <p style={{ fontSize: '13px', margin: 0, color: '#94a3b8' }}>
+            <p className="rg-empty-sub">
               {isTech ? 'Los reportes de tus trabajos aceptados aparecerán organizados aquí.' : 'Cuando los técnicos suban fotos de sus etapas se mostrarán aquí.'}
             </p>
           </div>
         ) : (
-          <div className="global-gallery-grouped">
-            {Object.entries(
-              filteredReportes.reduce((acc, r) => {
-                const prop = r.service?.property || r.work_order?.property || r.workOrder?.property;
-                const propName = prop?.property_name || 'PROPIEDAD SIN NOMBRE';
-                const curp = prop?.custom_curp || 'SIN CURP';
-                const owner = prop?.client?.name || 'Usuario';
-                
-                const isService = !!r.service?.property;
-                const serviceData = isService ? r.service : (r.work_order || r.workOrder || r.service);
-                const tituloTrabajo = serviceData?.title || serviceData?.type || r.title || 'Mantenimiento';
-                const trabajoId = r.service_id || r.work_order_id || r.id || 'general';
-                const tipo = (r.work_order_id || r.workOrder) ? 'work_order' : 'servicio';
-                
-                const groupKey = `${propName}|${curp}|${owner}|${trabajoId}|${tipo}|${tituloTrabajo}`;
-                
-                if (!acc[groupKey]) acc[groupKey] = [];
-                acc[groupKey].push(r);
-                return acc;
-              }, {})
-            ).map(([groupKey, reports]) => {
-              const [nombre, curp, dueno, trabajoId, tipo, tituloTrabajo] = groupKey.split('|');
-              
-              return (
-                <div key={groupKey} className="property-group-section">
-                  
-                  {/* ENCABEZADO DEL GRUPO DE TRABAJO */}
-                  <div className="property-group-header">
-                    <div className="property-header-info">
-                      <div className="property-name-row">
-                        <MapPin size={20} color="#F26522" style={{ flexShrink: 0 }} />
-                        <h3 className="property-title-text">{nombre}</h3>
-                        <span className="property-trabajo-badge">
-                          TRABAJO #{trabajoId} – {tituloTrabajo}
+          <div className="rg-jobs-grid">
+            {propiedadesConReportes.map(propiedad => (
+              <button
+                key={propiedad.propKey}
+                type="button"
+                className="rg-glass-card rg-job-card"
+                onClick={() => { setSelectedPropKey(propiedad.propKey); setSelectedGroupKey(null); }}
+              >
+                <div className="rg-job-photo">
+                  {propiedad.foto ? (
+                    <img src={propiedad.foto} alt={propiedad.nombre} />
+                  ) : (
+                    <div className="rg-job-photo-empty"><ImageIcon size={34} /></div>
+                  )}
+                  <span className="rg-job-progress">
+                    <ClipboardList size={13} /> {propiedad.servicios.length} {propiedad.servicios.length === 1 ? 'SERVICIO' : 'SERVICIOS'}
+                  </span>
+                </div>
+
+                <div className="rg-job-body">
+                  <div className="rg-job-name">
+                    <MapPin size={17} />
+                    <h3>{propiedad.nombre}</h3>
+                  </div>
+                  <div className="rg-job-meta">
+                    <span><strong>CURP:</strong> {propiedad.curp}</span>
+                    <span><strong>DUEÑO:</strong> {propiedad.dueno}</span>
+                  </div>
+                  <span className="rg-job-cta">
+                    Ver servicios <ChevronRight size={16} />
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </main>
+
+      {/* PANEL DE DETALLE: PROPIEDAD → LISTA DE SERVICIOS → REPORTE DEL SERVICIO */}
+      {propiedadSeleccionada && createPortal(
+        <div className="rg-sheet-overlay" onClick={cerrarPanel}>
+          <div className="rg-sheet" onClick={e => e.stopPropagation()}>
+            <div className="rg-sheet-grabber" />
+
+            <div className="rg-sheet-header">
+              <div className="rg-sheet-header-text">
+                {grupoSeleccionado ? (
+                  <button type="button" className="rg-sheet-back" onClick={() => setSelectedGroupKey(null)}>
+                    <ChevronLeft size={16} /> Servicios
+                  </button>
+                ) : (
+                  <span className="rg-trabajo-badge">
+                    {propiedadSeleccionada.servicios.length} {propiedadSeleccionada.servicios.length === 1 ? 'SERVICIO REALIZADO' : 'SERVICIOS REALIZADOS'}
+                  </span>
+                )}
+                <h2>{propiedadSeleccionada.nombre}</h2>
+                <div className="rg-job-meta">
+                  {grupoSeleccionado ? (
+                    <>
+                      <span><strong>SERVICIO {numeroServicio}:</strong> {grupoSeleccionado.tituloTrabajo} (#{grupoSeleccionado.trabajoId})</span>
+                      <span><strong>FECHA:</strong> {grupoSeleccionado.fechaTexto}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span><strong>CURP:</strong> {propiedadSeleccionada.curp}</span>
+                      <span><strong>DUEÑO:</strong> {propiedadSeleccionada.dueno}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <button type="button" className="rg-sheet-close" onClick={cerrarPanel} aria-label="Cerrar">
+                <X size={18} />
+              </button>
+            </div>
+
+            {!grupoSeleccionado ? (
+              /* NIVEL 1: LISTA DE SERVICIOS DE LA PROPIEDAD */
+              <>
+                {propiedadSeleccionada.foto && (
+                  <div className="rg-sheet-photo">
+                    <img src={propiedadSeleccionada.foto} alt={propiedadSeleccionada.nombre} onClick={() => setZoomImage(propiedadSeleccionada.foto)} />
+                  </div>
+                )}
+
+                <div className="rg-services-list">
+                  {propiedadSeleccionada.servicios.map((servicio, idx) => (
+                    <button
+                      key={servicio.groupKey}
+                      type="button"
+                      className="rg-service-item"
+                      onClick={() => setSelectedGroupKey(servicio.groupKey)}
+                    >
+                      <span className="rg-service-number">{idx + 1}</span>
+                      <span className="rg-service-info">
+                        <span className="rg-service-label">SERVICIO {idx + 1} · #{servicio.trabajoId}</span>
+                        <span className="rg-service-title">{servicio.tituloTrabajo}</span>
+                        <span className="rg-service-meta">
+                          <Calendar size={13} /> {servicio.fechaTexto}
+                          <span className="rg-service-dot">•</span>
+                          <CheckCircle2 size={13} /> {servicio.etapasRegistradas}/{STAGES.length} etapas
                         </span>
-                      </div>
-                      <div className="property-meta-row">
-                        <span><strong>CURP:</strong> <strong style={{ color: '#F26522' }}>{curp}</strong></span>
-                        <span><strong>DUEÑO:</strong> <strong>{dueno}</strong></span>
-                      </div>
+                      </span>
+                      <ChevronRight size={18} className="rg-service-chevron" />
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+            /* NIVEL 2: REPORTE DEL SERVICIO SELECCIONADO */
+            <>
+            <div className="rg-sheet-actions">
+              {(() => {
+                const cotizacionAsociada = getCotizacionAsociada(grupoSeleccionado);
+                return cotizacionAsociada ? (
+                  <button type="button" className="rg-btn-secondary" onClick={() => abrirCotizacion(cotizacionAsociada)}>
+                    <FileText size={15} /> VER COTIZACIÓN
+                  </button>
+                ) : null;
+              })()}
+              <button type="button" className="rg-btn-primary" onClick={() => abrirReporteOficial(grupoSeleccionado)}>
+                <FileText size={15} /> REPORTE OFICIAL
+              </button>
+            </div>
+
+            {/* LAS 4 ETAPAS ESTRUCTURADAS (ANTES, DURANTE, DESPUÉS, EXTRA) */}
+            <div className="rg-stages-grid">
+              {STAGES.map(stage => {
+                const { reports, trabajoId, tipo } = grupoSeleccionado;
+                const r = getReportForStage(reports, stage);
+                const cleanDesc = r ? (r.description || '').replace(/\[(ANTES|DURANTE|DESPUÉS|DESPUES|EXTRA)\]/gi, '').trim() : '';
+
+                return r ? (
+                  <div key={stage.key} className="rg-stage-card">
+                    <div className="rg-stage-header">
+                      <span className="rg-stage-badge">{stage.title}</span>
+                      <span className="rg-stage-status"><CheckCircle2 size={12} /> REGISTRADO</span>
                     </div>
 
-                    <div className="property-header-actions">
-                      {(() => {
-                        const cotizacionAsociada = cotizaciones.find(c => 
-                          (tipo === 'work_order' && c.work_order_id === parseInt(trabajoId)) || 
-                          (tipo === 'servicio' && c.service_id === parseInt(trabajoId))
-                        );
-                        
-                        if (cotizacionAsociada) {
-                          return (
-                            <button 
-                              type="button"
-                              className="btn-reporte-coti"
-                              onClick={() => {
-                                localStorage.setItem('cotizacion_para_imprimir', JSON.stringify(cotizacionAsociada));
-                                navigate('/imprimir-cotizacion');
-                              }}
-                            >
-                              <FileText size={14} /> VER COTIZACIÓN
-                            </button>
-                          );
-                        }
-                        return null;
-                      })()}
+                    <div className="rg-stage-image">
+                      <img
+                        src={r.image_url || r.image_path}
+                        alt={stage.title}
+                        onClick={() => setZoomImage(r.image_url || r.image_path)}
+                      />
+                    </div>
 
-                      <button 
-                        type="button"
-                        className="btn-reporte-oficial"
-                        onClick={() => {
-                          const firstReport = reports[0];
-                          const isService = tipo === 'servicio';
-                          const serviceData = isService ? firstReport.service : (firstReport.work_order || firstReport.workOrder || firstReport.service);
-                          const prop = serviceData?.property;
-                          
-                          navigate(`/reporte-trabajo-admin/${tipo}-${trabajoId}`, { 
-                            state: { 
-                              trabajoId: `${tipo}-${trabajoId}`, 
-                              servicio: {
-                                cliente_nombre: dueno,
-                                cliente_email: prop?.client?.email || '',
-                                cliente_telefono: prop?.client?.phone || '',
-                                direccion: prop?.address || serviceData?.address || '',
-                                propiedad_nombre: nombre,
-                                tipoPropiedad: prop?.type || serviceData?.tipoPropiedad || 'CASA',
-                                identificador_curp: curp,
-                                titulo: tituloTrabajo,
-                                descripcion: serviceData?.description
-                              }, 
-                              imagenes: reports.map(r => r.image_url || r.image_path).filter(Boolean) 
-                            } 
-                          });
-                        }}
-                      >
-                        <FileText size={14} /> REPORTE OFICIAL
+                    <div className="rg-stage-tech">
+                      <div className="rg-stage-tech-initial">
+                        {r.technician?.first_name?.charAt(0) || (user?.first_name ? user.first_name.charAt(0) : 'T')}
+                      </div>
+                      <span>
+                        {r.technician ? `${r.technician.first_name} ${r.technician.last_name || ''}`.trim() : (user?.name || 'Técnico')}
+                      </span>
+                    </div>
+
+                    <p className="rg-stage-desc">"{cleanDesc || 'Sin descripción.'}"</p>
+
+                    <div className="rg-stage-actions">
+                      <button type="button" className="rg-stage-btn-edit" onClick={() => handleOpenModal('edit', r, trabajoId, tipo, stage)}>
+                        <Pencil size={13} /> Editar
+                      </button>
+                      <button type="button" className="rg-stage-btn-delete" onClick={() => handleDeleteReport(r.id)}>
+                        <Trash2 size={13} /> Eliminar
                       </button>
                     </div>
                   </div>
-
-                  {/* GRID DE LAS 4 ETAPAS ESTRUCTURADAS (ANTES, DURANTE, DESPUÉS, EXTRA) */}
-                  <div className="stages-grid-4cols">
-                    {STAGES.map(stage => {
-                      const r = getReportForStage(reports, stage);
-                      const cleanDesc = r ? (r.description || '').replace(/\[(ANTES|DURANTE|DESPUÉS|DESPUES|EXTRA)\]/gi, '').trim() : '';
-
-                      return (
-                        <div key={stage.key} className={r ? "stage-card" : "stage-card-empty"} onClick={!r ? () => handleOpenModal('add', null, trabajoId, tipo, stage) : undefined}>
-                          {r ? (
-                            <>
-                              <div>
-                                {/* BADGE DE ETAPA */}
-                                <div className="stage-card-header">
-                                  <span className="stage-badge-tag" style={{ background: stage.badgeColor }}>
-                                    {stage.title}
-                                  </span>
-
-                                  <span 
-                                    className="stage-status-pill"
-                                    style={{
-                                      background: '#dcfce7',
-                                      color: '#15803d'
-                                    }}
-                                  >
-                                    ✅ REGISTRADO
-                                  </span>
-                                </div>
-
-                                {/* FOTOGRAFÍA DE EVIDENCIA */}
-                                <div className="stage-image-container">
-                                  <img 
-                                    src={r.image_url || r.image_path} 
-                                    alt={stage.title} 
-                                    onClick={() => setZoomImage(r.image_url || r.image_path)}
-                                  />
-                                </div>
-
-                                <div className="stage-tech-chip">
-                                  <div className="stage-tech-initial">
-                                    {r.technician?.first_name?.charAt(0) || (user?.first_name ? user.first_name.charAt(0) : 'T')}
-                                  </div>
-                                  <span style={{ fontWeight: '700' }}>
-                                    {r.technician ? `${r.technician.first_name} ${r.technician.last_name || ''}`.trim() : (user?.name || 'Técnico')}
-                                  </span>
-                                </div>
-
-                                <p className="stage-desc-text">
-                                  "{cleanDesc || 'Sin descripción.'}"
-                                </p>
-                              </div>
-
-                              {/* FILA DE BOTONES VISIBLES DE ACCIÓN DEBAJO DE LA DESCRIPCIÓN */}
-                              <div className="stage-card-actions">
-                                <button
-                                  type="button"
-                                  className="stage-btn-edit"
-                                  onClick={(e) => { e.stopPropagation(); handleOpenModal('edit', r, trabajoId, tipo, stage); }}
-                                >
-                                  <Pencil size={13} color="#0f172a" /> Editar
-                                </button>
-                                <button
-                                  type="button"
-                                  className="stage-btn-delete"
-                                  onClick={(e) => { e.stopPropagation(); handleDeleteReport(r.id); }}
-                                >
-                                  <Trash2 size={13} color="#dc2626" /> Eliminar
-                                </button>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <Plus size={32} color="#F26522" />
-                              <strong style={{ color: '#0f172a', fontSize: '0.82rem' }}>AÑADIR EVIDENCIA</strong>
-                              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Tap para subir foto ({stage.title})</span>
-                            </>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                </div>
-              );
-            })}
+                ) : (
+                  <button
+                    key={stage.key}
+                    type="button"
+                    className="rg-stage-empty"
+                    onClick={() => handleOpenModal('add', null, trabajoId, tipo, stage)}
+                  >
+                    <span className="rg-stage-empty-icon"><Plus size={22} /></span>
+                    <strong>AÑADIR EVIDENCIA</strong>
+                    <span>{stage.title}{!stage.required && ' (opcional)'}</span>
+                  </button>
+                );
+              })}
+            </div>
+            </>
+            )}
           </div>
-        )}
-      </div>
+        </div>,
+        document.body
+      )}
 
       {/* MODAL PARA AGREGAR O EDITAR EVIDENCIA */}
-      {isModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', backdropFilter: 'blur(4px)' }}>
-          <div style={{ background: 'white', padding: '24px', borderRadius: '20px', width: '100%', maxWidth: '520px', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <button onClick={closeModal} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
-              <X size={24} />
-            </button>
-            
-            <h3 style={{ marginTop: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.15rem', fontWeight: '800' }}>
-              {modalMode === 'add' ? <Plus size={22} color="#F26522" /> : <Edit size={22} color="#F26522" />}
-              {modalMode === 'add' ? `AÑADIR EVIDENCIA (${selectedStage?.title || ''})` : `EDITAR EVIDENCIA (${selectedStage?.title || ''})`}
-            </h3>
-            
-            <form onSubmit={handleSubmitReport} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '800', color: '#1e293b', fontSize: '0.85rem' }}>
-                  Descripción Obligatoria <span style={{ color: '#dc2626' }}>*</span>
+      {isModalOpen && createPortal(
+        <div className="rg-modal-overlay">
+          <div className="rg-modal">
+            <div className="rg-modal-header">
+              <div className="rg-sheet-header-text">
+                <span className="rg-trabajo-badge">{selectedStage?.title || 'EVIDENCIA'}</span>
+                <h2>{modalMode === 'add' ? 'Añadir evidencia' : 'Editar evidencia'}</h2>
+              </div>
+              <button type="button" className="rg-sheet-close" onClick={closeModal} aria-label="Cerrar">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitReport} className="rg-modal-form">
+              <div className="rg-field">
+                <label className="rg-label">
+                  {modalMode === 'add' ? <Plus size={15} /> : <Edit size={15} />} Descripción obligatoria <span className="rg-required">*</span>
                 </label>
-                <textarea 
+                <textarea
+                  className="rg-textarea"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder={selectedStage?.placeholder || "Escribe la descripción de lo realizado..."}
-                  style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1.5px solid #cbd5e1', minHeight: '90px', resize: 'vertical', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
                   required
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '800', color: '#1e293b', fontSize: '0.85rem' }}>
-                  Fotografía de Evidencia {modalMode === 'add' && <span style={{ color: '#dc2626' }}>*</span>}
+              <div className="rg-field">
+                <label className="rg-label">
+                  <Upload size={15} /> Fotografía de evidencia {modalMode === 'add' && <span className="rg-required">*</span>}
                 </label>
-                <input 
-                  type="file" 
-                  accept="image/*" 
+                <input
+                  type="file"
+                  accept="image/*"
                   onChange={handleImageChange}
                   style={{ display: 'none' }}
                   id="report-image-upload"
                 />
-                <label 
-                  htmlFor="report-image-upload" 
-                  style={{ 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                    padding: '12px', border: '2px dashed #F26522', borderRadius: '12px', 
-                    cursor: 'pointer', color: '#F26522', fontWeight: 'bold', textAlign: 'center', background: '#fff7ed', fontSize: '0.82rem'
-                  }}
-                >
+                <label htmlFor="report-image-upload" className="rg-upload-btn">
                   <Upload size={18} />
-                  {formData.image ? 'Cambiar Imagen Seleccionada' : (modalMode === 'edit' ? 'Subir Nueva Foto (Opcional)' : 'Seleccionar Fotografía')}
+                  {formData.image ? 'Cambiar imagen seleccionada' : (modalMode === 'edit' ? 'Subir nueva foto (opcional)' : 'Seleccionar fotografía')}
                 </label>
 
                 {previewImage && (
-                  <div style={{ marginTop: '12px', textAlign: 'center' }}>
-                    <img src={previewImage} alt="Vista previa" style={{ maxWidth: '100%', maxHeight: '160px', borderRadius: '10px', border: '1px solid #cbd5e1', objectFit: 'cover' }} />
-                  </div>
+                  <img src={previewImage} alt="Vista previa" className="rg-upload-preview" />
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                <button type="button" onClick={closeModal} style={{ flex: 1, padding: '11px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.82rem' }}>
+              <div className="rg-modal-footer">
+                <button type="button" onClick={closeModal} className="rg-btn-secondary">
                   CANCELAR
                 </button>
-                <button type="submit" disabled={isSubmitting} style={{ flex: 1, padding: '11px', background: '#F26522', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1, textTransform: 'uppercase', fontSize: '0.82rem' }}>
+                <button type="submit" disabled={isSubmitting} className="rg-btn-primary">
                   {isSubmitting ? 'GUARDANDO...' : 'GUARDAR EVIDENCIA'}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL ZOOM */}
-      {zoomImage && (
-        <div 
-          onClick={() => setZoomImage(null)}
-          style={{ position: 'fixed', inset: 0, zIndex: 999999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
-        >
-          <img src={zoomImage} alt="Ampliada" style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '16px', objectFit: 'contain' }} onClick={e => e.stopPropagation()} />
-          <button onClick={() => setZoomImage(null)} style={{ position: 'absolute', top: '20px', right: '25px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={36}/></button>
-        </div>
+      {zoomImage && createPortal(
+        <div className="rg-zoom-overlay" onClick={() => setZoomImage(null)}>
+          <img src={zoomImage} alt="Ampliada" onClick={e => e.stopPropagation()} />
+          <button type="button" className="rg-zoom-close" onClick={() => setZoomImage(null)} aria-label="Cerrar">
+            <X size={30} />
+          </button>
+        </div>,
+        document.body
       )}
 
       {/* Mobile Bottom Dock Bar */}

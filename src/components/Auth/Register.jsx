@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
-import { User, Lock, Mail, Phone, Shield, X, Wrench } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { User, Lock, Mail, Phone, X, Wrench, Loader2 } from 'lucide-react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+// Mismo diseño "liquid glass" / bottom sheet que el modal Registrar Propiedad
+import '../../styles/AgenteMarket/Cliente/ModalRegistroInmueble.css';
+import '../../styles/Shared/LiquidGlass.css';
 
 const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -21,6 +23,38 @@ const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Gesto táctil: Arrastrar hacia abajo para cerrar (Swipe down to dismiss)
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchStartY = useRef(0);
+
+  const handleTouchStart = (e) => {
+    if (!onClose || e.target.closest('button, input, select, textarea, a')) return;
+    touchStartY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStartY.current) return;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    if (deltaY > 0) setDragY(deltaY);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartY.current) return;
+    setIsDragging(false);
+    if (dragY > 80) {
+      setDragY(window.innerHeight);
+      setTimeout(() => {
+        onClose();
+        setDragY(0);
+      }, 200);
+    } else {
+      setDragY(0);
+    }
+    touchStartY.current = 0;
+  };
 
   // Rol permitido según requerimiento: Técnico asignado
   const isRoot = user?.role_id === 0 || user?.role_id === 1;
@@ -101,322 +135,147 @@ const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="root-register-overlay">
+  const campos = [
+    { name: 'first_name', type: 'text', label: 'Nombre(s)', placeholder: 'Ej. Juan Carlos', icon: User },
+    { name: 'last_name', type: 'text', label: 'Apellidos', placeholder: 'Ej. Pérez López', icon: User },
+    { name: 'email', type: 'email', label: 'Correo Electrónico', placeholder: 'Ej. tecnico@correo.com', icon: Mail },
+    { name: 'phone_number', type: 'tel', label: 'Teléfono', placeholder: '10 dígitos', icon: Phone },
+    { name: 'password', type: 'password', label: 'Contraseña', placeholder: 'Ingresa una contraseña', icon: Lock },
+    { name: 'confirmPassword', type: 'password', label: 'Confirma Contraseña', placeholder: 'Repite la contraseña', icon: Lock },
+  ];
+
+  return createPortal(
+    <div className="mri-overlay" onClick={onClose}>
       <style>{`
-        .root-register-overlay {
-          position: fixed;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(10, 14, 23, 0.82);
-          backdrop-filter: blur(10px);
+        .reg-role-box {
           display: flex;
-          justify-content: center;
           align-items: center;
-          z-index: 9999;
-          padding: 20px;
+          gap: 12px;
+          padding: 12px 14px;
+          border-radius: 14px;
+          background: rgba(242, 101, 34, 0.14);
+          border: 1px solid rgba(255, 140, 66, 0.45);
           box-sizing: border-box;
-          animation: fadeInOverlay 0.2s ease-out;
         }
-
-        @keyframes fadeInOverlay {
-          from { opacity: 0; transform: scale(0.98); }
-          to { opacity: 1; transform: scale(1); }
-        }
-
-        .root-register-card {
-          background: rgba(18, 24, 38, 0.92);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: 24px;
-          width: 100%;
-          max-width: 640px;
-          max-height: 90vh;
-          overflow-y: auto;
-          padding: 30px;
-          box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 35px rgba(242, 101, 34, 0.18);
-          position: relative;
-          color: white;
-          font-family: 'Outfit', -apple-system, sans-serif;
-        }
-
-        .root-register-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 20px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          padding-bottom: 14px;
-        }
-
-        .root-register-title {
-          font-size: 1.25rem;
-          font-weight: 800;
-          color: #ffffff;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          letter-spacing: 0.5px;
-        }
-
-        .root-close-btn {
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          color: #94a3b8;
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
+        .reg-role-icon {
+          width: 38px;
+          height: 38px;
+          border-radius: 10px;
+          background: rgba(255, 140, 66, 0.18);
+          border: 1px solid rgba(255, 140, 66, 0.35);
+          color: #ff8c42;
           display: flex;
           align-items: center;
           justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
+          flex-shrink: 0;
         }
-
-        .root-close-btn:hover {
-          background: #ef4444;
-          color: white;
-          border-color: #ef4444;
-          transform: rotate(90deg);
-        }
-
-        .role-single-box {
-          background: rgba(242, 101, 34, 0.12);
-          border: 2px solid #F26522;
-          border-radius: 16px;
-          padding: 14px 18px;
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          margin-bottom: 22px;
-          box-shadow: 0 4px 20px rgba(242, 101, 34, 0.2);
-        }
-
-        .role-single-icon {
-          font-size: 1.8rem;
-          line-height: 1;
-        }
-
-        .role-single-info-title {
-          font-weight: 900;
-          font-size: 1rem;
-          color: #ffffff;
-          letter-spacing: 0.5px;
-        }
-
-        .role-single-info-desc {
-          font-size: 0.8rem;
-          color: rgba(255, 255, 255, 0.7);
-          margin-top: 2px;
-        }
-
-        .form-grid-2 {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 14px;
-          margin-bottom: 14px;
-        }
-
-        .form-input-box {
-          position: relative;
-        }
-
-        .form-input-box input {
-          width: 100%;
-          padding: 12px 16px 12px 42px;
-          border-radius: 12px;
-          border: 1.5px solid rgba(255, 255, 255, 0.12);
-          background: rgba(11, 16, 26, 0.85);
-          color: white;
+        .reg-role-title {
           font-size: 0.9rem;
-          font-weight: 600;
-          outline: none;
-          transition: all 0.2s;
-          box-sizing: border-box;
-        }
-
-        .form-input-box input::placeholder {
-          color: #64748b;
-          font-weight: 500;
-          font-size: 0.85rem;
-        }
-
-        .form-input-box input:focus {
-          border-color: #F26522;
-          background: rgba(11, 16, 26, 0.95);
-          box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.25);
-        }
-
-        .form-input-box .input-icon-svg {
-          position: absolute;
-          left: 14px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #94a3b8;
-          pointer-events: none;
-        }
-
-        .btn-submit-root {
-          width: 100%;
-          padding: 13px;
-          border-radius: 50px;
-          border: none;
-          background: linear-gradient(135deg, #F26522 0%, #d84e0c 100%);
-          color: white;
-          font-size: 1rem;
           font-weight: 800;
-          cursor: pointer;
-          box-shadow: 0 8px 25px rgba(242, 101, 34, 0.35);
-          transition: all 0.2s;
-          margin-top: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
+          color: #ffffff;
+          letter-spacing: 0.4px;
         }
-
-        .btn-submit-root:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 30px rgba(242, 101, 34, 0.5);
-          background: linear-gradient(135deg, #ff7233 0%, #e05300 100%);
-        }
-
-        .btn-submit-root:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        @media (max-width: 640px) {
-          .form-grid-2 {
-            grid-template-columns: 1fr;
-          }
-          .root-register-card {
-            padding: 20px;
-          }
+        .reg-role-desc {
+          font-size: 0.76rem;
+          color: rgba(255, 255, 255, 0.65);
+          margin-top: 2px;
         }
       `}</style>
 
-      <div className="root-register-card">
-        <div className="root-register-header">
-          <div className="root-register-title">
-            <Shield size={22} color="#F26522" />
-            <span>REGISTRO DE USUARIO (TÉCNICO AGENTE)</span>
+      <div
+        className="mri-card"
+        onClick={e => e.stopPropagation()}
+        style={{
+          transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
+          transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+        }}
+      >
+        {/* Mobile grabber pill táctil */}
+        <div
+          className="mri-grabber-area"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="mri-grabber" />
+        </div>
+
+        <div
+          className="mri-header"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="mri-header-text">
+            <span className="mri-tag">NUEVO USUARIO</span>
+            <h2 className="mri-title">Registrar Técnico</h2>
           </div>
           {onClose && (
-            <button className="root-close-btn" onClick={onClose} type="button" title="Cerrar">
-              <X size={18} />
+            <button className="mri-close-btn" onClick={onClose} title="Cerrar ventana" aria-label="Cerrar ventana" type="button">
+              <X size={18} color="#ffffff" strokeWidth={2.6} />
             </button>
           )}
         </div>
 
-        {/* Rol único seleccionado: Técnico Agente */}
-        <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#94a3b8', display: 'block', marginBottom: '8px', letterSpacing: '0.5px' }}>
-          ROL ASIGNADO (EQUIPO INTERNO):
-        </label>
-        <div className="role-single-box">
-          <Wrench size={26} color="#F26522" className="role-single-icon" />
-          <div>
-            <div className="role-single-info-title">{rolTecnico.label}</div>
-            <div className="role-single-info-desc">{rolTecnico.desc}</div>
-          </div>
-        </div>
+        <form className="mri-body" onSubmit={handleRegistro}>
+          <div className="mri-form-grid">
 
-        <form onSubmit={handleRegistro}>
-          <div className="form-grid-2">
-            <div className="form-input-box">
-              <User className="input-icon-svg" size={17} />
-              <input
-                name="first_name"
-                required
-                type="text"
-                placeholder="NOMBRE(S)"
-                value={formData.first_name}
-                onChange={handleChange}
-              />
+            {/* Rol único asignado: Técnico Agente */}
+            <div className="mri-field-full">
+              <label className="mri-label">
+                <Wrench size={16} /> Rol Asignado (Equipo Interno):
+              </label>
+              <div className="reg-role-box">
+                <div className="reg-role-icon">
+                  <Wrench size={19} />
+                </div>
+                <div>
+                  <div className="reg-role-title">{rolTecnico.label}</div>
+                  <div className="reg-role-desc">{rolTecnico.desc}</div>
+                </div>
+              </div>
             </div>
-            <div className="form-input-box">
-              <User className="input-icon-svg" size={17} />
-              <input
-                name="last_name"
-                required
-                type="text"
-                placeholder="APELLIDOS"
-                value={formData.last_name}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
 
-          <div className="form-grid-2">
-            <div className="form-input-box">
-              <Mail className="input-icon-svg" size={17} />
-              <input
-                name="email"
-                required
-                type="email"
-                placeholder="CORREO ELECTRÓNICO"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="form-input-box">
-              <Phone className="input-icon-svg" size={17} />
-              <input
-                name="phone_number"
-                required
-                type="tel"
-                placeholder="TELÉFONO (10 DÍGITOS)"
-                value={formData.phone_number}
-                onChange={handleChange}
-              />
-            </div>
+            {campos.map(({ name, type, label, placeholder, icon: Icon }) => (
+              <div className="mri-field-full" key={name}>
+                <label className="mri-label">
+                  <Icon size={16} /> {label}:
+                </label>
+                <input
+                  name={name}
+                  type={type}
+                  className="mri-input"
+                  placeholder={placeholder}
+                  value={formData[name]}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            ))}
+
           </div>
 
-          <div className="form-grid-2">
-            <div className="form-input-box">
-              <Lock className="input-icon-svg" size={17} />
-              <input
-                name="password"
-                required
-                type="password"
-                placeholder="CONTRASEÑA"
-                value={formData.password}
-                onChange={handleChange}
-              />
+          {mensaje && (
+            <div className={`mri-msg ${tipoMensaje}`}>
+              {mensaje}
             </div>
-            <div className="form-input-box">
-              <Lock className="input-icon-svg" size={17} />
-              <input
-                name="confirmPassword"
-                required
-                type="password"
-                placeholder="CONFIRMA CONTRASEÑA"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
+          )}
 
-          <button type="submit" className="btn-submit-root" disabled={isLoading}>
-            {isLoading ? 'REGISTRANDO TÉCNICO...' : 'CREAR Y ACTIVAR CUENTA'}
-          </button>
+          <div className="mri-footer-sticky">
+            <button type="submit" className="mri-submit-btn" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" /> REGISTRANDO TÉCNICO...
+                </>
+              ) : (
+                'CREAR Y ACTIVAR CUENTA'
+              )}
+            </button>
+          </div>
         </form>
-
-        {mensaje && (
-          <div style={{
-            marginTop: '18px',
-            padding: '12px 16px',
-            borderRadius: '12px',
-            textAlign: 'center',
-            fontWeight: '800',
-            fontSize: '0.9rem',
-            color: 'white',
-            backgroundColor: tipoMensaje === 'error' ? '#ef4444' : '#10b981',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.2)'
-          }}>
-            {mensaje}
-          </div>
-        )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

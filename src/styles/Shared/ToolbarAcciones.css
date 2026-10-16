@@ -1,0 +1,204 @@
+/* ==========================================================================
+   BARRA UNIFICADA COMPARTIDA: BUSCADOR + BOTÓN ÚNICO DE ACCIONES (tb-*)
+   Usada en Propiedades y Levantamientos. Mismo estilo que Directorio de Usuarios.
+   ========================================================================== */
+
+.tb-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.tb-toolbar-search {
+    flex: 1;
+    min-width: 0;
+}
+
+.tb-toolbar-search .search-wrapper-full {
+    margin: 0;
+}
+
+/* Mismo estilo de buscador que Directorio de Usuarios (vu-search-unified) */
+.tb-toolbar-search .search-input-large {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.42) 100%) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+    color: #0f172a !important;
+    border-radius: 18px !important;
+    padding: 13px 20px 13px 48px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.4px !important;
+    text-transform: none !important;
+    backdrop-filter: blur(28px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), inset 0 1px 2px rgba(255, 255, 255, 0.9) !important;
+    transition: all 0.25s ease !important;
+}
+
+.tb-toolbar-search .search-input-large::placeholder {
+    color: #64748b !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+}
+
+.tb-toolbar-search .search-input-large:focus {
+    border-color: #f26522 !important;
+    background: rgba(255, 255, 255, 0.82) !important;
+    box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.2), 0 16px 36px rgba(0, 0, 0, 0.16) !important;
+}
+
+.tb-toolbar-search .search-icon-inside {
+    color: #f26522 !important;
+    left: 18px !important;
+}
+
+@media (max-width: 640px) {
+    .tb-toolbar-search .search-input-large {
+        font-size: 0.82rem !important;
+        padding: 10px 14px 10px 40px !important;
+    }
+
+    .tb-toolbar-search .search-icon-inside {
+        left: 14px !important;
+    }
+}
+
+.tb-actions-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* Mismo estilo de botón icono que Usuarios (vu-icon-btn), en tono naranja */
+.tb-actions-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    padding: 0;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #ea580c;
+    background: rgba(242, 101, 34, 0.12);
+    border: 1.5px solid rgba(242, 101, 34, 0.45);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    user-select: none;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tb-actions-btn svg {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tb-actions-btn:hover,
+.tb-actions-btn.open {
+    background: rgba(242, 101, 34, 0.24);
+    border-color: #f26522;
+    color: #c2410c;
+    box-shadow: 0 6px 20px rgba(242, 101, 34, 0.3);
+}
+
+.tb-actions-btn:hover {
+    transform: translateY(-2px);
+}
+
+@media (max-width: 640px) {
+    .tb-actions-btn {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        border-radius: 12px;
+    }
+}
+
+.tb-actions-btn:active {
+    transform: scale(0.96);
+}
+
+/* Al abrir, el + gira y se convierte en X */
+.tb-actions-btn.open svg {
+    transform: rotate(45deg);
+}
+
+.tb-actions-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 230px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14), 0 0 24px rgba(242, 101, 34, 0.08);
+    animation: propActionsIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes propActionsIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tb-actions-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #1e293b;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tb-actions-item:hover {
+    background: rgba(241, 245, 249, 0.95);
+    border-color: transparent;
+}
+
+.tb-actions-item.selected {
+    background: rgba(242, 101, 34, 0.1);
+    border-color: rgba(242, 101, 34, 0.3);
+    color: #ea580c;
+}
+
+.tb-actions-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #ffffff;
+}
+
+.tb-actions-icon.orange { background: linear-gradient(135deg, #f26522 0%, #ea580c 100%); }
+.tb-actions-icon.dark { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+.tb-actions-icon.green { background: linear-gradient(135deg, #10b981 0%, #047857 100%); }
+
+.tb-actions-badge {
+    margin-left: auto;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: #f26522;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 800;
+}

@@ -9,10 +9,13 @@ import ModalCompraEspacios from "../../../components/Shared/ModalCompraEspacios"
 import ModalRegistroInmueble from "../../../components/Shared/ModalRegistroInmueble";
 import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
 import "../../../styles/AgenteSolutions/Cliente/DetallePropiedad.css";
+import "../../../styles/Shared/LiquidGlass.css";
+import "../../../styles/Shared/ToolbarAcciones.css";
 import { 
   X, CheckCircle, User, AlertTriangle, ListChecks, Clock, CheckCircle2, 
   LayoutDashboard, ChevronLeft, PlusCircle, Plus, Globe, FileText, Home, Wrench, 
-  MessageSquare, Camera, UserCheck, ImageIcon, Loader2 
+  MessageSquare, Camera, UserCheck, ImageIcon, Loader2,
+  MoreVertical, Eye, ClipboardCheck, ClipboardList, Pencil, Trash2
 } from "lucide-react";
 
 const TIPOS_PROPIEDAD = [
@@ -516,6 +519,79 @@ const VistaPropiedades = () => {
     navigate("/levantamientos"); 
   };
 
+  // ACCIONES DE TARJETA (compartidas entre overlay de escritorio y menú ⋮ móvil)
+  const irADetallesPropiedad = (p) => {
+    localStorage.setItem('current_property_id', p.id);
+    localStorage.setItem('current_levantamiento_id', p.id_levantamiento || '');
+    window.dispatchEvent(new Event('sync-agente-ids'));
+    navigate(isClient ? `/DetallePropiedad/${p.id}` : `/detalle-propiedad/${p.id}`);
+  };
+
+  const irAVerLevantamiento = (p) => {
+    localStorage.setItem('current_property_id', p.id);
+    window.dispatchEvent(new Event('sync-agente-ids'));
+    if (p.id_levantamiento) {
+      localStorage.setItem('current_levantamiento_id', p.id_levantamiento);
+      navigate(`/detalle-reporte/${p.id_levantamiento}`);
+    } else {
+      // Si no hay servicio pero hay zonas, vamos al reporte usando el ID de propiedad
+      navigate(`/detalle-reporte/prop_${p.id}`);
+    }
+  };
+
+  const irARegistroZonas = (p) => navigate(`/RegistroZonas/${encodeURIComponent(p.curp)}`);
+
+  // BOTÓN ÚNICO DE ACCIONES JUNTO AL BUSCADOR
+  const [accionesAbiertas, setAccionesAbiertas] = useState(false);
+  const accionesRef = useRef(null);
+
+  useEffect(() => {
+    if (!accionesAbiertas) return;
+    const handleClickOutside = (e) => {
+      if (accionesRef.current && !accionesRef.current.contains(e.target)) {
+        setAccionesAbiertas(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [accionesAbiertas]);
+
+  // MENÚ ⋮ MÓVIL DE TARJETA
+  const [menuTarjeta, setMenuTarjeta] = useState(null); // { id, top, bottom, right }
+
+  const abrirMenuTarjeta = (e, p) => {
+    e.stopPropagation();
+    if (menuTarjeta?.id === p.id) { setMenuTarjeta(null); return; }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const abrirArriba = rect.bottom + 260 > window.innerHeight;
+    setMenuTarjeta({
+      id: p.id,
+      top: abrirArriba ? null : rect.bottom + 6,
+      bottom: abrirArriba ? window.innerHeight - rect.top + 6 : null,
+      right: window.innerWidth - rect.right,
+    });
+  };
+
+  const ejecutarAccionMenu = (accion) => {
+    setMenuTarjeta(null);
+    accion();
+  };
+
+  useEffect(() => {
+    if (!menuTarjeta) return;
+    const cerrar = () => setMenuTarjeta(null);
+    window.addEventListener('scroll', cerrar, true);
+    window.addEventListener('resize', cerrar);
+    return () => {
+      window.removeEventListener('scroll', cerrar, true);
+      window.removeEventListener('resize', cerrar);
+    };
+  }, [menuTarjeta]);
+
   const abrirModalEditar = (propiedad) => {
     setPropiedadAEditar(propiedad);
     setEditNombre(propiedad.nombre_propiedad || "");
@@ -625,17 +701,75 @@ const VistaPropiedades = () => {
           </div>
         )}
 
-        {/* Solo para Admin / Autónomo: Buscador Centrado y Simétrico */}
+        {/* Solo para Admin / Autónomo: Buscador + botón único de acciones */}
         {!isClient && (
            <div className="search-header-flex">
-              <div className="search-container-center">
-                <UniversalSearch
-                  type="PROPIEDADES"
-                  data={listaPropiedades}
-                  setFilteredData={setPropiedadesFiltradas}
-                  filtroActual={categoria}
-                  placeholder="PROPIEDADES"
-                />
+              <div className="search-container-center tb-toolbar">
+                <div className="tb-toolbar-search">
+                  <UniversalSearch
+                    type="PROPIEDADES"
+                    data={listaPropiedades}
+                    setFilteredData={setPropiedadesFiltradas}
+                    filtroActual={categoria}
+                    placeholder="BUSCAR PROPIEDAD POR NOMBRE..."
+                  />
+                </div>
+
+                <div className="tb-actions-wrapper" ref={accionesRef}>
+                  <button
+                    type="button"
+                    className={`tb-actions-btn ${accionesAbiertas ? 'open' : ''}`}
+                    onClick={() => setAccionesAbiertas((v) => !v)}
+                    title="Acciones"
+                    aria-label="Acciones de propiedades"
+                    aria-expanded={accionesAbiertas}
+                  >
+                    <Plus size={20} />
+                  </button>
+
+                  {accionesAbiertas && (
+                    <div className="tb-actions-menu">
+                      {isLimitReached ? (
+                        <button
+                          type="button"
+                          className="tb-actions-item"
+                          onClick={() => { setAccionesAbiertas(false); setMostrarModalCompraEspacios(true); }}
+                        >
+                          <span className="tb-actions-icon orange"><Plus size={16} strokeWidth={3} /></span>
+                          <span>Comprar espacio</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="tb-actions-item"
+                          onClick={() => { setAccionesAbiertas(false); setMostrarModalRegistroPropiedad(true); }}
+                        >
+                          <span className="tb-actions-icon orange"><Plus size={16} strokeWidth={3} /></span>
+                          <span>Nueva propiedad</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        className={`tb-actions-item ${categoria === "TODAS" ? 'selected' : ''}`}
+                        onClick={() => { setAccionesAbiertas(false); setCategoria("TODAS"); }}
+                      >
+                        <span className="tb-actions-icon dark"><Globe size={16} strokeWidth={2.4} /></span>
+                        <span>Todas</span>
+                        <span className="tb-actions-badge">{listaPropiedades.length}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="tb-actions-item"
+                        onClick={() => { setAccionesAbiertas(false); handleAbrirReportarProblema(); }}
+                      >
+                        <span className="tb-actions-icon orange"><PlusCircle size={16} strokeWidth={2.6} /></span>
+                        <span>Solicitar servicio</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
            </div>
         )}
@@ -692,52 +826,6 @@ const VistaPropiedades = () => {
           </div>
         )}
 
-        {!isClient && (
-          <div className="categories-row-container">
-            <div className="categories-row">
-              {/* Botón 1: NUEVA PROPIEDAD (+) con icono Plus blanco */}
-              {isLimitReached ? (
-                <button
-                  className="btn-add-action-bar"
-                  onClick={() => setMostrarModalCompraEspacios(true)}
-                  title="Comprar Espacio"
-                  type="button"
-                  style={{ padding: 0 }}
-                >
-                  <Plus size={24} color="#ffffff" strokeWidth={3.5} />
-                </button>
-              ) : (
-                <button
-                  className="btn-add-action-bar"
-                  onClick={() => setMostrarModalRegistroPropiedad(true)}
-                  title="Nueva Propiedad"
-                  type="button"
-                  style={{ padding: 0 }}
-                >
-                  <Plus size={24} color="#ffffff" strokeWidth={3.5} />
-                </button>
-              )}
-              <button
-                className={`cat-btn-filter ${categoria === "TODAS" ? "active" : ""}`}
-                onClick={() => setCategoria("TODAS")}
-                type="button"
-              >
-                <Globe size={17} color="#ffffff" strokeWidth={2.4} />
-                <span>TODAS</span>
-              </button>
-
-              {/* Botón 3: SOLICITAR SERVICIO con icono PlusCircle blanco */}
-              <button
-                type="button"
-                className="btn-solicitar-servicio-bar"
-                onClick={handleAbrirReportarProblema}
-              >
-                <PlusCircle size={18} color="#ffffff" strokeWidth={2.6} />
-                <span>SOLICITAR SERVICIO</span>
-              </button>
-            </div>
-          </div>
-        )}
 
         <div className="properties-grid">
           {cargando ? (
@@ -782,6 +870,14 @@ const VistaPropiedades = () => {
 
                 <div className="property-name-bar">
                   <h3>{p.nombre_propiedad || "Propiedad sin nombre"}</h3>
+                  <button
+                    type="button"
+                    className={`btn-card-menu ${menuTarjeta?.id === p.id ? 'active' : ''}`}
+                    aria-label="Opciones de propiedad"
+                    onClick={(e) => abrirMenuTarjeta(e, p)}
+                  >
+                    <MoreVertical size={20} strokeWidth={2.6} />
+                  </button>
                 </div>
 
                   <div className="property-overlay">
@@ -813,17 +909,7 @@ const VistaPropiedades = () => {
                       {/* BOTÓN 1: DETALLES DE PROPIEDAD */}
                       <button
                         className="btn-overlay secondary"
-                        onClick={() => {
-                          localStorage.setItem('current_property_id', p.id);
-                          localStorage.setItem('current_levantamiento_id', p.id_levantamiento || '');
-                          window.dispatchEvent(new Event('sync-agente-ids'));
-                          
-                          if (isClient) {
-                            navigate(`/DetallePropiedad/${p.id}`);
-                          } else {
-                            navigate(`/detalle-propiedad/${p.id}`);
-                          }
-                        }}
+                        onClick={() => irADetallesPropiedad(p)}
                       >
                         DETALLES DE PROPIEDAD
                       </button>
@@ -833,18 +919,7 @@ const VistaPropiedades = () => {
                         <button 
                           className="btn-overlay primary" 
                           style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none' }}
-                          onClick={() => {
-                            localStorage.setItem('current_property_id', p.id);
-                            window.dispatchEvent(new Event('sync-agente-ids'));
-                            
-                            if (p.id_levantamiento) {
-                              localStorage.setItem('current_levantamiento_id', p.id_levantamiento);
-                              navigate(`/detalle-reporte/${p.id_levantamiento}`);
-                            } else {
-                              // Si no hay servicio pero hay zonas, vamos al reporte usando el ID de propiedad
-                              navigate(`/detalle-reporte/prop_${p.id}`);
-                            }
-                          }}
+                          onClick={() => irAVerLevantamiento(p)}
                         >
                           VER LEVANTAMIENTO
                         </button>
@@ -861,7 +936,7 @@ const VistaPropiedades = () => {
                       <button
                         className="btn-overlay primary"
                         style={{ backgroundColor: '#F26522', color: 'white', border: 'none' }}
-                        onClick={() => navigate(`/RegistroZonas/${encodeURIComponent(p.curp)}`)} 
+                        onClick={() => irARegistroZonas(p)}
                       >
                         {p.levantamiento_realizado ? "✏️ EDITAR LEVANTAMIENTO" : "📸 REALIZAR MI PROPIO LEVANTAMIENTO"}
                       </button>
@@ -877,6 +952,58 @@ const VistaPropiedades = () => {
         </div>
 
       </section>
+
+      {/* MENÚ ⋮ MÓVIL DE TARJETA */}
+      {menuTarjeta && (() => {
+        const p = propiedadesFiltradas.find((x) => x.id === menuTarjeta.id);
+        if (!p) return null;
+        return createPortal(
+          <>
+            <div className="card-menu-backdrop" onClick={() => setMenuTarjeta(null)} />
+            <div
+              className="card-menu-dropdown"
+              style={{
+                top: menuTarjeta.top ?? 'auto',
+                bottom: menuTarjeta.bottom ?? 'auto',
+                right: menuTarjeta.right,
+              }}
+            >
+              <div className="card-menu-title">{p.nombre_propiedad || "Propiedad sin nombre"}</div>
+
+              <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => irADetallesPropiedad(p))}>
+                <Eye size={17} color="#2196F3" /> Detalles de propiedad
+              </button>
+
+              {p.levantamiento_realizado ? (
+                <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => irAVerLevantamiento(p))}>
+                  <ClipboardCheck size={17} color="#4CAF50" /> Ver levantamiento
+                </button>
+              ) : (
+                <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => abrirModalParaPropiedad(p))}>
+                  <ClipboardList size={17} color="#ff8800" /> {p.has_pending_service ? "Levantamiento solicitado" : "Solicitar levantamiento"}
+                </button>
+              )}
+
+              <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => irARegistroZonas(p))}>
+                <Camera size={17} color="#F26522" /> {p.levantamiento_realizado ? "Editar levantamiento" : "Realizar mi propio levantamiento"}
+              </button>
+
+              <div className="card-menu-divider" />
+
+              <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => abrirModalEditar(p))}>
+                <Pencil size={17} color="#64748b" /> Editar propiedad
+              </button>
+
+              {!p.is_shared_with_me && (
+                <button type="button" className="card-menu-item danger" onClick={() => ejecutarAccionMenu(() => eliminarPropiedad(p))}>
+                  <Trash2 size={17} /> Eliminar propiedad
+                </button>
+              )}
+            </div>
+          </>,
+          document.body
+        );
+      })()}
 
       {/* MODAL DE SOLICITAR LEVANTAMIENTO */}
       {mostrarModalServicio && createPortal(

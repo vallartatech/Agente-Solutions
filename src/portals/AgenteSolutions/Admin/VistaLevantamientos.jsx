@@ -21,7 +21,8 @@ import {
   UserCheck,
   FileText,
   X,
-  Shield
+  Shield,
+  Plus
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 import UniversalSearch from "../../../components/Shared/UniversalSearch"; 
@@ -29,6 +30,7 @@ import ModalCalendarioCliente from "../../AgenteMarket/Cliente/ModalCalendarioCl
 import NotificationBell from "../../../components/Shared/NotificationBell";
 import Header from "../../../components/Shared/Header";
 import "../../../styles/AgenteSolutions/Admin/VistaLevantamientos.css";
+import "../../../styles/Shared/ToolbarAcciones.css";
 
 const VistaLevantamientos = () => {
   const navigate = useNavigate();
@@ -130,6 +132,25 @@ const VistaLevantamientos = () => {
   useEffect(() => {
     cargarDatos();
   }, [isClient]);
+
+  // BOTÓN ÚNICO DE FILTROS Y ACCIONES JUNTO AL BUSCADOR
+  const [accionesAbiertas, setAccionesAbiertas] = useState(false);
+  const accionesRef = useRef(null);
+
+  useEffect(() => {
+    if (!accionesAbiertas) return;
+    const handleClickOutside = (e) => {
+      if (accionesRef.current && !accionesRef.current.contains(e.target)) {
+        setAccionesAbiertas(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [accionesAbiertas]);
 
   // Si se envió una propiedad seleccionada en la navegación, asignarla al formulario
   useEffect(() => {
@@ -352,49 +373,63 @@ const VistaLevantamientos = () => {
           </div>
         </div>
 
-        {/* ── BOTONES DE FILTRO Y SOLICITUD ── */}
-        <div className="lev-filter-grid">
-          <button
-            type="button"
-            className={`lev-filter-pill ${tabActual === "PENDIENTES" ? "active" : ""}`}
-            onClick={() => setTabActual("PENDIENTES")}
-            title="Ver visitas técnicas pendientes"
-          >
-            <Clock size={16} />
-            <span>VISITAS PENDIENTES ({pendientesCount})</span>
-          </button>
+        {/* ── BARRA UNIFICADA: BUSCADOR + BOTÓN ÚNICO (FILTROS Y SOLICITUD) ── */}
+        <div className="tb-toolbar">
+          <div className="tb-toolbar-search">
+            <UniversalSearch
+              data={servicios}
+              setFilteredData={setServiciosFiltrados}
+              placeholder="BUSCAR POR PROPIEDAD, ID O ESTADO..."
+              filtroActual={tabActual}
+              type="LEVANTAMIENTOS"
+            />
+          </div>
 
-          <button
-            type="button"
-            className={`lev-filter-pill ${tabActual === "REALIZADOS" ? "active-completed" : ""}`}
-            onClick={() => setTabActual("REALIZADOS")}
-            title="Ver levantamientos finalizados"
-          >
-            <CheckCircle2 size={16} />
-            <span>FINALIZADOS ({finalizadosCount})</span>
-          </button>
+          <div className="tb-actions-wrapper" ref={accionesRef}>
+            <button
+              type="button"
+              className={`tb-actions-btn ${accionesAbiertas ? 'open' : ''}`}
+              onClick={() => setAccionesAbiertas((v) => !v)}
+              title="Filtros y acciones"
+              aria-label="Filtros y acciones de levantamientos"
+              aria-expanded={accionesAbiertas}
+            >
+              <Plus size={20} />
+            </button>
 
-          {/* BOTÓN SOLICITAR LEVANTAMIENTO */}
-          <button
-            type="button"
-            className="lev-filter-pill lev-action-pill-solicitar"
-            onClick={() => setMostrarModalSolicitar(true)}
-            title="Solicitar nuevo levantamiento para una propiedad"
-          >
-            <PlusCircle size={17} />
-            <span>SOLICITAR LEVANTAMIENTO</span>
-          </button>
-        </div>
+            {accionesAbiertas && (
+              <div className="tb-actions-menu">
+                <button
+                  type="button"
+                  className={`tb-actions-item ${tabActual === "PENDIENTES" ? 'selected' : ''}`}
+                  onClick={() => { setAccionesAbiertas(false); setTabActual("PENDIENTES"); }}
+                >
+                  <span className="tb-actions-icon orange"><Clock size={16} strokeWidth={2.4} /></span>
+                  <span>Visitas pendientes</span>
+                  <span className="tb-actions-badge">{pendientesCount}</span>
+                </button>
 
-        {/* ── UNIVERSAL SEARCH IN DARK GLASS ── */}
-        <div className="lev-search-wrapper">
-          <UniversalSearch 
-            data={servicios}
-            setFilteredData={setServiciosFiltrados}
-            placeholder="BUSCAR POR PROPIEDAD, ID O ESTADO..."
-            filtroActual={tabActual}
-            type="LEVANTAMIENTOS"
-          />
+                <button
+                  type="button"
+                  className={`tb-actions-item ${tabActual === "REALIZADOS" ? 'selected' : ''}`}
+                  onClick={() => { setAccionesAbiertas(false); setTabActual("REALIZADOS"); }}
+                >
+                  <span className="tb-actions-icon green"><CheckCircle2 size={16} strokeWidth={2.4} /></span>
+                  <span>Finalizados</span>
+                  <span className="tb-actions-badge">{finalizadosCount}</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="tb-actions-item"
+                  onClick={() => { setAccionesAbiertas(false); setMostrarModalSolicitar(true); }}
+                >
+                  <span className="tb-actions-icon dark"><PlusCircle size={16} strokeWidth={2.6} /></span>
+                  <span>Solicitar levantamiento</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── DESKTOP TABLE VIEW (> 768px) ── */}
