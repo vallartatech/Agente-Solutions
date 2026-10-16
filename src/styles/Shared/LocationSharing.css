@@ -1,0 +1,148 @@
+.loc-share {
+  position: fixed;
+  left: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+}
+
+/* padding/margin propios: anulan los estilos globales de button de index.css */
+.loc-share-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background: rgba(15, 23, 42, 0.88);
+  color: #d1fae5;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.loc-share-pill svg {
+  color: #34d399;
+}
+
+.loc-share-pill.has-error {
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fecaca;
+}
+
+.loc-share-pill.has-error svg {
+  color: #f87171;
+}
+
+.loc-share-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+  animation: locSharePulse 2s infinite;
+}
+
+@keyframes locSharePulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+  70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.loc-share-panel {
+  position: relative;
+  width: min(280px, calc(100vw - 32px));
+  padding: 14px 14px 12px;
+  border-radius: 14px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+  font-size: 0.82rem;
+}
+
+.loc-share-panel strong {
+  display: block;
+  font-size: 0.9rem;
+  color: #ffffff;
+  margin-bottom: 4px;
+  padding-right: 22px;
+}
+
+.loc-share-panel p {
+  margin: 0 0 8px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.loc-share-panel .loc-share-warn {
+  color: #fca5a5;
+}
+
+.loc-share-label {
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.loc-share-panel ul {
+  margin: 4px 0 10px;
+  padding-left: 18px;
+  color: #cbd5e1;
+}
+
+.loc-share-panel-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.loc-share-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.loc-share-stop:hover {
+  background: rgba(239, 68, 68, 0.22);
+}
+
+/* En celular, por encima de la barra de navegación inferior */
+@media (max-width: 900px) {
+  .loc-share {
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    left: 12px;
+  }
+}

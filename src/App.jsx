@@ -15,6 +15,8 @@ import AssignServiceForm from "./components/AssignServiceForm";
 import VistaNotificaciones from "./components/Shared/VistaNotificaciones";
 import UpdateModal from "./components/Shared/UpdateModal";
 import InstallPrompt from "./components/Shared/InstallPrompt";
+import LocationSharing from "./components/Shared/LocationSharing";
+import VistaMapaEquipo from "./portals/AgenteSolutions/Admin/VistaMapaEquipo";
 import RegistroZonas from "./portals/AgenteSolutions/Tecnico/RegistroZonas";
 import CheckEmail from "./components/Auth/CheckEmail";
 import VerifyEmail from "./components/Auth/VerifyEmail";
@@ -225,6 +227,7 @@ const AppRoutes = () => {
       <Route path="/reporte-trabajo-admin/:id?" element={<ReporteTrabajoAdmin />} />
 
       <Route path="/notificaciones" element={<VistaNotificaciones />} />
+      <Route path="/mapa-equipo" element={<VistaMapaEquipo />} />
       <Route path="/trabajos-asignados" element={<TrabajosAsignados />} />
 
       {/* Vista de inicio del cliente sin Sidebar */}
@@ -257,6 +260,7 @@ function App() {
         <AppRoutes />
         <UpdateModal />
         <InstallPrompt />
+        <LocationSharing />
       </BrowserRouter>
     </AuthProvider>
   );

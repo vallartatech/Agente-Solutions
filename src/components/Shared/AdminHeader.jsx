@@ -2,12 +2,13 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarDays, Shield, User, LogOut } from 'lucide-react'; 
+import { CalendarDays, Shield, User, LogOut, Navigation } from 'lucide-react';
 import defaultLogo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
 import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
+import { obtenerEstadoUbicacion, suscribirEstadoUbicacion } from './ubicacionService';
 import '../../styles/Shared/Header.css';
 
 const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
@@ -18,7 +19,16 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
   const [appLogo, setAppLogo] = useState(defaultLogo);
+  const [canViewMap, setCanViewMap] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Botón del mapa del equipo: solo para usuarios autorizados (el backend también lo valida)
+  useEffect(() => {
+    let active = true;
+    obtenerEstadoUbicacion().then(estado => { if (active) setCanViewMap(Boolean(estado?.can_view_map)); });
+    const unsub = suscribirEstadoUbicacion(estado => setCanViewMap(Boolean(estado?.can_view_map)));
+    return () => { active = false; unsub(); };
+  }, [user?.id]);
 
   // Logo dinámico
   useEffect(() => {
@@ -93,6 +103,7 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
   const isCotizacionesActive = activeModule === 'cotizaciones' || currentPath.includes('/cotizacion');
   const isServiciosActive = activeModule === 'servicios' || currentPath.includes('/tablero-servicios') || currentPath.includes('/servicios');
   const isMercadoActive = activeModule === 'mercado' || currentPath.includes('/red-autonomos');
+  const isMapaActive = activeModule === 'mapa' || currentPath.includes('/mapa-equipo');
 
   return (
     <>
@@ -165,6 +176,16 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
           >
             SERVICIOS
           </button>
+
+          {canViewMap && (
+            <button
+              type="button"
+              className={`vcp-nav-btn ${isMapaActive ? 'active' : ''}`}
+              onClick={() => navigate('/mapa-equipo')}
+            >
+              MAPA EN VIVO
+            </button>
+          )}
 
           {isRoot && (
             <button
@@ -246,6 +267,15 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
             >
               <User size={16} /> Mi Perfil
             </button>
+            {canViewMap && (
+              <button
+                type="button"
+                className="vcp-dropdown-item"
+                onClick={() => { setProfileDropdownOpen(false); navigate('/mapa-equipo'); }}
+              >
+                <Navigation size={16} /> Mapa en vivo
+              </button>
+            )}
             <button
               type="button"
               className="vcp-dropdown-item logout"
