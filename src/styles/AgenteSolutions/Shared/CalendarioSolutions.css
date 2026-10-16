@@ -553,3 +553,105 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+/* ── RESPONSIVE FIXES PARA MODAL DE CALENDARIO ── */
+.btn-text-full {
+  display: inline;
+}
+
+.btn-text-short {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .modal-cal-topbar {
+    padding: 8px 10px !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .modal-cal-title-wrapper {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+  }
+
+  .modal-cal-icon-circle {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    border-radius: 8px !important;
+  }
+
+  .modal-cal-title {
+    font-size: 0.84rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    letter-spacing: 0.2px !important;
+  }
+
+  .modal-cal-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .btn-text-full {
+    display: none !important;
+  }
+
+  .btn-text-short {
+    display: inline !important;
+  }
+
+  .btn-modal-quick-notice {
+    padding: 6px 9px !important;
+    font-size: 0.72rem !important;
+    border-radius: 18px !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  .btn-modal-quick-new {
+    padding: 6px 9px !important;
+    font-size: 0.72rem !important;
+    border-radius: 18px !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  .btn-modal-close-window {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Barra de filtros horizontal sin desbordamiento */
+  .scheduler-legend-bar {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 6px 4px !important;
+  }
+
+  .legend-item {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    font-size: 0.72rem !important;
+    padding: 4px 8px !important;
+  }
+}
+
+

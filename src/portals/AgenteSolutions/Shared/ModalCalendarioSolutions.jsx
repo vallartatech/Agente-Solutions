@@ -74,8 +74,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const [currentView, setCurrentView] = useState('month'); // 'month' | 'week' | 'agenda'
   const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'overdue' | 'today' | 'future' | 'uncoordinated' | 'completed'
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [allEvents, setAllEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [workOrdersList, setWorkOrdersList] = useState([]);
+  const [noticesList, setNoticesList] = useState([]);
+  const [birthdaysList, setBirthdaysList] = useState([]);
   const [tecnicosList, setTecnicosList] = useState([]);
 
   // Estados del Modal de Detalle
@@ -264,20 +267,68 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     };
   }, []);
 
-  // Carga de datos para Admin y Técnicos de Solutions
-  const fetchSolutionsData = useCallback(async () => {
+  // ── COMPUTAR allEvents REACTIVAMENTE (Evita re-fetch loops al navegar de mes o cerrar modales) ──
+  const allEvents = useMemo(() => {
+    const list = [...workOrdersList, ...noticesList];
+    const currentYear = currentDate.getFullYear();
+    const now = new Date();
+    const todayDateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    // Proyectar cumpleaños en el año actual y adyacentes
+    [currentYear - 1, currentYear, currentYear + 1].forEach(yr => {
+      birthdaysList.forEach(bday => {
+        const monthStr = String(bday.month).padStart(2, '0');
+        const dayStr = String(bday.day).padStart(2, '0');
+        const dateKey = `${yr}-${monthStr}-${dayStr}`;
+        const bdayDate = new Date(yr, bday.month - 1, bday.day, 9, 0, 0);
+
+        list.push({
+          id: `bday_${bday.user_id}_${yr}`,
+          isBirthday: true,
+          bdayUser: bday,
+          titulo: `🎂 Cumpleaños de ${bday.name}`,
+          type: 'cumpleanos',
+          color: '#ec4899',
+          descripcion: `¡Hoy es el cumpleaños de ${bday.name}! Felicitaciones del equipo Agente Solutions.`,
+          calendarDate: bdayDate,
+          dateKey,
+          hourIndex: 9,
+          calendarHour: 9,
+          calendarTime: 'Todo el día',
+          scheduled_at: null,
+          hasScheduledDate: false,
+          assigned_tech_name: '',
+          cliente: bday.name,
+          statusType: 'birthday',
+          timingCategory: 'birthday',
+          timingBadge: '🎂 Cumpleaños',
+          timingRelative: `Cumpleaños de ${bday.name}`,
+          statusLabel: `🎂 ${bday.name}`,
+          isOverdue: false,
+          isToday: dateKey === todayDateKey,
+          isFuture: false,
+          isUncoordinated: false,
+          isCompleted: false,
+        });
+      });
+    });
+
+    return list;
+  }, [workOrdersList, noticesList, birthdaysList, currentDate]);
+
+  // Carga de datos para Admin y Técnicos de Solutions (Sin ecosistema externo de Agente Market)
+  const fetchSolutionsData = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) setLoading(true);
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const [resWorkOrders, resTecnicos, resTecServicios, resMercado, resEvents, resBirthdays] = await Promise.all([
+      const [resWorkOrders, resTecnicos, resTecServicios, resEvents, resBirthdays] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/all`, { headers }).catch(e => ({ data: [] })),
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`, { headers }).catch(e => ({ data: [] })),
         (isTechnician && user?.id)
           ? axios.get(`${import.meta.env.VITE_API_BASE_URL}/tecnico/${user.id}/servicios`, { headers }).catch(e => ({ data: [] }))
           : Promise.resolve({ data: [] }),
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos`, { headers }).catch(e => ({ data: { success: false, data: [] } })),
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/events`, { headers }).catch(e => ({ data: [] })),
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/birthdays`, { headers }).catch(e => ({ data: [] }))
       ]);
@@ -286,13 +337,44 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       const rawTechs = Array.isArray(resTecnicos.data) ? resTecnicos.data : [];
       setTecnicosList(rawTechs);
 
+      const teamTechIds = new Set(rawTechs.map(t => Number(t.id)));
       const eventMap = new Map();
-      const now = new Date();
-      const todayDateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      // 1. Procesar todas las Work Orders del tenant
+      // 1. Procesar todas las Work Orders internas de Solutions (excluyendo el otro ecosistema de Agente Market)
       rawOrders.forEach(wo => {
-        // Si es técnico, filtrar solo los que le corresponden
+        const isMarketBroadcast = Boolean(
+          wo.publish_network == 1 ||
+          wo.publish_network === true ||
+          wo.is_from_network ||
+          wo.is_network_service
+        );
+
+        // Si es publicación al mercado abierto de la red freelance, solo incluirla si nuestro técnico o admin interactuó
+        if (isMarketBroadcast) {
+          const hasOurTech = wo.tecnico_id && teamTechIds.has(Number(wo.tecnico_id));
+          const hasOurTechInList = wo.technicians && wo.technicians.some(t => teamTechIds.has(Number(t.id)));
+          const isCreatedByMe = Number(wo.user_id) === Number(user?.id) || Number(wo.created_by) === Number(user?.id);
+          if (!hasOurTech && !hasOurTechInList && !isCreatedByMe) {
+            return;
+          }
+        }
+
+        // Si el usuario tiene tenant_id (e.g. Raúl Rivera tenant 15), descartar de otros tenants externos
+        if (user?.tenant_id) {
+          const myTenant = Number(user.tenant_id);
+          const orderTenant = wo.tenant_id ? Number(wo.tenant_id) : null;
+          const propTenant = wo.property?.tenant_id ? Number(wo.property.tenant_id) : null;
+          if (orderTenant && orderTenant !== myTenant && propTenant !== myTenant) {
+            return;
+          }
+        } else if (isAdmin) {
+          // Si es ROOT (rol 0) o tenant null, descartar órdenes pertenecientes a otros tenants externos de marketplace (6, 13) si no tienen técnico nuestro
+          if (wo.tenant_id && [6, 13].includes(Number(wo.tenant_id)) && !wo.tecnico_id) {
+            return;
+          }
+        }
+
+        // Si es técnico de Solutions, solo las que le corresponden
         if (isTechnician && !isAdmin) {
           const isAssignedToMe = Number(wo.tecnico_id) === Number(user?.id) || 
             (wo.technicians && wo.technicians.some(t => Number(t.id) === Number(user?.id)));
@@ -314,22 +396,14 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         });
       }
 
-      // 3. Procesar del mercado si hay datos
-      if (resMercado?.data?.success && Array.isArray(resMercado.data.data)) {
-        resMercado.data.data.forEach(mJob => {
-          const key = `wo_${mJob.id}`;
-          if (!eventMap.has(key)) {
-            if (isAdmin) {
-              const ev = processOrderToEvent(mJob, false);
-              eventMap.set(key, ev);
-            }
-          }
-        });
-      }
+      setWorkOrdersList(Array.from(eventMap.values()));
 
-      // 4. Procesar Avisos / Eventos del Calendario
+      // 3. Procesar Avisos / Eventos del Calendario
       const rawNotices = Array.isArray(resEvents.data) ? resEvents.data : [];
-      rawNotices.forEach(notice => {
+      const now = new Date();
+      const todayDateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      const noticesArr = rawNotices.map(notice => {
         const dateStr = notice.event_date;
         const timeStr = notice.start_time ? notice.start_time.substring(0, 5) : 'Todo el día';
         const hourNum = notice.start_time ? parseInt(notice.start_time.split(':')[0], 10) : 9;
@@ -344,7 +418,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         else if (type === 'mantenimiento') badge = '🔧 Mantto.';
         else if (type === 'otro') badge = '📌 Evento';
 
-        const noticeObj = {
+        return {
           id: `notice_${notice.id}`,
           noticeId: notice.id,
           isNotice: true,
@@ -374,70 +448,34 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
           isUncoordinated: false,
           isCompleted: false,
         };
-        eventMap.set(`notice_${notice.id}`, noticeObj);
       });
+      setNoticesList(noticesArr);
 
-      // 5. Procesar Cumpleaños proyectados en el calendario
+      // 4. Cumpleaños
       const rawBirthdays = Array.isArray(resBirthdays.data) ? resBirthdays.data : [];
-      const currentYear = currentDate.getFullYear();
-      [currentYear - 1, currentYear, currentYear + 1].forEach(yr => {
-        rawBirthdays.forEach(bday => {
-          const monthStr = String(bday.month).padStart(2, '0');
-          const dayStr = String(bday.day).padStart(2, '0');
-          const dateKey = `${yr}-${monthStr}-${dayStr}`;
-          const bdayDate = new Date(yr, bday.month - 1, bday.day, 9, 0, 0);
+      setBirthdaysList(rawBirthdays);
 
-          const bdayObj = {
-            id: `bday_${bday.user_id}_${yr}`,
-            isBirthday: true,
-            bdayUser: bday,
-            titulo: `🎂 Cumpleaños de ${bday.name}`,
-            type: 'cumpleanos',
-            color: '#ec4899',
-            descripcion: `¡Hoy es el cumpleaños de ${bday.name}! Felicitaciones del equipo Agente Solutions.`,
-            calendarDate: bdayDate,
-            dateKey,
-            hourIndex: 9,
-            calendarHour: 9,
-            calendarTime: 'Todo el día',
-            scheduled_at: null,
-            hasScheduledDate: false,
-            assigned_tech_name: '',
-            cliente: bday.name,
-            statusType: 'birthday',
-            timingCategory: 'birthday',
-            timingBadge: '🎂 Cumpleaños',
-            timingRelative: `Cumpleaños de ${bday.name}`,
-            statusLabel: `🎂 ${bday.name}`,
-            isOverdue: false,
-            isToday: dateKey === todayDateKey,
-            isFuture: false,
-            isUncoordinated: false,
-            isCompleted: false,
-          };
-          eventMap.set(bdayObj.id, bdayObj);
-        });
+      // Si había un trabajo seleccionado, actualizarlo funcionalmente
+      setSelectedJob(prev => {
+        if (!prev) return null;
+        const allCurrent = [...Array.from(eventMap.values()), ...noticesArr];
+        const updated = allCurrent.find(e => e.id === prev.id);
+        return updated || prev;
       });
 
-      const eventsList = Array.from(eventMap.values());
-      setAllEvents(eventsList);
-
-      if (selectedJob) {
-        const updated = eventsList.find(e => e.id === selectedJob.id);
-        if (updated) setSelectedJob(updated);
-      }
+      setHasLoadedOnce(true);
     } catch (err) {
       console.error("Error cargando eventos en ModalCalendarioSolutions:", err);
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, isTechnician, user?.id, processOrderToEvent, selectedJob, currentDate]);
+  }, [isAdmin, isTechnician, user?.id, user?.tenant_id, processOrderToEvent]);
 
   useEffect(() => {
     if (isOpen) {
-      fetchSolutionsData();
+      fetchSolutionsData(hasLoadedOnce);
     }
-  }, [isOpen, fetchSolutionsData]);
+  }, [isOpen]);
 
   // Selección de día / navegación
   const handlePrevMonth = () => {
@@ -886,7 +924,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
             </div>
           </div>
 
-          <div className="modal-cal-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          <div className="modal-cal-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {isAdmin && (
               <>
                 <button 
@@ -894,8 +932,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   onClick={() => handleOpenCreateNotice()}
                   title="Publicar Aviso, Fumigación o Evento para el equipo"
                 >
-                  <PlusCircle size={17} />
-                  <span className="btn-modal-quick-new-text">+ Publicar Aviso</span>
+                  <PlusCircle size={15} />
+                  <span className="btn-modal-quick-notice-text">
+                    <span className="btn-text-full">+ Publicar Aviso</span>
+                    <span className="btn-text-short">+ Aviso</span>
+                  </span>
                 </button>
 
                 <button 
@@ -906,8 +947,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   }}
                   title="Gestionar en Tablero de Servicios"
                 >
-                  <CalendarDays size={17} />
-                  <span className="btn-modal-quick-new-text">Tablero</span>
+                  <CalendarDays size={15} />
+                  <span className="btn-modal-quick-new-text">
+                    <span className="btn-text-full">Tablero Servicios</span>
+                    <span className="btn-text-short">Tablero</span>
+                  </span>
                 </button>
               </>
             )}
@@ -917,7 +961,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
               title="Cerrar ventana (Esc)"
               aria-label="Cerrar ventana"
             >
-              <X size={20} color="#FFFFFF" strokeWidth={2.8} />
+              <X size={18} color="#FFFFFF" strokeWidth={2.8} />
             </button>
           </div>
         </div>
