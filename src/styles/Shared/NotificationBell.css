@@ -476,3 +476,87 @@
     font-size: 0.68rem;
   }
 }
+
+/* ── PUSH NOTIFICATION BANNER EN EL POPOVER ── */
+.nb-push-banner {
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.12) 0%, rgba(255, 138, 0, 0.05) 100%);
+  border: 1px solid rgba(242, 101, 34, 0.25);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nb-push-banner-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nb-push-banner-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 9px;
+  background: #f26522;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(242, 101, 34, 0.35);
+}
+
+.nb-push-banner-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nb-push-banner-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nb-push-banner-subtitle {
+  font-size: 0.70rem;
+  color: #64748b;
+  line-height: 1.25;
+}
+
+.nb-push-banner-btn {
+  background: #f26522;
+  color: #ffffff;
+  border: none;
+  border-radius: 9px;
+  padding: 6px 12px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(242, 101, 34, 0.3);
+  flex-shrink: 0;
+}
+
+.nb-push-banner-btn:hover {
+  background: #ea580c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.4);
+}
+
+.nb-push-banner-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

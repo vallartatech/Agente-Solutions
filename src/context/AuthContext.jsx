@@ -27,10 +27,20 @@ export const AuthProvider = ({ children }) => {
     return null;
   });
 
-  // Mark as initialized after first render
+  // Mark as initialized after first render and link OneSignal if user exists
   useEffect(() => {
     setInitialized(true);
-  }, []);
+    if (user?.id) {
+      try {
+        if (typeof OneSignal?.login === 'function') {
+          OneSignal.login(String(user.id))
+            .catch(e => console.warn("[OneSignal] Sesión restaurada sin vinculación:", e));
+        }
+      } catch (e) {
+        console.warn("[OneSignal] Error en vinculación inicial:", e);
+      }
+    }
+  }, [user]);
 
   const loginGlobal = (userData) => {
     const TIEMPO_EXPIRACION = 36 * 60 * 60 * 1000; // 36 Horas

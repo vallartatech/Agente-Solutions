@@ -136,11 +136,15 @@ const AppRoutes = () => {
               prompts: [
                 {
                   type: "push",
-                  autoPrompt: false,
+                  autoPrompt: true,
                   text: {
-                    actionMessage: "Nos gustaría enviarte notificaciones para mantenerte al día con tus servicios y cotizaciones.",
+                    actionMessage: "Recibe avisos de servicios, citas y comunicados del equipo Agente Solutions en tiempo real.",
                     acceptButton: "Permitir",
                     cancelButton: "Más tarde"
+                  },
+                  delay: {
+                    pageViews: 1,
+                    timeDelay: 2
                   }
                 }
               ]
@@ -158,8 +162,22 @@ const AppRoutes = () => {
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);
+
   const { user, initialized } = useAuth();
 
+  // Asegurar que el dispositivo esté vinculado al ID del usuario en OneSignal al cargar cualquier sesión
+  useEffect(() => {
+    if (user?.id) {
+      try {
+        if (typeof OneSignal?.login === 'function') {
+          OneSignal.login(String(user.id))
+            .catch(err => console.warn("[OneSignal] Error al asociar usuario:", err));
+        }
+      } catch (err) {
+        console.warn("[OneSignal] Error al invocar login:", err);
+      }
+    }
+  }, [user?.id]);
 
   if (!initialized) return null;
 

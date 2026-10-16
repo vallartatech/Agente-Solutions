@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import Swal from 'sweetalert2';
+import OneSignal from 'react-onesignal';
 import '../../../styles/AgenteSolutions/Shared/CalendarioSolutions.css';
 import {
   Calendar as CalendarIcon,
@@ -30,7 +31,8 @@ import {
   Check,
   CalendarDays,
   Trash2,
-  Bell
+  Bell,
+  BellRing
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -267,6 +269,57 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     };
   }, []);
 
+  // Helper para procesar un aviso o evento a un objeto estándar de calendario
+  const processNoticeToEvent = useCallback((notice) => {
+    const dateStr = notice.event_date;
+    const timeStr = notice.start_time ? notice.start_time.substring(0, 5) : 'Todo el día';
+    const hourNum = notice.start_time ? parseInt(notice.start_time.split(':')[0], 10) : 9;
+
+    let eventDate = new Date(`${dateStr}T${notice.start_time || '09:00:00'}`);
+    if (isNaN(eventDate.getTime())) eventDate = new Date();
+
+    const type = notice.type || 'aviso';
+    let badge = '📢 Aviso';
+    if (type === 'fumigacion') badge = '🐜 Fumigación';
+    else if (type === 'reunion') badge = '👥 Reunión';
+    else if (type === 'mantenimiento') badge = '🔧 Mantto.';
+    else if (type === 'otro') badge = '📌 Evento';
+
+    const now = new Date();
+    const todayDateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    return {
+      id: `notice_${notice.id}`,
+      noticeId: notice.id,
+      isNotice: true,
+      rawNotice: notice,
+      titulo: notice.title,
+      type: notice.type,
+      color: notice.color || '#10b981',
+      descripcion: notice.description || 'Sin notas adicionales',
+      calendarDate: eventDate,
+      dateKey: dateStr,
+      hourIndex: hourNum,
+      calendarHour: hourNum,
+      calendarTime: timeStr,
+      scheduled_at: notice.start_time ? `${dateStr} ${notice.start_time}` : null,
+      hasScheduledDate: Boolean(notice.start_time),
+      assigned_tech_name: '',
+      cliente: notice.creator ? `${notice.creator.first_name || ''} ${notice.creator.last_name || ''}`.trim() : (user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : 'Administración'),
+      creator: notice.creator || user,
+      statusType: 'notice',
+      timingCategory: 'notice',
+      timingBadge: badge,
+      timingRelative: badge,
+      statusLabel: notice.title,
+      isOverdue: false,
+      isToday: dateStr === todayDateKey,
+      isFuture: false,
+      isUncoordinated: false,
+      isCompleted: false,
+    };
+  }, [user]);
+
   // ── COMPUTAR allEvents REACTIVAMENTE (Evita re-fetch loops al navegar de mes o cerrar modales) ──
   const allEvents = useMemo(() => {
     const list = [...workOrdersList, ...noticesList];
@@ -400,55 +453,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
       // 3. Procesar Avisos / Eventos del Calendario
       const rawNotices = Array.isArray(resEvents.data) ? resEvents.data : [];
-      const now = new Date();
-      const todayDateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-      const noticesArr = rawNotices.map(notice => {
-        const dateStr = notice.event_date;
-        const timeStr = notice.start_time ? notice.start_time.substring(0, 5) : 'Todo el día';
-        const hourNum = notice.start_time ? parseInt(notice.start_time.split(':')[0], 10) : 9;
-
-        let eventDate = new Date(`${dateStr}T${notice.start_time || '09:00:00'}`);
-        if (isNaN(eventDate.getTime())) eventDate = new Date();
-
-        const type = notice.type || 'aviso';
-        let badge = '📢 Aviso';
-        if (type === 'fumigacion') badge = '🐜 Fumigación';
-        else if (type === 'reunion') badge = '👥 Reunión';
-        else if (type === 'mantenimiento') badge = '🔧 Mantto.';
-        else if (type === 'otro') badge = '📌 Evento';
-
-        return {
-          id: `notice_${notice.id}`,
-          noticeId: notice.id,
-          isNotice: true,
-          rawNotice: notice,
-          titulo: notice.title,
-          type: notice.type,
-          color: notice.color || '#10b981',
-          descripcion: notice.description || 'Sin notas adicionales',
-          calendarDate: eventDate,
-          dateKey: dateStr,
-          hourIndex: hourNum,
-          calendarHour: hourNum,
-          calendarTime: timeStr,
-          scheduled_at: notice.start_time ? `${dateStr} ${notice.start_time}` : null,
-          hasScheduledDate: Boolean(notice.start_time),
-          assigned_tech_name: '',
-          cliente: notice.creator ? `${notice.creator.first_name || ''} ${notice.creator.last_name || ''}`.trim() : 'Administración',
-          creator: notice.creator,
-          statusType: 'notice',
-          timingCategory: 'notice',
-          timingBadge: badge,
-          timingRelative: badge,
-          statusLabel: notice.title,
-          isOverdue: false,
-          isToday: dateStr === todayDateKey,
-          isFuture: false,
-          isUncoordinated: false,
-          isCompleted: false,
-        };
-      });
+      const noticesArr = rawNotices.map(notice => processNoticeToEvent(notice));
       setNoticesList(noticesArr);
 
       // 4. Cumpleaños
@@ -469,7 +474,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, isTechnician, user?.id, user?.tenant_id, processOrderToEvent]);
+  }, [isAdmin, isTechnician, user?.id, user?.tenant_id, processOrderToEvent, processNoticeToEvent]);
 
   useEffect(() => {
     if (isOpen) {
@@ -588,17 +593,29 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       );
 
       if (res.status === 200 || res.status === 201 || res.data?.success) {
+        const savedEvent = res.data?.event || {
+          ...payload,
+          id: Date.now(),
+          creator: user
+        };
+        const newNoticeEvent = processNoticeToEvent(savedEvent);
+
+        // Actualización optimista inmediata: aparece al instante en el calendario (0ms)
+        setNoticesList(prev => [newNoticeEvent, ...prev.filter(n => n.noticeId !== newNoticeEvent.noticeId)]);
         setShowCreateNoticeModal(false);
+
         Swal.fire({
           icon: 'success',
           title: '¡Aviso Publicado!',
           text: noticeForm.notify_team
             ? 'El evento se guardó en el calendario y se envió la notificación push al equipo.'
             : 'El evento se ha guardado correctamente en el calendario.',
-          timer: 2500,
+          timer: 2200,
           showConfirmButton: false
         });
-        await fetchSolutionsData();
+
+        // Sincronización silenciosa en background sin bloquear la interfaz
+        fetchSolutionsData(true);
       }
     } catch (err) {
       console.error("Error al crear aviso de calendario:", err);
@@ -627,6 +644,10 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     if (!confirm.isConfirmed) return;
 
     try {
+      // Remoción optimista inmediata del calendario
+      setNoticesList(prev => prev.filter(n => n.noticeId !== noticeId));
+      setSelectedNotice(null);
+
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
@@ -636,17 +657,18 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       );
 
       if (res.status === 200 || res.data?.success) {
-        setSelectedNotice(null);
         Swal.fire({
           icon: 'success',
           title: 'Aviso Eliminado',
-          timer: 1800,
+          timer: 1600,
           showConfirmButton: false
         });
-        await fetchSolutionsData();
+        fetchSolutionsData(true);
       }
     } catch (err) {
       console.error("Error al eliminar aviso:", err);
+      // Si falló, resincronizar
+      fetchSolutionsData(true);
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -1782,6 +1804,51 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       <div className="notice-switch-knob" />
                     </div>
                   </div>
+
+                  {/* Alerta de activación Push si el dispositivo no tiene permisos concedidos */}
+                  {noticeForm.notify_team && typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && (
+                    <div className="notice-push-warning-box">
+                      <div className="notice-push-warning-text">
+                        <BellRing size={16} color="#f97316" />
+                        <span>Este celular o navegador aún no tiene activadas las notificaciones Push.</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="notice-push-quick-btn"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            if (typeof OneSignal?.Notifications?.requestPermission === 'function') {
+                              await OneSignal.Notifications.requestPermission();
+                            } else if (typeof OneSignal?.Slidedown?.promptPush === 'function') {
+                              await OneSignal.Slidedown.promptPush({ force: true });
+                            } else if ('Notification' in window) {
+                              await Notification.requestPermission();
+                            }
+                            if (typeof OneSignal?.User?.PushSubscription?.optIn === 'function') {
+                              await OneSignal.User.PushSubscription.optIn();
+                            }
+                            if (user?.id && typeof OneSignal?.login === 'function') {
+                              await OneSignal.login(String(user.id));
+                            }
+                            if (Notification.permission === 'granted') {
+                              Swal.fire({
+                                icon: 'success',
+                                title: '¡Push Activado!',
+                                text: 'Este dispositivo ahora recibirá notificaciones en su pantalla.',
+                                timer: 2000,
+                                showConfirmButton: false
+                              });
+                            }
+                          } catch (err) {
+                            console.warn("Error al activar push:", err);
+                          }
+                        }}
+                      >
+                        Activar en mi Celular
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="submodal-footer">

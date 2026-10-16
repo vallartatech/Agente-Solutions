@@ -17,6 +17,8 @@ import {
   ArrowRight
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import OneSignal from 'react-onesignal';
+import Swal from 'sweetalert2';
 import "../../styles/Shared/NotificationBell.css";
 
 const timeAgo = (dateString) => {
@@ -94,6 +96,59 @@ const NotificationBell = ({ triggerClassName = '' }) => {
   const navigate = useNavigate();
   const triggerBtnRef = useRef(null);
   const { user } = useAuth();
+  const [pushPermission, setPushPermission] = useState(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      return Notification.permission;
+    }
+    return 'default';
+  });
+  const [enablingPush, setEnablingPush] = useState(false);
+
+  // Verificar estado de permisos cada vez que se abre
+  useEffect(() => {
+    if (isOpen && typeof window !== 'undefined' && 'Notification' in window) {
+      setPushPermission(Notification.permission);
+    }
+  }, [isOpen]);
+
+  const handleEnablePush = async () => {
+    try {
+      setEnablingPush(true);
+      if (typeof OneSignal?.Notifications?.requestPermission === 'function') {
+        await OneSignal.Notifications.requestPermission();
+      } else if (typeof OneSignal?.Slidedown?.promptPush === 'function') {
+        await OneSignal.Slidedown.promptPush({ force: true });
+      } else if (typeof window !== 'undefined' && 'Notification' in window) {
+        await Notification.requestPermission();
+      }
+
+      if (typeof OneSignal?.User?.PushSubscription?.optIn === 'function') {
+        await OneSignal.User.PushSubscription.optIn();
+      }
+
+      if (user?.id && typeof OneSignal?.login === 'function') {
+        await OneSignal.login(String(user.id));
+      }
+
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        setPushPermission(Notification.permission);
+      }
+
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        Swal.fire({
+          icon: 'success',
+          title: '¡Push Activado!',
+          text: 'Este celular ahora recibirá los avisos y alertas en tiempo real.',
+          timer: 2200,
+          showConfirmButton: false
+        });
+      }
+    } catch (err) {
+      console.warn("Error habilitando notificaciones push:", err);
+    } finally {
+      setEnablingPush(false);
+    }
+  };
 
   // Función para obtener las notificaciones de Laravel y respaldo local
   const fetchNotifications = async () => {
@@ -372,6 +427,35 @@ const NotificationBell = ({ triggerClassName = '' }) => {
                 <X size={17} strokeWidth={2.4} />
               </button>
             </div>
+
+            {/* Banner de Notificaciones Push para celular / escritorio */}
+            {pushPermission !== 'granted' && (
+              <div className="nb-push-banner">
+                <div className="nb-push-banner-body">
+                  <div className="nb-push-banner-icon">
+                    <BellRing size={16} />
+                  </div>
+                  <div className="nb-push-banner-info">
+                    <span className="nb-push-banner-title">Notificaciones en Celular</span>
+                    <span className="nb-push-banner-subtitle">
+                      {pushPermission === 'denied'
+                        ? 'Permiso bloqueado en navegador (actívalo en ajustes)'
+                        : 'Recibe avisos y citas directamente en tu pantalla'}
+                    </span>
+                  </div>
+                </div>
+                {pushPermission !== 'denied' && (
+                  <button
+                    type="button"
+                    className="nb-push-banner-btn"
+                    onClick={handleEnablePush}
+                    disabled={enablingPush}
+                  >
+                    {enablingPush ? 'Activando...' : 'Activar'}
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Filter Tabs Row */}
             <div className="nb-tabs-row">
