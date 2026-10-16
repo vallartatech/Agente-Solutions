@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import Swal from 'sweetalert2';
-import OneSignal from 'react-onesignal';
+import { suscribirPushOneSignal } from '../../../components/Shared/oneSignalPush';
 import '../../../styles/AgenteSolutions/Shared/CalendarioSolutions.css';
 import {
   Calendar as CalendarIcon,
@@ -679,17 +679,17 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
       if (permission === 'granted') {
         try {
-          if (typeof OneSignal?.Notifications?.requestPermission === 'function') {
-            await OneSignal.Notifications.requestPermission();
-          }
-          if (typeof OneSignal?.User?.PushSubscription?.optIn === 'function') {
-            await OneSignal.User.PushSubscription.optIn();
-          }
-          if (user?.id && typeof OneSignal?.login === 'function') {
-            await OneSignal.login(String(user.id));
-          }
+          const subscribed = await suscribirPushOneSignal(user?.id);
+          if (!subscribed) throw new Error('OneSignal no registró este dispositivo. Recarga la página e inténtalo de nuevo.');
         } catch (e) {
           console.warn("OneSignal sync warning:", e);
+          Swal.fire({
+            icon: 'error',
+            title: 'No se pudo activar',
+            text: e.message,
+            confirmButtonColor: '#f97316'
+          });
+          return;
         }
 
         Swal.fire({

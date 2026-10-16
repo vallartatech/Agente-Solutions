@@ -151,6 +151,8 @@ const AppRoutes = () => {
           }
         });
       } catch (err) {
+        // El botón "Activar" lo lee para mostrar el motivo en vez de quedarse esperando
+        window.__agenteOneSignalInitError = String(err?.message || err);
         console.warn("OneSignal initialization blocked/failed gracefully:", err);
       }
     };

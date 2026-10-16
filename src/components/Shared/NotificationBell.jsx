@@ -19,6 +19,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import OneSignal from 'react-onesignal';
 import Swal from 'sweetalert2';
+import { suscribirPushOneSignal } from './oneSignalPush';
 import "../../styles/Shared/NotificationBell.css";
 
 const timeAgo = (dateString) => {
@@ -157,22 +158,33 @@ const NotificationBell = ({ triggerClassName = '' }) => {
       const permission = await Notification.requestPermission();
 
       if (permission === 'granted') {
+        setPushPermission('granted');
+
+        let subscribed = false;
         try {
-          if (typeof OneSignal?.Notifications?.requestPermission === 'function') {
-            await OneSignal.Notifications.requestPermission();
-          }
-          if (typeof OneSignal?.User?.PushSubscription?.optIn === 'function') {
-            await OneSignal.User.PushSubscription.optIn();
-          }
-          if (user?.id && typeof OneSignal?.login === 'function') {
-            await OneSignal.login(String(user.id));
-          }
+          subscribed = await suscribirPushOneSignal(user?.id);
         } catch (e) {
           console.warn("OneSignal sync warning:", e);
+          setPushSubscribed(false);
+          Swal.fire({
+            icon: 'error',
+            title: 'No se pudo activar',
+            text: e.message,
+            confirmButtonColor: '#f97316'
+          });
+          return;
         }
 
-        setPushPermission('granted');
-        setPushSubscribed(OneSignal?.User?.PushSubscription?.optedIn === true);
+        setPushSubscribed(subscribed);
+        if (!subscribed) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Suscripción incompleta',
+            text: 'El permiso está concedido pero OneSignal no registró este dispositivo. Recarga la página e inténtalo de nuevo.',
+            confirmButtonColor: '#f97316'
+          });
+          return;
+        }
 
         Swal.fire({
           icon: 'success',
@@ -254,7 +266,10 @@ const NotificationBell = ({ triggerClassName = '' }) => {
   useEffect(() => {
     if (user) {
       fetchNotifications();
-      const timer = setInterval(fetchNotifications, 3000);
+      // Sondeo moderado; los avisos inmediatos llegan por push. No consultar con la pestaña oculta.
+      const timer = setInterval(() => {
+        if (!document.hidden) fetchNotifications();
+      }, 20000);
       window.addEventListener('storage', fetchNotifications);
       window.addEventListener('notif_update', fetchNotifications);
 
