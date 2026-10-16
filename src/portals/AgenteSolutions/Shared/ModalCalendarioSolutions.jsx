@@ -629,10 +629,93 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     }
   };
 
+  const handleRequestPushPermission = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Navegador no compatible',
+        text: 'Este navegador no soporta notificaciones Web Push directamente.'
+      });
+      return;
+    }
+
+    if (Notification.permission === 'denied') {
+      Swal.fire({
+        icon: 'info',
+        title: 'Notificaciones Bloqueadas',
+        html: `
+          <div style="text-align: left; font-size: 0.92rem; color: #334155; line-height: 1.6;">
+            <p style="margin-bottom: 10px;">Tu navegador tiene bloqueadas las notificaciones para esta web.</p>
+            <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px;">
+              <strong>Cómo habilitarlas en 5 segundos:</strong>
+              <ol style="margin: 8px 0 0 0; padding-left: 20px;">
+                <li>Toca el <strong>ícono de candado 🔒</strong> o controles junto al enlace web (arriba a la izquierda).</li>
+                <li>Toca en <strong>Permisos</strong> > <strong>Notificaciones</strong>.</li>
+                <li>Selecciona <strong>Permitir</strong> o <strong>Restablecer permisos</strong>.</li>
+                <li>Recarga la página y listo.</li>
+              </ol>
+            </div>
+          </div>
+        `,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#f97316'
+      });
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+
+      if (permission === 'granted') {
+        try {
+          if (typeof OneSignal?.Notifications?.requestPermission === 'function') {
+            await OneSignal.Notifications.requestPermission();
+          }
+          if (typeof OneSignal?.User?.PushSubscription?.optIn === 'function') {
+            await OneSignal.User.PushSubscription.optIn();
+          }
+          if (user?.id && typeof OneSignal?.login === 'function') {
+            await OneSignal.login(String(user.id));
+          }
+        } catch (e) {
+          console.warn("OneSignal sync warning:", e);
+        }
+
+        Swal.fire({
+          icon: 'success',
+          title: '¡Push Activado!',
+          text: 'Este celular ahora recibirá los avisos y alertas en tiempo real.',
+          timer: 2500,
+          showConfirmButton: false
+        });
+      } else if (permission === 'denied') {
+        Swal.fire({
+          icon: 'info',
+          title: 'Permiso No Concedido',
+          text: 'Puedes activarlas cuando desees tocando el candado 🔒 de tu navegador.'
+        });
+      }
+    } catch (err) {
+      console.warn("Error habilitando notificaciones push:", err);
+    }
+  };
+
   const handleDeleteNotice = async (noticeId) => {
+    const rawId = noticeId || selectedNotice?.noticeId || selectedNotice?.rawNotice?.id || (typeof selectedNotice?.id === 'string' ? selectedNotice.id.replace('notice_', '') : selectedNotice?.id);
+    const targetId = parseInt(rawId, 10);
+
+    if (!targetId || isNaN(targetId)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo identificar el número de aviso a eliminar.'
+      });
+      return;
+    }
+
     const confirm = await Swal.fire({
       title: '¿Eliminar este aviso?',
-      text: 'Esta acción no se puede deshacer y retirará el aviso del calendario.',
+      text: 'Esta acción no se puede deshacer y retirará el aviso del calendario de todo el equipo.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
@@ -645,14 +728,15 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
     try {
       // Remoción optimista inmediata del calendario
-      setNoticesList(prev => prev.filter(n => n.noticeId !== noticeId));
+      setNoticesList(prev => prev.filter(n => Number(n.noticeId) !== targetId && n.id !== `notice_${targetId}`));
       setSelectedNotice(null);
 
-      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const session = JSON.parse(localStorage.getItem('agente_session') || '{}');
+      const token = session.token || session.access_token || localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       const res = await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/calendar/events/${noticeId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/calendar/events/${targetId}`,
         { headers }
       );
 
@@ -671,8 +755,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       fetchSolutionsData(true);
       Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: err.response?.data?.error || 'No se pudo eliminar el aviso.'
+        title: 'Error al eliminar',
+        text: err.response?.data?.error || err.response?.data?.message || 'No se pudo eliminar el aviso.'
       });
     }
   };
@@ -1815,34 +1899,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       <button
                         type="button"
                         className="notice-push-quick-btn"
-                        onClick={async (e) => {
+                        onClick={(e) => {
                           e.stopPropagation();
-                          try {
-                            if (typeof OneSignal?.Notifications?.requestPermission === 'function') {
-                              await OneSignal.Notifications.requestPermission();
-                            } else if (typeof OneSignal?.Slidedown?.promptPush === 'function') {
-                              await OneSignal.Slidedown.promptPush({ force: true });
-                            } else if ('Notification' in window) {
-                              await Notification.requestPermission();
-                            }
-                            if (typeof OneSignal?.User?.PushSubscription?.optIn === 'function') {
-                              await OneSignal.User.PushSubscription.optIn();
-                            }
-                            if (user?.id && typeof OneSignal?.login === 'function') {
-                              await OneSignal.login(String(user.id));
-                            }
-                            if (Notification.permission === 'granted') {
-                              Swal.fire({
-                                icon: 'success',
-                                title: '¡Push Activado!',
-                                text: 'Este dispositivo ahora recibirá notificaciones en su pantalla.',
-                                timer: 2000,
-                                showConfirmButton: false
-                              });
-                            }
-                          } catch (err) {
-                            console.warn("Error al activar push:", err);
-                          }
+                          handleRequestPushPermission();
                         }}
                       >
                         Activar en mi Celular

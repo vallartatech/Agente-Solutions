@@ -112,35 +112,73 @@ const NotificationBell = ({ triggerClassName = '' }) => {
   }, [isOpen]);
 
   const handleEnablePush = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Navegador no compatible',
+        text: 'Este navegador no soporta notificaciones Web Push directamente.'
+      });
+      return;
+    }
+
+    if (Notification.permission === 'denied') {
+      Swal.fire({
+        icon: 'info',
+        title: 'Notificaciones Bloqueadas',
+        html: `
+          <div style="text-align: left; font-size: 0.92rem; color: #334155; line-height: 1.6;">
+            <p style="margin-bottom: 10px;">Tu navegador tiene bloqueadas las notificaciones para esta web.</p>
+            <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px;">
+              <strong>Cómo habilitarlas en 5 segundos:</strong>
+              <ol style="margin: 8px 0 0 0; padding-left: 20px;">
+                <li>Toca el <strong>ícono de candado 🔒</strong> o controles junto al enlace web (arriba a la izquierda).</li>
+                <li>Toca en <strong>Permisos</strong> > <strong>Notificaciones</strong>.</li>
+                <li>Selecciona <strong>Permitir</strong> o <strong>Restablecer permisos</strong>.</li>
+                <li>Recarga la página y listo.</li>
+              </ol>
+            </div>
+          </div>
+        `,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#f97316'
+      });
+      return;
+    }
+
     try {
       setEnablingPush(true);
-      if (typeof OneSignal?.Notifications?.requestPermission === 'function') {
-        await OneSignal.Notifications.requestPermission();
-      } else if (typeof OneSignal?.Slidedown?.promptPush === 'function') {
-        await OneSignal.Slidedown.promptPush({ force: true });
-      } else if (typeof window !== 'undefined' && 'Notification' in window) {
-        await Notification.requestPermission();
-      }
+      const permission = await Notification.requestPermission();
 
-      if (typeof OneSignal?.User?.PushSubscription?.optIn === 'function') {
-        await OneSignal.User.PushSubscription.optIn();
-      }
+      if (permission === 'granted') {
+        try {
+          if (typeof OneSignal?.Notifications?.requestPermission === 'function') {
+            await OneSignal.Notifications.requestPermission();
+          }
+          if (typeof OneSignal?.User?.PushSubscription?.optIn === 'function') {
+            await OneSignal.User.PushSubscription.optIn();
+          }
+          if (user?.id && typeof OneSignal?.login === 'function') {
+            await OneSignal.login(String(user.id));
+          }
+        } catch (e) {
+          console.warn("OneSignal sync warning:", e);
+        }
 
-      if (user?.id && typeof OneSignal?.login === 'function') {
-        await OneSignal.login(String(user.id));
-      }
+        setPushPermission('granted');
 
-      if (typeof window !== 'undefined' && 'Notification' in window) {
-        setPushPermission(Notification.permission);
-      }
-
-      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
         Swal.fire({
           icon: 'success',
           title: '¡Push Activado!',
           text: 'Este celular ahora recibirá los avisos y alertas en tiempo real.',
-          timer: 2200,
+          timer: 2500,
           showConfirmButton: false
+        });
+      } else if (permission === 'denied') {
+        setPushPermission('denied');
+        Swal.fire({
+          icon: 'info',
+          title: 'Permiso No Concedido',
+          text: 'Puedes activarlas cuando desees tocando el candado 🔒 de tu navegador.'
         });
       }
     } catch (err) {

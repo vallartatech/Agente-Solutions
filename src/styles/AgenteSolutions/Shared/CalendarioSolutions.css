@@ -695,4 +695,9 @@
   transform: translateY(-1px);
 }
 
+.swal2-container {
+  z-index: 2147483647 !important;
+}
+
+
 

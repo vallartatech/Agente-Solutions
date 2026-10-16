@@ -122,12 +122,6 @@ const AppRoutes = () => {
 
     const initOneSignal = async () => {
       try {
-        if (typeof window !== 'undefined' && 'Notification' in window) {
-          if (Notification.permission === 'denied') {
-            console.warn("OneSignal notifications permission is blocked by browser.");
-            return;
-          }
-        }
         await OneSignal.init({
           appId: "67944b3a-0f59-4080-a682-48dd6bee81ce",
           allowLocalhostAsSecureOrigin: true,
