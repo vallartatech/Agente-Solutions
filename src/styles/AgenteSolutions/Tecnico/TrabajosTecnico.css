@@ -659,10 +659,117 @@ body, html { margin: 0; padding: 0; }
   pointer-events: none;
 }
 
+/* Bloqueado: los trabajos se ven atenuados pero legibles; el aviso va arriba (.tt-checklist-gate) */
 .tt-board-container-kanban.table-locked .tt-col-content {
-  filter: blur(10px);
-  opacity: 0.4;
+  filter: grayscale(0.6);
+  opacity: 0.5;
   transition: all 0.5s ease;
+}
+
+/* ── AVISO: CHECKLIST OBLIGATORIO ANTES DE LOS TRABAJOS ── */
+.tt-checklist-gate {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #fff7ed;
+  border: 1.5px solid #fdba74;
+  border-left: 6px solid #f26624;
+  box-shadow: 0 6px 18px rgba(242, 102, 36, 0.12);
+}
+
+.tt-checklist-gate-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #f26624;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tt-checklist-gate-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tt-checklist-gate-text strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #9a3412;
+}
+
+.tt-checklist-gate-text span {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #7c2d12;
+}
+
+/* margin/padding propios: anulan los estilos globales de button de index.css */
+.tt-checklist-gate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+  background: #f26624;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(242, 102, 36, 0.35);
+}
+
+.tt-checklist-gate-btn:hover {
+  background: #ea580c;
+}
+
+@media (max-width: 640px) {
+  .tt-checklist-gate {
+    flex-wrap: wrap;
+    padding: 14px;
+  }
+
+  .tt-checklist-gate-btn {
+    width: 100%;
+  }
+}
+
+/* ── ETIQUETA DE LEVANTAMIENTO EN LAS TARJETAS ── */
+.tt-survey-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.tt-survey-tag.is-pending {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
+}
+
+.tt-survey-tag.is-started {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #6ee7b7;
 }
 
 .lock-text { color: #f26624; font-size: 14px; margin-left: 10px; text-transform: uppercase; font-weight: 900; }

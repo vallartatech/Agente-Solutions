@@ -14,6 +14,7 @@ import {
   FileText,
   User,
   LayoutGrid,
+  PencilLine,
   ChevronLeft
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -173,12 +174,12 @@ const TrabajosAsignados = () => {
                           </button>
 
                           <button
-                            className="btn-action zones"
-                            title="Iniciar Levantamiento de Zonas"
+                            className={`btn-action zones ${s.tiene_levantamiento ? 'has-survey' : ''}`}
+                            title={s.tiene_levantamiento ? 'Editar el levantamiento de zonas' : 'Iniciar levantamiento de zonas'}
                             onClick={() => irARegistro(s)}
                           >
-                            <LayoutGrid size={17} />
-                            <span>Levantamiento</span>
+                            {s.tiene_levantamiento ? <PencilLine size={17} /> : <LayoutGrid size={17} />}
+                            <span>{s.tiene_levantamiento ? 'Editar levantamiento' : 'Levantamiento'}</span>
                           </button>
 
                           <button

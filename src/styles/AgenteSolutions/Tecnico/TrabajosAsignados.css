@@ -249,6 +249,19 @@
   box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
 }
 
+/* La propiedad ya tiene elementos: "Editar levantamiento" */
+.btn-action.zones.has-survey {
+  background-color: #f5f3ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+}
+
+.btn-action.zones.has-survey:hover {
+  background-color: #7c3aed;
+  color: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.3);
+}
+
 .btn-action.view {
   background-color: #fff7ed;
   color: #f97316;
@@ -592,7 +605,8 @@
 
   .cell-acciones {
     display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
+    /* columna central más ancha: "Editar levantamiento" */
+    grid-template-columns: 1fr 1.45fr 1fr !important;
     gap: 6px !important;
     margin-top: 0.75rem !important;
     padding-top: 0.75rem !important;
@@ -606,6 +620,12 @@
     border-radius: 8px !important;
     font-weight: 700 !important;
     letter-spacing: 0.2px !important;
+  }
+
+  .btn-action.zones.has-survey {
+    white-space: normal !important;
+    text-align: center !important;
+    line-height: 1.15 !important;
   }
 
   .info-grid-formal {

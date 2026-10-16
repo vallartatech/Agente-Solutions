@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosTecnico.css";
 import { 
   Search, Package, Wrench, CheckCircle2, Lock, Settings, 
-  Calendar, Clock, MapPin, AlertTriangle, ChevronRight, X, ChevronLeft
+  Calendar, Clock, MapPin, AlertTriangle, ChevronRight, X, ChevronLeft, LayoutGrid
 } from 'lucide-react';
 import Header from "../../../components/Shared/Header";
 import UniversalSearch from '../../../components/Shared/UniversalSearch';
@@ -402,6 +402,14 @@ const TrabajosTecnico = () => {
         
         <div className="tt-col tt-col-main">
           <h4 className="tt-property-title">{item.property_name || "Sin Nombre"}</h4>
+          {item.es_levantamiento && (
+            <span className={`tt-survey-tag ${item.tiene_levantamiento ? 'is-started' : 'is-pending'}`}>
+              <LayoutGrid size={12} />
+              {item.tiene_levantamiento
+                ? `Levantamiento${item.zonas_registradas ? ` · ${item.zonas_registradas} ${item.zonas_registradas === 1 ? 'zona' : 'zonas'}` : ''}`
+                : 'Levantamiento por realizar'}
+            </span>
+          )}
         </div>
 
         <div className="tt-col tt-col-info">
@@ -480,6 +488,19 @@ const TrabajosTecnico = () => {
     ...itemsCheck.herramientas
   ].every(item => item === true);
 
+  const abrirChecklist = () => {
+    if (materialRecibido) {
+      const updated = { ...itemsCheck };
+      Object.keys(updated).forEach(k => {
+        if (Array.isArray(updated[k])) {
+          updated[k] = updated[k].map(() => true);
+        }
+      });
+      setItemsCheck(updated);
+    }
+    setMostrarModalChecklist(true);
+  };
+
   const confirmarRecepcion = () => {
     setMaterialRecibido(true);
     if (user?.id) {
@@ -516,26 +537,31 @@ const TrabajosTecnico = () => {
         </div>
         
         {!isTecnicoRed && (
-          <button 
+          <button
               className={`btn-open-checklist ${materialRecibido ? 'recibido' : 'pendiente'}`}
-              onClick={() => {
-                if (materialRecibido) {
-                  const updated = { ...itemsCheck };
-                  Object.keys(updated).forEach(k => {
-                    if (Array.isArray(updated[k])) {
-                      updated[k] = updated[k].map(() => true);
-                    }
-                  });
-                  setItemsCheck(updated);
-                }
-                setMostrarModalChecklist(true);
-              }}
+              onClick={abrirChecklist}
             >
             {materialRecibido ? <CheckCircle2 size={20} /> : <Package size={20} />}
             <span>{materialRecibido ? "MATERIAL LISTO" : "LISTA DE RUTA"}</span>
           </button>
         )}
       </div>
+
+      {/* Aviso del checklist obligatorio: arriba de los trabajos, no encima de ellos */}
+      {(!materialRecibido && !isTecnicoRed) && (
+        <div className="tt-checklist-gate" role="alert">
+          <div className="tt-checklist-gate-icon">
+            <Lock size={22} />
+          </div>
+          <div className="tt-checklist-gate-text">
+            <strong>Paso obligatorio: confirma tu lista de ruta</strong>
+            <span>Antes de iniciar tus trabajos marca el material, equipo y herramientas que llevas. Tus trabajos se desbloquean al confirmar.</span>
+          </div>
+          <button type="button" className="tt-checklist-gate-btn" onClick={abrirChecklist}>
+            <Package size={16} /> Confirmar lista de ruta
+          </button>
+        </div>
+      )}
 
       <div className="tt-mobile-tabs">
         <button 
@@ -642,9 +668,6 @@ const TrabajosTecnico = () => {
         </div>
 
       </div>
-        {(!materialRecibido && !isTecnicoRed) && (
-          <div className="lock-overlay-msg">Debe confirmar recepción de material para desbloquear</div>
-        )}
 
       {!isTecnicoRed && (
         <AnimatePresence>
