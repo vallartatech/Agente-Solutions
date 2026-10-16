@@ -125,6 +125,7 @@ const AppRoutes = () => {
       try {
         await OneSignal.init({
           appId: "67944b3a-0f59-4080-a682-48dd6bee81ce",
+          safari_web_id: "web.onesignal.auto.2d34c372-40ef-4eb5-956b-2d525ea9497b",
           allowLocalhostAsSecureOrigin: true,
           // Scope propio para no chocar con el service worker de la PWA (/sw.js en "/")
           serviceWorkerPath: "push/onesignal/OneSignalSDKWorker.js",
