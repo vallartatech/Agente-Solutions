@@ -14,6 +14,7 @@ import CustomizeLogin from "./components/Auth/CustomizeLogin";
 import AssignServiceForm from "./components/AssignServiceForm";
 import VistaNotificaciones from "./components/Shared/VistaNotificaciones";
 import UpdateModal from "./components/Shared/UpdateModal";
+import InstallPrompt from "./components/Shared/InstallPrompt";
 import RegistroZonas from "./portals/AgenteSolutions/Tecnico/RegistroZonas";
 import CheckEmail from "./components/Auth/CheckEmail";
 import VerifyEmail from "./components/Auth/VerifyEmail";
@@ -125,12 +126,16 @@ const AppRoutes = () => {
         await OneSignal.init({
           appId: "67944b3a-0f59-4080-a682-48dd6bee81ce",
           allowLocalhostAsSecureOrigin: true,
+          // Scope propio para no chocar con el service worker de la PWA (/sw.js en "/")
+          serviceWorkerPath: "push/onesignal/OneSignalSDKWorker.js",
+          serviceWorkerParam: { scope: "/push/onesignal/" },
           promptOptions: {
             slidedown: {
               prompts: [
                 {
                   type: "push",
-                  autoPrompt: true,
+                  // El permiso se pide desde el botón "Activar" de la campanita
+                  autoPrompt: false,
                   text: {
                     actionMessage: "Recibe avisos de servicios, citas y comunicados del equipo Agente Solutions en tiempo real.",
                     acceptButton: "Permitir",
@@ -294,6 +299,7 @@ function App() {
       <BrowserRouter>
         <AppRoutes />
         <UpdateModal />
+        <InstallPrompt />
       </BrowserRouter>
     </AuthProvider>
   );

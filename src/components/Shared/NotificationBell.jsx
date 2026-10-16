@@ -103,11 +103,18 @@ const NotificationBell = ({ triggerClassName = '' }) => {
     return 'default';
   });
   const [enablingPush, setEnablingPush] = useState(false);
+  // Permiso concedido no basta: el dispositivo debe estar suscrito en OneSignal
+  const [pushSubscribed, setPushSubscribed] = useState(true);
 
-  // Verificar estado de permisos cada vez que se abre
+  // Verificar estado de permisos y suscripción cada vez que se abre
   useEffect(() => {
     if (isOpen && typeof window !== 'undefined' && 'Notification' in window) {
       setPushPermission(Notification.permission);
+      try {
+        setPushSubscribed(OneSignal?.User?.PushSubscription?.optedIn === true);
+      } catch (e) {
+        setPushSubscribed(false);
+      }
     }
   }, [isOpen]);
 
@@ -165,6 +172,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
         }
 
         setPushPermission('granted');
+        setPushSubscribed(OneSignal?.User?.PushSubscription?.optedIn === true);
 
         Swal.fire({
           icon: 'success',
@@ -467,7 +475,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
             </div>
 
             {/* Banner de Notificaciones Push para celular / escritorio */}
-            {pushPermission !== 'granted' && (
+            {(pushPermission !== 'granted' || !pushSubscribed) && (
               <div className="nb-push-banner">
                 <div className="nb-push-banner-body">
                   <div className="nb-push-banner-icon">

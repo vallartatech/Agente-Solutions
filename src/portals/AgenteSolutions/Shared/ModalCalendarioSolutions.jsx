@@ -604,15 +604,26 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         setNoticesList(prev => [newNoticeEvent, ...prev.filter(n => n.noticeId !== newNoticeEvent.noticeId)]);
         setShowCreateNoticeModal(false);
 
-        Swal.fire({
-          icon: 'success',
-          title: '¡Aviso Publicado!',
-          text: noticeForm.notify_team
-            ? 'El evento se guardó en el calendario y se envió la notificación push al equipo.'
-            : 'El evento se ha guardado correctamente en el calendario.',
-          timer: 2200,
-          showConfirmButton: false
-        });
+        // El backend informa si OneSignal realmente aceptó el envío
+        const push = res.data?.push;
+        if (noticeForm.notify_team && push && !push.sent) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Aviso guardado, push no enviada',
+            text: `El aviso ya está en el calendario y en la campanita, pero OneSignal no envió la notificación: ${push.error || 'ningún dispositivo del equipo está suscrito.'}`,
+            confirmButtonColor: '#f97316'
+          });
+        } else {
+          Swal.fire({
+            icon: 'success',
+            title: '¡Aviso Publicado!',
+            text: noticeForm.notify_team
+              ? `El evento se guardó en el calendario y se envió la notificación push${push?.subscribed != null ? ` a ${push.subscribed} de ${push.recipients} miembros del equipo` : ' al equipo'}.`
+              : 'El evento se ha guardado correctamente en el calendario.',
+            timer: 2600,
+            showConfirmButton: false
+          });
+        }
 
         // Sincronización silenciosa en background sin bloquear la interfaz
         fetchSolutionsData(true);
