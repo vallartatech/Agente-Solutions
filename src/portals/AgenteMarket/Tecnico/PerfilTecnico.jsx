@@ -27,6 +27,7 @@ import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 import logo from '../../../assets/Logo4.png';
 import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
+import ModalCalendarioSolutions from '../../AgenteSolutions/Shared/ModalCalendarioSolutions';
 import NotificationBell from '../../../components/Shared/NotificationBell';
 import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import '../../../styles/Shared/Profile.css';
@@ -930,11 +931,18 @@ const PerfilTecnico = () => {
         onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} 
       />
 
-      {/* Modal de Calendario */}
-      <ModalCalendarioCliente
-        isOpen={showModalCalendario}
-        onClose={() => setShowModalCalendario(false)}
-      />
+      {/* Modal de Calendario: 0-3 Solutions vs 4+ Market (igual que los headers) */}
+      {Number(user?.role_id) <= 3 ? (
+        <ModalCalendarioSolutions
+          isOpen={showModalCalendario}
+          onClose={() => setShowModalCalendario(false)}
+        />
+      ) : (
+        <ModalCalendarioCliente
+          isOpen={showModalCalendario}
+          onClose={() => setShowModalCalendario(false)}
+        />
+      )}
 
       {/* Responsive Bottom Navigation (Only Icons) */}
       <MobileBottomNav />
