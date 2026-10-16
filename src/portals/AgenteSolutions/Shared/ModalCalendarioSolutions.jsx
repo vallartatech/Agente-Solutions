@@ -1042,8 +1042,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
   return createPortal(
     <div className="cal-modal-backdrop" onClick={onClose}>
-      <div 
-        className="modal-calendario-window" 
+      <div
+        className="modal-calendario-window cal-solutions"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── ENCABEZADO DEL MODAL ── */}

@@ -1193,3 +1193,76 @@
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
+
+/* ── CALENDARIO SOLUTIONS: EL MES SE AJUSTA AL ALTO DE LA VENTANA (escritorio) ──
+   Antes cada día tenía alto fijo (88–125px) y con 6 semanas la última fila se cortaba.
+   Ahora la cuadrícula ocupa el espacio libre y las filas se reparten en partes iguales. */
+@media (min-width: 901px) {
+  .cal-solutions .cal-main-col {
+    overflow: hidden;
+    gap: 12px;
+    padding-bottom: 16px;
+  }
+
+  .cal-solutions .scheduler-toolbar-card,
+  .cal-solutions .scheduler-legend-bar {
+    flex-shrink: 0;
+  }
+
+  /* Filtros en un solo renglón (desliza horizontal si no caben) */
+  .cal-solutions .scheduler-legend-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 8px;
+  }
+
+  .cal-solutions .scheduler-legend-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .cal-solutions .legend-item {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 4px 11px;
+    font-size: 0.76rem;
+  }
+
+  /* El lienzo toma el alto restante; semana y agenda se desplazan dentro de él */
+  .cal-solutions .scheduler-canvas-card {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .cal-solutions .cal-month-grid {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .cal-solutions .cal-month-header-row {
+    flex-shrink: 0;
+  }
+
+  .cal-solutions .cal-month-days-grid {
+    flex: 1;
+    min-height: 0;
+    grid-auto-rows: minmax(0, 1fr);
+  }
+
+  .cal-solutions .cal-day-cell {
+    min-height: 0;
+    max-height: none;
+  }
+
+  .cal-solutions .cal-events-list {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    scrollbar-width: none;
+  }
+
+  .cal-solutions .cal-events-list::-webkit-scrollbar {
+    display: none;
+  }
+}
