@@ -246,6 +246,18 @@ const TrabajoPropiedad = () => {
     }
   };
 
+  // Lleva al listado de levantamientos y abre directamente el de esta propiedad
+  const irALevantamiento = () => {
+    if (!data?.property_id) return alert("Esta orden no tiene propiedad asociada.");
+    navigate('/trabajos-asignados', {
+      state: {
+        abrirPropiedadId: data.property_id,
+        curp: data.custom_curp || null,
+        servicioId: getRealId(id)
+      }
+    });
+  };
+
   const abrirSurvey = async () => {
     if (!data?.property_id) return alert("Esta orden no tiene propiedad asociada.");
     
@@ -726,7 +738,7 @@ const TrabajoPropiedad = () => {
               
               <div className="tp-flow-buttons">
 
-                <button className="tp-btn-consult variant-dark" onClick={abrirSurvey}>
+                <button className="tp-btn-consult variant-dark" onClick={irALevantamiento}>
                   <Layout size={18} />
                   <span>CONSULTAR LEVANTAMIENTO</span>
                 </button>

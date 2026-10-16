@@ -1533,3 +1533,13 @@
   position: relative;
   z-index: 30;
 }
+
+/* Celular: el título queda a la derecha, así que el selector se alinea a la derecha
+   (antes se salía de la pantalla) */
+@media (max-width: 900px) {
+  .cal-solutions .cal-month-picker {
+    left: auto;
+    right: 0;
+    width: min(280px, calc(100vw - 48px));
+  }
+}

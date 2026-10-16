@@ -17,7 +17,7 @@ import {
   PencilLine,
   ChevronLeft
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../../../components/Shared/Header";
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosAsignados.css";
 
@@ -26,7 +26,11 @@ import "../../../styles/AgenteSolutions/Tecnico/TrabajosAsignados.css";
 const TrabajosAsignados = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [servicios, setServicios] = useState([]);
+  const [cargado, setCargado] = useState(false);
+  // Propiedad a resaltar al volver de su levantamiento
+  const resaltarPropiedadId = location.state?.resaltarPropiedadId ?? null;
   const [modalVisible, setModalVisible] = useState(false);
   const [detalleServicio, setDetalleServicio] = useState(null);
   const [activeTab, setActiveTab] = useState("asignados");
@@ -43,6 +47,8 @@ const TrabajosAsignados = () => {
       setServicios(res.data);
     } catch (error) {
       console.error("Error al obtener trabajos:", error);
+    } finally {
+      setCargado(true);
     }
   };
 
@@ -81,6 +87,30 @@ const TrabajosAsignados = () => {
       state: { id: idValido, servicioId: propiedad.id } 
     });
   };
+
+  // Llegada desde "Consultar levantamiento" de un trabajo: abrir el levantamiento de esa propiedad.
+  // El historial queda: trabajo -> este listado (con la propiedad resaltada) -> levantamiento.
+  useEffect(() => {
+    const abrirId = location.state?.abrirPropiedadId;
+    if (!abrirId || !cargado) return;
+
+    const coincidencias = servicios.filter(s => String(s.property_id) === String(abrirId));
+    const fila = coincidencias.find(s => s.es_levantamiento) || coincidencias[0];
+
+    navigate(location.pathname, { replace: true, state: { resaltarPropiedadId: abrirId } });
+    irARegistro(fila || {
+      property_id: abrirId,
+      custom_curp: location.state?.curp,
+      id: location.state?.servicioId
+    });
+  }, [cargado, servicios, location.state]);
+
+  // Al volver del levantamiento, desplazar hasta la propiedad resaltada
+  useEffect(() => {
+    if (!resaltarPropiedadId || !cargado) return;
+    const el = document.querySelector(`[data-propiedad-id="${resaltarPropiedadId}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [resaltarPropiedadId, cargado]);
 
   // Filtros por estatus
   const pendientes = servicios.filter((s) => s.status !== "completed" && s.status !== "Finalizado" && s.status !== "Listo");
@@ -145,7 +175,11 @@ const TrabajosAsignados = () => {
                 <tbody>
                   {pendientes.length > 0 ? (
                     pendientes.map((s) => (
-                      <tr key={s.id} className="card-trabajo-item">
+                      <tr
+                        key={s.composite_id || s.id}
+                        className={`card-trabajo-item ${resaltarPropiedadId != null && String(s.property_id) === String(resaltarPropiedadId) ? 'is-highlighted' : ''}`}
+                        data-propiedad-id={s.property_id}
+                      >
                         <td className="cell-propiedad">
                           <strong className="propiedad-nombre">{s.property_name}</strong>
                           <span className={`badge ${s.priority} badge-mobile-only`}>
