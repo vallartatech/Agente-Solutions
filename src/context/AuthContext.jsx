@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from "axios";
-// 👇 1. IMPORTAMOS ONESIGNAL AQUÍ
-import OneSignal from 'react-onesignal'; 
+import { desvincularUsuarioOneSignal } from '../components/Shared/oneSignalPush';
 
 const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
@@ -27,20 +26,10 @@ export const AuthProvider = ({ children }) => {
     return null;
   });
 
-  // Mark as initialized after first render and link OneSignal if user exists
+  // Mark as initialized after first render (App.jsx vincula OneSignal cuando cambia user.id)
   useEffect(() => {
     setInitialized(true);
-    if (user?.id) {
-      try {
-        if (typeof OneSignal?.login === 'function') {
-          OneSignal.login(String(user.id))
-            .catch(e => console.warn("[OneSignal] Sesión restaurada sin vinculación:", e));
-        }
-      } catch (e) {
-        console.warn("[OneSignal] Error en vinculación inicial:", e);
-      }
-    }
-  }, [user]);
+  }, []);
 
   const loginGlobal = (userData) => {
     const TIEMPO_EXPIRACION = 36 * 60 * 60 * 1000; // 36 Horas
@@ -58,17 +47,6 @@ export const AuthProvider = ({ children }) => {
 
     setUser(userData);
     localStorage.setItem('agente_session', JSON.stringify(sessionData));
-
-    // 👇 2. VINCULAMOS ONESIGNAL AL INICIAR SESIÓN (Protegido contra bloqueo de permisos)
-    if (userData && userData.id) {
-      try {
-        if (typeof OneSignal?.login === 'function') {
-          OneSignal.login(String(userData.id)); 
-        }
-      } catch (e) {
-        console.warn("OneSignal.login omitido/bloqueado por permisos del navegador:", e);
-      }
-    }
   };
 
   const logoutGlobal = () => {
@@ -77,14 +55,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('agente_token'); // Limpiar también el token
     delete axios.defaults.headers.common["Authorization"];
     
-    // 👇 3. DESVINCULAMOS ONESIGNAL AL CERRAR SESIÓN
-    try {
-      if (typeof OneSignal?.logout === 'function') {
-        OneSignal.logout();
-      }
-    } catch (e) {
-      console.warn("OneSignal.logout omitido/bloqueado por permisos del navegador:", e);
-    }
+    // Desvincular el dispositivo del usuario en OneSignal
+    desvincularUsuarioOneSignal();
   };
 
   // INTERCEPTOR PARA MANEJAR EXPIRACIÓN DE TOKEN (401)

@@ -17,9 +17,9 @@ import {
   ArrowRight
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import OneSignal from 'react-onesignal';
+
 import Swal from 'sweetalert2';
-import { suscribirPushOneSignal } from './oneSignalPush';
+import { suscribirPushOneSignal, estaSuscritoOneSignal } from './oneSignalPush';
 import "../../styles/Shared/NotificationBell.css";
 
 const timeAgo = (dateString) => {
@@ -112,7 +112,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
     if (isOpen && typeof window !== 'undefined' && 'Notification' in window) {
       setPushPermission(Notification.permission);
       try {
-        setPushSubscribed(OneSignal?.User?.PushSubscription?.optedIn === true);
+        setPushSubscribed(estaSuscritoOneSignal());
       } catch (e) {
         setPushSubscribed(false);
       }

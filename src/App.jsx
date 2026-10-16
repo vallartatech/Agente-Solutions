@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import OneSignal from 'react-onesignal';
+import { iniciarOneSignal, vincularUsuarioOneSignal } from "./components/Shared/oneSignalPush";
 import React, { useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./context/ProtectedRoute";
@@ -121,44 +121,7 @@ const AppRoutes = () => {
     };
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
-    const initOneSignal = async () => {
-      try {
-        await OneSignal.init({
-          appId: "67944b3a-0f59-4080-a682-48dd6bee81ce",
-          safari_web_id: "web.onesignal.auto.2d34c372-40ef-4eb5-956b-2d525ea9497b",
-          allowLocalhostAsSecureOrigin: true,
-          // Scope propio para no chocar con el service worker de la PWA (/sw.js en "/")
-          serviceWorkerPath: "push/onesignal/OneSignalSDKWorker.js",
-          serviceWorkerParam: { scope: "/push/onesignal/" },
-          promptOptions: {
-            slidedown: {
-              prompts: [
-                {
-                  type: "push",
-                  // El permiso se pide desde el botón "Activar" de la campanita
-                  autoPrompt: false,
-                  text: {
-                    actionMessage: "Recibe avisos de servicios, citas y comunicados del equipo Agente Solutions en tiempo real.",
-                    acceptButton: "Permitir",
-                    cancelButton: "Más tarde"
-                  },
-                  delay: {
-                    pageViews: 1,
-                    timeDelay: 2
-                  }
-                }
-              ]
-            }
-          }
-        });
-      } catch (err) {
-        // El botón "Activar" lo lee para mostrar el motivo en vez de quedarse esperando
-        window.__agenteOneSignalInitError = String(err?.message || err);
-        console.warn("OneSignal initialization blocked/failed gracefully:", err);
-      }
-    };
-
-    initOneSignal();
+    iniciarOneSignal();
 
     return () => {
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
@@ -167,18 +130,9 @@ const AppRoutes = () => {
 
   const { user, initialized } = useAuth();
 
-  // Asegurar que el dispositivo esté vinculado al ID del usuario en OneSignal al cargar cualquier sesión
+  // Vincular el dispositivo al usuario en OneSignal (espera a que termine init)
   useEffect(() => {
-    if (user?.id) {
-      try {
-        if (typeof OneSignal?.login === 'function') {
-          OneSignal.login(String(user.id))
-            .catch(err => console.warn("[OneSignal] Error al asociar usuario:", err));
-        }
-      } catch (err) {
-        console.warn("[OneSignal] Error al invocar login:", err);
-      }
-    }
+    if (user?.id) vincularUsuarioOneSignal(user.id);
   }, [user?.id]);
 
   if (!initialized) return null;
