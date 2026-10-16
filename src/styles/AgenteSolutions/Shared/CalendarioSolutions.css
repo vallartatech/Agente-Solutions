@@ -1526,3 +1526,10 @@
   color: #fca5a5;
   text-transform: none;
 }
+
+/* El selector de mes vive dentro de la barra superior; backdrop-filter crea capas separadas y
+   el lienzo (posterior en el DOM) lo tapaba. Se sube la capa completa de la barra. */
+.cal-solutions .scheduler-toolbar-card {
+  position: relative;
+  z-index: 30;
+}
