@@ -43,7 +43,16 @@ const timeAgo = (iso) => {
   return date.toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 };
 
-const initials = (name) => name.split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('');
+// Solo letras: "Jorge (Personal) Vallarta" -> "JP", no "J("
+const initials = (name) => name
+  .replace(/[^\p{L}\s]/gu, ' ')
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map(p => p[0].toUpperCase())
+  .join('') || '?';
+
+const MAX_FIT_ZOOM = 16;
 
 // Marcador redondo con iniciales y color de estado
 const markerIcon = (name, color, selected) => {
@@ -144,6 +153,10 @@ const VistaMapaEquipo = () => {
       mapRef.current.setZoom(15);
     } else {
       mapRef.current.fitBounds(bounds, 60);
+      // Si todos están casi en el mismo punto, fitBounds acerca demasiado: se limita el zoom
+      window.google.maps.event.addListenerOnce(mapRef.current, 'idle', () => {
+        if (mapRef.current.getZoom() > MAX_FIT_ZOOM) mapRef.current.setZoom(MAX_FIT_ZOOM);
+      });
     }
     fittedRef.current = true;
   }, [isLoaded, onMap]);

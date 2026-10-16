@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { obtenerEstadoUbicacion, suscribirEstadoUbicacion } from './ubicacionService';
 import {
   Home,
   Users,
@@ -10,7 +11,8 @@ import {
   FileText,
   Receipt,
   Wrench,
-  Globe
+  Globe,
+  Navigation
 } from 'lucide-react';
 import '../../styles/Shared/MobileBottomNav.css';
 
@@ -25,6 +27,17 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
   const userId = Number(user?.id ?? 0);
   const isRoot = role === 0;
   const isAdminRole1 = role === 1;
+
+  // Ícono del mapa en vivo: solo para usuarios autorizados (el backend también lo valida)
+  const [canViewMap, setCanViewMap] = useState(false);
+  useEffect(() => {
+    if (!isRoot && !isAdminRole1) return;
+    let active = true;
+    obtenerEstadoUbicacion().then(estado => { if (active) setCanViewMap(Boolean(estado?.can_view_map)); });
+    const unsub = suscribirEstadoUbicacion(estado => setCanViewMap(Boolean(estado?.can_view_map)));
+    return () => { active = false; unsub(); };
+  }, [isRoot, isAdminRole1, userId]);
+  const isMapaActive = activeModule === 'mapa' || currentPath.includes('/mapa-equipo');
 
   const irAlInicio = () => {
     if (!user) return navigate('/');
@@ -309,10 +322,22 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           <Wrench size={22} className="vcp-mobile-nav-icon" />
         </button>
 
+        {canViewMap && (
+          <button
+            type="button"
+            className={`vcp-mobile-nav-item ${isMapaActive ? 'active' : ''}`}
+            onClick={() => navigate('/mapa-equipo')}
+            title="Mapa en vivo"
+            aria-label="Mapa en vivo"
+          >
+            <Navigation size={22} className="vcp-mobile-nav-icon" />
+          </button>
+        )}
+
         {isRoot && (
-          <button 
-            type="button" 
-            className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`} 
+          <button
+            type="button"
+            className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`}
             onClick={() => navigate('/red-autonomos')} 
             title="Mercado / Red"
             aria-label="Mercado / Red"
