@@ -1818,7 +1818,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   </div>
                   <div className="nq-header-text">
                     <h3 id="nq-title">Nuevo aviso</h3>
-                    <p>Le llegará al instante a todo el equipo</p>
+                    <p><Users size={13} /> Se notificará al instante a todo el equipo</p>
                   </div>
                   <button type="button" className="nq-close" onClick={closeModal} aria-label="Cerrar">
                     <X size={18} />
@@ -1848,7 +1848,10 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                     </div>
 
                     <div className="nq-field">
-                      <label>¿Cuándo?</label>
+                      <div className="nq-label-row">
+                        <label>¿Cuándo?</label>
+                        <span className="nq-date-hint">{formatNoticeDate(noticeForm.event_date)}</span>
+                      </div>
                       <div className="nq-date-chips">
                         <button type="button" className={`nq-chip ${noticeForm.dateMode === 'today' ? 'active' : ''}`} onClick={() => setDateMode('today')}>
                           Hoy
@@ -1870,7 +1873,6 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                           required
                         />
                       )}
-                      <span className="nq-date-hint">{formatNoticeDate(noticeForm.event_date)}</span>
                     </div>
 
                     <div className="nq-field">
@@ -1880,6 +1882,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                         className="nq-input nq-textarea"
                         placeholder="Ej: Despejar escritorios y guardar alimentos antes de las 18:00 hrs"
                         maxLength={500}
+                        rows={2}
                         value={noticeForm.description}
                         onChange={(e) => setNoticeForm(prev => ({ ...prev, description: e.target.value }))}
                       />
@@ -1894,7 +1897,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       <span className="nq-important-check">{noticeForm.important && <Check size={14} strokeWidth={3} />}</span>
                       <span className="nq-important-text">
                         <strong>Marcar como importante</strong>
-                        <small>Se destaca en rojo en el calendario y en la notificación</small>
+                        <small>Se destaca en rojo</small>
                       </span>
                       <AlertTriangle size={18} className="nq-important-icon" />
                     </button>
@@ -1932,10 +1935,6 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   </div>
 
                   <div className="nq-footer">
-                    <div className="nq-footer-note">
-                      <Users size={15} />
-                      <span>Se notificará a <strong>todo el equipo</strong> (administradores y técnicos)</span>
-                    </div>
                     <div className="nq-footer-actions">
                       <button type="button" className="nq-btn-cancel" onClick={closeModal} disabled={submittingNotice}>
                         Cancelar
