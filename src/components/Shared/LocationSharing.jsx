@@ -139,47 +139,26 @@ const LocationSharing = () => {
 
   if (!isTracked || !estado?.consent) return null;
 
-  const handleStop = async () => {
-    const r = await Swal.fire({
-      icon: 'warning',
-      title: '¿Dejar de compartir tu ubicación?',
-      text: 'El equipo ya no verá dónde estás. Puedes volver a activarlo cuando quieras.',
-      showCancelButton: true,
-      confirmButtonText: 'Dejar de compartir',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#ef4444',
-      reverseButtons: true
-    });
-    if (!r.isConfirmed) return;
-    try {
-      await cambiarConsentimientoUbicacion(false);
-      try { localStorage.setItem(`agente_ubicacion_pospuesto_${user.id}`, String(Date.now())); } catch { /* sin almacenamiento */ }
-      setPanelOpen(false);
-    } catch {
-      Swal.fire({ icon: 'error', title: 'No se pudo cambiar', text: 'Inténtalo de nuevo más tarde.' });
-    }
-  };
-
+  // El indicador solo informa; si el GPS falla, al tocarlo explica cómo activarlo
   return createPortal(
     <div className="loc-share">
-      {panelOpen && (
-        <div className="loc-share-panel" role="dialog" aria-label="Ubicación compartida">
+      {panelOpen && gpsError && (
+        <div className="loc-share-panel" role="dialog" aria-label="Ubicación">
           <button type="button" className="loc-share-panel-close" onClick={() => setPanelOpen(false)} aria-label="Cerrar">
             <X size={16} />
           </button>
-          <strong>Compartiendo tu ubicación</strong>
-          {gpsError === 'denied' && (
-            <p className="loc-share-warn">Tu navegador bloqueó el GPS. Actívalo en el candado 🔒 de la barra de direcciones.</p>
-          )}
-          <button type="button" className="loc-share-stop" onClick={handleStop}>
-            <MapPinOff size={15} /> Dejar de compartir
-          </button>
+          <strong>Activa tu ubicación</strong>
+          <p className="loc-share-warn">
+            {gpsError === 'denied'
+              ? 'Tu navegador bloqueó el GPS. Actívalo en el candado 🔒 de la barra de direcciones y recarga la página.'
+              : 'No se pudo obtener tu ubicación. Revisa que el GPS del celular esté encendido.'}
+          </p>
         </div>
       )}
       <button
         type="button"
         className={`loc-share-pill ${gpsError ? 'has-error' : ''}`}
-        onClick={() => setPanelOpen(o => !o)}
+        onClick={() => { if (gpsError) setPanelOpen(o => !o); }}
         title="Ubicación compartida"
       >
         {gpsError ? <MapPinOff size={14} /> : <MapPin size={14} />}
