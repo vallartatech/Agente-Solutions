@@ -129,7 +129,7 @@ const AppRoutes = () => {
           }
         }
         await OneSignal.init({
-          appId: "632781ba-8ada-42ea-a894-b53f1618b204",
+          appId: "67944b3a-0f59-4080-a682-48dd6bee81ce",
           allowLocalhostAsSecureOrigin: true,
           promptOptions: {
             slidedown: {

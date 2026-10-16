@@ -28,7 +28,9 @@ import {
   ExternalLink,
   Save,
   Check,
-  CalendarDays
+  CalendarDays,
+  Trash2,
+  Bell
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -81,6 +83,20 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [activePhoto, setActivePhoto] = useState(null);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
+
+  // Estados de Avisos del Equipo y Cumpleaños
+  const [showCreateNoticeModal, setShowCreateNoticeModal] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState(null);
+  const [submittingNotice, setSubmittingNotice] = useState(false);
+  const [noticeForm, setNoticeForm] = useState({
+    title: '',
+    event_date: new Date().toISOString().split('T')[0],
+    start_time: '',
+    type: 'fumigacion',
+    description: '',
+    color: '#10b981',
+    notify_team: true
+  });
 
   // Estados de edición de Cita / Técnico (Admins)
   const [editTecnicoId, setEditTecnicoId] = useState('');
@@ -255,30 +271,24 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const requests = [
+      const [resWorkOrders, resTecnicos, resTecServicios, resMercado, resEvents, resBirthdays] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/all`, { headers }).catch(e => ({ data: [] })),
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`, { headers }).catch(e => ({ data: [] }))
-      ];
-
-      // Si es técnico Solutions, también traemos sus servicios asignados directos
-      if (isTechnician && user?.id) {
-        requests.push(
-          axios.get(`${import.meta.env.VITE_API_BASE_URL}/tecnico/${user.id}/servicios`, { headers }).catch(e => ({ data: [] }))
-        );
-      }
-
-      // Traer publicaciones de red
-      requests.push(
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos`, { headers }).catch(e => ({ data: { success: false, data: [] } }))
-      );
-
-      const [resWorkOrders, resTecnicos, resTecServicios, resMercado] = await Promise.all(requests);
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`, { headers }).catch(e => ({ data: [] })),
+        (isTechnician && user?.id)
+          ? axios.get(`${import.meta.env.VITE_API_BASE_URL}/tecnico/${user.id}/servicios`, { headers }).catch(e => ({ data: [] }))
+          : Promise.resolve({ data: [] }),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos`, { headers }).catch(e => ({ data: { success: false, data: [] } })),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/events`, { headers }).catch(e => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/birthdays`, { headers }).catch(e => ({ data: [] }))
+      ]);
 
       const rawOrders = Array.isArray(resWorkOrders.data) ? resWorkOrders.data : [];
       const rawTechs = Array.isArray(resTecnicos.data) ? resTecnicos.data : [];
       setTecnicosList(rawTechs);
 
       const eventMap = new Map();
+      const now = new Date();
+      const todayDateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
       // 1. Procesar todas las Work Orders del tenant
       rawOrders.forEach(wo => {
@@ -317,6 +327,98 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         });
       }
 
+      // 4. Procesar Avisos / Eventos del Calendario
+      const rawNotices = Array.isArray(resEvents.data) ? resEvents.data : [];
+      rawNotices.forEach(notice => {
+        const dateStr = notice.event_date;
+        const timeStr = notice.start_time ? notice.start_time.substring(0, 5) : 'Todo el día';
+        const hourNum = notice.start_time ? parseInt(notice.start_time.split(':')[0], 10) : 9;
+
+        let eventDate = new Date(`${dateStr}T${notice.start_time || '09:00:00'}`);
+        if (isNaN(eventDate.getTime())) eventDate = new Date();
+
+        const type = notice.type || 'aviso';
+        let badge = '📢 Aviso';
+        if (type === 'fumigacion') badge = '🐜 Fumigación';
+        else if (type === 'reunion') badge = '👥 Reunión';
+        else if (type === 'mantenimiento') badge = '🔧 Mantto.';
+        else if (type === 'otro') badge = '📌 Evento';
+
+        const noticeObj = {
+          id: `notice_${notice.id}`,
+          noticeId: notice.id,
+          isNotice: true,
+          rawNotice: notice,
+          titulo: notice.title,
+          type: notice.type,
+          color: notice.color || '#10b981',
+          descripcion: notice.description || 'Sin notas adicionales',
+          calendarDate: eventDate,
+          dateKey: dateStr,
+          hourIndex: hourNum,
+          calendarHour: hourNum,
+          calendarTime: timeStr,
+          scheduled_at: notice.start_time ? `${dateStr} ${notice.start_time}` : null,
+          hasScheduledDate: Boolean(notice.start_time),
+          assigned_tech_name: '',
+          cliente: notice.creator ? `${notice.creator.first_name || ''} ${notice.creator.last_name || ''}`.trim() : 'Administración',
+          creator: notice.creator,
+          statusType: 'notice',
+          timingCategory: 'notice',
+          timingBadge: badge,
+          timingRelative: badge,
+          statusLabel: notice.title,
+          isOverdue: false,
+          isToday: dateStr === todayDateKey,
+          isFuture: false,
+          isUncoordinated: false,
+          isCompleted: false,
+        };
+        eventMap.set(`notice_${notice.id}`, noticeObj);
+      });
+
+      // 5. Procesar Cumpleaños proyectados en el calendario
+      const rawBirthdays = Array.isArray(resBirthdays.data) ? resBirthdays.data : [];
+      const currentYear = currentDate.getFullYear();
+      [currentYear - 1, currentYear, currentYear + 1].forEach(yr => {
+        rawBirthdays.forEach(bday => {
+          const monthStr = String(bday.month).padStart(2, '0');
+          const dayStr = String(bday.day).padStart(2, '0');
+          const dateKey = `${yr}-${monthStr}-${dayStr}`;
+          const bdayDate = new Date(yr, bday.month - 1, bday.day, 9, 0, 0);
+
+          const bdayObj = {
+            id: `bday_${bday.user_id}_${yr}`,
+            isBirthday: true,
+            bdayUser: bday,
+            titulo: `🎂 Cumpleaños de ${bday.name}`,
+            type: 'cumpleanos',
+            color: '#ec4899',
+            descripcion: `¡Hoy es el cumpleaños de ${bday.name}! Felicitaciones del equipo Agente Solutions.`,
+            calendarDate: bdayDate,
+            dateKey,
+            hourIndex: 9,
+            calendarHour: 9,
+            calendarTime: 'Todo el día',
+            scheduled_at: null,
+            hasScheduledDate: false,
+            assigned_tech_name: '',
+            cliente: bday.name,
+            statusType: 'birthday',
+            timingCategory: 'birthday',
+            timingBadge: '🎂 Cumpleaños',
+            timingRelative: `Cumpleaños de ${bday.name}`,
+            statusLabel: `🎂 ${bday.name}`,
+            isOverdue: false,
+            isToday: dateKey === todayDateKey,
+            isFuture: false,
+            isUncoordinated: false,
+            isCompleted: false,
+          };
+          eventMap.set(bdayObj.id, bdayObj);
+        });
+      });
+
       const eventsList = Array.from(eventMap.values());
       setAllEvents(eventsList);
 
@@ -329,7 +431,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, isTechnician, user?.id, processOrderToEvent, selectedJob]);
+  }, [isAdmin, isTechnician, user?.id, processOrderToEvent, selectedJob, currentDate]);
 
   useEffect(() => {
     if (isOpen) {
@@ -352,7 +454,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     setMiniCalDate(now);
   };
 
-  // Abrir detalle de evento
+  // Abrir detalle de evento de trabajo
   const handleOpenDetailModal = (job) => {
     setSelectedJob(job);
     setActivePhoto(job.fotos?.[0] || job.foto || null);
@@ -362,11 +464,157 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   };
 
   const handleEventClick = (job) => {
+    if (job.isBirthday) {
+      Swal.fire({
+        title: `🎂 ¡Cumpleaños de ${job.bdayUser.name}!`,
+        html: `
+          <div style="text-align: center; font-size: 0.95rem; color: #334155; padding: 10px 0;">
+            ${job.bdayUser.profile_picture ? `<img src="${job.bdayUser.profile_picture}" alt="${job.bdayUser.name}" style="width: 84px; height: 84px; border-radius: 50%; object-fit: cover; margin: 0 auto 14px; border: 3px solid #ec4899; box-shadow: 0 4px 14px rgba(236,72,153,0.35); display: block;" />` : ''}
+            <div style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">${job.bdayUser.name}</div>
+            <div style="color: #64748b; font-weight: 600; margin-bottom: 14px;">${job.bdayUser.role_id === 1 ? '👑 Administrador' : '🛠️ Técnico Especialista'}</div>
+            <div style="background: #fdf2f8; border: 1.5px solid #fbcfe8; border-radius: 12px; padding: 12px; color: #be185d; font-weight: 700; font-size: 0.92rem;">
+              🎉 ¡Felicitemos a nuestro compañero de equipo en su día especial!
+            </div>
+          </div>
+        `,
+        confirmButtonText: '¡Felicidades!',
+        confirmButtonColor: '#ec4899'
+      });
+      return;
+    }
+
+    if (job.isNotice) {
+      setSelectedNotice(job);
+      return;
+    }
+
     if (onSelectJob) {
       onSelectJob(job);
       return;
     }
     handleOpenDetailModal(job);
+  };
+
+  // Gestión de Avisos y Fumigaciones
+  const handleOpenCreateNotice = (customDate = null) => {
+    setNoticeForm({
+      title: '',
+      event_date: customDate || new Date().toISOString().split('T')[0],
+      start_time: '',
+      type: 'fumigacion',
+      description: '',
+      color: '#10b981',
+      notify_team: true
+    });
+    setShowCreateNoticeModal(true);
+  };
+
+  const handleCreateNotice = async (e) => {
+    if (e) e.preventDefault();
+    if (!noticeForm.title.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Título requerido',
+        text: 'Por favor ingresa un título para el aviso o fumigación.'
+      });
+      return;
+    }
+    if (!noticeForm.event_date) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Fecha requerida',
+        text: 'Por favor selecciona la fecha del evento.'
+      });
+      return;
+    }
+
+    try {
+      setSubmittingNotice(true);
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const payload = {
+        title: noticeForm.title.trim(),
+        event_date: noticeForm.event_date,
+        start_time: noticeForm.start_time || null,
+        type: noticeForm.type,
+        description: noticeForm.description?.trim() || null,
+        color: noticeForm.color,
+        notify_team: noticeForm.notify_team
+      };
+
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/calendar/events`,
+        payload,
+        { headers }
+      );
+
+      if (res.status === 200 || res.status === 201 || res.data?.success) {
+        setShowCreateNoticeModal(false);
+        Swal.fire({
+          icon: 'success',
+          title: '¡Aviso Publicado!',
+          text: noticeForm.notify_team
+            ? 'El evento se guardó en el calendario y se envió la notificación push al equipo.'
+            : 'El evento se ha guardado correctamente en el calendario.',
+          timer: 2500,
+          showConfirmButton: false
+        });
+        await fetchSolutionsData();
+      }
+    } catch (err) {
+      console.error("Error al crear aviso de calendario:", err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al publicar',
+        text: err.response?.data?.error || err.response?.data?.message || 'No se pudo crear el aviso.'
+      });
+    } finally {
+      setSubmittingNotice(false);
+    }
+  };
+
+  const handleDeleteNotice = async (noticeId) => {
+    const confirm = await Swal.fire({
+      title: '¿Eliminar este aviso?',
+      text: 'Esta acción no se puede deshacer y retirará el aviso del calendario.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const res = await axios.delete(
+        `${import.meta.env.VITE_API_BASE_URL}/calendar/events/${noticeId}`,
+        { headers }
+      );
+
+      if (res.status === 200 || res.data?.success) {
+        setSelectedNotice(null);
+        Swal.fire({
+          icon: 'success',
+          title: 'Aviso Eliminado',
+          timer: 1800,
+          showConfirmButton: false
+        });
+        await fetchSolutionsData();
+      }
+    } catch (err) {
+      console.error("Error al eliminar aviso:", err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.response?.data?.error || 'No se pudo eliminar el aviso.'
+      });
+    }
   };
 
   // Guardar asignación y horario para Admins
@@ -417,11 +665,13 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const filteredEvents = useMemo(() => {
     let result = [...allEvents];
 
-    if (selectedFilter === 'overdue') result = result.filter(e => e.isOverdue);
+    if (selectedFilter === 'notices') result = result.filter(e => e.isNotice);
+    else if (selectedFilter === 'birthdays') result = result.filter(e => e.isBirthday);
+    else if (selectedFilter === 'overdue') result = result.filter(e => e.isOverdue && !e.isNotice && !e.isBirthday);
     else if (selectedFilter === 'today') result = result.filter(e => e.isToday);
-    else if (selectedFilter === 'future') result = result.filter(e => e.isFuture);
-    else if (selectedFilter === 'uncoordinated') result = result.filter(e => e.isUncoordinated);
-    else if (selectedFilter === 'completed') result = result.filter(e => e.isCompleted);
+    else if (selectedFilter === 'future') result = result.filter(e => e.isFuture && !e.isNotice && !e.isBirthday);
+    else if (selectedFilter === 'uncoordinated') result = result.filter(e => e.isUncoordinated && !e.isNotice && !e.isBirthday);
+    else if (selectedFilter === 'completed') result = result.filter(e => e.isCompleted && !e.isNotice && !e.isBirthday);
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -430,7 +680,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         e.cliente?.toLowerCase().includes(q) ||
         e.calle?.toLowerCase().includes(q) ||
         e.zona?.toLowerCase().includes(q) ||
-        e.assigned_tech_name?.toLowerCase().includes(q)
+        e.assigned_tech_name?.toLowerCase().includes(q) ||
+        e.descripcion?.toLowerCase().includes(q)
       );
     }
 
@@ -439,6 +690,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
   // Contadores
   const countAll = allEvents.length;
+  const countNotices = allEvents.filter(e => e.isNotice).length;
+  const countBirthdays = allEvents.filter(e => e.isBirthday && e.calendarDate.getFullYear() === currentDate.getFullYear()).length;
   const countOverdue = allEvents.filter(e => e.isOverdue).length;
   const countToday = allEvents.filter(e => e.isToday).length;
   const countFuture = allEvents.filter(e => e.isFuture).length;
@@ -633,19 +886,30 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
             </div>
           </div>
 
-          <div className="modal-cal-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+          <div className="modal-cal-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
             {isAdmin && (
-              <button 
-                className="btn-modal-quick-new"
-                onClick={() => {
-                  onClose();
-                  navigate('/tablero-servicios');
-                }}
-                title="Gestionar en Tablero de Servicios"
-              >
-                <PlusCircle size={17} />
-                <span className="btn-modal-quick-new-text">Tablero Servicios</span>
-              </button>
+              <>
+                <button 
+                  className="btn-modal-quick-notice"
+                  onClick={() => handleOpenCreateNotice()}
+                  title="Publicar Aviso, Fumigación o Evento para el equipo"
+                >
+                  <PlusCircle size={17} />
+                  <span className="btn-modal-quick-new-text">+ Publicar Aviso</span>
+                </button>
+
+                <button 
+                  className="btn-modal-quick-new"
+                  onClick={() => {
+                    onClose();
+                    navigate('/tablero-servicios');
+                  }}
+                  title="Gestionar en Tablero de Servicios"
+                >
+                  <CalendarDays size={17} />
+                  <span className="btn-modal-quick-new-text">Tablero</span>
+                </button>
+              </>
             )}
             <button 
               className="btn-modal-close-window" 
@@ -741,6 +1005,24 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
               </button>
 
               <button 
+                className={`legend-item legend-notice ${selectedFilter === 'notices' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'notices' ? 'all' : 'notices')}
+                title="Avisos generales, fumigaciones y eventos del equipo"
+              >
+                <span className="legend-dot dot-notice"></span>
+                <span>📢 Avisos ({countNotices})</span>
+              </button>
+
+              <button 
+                className={`legend-item legend-birthday ${selectedFilter === 'birthdays' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter(selectedFilter === 'birthdays' ? 'all' : 'birthdays')}
+                title="Cumpleaños detectados de administradores y técnicos"
+              >
+                <span className="legend-dot dot-birthday"></span>
+                <span>🎂 Cumpleaños ({countBirthdays})</span>
+              </button>
+
+              <button 
                 className={`legend-item legend-overdue ${selectedFilter === 'overdue' ? 'active' : ''} ${countOverdue > 0 ? 'has-overdue' : ''}`}
                 onClick={() => setSelectedFilter(selectedFilter === 'overdue' ? 'all' : 'overdue')}
                 title="Citas cuya fecha programada ya pasó y no han concluido"
@@ -752,7 +1034,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
               <button 
                 className={`legend-item legend-today ${selectedFilter === 'today' ? 'active' : ''} ${countToday > 0 ? 'has-today' : ''}`}
                 onClick={() => setSelectedFilter(selectedFilter === 'today' ? 'all' : 'today')}
-                title="Citas programadas para el día de hoy"
+                title="Citas y avisos programados para el día de hoy"
               >
                 <span className="legend-dot dot-today"></span>
                 <span>⚡ Citas Hoy {countToday > 0 ? `(${countToday})` : '(0)'}</span>
@@ -764,7 +1046,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                 title="Citas agendadas para días futuros"
               >
                 <span className="legend-dot dot-future"></span>
-                <span>📅 Próximos / Futuros {countFuture > 0 ? `(${countFuture})` : '(0)'}</span>
+                <span>📅 Próximos {countFuture > 0 ? `(${countFuture})` : '(0)'}</span>
               </button>
 
               <button 
@@ -804,6 +1086,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                         onClick={() => {
                           if (cell.events.length > 0) {
                             handleEventClick(cell.events[0]);
+                          } else if (isAdmin) {
+                            handleOpenCreateNotice(cell.dateKey);
                           }
                         }}
                       >
@@ -821,23 +1105,34 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                             <div 
                               key={job.id}
                               className={`cal-event-chip status-${job.statusType} timing-${job.timingCategory}`}
+                              style={job.isNotice ? { borderLeftColor: job.color, background: `${job.color}25` } : (job.isBirthday ? { borderLeftColor: '#ec4899', background: 'rgba(236,72,153,0.25)' } : {})}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleEventClick(job);
                               }}
-                              title={`${job.titulo}\n${job.timingBadge}\nHorario: ${job.calendarTime}\nCliente: ${job.cliente}\nDirección: ${job.calle || job.zona}\n(Clic para abrir todos los detalles)`}
+                              title={`${job.titulo}\n${job.timingBadge}\nHorario: ${job.calendarTime}`}
                             >
                               <div className="chip-compact-row">
-                                {job.timingCategory === 'overdue' && <span className="chip-mini-dot dot-overdue"></span>}
-                                {job.timingCategory === 'today' && <span className="chip-mini-dot dot-today"></span>}
-                                {job.timingCategory === 'future' && <span className="chip-mini-dot dot-future"></span>}
-                                {job.timingCategory === 'uncoordinated' && <span className="chip-mini-dot dot-uncoordinated"></span>}
-                                {job.timingCategory === 'completed' && <span className="chip-mini-dot dot-confirmed"></span>}
+                                {job.isBirthday ? (
+                                  <span style={{ fontSize: '0.72rem', lineHeight: 1 }}>🎂</span>
+                                ) : job.isNotice ? (
+                                  <span style={{ fontSize: '0.72rem', lineHeight: 1 }}>
+                                    {job.type === 'fumigacion' ? '🐜' : (job.type === 'reunion' ? '👥' : (job.type === 'mantenimiento' ? '🔧' : '📢'))}
+                                  </span>
+                                ) : (
+                                  <>
+                                    {job.timingCategory === 'overdue' && <span className="chip-mini-dot dot-overdue"></span>}
+                                    {job.timingCategory === 'today' && <span className="chip-mini-dot dot-today"></span>}
+                                    {job.timingCategory === 'future' && <span className="chip-mini-dot dot-future"></span>}
+                                    {job.timingCategory === 'uncoordinated' && <span className="chip-mini-dot dot-uncoordinated"></span>}
+                                    {job.timingCategory === 'completed' && <span className="chip-mini-dot dot-confirmed"></span>}
+                                  </>
+                                )}
 
-                                <span className="chip-compact-time">
-                                  {job.hasScheduledDate ? job.calendarTime : '⏳'}
+                                <span className="chip-compact-time" style={job.isBirthday ? { color: '#fbcfe8' } : (job.isNotice ? { color: job.color } : {})}>
+                                  {job.hasScheduledDate ? job.calendarTime : (job.isBirthday || job.isNotice ? '📌' : '⏳')}
                                 </span>
-                                <span className="chip-compact-title">
+                                <span className="chip-compact-title" style={job.isBirthday ? { color: '#fdf2f8' } : {}}>
                                   {job.titulo}
                                 </span>
                               </div>
@@ -877,10 +1172,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                                   <div 
                                     key={job.id}
                                     className={`week-event-card status-${job.statusType} timing-${job.timingCategory}`}
+                                    style={job.isNotice ? { borderLeftColor: job.color, background: `${job.color}25` } : (job.isBirthday ? { borderLeftColor: '#ec4899', background: 'rgba(236,72,153,0.25)' } : {})}
                                     onClick={() => handleEventClick(job)}
                                   >
                                     <div style={{ fontWeight: 800, fontSize: '0.68rem', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                      <Clock size={10} /> {job.calendarTime}
+                                      {job.isBirthday ? '🎂' : (job.isNotice ? (job.type === 'fumigacion' ? '🐜' : '📢') : <Clock size={10} />)} {job.calendarTime}
                                       {job.timingCategory === 'overdue' && <span style={{ color: '#fca5a5' }}>[🚨 Atrasado]</span>}
                                     </div>
                                     <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -918,36 +1214,52 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                             <div 
                               key={job.id}
                               className={`agenda-item-card status-${job.statusType} timing-${job.timingCategory}`}
+                              style={job.isNotice ? { borderLeft: `4px solid ${job.color}`, background: 'rgba(15, 23, 42, 0.65)' } : (job.isBirthday ? { borderLeft: '4px solid #ec4899', background: 'rgba(236,72,153,0.1)' } : {})}
                               onClick={() => handleEventClick(job)}
                             >
                               <div className="agenda-card-top">
                                 <div>
                                   <h4 className="agenda-card-title">{job.titulo}</h4>
-                                  <span className="agenda-card-subtitle">{job.equipment ? `Equipo: ${job.equipment}` : job.type}</span>
+                                  <span className="agenda-card-subtitle">
+                                    {job.isBirthday ? 'Día de Cumpleaños' : (job.isNotice ? (job.type === 'fumigacion' ? 'Fumigación de Instalaciones' : 'Aviso al Equipo') : (job.equipment ? `Equipo: ${job.equipment}` : job.type))}
+                                  </span>
                                 </div>
-                                <span className={`agenda-status-pill pill-${job.statusType} pill-timing-${job.timingCategory}`}>
+                                <span 
+                                  className={`agenda-status-pill pill-${job.statusType} pill-timing-${job.timingCategory}`}
+                                  style={job.isNotice ? { background: `${job.color}30`, color: job.color } : (job.isBirthday ? { background: 'rgba(236,72,153,0.25)', color: '#f472b6' } : {})}
+                                >
                                   {job.timingBadge}
                                 </span>
                               </div>
 
                               <div className="agenda-card-info">
                                 <div className="agenda-info-row">
-                                  <Clock size={13} color={job.timingCategory === 'overdue' ? '#ef4444' : '#ff6600'} />
-                                  <strong>Horario:</strong> <span style={{ color: job.timingCategory === 'overdue' ? '#fca5a5' : '#ffffff', fontWeight: 700 }}>{job.calendarTime} ({job.timingRelative})</span>
+                                  <Clock size={13} color={job.isBirthday ? '#ec4899' : (job.isNotice ? job.color : (job.timingCategory === 'overdue' ? '#ef4444' : '#ff6600'))} />
+                                  <strong>Horario:</strong> <span style={{ color: '#ffffff', fontWeight: 700 }}>{job.calendarTime}</span>
                                 </div>
-                                <div className="agenda-info-row">
-                                  <MapPin size={13} color="#94a3b8" />
-                                  <span>{job.calle || job.zona}</span>
-                                </div>
-                                <div className="agenda-info-row">
-                                  <User size={13} color="#94a3b8" />
-                                  <span>Cliente: <strong>{job.cliente}</strong></span>
-                                </div>
-                                {job.assigned_tech_name && (
+                                {job.descripcion && (
                                   <div className="agenda-info-row">
-                                    <Wrench size={13} color="#38bdf8" />
-                                    <span>Técnico: <strong style={{ color: '#38bdf8' }}>{job.assigned_tech_name}</strong></span>
+                                    <FileText size={13} color="#94a3b8" />
+                                    <span style={{ color: '#cbd5e1' }}>{job.descripcion}</span>
                                   </div>
+                                )}
+                                {!job.isNotice && !job.isBirthday && (
+                                  <>
+                                    <div className="agenda-info-row">
+                                      <MapPin size={13} color="#94a3b8" />
+                                      <span>{job.calle || job.zona}</span>
+                                    </div>
+                                    <div className="agenda-info-row">
+                                      <User size={13} color="#94a3b8" />
+                                      <span>Cliente: <strong>{job.cliente}</strong></span>
+                                    </div>
+                                    {job.assigned_tech_name && (
+                                      <div className="agenda-info-row">
+                                        <Wrench size={13} color="#38bdf8" />
+                                        <span>Técnico: <strong style={{ color: '#38bdf8' }}>{job.assigned_tech_name}</strong></span>
+                                      </div>
+                                    )}
+                                  </>
                                 )}
                               </div>
 
@@ -959,7 +1271,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                                     handleEventClick(job);
                                   }}
                                 >
-                                  Ver Detalles
+                                  {job.isBirthday ? 'Ver Cumpleañero' : (job.isNotice ? 'Ver Aviso' : 'Ver Detalles')}
                                 </button>
                               </div>
                             </div>
@@ -1293,6 +1605,255 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
               alt="Zoom" 
               style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '12px' }} 
             />
+          </div>
+        )}
+
+        {/* ── MODAL SUBMODAL: CREAR AVISO O FUMIGACIÓN ── */}
+        {showCreateNoticeModal && (
+          <div 
+            className="solutions-submodal-overlay"
+            onClick={() => setShowCreateNoticeModal(false)}
+          >
+            <div 
+              className="solutions-submodal-window"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="submodal-header">
+                <div className="submodal-title-row">
+                  <div className="submodal-icon-badge" style={{ background: noticeForm.color }}>
+                    <CalendarDays size={20} color="#ffffff" />
+                  </div>
+                  <div>
+                    <h3>Publicar Aviso o Evento</h3>
+                    <p>Se mostrará en el calendario de todo el equipo (Admins y Técnicos)</p>
+                  </div>
+                </div>
+                <button 
+                  className="btn-submodal-close"
+                  onClick={() => setShowCreateNoticeModal(false)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateNotice}>
+                <div className="submodal-body">
+                  {/* Tipo de Evento */}
+                  <div className="notice-field">
+                    <label>Tipo de Evento</label>
+                    <div className="notice-type-grid">
+                      {[
+                        { key: 'fumigacion', label: '🐜 Fumigación', color: '#10b981' },
+                        { key: 'aviso', label: '📢 Aviso', color: '#f97316' },
+                        { key: 'reunion', label: '👥 Reunión', color: '#3b82f6' },
+                        { key: 'mantenimiento', label: '🔧 Mantto.', color: '#8b5cf6' },
+                        { key: 'otro', label: '📌 Otro', color: '#06b6d4' }
+                      ].map(t => (
+                        <button
+                          key={t.key}
+                          type="button"
+                          className={`notice-type-pill ${noticeForm.type === t.key ? 'active' : ''}`}
+                          onClick={() => setNoticeForm(prev => ({ ...prev, type: t.key, color: t.color }))}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Título */}
+                  <div className="notice-field">
+                    <label>Título del Evento *</label>
+                    <input 
+                      type="text"
+                      className="notice-input"
+                      placeholder="Ej: Fumigación general de oficinas, Junta técnica..."
+                      value={noticeForm.title}
+                      onChange={(e) => setNoticeForm(prev => ({ ...prev, title: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                  {/* Fecha y Hora */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="notice-field">
+                      <label>Fecha del Evento *</label>
+                      <input 
+                        type="date"
+                        className="notice-input"
+                        value={noticeForm.event_date}
+                        onChange={(e) => setNoticeForm(prev => ({ ...prev, event_date: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="notice-field">
+                      <label>Hora (Opcional)</label>
+                      <input 
+                        type="time"
+                        className="notice-input"
+                        value={noticeForm.start_time}
+                        onChange={(e) => setNoticeForm(prev => ({ ...prev, start_time: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Color del Evento */}
+                  <div className="notice-field">
+                    <label>Color Identificador</label>
+                    <div className="notice-color-grid">
+                      {['#10b981', '#f97316', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#eab308'].map(c => (
+                        <div 
+                          key={c}
+                          className={`notice-color-dot ${noticeForm.color === c ? 'active' : ''}`}
+                          style={{ background: c }}
+                          onClick={() => setNoticeForm(prev => ({ ...prev, color: c }))}
+                        >
+                          {noticeForm.color === c && <Check size={16} color="#ffffff" strokeWidth={3} />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Descripción */}
+                  <div className="notice-field">
+                    <label>Detalles o Indicaciones</label>
+                    <textarea 
+                      className="notice-textarea"
+                      placeholder="Ej: Despejar escritorios y guardar alimentos antes de las 18:00 hrs..."
+                      value={noticeForm.description}
+                      onChange={(e) => setNoticeForm(prev => ({ ...prev, description: e.target.value }))}
+                    />
+                  </div>
+
+                  {/* Switch de Notificación Push */}
+                  <div 
+                    className="notice-toggle-card"
+                    onClick={() => setNoticeForm(prev => ({ ...prev, notify_team: !prev.notify_team }))}
+                  >
+                    <div className="notice-toggle-text">
+                      <span className="notice-toggle-title">🔔 Notificar al Equipo (Push)</span>
+                      <span className="notice-toggle-sub">Envía alerta instantánea a celulares y computadoras del equipo vía OneSignal</span>
+                    </div>
+                    <div className={`notice-switch ${noticeForm.notify_team ? 'on' : ''}`}>
+                      <div className="notice-switch-knob" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="submodal-footer">
+                  <button 
+                    type="button"
+                    className="btn-submodal-cancel"
+                    onClick={() => setShowCreateNoticeModal(false)}
+                    disabled={submittingNotice}
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit"
+                    className="btn-submodal-submit"
+                    disabled={submittingNotice}
+                  >
+                    <Send size={16} />
+                    <span>{submittingNotice ? 'Publicando...' : 'Publicar Evento'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ── MODAL SUBMODAL: DETALLE Y ELIMINACIÓN DE AVISO ── */}
+        {selectedNotice && (
+          <div 
+            className="solutions-submodal-overlay"
+            onClick={() => setSelectedNotice(null)}
+          >
+            <div 
+              className="solutions-submodal-window"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="submodal-header">
+                <div className="submodal-title-row">
+                  <div className="submodal-icon-badge" style={{ background: selectedNotice.color || '#f97316' }}>
+                    <CalendarDays size={20} color="#ffffff" />
+                  </div>
+                  <div>
+                    <h3>Detalle del Evento</h3>
+                    <p>{selectedNotice.timingBadge}</p>
+                  </div>
+                </div>
+                <button 
+                  className="btn-submodal-close"
+                  onClick={() => setSelectedNotice(null)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="submodal-body">
+                <div className="notice-detail-box">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                    <span 
+                      className="notice-detail-badge"
+                      style={{ background: `${selectedNotice.color || '#f97316'}25`, color: selectedNotice.color || '#f97316' }}
+                    >
+                      {selectedNotice.timingBadge}
+                    </span>
+                    <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>
+                      📅 {selectedNotice.dateKey}
+                    </span>
+                  </div>
+
+                  <h2 style={{ margin: '4px 0 0 0', fontSize: '1.25rem', fontWeight: 900, color: '#ffffff' }}>
+                    {selectedNotice.titulo}
+                  </h2>
+
+                  <div className="notice-detail-meta">
+                    <div className="notice-detail-meta-item">
+                      <Clock size={16} color="#94a3b8" />
+                      <span>Horario: <strong style={{ color: '#ffffff' }}>{selectedNotice.calendarTime}</strong></span>
+                    </div>
+
+                    {selectedNotice.creator && (
+                      <div className="notice-detail-meta-item">
+                        <User size={16} color="#94a3b8" />
+                        <span>Publicado por: <strong style={{ color: '#ffffff' }}>{selectedNotice.creator.first_name} {selectedNotice.creator.last_name || ''}</strong></span>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedNotice.descripcion && (
+                    <div style={{ marginTop: '6px', background: 'rgba(0, 0, 0, 0.25)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 800, marginBottom: '6px' }}>Indicaciones / Notas:</div>
+                      <p style={{ margin: 0, fontSize: '0.9rem', color: '#e2e8f0', whiteSpace: 'pre-line', lineHeight: '1.5' }}>
+                        {selectedNotice.descripcion}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="submodal-footer" style={{ justifyContent: isAdmin ? 'space-between' : 'flex-end' }}>
+                {isAdmin && (
+                  <button 
+                    type="button"
+                    className="btn-notice-delete"
+                    onClick={() => handleDeleteNotice(selectedNotice.noticeId)}
+                  >
+                    <Trash2 size={16} />
+                    <span>Eliminar Aviso</span>
+                  </button>
+                )}
+                <button 
+                  type="button"
+                  className="btn-submodal-cancel"
+                  onClick={() => setSelectedNotice(null)}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
