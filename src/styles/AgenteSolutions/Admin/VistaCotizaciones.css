@@ -1336,11 +1336,12 @@
 }
 
 /* ── PANEL DE PROPIEDAD ──
-   z-index sobre la barra inferior (9999) y debajo del detalle de cotización (1000005) */
+   z-index sobre el encabezado (hasta 999999 según la hoja de estilos cargada) y la barra
+   inferior, pero debajo del detalle de cotización (1000005) para que este abra encima */
 .cotiz-sheet-overlay {
     position: fixed;
     inset: 0;
-    z-index: 10050;
+    z-index: 1000000;
     display: flex;
     align-items: center;
     justify-content: center;

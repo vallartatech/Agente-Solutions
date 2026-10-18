@@ -270,7 +270,7 @@
 .rg-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100000;
+  z-index: 1000000; /* sobre el encabezado (hasta 999999) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -282,7 +282,7 @@
   box-sizing: border-box;
 }
 
-.rg-modal-overlay { z-index: 100001; }
+.rg-modal-overlay { z-index: 1000001; }
 
 @keyframes rgOverlayIn { from { opacity: 0; } to { opacity: 1; } }
 

@@ -1,0 +1,585 @@
+/* ==========================================================================
+   TRABAJOS DEL TÉCNICO - WHITE LIQUID GLASS
+   Se carga después de TrabajosTecnico.css (que también usa RegistrarVentaCruzada),
+   por eso todo va con el prefijo .ttg-root.
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+.ttg-root {
+  min-height: 100vh;
+  width: 100%;
+  background: url('../../../assets/geometric-poly-bg.png') center center / cover no-repeat fixed;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
+}
+
+.ttg-root .tt-body {
+  padding: 0 0 40px;
+  overflow: visible;
+  align-items: stretch;
+}
+
+.ttg-action-bar,
+.ttg-toolbar,
+.ttg-root .tt-checklist-gate,
+.ttg-root .tt-mobile-tabs,
+.ttg-root .tt-board-container-kanban {
+  width: 95%;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+/* ── TÍTULO ── */
+.ttg-action-bar {
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+
+.ttg-page-title-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.40) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  padding: 7px 18px;
+  border-radius: 24px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #0f172a;
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
+}
+
+.ttg-title-icon { color: #f26522; }
+
+.ttg-count-pill {
+  background: #f26522;
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.74rem;
+  font-weight: 900;
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.35);
+}
+
+/* ── BARRA UNIFICADA ── */
+.ttg-toolbar {
+  position: relative;
+  z-index: 200;
+  margin-bottom: 16px;
+}
+
+/* Botón de lista de ruta: naranja pendiente (con punto pulsante) / verde listo */
+.ttg-route-btn {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  padding: 0;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ttg-route-btn.is-pending {
+  color: #ea580c;
+  background: rgba(242, 101, 34, 0.12);
+  border: 1.5px solid rgba(242, 101, 34, 0.45);
+}
+
+.ttg-route-btn.is-ready {
+  color: #047857;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1.5px solid rgba(16, 185, 129, 0.45);
+}
+
+.ttg-route-btn:hover { transform: translateY(-2px); }
+
+.ttg-route-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #f26522;
+  animation: ttgPulse 1.8s infinite;
+}
+
+@keyframes ttgPulse {
+  0% { box-shadow: 0 0 0 0 rgba(242, 101, 34, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(242, 101, 34, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(242, 101, 34, 0); }
+}
+
+/* ── AVISO DE LISTA DE RUTA OBLIGATORIA ── */
+.ttg-root .tt-checklist-gate {
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  border-left: 4px solid #f26522;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.55) 100%);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
+}
+
+.ttg-root .tt-checklist-gate-icon {
+  background: rgba(242, 101, 34, 0.14);
+  color: #ea580c;
+  border: 1.5px solid rgba(242, 101, 34, 0.4);
+  border-radius: 14px;
+}
+
+.ttg-root .tt-checklist-gate-text strong {
+  font-family: 'Outfit', sans-serif;
+  color: #0f172a;
+}
+
+.ttg-root .tt-checklist-gate-text span {
+  color: #475569;
+  font-weight: 500;
+}
+
+.ttg-root .tt-checklist-gate-btn {
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  box-shadow: 0 8px 20px rgba(242, 101, 34, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  font-family: 'Outfit', sans-serif;
+}
+
+/* ── PESTAÑAS MÓVILES (HOY / MAÑANA / LISTO) COMO CONTROL SEGMENTADO ── */
+.ttg-root .tt-mobile-tabs {
+  top: 8px;
+  gap: 6px;
+  padding: 6px;
+  margin-bottom: 14px;
+  border-bottom: none;
+  border-radius: 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.55) 100%);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
+}
+
+.ttg-root .tt-m-tab-btn {
+  flex-direction: row;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border: none;
+  border-radius: 13px;
+  background: transparent;
+  color: #475569;
+  font-family: 'Outfit', sans-serif;
+}
+
+.ttg-root .tt-m-tab-btn span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.ttg-root .tt-m-tab-btn.active {
+  transform: none;
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.35);
+}
+
+.ttg-root .tt-m-tab-btn.active .tab-icon-wrapper {
+  color: #ffffff;
+  transform: none;
+}
+
+.ttg-root .tab-icon-wrapper { display: inline-flex; }
+.ttg-root .tab-icon-wrapper svg { width: 16px; height: 16px; }
+
+.ttg-root .tab-badge {
+  position: static;
+  margin-left: 2px;
+  padding: 1px 6px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.1);
+  color: #334155;
+  font-size: 0.66rem;
+}
+
+.ttg-root .tt-m-tab-btn.active .tab-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* ── COLUMNAS DEL TABLERO COMO TARJETAS DE VIDRIO ── */
+/* Las 3 columnas se reparten todo el ancho (el CSS base las limita a 380px y dejaba un hueco) */
+.ttg-root .tt-board-container-kanban {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  padding: 0 0 20px;
+  overflow: visible;
+}
+
+.ttg-root .tt-kanban-col {
+  width: auto;
+  max-width: none;
+  min-height: 55vh;
+  padding: 14px;
+  border-radius: 22px;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.28) 50%,
+      rgba(255, 255, 255, 0.45) 100%),
+    rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14), inset 0 2px 2px rgba(255, 255, 255, 0.9);
+}
+
+.ttg-root .tt-col-header {
+  position: relative;
+  padding: 4px 4px 12px;
+  border-radius: 0;
+  background: transparent !important;
+  color: #0f172a;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.6px;
+}
+
+.ttg-root .tt-col-header::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  bottom: 0;
+  width: 36px;
+  height: 3px;
+  border-radius: 3px;
+  background: #f26522;
+}
+
+.ttg-root .col-done .tt-col-header::after { background: #10b981; }
+
+.ttg-root .count-pill {
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.3);
+}
+
+.ttg-root .tt-col-content { padding: 12px 0 0; }
+
+.ttg-root .tt-subgroup-label {
+  color: #475569;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+}
+
+.ttg-root .empty-mini {
+  margin: 4px 0;
+  padding: 28px 14px;
+  border-radius: 16px;
+  border: 2px dashed rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.35);
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* Encabezado de "Mañana / Histórico" (trae fondo azul y texto blanco del CSS base):
+   título y contador en la misma línea que las otras columnas, filtro de fecha debajo */
+.ttg-root .tt-col-header.header-with-filter {
+  padding: 4px 4px 12px !important;
+  gap: 10px !important;
+  background: transparent !important;
+}
+
+.ttg-root .header-label-group {
+  color: #0f172a;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.6px;
+}
+
+.ttg-root .tt-date-button-trigger-mini {
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(242, 101, 34, 0.4);
+  background: rgba(242, 101, 34, 0.1);
+  color: #ea580c;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.ttg-root .tt-date-button-trigger-mini:hover {
+  background: rgba(242, 101, 34, 0.2);
+  border-color: #f26522;
+}
+
+.ttg-root .btn-clear-filter-mini {
+  padding: 0;
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+/* ── TARJETAS DE TRABAJO ── */
+.ttg-root .tt-task-card {
+  border-radius: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-left: 4px solid #f26522;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.07), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  font-family: inherit;
+}
+
+.ttg-root .tt-task-card:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
+}
+
+.ttg-root .tt-task-card.is-sos {
+  border-left-color: #ef4444;
+  background: rgba(255, 245, 245, 0.9);
+}
+
+.ttg-root .col-done .tt-task-card { border-left-color: #10b981; }
+
+.ttg-root .tt-property-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* Botón "Ya llegué" / etiqueta "En el lugar" */
+.ttg-arrival-row { margin-top: 6px; }
+
+.ttg-arrival {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(242, 101, 34, 0.45);
+  background: rgba(242, 101, 34, 0.1);
+  color: #ea580c;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button.ttg-arrival:hover {
+  background: rgba(242, 101, 34, 0.2);
+  border-color: #f26522;
+}
+
+.ttg-arrival.is-here {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  cursor: default;
+}
+
+/* Bloqueo: tarjetas atenuadas hasta confirmar la lista de ruta */
+.ttg-root .tt-board-container-kanban.table-locked .tt-col-content {
+  filter: grayscale(0.5);
+  opacity: 0.55;
+}
+
+/* ── MODAL DE CONFIRMACIÓN DE MATERIAL ── */
+.ttg-root .tt-modal-overlay {
+  z-index: 1000000; /* sobre el encabezado (hasta 999999) */
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(6, 8, 12, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.ttg-root .tt-modal-content {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 26px;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.86) 100%);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3), inset 0 2px 2px rgba(255, 255, 255, 0.95);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.ttg-root .tt-modal-header {
+  padding: 18px 22px 14px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #0f172a;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.ttg-root .tt-modal-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-style: normal;
+  color: #0f172a;
+}
+
+.ttg-root .tt-modal-header h3 svg { color: #f26522; }
+
+.ttg-root .pills-alert {
+  border-radius: 999px;
+  background: rgba(242, 101, 34, 0.12);
+  border: 1px solid rgba(242, 101, 34, 0.35);
+  color: #ea580c;
+}
+
+.ttg-root .tt-modal-body { padding: 16px 22px; }
+
+.ttg-root .modal-instruction { color: #475569; font-size: 0.82rem; }
+
+.ttg-root .checklist-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #ea580c;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.ttg-root .check-item {
+  border-radius: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.ttg-root .check-item.checked {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.ttg-root .check-item input[type="checkbox"] { accent-color: #f26522; }
+
+.ttg-root .tt-modal-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 22px 18px;
+  background: rgba(255, 255, 255, 0.82);
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.ttg-root .btn-confirmar {
+  border-radius: 14px;
+  font-family: 'Outfit', sans-serif;
+}
+
+.ttg-root .btn-confirmar.ready {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+.ttg-root .btn-confirmar.disabled {
+  background: rgba(15, 23, 42, 0.08);
+  color: #94a3b8;
+  box-shadow: none;
+}
+
+.ttg-root .btn-cancelar-modal {
+  border-radius: 14px;
+  border: 1.5px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.75);
+  color: #0f172a;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+}
+
+/* ==========================================================================
+   RESPONSIVO
+   ========================================================================== */
+@media (max-width: 900px) {
+  .ttg-root .tt-body { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+
+  .ttg-action-bar,
+  .ttg-toolbar,
+  .ttg-root .tt-checklist-gate,
+  .ttg-root .tt-mobile-tabs,
+  .ttg-root .tt-board-container-kanban {
+    width: 94%;
+  }
+
+  .ttg-action-bar { margin-top: 12px; margin-bottom: 12px; }
+
+  /* En móvil solo se ve la columna de la pestaña activa: una sola columna a todo el ancho */
+  .ttg-root .tt-board-container-kanban {
+    grid-template-columns: 1fr;
+    padding: 0 0 16px;
+  }
+
+  .ttg-root .tt-kanban-col { min-height: auto; }
+
+  .ttg-root .tt-kanban-col {
+    padding: 12px;
+    margin-bottom: 0;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14), inset 0 2px 2px rgba(255, 255, 255, 0.9);
+  }
+
+  /* En móvil la pestaña ya dice qué columna es: el encabezado queda solo con el contador */
+  .ttg-root .tt-col-header { padding: 2px 4px 10px; }
+
+  .ttg-root .tt-col-info { border-top-color: rgba(15, 23, 42, 0.07); }
+
+  /* Modal desde abajo */
+  .ttg-root .tt-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .ttg-root .tt-modal-content {
+    max-width: 100%;
+    border-radius: 26px 26px 0 0;
+    border-bottom: none;
+  }
+
+  .ttg-root .tt-modal-footer { padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 640px) {
+  .ttg-page-title-badge { font-size: 0.72rem; padding: 5px 12px; }
+
+  .ttg-route-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 12px;
+  }
+
+  .ttg-root .tt-checklist-gate { padding: 14px; }
+}

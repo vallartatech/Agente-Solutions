@@ -1,0 +1,340 @@
+/* ==========================================================================
+   MODAL GENERAR / CONSULTAR / EDITAR COTIZACIÓN - WHITE LIQUID GLASS
+   Sobrescribe la piel de TrabajoPropiedad.css (compartido con otras vistas)
+   solo dentro de .mcc-overlay / .mcc-card.
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* Por encima de la barra inferior móvil (z-index 9999) */
+.tp-modal-overlay.mcc-overlay {
+  z-index: 1000010; /* sobre el encabezado y el detalle de cotización (1000005) */
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(6, 8, 12, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.tp-modal-quotation-card.mcc-card {
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  border-radius: 26px;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.86) 100%);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3), inset 0 2px 2px rgba(255, 255, 255, 0.95);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #0f172a;
+}
+
+.mcc-grabber { display: none; }
+
+/* ── ENCABEZADO CLARO ── */
+.mcc-card .tp-modal-q-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px 14px;
+  background: rgba(255, 255, 255, 0.82);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+}
+
+.mcc-tag {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(242, 101, 34, 0.12);
+  border: 1px solid rgba(242, 101, 34, 0.35);
+  color: #ea580c;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+}
+
+.mcc-card .tp-modal-q-header h2 {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0;
+}
+
+.mcc-card .tp-modal-q-header p {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.mcc-close {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mcc-close:hover {
+  background: rgba(242, 101, 34, 0.15);
+  border-color: rgba(242, 101, 34, 0.4);
+  color: #ea580c;
+  transform: rotate(90deg);
+}
+
+/* ── PESTAÑAS MANUAL / ARCHIVO ── */
+.mcc-card .tp-modal-q-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 14px 22px 0;
+  padding: 6px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.mcc-card .tp-q-tab {
+  flex: 1;
+  justify-content: center;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #475569;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+}
+
+.mcc-card .tp-q-tab.active {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.32);
+}
+
+/* ── CUERPO ── */
+.mcc-card .tp-modal-q-body {
+  padding: 18px 22px;
+  background: transparent;
+  scrollbar-width: none;
+}
+
+.mcc-card .tp-modal-q-body::-webkit-scrollbar { display: none; }
+
+.mcc-card .tp-q-section-header h3 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #0f172a;
+}
+
+.mcc-card .tp-q-line {
+  background: #f26522;
+  max-width: 36px;
+  height: 3px;
+  border-radius: 3px;
+}
+
+.mcc-card .tp-q-table-header span {
+  color: #94a3b8;
+  font-weight: 800;
+}
+
+/* Cada fila de concepto/material como tarjeta de vidrio */
+.mcc-card .tp-q-row {
+  border-radius: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.mcc-card .tp-q-row:hover { border-color: rgba(242, 101, 34, 0.35); }
+
+.mcc-card .tp-q-input,
+.mcc-card .tp-q-price-wrapper,
+.mcc-card .tp-q-textarea {
+  border-radius: 12px;
+  border: 1.5px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.85);
+  color: #0f172a;
+  font-family: inherit;
+}
+
+.mcc-card .tp-q-price-wrapper .tp-q-input {
+  border: none;
+  background: transparent;
+}
+
+.mcc-card .tp-q-input:focus,
+.mcc-card .tp-q-price-wrapper:focus-within,
+.mcc-card .tp-q-textarea:focus {
+  border-color: #f26522;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.18);
+}
+
+.mcc-card .tp-q-input:read-only,
+.mcc-card .tp-q-textarea:read-only {
+  background: rgba(15, 23, 42, 0.03);
+  color: #334155;
+}
+
+.mcc-card .tp-q-price-wrapper span { color: #ea580c; font-weight: 800; }
+
+.mcc-card .tp-q-subtotal {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.mcc-card .tp-q-btn-del {
+  padding: 0;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #dc2626;
+}
+
+.mcc-card .tp-q-btn-add {
+  border-radius: 12px;
+  border: 1.5px dashed rgba(242, 101, 34, 0.5);
+  background: rgba(242, 101, 34, 0.06);
+  color: #ea580c;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+}
+
+.mcc-card .tp-q-file-upload {
+  border-radius: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* ── PIE FIJO ── */
+.mcc-card .tp-modal-q-footer {
+  flex-shrink: 0;
+  gap: 12px;
+  padding: 12px 22px 18px;
+  background: rgba(255, 255, 255, 0.85);
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.mcc-card .tp-q-total-card {
+  border-radius: 16px;
+  border: 1.5px solid rgba(242, 101, 34, 0.35);
+  background: rgba(242, 101, 34, 0.08);
+  box-shadow: none;
+}
+
+.mcc-card .tp-q-total-label {
+  color: #64748b;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+}
+
+.mcc-card .tp-q-total-amount {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  color: #ea580c;
+}
+
+.mcc-card .tp-q-btn-cancel-new {
+  border-radius: 14px;
+  border: 1.5px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.8);
+  color: #0f172a;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+}
+
+.mcc-card .tp-q-btn-save-new {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(242, 101, 34, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* ==========================================================================
+   MÓVIL: PANEL DESDE ABAJO (en lugar de pantalla completa)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .tp-modal-overlay.mcc-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .tp-modal-quotation-card.mcc-card {
+    height: auto;
+    max-height: 92vh;
+    max-height: 92dvh;
+    max-width: 100%;
+    border-radius: 26px 26px 0 0;
+    border-bottom: none;
+  }
+
+  .mcc-grabber {
+    display: block;
+    flex-shrink: 0;
+    width: 48px;
+    height: 5px;
+    margin: 10px auto 0;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.2);
+  }
+
+  .mcc-card .tp-modal-q-header { padding: 10px 16px 12px; }
+  .mcc-card .tp-modal-q-header h2 { font-size: 1.15rem; }
+  .mcc-card .tp-modal-q-tabs { margin: 12px 16px 0; }
+  .mcc-card .tp-modal-q-body { padding: 14px 16px; }
+
+  .mcc-card .tp-q-row { padding: 14px; }
+
+  /* Pie compacto: total en una línea y botones lado a lado */
+  .mcc-card .tp-modal-q-footer {
+    gap: 10px;
+    padding: 10px 16px calc(14px + env(safe-area-inset-bottom));
+  }
+
+  .mcc-card .tp-q-total-card {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+  }
+
+  .mcc-card .tp-q-total-amount { font-size: 1.35rem; }
+
+  .mcc-card .tp-q-footer-actions {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .mcc-card .tp-q-btn-cancel-new,
+  .mcc-card .tp-q-btn-save-new {
+    flex: 1;
+    padding: 12px 10px;
+    font-size: 0.8rem;
+  }
+
+  .mcc-card .tp-q-input { font-size: 16px; } /* evita zoom en iOS */
+}

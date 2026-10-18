@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
-import { X, Plus, Trash2, Camera, FileText, Upload } from 'lucide-react';
+import { X, Plus, Trash2, Camera, FileText, Upload, Pencil } from 'lucide-react';
 import '../../styles/AgenteSolutions/Tecnico/TrabajoPropiedad.css';
+import '../../styles/Shared/ModalCrearCotizacion.css';
 
 const ModalCrearCotizacion = ({ 
   workOrderId, 
@@ -190,13 +191,15 @@ const ModalCrearCotizacion = ({
 
   return (
     <AnimatePresence>
-      <div className="tp-modal-overlay">
-        <motion.div 
+      <div className="tp-modal-overlay mcc-overlay">
+        <motion.div
           initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
-          className="tp-modal-quotation-card"
+          className="tp-modal-quotation-card mcc-card"
         >
+          <div className="mcc-grabber" />
           <div className="tp-modal-q-header">
             <div>
+              <span className="mcc-tag">COTIZACIÓN</span>
               <h2>
                 {cotizacionExistente && isAdmin ? 'EDITAR COTIZACIÓN' : 
                  modoConsulta ? 'COTIZACIÓN REGISTRADA' : 'GENERAR COTIZACIÓN'}
@@ -206,34 +209,13 @@ const ModalCrearCotizacion = ({
                  modoConsulta ? 'Consulta los detalles de la cotización actual' : 'Complete el formato para enviar la cotización al cliente'}
               </p>
             </div>
-            <button 
-              onClick={onClose} 
+            <button
+              type="button"
+              className="mcc-close"
+              onClick={onClose}
               aria-label="Cerrar modal"
-              style={{ 
-                background: 'rgba(255,255,255,0.18)', 
-                border: '1px solid rgba(255,255,255,0.3)', 
-                color: '#ffffff', 
-                width: '38px', 
-                height: '38px', 
-                borderRadius: '10px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                cursor: 'pointer', 
-                flexShrink: 0, 
-                transition: 'all 0.2s ease',
-                outline: 'none'
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = '#ef4444';
-                e.currentTarget.style.borderColor = '#ef4444';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.18)';
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
-              }}
             >
-              <X size={20} color="#ffffff" strokeWidth={2.5} />
+              <X size={18} strokeWidth={2.5} />
             </button>
           </div>
 
@@ -456,12 +438,11 @@ const ModalCrearCotizacion = ({
               {modoConsulta ? (
                 <>
                   <button className="tp-q-btn-cancel-new" onClick={onClose}>CERRAR</button>
-                  <button 
-                    className="tp-q-btn-save-new" 
-                    style={{ background: '#3b82f6', color: 'white', border: 'none' }}
+                  <button
+                    className="tp-q-btn-save-new"
                     onClick={() => setModoConsulta(false)}
                   >
-                    ✏️ EDITAR COTIZACIÓN
+                    <Pencil size={16} /> EDITAR COTIZACIÓN
                   </button>
                 </>
               ) : (

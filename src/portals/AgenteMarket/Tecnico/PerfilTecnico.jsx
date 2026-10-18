@@ -541,12 +541,13 @@ const PerfilTecnico = () => {
                   {user?.profile_picture ? (
                     <img src={user.profile_picture} alt="Perfil" className="profile-identity-avatar-img" />
                   ) : (
-                    <div className="profile-identity-avatar-fallback">
+                    <div className="profile-identity-avatar-initial">
                       {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : 'T')}
                     </div>
                   )}
-                  <div className="profile-avatar-camera-pill">
-                    <Camera size={11} />
+                  <div className="profile-identity-avatar-hover">
+                    <Camera size={16} />
+                    <span>CAMBIAR</span>
                   </div>
                 </div>
 

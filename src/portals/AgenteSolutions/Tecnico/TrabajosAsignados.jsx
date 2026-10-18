@@ -7,18 +7,17 @@ import {
   Clock,
   Eye,
   X,
-  ArrowLeft,
-  Building,
   UserCheck,
-  Wrench,
   FileText,
   User,
   LayoutGrid,
   PencilLine,
-  ChevronLeft
+  ClipboardList,
+  Calendar
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../../../components/Shared/Header";
+import CasaLoader from "../../../components/Shared/CasaLoader";
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosAsignados.css";
 
 
@@ -116,311 +115,234 @@ const TrabajosAsignados = () => {
   const pendientes = servicios.filter((s) => s.status !== "completed" && s.status !== "Finalizado" && s.status !== "Listo");
   const finalizados = servicios.filter((s) => s.status === "completed" || s.status === "Finalizado" || s.status === "Listo");
 
-  const handleRegresar = () => {
-    if (window.history.state && window.history.state.idx > 0) {
-      navigate(-1);
-    } else {
-      navigate("/VistaTecnico");
-    }
-  };
+  const listaActual = activeTab === "asignados" ? pendientes : finalizados;
+  const fotoDetalle = detalleServicio
+    ? (detalleServicio.facade_photo || detalleServicio.property_photo || detalleServicio.foto_fachada)
+    : null;
 
   return (
-    <>
+    <div className="ta-root">
       <Header />
-      <div className="trabajos-container">
-        <div className="top-actions" style={{ marginBottom: '15px' }}>
-          <button 
-            onClick={handleRegresar} 
-            style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#F26522', color: 'white', padding: '8px 25px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
-          >
-            <ChevronLeft size={18} />
-            <span>REGRESAR</span>
-          </button>
+      <main className="ta-main">
+
+        {/* ── TÍTULO ── */}
+        <div className="ta-action-bar">
+          <div className="ta-page-title-badge">
+            <ClipboardList size={18} className="ta-title-icon" />
+            <span>MIS LEVANTAMIENTOS</span>
+            <span className="ta-count-pill">{pendientes.length}</span>
+          </div>
         </div>
 
-        <div className="tabs-container">
+        {/* ── PESTAÑAS: ASIGNADOS / FINALIZADOS ── */}
+        <div className="ta-tabs" role="tablist">
           <button
-            className={`tab-btn ${activeTab === "asignados" ? "active" : ""}`}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "asignados"}
+            className={`ta-tab ${activeTab === "asignados" ? "active" : ""}`}
             onClick={() => setActiveTab("asignados")}
           >
-            <Clock size={18} />
-            Trabajos Asignados
+            <Clock size={16} />
+            <span>Asignados</span>
+            <span className="ta-tab-count">{pendientes.length}</span>
           </button>
           <button
-            className={`tab-btn ${activeTab === "finalizados" ? "active" : ""}`}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "finalizados"}
+            className={`ta-tab ${activeTab === "finalizados" ? "active" : ""}`}
             onClick={() => setActiveTab("finalizados")}
           >
-            <CheckCircle size={18} />
-            Trabajos Finalizados
+            <CheckCircle size={16} />
+            <span>Finalizados</span>
+            <span className="ta-tab-count">{finalizados.length}</span>
           </button>
         </div>
 
-        {/* --- SECCIÓN 1: TRABAJOS ASIGNADOS --- */}
-        {activeTab === "asignados" && (
-          <section className="seccion-trabajos fade-in">
-            <div className="titulo-seccion pending">
-              <Clock size={22} />
-              <h2>Trabajos Asignados</h2>
-            </div>
-            <div className="tabla-wrapper">
-              <table className="tabla-general">
-                <thead>
-                  <tr>
-                    <th>Propiedad</th>
-                    <th>Dirección</th>
-                    <th>Prioridad</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendientes.length > 0 ? (
-                    pendientes.map((s) => (
-                      <tr
-                        key={s.composite_id || s.id}
-                        className={`card-trabajo-item ${resaltarPropiedadId != null && String(s.property_id) === String(resaltarPropiedadId) ? 'is-highlighted' : ''}`}
-                        data-propiedad-id={s.property_id}
-                      >
-                        <td className="cell-propiedad">
-                          <strong className="propiedad-nombre">{s.property_name}</strong>
-                          <span className={`badge ${s.priority} badge-mobile-only`}>
-                            {s.priority}
-                          </span>
-                        </td>
-                        <td className="cell-direccion">
-                          <span className="direccion-texto">
-                            <MapPin size={15} className="pin-icon-mobile" />
-                            {s.address}
-                          </span>
-                        </td>
-                        <td className="cell-prioridad">
-                          <span className={`badge ${s.priority}`}>
-                            {s.priority}
-                          </span>
-                        </td>
-                        <td className="btns-accion cell-acciones">
-                          <button
-                            className="btn-action map"
-                            title="Ver en Google Maps"
-                            onClick={() => abrirMapa(s.coordinates || s.coordenadas, s.address)}
-                          >
-                            <MapPin size={17} />
-                            <span>Mapa</span>
-                          </button>
+        {/* ── LISTA DE TRABAJOS ── */}
+        {!cargado ? (
+          <CasaLoader texto="Cargando levantamientos..." />
+        ) : listaActual.length === 0 ? (
+          <div className="ta-empty">
+            <span className="ta-empty-icon">
+              {activeTab === "asignados" ? <Clock size={26} /> : <CheckCircle size={26} />}
+            </span>
+            <strong>
+              {activeTab === "asignados" ? "No tienes levantamientos pendientes" : "Aún no hay levantamientos finalizados"}
+            </strong>
+            <span>
+              {activeTab === "asignados"
+                ? "Cuando te asignen una visita técnica aparecerá aquí."
+                : "Los levantamientos que termines se guardarán aquí."}
+            </span>
+          </div>
+        ) : (
+          <div className="ta-grid">
+            {activeTab === "asignados" && pendientes.map((s) => (
+              <article
+                key={s.composite_id || s.id}
+                className={`ta-card ${resaltarPropiedadId != null && String(s.property_id) === String(resaltarPropiedadId) ? 'is-highlighted' : ''}`}
+                data-propiedad-id={s.property_id}
+              >
+                <div className="ta-card-top">
+                  <h3 className="ta-card-title">{s.property_name}</h3>
+                  {s.priority && <span className={`ta-priority ${String(s.priority).toLowerCase()}`}>{s.priority}</span>}
+                </div>
 
-                          <button
-                            className={`btn-action zones ${s.tiene_levantamiento ? 'has-survey' : ''}`}
-                            title={s.tiene_levantamiento ? 'Editar el levantamiento de zonas' : 'Iniciar levantamiento de zonas'}
-                            onClick={() => irARegistro(s)}
-                          >
-                            {s.tiene_levantamiento ? <PencilLine size={17} /> : <LayoutGrid size={17} />}
-                            <span>{s.tiene_levantamiento ? 'Editar levantamiento' : 'Levantamiento'}</span>
-                          </button>
+                <p className="ta-card-line">
+                  <MapPin size={14} />
+                  <span>{s.address || 'Sin dirección registrada'}</span>
+                </p>
 
-                          <button
-                            className="btn-action view"
-                            title="Ver Información Completa"
-                            onClick={() => verDetalle(s)}
-                          >
-                            <Eye size={17} />
-                            <span>Detalles</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="4" className="empty-state">
-                        No tienes trabajos pendientes por ahora.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {/* --- SECCIÓN 2: TRABAJOS FINALIZADOS --- */}
-        {activeTab === "finalizados" && (
-          <section className="seccion-trabajos fade-in">
-            <div className="titulo-seccion success">
-              <CheckCircle size={22} />
-              <h2>Trabajos Finalizados</h2>
-            </div>
-            <div className="tabla-wrapper">
-              <table className="tabla-general">
-                <thead>
-                  <tr>
-                    <th>Propiedad</th>
-                    <th>Fecha Cierre</th>
-                    <th>Resultado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {finalizados.map((s) => (
-                    <tr key={s.id} className="row-finalizado card-trabajo-item">
-                      <td className="cell-propiedad">
-                        <strong className="propiedad-nombre">{s.property_name}</strong>
-                        <span className="badge Baja badge-mobile-only">
-                          {s.status}
-                        </span>
-                      </td>
-                      <td className="cell-direccion">
-                        <span className="direccion-texto">
-                          <Clock size={15} className="pin-icon-mobile" />
-                          {new Date(
-                            s.real_end || s.updated_at,
-                          ).toLocaleDateString()}
-                        </span>
-                      </td>
-                      <td className="cell-prioridad">
-                        <span className="badge Baja">{s.status}</span>
-                      </td>
-                      <td className="btns-accion cell-acciones">
-                        <button
-                          className="btn-action view"
-                          onClick={() => navigate(`/detalle-reporte/${s.id}`)}
-                          style={{ width: '100%', justifyContent: 'center' }}
-                        >
-                          <Eye size={17} />
-                          <span>Ver detalles</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {finalizados.length === 0 && (
-                    <tr>
-                      <td colSpan="4" className="empty-state">
-                        No hay trabajos finalizados.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {/* --- MODAL DE SÓLO LECTURA --- */}
-        {modalVisible && detalleServicio && (
-          <div className="modal-overlay">
-            <div className="modal-detalle-formal">
-              <div className="modal-header">
-                <h3>Detalles de la Propiedad</h3>
-                <button
-                  className="close-modal"
-                  onClick={() => setModalVisible(false)}
-                >
-                  <X />
-                </button>
-              </div>
-
-              <div className="modal-body-formal">
-                {(detalleServicio.facade_photo ||
-                  detalleServicio.property_photo ||
-                  detalleServicio.foto_fachada) && (
-                  <div className="facade-photo-container">
-                    <img
-                      src={
-                        detalleServicio.facade_photo ||
-                        detalleServicio.property_photo ||
-                        detalleServicio.foto_fachada
-                      }
-                      alt="Fachada"
-                      className="facade-img"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                  </div>
+                {s.tiene_levantamiento && (
+                  <span className="ta-survey-tag">
+                    <LayoutGrid size={12} /> Levantamiento iniciado
+                  </span>
                 )}
 
-                <div className="info-grid-formal">
-                  <div className="info-item-formal">
-                    <span className="icon-wrapper"><Building size={20} /></span>
-                    <div className="info-content">
-                      <label>Nombre Propiedad</label>
-                      <p>{detalleServicio.property_name}</p>
-                    </div>
+                <div className="ta-card-actions">
+                  <button
+                    type="button"
+                    className="ta-btn ta-btn-primary"
+                    title={s.tiene_levantamiento ? 'Editar el levantamiento de zonas' : 'Iniciar levantamiento de zonas'}
+                    onClick={() => irARegistro(s)}
+                  >
+                    {s.tiene_levantamiento ? <PencilLine size={16} /> : <LayoutGrid size={16} />}
+                    <span>{s.tiene_levantamiento ? 'Editar levantamiento' : 'Iniciar levantamiento'}</span>
+                  </button>
+                  <div className="ta-card-actions-row">
+                    <button
+                      type="button"
+                      className="ta-btn ta-btn-secondary"
+                      title="Ver en Google Maps"
+                      onClick={() => abrirMapa(s.coordinates || s.coordenadas, s.address)}
+                    >
+                      <MapPin size={16} />
+                      <span>Mapa</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="ta-btn ta-btn-secondary"
+                      title="Ver información completa"
+                      onClick={() => verDetalle(s)}
+                    >
+                      <Eye size={16} />
+                      <span>Detalles</span>
+                    </button>
                   </div>
+                </div>
+              </article>
+            ))}
 
-                  <div className="info-item-formal">
-                    <span className="icon-wrapper"><MapPin size={20} /></span>
-                    <div className="info-content">
-                      <label>Dirección Completa</label>
-                      <p>{detalleServicio.address}</p>
-                      {(detalleServicio.coordinates || detalleServicio.coordenadas) && (
-                        <p style={{ fontSize: '0.8rem', color: '#9CA3AF', marginTop: '3px' }}>
-                          📍 Coordenadas: <strong style={{ color: '#E5E7EB' }}>{detalleServicio.coordinates || detalleServicio.coordenadas}</strong>
-                        </p>
-                      )}
-                      <button
-                        onClick={() => abrirMapa(detalleServicio.coordinates || detalleServicio.coordenadas, detalleServicio.address)}
-                        style={{
-                          marginTop: '6px',
-                          background: 'none',
-                          border: 'none',
-                          color: '#FF6600',
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: 0,
-                          fontSize: '0.85rem'
-                        }}
-                      >
-                        <MapPin size={14} /> Abrir en Google Maps
-                      </button>
-                    </div>
-                  </div>
+            {activeTab === "finalizados" && finalizados.map((s) => (
+              <article key={s.id} className="ta-card is-done">
+                <div className="ta-card-top">
+                  <h3 className="ta-card-title">{s.property_name}</h3>
+                  <span className="ta-status-done"><CheckCircle size={12} /> {s.status}</span>
+                </div>
 
-                  <div className="info-item-formal">
-                    <span className="icon-wrapper"><User size={20} /></span>
-                    <div className="info-content">
-                      <label>Dueño / Cliente</label>
-                      <p>
-                        {detalleServicio.client_name ||
-                          detalleServicio.owner_name ||
-                          "No especificado"}
+                <p className="ta-card-line">
+                  <Calendar size={14} />
+                  <span>Cerrado el {new Date(s.real_end || s.updated_at).toLocaleDateString('es-MX')}</span>
+                </p>
+
+                <div className="ta-card-actions">
+                  <button
+                    type="button"
+                    className="ta-btn ta-btn-secondary"
+                    onClick={() => navigate(`/detalle-reporte/${s.id}`)}
+                  >
+                    <Eye size={16} />
+                    <span>Ver detalles</span>
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </main>
+
+      {/* ── MODAL DE SÓLO LECTURA: DETALLES DE LA PROPIEDAD ── */}
+      {modalVisible && detalleServicio && (
+        <div className="ta-modal-overlay" onClick={() => setModalVisible(false)}>
+          <div className="ta-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="ta-modal-grabber" />
+
+            <div className="ta-modal-header">
+              <div className="ta-modal-header-text">
+                <span className="ta-modal-tag">DETALLES DE LA PROPIEDAD</span>
+                <h2>{detalleServicio.property_name}</h2>
+              </div>
+              <button type="button" className="ta-modal-close" onClick={() => setModalVisible(false)} aria-label="Cerrar">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="ta-modal-body">
+              {fotoDetalle && (
+                <div className="ta-modal-photo">
+                  <img
+                    src={fotoDetalle}
+                    alt="Fachada"
+                    onError={(e) => { e.target.parentElement.style.display = "none"; }}
+                  />
+                </div>
+              )}
+
+              <div className="ta-info-card">
+                <div className="ta-info-row">
+                  <MapPin size={16} />
+                  <div>
+                    <label>Dirección completa</label>
+                    <p>{detalleServicio.address || 'Sin dirección registrada'}</p>
+                    {(detalleServicio.coordinates || detalleServicio.coordenadas) && (
+                      <p className="ta-info-coords">
+                        Coordenadas: {detalleServicio.coordinates || detalleServicio.coordenadas}
                       </p>
-                    </div>
+                    )}
+                    <button
+                      type="button"
+                      className="ta-link-btn"
+                      onClick={() => abrirMapa(detalleServicio.coordinates || detalleServicio.coordenadas, detalleServicio.address)}
+                    >
+                      <MapPin size={14} /> Abrir en Google Maps
+                    </button>
                   </div>
+                </div>
 
-                  <div className="info-item-formal">
-                    <span className="icon-wrapper"><UserCheck size={20} /></span>
-                    <div className="info-content">
-                      <label>Supervisor</label>
-                      <p>{detalleServicio.supervisor_name || "No asignado"}</p>
-                    </div>
+                <div className="ta-info-row">
+                  <User size={16} />
+                  <div>
+                    <label>Dueño / Cliente</label>
+                    <p>{detalleServicio.client_name || detalleServicio.owner_name || "No especificado"}</p>
                   </div>
+                </div>
 
-                  <div className="info-item-formal full">
-                    <span className="icon-wrapper"><FileText size={20} /></span>
-                    <div className="info-content">
-                      <label>Instrucciones</label>
-                      <div className="desc-box-formal">
-                        {detalleServicio.description || "Sin instrucciones adicionales."}
-                      </div>
-                    </div>
+                <div className="ta-info-row">
+                  <UserCheck size={16} />
+                  <div>
+                    <label>Supervisor</label>
+                    <p>{detalleServicio.supervisor_name || "No asignado"}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="modal-footer-formal">
-                <button
-                  className="btn-close-formal"
-                  onClick={() => setModalVisible(false)}
-                >
-                  Cerrar
-                </button>
+              <div className="ta-note">
+                <h4><FileText size={15} /> Instrucciones</h4>
+                <p>{detalleServicio.description || "Sin instrucciones adicionales."}</p>
               </div>
             </div>
+
+            <div className="ta-modal-footer">
+              <button type="button" className="ta-btn ta-btn-secondary" onClick={() => setModalVisible(false)}>
+                Cerrar
+              </button>
+            </div>
           </div>
-        )}
-      </div>
-    </>
+        </div>
+      )}
+    </div>
   );
 };
 
