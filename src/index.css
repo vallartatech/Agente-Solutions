@@ -81,3 +81,22 @@ button:focus-visible {
   z-index: 2147483647 !important;
 }
 
+
+/* ── GOOGLE MAPS: anular el estilo global de button ──
+   La regla "button { padding: 0.6em 1.2em; border-radius: 8px }" de este archivo se aplicaba
+   también a los controles de Google Maps y ocultaba la X del globo de información y cortaba
+   el botón de pantalla completa. */
+.gm-style button {
+  padding: 0 !important;
+  border-radius: 2px;
+  font-weight: normal;
+}
+
+.gm-style button:hover {
+  border-color: transparent;
+}
+
+.gm-style button:focus,
+.gm-style button:focus-visible {
+  outline: none;
+}

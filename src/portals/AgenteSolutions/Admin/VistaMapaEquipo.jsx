@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import axios from 'axios';
-import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindow, Polyline } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindow, Polyline, Marker } from '@react-google-maps/api';
 import { Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import '../../../styles/AgenteSolutions/Admin/VistaMapaEquipo.css';
@@ -91,6 +91,52 @@ const PersonMarker = memo(({ member, color, selected, onClick }) => {
 // Centra el marcador sobre la coordenada
 const centerOverlay = (width, height) => ({ x: -(width / 2), y: -(height / 2) });
 
+// ── Recorrido ──
+// Más de este tiempo entre dos puntos = la app estuvo cerrada: no sabemos el camino real.
+const ROUTE_GAP_MINUTES = 10;
+// Puntos con peor precisión que esto se descartan (son los que dibujan zigzags).
+const ROUTE_MAX_ACCURACY_M = 100;
+
+const ROUTE_SOLID = {
+  strokeColor: '#f97316',
+  strokeOpacity: 0.9,
+  strokeWeight: 4,
+  icons: [{ icon: { path: 'M 0,-2 2,2 -2,2 z', fillColor: '#f97316', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 1, scale: 1.6 }, offset: '50%', repeat: '140px' }]
+};
+
+const ROUTE_GAP = {
+  strokeOpacity: 0,
+  strokeWeight: 3,
+  icons: [{ icon: { path: 'M 0,-1 0,1', strokeColor: '#64748b', strokeOpacity: 0.9, strokeWeight: 3, scale: 3 }, offset: '0', repeat: '14px' }]
+};
+
+const buildRouteSegments = (points) => {
+  const validos = points.filter(p => p.accuracy == null || p.accuracy <= ROUTE_MAX_ACCURACY_M);
+  const continuos = [];
+  const sinDatos = [];
+  let actual = [];
+
+  for (let i = 0; i < validos.length; i++) {
+    const p = { lat: validos[i].lat, lng: validos[i].lng };
+    if (i === 0) { actual = [p]; continue; }
+    const minutos = (new Date(validos[i].recorded_at) - new Date(validos[i - 1].recorded_at)) / 60000;
+    if (minutos > ROUTE_GAP_MINUTES) {
+      if (actual.length > 1) continuos.push(actual);
+      sinDatos.push([actual[actual.length - 1], p]);
+      actual = [p];
+    } else {
+      actual.push(p);
+    }
+  }
+  if (actual.length > 1) continuos.push(actual);
+
+  return {
+    continuos,
+    sinDatos,
+    inicio: validos.length ? { lat: validos[0].lat, lng: validos[0].lng } : null
+  };
+};
+
 // Opciones fijas del mapa (un objeto nuevo en cada render obliga a Google Maps a reaplicarlas)
 const MAP_OPTIONS = {
   streetViewControl: false,
@@ -180,6 +226,7 @@ const VistaMapaEquipo = () => {
 
   const onMap = filtered.filter(m => m.last_location);
   const selected = members.find(m => m.id === selectedId) || null;
+  const tramosRuta = useMemo(() => buildRouteSegments(routePoints), [routePoints]);
   const countOnline = members.filter(m => m.online).length;
 
   // Encuadrar a todos la primera vez que hay ubicaciones
@@ -346,10 +393,20 @@ const VistaMapaEquipo = () => {
               onClick={() => setInfoOpen(false)}
               options={MAP_OPTIONS}
             >
-              {selected && routePoints.length > 1 && (
-                <Polyline
-                  path={routePoints.map(p => ({ lat: p.lat, lng: p.lng }))}
-                  options={{ strokeColor: '#f97316', strokeOpacity: 0.85, strokeWeight: 4 }}
+              {/* Recorrido del día: continuo (con flechas) donde hay datos seguidos;
+                  punteado donde la app estuvo cerrada y no se sabe el camino exacto */}
+              {selected && tramosRuta.continuos.map((path, i) => (
+                <Polyline key={`c-${i}`} path={path} options={ROUTE_SOLID} />
+              ))}
+              {selected && tramosRuta.sinDatos.map((path, i) => (
+                <Polyline key={`d-${i}`} path={path} options={ROUTE_GAP} />
+              ))}
+              {selected && tramosRuta.inicio && (
+                <Marker
+                  position={tramosRuta.inicio}
+                  title="Inicio del recorrido de hoy"
+                  clickable={false}
+                  icon={{ path: window.google.maps.SymbolPath.CIRCLE, scale: 6, fillColor: '#10b981', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 2 }}
                 />
               )}
 
@@ -403,6 +460,12 @@ const VistaMapaEquipo = () => {
             {['online', 'recent', 'old'].map(k => (
               <span key={k}><i style={{ background: STATUS[k].color }} /> {STATUS[k].label}</span>
             ))}
+            {selected && routePoints.length > 1 && (
+              <>
+                <span><b className="vme-legend-line" /> Recorrido</span>
+                <span><b className="vme-legend-line dashed" /> Sin datos (app cerrada)</span>
+              </>
+            )}
           </div>
         </section>
       </main>
