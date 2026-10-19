@@ -2026,13 +2026,17 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
           return (
             <div className="solutions-submodal-overlay nq-overlay" onClick={closeModal}>
               <div
-                className={`nq-window ${noticeForm.important ? 'is-important' : ''}`}
+                className={`nq-window nq-light ${noticeForm.important ? 'is-important' : ''}`}
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-labelledby="nq-title"
               >
                 <div className="nq-header">
-                  <h3 id="nq-title">Nuevo aviso</h3>
+                  <span className="nq-header-badge" aria-hidden="true"><CalendarDays size={18} /></span>
+                  <div className="nq-header-text">
+                    <h3 id="nq-title">Nuevo aviso</h3>
+                    <p>Aparecerá en el calendario y le llegará a todo el equipo</p>
+                  </div>
                   <button type="button" className="nq-close" onClick={closeModal} aria-label="Cerrar">
                     <X size={18} />
                   </button>
@@ -2041,13 +2045,13 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                 <form className="nq-form" onSubmit={handleCreateNotice}>
                   <div className="nq-body">
                     {/* Título: lo principal, grande y sin texto de ayuda largo */}
+                    <label htmlFor="nq-input-title" className="nq-row-label nq-title-label">¿Qué quieres avisar?</label>
                     <div className="nq-title-wrap">
                       <input
                         id="nq-input-title"
                         type="text"
                         className="nq-input nq-title-input"
-                        placeholder="Título del aviso"
-                        aria-label="Título del aviso"
+                        placeholder="Ej. Junta de revisión mensual"
                         maxLength={NOTICE_TITLE_MAX}
                         value={noticeForm.title}
                         onChange={(e) => setNoticeForm(prev => ({ ...prev, title: e.target.value }))}
@@ -2063,8 +2067,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
                     {/* Etiqueta: botones con las del equipo + "Nueva" */}
                     <div className="nq-row">
-                      <Tag size={17} className="nq-row-icon" aria-label="Etiqueta" />
+                      <Tag size={17} className="nq-row-icon" aria-hidden="true" />
                       <div className="nq-row-content">
+                        <span className="nq-row-label">Etiqueta <em>(opcional)</em></span>
                         <div className="nq-date-chips">
                           {chipsEtiqueta.map(l => (
                             <button
@@ -2101,8 +2106,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
                     {/* Fecha */}
                     <div className="nq-row">
-                      <CalendarDays size={17} className="nq-row-icon" aria-label="Fecha" />
+                      <CalendarDays size={17} className="nq-row-icon" aria-hidden="true" />
                       <div className="nq-row-content">
+                        <span className="nq-row-label">Fecha</span>
                         <div className="nq-date-chips">
                           <button type="button" className={`nq-chip ${noticeForm.dateMode === 'today' ? 'active' : ''}`} onClick={() => setDateMode('today')}>
                             Hoy
@@ -2130,8 +2136,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
                     {/* Horario */}
                     <div className="nq-row">
-                      <Clock size={17} className="nq-row-icon" aria-label="Horario" />
+                      <Clock size={17} className="nq-row-icon" aria-hidden="true" />
                       <div className="nq-row-content">
+                        <span className="nq-row-label">Horario</span>
                         <div className="nq-date-chips">
                           <button type="button" className={`nq-chip ${noticeForm.allDay ? 'active' : ''}`} onClick={() => setNoticeForm(prev => ({ ...prev, allDay: true }))}>
                             Todo el día
@@ -2259,7 +2266,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
           return (
             <div className="solutions-submodal-overlay nq-overlay" onClick={() => setSelectedNotice(null)}>
-              <div className="nq-window nd-window" style={{ '--nq-accent': color }} onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="nd-title">
+              <div className="nq-window nq-light nd-window" style={{ '--nq-accent': color }} onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="nd-title">
                 <div className="nq-header">
                   <span className="nd-kind" style={{ color }}>
                     <span className="nd-kind-dot" style={{ background: color }} />
