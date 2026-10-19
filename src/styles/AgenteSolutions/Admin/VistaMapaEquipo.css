@@ -346,9 +346,11 @@
 }
 
 .vme-info {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding: 4px 30px 2px 2px;
   color: #0f172a;
   font-size: 0.8rem;
   font-family: 'Plus Jakarta Sans', Arial, sans-serif;
@@ -356,6 +358,30 @@
 
 .vme-info strong {
   font-size: 0.92rem;
+}
+
+/* ✕ propia del globo de información (la de Google no se veía) */
+.vme-info-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  padding: 0 !important;
+  border: none;
+  border-radius: 50% !important;
+  background: #f1f5f9;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.vme-info-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .vme-info span {

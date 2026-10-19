@@ -100,3 +100,13 @@ button:focus-visible {
 .gm-style button:focus-visible {
   outline: none;
 }
+
+/* La ✕ de los globos de Google se dibuja con el color heredado (blanco en esta app): se fuerza oscura */
+.gm-style .gm-ui-hover-effect {
+  background: transparent !important;
+  opacity: 0.7;
+}
+
+.gm-style .gm-ui-hover-effect > span {
+  background-color: #334155 !important;
+}

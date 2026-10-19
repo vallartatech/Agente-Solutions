@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindow, Polyline, Marker } from '@react-google-maps/api';
-import { Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield } from 'lucide-react';
+import { Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield, X } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import '../../../styles/AgenteSolutions/Admin/VistaMapaEquipo.css';
 
@@ -431,9 +431,14 @@ const VistaMapaEquipo = () => {
                 <InfoWindow
                   position={{ lat: selected.last_location.lat, lng: selected.last_location.lng }}
                   onCloseClick={() => setInfoOpen(false)}
-                  options={{ pixelOffset: new window.google.maps.Size(0, -22) }}
+                  // Encabezado propio de Google oculto: su ✕ heredaba el color blanco de la app
+                  // y no se veía. Usamos nuestra propia ✕ dentro del contenido.
+                  options={{ pixelOffset: new window.google.maps.Size(0, -22), headerDisabled: true }}
                 >
                   <div className="vme-info">
+                    <button type="button" className="vme-info-close" onClick={() => setInfoOpen(false)} aria-label="Cerrar">
+                      <X size={16} />
+                    </button>
                     <strong>{selected.name}</strong>
                     <span>{selected.role_id === 2 ? 'Técnico' : 'Admin'} · {STATUS[statusOf(selected)].label}</span>
                     <span>{SOURCE_LABEL[selected.last_location.source] || ''} · {timeAgo(selected.last_location.recorded_at)}</span>
