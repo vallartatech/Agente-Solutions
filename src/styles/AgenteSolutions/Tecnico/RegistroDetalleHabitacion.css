@@ -591,7 +591,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 6px;
+  /* Va hasta arriba del formulario para que se vea al abrirlo */
+  margin: 0 0 14px;
 }
 
 .rdh-ficha-switch {
