@@ -789,64 +789,51 @@
     word-break: break-word;
 }
 
-/* Ocultar barra al hacer hover */
-.property-card:hover .property-name-bar {
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(10px);
+/* --- MENÚ ⋮ DE TARJETA (WEB Y MÓVIL) ---
+   Las acciones viven en el menú ⋮; ya no se usa el panel que aparecía al pasar el mouse. */
+.property-overlay {
+    display: none !important;
 }
 
-/* --- MENÚ ⋮ DE TARJETA (SOLO MÓVIL) --- */
+.property-card:hover .property-image {
+    filter: none;
+}
+
+.property-name-bar {
+    padding: 6px 52px;
+}
+
 .btn-card-menu {
-    display: none;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-card-menu:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.btn-card-menu.active,
+.btn-card-menu:active {
+    background: #f26522;
 }
 
 @media (max-width: 768px) {
-    /* En móvil no hay hover: ocultamos el overlay y usamos el menú ⋮ */
-    .property-overlay {
-        display: none !important;
-    }
-
     .property-card:hover {
         transform: none;
-    }
-
-    .property-card:hover .property-image {
-        filter: none;
-    }
-
-    .property-card:hover .property-name-bar {
-        opacity: 1;
-        visibility: visible;
-        transform: none;
-    }
-
-    .property-name-bar {
-        padding: 6px 52px;
-    }
-
-    .btn-card-menu {
-        position: absolute;
-        right: 8px;
-        top: 50%;
-        transform: translateY(-50%);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 36px;
-        height: 36px;
-        padding: 0;
-        border: none;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.15);
-        color: #ffffff;
-        cursor: pointer;
-        transition: background 0.2s;
-    }
-
-    .btn-card-menu.active,
-    .btn-card-menu:active {
-        background: #f26522;
     }
 }
 

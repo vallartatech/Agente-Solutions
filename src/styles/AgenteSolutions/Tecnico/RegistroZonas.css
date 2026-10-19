@@ -396,3 +396,17 @@
     font-size: 12px;
   }
 }
+/* Aviso para técnicos: solo el administrador finaliza el levantamiento */
+.rz-admin-finish-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: #ecfdf5;
+  border: 1px dashed #6ee7b7;
+  color: #047857;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.3;
+}

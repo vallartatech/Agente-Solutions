@@ -1,0 +1,317 @@
+.mel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  background: rgba(5, 7, 15, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.mel-window {
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+  font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+}
+
+.mel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mel-header-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #f26522;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mel-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.mel-header-text h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.mel-header-text p {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* padding/margin propios: anulan los estilos globales de button de index.css */
+.mel-close {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  background: #f8fafc;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mel-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #64748b;
+  font-size: 0.9rem;
+  padding: 12px 0;
+}
+
+.mel-spin {
+  animation: melSpin 1s linear infinite;
+}
+
+@keyframes melSpin {
+  to { transform: rotate(360deg); }
+}
+
+.mel-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.mel-status.open {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+
+.mel-status.done {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.mel-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.mel-members {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mel-members li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.mel-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #1e293b;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mel-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mel-member-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mel-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.mel-remove {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mel-remove:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.mel-add {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.mel-add label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #334155;
+}
+
+.mel-add-row {
+  display: flex;
+  gap: 8px;
+}
+
+.mel-add-row select {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 16px;
+}
+
+.mel-add-row select:focus {
+  outline: none;
+  border-color: #f26522;
+}
+
+.mel-btn-add,
+.mel-btn-finish {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mel-btn-add {
+  flex-shrink: 0;
+  background: #f26522;
+}
+
+.mel-btn-add:disabled,
+.mel-btn-finish:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mel-footer {
+  padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.mel-btn-finish {
+  width: 100%;
+  background: #10b981;
+}
+
+@media (max-width: 560px) {
+  .mel-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .mel-window {
+    max-width: none;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .mel-add-row {
+    flex-direction: column;
+  }
+}

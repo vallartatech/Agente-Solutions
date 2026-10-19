@@ -13,7 +13,8 @@ import {
   LayoutGrid,
   PencilLine,
   ClipboardList,
-  Calendar
+  Calendar,
+  Users
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../../../components/Shared/Header";
@@ -195,10 +196,19 @@ const TrabajosAsignados = () => {
                   <span>{s.address || 'Sin dirección registrada'}</span>
                 </p>
 
-                {s.tiene_levantamiento && (
-                  <span className="ta-survey-tag">
-                    <LayoutGrid size={12} /> Levantamiento iniciado
-                  </span>
+                {(s.tiene_levantamiento || s.equipo_count > 1) && (
+                  <div className="ta-tags-row">
+                    {s.tiene_levantamiento && (
+                      <span className="ta-survey-tag">
+                        <LayoutGrid size={12} /> Levantamiento iniciado
+                      </span>
+                    )}
+                    {s.equipo_count > 1 && (
+                      <span className="ta-team-tag" title="Todos los integrantes ven y editan el mismo levantamiento">
+                        <Users size={12} /> Equipo de {s.equipo_count}
+                      </span>
+                    )}
+                  </div>
                 )}
 
                 <div className="ta-card-actions">
@@ -247,7 +257,25 @@ const TrabajosAsignados = () => {
                   <span>Cerrado el {new Date(s.real_end || s.updated_at).toLocaleDateString('es-MX')}</span>
                 </p>
 
+                {s.equipo_count > 1 && (
+                  <div className="ta-tags-row">
+                    <span className="ta-team-tag"><Users size={12} /> Equipo de {s.equipo_count}</span>
+                  </div>
+                )}
+
                 <div className="ta-card-actions">
+                  {/* Finalizado no es definitivo: el equipo puede seguir editando el levantamiento */}
+                  {s.es_levantamiento && (
+                    <button
+                      type="button"
+                      className="ta-btn ta-btn-primary"
+                      title="Editar el levantamiento de zonas"
+                      onClick={() => irARegistro(s)}
+                    >
+                      <PencilLine size={16} />
+                      <span>Editar levantamiento</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="ta-btn ta-btn-secondary"

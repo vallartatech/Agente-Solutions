@@ -211,6 +211,9 @@ const RegistroZonas = () => {
 
   const user = JSON.parse(localStorage.getItem('agente_session') || '{}')?.userData;
   const isClient = user?.role_id === 3;
+  // Solo los administradores finalizan; técnicos y admins pueden editar aunque ya esté finalizado
+  const isAdmin = [0, 1].includes(Number(user?.role_id));
+  const puedeAgregar = !isFinalizado || editMode || !isClient;
 
   if (zonaSeleccionada) {
     return (
@@ -232,20 +235,24 @@ const RegistroZonas = () => {
             <button className="rz-btn-main orange-gradient" onClick={() => navigate(-1)}>
               <ArrowLeft size={20} /> VOLVER
             </button>
-            {(!isFinalizado || editMode) && (
+            {puedeAgregar && (
               <button className="rz-btn-main purple-gradient" onClick={() => setModalAbierto(true)}>
                 <Plus size={24} strokeWidth={3} /> AGREGAR
               </button>
             )}
-            {servicioId ? (
-              <button 
-                className="rz-btn-main green-gradient" 
+            {servicioId && isAdmin ? (
+              <button
+                className="rz-btn-main green-gradient"
                 onClick={finalizarLevantamiento}
                 disabled={loading}
               >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle size={20} />} 
+                {loading ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle size={20} />}
                 FINALIZAR LEVANTAMIENTO
               </button>
+            ) : servicioId ? (
+              <span className="rz-admin-finish-note">
+                <CheckCircle size={16} /> El administrador marcará el levantamiento como finalizado
+              </span>
             ) : isClient && zonas.length > 0 ? (
               isFinalizado && !editMode ? (
                 <button 

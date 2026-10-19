@@ -8,6 +8,7 @@ import Header from "../../../components/Shared/Header";
 import ModalCompraEspacios from "../../../components/Shared/ModalCompraEspacios";
 import ModalRegistroInmueble from "../../../components/Shared/ModalRegistroInmueble";
 import CasaLoader from "../../../components/Shared/CasaLoader";
+import ModalEquipoLevantamiento from "../../../components/Modals/ModalEquipoLevantamiento";
 import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
 import "../../../styles/AgenteSolutions/Cliente/DetallePropiedad.css";
 import "../../../styles/Shared/LiquidGlass.css";
@@ -16,7 +17,7 @@ import {
   X, CheckCircle, User, AlertTriangle, ListChecks, Clock, CheckCircle2, 
   LayoutDashboard, ChevronLeft, PlusCircle, Plus, Globe, FileText, Home, Wrench, 
   MessageSquare, Camera, UserCheck, ImageIcon, Loader2,
-  MoreVertical, Eye, ClipboardCheck, ClipboardList, Pencil, Trash2
+  MoreVertical, Eye, ClipboardCheck, ClipboardList, Pencil, Trash2, Users
 } from "lucide-react";
 
 const TIPOS_PROPIEDAD = [
@@ -561,14 +562,16 @@ const VistaPropiedades = () => {
     };
   }, [accionesAbiertas]);
 
-  // MENÚ ⋮ MÓVIL DE TARJETA
+  // MENÚ ⋮ DE TARJETA (web y móvil)
   const [menuTarjeta, setMenuTarjeta] = useState(null); // { id, top, bottom, right }
+  // Equipo de trabajo del levantamiento (solo admins)
+  const [equipoPropiedad, setEquipoPropiedad] = useState(null);
 
   const abrirMenuTarjeta = (e, p) => {
     e.stopPropagation();
     if (menuTarjeta?.id === p.id) { setMenuTarjeta(null); return; }
     const rect = e.currentTarget.getBoundingClientRect();
-    const abrirArriba = rect.bottom + 260 > window.innerHeight;
+    const abrirArriba = rect.bottom + 320 > window.innerHeight;
     setMenuTarjeta({
       id: p.id,
       top: abrirArriba ? null : rect.bottom + 6,
@@ -879,68 +882,6 @@ const VistaPropiedades = () => {
                   </button>
                 </div>
 
-                  <div className="property-overlay">
-                    <div className="overlay-icon-actions">
-                      <button 
-                        className="btn-icon-overlay" 
-                        title="Editar"
-                        onClick={(e) => { e.stopPropagation(); abrirModalEditar(p); }}
-                      >
-                        ✏️
-                      </button>
-                      
-                      {/* La papelera si la dejamos solo para Admin por seguridad, o tú me dices */}
-                      {!p.is_shared_with_me && (
-                        <button 
-                          className="btn-icon-overlay" 
-                          title="Eliminar"
-                          onClick={(e) => { e.stopPropagation(); eliminarPropiedad(p); }}
-                        >
-                          🗑️
-                        </button>
-                      )}
-                    </div>
-
-                    <h3 className="property-title-overlay">
-                      {p.nombre_propiedad || "Propiedad sin nombre"}
-                    </h3>
-                    <div className="overlay-actions">
-                      {/* BOTÓN 1: DETALLES DE PROPIEDAD */}
-                      <button
-                        className="btn-overlay secondary"
-                        onClick={() => irADetallesPropiedad(p)}
-                      >
-                        DETALLES DE PROPIEDAD
-                      </button>
-
-                      {/* BOTÓN 2: VER O SOLICITAR LEVANTAMIENTO */}
-                      {p.levantamiento_realizado ? (
-                        <button 
-                          className="btn-overlay primary" 
-                          style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none' }}
-                          onClick={() => irAVerLevantamiento(p)}
-                        >
-                          VER LEVANTAMIENTO
-                        </button>
-                      ) : (
-                        <button
-                          className="btn-overlay primary"
-                          onClick={() => abrirModalParaPropiedad(p)}
-                        >
-                          {p.has_pending_service ? "LEVANTAMIENTO SOLICITADO" : "SOLICITAR LEVANTAMIENTO"}
-                        </button>
-                      )}
-
-                      {/* BOTÓN 3: REALIZAR MI PROPIO LEVANTAMIENTO / EDITAR */}
-                      <button
-                        className="btn-overlay primary"
-                        style={{ backgroundColor: '#F26522', color: 'white', border: 'none' }}
-                        onClick={() => irARegistroZonas(p)}
-                      >
-                        {p.levantamiento_realizado ? "✏️ EDITAR LEVANTAMIENTO" : "📸 REALIZAR MI PROPIO LEVANTAMIENTO"}
-                      </button>
-                    </div>
-                  </div>
               </div>
             ))
           ) : (
@@ -987,6 +928,12 @@ const VistaPropiedades = () => {
                 <Camera size={17} color="#F26522" /> {p.levantamiento_realizado ? "Editar levantamiento" : "Realizar mi propio levantamiento"}
               </button>
 
+              {(isRoot || isAgenteAdmin) && (p.has_pending_service || p.levantamiento_realizado) && (
+                <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => setEquipoPropiedad(p))}>
+                  <Users size={17} color="#7c3aed" /> Equipo del levantamiento
+                </button>
+              )}
+
               <div className="card-menu-divider" />
 
               <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => abrirModalEditar(p))}>
@@ -1003,6 +950,14 @@ const VistaPropiedades = () => {
           document.body
         );
       })()}
+
+      {equipoPropiedad && (
+        <ModalEquipoLevantamiento
+          propiedad={equipoPropiedad}
+          onClose={() => setEquipoPropiedad(null)}
+          onChanged={obtenerPropiedades}
+        />
+      )}
 
       {/* MODAL DE SOLICITAR LEVANTAMIENTO */}
       {mostrarModalServicio && createPortal(

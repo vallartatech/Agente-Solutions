@@ -234,6 +234,8 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
 
   const user = JSON.parse(localStorage.getItem('agente_session') || '{}')?.userData;
   const isClient = user?.role_id === 3;
+  // Solo los administradores finalizan el levantamiento
+  const isAdmin = [0, 1].includes(Number(user?.role_id));
 
   // ========================================================
   // PUENTE AL NIVEL 5: Si hay categoría activa, mostramos la otra vista
@@ -367,15 +369,15 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
                 {actualizando ? <Loader2 className="animate-spin" size={24} /> : 'GUARDAR ZONA'}
               </button>
               
-              {servicioId ? (
-                <button 
+              {servicioId && isAdmin ? (
+                <button
                   onClick={finalizarLevantamiento}
                   disabled={actualizando}
                   className="dh-btn-finalizar-3d"
                 >
                   <CheckCircle size={22} /> FINALIZAR LEVANTAMIENTO
                 </button>
-              ) : isClient ? (
+              ) : servicioId ? null : isClient ? (
                 <button 
                   onClick={finalizarRegistroCliente}
                   className="dh-btn-finalizar-3d"
