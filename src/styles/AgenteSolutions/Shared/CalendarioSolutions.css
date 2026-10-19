@@ -1589,3 +1589,278 @@
   font-weight: 700;
   color: #94a3b8;
 }
+
+/* ── NUEVO AVISO / DETALLE (rediseño con menos ruido) ── */
+.nq-header h3 {
+  flex: 1;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: #ffffff;
+}
+
+.nq-body {
+  gap: 16px;
+}
+
+/* Título grande: lo más importante del formulario */
+.nq-title-wrap {
+  position: relative;
+}
+
+.nq-title-input {
+  font-size: 1.12rem;
+  font-weight: 700;
+  padding: 13px 48px 13px 14px;
+}
+
+.nq-title-wrap .nq-counter {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Filas con ícono en lugar de títulos de sección */
+.nq-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.nq-row-icon {
+  flex-shrink: 0;
+  margin-top: 9px;
+  color: #64748b;
+}
+
+.nq-row-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nq-chip-ghost {
+  border-style: dashed;
+  color: #94a3b8;
+}
+
+.nq-input-sm {
+  padding: 8px 12px;
+  font-size: 16px;
+}
+
+.nq-time-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nq-time-row .nq-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.nq-time-sep {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+/* Enlaces discretos (detalles, vista previa, activar notificaciones) */
+.nq-link-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 2px 0;
+  border: none;
+  background: transparent;
+  color: #fdba74;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nq-link-btn:hover {
+  color: #ffffff;
+}
+
+.nq-link-muted {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+/* Interruptor "Importante" */
+.nq-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin: 0;
+  padding: 10px 2px;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  background: transparent;
+  color: #e2e8f0;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nq-switch-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nq-dot-red {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+.nq-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  transition: background 0.15s;
+}
+
+.nq-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.15s;
+}
+
+.nq-switch-row.on .nq-switch {
+  background: #ef4444;
+}
+
+.nq-switch-row.on .nq-switch-knob {
+  transform: translateX(18px);
+}
+
+/* ── DETALLE DEL AVISO ── */
+.nd-window {
+  max-width: 440px;
+}
+
+.nd-kind {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.nd-kind-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.nd-body {
+  gap: 10px;
+}
+
+.nd-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #ffffff;
+  overflow-wrap: anywhere;
+}
+
+.nd-when {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #cbd5e1;
+}
+
+.nd-label {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.nd-notes {
+  margin: 4px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #e2e8f0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.nd-author {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.nd-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Eliminar discreto (sigue pidiendo confirmación) */
+.nd-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 4px;
+  border: none;
+  background: transparent;
+  color: #f87171;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nd-delete:hover {
+  color: #fca5a5;
+  text-decoration: underline;
+}
+
+/* Celular: botones en fila flexible (la cuadrícula de 3 columnas era solo para las fechas) */
+@media (max-width: 560px) {
+  .nq-row-content .nq-date-chips {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .nq-row-content .nq-chip {
+    padding: 7px 12px;
+  }
+}

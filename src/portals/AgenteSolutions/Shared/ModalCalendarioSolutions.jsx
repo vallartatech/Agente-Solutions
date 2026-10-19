@@ -29,13 +29,13 @@ import {
   Wrench,
   ExternalLink,
   Save,
-  Check,
   CalendarDays,
   Trash2,
   Bell,
   BellRing,
-  Megaphone,
-  Users
+  Tag,
+  Plus,
+  Eye
 } from 'lucide-react';
 
 // Fecha local YYYY-MM-DD (toISOString usa UTC y en la noche de México ya marca el día siguiente)
@@ -637,9 +637,12 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   // Gestión de Avisos y Fumigaciones
   // Etiquetas ya usadas por el equipo (sugerencias del formulario de aviso)
   const [savedLabels, setSavedLabels] = useState([]);
+  // Partes opcionales del formulario que se abren solo si se necesitan
+  const [nqUi, setNqUi] = useState({ showDetails: false, newLabel: false, showPreview: false });
 
   const handleOpenCreateNotice = (customDate = null) => {
     setNoticeForm(emptyNoticeForm(typeof customDate === 'string' ? customDate : null));
+    setNqUi({ showDetails: false, newLabel: false, showPreview: false });
     setShowCreateNoticeModal(true);
     axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/labels`)
       .then(res => setSavedLabels(Array.isArray(res.data) ? res.data : []))
@@ -2008,10 +2011,16 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
             : (noticeForm.end_time ? ` · ${noticeForm.start_time} a ${noticeForm.end_time}` : ` a las ${noticeForm.start_time}`);
           const previewTitle = `${noticeForm.important ? '🔴' : '📅'} ${etiqueta ? `${etiqueta} · ` : ''}${noticeForm.title.trim() || 'Título del aviso'}`;
           const previewBody = `${formatNoticeDate(noticeForm.event_date)}${horario}${noticeForm.description.trim() ? ` · ${noticeForm.description.trim()}` : ''}`;
-          const filtroEtiqueta = etiqueta.toLowerCase();
-          const sugerencias = savedLabels
-            .filter(l => !filtroEtiqueta || (l.toLowerCase().includes(filtroEtiqueta) && l.toLowerCase() !== filtroEtiqueta))
-            .slice(0, 6);
+          // Etiquetas: las del equipo como botones (la elegida siempre visible)
+          const etiquetaEsGuardada = savedLabels.some(l => l.toLowerCase() === etiqueta.toLowerCase());
+          const chipsEtiqueta = [
+            ...(etiqueta && !etiquetaEsGuardada ? [etiqueta] : []),
+            ...savedLabels.slice(0, 6)
+          ];
+          const elegirEtiqueta = (l) => {
+            setNoticeForm(prev => ({ ...prev, label: prev.label.trim().toLowerCase() === l.toLowerCase() ? '' : l }));
+            setNqUi(prev => ({ ...prev, newLabel: false }));
+          };
           const closeModal = () => { if (!submittingNotice) setShowCreateNoticeModal(false); };
 
           return (
@@ -2023,13 +2032,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                 aria-labelledby="nq-title"
               >
                 <div className="nq-header">
-                  <div className="nq-header-icon">
-                    <Megaphone size={20} color="#ffffff" />
-                  </div>
-                  <div className="nq-header-text">
-                    <h3 id="nq-title">Nuevo aviso</h3>
-                    <p><Users size={13} /> Se notificará al instante a todo el equipo</p>
-                  </div>
+                  <h3 id="nq-title">Nuevo aviso</h3>
                   <button type="button" className="nq-close" onClick={closeModal} aria-label="Cerrar">
                     <X size={18} />
                   </button>
@@ -2037,152 +2040,165 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
                 <form className="nq-form" onSubmit={handleCreateNotice}>
                   <div className="nq-body">
-                    <div className="nq-field">
-                      <div className="nq-label-row">
-                        <label htmlFor="nq-input-title">¿Qué quieres avisar?</label>
-                        <span className={`nq-counter ${titleLength >= NOTICE_TITLE_MAX ? 'is-max' : ''}`}>
-                          {titleLength}/{NOTICE_TITLE_MAX}
-                        </span>
-                      </div>
+                    {/* Título: lo principal, grande y sin texto de ayuda largo */}
+                    <div className="nq-title-wrap">
                       <input
                         id="nq-input-title"
                         type="text"
-                        className="nq-input"
-                        placeholder="Ej: Fumigación general de oficinas"
+                        className="nq-input nq-title-input"
+                        placeholder="Título del aviso"
+                        aria-label="Título del aviso"
                         maxLength={NOTICE_TITLE_MAX}
                         value={noticeForm.title}
                         onChange={(e) => setNoticeForm(prev => ({ ...prev, title: e.target.value }))}
                         autoFocus
                         required
                       />
+                      {titleLength >= NOTICE_TITLE_MAX - 15 && (
+                        <span className={`nq-counter ${titleLength >= NOTICE_TITLE_MAX ? 'is-max' : ''}`}>
+                          {NOTICE_TITLE_MAX - titleLength}
+                        </span>
+                      )}
                     </div>
 
-                    {/* Etiqueta libre: lo que se escribe una vez queda como sugerencia para todo el equipo */}
-                    <div className="nq-field">
-                      <label htmlFor="nq-input-label">Etiqueta <span className="nq-optional">(opcional)</span></label>
-                      <input
-                        id="nq-input-label"
-                        type="text"
-                        className="nq-input"
-                        placeholder="Ej: Cita con un cliente, Junta, Mantenimiento"
-                        maxLength={60}
-                        list="nq-labels"
-                        value={noticeForm.label}
-                        onChange={(e) => setNoticeForm(prev => ({ ...prev, label: e.target.value }))}
-                      />
-                      <datalist id="nq-labels">
-                        {savedLabels.map(l => <option key={l} value={l} />)}
-                      </datalist>
-                      {sugerencias.length > 0 && (
-                        <div className="nq-label-chips">
-                          {sugerencias.map(l => (
+                    {/* Etiqueta: botones con las del equipo + "Nueva" */}
+                    <div className="nq-row">
+                      <Tag size={17} className="nq-row-icon" aria-label="Etiqueta" />
+                      <div className="nq-row-content">
+                        <div className="nq-date-chips">
+                          {chipsEtiqueta.map(l => (
                             <button
                               type="button"
                               key={l}
-                              className="nq-label-chip"
-                              onClick={() => setNoticeForm(prev => ({ ...prev, label: l }))}
+                              className={`nq-chip ${etiqueta.toLowerCase() === l.toLowerCase() ? 'active' : ''}`}
+                              onClick={() => elegirEtiqueta(l)}
                             >
                               {l}
                             </button>
                           ))}
+                          {!nqUi.newLabel && (
+                            <button type="button" className="nq-chip nq-chip-ghost" onClick={() => setNqUi(prev => ({ ...prev, newLabel: true }))}>
+                              <Plus size={14} /> {chipsEtiqueta.length ? 'Nueva' : 'Agregar etiqueta'}
+                            </button>
+                          )}
                         </div>
-                      )}
+                        {nqUi.newLabel && (
+                          <input
+                            type="text"
+                            className="nq-input nq-input-sm"
+                            placeholder="Ej. Cita con un cliente"
+                            aria-label="Nueva etiqueta"
+                            maxLength={60}
+                            value={etiquetaEsGuardada ? '' : noticeForm.label}
+                            onChange={(e) => setNoticeForm(prev => ({ ...prev, label: e.target.value }))}
+                            onBlur={() => setNqUi(prev => ({ ...prev, newLabel: false }))}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setNqUi(prev => ({ ...prev, newLabel: false })); } }}
+                            autoFocus
+                          />
+                        )}
+                      </div>
                     </div>
 
-                    <div className="nq-field">
-                      <div className="nq-label-row">
-                        <label>¿Cuándo?</label>
-                        <span className="nq-date-hint">{formatNoticeDate(noticeForm.event_date)}</span>
+                    {/* Fecha */}
+                    <div className="nq-row">
+                      <CalendarDays size={17} className="nq-row-icon" aria-label="Fecha" />
+                      <div className="nq-row-content">
+                        <div className="nq-date-chips">
+                          <button type="button" className={`nq-chip ${noticeForm.dateMode === 'today' ? 'active' : ''}`} onClick={() => setDateMode('today')}>
+                            Hoy
+                          </button>
+                          <button type="button" className={`nq-chip ${noticeForm.dateMode === 'tomorrow' ? 'active' : ''}`} onClick={() => setDateMode('tomorrow')}>
+                            Mañana
+                          </button>
+                          <button type="button" className={`nq-chip ${noticeForm.dateMode === 'other' ? 'active' : ''}`} onClick={() => setDateMode('other')}>
+                            {noticeForm.dateMode === 'other' ? formatNoticeDate(noticeForm.event_date) : 'Otra fecha'}
+                          </button>
+                        </div>
+                        {noticeForm.dateMode === 'other' && (
+                          <input
+                            type="date"
+                            className="nq-input nq-input-sm nq-date-input"
+                            aria-label="Fecha del aviso"
+                            min={todayKey}
+                            value={noticeForm.event_date}
+                            onChange={(e) => setNoticeForm(prev => ({ ...prev, event_date: e.target.value }))}
+                            required
+                          />
+                        )}
                       </div>
-                      <div className="nq-date-chips">
-                        <button type="button" className={`nq-chip ${noticeForm.dateMode === 'today' ? 'active' : ''}`} onClick={() => setDateMode('today')}>
-                          Hoy
-                        </button>
-                        <button type="button" className={`nq-chip ${noticeForm.dateMode === 'tomorrow' ? 'active' : ''}`} onClick={() => setDateMode('tomorrow')}>
-                          Mañana
-                        </button>
-                        <button type="button" className={`nq-chip ${noticeForm.dateMode === 'other' ? 'active' : ''}`} onClick={() => setDateMode('other')}>
-                          <CalendarDays size={15} /> Otra fecha
-                        </button>
-                      </div>
-                      {noticeForm.dateMode === 'other' && (
-                        <input
-                          type="date"
-                          className="nq-input nq-date-input"
-                          min={todayKey}
-                          value={noticeForm.event_date}
-                          onChange={(e) => setNoticeForm(prev => ({ ...prev, event_date: e.target.value }))}
-                          required
-                        />
-                      )}
                     </div>
 
-                    {/* Horario opcional: todo el día o de X a Y (ej. junta de 9:00 a 11:00) */}
-                    <div className="nq-field">
-                      <label>Horario</label>
-                      <div className="nq-date-chips">
-                        <button type="button" className={`nq-chip ${noticeForm.allDay ? 'active' : ''}`} onClick={() => setNoticeForm(prev => ({ ...prev, allDay: true }))}>
-                          Todo el día
-                        </button>
-                        <button type="button" className={`nq-chip ${!noticeForm.allDay ? 'active' : ''}`} onClick={() => setNoticeForm(prev => ({ ...prev, allDay: false }))}>
-                          <Clock size={15} /> Con horario
-                        </button>
-                      </div>
-                      {!noticeForm.allDay && (
-                        <div className="nq-time-row">
-                          <label className="nq-time-field">
-                            <span>Desde</span>
+                    {/* Horario */}
+                    <div className="nq-row">
+                      <Clock size={17} className="nq-row-icon" aria-label="Horario" />
+                      <div className="nq-row-content">
+                        <div className="nq-date-chips">
+                          <button type="button" className={`nq-chip ${noticeForm.allDay ? 'active' : ''}`} onClick={() => setNoticeForm(prev => ({ ...prev, allDay: true }))}>
+                            Todo el día
+                          </button>
+                          <button type="button" className={`nq-chip ${!noticeForm.allDay ? 'active' : ''}`} onClick={() => setNoticeForm(prev => ({ ...prev, allDay: false }))}>
+                            Con horario
+                          </button>
+                        </div>
+                        {!noticeForm.allDay && (
+                          <div className="nq-time-row">
                             <input
                               type="time"
-                              className="nq-input nq-date-input"
+                              className="nq-input nq-input-sm nq-date-input"
+                              aria-label="Desde"
                               value={noticeForm.start_time}
                               onChange={(e) => setNoticeForm(prev => ({ ...prev, start_time: e.target.value }))}
                               required
                             />
-                          </label>
-                          <label className="nq-time-field">
-                            <span>Hasta</span>
+                            <span className="nq-time-sep">a</span>
                             <input
                               type="time"
-                              className="nq-input nq-date-input"
+                              className="nq-input nq-input-sm nq-date-input"
+                              aria-label="Hasta"
                               value={noticeForm.end_time}
                               min={noticeForm.start_time}
                               onChange={(e) => setNoticeForm(prev => ({ ...prev, end_time: e.target.value }))}
                             />
-                          </label>
-                        </div>
-                      )}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="nq-field">
-                      <label htmlFor="nq-input-details">Detalles <span className="nq-optional">(opcional)</span></label>
+                    {/* Detalles: se abren solo si se necesitan */}
+                    {nqUi.showDetails || noticeForm.description ? (
                       <textarea
-                        id="nq-input-details"
                         className="nq-input nq-textarea"
-                        placeholder="Ej: Despejar escritorios y guardar alimentos antes de las 18:00 hrs"
+                        placeholder="Detalles o indicaciones"
+                        aria-label="Detalles"
                         maxLength={500}
                         rows={2}
                         value={noticeForm.description}
                         onChange={(e) => setNoticeForm(prev => ({ ...prev, description: e.target.value }))}
+                        autoFocus={nqUi.showDetails && !noticeForm.description}
                       />
-                    </div>
+                    ) : (
+                      <button type="button" className="nq-link-btn" onClick={() => setNqUi(prev => ({ ...prev, showDetails: true }))}>
+                        <Plus size={15} /> Agregar detalles
+                      </button>
+                    )}
 
+                    {/* Importante: interruptor simple */}
                     <button
                       type="button"
-                      className={`nq-important ${noticeForm.important ? 'active' : ''}`}
+                      role="switch"
+                      aria-checked={noticeForm.important}
+                      className={`nq-switch-row ${noticeForm.important ? 'on' : ''}`}
                       onClick={() => setNoticeForm(prev => ({ ...prev, important: !prev.important }))}
-                      aria-pressed={noticeForm.important}
                     >
-                      <span className="nq-important-check">{noticeForm.important && <Check size={14} strokeWidth={3} />}</span>
-                      <span className="nq-important-text">
-                        <strong>Marcar como importante</strong>
-                        <small>Se destaca en rojo</small>
-                      </span>
-                      <AlertTriangle size={18} className="nq-important-icon" />
+                      <span className="nq-switch-label"><span className="nq-dot-red" /> Importante</span>
+                      <span className="nq-switch"><span className="nq-switch-knob" /></span>
                     </button>
 
-                    <div className="nq-preview">
-                      <span className="nq-preview-label">Así le llegará al equipo</span>
+                    {/* Vista previa de la notificación: bajo demanda */}
+                    <button type="button" className="nq-link-btn nq-link-muted" onClick={() => setNqUi(prev => ({ ...prev, showPreview: !prev.showPreview }))}>
+                      <Eye size={15} /> {nqUi.showPreview ? 'Ocultar vista previa' : 'Ver cómo llegará'}
+                    </button>
+                    {nqUi.showPreview && (
                       <div className="nq-preview-card">
                         <img src="/Logo_192.png" alt="" className="nq-preview-logo" />
                         <div className="nq-preview-content">
@@ -2191,25 +2207,16 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                           <div className="nq-preview-body">{previewBody}</div>
                         </div>
                       </div>
-                    </div>
+                    )}
 
                     {typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && (
-                      <div className="notice-push-warning-box">
-                        <div className="notice-push-warning-text">
-                          <BellRing size={16} color="#f97316" />
-                          <span>Tu dispositivo aún no recibe notificaciones. El equipo sí recibirá el aviso.</span>
-                        </div>
-                        <button
-                          type="button"
-                          className="notice-push-quick-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRequestPushPermission();
-                          }}
-                        >
-                          Activar en mi dispositivo
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        className="nq-link-btn nq-link-muted"
+                        onClick={(e) => { e.stopPropagation(); handleRequestPushPermission(); }}
+                      >
+                        <BellRing size={15} /> Activar notificaciones en este dispositivo
+                      </button>
                     )}
                   </div>
 
@@ -2220,7 +2227,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       </button>
                       <button type="submit" className="nq-btn-submit" disabled={submittingNotice || !noticeForm.title.trim()}>
                         <Send size={16} />
-                        <span>{submittingNotice ? 'Enviando…' : 'Publicar y notificar'}</span>
+                        <span>{submittingNotice ? 'Enviando…' : 'Publicar para el equipo'}</span>
                       </button>
                     </div>
                   </div>
@@ -2231,98 +2238,66 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         })()}
 
         {/* ── MODAL SUBMODAL: DETALLE Y ELIMINACIÓN DE AVISO ── */}
-        {selectedNotice && (
-          <div 
-            className="solutions-submodal-overlay"
-            onClick={() => setSelectedNotice(null)}
-          >
-            <div 
-              className="solutions-submodal-window"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="submodal-header">
-                <div className="submodal-title-row">
-                  <div className="submodal-icon-badge" style={{ background: selectedNotice.color || '#f97316' }}>
-                    <CalendarDays size={20} color="#ffffff" />
-                  </div>
-                  <div>
-                    <h3>Detalle del Evento</h3>
-                    <p>{selectedNotice.timingBadge}</p>
-                  </div>
+        {selectedNotice && (() => {
+          const raw = selectedNotice.rawNotice || {};
+          const esImportante = selectedNotice.type === 'importante';
+          const color = selectedNotice.color || '#f97316';
+          const notas = (raw.description || '').trim();
+          const autor = selectedNotice.creator
+            ? `${selectedNotice.creator.first_name || ''} ${selectedNotice.creator.last_name || ''}`.trim()
+            : '';
+          const hace = (() => {
+            if (!raw.created_at) return '';
+            const min = Math.floor((Date.now() - new Date(raw.created_at).getTime()) / 60000);
+            if (min < 1) return 'hace un momento';
+            if (min < 60) return `hace ${min} min`;
+            const h = Math.floor(min / 60);
+            if (h < 24) return `hace ${h} h`;
+            const d = Math.floor(h / 24);
+            return d === 1 ? 'ayer' : `hace ${d} días`;
+          })();
+
+          return (
+            <div className="solutions-submodal-overlay nq-overlay" onClick={() => setSelectedNotice(null)}>
+              <div className="nq-window nd-window" style={{ '--nq-accent': color }} onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="nd-title">
+                <div className="nq-header">
+                  <span className="nd-kind" style={{ color }}>
+                    <span className="nd-kind-dot" style={{ background: color }} />
+                    {esImportante ? 'Importante' : 'Aviso'}
+                  </span>
+                  <button type="button" className="nq-close" onClick={() => setSelectedNotice(null)} aria-label="Cerrar">
+                    <X size={18} />
+                  </button>
                 </div>
-                <button 
-                  className="btn-submodal-close"
-                  onClick={() => setSelectedNotice(null)}
-                >
-                  <X size={18} />
-                </button>
-              </div>
 
-              <div className="submodal-body">
-                <div className="notice-detail-box">
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                    <span 
-                      className="notice-detail-badge"
-                      style={{ background: `${selectedNotice.color || '#f97316'}25`, color: selectedNotice.color || '#f97316' }}
-                    >
-                      {selectedNotice.timingBadge}
-                    </span>
-                    <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>
-                      📅 {selectedNotice.dateKey}
-                    </span>
-                  </div>
-
-                  <h2 style={{ margin: '4px 0 0 0', fontSize: '1.25rem', fontWeight: 900, color: '#ffffff' }}>
-                    {selectedNotice.titulo}
-                  </h2>
-
-                  <div className="notice-detail-meta">
-                    <div className="notice-detail-meta-item">
-                      <Clock size={16} color="#94a3b8" />
-                      <span>Horario: <strong style={{ color: '#ffffff' }}>{selectedNotice.calendarTime}</strong></span>
-                    </div>
-
-                    {selectedNotice.creator && (
-                      <div className="notice-detail-meta-item">
-                        <User size={16} color="#94a3b8" />
-                        <span>Publicado por: <strong style={{ color: '#ffffff' }}>{selectedNotice.creator.first_name} {selectedNotice.creator.last_name || ''}</strong></span>
-                      </div>
-                    )}
-                  </div>
-
-                  {selectedNotice.descripcion && (
-                    <div style={{ marginTop: '6px', background: 'rgba(0, 0, 0, 0.25)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                      <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 800, marginBottom: '6px' }}>Indicaciones / Notas:</div>
-                      <p style={{ margin: 0, fontSize: '0.9rem', color: '#e2e8f0', whiteSpace: 'pre-line', lineHeight: '1.5' }}>
-                        {selectedNotice.descripcion}
-                      </p>
-                    </div>
+                <div className="nq-body nd-body">
+                  <h3 id="nd-title" className="nd-title">{raw.title || selectedNotice.titulo}</h3>
+                  <p className="nd-when">
+                    {formatNoticeDate(selectedNotice.dateKey)} · {selectedNotice.calendarTime}
+                  </p>
+                  {selectedNotice.label && (
+                    <span className="nd-label"><Tag size={13} /> {selectedNotice.label}</span>
+                  )}
+                  {notas && <p className="nd-notes">{notas}</p>}
+                  {autor && (
+                    <p className="nd-author">Publicado por {autor}{hace ? ` · ${hace}` : ''}</p>
                   )}
                 </div>
-              </div>
 
-              <div className="submodal-footer" style={{ justifyContent: isAdmin ? 'space-between' : 'flex-end' }}>
-                {isAdmin && (
-                  <button 
-                    type="button"
-                    className="btn-notice-delete"
-                    onClick={() => handleDeleteNotice(selectedNotice.noticeId)}
-                  >
-                    <Trash2 size={16} />
-                    <span>Eliminar Aviso</span>
+                <div className="nq-footer nd-footer">
+                  {isAdmin ? (
+                    <button type="button" className="nd-delete" onClick={() => handleDeleteNotice(selectedNotice.noticeId)}>
+                      <Trash2 size={15} /> Eliminar
+                    </button>
+                  ) : <span />}
+                  <button type="button" className="nq-btn-cancel" onClick={() => setSelectedNotice(null)}>
+                    Cerrar
                   </button>
-                )}
-                <button 
-                  type="button"
-                  className="btn-submodal-cancel"
-                  onClick={() => setSelectedNotice(null)}
-                >
-                  Cerrar
-                </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
       </div>
     </div>,
