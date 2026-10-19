@@ -113,8 +113,28 @@ const TrabajosAsignados = () => {
   }, [resaltarPropiedadId, cargado]);
 
   // Filtros por estatus
-  const pendientes = servicios.filter((s) => s.status !== "completed" && s.status !== "Finalizado" && s.status !== "Listo");
-  const finalizados = servicios.filter((s) => s.status === "completed" || s.status === "Finalizado" || s.status === "Listo");
+  // Solo levantamientos (las órdenes de trabajo van en "Trabajos") y una sola tarjeta por propiedad:
+  // si hay registros duplicados de la misma propiedad se muestra el más reciente.
+  const esCerrado = (s) => s.status === "completed" || s.status === "Finalizado" || s.status === "Listo";
+  const unoPorPropiedad = (lista) => {
+    const porPropiedad = new Map();
+    lista.forEach((s) => {
+      const clave = s.property_id ?? s.composite_id;
+      const previo = porPropiedad.get(clave);
+      if (!previo || Number(s.id) > Number(previo.id)) {
+        porPropiedad.set(clave, { ...s, equipo_count: Math.max(s.equipo_count || 1, previo?.equipo_count || 1) });
+      } else {
+        previo.equipo_count = Math.max(previo.equipo_count || 1, s.equipo_count || 1);
+      }
+    });
+    return Array.from(porPropiedad.values());
+  };
+  const levantamientos = servicios.filter((s) => s.es_levantamiento);
+  const pendientes = unoPorPropiedad(levantamientos.filter((s) => !esCerrado(s)));
+  const propiedadesAbiertas = new Set(pendientes.map((s) => String(s.property_id)));
+  const finalizados = unoPorPropiedad(
+    levantamientos.filter((s) => esCerrado(s) && !propiedadesAbiertas.has(String(s.property_id)))
+  );
 
   const listaActual = activeTab === "asignados" ? pendientes : finalizados;
   const fotoDetalle = detalleServicio
@@ -246,7 +266,7 @@ const TrabajosAsignados = () => {
             ))}
 
             {activeTab === "finalizados" && finalizados.map((s) => (
-              <article key={s.id} className="ta-card is-done">
+              <article key={s.composite_id || s.id} className="ta-card is-done">
                 <div className="ta-card-top">
                   <h3 className="ta-card-title">{s.property_name}</h3>
                   <span className="ta-status-done"><CheckCircle size={12} /> {s.status}</span>
