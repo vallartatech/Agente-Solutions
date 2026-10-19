@@ -1257,3 +1257,20 @@
         padding: 12px 18px calc(18px + env(safe-area-inset-bottom)) !important;
     }
 }
+/* Tarjetas con menú ⋮: sin difuminado ni barra oculta al pasar el mouse.
+   Otros CSS globales (Market/VistaPropiedades, DetalleReporte) usan las mismas clases
+   y aplicaban blur y ocultaban la barra; estas reglas son más específicas. */
+.property-card.vp-card-menu:hover .property-image {
+    filter: none;
+    transform: none;
+}
+
+.property-card.vp-card-menu:hover .property-name-bar {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+}
+
+.property-card.vp-card-menu .property-overlay {
+    display: none !important;
+}

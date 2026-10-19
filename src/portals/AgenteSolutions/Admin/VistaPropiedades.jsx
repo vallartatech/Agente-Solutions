@@ -836,7 +836,7 @@ const VistaPropiedades = () => {
             <CasaLoader texto="Cargando propiedades..." />
           ) : propiedadesFiltradas.length > 0 ? (
             propiedadesFiltradas.map((p) => (
-              <div key={p.id} className="property-card" style={{ position: 'relative' }}>
+              <div key={p.id} className="property-card vp-card-menu" style={{ position: 'relative' }}>
                 
                 {/* Si es Root y la propiedad es de un autónomo externo */}
                 {isRoot && p.tenant_id && Number(p.tenant_id) !== 1 && (
