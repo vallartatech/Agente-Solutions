@@ -1,8 +1,29 @@
 import React, { useState, useEffect } from 'react'; 
 import axios from 'axios';
 import "../../../styles/AgenteSolutions/Tecnico/RegistroDetalleHabitacion.css";
-import { ArrowLeft, Plus, Trash2, X, Loader2, ImageIcon, Edit3, Eye } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, X, Loader2, ImageIcon, Edit3, Eye, SlidersHorizontal } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
+
+// Ficha técnica opcional de aire acondicionado ("modo avanzado" del formulario).
+// Todos los campos son opcionales; se guardan en property_components.specs (JSON).
+const esCategoriaAire = (nombre) => /AIRE/i.test(nombre || '');
+
+const FICHA_AIRE = [
+  { key: 'tipo_equipo', label: 'TIPO DE EQUIPO', type: 'select', options: ['MINISPLIT', 'VENTANA', 'PAQUETE', 'CENTRAL / FAN & COIL', 'PISO-TECHO', 'CASSETTE', 'PORTÁTIL'] },
+  { key: 'capacidad', label: 'CAPACIDAD', type: 'datalist', placeholder: 'Ej. 18,000 BTU', options: ['9,000 BTU (0.75 TR)', '12,000 BTU (1 TR)', '18,000 BTU (1.5 TR)', '24,000 BTU (2 TR)', '36,000 BTU (3 TR)', '48,000 BTU (4 TR)', '60,000 BTU (5 TR)'] },
+  { key: 'tecnologia', label: 'TECNOLOGÍA', type: 'select', options: ['INVERTER', 'CONVENCIONAL'] },
+  { key: 'refrigerante', label: 'REFRIGERANTE', type: 'datalist', placeholder: 'Ej. R-410A', options: ['R-410A', 'R-32', 'R-22', 'R-134A'] },
+  { key: 'voltaje', label: 'VOLTAJE', type: 'datalist', placeholder: 'Ej. 220 V', options: ['115 V', '220 V', '220 V TRIFÁSICO', '440 V TRIFÁSICO'] },
+  { key: 'ubicacion_condensadora', label: 'UBICACIÓN CONDENSADORA', type: 'text', placeholder: 'Ej. AZOTEA, PATIO' },
+  { key: 'anio_instalacion', label: 'AÑO DE INSTALACIÓN', type: 'number', placeholder: 'Ej. 2021' },
+  { key: 'estado_equipo', label: 'ESTADO DEL EQUIPO', type: 'select', options: ['BUENO', 'REGULAR', 'MALO', 'FUERA DE SERVICIO'] },
+];
+
+const parseSpecs = (specs) => {
+  if (!specs) return {};
+  if (typeof specs === 'object') return specs;
+  try { return JSON.parse(specs) || {}; } catch { return {}; }
+};
 const obtenerColorHex = (val) => {
   if (!val) return null;
   const cleanVal = val.trim().toLowerCase();
@@ -75,6 +96,11 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
   const [nuevoRegistro, setNuevoRegistro] = useState({
     brand: '', model_or_color: '', quantity: 1, sub_category: '', serial_number: '', observations: ''
   });
+  // Ficha técnica (modo avanzado, opcional)
+  const [ficha, setFicha] = useState({});
+  const [mostrarFicha, setMostrarFicha] = useState(false);
+  const esAire = esCategoriaAire(categoriaActiva?.name);
+  const camposFichaLlenos = Object.values(ficha).filter(v => String(v || '').trim() !== '').length;
 
   useEffect(() => {
     if (habitacion?.id) fetchComponentes();
@@ -127,6 +153,9 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
       serial_number: item.serial_number || '',
       observations: item.observations || ''
     });
+    const specs = parseSpecs(item.specs);
+    setFicha(specs);
+    setMostrarFicha(Object.keys(specs).length > 0);
 
     // ✅ CORRECCIÓN: Leemos la ruta directa si existe
     if (item.image_path) {
@@ -148,6 +177,8 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
     setModoEdicion(false);
     setIdEditando(null);
     setNuevoRegistro({ brand: '', model_or_color: '', quantity: 1, sub_category: '', serial_number: '', observations: '' });
+    setFicha({});
+    setMostrarFicha(false);
     setPreviewImg(null);
     setSelectedFile(null);
     setGaleriaArchivos([]);
@@ -179,6 +210,10 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
     formData.append('observations', nuevoRegistro.observations);
     formData.append('unit', categoriaActiva?.name === 'PINTURA' ? 'M2' : 'PZA');
     formData.append('status', 'Bueno');
+    // Aire acondicionado: ficha técnica opcional (vacía = se borra)
+    if (esAire) {
+      formData.append('specs', JSON.stringify(ficha));
+    }
     
     if (selectedFile) {
       formData.append('image', selectedFile);
@@ -728,6 +763,74 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
                 </>
               )}
 
+              {/* AIRE ACONDICIONADO: formulario sencillo o con ficha técnica (como calculadora básica / científica) */}
+              {esAire && (
+                <div className="rdh-ficha">
+                  <div className="rdh-ficha-switch" role="tablist" aria-label="Tipo de formulario">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={!mostrarFicha}
+                      className={!mostrarFicha ? 'active' : ''}
+                      onClick={() => setMostrarFicha(false)}
+                    >
+                      Sencillo
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={mostrarFicha}
+                      className={mostrarFicha ? 'active' : ''}
+                      onClick={() => setMostrarFicha(true)}
+                    >
+                      <SlidersHorizontal size={14} /> Ficha técnica
+                      {camposFichaLlenos > 0 && <span className="rdh-ficha-count">{camposFichaLlenos}</span>}
+                    </button>
+                  </div>
+
+                  {mostrarFicha && (
+                    <div className="rdh-ficha-panel">
+                      <p className="rdh-ficha-hint">Todos los campos son opcionales.</p>
+                      <div className="rdh-ficha-grid">
+                        {FICHA_AIRE.map(campo => (
+                          <div key={campo.key} className="rdh-ficha-field">
+                            <label htmlFor={`ficha-${campo.key}`}>{campo.label}</label>
+                            {campo.type === 'select' ? (
+                              <select
+                                id={`ficha-${campo.key}`}
+                                className="rdh-modal-input"
+                                value={ficha[campo.key] || ''}
+                                onChange={(e) => setFicha({ ...ficha, [campo.key]: e.target.value })}
+                              >
+                                <option value="">—</option>
+                                {campo.options.map(op => <option key={op} value={op}>{op}</option>)}
+                              </select>
+                            ) : (
+                              <>
+                                <input
+                                  id={`ficha-${campo.key}`}
+                                  type={campo.type === 'number' ? 'number' : 'text'}
+                                  className="rdh-modal-input"
+                                  placeholder={campo.placeholder}
+                                  list={campo.type === 'datalist' ? `ficha-list-${campo.key}` : undefined}
+                                  value={ficha[campo.key] || ''}
+                                  onChange={(e) => setFicha({ ...ficha, [campo.key]: e.target.value.toUpperCase() })}
+                                />
+                                {campo.type === 'datalist' && (
+                                  <datalist id={`ficha-list-${campo.key}`}>
+                                    {campo.options.map(op => <option key={op} value={op} />)}
+                                  </datalist>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="rdh-modal-field" style={{ alignItems: 'flex-start' }}>
                 <label style={{ marginTop: '15px' }}>COMENTARIOS</label>
                 <textarea 
@@ -803,6 +906,19 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
                     <div style={{ fontSize: '15px' }}><strong style={{color: '#fff'}}>MODELO:</strong> {itemDetalle.model_or_color || 'N/A'}</div>
                     <div style={{ fontSize: '15px' }}><strong style={{color: '#fff'}}>NO. SERIE:</strong> {itemDetalle.serial_number || 'S/N'}</div>
                     <div style={{ fontSize: '15px' }}><strong style={{color: '#fff'}}>CANTIDAD:</strong> {itemDetalle.quantity}</div>
+                    {(() => {
+                      const specs = parseSpecs(itemDetalle.specs);
+                      const filas = FICHA_AIRE.filter(c => specs[c.key]);
+                      if (filas.length === 0) return null;
+                      return (
+                        <div className="rdh-ficha-detalle">
+                          <strong>FICHA TÉCNICA</strong>
+                          {filas.map(c => (
+                            <div key={c.key}><span>{c.label}:</span> {specs[c.key]}</div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </>
                 )}
                 <div style={{ marginTop: '10px', fontSize: '15px' }}><strong style={{color: '#fff'}}>OBSERVACIONES:</strong></div>
