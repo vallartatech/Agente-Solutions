@@ -427,25 +427,23 @@
   }
 }
 
-/* ── MARCADOR DE PERSONA: foto o iniciales con borde del color de estado ── */
+/* ── MARCADOR DE PERSONA (versión ligera) ──
+   Solo la foto (o iniciales) con borde del color de estado. Sin sombras, animaciones ni
+   transiciones: el marcador se reacomoda en cada cuadro del zoom y en Android/tabletas
+   esos efectos lo trababan. */
 .vme-marker {
   width: 40px;
   height: 40px;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
   border-radius: 50%;
-  border: 3px solid var(--vme-marker-color);
-  box-shadow: 0 0 0 2px #ffffff, 0 4px 10px rgba(15, 23, 42, 0.45);
+  border: 3px solid #64748b;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.15s ease, width 0.15s ease, height 0.15s ease;
-}
-
-.vme-marker:hover {
-  transform: scale(1.08);
 }
 
 .vme-marker img {
@@ -453,6 +451,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  pointer-events: none;
 }
 
 .vme-marker span {
@@ -460,7 +459,6 @@
   font-family: Arial, sans-serif;
   font-size: 0.85rem;
   font-weight: 700;
-  letter-spacing: 0.3px;
 }
 
 .vme-marker.selected {
@@ -469,12 +467,42 @@
   border-width: 4px;
 }
 
-.vme-marker.online {
-  animation: vmeMarkerPulse 2.2s infinite;
+/* ── PANTALLA DE CARGA DEL MAPA (liviana: un círculo que gira) ── */
+.vme-map-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #0f172a;
+  color: #e2e8f0;
+  text-align: center;
+  padding: 16px;
 }
 
-@keyframes vmeMarkerPulse {
-  0% { box-shadow: 0 0 0 2px #ffffff, 0 0 0 2px rgba(16, 185, 129, 0.55), 0 4px 10px rgba(15, 23, 42, 0.45); }
-  70% { box-shadow: 0 0 0 2px #ffffff, 0 0 0 12px rgba(16, 185, 129, 0), 0 4px 10px rgba(15, 23, 42, 0.45); }
-  100% { box-shadow: 0 0 0 2px #ffffff, 0 0 0 2px rgba(16, 185, 129, 0), 0 4px 10px rgba(15, 23, 42, 0.45); }
+.vme-map-loading strong {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.vme-map-loading span:last-child {
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.vme-spinner {
+  width: 38px;
+  height: 38px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #f97316;
+  animation: vmeSpin 0.9s linear infinite;
+}
+
+@keyframes vmeSpin {
+  to { transform: rotate(360deg); }
 }

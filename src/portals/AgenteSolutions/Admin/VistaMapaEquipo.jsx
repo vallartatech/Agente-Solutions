@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindow, Polyline } from '@react-google-maps/api';
 import { Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield } from 'lucide-react';
@@ -54,28 +54,52 @@ const initials = (name) => name
 
 const MAX_FIT_ZOOM = 16;
 
-// Marcador HTML: foto redonda (o iniciales) con borde del color de estado.
-// Si la foto no carga, vuelve a las iniciales.
-const PersonMarker = ({ member, color, selected, onClick }) => {
+// Miniatura de la foto: en Cloudinary se pide a 96×96 (en lugar de la original de varios MB).
+// Es lo que más aligera el zoom en celulares: el navegador ya no reescala fotos grandes en cada cuadro.
+const thumb = (url, size = 96) => {
+  if (!url || !/res\.cloudinary\.com\/.+\/upload\//.test(url)) return url;
+  return url.replace('/upload/', `/upload/c_fill,g_face,w_${size},h_${size},f_auto,q_auto/`);
+};
+
+// Marcador HTML ligero: solo la foto (o iniciales) con borde del color de estado.
+// Sin sombras ni animaciones: el navegador lo reacomoda en cada cuadro del zoom.
+// memo: solo se redibuja si cambia algo que se ve (no en cada actualización del equipo).
+const PersonMarker = memo(({ member, color, selected, onClick }) => {
   const [photoFailed, setPhotoFailed] = useState(false);
   const showPhoto = member.profile_picture && !photoFailed;
   return (
     <button
       type="button"
-      className={`vme-marker ${selected ? 'selected' : ''} ${member.online ? 'online' : ''}`}
-      style={{ '--vme-marker-color': color, background: showPhoto ? '#ffffff' : color }}
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className={`vme-marker ${selected ? 'selected' : ''}`}
+      style={{ borderColor: color, background: showPhoto ? '#ffffff' : color }}
+      onClick={(e) => { e.stopPropagation(); onClick(member.id); }}
       title={member.name}
     >
       {showPhoto
-        ? <img src={member.profile_picture} alt="" onError={() => setPhotoFailed(true)} />
+        ? <img src={thumb(member.profile_picture)} alt="" decoding="async" draggable={false} onError={() => setPhotoFailed(true)} />
         : <span>{initials(member.name)}</span>}
     </button>
   );
-};
+}, (prev, next) =>
+  prev.member.id === next.member.id &&
+  prev.member.name === next.member.name &&
+  prev.member.profile_picture === next.member.profile_picture &&
+  prev.color === next.color &&
+  prev.selected === next.selected
+);
 
 // Centra el marcador sobre la coordenada
 const centerOverlay = (width, height) => ({ x: -(width / 2), y: -(height / 2) });
+
+// Opciones fijas del mapa (un objeto nuevo en cada render obliga a Google Maps a reaplicarlas)
+const MAP_OPTIONS = {
+  streetViewControl: false,
+  mapTypeControl: false,
+  fullscreenControl: true,
+  clickableIcons: false,
+  keyboardShortcuts: false,
+  gestureHandling: 'greedy' // en celular se mueve con un dedo
+};
 
 const VistaMapaEquipo = () => {
   const { isLoaded, loadError } = useJsApiLoader({
@@ -93,8 +117,14 @@ const VistaMapaEquipo = () => {
   const [selectedId, setSelectedId] = useState(null);
   const [routePoints, setRoutePoints] = useState([]);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef(null);
   const fittedRef = useRef(false);
+
+  const handleMarkerClick = useCallback((id) => {
+    setSelectedId(id);
+    setInfoOpen(true);
+  }, []);
 
   const fetchTeam = useCallback(async () => {
     try {
@@ -255,7 +285,7 @@ const VistaMapaEquipo = () => {
                     onClick={() => handleSelect(m)}
                   >
                     <span className="vme-avatar" style={{ borderColor: STATUS[st].color }}>
-                      {m.profile_picture ? <img src={m.profile_picture} alt="" /> : initials(m.name)}
+                      {m.profile_picture ? <img src={thumb(m.profile_picture)} alt="" loading="lazy" decoding="async" /> : initials(m.name)}
                       <span className="vme-avatar-dot" style={{ background: STATUS[st].color }} />
                     </span>
                     <span className="vme-person-info">
@@ -296,15 +326,25 @@ const VistaMapaEquipo = () => {
 
         <section className="vme-map">
           {loadError && <div className="vme-map-msg">No se pudo cargar Google Maps.</div>}
-          {!isLoaded && !loadError && <div className="vme-map-msg">Cargando mapa…</div>}
+
+          {/* Pantalla de carga liviana (solo un círculo que gira) hasta que el mapa termina de dibujarse */}
+          {!loadError && (!isLoaded || !mapReady) && (
+            <div className="vme-map-loading" role="status" aria-live="polite">
+              <span className="vme-spinner" aria-hidden="true" />
+              <strong>Cargando mapa…</strong>
+              <span>Espera un momento</span>
+            </div>
+          )}
+
           {isLoaded && (
             <GoogleMap
               mapContainerClassName="vme-map-canvas"
               center={MERIDA}
               zoom={12}
               onLoad={(map) => { mapRef.current = map; }}
+              onTilesLoaded={() => { if (!mapReady) setMapReady(true); }}
               onClick={() => setInfoOpen(false)}
-              options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: true, clickableIcons: false }}
+              options={MAP_OPTIONS}
             >
               {selected && routePoints.length > 1 && (
                 <Polyline
@@ -325,7 +365,7 @@ const VistaMapaEquipo = () => {
                     member={m}
                     color={STATUS[statusOf(m)].color}
                     selected={m.id === selectedId}
-                    onClick={() => { setSelectedId(m.id); setInfoOpen(true); }}
+                    onClick={handleMarkerClick}
                   />
                 </OverlayViewF>
               ))}
