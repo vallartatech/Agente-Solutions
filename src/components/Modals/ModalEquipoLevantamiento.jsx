@@ -70,7 +70,7 @@ const ModalEquipoLevantamiento = ({ propiedad, onClose, onChanged }) => {
     const tecnico = data.available.find(t => String(t.id) === String(seleccion));
     ejecutar(
       () => axios.post(`${API}/propiedades/${propiedad.id}/equipo-levantamiento`, { technician_id: Number(seleccion) }),
-      `${tecnico?.name || 'Técnico'} se unió al equipo`
+      `${tecnico?.name || 'Técnico'} ${data.service ? 'se unió al equipo' : 'quedó asignado al levantamiento'}`
     ).then(() => setSeleccion(''));
   };
 
@@ -123,23 +123,30 @@ const ModalEquipoLevantamiento = ({ propiedad, onClose, onChanged }) => {
         <div className="mel-body">
           {loading ? (
             <div className="mel-empty"><Loader2 size={22} className="mel-spin" /> Cargando equipo…</div>
-          ) : !servicio ? (
-            <div className="mel-empty">
-              <ClipboardCheck size={22} />
-              Esta propiedad todavía no tiene un levantamiento asignado a un técnico.
-            </div>
           ) : (
             <>
-              <div className={`mel-status ${servicio.finalizado ? 'done' : 'open'}`}>
-                {servicio.finalizado
-                  ? <><CheckCircle2 size={16} /> Finalizado · el equipo aún puede editarlo</>
-                  : <><Loader2 size={16} /> En proceso</>}
-              </div>
+              {servicio ? (
+                <div className={`mel-status ${servicio.finalizado ? 'done' : 'open'}`}>
+                  {servicio.finalizado
+                    ? <><CheckCircle2 size={16} /> Finalizado · el equipo aún puede editarlo</>
+                    : <><Loader2 size={16} /> En proceso</>}
+                </div>
+              ) : (
+                <div className="mel-status open">
+                  <ClipboardCheck size={16} /> Sin técnico asignado
+                </div>
+              )}
 
-              <p className="mel-hint">Todos los integrantes ven y editan el mismo levantamiento: lo que agrega uno, lo ven los demás.</p>
+              <p className="mel-hint">
+                {servicio
+                  ? 'Todos los integrantes ven y editan el mismo levantamiento: lo que agrega uno, lo ven los demás.'
+                  : data.zonas_registradas > 0
+                    ? `Ya hay ${data.zonas_registradas} ${data.zonas_registradas === 1 ? 'zona registrada' : 'zonas registradas'}. Asigna uno o más técnicos para que continúen el levantamiento.`
+                    : 'Asigna uno o más técnicos para que realicen el levantamiento. El primero que agregues será el responsable.'}
+              </p>
 
               <ul className="mel-members">
-                {data.members.map(m => (
+                {(data.members || []).map(m => (
                   <li key={m.id}>
                     <Avatar person={m} />
                     <span className="mel-member-name">{m.name}</span>
@@ -154,7 +161,7 @@ const ModalEquipoLevantamiento = ({ propiedad, onClose, onChanged }) => {
               </ul>
 
               <div className="mel-add">
-                <label htmlFor="mel-select">Agregar técnico</label>
+                <label htmlFor="mel-select">{servicio ? 'Agregar técnico' : 'Asignar técnico'}</label>
                 <div className="mel-add-row">
                   <select
                     id="mel-select"
@@ -168,7 +175,7 @@ const ModalEquipoLevantamiento = ({ propiedad, onClose, onChanged }) => {
                     {data.available.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                   <button type="button" className="mel-btn-add" onClick={agregar} disabled={!seleccion || busy}>
-                    <UserPlus size={16} /> Agregar
+                    <UserPlus size={16} /> {servicio ? 'Agregar' : 'Asignar'}
                   </button>
                 </div>
               </div>

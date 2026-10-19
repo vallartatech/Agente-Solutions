@@ -928,7 +928,7 @@ const VistaPropiedades = () => {
                 <Camera size={17} color="#F26522" /> {p.levantamiento_realizado ? "Editar levantamiento" : "Realizar mi propio levantamiento"}
               </button>
 
-              {(isRoot || isAgenteAdmin) && (p.has_pending_service || p.levantamiento_realizado) && (
+              {(isRoot || isAgenteAdmin) && (
                 <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => setEquipoPropiedad(p))}>
                   <Users size={17} color="#7c3aed" /> Equipo del levantamiento
                 </button>
