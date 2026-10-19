@@ -35,7 +35,10 @@ import {
   BellRing,
   Tag,
   Plus,
-  Eye
+  Eye,
+  Link2,
+  CheckCircle2,
+  CalendarPlus
 } from 'lucide-react';
 
 // Fecha local YYYY-MM-DD (toISOString usa UTC y en la noche de México ya marca el día siguiente)
@@ -128,7 +131,9 @@ const emptyNoticeForm = (dateKey = null) => {
     label: '',
     allDay: true,
     start_time: '09:00',
-    end_time: '10:00'
+    end_time: '10:00',
+    // Aviso anterior cuando este es el siguiente paso (seguimiento)
+    parent: null
   };
 };
 
@@ -379,6 +384,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     else if (type === 'otro') badge = '📌 Evento';
     // La etiqueta del aviso ("Cita con un cliente", "Junta"...) tiene prioridad sobre el tipo
     if (notice.label) badge = `${type === 'importante' ? '🔴' : '🏷️'} ${notice.label}`;
+    const isDone = Boolean(notice.completed_at);
+    if (isDone) badge = `✅ ${notice.label || 'Completado'}`;
+    const baseTitle = notice.label ? `${notice.label} · ${notice.title}` : notice.title;
 
     const now = new Date();
     const todayDateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -389,10 +397,12 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       isNotice: true,
       rawNotice: notice,
       // "Junta · Revisión mensual": la etiqueta se ve también en los recuadros del mes y la semana
-      titulo: notice.label ? `${notice.label} · ${notice.title}` : notice.title,
+      // Completados en verde y con ✓ en la cuadrícula
+      titulo: isDone ? `✓ ${baseTitle}` : baseTitle,
       label: notice.label || null,
+      parentId: notice.parent_id ? Number(notice.parent_id) : null,
       type: notice.type,
-      color: notice.color || '#10b981',
+      color: isDone ? '#16a34a' : (notice.color || '#10b981'),
       descripcion: notice.description || 'Sin notas adicionales',
       calendarDate: eventDate,
       dateKey: dateStr,
@@ -413,7 +423,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       isToday: dateStr === todayDateKey,
       isFuture: false,
       isUncoordinated: false,
-      isCompleted: false,
+      isCompleted: isDone,
     };
   }, [user]);
 
@@ -649,6 +659,75 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       .catch(() => { /* sin sugerencias: se puede escribir igual */ });
   };
 
+  // Siguiente paso de un aviso: el formulario llega con la etiqueta y los detalles del anterior y queda ligado a él
+  const handleOpenFollowUp = (parentNotice) => {
+    const raw = parentNotice.rawNotice || {};
+    handleOpenCreateNotice();
+    setNoticeForm(prev => ({
+      ...prev,
+      label: raw.label || '',
+      description: raw.description || '',
+      parent: parentNotice
+    }));
+    setSelectedNotice(null);
+  };
+
+  // Completar un aviso: paso de confirmación dentro del detalle con comentario opcional para el equipo
+  const [completeStep, setCompleteStep] = useState(null); // null | { note }
+  const [completingNotice, setCompletingNotice] = useState(false);
+
+  useEffect(() => { setCompleteStep(null); }, [selectedNotice?.noticeId]);
+
+  const handleCompleteNotice = async (withFollowUp) => {
+    if (!selectedNotice || completingNotice) return;
+    const note = (completeStep?.note || '').trim();
+    try {
+      setCompletingNotice(true);
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/calendar/events/${selectedNotice.noticeId}/complete`,
+        { note: note || null },
+        { headers }
+      );
+
+      const done = processNoticeToEvent(res.data.event);
+      setNoticesList(prev => prev.map(n => (n.noticeId === done.noticeId ? done : n)));
+      setCompleteStep(null);
+
+      const push = res.data?.push;
+      if (note && push && !push.sent) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Completado, push no enviada',
+          text: `El comentario quedó en la campanita del equipo, pero OneSignal no envió la notificación: ${push.error || 'ningún dispositivo del equipo está suscrito.'}`,
+          confirmButtonColor: '#f97316'
+        });
+      } else if (!withFollowUp) {
+        Swal.fire({
+          icon: 'success',
+          title: '¡Completado!',
+          text: note ? 'Se notificó tu comentario a todo el equipo.' : undefined,
+          timer: 1800,
+          showConfirmButton: false
+        });
+      }
+
+      if (withFollowUp) handleOpenFollowUp(done);
+      else setSelectedNotice(done);
+      fetchSolutionsData(true);
+    } catch (err) {
+      console.error('Error al completar aviso:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'No se pudo completar',
+        text: err.response?.data?.error || err.response?.data?.message || 'Intenta de nuevo.'
+      });
+    } finally {
+      setCompletingNotice(false);
+    }
+  };
+
   const handleCreateNotice = async (e) => {
     if (e) e.preventDefault();
     if (!noticeForm.title.trim()) {
@@ -692,7 +771,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         type: noticeForm.important ? 'importante' : 'aviso',
         description: noticeForm.description?.trim() || null,
         color: noticeForm.important ? '#ef4444' : '#f97316',
-        notify_team: true
+        notify_team: true,
+        parent_id: noticeForm.parent?.noticeId || null
       };
 
       const res = await axios.post(
@@ -2034,8 +2114,12 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                 <div className="nq-header">
                   <span className="nq-header-badge" aria-hidden="true"><CalendarDays size={18} /></span>
                   <div className="nq-header-text">
-                    <h3 id="nq-title">Nuevo aviso</h3>
-                    <p>Aparecerá en el calendario y le llegará a todo el equipo</p>
+                    <h3 id="nq-title">{noticeForm.parent ? 'Siguiente paso' : 'Nuevo aviso'}</h3>
+                    <p>
+                      {noticeForm.parent
+                        ? 'Quedará ligado al aviso anterior en el historial'
+                        : 'Aparecerá en el calendario y le llegará a todo el equipo'}
+                    </p>
                   </div>
                   <button type="button" className="nq-close" onClick={closeModal} aria-label="Cerrar">
                     <X size={18} />
@@ -2044,14 +2128,40 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
                 <form className="nq-form" onSubmit={handleCreateNotice}>
                   <div className="nq-body">
+                    {/* Liga con el aviso anterior (seguimiento) */}
+                    {noticeForm.parent && (
+                      <div className="nq-parent-link">
+                        <Link2 size={16} className="nq-parent-icon" aria-hidden="true" />
+                        <div className="nq-parent-text">
+                          <span className="nq-parent-kicker">Sigue de</span>
+                          <strong>{noticeForm.parent.rawNotice?.title || noticeForm.parent.titulo}</strong>
+                          <span className="nq-parent-date">
+                            {formatNoticeDate(noticeForm.parent.dateKey)}
+                            {noticeForm.parent.isCompleted ? ' · ✓ Completado' : ''}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="nq-parent-unlink"
+                          onClick={() => setNoticeForm(prev => ({ ...prev, parent: null }))}
+                          aria-label="Quitar liga con el aviso anterior"
+                          title="Quitar liga"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+                    )}
+
                     {/* Título: lo principal, grande y sin texto de ayuda largo */}
-                    <label htmlFor="nq-input-title" className="nq-row-label nq-title-label">¿Qué quieres avisar?</label>
+                    <label htmlFor="nq-input-title" className="nq-row-label nq-title-label">
+                      {noticeForm.parent ? '¿Cuál es el siguiente paso?' : '¿Qué quieres avisar?'}
+                    </label>
                     <div className="nq-title-wrap">
                       <input
                         id="nq-input-title"
                         type="text"
                         className="nq-input nq-title-input"
-                        placeholder="Ej. Junta de revisión mensual"
+                        placeholder={noticeForm.parent ? 'Ej. Enviar cotización al cliente' : 'Ej. Junta de revisión mensual'}
                         maxLength={NOTICE_TITLE_MAX}
                         value={noticeForm.title}
                         onChange={(e) => setNoticeForm(prev => ({ ...prev, title: e.target.value }))}
@@ -2246,12 +2356,40 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
         {/* ── MODAL SUBMODAL: DETALLE Y ELIMINACIÓN DE AVISO ── */}
         {selectedNotice && (() => {
-          const raw = selectedNotice.rawNotice || {};
-          const esImportante = selectedNotice.type === 'importante';
-          const color = selectedNotice.color || '#f97316';
+          // Versión más reciente del aviso (tras completar o sincronizar)
+          const byId = new Map(noticesList.map(n => [Number(n.noticeId), n]));
+          const actual = byId.get(Number(selectedNotice.noticeId)) || selectedNotice;
+          const raw = actual.rawNotice || {};
+          const completado = Boolean(raw.completed_at);
+          const completadoPor = raw.completer
+            ? `${raw.completer.first_name || ''} ${raw.completer.last_name || ''}`.trim()
+            : '';
+          const completadoEl = completado
+            ? new Date(raw.completed_at).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+            : '';
+
+          // Historial: desde el primer aviso de la cadena hasta el último seguimiento, por fecha
+          let raiz = actual;
+          const vistos = new Set([Number(raiz.noticeId)]);
+          while (raiz.parentId && byId.has(raiz.parentId) && !vistos.has(raiz.parentId)) {
+            raiz = byId.get(raiz.parentId);
+            vistos.add(Number(raiz.noticeId));
+          }
+          const cadena = [raiz];
+          for (let i = 0; i < cadena.length; i++) {
+            noticesList.forEach(n => {
+              if (n.parentId === Number(cadena[i].noticeId) && !cadena.some(c => c.noticeId === n.noticeId)) cadena.push(n);
+            });
+          }
+          const ordenKey = (n) => `${n.dateKey} ${n.rawNotice?.start_time || '00:00'}`;
+          cadena.sort((a, b) => ordenKey(a).localeCompare(ordenKey(b)));
+          const anterior = actual.parentId ? byId.get(actual.parentId) : null;
+          const cerrarDetalle = () => { if (!completingNotice) setSelectedNotice(null); };
+          const esImportante = actual.type === 'importante';
+          const color = (raw.color || actual.color || '#f97316');
           const notas = (raw.description || '').trim();
-          const autor = selectedNotice.creator
-            ? `${selectedNotice.creator.first_name || ''} ${selectedNotice.creator.last_name || ''}`.trim()
+          const autor = actual.creator
+            ? `${actual.creator.first_name || ''} ${actual.creator.last_name || ''}`.trim()
             : '';
           const hace = (() => {
             if (!raw.created_at) return '';
@@ -2265,42 +2403,129 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
           })();
 
           return (
-            <div className="solutions-submodal-overlay nq-overlay" onClick={() => setSelectedNotice(null)}>
+            <div className="solutions-submodal-overlay nq-overlay" onClick={cerrarDetalle}>
               <div className="nq-window nq-light nd-window" style={{ '--nq-accent': color }} onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="nd-title">
                 <div className="nq-header">
-                  <span className="nd-kind" style={{ color }}>
-                    <span className="nd-kind-dot" style={{ background: color }} />
-                    {esImportante ? 'Importante' : 'Aviso'}
+                  <span className="nd-kind" style={{ color: completado ? '#16a34a' : color }}>
+                    <span className="nd-kind-dot" style={{ background: completado ? '#16a34a' : color }} />
+                    {completado ? 'Completado' : (esImportante ? 'Importante' : 'Aviso')}
                   </span>
-                  <button type="button" className="nq-close" onClick={() => setSelectedNotice(null)} aria-label="Cerrar">
+                  <button type="button" className="nq-close" onClick={cerrarDetalle} aria-label="Cerrar">
                     <X size={18} />
                   </button>
                 </div>
 
                 <div className="nq-body nd-body">
-                  <h3 id="nd-title" className="nd-title">{raw.title || selectedNotice.titulo}</h3>
+                  <h3 id="nd-title" className={`nd-title ${completado ? 'is-done' : ''}`}>{raw.title || actual.titulo}</h3>
                   <p className="nd-when">
-                    {formatNoticeDate(selectedNotice.dateKey)} · {selectedNotice.calendarTime}
+                    {formatNoticeDate(actual.dateKey)} · {actual.calendarTime}
                   </p>
-                  {selectedNotice.label && (
-                    <span className="nd-label"><Tag size={13} /> {selectedNotice.label}</span>
+                  {actual.label && (
+                    <span className="nd-label"><Tag size={13} /> {actual.label}</span>
+                  )}
+                  {anterior && (
+                    <button type="button" className="nd-parent-chip" onClick={() => setSelectedNotice(anterior)}>
+                      <Link2 size={13} /> Sigue de: {anterior.rawNotice?.title || anterior.titulo} · {formatNoticeDate(anterior.dateKey)}
+                    </button>
                   )}
                   {notas && <p className="nd-notes">{notas}</p>}
+
+                  {completado && (
+                    <div className="nd-done">
+                      <div className="nd-done-head">
+                        <CheckCircle2 size={16} />
+                        <span>Completado{completadoPor ? ` por ${completadoPor}` : ''} · {completadoEl}</span>
+                      </div>
+                      {raw.completion_note && <p className="nd-done-note">“{raw.completion_note}”</p>}
+                    </div>
+                  )}
+
+                  {/* Confirmación: comentario opcional para el equipo y siguiente paso */}
+                  {completeStep && !completado && (
+                    <div className="nd-complete-panel">
+                      <span className="nd-complete-title"><CheckCircle2 size={16} /> ¿Marcar como completado?</span>
+                      <textarea
+                        className="nq-input nq-textarea"
+                        placeholder="Comentario (opcional). Ej. Se revisó el equipo, falta cotizar la pieza"
+                        aria-label="Comentario para el equipo"
+                        maxLength={1000}
+                        rows={3}
+                        value={completeStep.note}
+                        onChange={(e) => setCompleteStep({ note: e.target.value })}
+                        autoFocus
+                      />
+                      <span className="nd-complete-hint">
+                        <Bell size={13} /> {completeStep.note.trim() ? 'El comentario le llegará a todo el equipo' : 'Si escribes un comentario, le llegará a todo el equipo'}
+                      </span>
+                      <button type="button" className="nq-btn-submit nd-btn-done" onClick={() => handleCompleteNotice(true)} disabled={completingNotice}>
+                        <CalendarPlus size={16} /> {completingNotice ? 'Guardando…' : 'Completar y agendar siguiente paso'}
+                      </button>
+                      <div className="nd-complete-row">
+                        <button type="button" className="nq-btn-cancel" onClick={() => setCompleteStep(null)} disabled={completingNotice}>
+                          Cancelar
+                        </button>
+                        <button type="button" className="nq-btn-cancel nd-btn-only" onClick={() => handleCompleteNotice(false)} disabled={completingNotice}>
+                          <CheckCircle2 size={15} /> Solo completar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Historial de la cadena de seguimientos */}
+                  {cadena.length > 1 && (
+                    <div className="nd-history">
+                      <span className="nd-history-title"><Link2 size={14} /> Historial ({cadena.length})</span>
+                      <ol className="nd-timeline">
+                        {cadena.map(n => {
+                          const esEste = n.noticeId === actual.noticeId;
+                          const hecho = Boolean(n.rawNotice?.completed_at);
+                          return (
+                            <li key={n.noticeId} className={`nd-tl-item ${hecho ? 'done' : ''} ${esEste ? 'current' : ''}`}>
+                              <span className="nd-tl-dot" aria-hidden="true">{hecho ? <CheckCircle2 size={14} /> : null}</span>
+                              <button type="button" className="nd-tl-btn" onClick={() => !esEste && setSelectedNotice(n)} disabled={esEste}>
+                                <span className="nd-tl-date">
+                                  {formatNoticeDate(n.dateKey)}{n.rawNotice?.start_time ? ` · ${n.rawNotice.start_time.substring(0, 5)}` : ''}
+                                  {esEste && <em> · este</em>}
+                                </span>
+                                <span className="nd-tl-name">{n.rawNotice?.title || n.titulo}</span>
+                                {n.rawNotice?.completion_note && <span className="nd-tl-note">“{n.rawNotice.completion_note}”</span>}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </div>
+                  )}
+
                   {autor && (
                     <p className="nd-author">Publicado por {autor}{hace ? ` · ${hace}` : ''}</p>
                   )}
                 </div>
 
-                <div className="nq-footer nd-footer">
-                  {isAdmin ? (
-                    <button type="button" className="nd-delete" onClick={() => handleDeleteNotice(selectedNotice.noticeId)}>
-                      <Trash2 size={15} /> Eliminar
-                    </button>
-                  ) : <span />}
-                  <button type="button" className="nq-btn-cancel" onClick={() => setSelectedNotice(null)}>
-                    Cerrar
-                  </button>
-                </div>
+                {!completeStep && (
+                  <div className="nq-footer nd-footer">
+                    {isAdmin ? (
+                      <button type="button" className="nd-delete" onClick={() => handleDeleteNotice(actual.noticeId)}>
+                        <Trash2 size={15} /> Eliminar
+                      </button>
+                    ) : <span />}
+                    <div className="nd-footer-actions">
+                      <button type="button" className="nq-btn-cancel" onClick={cerrarDetalle}>
+                        Cerrar
+                      </button>
+                      {isAdmin && !completado && (
+                        <button type="button" className="nq-btn-submit nd-btn-done" onClick={() => setCompleteStep({ note: '' })}>
+                          <CheckCircle2 size={16} /> Completar
+                        </button>
+                      )}
+                      {isAdmin && completado && (
+                        <button type="button" className="nq-btn-submit" onClick={() => handleOpenFollowUp(actual)}>
+                          <CalendarPlus size={16} /> Siguiente paso
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );

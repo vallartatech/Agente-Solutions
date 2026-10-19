@@ -2117,3 +2117,318 @@
 .nq-light .nd-delete:hover {
   color: #b91c1c;
 }
+
+/* ── SEGUIMIENTO: completar avisos y cadena de siguientes pasos ── */
+
+/* Formulario: tarjeta "Sigue de" con el aviso anterior */
+.nq-parent-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(242, 101, 34, 0.08);
+  border: 1px dashed rgba(242, 101, 34, 0.45);
+}
+
+.nq-parent-icon {
+  flex-shrink: 0;
+  color: #ea580c;
+}
+
+.nq-parent-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  color: #0f172a;
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.nq-parent-kicker {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #ea580c;
+}
+
+.nq-parent-date {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.nq-parent-unlink {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: rgba(15, 23, 42, 0.06);
+  color: #64748b;
+  cursor: pointer;
+}
+
+.nq-parent-unlink:hover {
+  background: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+
+/* Detalle: título tachado suave cuando está completado */
+.nq-light .nd-title.is-done {
+  color: #475569;
+}
+
+/* Chip "Sigue de" que lleva al aviso anterior */
+.nd-parent-chip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px dashed rgba(100, 116, 139, 0.5);
+  background: transparent;
+  color: #475569;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nd-parent-chip:hover {
+  border-color: #ea580c;
+  color: #c2410c;
+}
+
+/* Bloque "Completado por…" */
+.nd-done {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: rgba(22, 163, 74, 0.08);
+  border: 1px solid rgba(22, 163, 74, 0.25);
+}
+
+.nd-done-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #15803d;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.nd-done-note {
+  margin: 0;
+  color: #334155;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* Paso de confirmación */
+.nd-complete-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1.5px solid rgba(22, 163, 74, 0.35);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+}
+
+.nd-complete-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #15803d;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.nd-complete-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: -4px;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.nd-complete-row {
+  display: flex;
+  gap: 8px;
+}
+
+.nd-complete-row > button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.nq-light .nd-btn-done {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.25);
+}
+
+.nd-complete-panel .nd-btn-done {
+  flex: none;
+  width: 100%;
+}
+
+.nq-light .nd-btn-only {
+  color: #15803d;
+  border-color: rgba(22, 163, 74, 0.4);
+}
+
+.nd-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.nd-footer-actions .nq-btn-submit {
+  flex: none;
+}
+
+/* Historial (línea de tiempo de la cadena) */
+.nd-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.nd-history-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.nd-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nd-tl-item {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding-bottom: 4px;
+}
+
+/* Línea que une los pasos */
+.nd-tl-item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 22px;
+  bottom: -2px;
+  width: 2px;
+  background: rgba(148, 163, 184, 0.4);
+}
+
+.nd-tl-dot {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #f97316;
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+.nd-tl-item.done .nd-tl-dot {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.nd-tl-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 9px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nd-tl-btn:hover:not(:disabled) {
+  background: rgba(241, 245, 249, 0.9);
+}
+
+.nd-tl-btn:disabled {
+  cursor: default;
+}
+
+.nd-tl-item.current .nd-tl-btn {
+  background: rgba(242, 101, 34, 0.07);
+  border-color: rgba(242, 101, 34, 0.25);
+}
+
+.nd-tl-date {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.nd-tl-date em {
+  font-style: normal;
+  color: #ea580c;
+}
+
+.nd-tl-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+  overflow-wrap: anywhere;
+}
+
+.nd-tl-item.done .nd-tl-name {
+  color: #475569;
+}
+
+.nd-tl-note {
+  font-size: 0.8rem;
+  color: #64748b;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .nd-footer {
+    gap: 8px;
+  }
+
+  .nd-footer-actions .nq-btn-cancel {
+    display: none; /* en celular basta la X del encabezado */
+  }
+}
