@@ -463,7 +463,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  border-radius: 50%;
+  border-radius: 50% !important; /* siempre redondo, aunque haya estilos globales de button */
   border: 3px solid #64748b;
   overflow: hidden;
   display: flex;
@@ -538,11 +538,11 @@
   display: inline-block;
   width: 18px;
   height: 0;
-  border-top: 3px solid #f97316;
+  border-top: 4px solid #2563eb;
 }
 
 .vme-legend-line.dashed {
-  border-top: 3px dashed #94a3b8;
+  border-top: 3px dashed #334155;
 }
 
 @media (max-width: 900px) {

@@ -86,18 +86,26 @@ button:focus-visible {
    La regla "button { padding: 0.6em 1.2em; border-radius: 8px }" de este archivo se aplicaba
    también a los controles de Google Maps y ocultaba la X del globo de información y cortaba
    el botón de pantalla completa. */
-.gm-style button {
+/* Solo los controles propios de Google (no los marcadores ni botones de la app dentro del mapa) */
+.gm-style button.gm-control-active,
+.gm-style button.gm-fullscreen-control,
+.gm-style button.gm-ui-hover-effect,
+.gm-style .gm-style-mtc button,
+.gm-style .gmnoprint button {
   padding: 0 !important;
   border-radius: 2px;
   font-weight: normal;
 }
 
-.gm-style button:hover {
+.gm-style button.gm-control-active:hover,
+.gm-style button.gm-fullscreen-control:hover,
+.gm-style button.gm-ui-hover-effect:hover {
   border-color: transparent;
 }
 
-.gm-style button:focus,
-.gm-style button:focus-visible {
+.gm-style button.gm-control-active:focus-visible,
+.gm-style button.gm-fullscreen-control:focus-visible,
+.gm-style button.gm-ui-hover-effect:focus-visible {
   outline: none;
 }
 

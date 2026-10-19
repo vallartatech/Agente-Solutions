@@ -97,18 +97,38 @@ const ROUTE_GAP_MINUTES = 10;
 // Puntos con peor precisión que esto se descartan (son los que dibujan zigzags).
 const ROUTE_MAX_ACCURACY_M = 100;
 
+// Azul tipo navegación: resalta sobre el mapa (el naranja se perdía entre íconos de negocios).
+// Se dibuja dos veces: un borde blanco ancho debajo y la línea azul encima.
+const ROUTE_COLOR = '#2563eb';
+
+const ROUTE_CASING = {
+  strokeColor: '#ffffff',
+  strokeOpacity: 1,
+  strokeWeight: 9,
+  zIndex: 1
+};
+
 const ROUTE_SOLID = {
-  strokeColor: '#f97316',
-  strokeOpacity: 0.9,
-  strokeWeight: 4,
-  icons: [{ icon: { path: 'M 0,-2 2,2 -2,2 z', fillColor: '#f97316', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 1, scale: 1.6 }, offset: '50%', repeat: '140px' }]
+  strokeColor: ROUTE_COLOR,
+  strokeOpacity: 1,
+  strokeWeight: 5,
+  zIndex: 2,
+  icons: [{ icon: { path: 'M 0,-2 2,2 -2,2 z', fillColor: '#ffffff', fillOpacity: 1, strokeColor: ROUTE_COLOR, strokeWeight: 1, scale: 1.4 }, offset: '50%', repeat: '120px' }]
 };
 
 const ROUTE_GAP = {
   strokeOpacity: 0,
-  strokeWeight: 3,
-  icons: [{ icon: { path: 'M 0,-1 0,1', strokeColor: '#64748b', strokeOpacity: 0.9, strokeWeight: 3, scale: 3 }, offset: '0', repeat: '14px' }]
+  strokeWeight: 4,
+  zIndex: 2,
+  icons: [{ icon: { path: 'M 0,-1 0,1', strokeColor: '#334155', strokeOpacity: 0.85, strokeWeight: 4, scale: 4 }, offset: '0', repeat: '18px' }]
 };
+
+// Mapa más limpio y ligero: se ocultan íconos de negocios y transporte de Google
+const MAP_STYLES = [
+  { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] }
+];
 
 const buildRouteSegments = (points) => {
   const validos = points.filter(p => p.accuracy == null || p.accuracy <= ROUTE_MAX_ACCURACY_M);
@@ -144,7 +164,8 @@ const MAP_OPTIONS = {
   fullscreenControl: true,
   clickableIcons: false,
   keyboardShortcuts: false,
-  gestureHandling: 'greedy' // en celular se mueve con un dedo
+  gestureHandling: 'greedy', // en celular se mueve con un dedo
+  styles: MAP_STYLES
 };
 
 const VistaMapaEquipo = () => {
@@ -395,6 +416,9 @@ const VistaMapaEquipo = () => {
             >
               {/* Recorrido del día: continuo (con flechas) donde hay datos seguidos;
                   punteado donde la app estuvo cerrada y no se sabe el camino exacto */}
+              {selected && tramosRuta.continuos.map((path, i) => (
+                <Polyline key={`cb-${i}`} path={path} options={ROUTE_CASING} />
+              ))}
               {selected && tramosRuta.continuos.map((path, i) => (
                 <Polyline key={`c-${i}`} path={path} options={ROUTE_SOLID} />
               ))}
