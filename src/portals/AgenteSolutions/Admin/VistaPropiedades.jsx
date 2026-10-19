@@ -17,8 +17,11 @@ import {
   X, CheckCircle, User, AlertTriangle, ListChecks, Clock, CheckCircle2, 
   LayoutDashboard, ChevronLeft, PlusCircle, Plus, Globe, FileText, Home, Wrench, 
   MessageSquare, Camera, UserCheck, ImageIcon, Loader2,
-  MoreVertical, Eye, ClipboardCheck, ClipboardList, Pencil, Trash2, Users
+  MoreVertical, Eye, ClipboardCheck, ClipboardList, Pencil, Trash2, Users,
+  Folder, FolderPlus, FolderInput, FolderOpen, ArrowLeft, FolderX, Check
 } from "lucide-react";
+
+const COLORES_CARPETA = ["#F26522", "#2563eb", "#10b981", "#8b5cf6", "#e11d48", "#0f172a"];
 
 const TIPOS_PROPIEDAD = [
   { label: "TODAS", icon: "🌐", title: "TODAS" },
@@ -107,7 +110,18 @@ const VistaPropiedades = () => {
   const [editNombre, setEditNombre] = useState("");
   const [editFoto, setEditFoto] = useState(null);
   const [editando, setEditando] = useState(false);
-  
+
+  // CARPETAS (solo para organizar el catálogo; las comparten todos los admins)
+  const [carpetas, setCarpetas] = useState([]);
+  const [carpetaAbierta, setCarpetaAbierta] = useState(null); // id de la carpeta abierta
+  const [busquedaCatalogo, setBusquedaCatalogo] = useState("");
+  const [mostrarModalCarpetas, setMostrarModalCarpetas] = useState(false);
+  const [nuevaCarpetaNombre, setNuevaCarpetaNombre] = useState("");
+  const [nuevaCarpetaColor, setNuevaCarpetaColor] = useState(COLORES_CARPETA[0]);
+  const [guardandoCarpeta, setGuardandoCarpeta] = useState(false);
+  const [propiedadAMover, setPropiedadAMover] = useState(null);
+  const [moviendoPropiedad, setMoviendoPropiedad] = useState(false);
+
   // CONTEXTO DE BÚSQUEDA (desde MainLayoutCliente)
   let searchTerm = "";
   try {
@@ -122,6 +136,7 @@ const VistaPropiedades = () => {
   const isClient = user?.role_id === 3;
   const isRoot = Number(user?.role_id) === 0;
   const isAgenteAdmin = Number(user?.role_id) === 1;
+  const puedeOrganizar = !isClient && (isRoot || isAgenteAdmin);
 
   useEffect(() => {
     obtenerPropiedades();
@@ -131,9 +146,23 @@ const VistaPropiedades = () => {
     return () => window.removeEventListener('focus', obtenerPropiedades);
   }, []);
 
-  const obtenerPropiedades = async () => {
+  const obtenerCarpetas = async () => {
+    if (!puedeOrganizar) return;
     try {
-      const token = localStorage.getItem('agente_token'); 
+      const token = localStorage.getItem('agente_token');
+      const { data } = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/property-folders`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setCarpetas(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error al cargar carpetas:", error);
+    }
+  };
+
+  const obtenerPropiedades = async () => {
+    obtenerCarpetas();
+    try {
+      const token = localStorage.getItem('agente_token');
 
       const [propsRes, statsRes] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/propiedades`, {
@@ -571,7 +600,7 @@ const VistaPropiedades = () => {
     e.stopPropagation();
     if (menuTarjeta?.id === p.id) { setMenuTarjeta(null); return; }
     const rect = e.currentTarget.getBoundingClientRect();
-    const abrirArriba = rect.bottom + 320 > window.innerHeight;
+    const abrirArriba = rect.bottom + 380 > window.innerHeight;
     setMenuTarjeta({
       id: p.id,
       top: abrirArriba ? null : rect.bottom + 6,
@@ -640,6 +669,108 @@ const VistaPropiedades = () => {
       setEditando(false);
     }
   };
+
+  // --- CARPETAS ---
+  const crearCarpeta = async (e) => {
+    e.preventDefault();
+    const nombre = nuevaCarpetaNombre.trim();
+    if (!nombre) return;
+    setGuardandoCarpeta(true);
+    try {
+      const token = localStorage.getItem('agente_token');
+      const { data } = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/property-folders`,
+        { name: nombre, color: nuevaCarpetaColor },
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      setCarpetas(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+      setNuevaCarpetaNombre("");
+    } catch (error) {
+      Swal.fire('Error', 'No se pudo crear la carpeta.', 'error');
+    } finally {
+      setGuardandoCarpeta(false);
+    }
+  };
+
+  const renombrarCarpeta = async (carpeta) => {
+    const { value: nombre } = await Swal.fire({
+      title: 'Renombrar carpeta',
+      input: 'text',
+      inputValue: carpeta.name,
+      inputAttributes: { maxlength: 80 },
+      showCancelButton: true,
+      confirmButtonColor: '#F26522',
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (v) => !v?.trim() && 'Escribe un nombre'
+    });
+    if (!nombre || nombre.trim() === carpeta.name) return;
+    try {
+      const token = localStorage.getItem('agente_token');
+      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/property-folders/${carpeta.id}`,
+        { name: nombre.trim() },
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      setCarpetas(prev => prev.map(c => c.id === carpeta.id ? { ...c, name: nombre.trim() } : c));
+    } catch (error) {
+      Swal.fire('Error', 'No se pudo renombrar la carpeta.', 'error');
+    }
+  };
+
+  const eliminarCarpeta = async (carpeta) => {
+    const result = await Swal.fire({
+      title: `¿Eliminar "${carpeta.name}"?`,
+      text: 'Las propiedades NO se eliminan: solo vuelven al catálogo principal.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar carpeta',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!result.isConfirmed) return;
+    try {
+      const token = localStorage.getItem('agente_token');
+      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/property-folders/${carpeta.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setCarpetas(prev => prev.filter(c => c.id !== carpeta.id));
+      setListaPropiedades(prev => prev.map(p => p.folder_id === carpeta.id ? { ...p, folder_id: null } : p));
+      if (carpetaAbierta === carpeta.id) setCarpetaAbierta(null);
+    } catch (error) {
+      Swal.fire('Error', 'No se pudo eliminar la carpeta.', 'error');
+    }
+  };
+
+  const moverPropiedadACarpeta = async (folderId) => {
+    if (!propiedadAMover) return;
+    setMoviendoPropiedad(true);
+    try {
+      const token = localStorage.getItem('agente_token');
+      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/propiedades/${propiedadAMover.id}/folder`,
+        { folder_id: folderId },
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      setListaPropiedades(prev => prev.map(p => p.id === propiedadAMover.id ? { ...p, folder_id: folderId } : p));
+      setPropiedadAMover(null);
+    } catch (error) {
+      Swal.fire('Error', 'No se pudo mover la propiedad.', 'error');
+    } finally {
+      setMoviendoPropiedad(false);
+    }
+  };
+
+  // Qué se ve en el catálogo: en la raíz, las carpetas + las propiedades sueltas;
+  // dentro de una carpeta, solo sus propiedades. Al buscar en la raíz se busca en todo.
+  const carpetaActual = puedeOrganizar ? carpetas.find(c => c.id === carpetaAbierta) || null : null;
+  const idsCarpetas = new Set(carpetas.map(c => c.id));
+  const mostrarCarpetas = puedeOrganizar && !carpetaActual && !busquedaCatalogo;
+  let propiedadesVisibles = propiedadesFiltradas;
+  if (carpetaActual) {
+    propiedadesVisibles = propiedadesFiltradas.filter(p => p.folder_id === carpetaActual.id);
+  } else if (mostrarCarpetas) {
+    propiedadesVisibles = propiedadesFiltradas.filter(p => !p.folder_id || !idsCarpetas.has(p.folder_id));
+  }
+  const propiedadesDeCarpeta = (id) => propiedadesFiltradas.filter(p => p.folder_id === id);
+  const totalEnCarpeta = (id) => listaPropiedades.filter(p => p.folder_id === id).length;
 
   return (
     <div className="vu-root">
@@ -716,8 +847,21 @@ const VistaPropiedades = () => {
                     setFilteredData={setPropiedadesFiltradas}
                     filtroActual={categoria}
                     placeholder="BUSCAR PROPIEDAD POR NOMBRE..."
+                    onBusquedaChange={setBusquedaCatalogo}
                   />
                 </div>
+
+                {puedeOrganizar && (
+                  <button
+                    type="button"
+                    className="tb-actions-btn"
+                    onClick={() => setMostrarModalCarpetas(true)}
+                    title="Carpetas"
+                    aria-label="Organizar en carpetas"
+                  >
+                    <FolderPlus size={20} />
+                  </button>
+                )}
 
                 <div className="tb-actions-wrapper" ref={accionesRef}>
                   <button
@@ -831,11 +975,57 @@ const VistaPropiedades = () => {
         )}
 
 
+        {carpetaActual && (
+          <div className="folder-breadcrumb" style={{ '--folder-color': carpetaActual.color }}>
+            <button type="button" className="folder-breadcrumb-back" onClick={() => setCarpetaAbierta(null)}>
+              <ArrowLeft size={18} strokeWidth={2.6} /> <span>Catálogo</span>
+            </button>
+            <span className="folder-breadcrumb-sep">/</span>
+            <span className="folder-breadcrumb-name">
+              <FolderOpen size={18} strokeWidth={2.4} /> {carpetaActual.name}
+            </span>
+            <span className="vu-count-pill">{propiedadesVisibles.length}</span>
+            <button type="button" className="folder-breadcrumb-icon" title="Renombrar carpeta" onClick={() => renombrarCarpeta(carpetaActual)}>
+              <Pencil size={16} />
+            </button>
+          </div>
+        )}
+
         <div className="properties-grid">
+          {!cargando && mostrarCarpetas && carpetas.map((c) => {
+            const props = propiedadesDeCarpeta(c.id);
+            const fotos = props.filter(p => p.foto_url).slice(0, 3);
+            return (
+              <div
+                key={`folder-${c.id}`}
+                className="folder-card"
+                style={{ '--folder-color': c.color || '#F26522' }}
+                onClick={() => setCarpetaAbierta(c.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter') setCarpetaAbierta(c.id); }}
+              >
+                <div className="folder-card-tab" />
+                <div className={`folder-card-preview count-${fotos.length}`}>
+                  {fotos.length > 0 ? (
+                    fotos.map(p => <img key={p.id} src={p.foto_url} alt="" />)
+                  ) : (
+                    <Folder size={64} strokeWidth={1.6} />
+                  )}
+                </div>
+                <div className="folder-card-bar">
+                  <Folder size={18} strokeWidth={2.6} />
+                  <h3>{c.name}</h3>
+                  <span className="folder-card-count">{props.length}</span>
+                </div>
+              </div>
+            );
+          })}
+
           {cargando ? (
             <CasaLoader texto="Cargando propiedades..." />
-          ) : propiedadesFiltradas.length > 0 ? (
-            propiedadesFiltradas.map((p) => (
+          ) : propiedadesVisibles.length > 0 ? (
+            propiedadesVisibles.map((p) => (
               <div key={p.id} className="property-card vp-card-menu" style={{ position: 'relative' }}>
                 
                 {/* Si es Root y la propiedad es de un autónomo externo */}
@@ -884,7 +1074,13 @@ const VistaPropiedades = () => {
 
               </div>
             ))
-          ) : (
+          ) : carpetaActual ? (
+            <div className="folder-empty">
+              <FolderOpen size={44} strokeWidth={1.6} />
+              <strong>Esta carpeta está vacía</strong>
+              <span>Usa el botón de carpeta de una propiedad para moverla aquí.</span>
+            </div>
+          ) : !(mostrarCarpetas && carpetas.length > 0) && (
             <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '50px', color: '#666' }}>
               No hay propiedades en esta categoría.
             </div>
@@ -911,38 +1107,44 @@ const VistaPropiedades = () => {
               <div className="card-menu-title">{p.nombre_propiedad || "Propiedad sin nombre"}</div>
 
               <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => irADetallesPropiedad(p))}>
-                <Eye size={17} color="#2196F3" /> Detalles de propiedad
+                <span className="tb-actions-icon blue"><Eye size={16} strokeWidth={2.4} /></span> Detalles de propiedad
               </button>
 
               {p.levantamiento_realizado ? (
                 <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => irAVerLevantamiento(p))}>
-                  <ClipboardCheck size={17} color="#4CAF50" /> Ver levantamiento
+                  <span className="tb-actions-icon green"><ClipboardCheck size={16} strokeWidth={2.4} /></span> Ver levantamiento
                 </button>
               ) : (
                 <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => abrirModalParaPropiedad(p))}>
-                  <ClipboardList size={17} color="#ff8800" /> {p.has_pending_service ? "Levantamiento solicitado" : "Solicitar levantamiento"}
+                  <span className="tb-actions-icon amber"><ClipboardList size={16} strokeWidth={2.4} /></span> {p.has_pending_service ? "Levantamiento solicitado" : "Solicitar levantamiento"}
                 </button>
               )}
 
               <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => irARegistroZonas(p))}>
-                <Camera size={17} color="#F26522" /> {p.levantamiento_realizado ? "Editar levantamiento" : "Realizar mi propio levantamiento"}
+                <span className="tb-actions-icon orange"><Camera size={16} strokeWidth={2.4} /></span> {p.levantamiento_realizado ? "Editar levantamiento" : "Realizar mi propio levantamiento"}
               </button>
 
               {(isRoot || isAgenteAdmin) && (
                 <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => setEquipoPropiedad(p))}>
-                  <Users size={17} color="#7c3aed" /> Equipo del levantamiento
+                  <span className="tb-actions-icon violet"><Users size={16} strokeWidth={2.4} /></span> Equipo del levantamiento
                 </button>
               )}
 
               <div className="card-menu-divider" />
 
+              {puedeOrganizar && (
+                <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => setPropiedadAMover(p))}>
+                  <span className="tb-actions-icon orange"><FolderInput size={16} strokeWidth={2.4} /></span> Mover a carpeta
+                </button>
+              )}
+
               <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => abrirModalEditar(p))}>
-                <Pencil size={17} color="#64748b" /> Editar propiedad
+                <span className="tb-actions-icon slate"><Pencil size={16} strokeWidth={2.4} /></span> Editar propiedad
               </button>
 
               {!p.is_shared_with_me && (
                 <button type="button" className="card-menu-item danger" onClick={() => ejecutarAccionMenu(() => eliminarPropiedad(p))}>
-                  <Trash2 size={17} /> Eliminar propiedad
+                  <span className="tb-actions-icon red"><Trash2 size={16} strokeWidth={2.4} /></span> Eliminar propiedad
                 </button>
               )}
             </div>
@@ -1591,127 +1793,172 @@ const VistaPropiedades = () => {
       )}
       {/* MODAL DE EDICIÓN DE PROPIEDAD */}
       {mostrarModalEditar && createPortal(
-        <div
-          className="modal-overlay"
-          onClick={() => !editando && setMostrarModalEditar(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999999,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "rgba(15, 23, 42, 0.78)",
-            backdropFilter: "blur(8px)",
-            padding: "20px"
-          }}
-        >
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: "450px",
-              width: "100%",
-              padding: "30px",
-              borderRadius: "16px",
-              backgroundColor: "white",
-              position: "relative",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-              zIndex: 10000000
-            }}
-          >
-            <button
-              className="close-modal"
-              onClick={() => setMostrarModalEditar(false)}
-              style={{
-                position: "absolute",
-                top: "15px",
-                right: "15px",
-                background: "rgba(0,0,0,0.06)",
-                border: "none",
-                borderRadius: "50%",
-                width: "32px",
-                height: "32px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-              }}
-            >
-              <X size={20} color="#333" strokeWidth={2.8} />
+        <div className="folder-modal-overlay" onClick={() => !editando && setMostrarModalEditar(false)}>
+          <div className="folder-modal" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="folder-modal-close" onClick={() => setMostrarModalEditar(false)} aria-label="Cerrar">
+              <X size={20} strokeWidth={2.8} />
             </button>
 
             <form onSubmit={handleUpdateProperty}>
-              <h2 style={{ marginBottom: '20px', color: '#1e293b', textAlign: 'center', fontWeight: 800 }}>Editar Propiedad</h2>
-              
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '0.9rem', color: '#334155' }}>Nombre de la Propiedad</label>
-                <input 
-                  type="text" 
-                  value={editNombre}
-                  onChange={(e) => setEditNombre(e.target.value)}
-                  placeholder="Ej. Casa de la Playa"
-                  style={{ 
-                    width: '100%', 
-                    padding: '12px', 
-                    borderRadius: '8px', 
-                    border: '1px solid #cbd5e1',
-                    backgroundColor: 'white',
-                    color: '#1e293b',
-                    fontSize: '0.95rem',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
+              <h2><Pencil size={22} color="#F26522" /> Editar propiedad</h2>
+              <p className="folder-modal-sub">{propiedadAEditar?.nombre_propiedad || "Propiedad sin nombre"}</p>
 
-              <div style={{ marginBottom: '25px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '0.9rem', color: '#334155' }}>Nueva Foto de Fachada</label>
-                <input 
-                  type="file" 
+              <label className="glass-field-label" htmlFor="edit-prop-nombre">Nombre de la propiedad</label>
+              <input
+                id="edit-prop-nombre"
+                type="text"
+                className="glass-input"
+                value={editNombre}
+                onChange={(e) => setEditNombre(e.target.value)}
+                placeholder="Ej. Casa de la Playa"
+              />
+
+              <label className="glass-field-label">Nueva foto de fachada</label>
+              <label className="glass-file">
+                <input
+                  type="file"
                   accept="image/*"
-                  onChange={(e) => setEditFoto(e.target.files[0])}
-                  style={{ width: '100%', fontSize: '0.85rem' }}
+                  onChange={(e) => setEditFoto(e.target.files[0] || null)}
                 />
-                <small style={{ color: '#64748b' }}>* Dejar vacío para mantener la foto actual.</small>
-              </div>
+                <span className="glass-file-btn"><ImageIcon size={16} strokeWidth={2.4} /> Elegir foto</span>
+                <span className="glass-file-name">{editFoto ? editFoto.name : "Ningún archivo seleccionado"}</span>
+              </label>
+              <small className="glass-field-hint">Déjalo vacío para mantener la foto actual.</small>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div className="glass-actions">
                 <button
                   type="button"
+                  className="glass-btn secondary"
                   onClick={() => setMostrarModalEditar(false)}
                   disabled={editando}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    backgroundColor: '#f8fafc',
-                    color: '#475569',
-                    fontWeight: 'bold',
-                    cursor: 'pointer'
-                  }}
                 >
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  disabled={editando}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    backgroundColor: '#f26522',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(242, 101, 34, 0.4)'
-                  }}
-                >
-                  {editando ? "Guardando..." : "Guardar Cambios"}
+                <button type="submit" className="glass-btn primary" disabled={editando}>
+                  {editando ? <><Loader2 size={18} className="spin" /> Guardando...</> : "Guardar cambios"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* MODAL: ADMINISTRAR CARPETAS */}
+      {mostrarModalCarpetas && createPortal(
+        <div className="folder-modal-overlay" onClick={() => setMostrarModalCarpetas(false)}>
+          <div className="folder-modal" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="folder-modal-close" onClick={() => setMostrarModalCarpetas(false)} aria-label="Cerrar">
+              <X size={20} strokeWidth={2.8} />
+            </button>
+            <h2><FolderPlus size={22} color="#F26522" /> Carpetas</h2>
+            <p className="folder-modal-sub">Organiza el catálogo. Todos los administradores ven las mismas carpetas.</p>
+
+            <form className="folder-create" onSubmit={crearCarpeta}>
+              <input
+                type="text"
+                value={nuevaCarpetaNombre}
+                onChange={(e) => setNuevaCarpetaNombre(e.target.value)}
+                placeholder="Nombre de la nueva carpeta"
+                maxLength={80}
+              />
+              <button type="submit" disabled={guardandoCarpeta || !nuevaCarpetaNombre.trim()}>
+                {guardandoCarpeta ? <Loader2 size={18} className="spin" /> : <Plus size={18} strokeWidth={3} />}
+                <span>Crear</span>
+              </button>
+            </form>
+            <div className="folder-colors">
+              {COLORES_CARPETA.map(color => (
+                <button
+                  key={color}
+                  type="button"
+                  className={`folder-color ${nuevaCarpetaColor === color ? 'selected' : ''}`}
+                  style={{ background: color }}
+                  onClick={() => setNuevaCarpetaColor(color)}
+                  aria-label={`Color ${color}`}
+                >
+                  {nuevaCarpetaColor === color && <Check size={14} strokeWidth={3.5} color="#fff" />}
+                </button>
+              ))}
+            </div>
+
+            <div className="folder-list">
+              {carpetas.length === 0 ? (
+                <div className="folder-list-empty">Aún no hay carpetas.</div>
+              ) : carpetas.map(c => (
+                <div key={c.id} className="folder-list-item">
+                  <button
+                    type="button"
+                    className="folder-list-open"
+                    onClick={() => { setCarpetaAbierta(c.id); setMostrarModalCarpetas(false); }}
+                  >
+                    <Folder size={20} color={c.color || '#F26522'} fill={c.color || '#F26522'} fillOpacity={0.2} />
+                    <span className="folder-list-name">{c.name}</span>
+                    <span className="folder-list-count">{totalEnCarpeta(c.id)}</span>
+                  </button>
+                  <button type="button" className="folder-list-icon" title="Renombrar" onClick={() => renombrarCarpeta(c)}>
+                    <Pencil size={16} />
+                  </button>
+                  <button type="button" className="folder-list-icon danger" title="Eliminar" onClick={() => eliminarCarpeta(c)}>
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* MODAL: MOVER PROPIEDAD A CARPETA */}
+      {propiedadAMover && createPortal(
+        <div className="folder-modal-overlay" onClick={() => !moviendoPropiedad && setPropiedadAMover(null)}>
+          <div className="folder-modal" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="folder-modal-close" onClick={() => setPropiedadAMover(null)} aria-label="Cerrar">
+              <X size={20} strokeWidth={2.8} />
+            </button>
+            <h2><FolderInput size={22} color="#F26522" /> Mover a carpeta</h2>
+            <p className="folder-modal-sub">{propiedadAMover.nombre_propiedad || "Propiedad sin nombre"}</p>
+
+            <div className="folder-list">
+              {carpetas.map(c => {
+                const actual = propiedadAMover.folder_id === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={`folder-list-open folder-pick ${actual ? 'current' : ''}`}
+                    disabled={moviendoPropiedad || actual}
+                    onClick={() => moverPropiedadACarpeta(c.id)}
+                  >
+                    <Folder size={20} color={c.color || '#F26522'} fill={c.color || '#F26522'} fillOpacity={0.2} />
+                    <span className="folder-list-name">{c.name}</span>
+                    {actual && <Check size={18} strokeWidth={3} color="#10b981" />}
+                  </button>
+                );
+              })}
+
+              {propiedadAMover.folder_id && (
+                <button
+                  type="button"
+                  className="folder-list-open folder-pick"
+                  disabled={moviendoPropiedad}
+                  onClick={() => moverPropiedadACarpeta(null)}
+                >
+                  <FolderX size={20} color="#64748b" />
+                  <span className="folder-list-name">Sacar de la carpeta</span>
+                </button>
+              )}
+
+              {carpetas.length === 0 && (
+                <div className="folder-list-empty">
+                  Aún no hay carpetas.{" "}
+                  <button type="button" className="folder-link" onClick={() => { setPropiedadAMover(null); setMostrarModalCarpetas(true); }}>
+                    Crear una
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>,
         document.body

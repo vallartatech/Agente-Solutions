@@ -1,69 +1,107 @@
 /* ==========================================================================
-   LIQUID GLASS COMPARTIDO PARA MODALES / BOTTOM SHEETS
+   LIQUID GLASS BLANCO PARA MODALES / BOTTOM SHEETS
    - .mri-*  → Registrar Propiedad y Registrar Técnico (usuario)
    - .rp-*   → Solicitar Servicio (Reportar Problema)
    Se carga DESPUÉS de los estilos base y solo sobreescribe la "piel" visual.
+   Mismo vidrio blanco que SweetAlertGlass.css y .folder-modal.
+   Los !important ganan a la base y a los colores en línea del JSX
+   (X blanca, <option> oscuros, botón "Añadir" de fotos).
    ========================================================================== */
 
-/* Fondo detrás del modal: poco oscuro y poco blur para que el vidrio refracte */
+/* Fondo detrás del modal */
 .mri-overlay,
 .rp-overlay {
-  background: rgba(6, 8, 12, 0.38) !important;
-  backdrop-filter: blur(3px) saturate(120%) !important;
-  -webkit-backdrop-filter: blur(3px) saturate(120%) !important;
+  background: rgba(15, 23, 42, 0.32) !important;
+  backdrop-filter: blur(5px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(5px) saturate(120%) !important;
 }
 
-/* Panel de vidrio */
+/* Panel de vidrio blanco */
 .mri-overlay .mri-card,
 .rp-overlay .rp-modal {
+  color: #334155 !important;
   background:
-    /* brillo especular superior izquierdo */
-    radial-gradient(120% 60% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
-    /* reflejo inferior derecho */
-    radial-gradient(90% 50% at 100% 100%, rgba(255, 140, 66, 0.12) 0%, rgba(255, 140, 66, 0) 60%),
-    /* tinte del vidrio */
-    linear-gradient(160deg, rgba(60, 66, 80, 0.42) 0%, rgba(22, 26, 34, 0.55) 100%) !important;
-  backdrop-filter: blur(26px) saturate(190%) brightness(0.72) !important;
-  -webkit-backdrop-filter: blur(26px) saturate(190%) brightness(0.72) !important;
-  border: 1px solid rgba(255, 255, 255, 0.24) !important;
+    radial-gradient(120% 60% at 0% 0%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 55%),
+    radial-gradient(90% 50% at 100% 100%, rgba(255, 140, 66, 0.10) 0%, rgba(255, 140, 66, 0) 60%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.86) 0%, rgba(241, 245, 249, 0.78) 100%) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
   box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 1px 0 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
-    inset 0 0 40px rgba(255, 255, 255, 0.04) !important;
+    0 30px 80px rgba(15, 23, 42, 0.28),
+    0 0 32px rgba(242, 101, 34, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
 }
 
-/* Encabezado fijo: vidrio más delgado sobre el contenido que se desplaza */
+/* Encabezado fijo: vidrio blanco más denso sobre el contenido que se desplaza */
 .mri-overlay .mri-header,
 .rp-overlay .rp-header {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.04) 100%) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.82) 100%) !important;
   backdrop-filter: blur(22px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
-  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
 }
 
-/* Pie fijo con el botón principal */
-.mri-overlay .mri-footer-sticky,
-.rp-overlay .rp-footer {
-  background: linear-gradient(0deg, rgba(20, 24, 32, 0.72) 55%, rgba(20, 24, 32, 0)) !important;
+.mri-overlay .mri-tag,
+.rp-overlay .rp-tag {
+  background: rgba(242, 101, 34, 0.1) !important;
+  border: 1px solid rgba(242, 101, 34, 0.35) !important;
+  color: #ea580c !important;
 }
 
-/* Campos de vidrio esmerilado */
+.mri-overlay .mri-title,
+.rp-overlay .rp-title {
+  color: #0f172a !important;
+}
+
+/* Botón cerrar: círculo de vidrio claro con X oscura */
+.mri-overlay .mri-close-btn,
+.rp-overlay .rp-close {
+  padding: 0 !important;
+  background: rgba(241, 245, 249, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  color: #475569 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), inset 0 1px 0 #fff !important;
+}
+
+.mri-overlay .mri-close-btn svg,
+.rp-overlay .rp-close svg {
+  color: #475569 !important;
+  stroke: #475569 !important; /* lucide pone stroke="#ffffff" como atributo */
+}
+
+.mri-overlay .mri-close-btn:hover,
+.rp-overlay .rp-close:hover {
+  background: rgba(226, 232, 240, 0.95) !important;
+}
+
+/* Etiquetas */
+.mri-overlay .mri-label,
+.rp-overlay .rp-label {
+  color: #334155 !important;
+}
+
+.mri-overlay .mri-label svg { color: #f26522 !important; }
+
+/* Campos de vidrio esmerilado claro */
 .mri-overlay .mri-input,
 .mri-overlay .mri-select,
 .mri-overlay .mri-file-wrapper,
 .mri-overlay .mri-gps-widget,
 .rp-overlay .rp-group select,
 .rp-overlay .rp-group textarea {
-  background-color: rgba(255, 255, 255, 0.09) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.08);
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  border: 1.5px solid rgba(203, 213, 225, 0.9) !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+}
+
+.mri-overlay .mri-input::placeholder,
+.rp-overlay .rp-group textarea::placeholder {
+  color: #94a3b8 !important;
 }
 
 .mri-overlay .mri-input:focus,
@@ -71,38 +109,117 @@
 .mri-overlay .mri-file-wrapper:focus-within,
 .rp-overlay .rp-group select:focus,
 .rp-overlay .rp-group textarea:focus {
-  background-color: rgba(255, 255, 255, 0.14) !important;
-  border-color: rgba(255, 140, 66, 0.75) !important;
-  box-shadow:
-    0 0 0 3px rgba(255, 140, 66, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+  background-color: #ffffff !important;
+  border-color: #f26522 !important;
+  box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.18) !important;
 }
 
-/* Botón cerrar y botones secundarios tipo cristal */
-.mri-overlay .mri-close-btn,
-.rp-overlay .rp-close,
+/* Opciones del <select> (el JSX las pinta oscuras en línea) */
+.mri-overlay .mri-select option,
+.mri-overlay .mri-select optgroup,
+.rp-overlay .rp-group option,
+.rp-overlay .rp-group optgroup {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.rp-overlay .rp-group optgroup { color: #ea580c !important; }
+
+.rp-overlay .rp-group small,
+.rp-overlay small {
+  color: #64748b !important;
+}
+
+/* Archivo y GPS */
 .mri-overlay .mri-file-btn,
 .mri-overlay .mri-gps-btn {
-  background: rgba(255, 255, 255, 0.14) !important;
-  border: 1px solid rgba(255, 255, 255, 0.26) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(241, 245, 249, 0.9) !important;
+  border: 1px solid rgba(203, 213, 225, 0.9) !important;
+  color: #334155 !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06), inset 0 1px 0 #fff !important;
 }
 
-/* Botón principal naranja con brillo de vidrio */
+.mri-overlay .mri-file-btn:hover,
+.mri-overlay .mri-gps-btn:hover:not(:disabled) {
+  background: rgba(255, 247, 237, 0.95) !important;
+  border-color: #fdba74 !important;
+  color: #c2410c !important;
+}
+
+.mri-overlay .mri-file-name,
+.mri-overlay .mri-gps-label {
+  color: #64748b !important;
+}
+
+.mri-overlay .mri-gps-val { color: #0f172a !important; }
+.mri-overlay .mri-gps-val.empty { color: #94a3b8 !important; }
+
+.mri-overlay .mri-gps-icon {
+  background: rgba(242, 101, 34, 0.12) !important;
+  color: #ea580c !important;
+}
+
+/* Caja del rol en Registrar Técnico (estilos en <style> de Register.jsx) */
+.mri-overlay .reg-role-box {
+  background: rgba(242, 101, 34, 0.08) !important;
+  border: 1.5px solid rgba(242, 101, 34, 0.3) !important;
+}
+
+.mri-overlay .reg-role-icon {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%) !important;
+  border: none !important;
+  color: #ffffff !important;
+}
+
+.mri-overlay .reg-role-title { color: #0f172a !important; }
+.mri-overlay .reg-role-desc { color: #64748b !important; }
+
+/* Botón "Añadir" foto de Reportar Problema (estilo en línea) */
+.rp-overlay .btn-add-foto-placeholder {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 2px dashed rgba(148, 163, 184, 0.7) !important;
+  color: #475569 !important;
+}
+
+.rp-overlay .btn-add-foto-placeholder:hover {
+  background: rgba(255, 247, 237, 0.9) !important;
+  border-color: #fdba74 !important;
+}
+
+/* Mensajes */
+.mri-overlay .mri-msg.error {
+  background: rgba(254, 226, 226, 0.85) !important;
+  color: #b91c1c !important;
+}
+
+.mri-overlay .mri-msg.success {
+  background: rgba(220, 252, 231, 0.85) !important;
+  color: #15803d !important;
+}
+
+/* Pie fijo con el botón principal */
+.mri-overlay .mri-footer-sticky,
+.rp-overlay .rp-footer {
+  background: linear-gradient(0deg, rgba(248, 250, 252, 0.98) 60%, rgba(248, 250, 252, 0)) !important;
+}
+
+/* Botón principal: naranja plano, sin brillo ni degradado */
 .mri-overlay .mri-submit-btn,
 .rp-overlay .rp-footer button[type="submit"] {
-  box-shadow:
-    0 10px 25px rgba(242, 101, 34, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.38),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.12) !important;
+  border: none !important;
+  background: #f26522 !important;
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.25) !important;
 }
 
-/* Pastilla de arrastre más visible sobre el vidrio */
+.mri-overlay .mri-submit-btn:hover:not(:disabled),
+.rp-overlay .rp-footer button[type="submit"]:hover:not(:disabled) {
+  background: #ea580c !important;
+}
+
+/* Pastilla de arrastre visible sobre el vidrio claro */
 .mri-overlay .mri-grabber,
 .rp-overlay .rp-grabber {
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(148, 163, 184, 0.7) !important;
 }
 
 /* Móvil: el borde superior del bottom sheet como filo de luz */
@@ -110,14 +227,16 @@
   .mri-overlay .mri-card,
   .rp-overlay .rp-modal {
     border-bottom: none !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+    border-left: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+    border-right: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+    border-top: 1.5px solid rgba(255, 255, 255, 1) !important;
   }
 }
 
-/* Navegadores sin backdrop-filter: tinte sólido para mantener legibilidad */
+/* Navegadores sin backdrop-filter: blanco casi sólido para mantener legibilidad */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .mri-overlay .mri-card,
   .rp-overlay .rp-modal {
-    background: linear-gradient(160deg, rgba(58, 63, 74, 0.97) 0%, rgba(30, 34, 42, 0.98) 100%) !important;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%) !important;
   }
 }

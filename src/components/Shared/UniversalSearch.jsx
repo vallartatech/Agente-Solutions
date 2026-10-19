@@ -2,8 +2,13 @@ import React from 'react';
 import { Search } from 'lucide-react';
 import '../../styles/Shared/UniversalSearch.css';
 
-const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, type }) => {
+const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, type, onBusquedaChange }) => {
   const [busqueda, setBusqueda] = React.useState("");
+
+  // Avisa al padre si hay texto escrito (p. ej. para buscar fuera de las carpetas)
+  React.useEffect(() => {
+    if (onBusquedaChange) onBusquedaChange(busqueda.trim());
+  }, [busqueda, onBusquedaChange]);
 
   React.useEffect(() => {
     const termino = busqueda.toLowerCase();

@@ -1,0 +1,238 @@
+/* ==========================================================================
+   SWEETALERT2 — LIQUID GLASS GLOBAL (BLANCO)
+   Se carga en main.jsx; aplica a todos los Swal.fire() de la app.
+   Los !important ganan a los estilos en línea que pone SweetAlert
+   (confirmButtonColor...) y a su CSS inyectado.
+   Las alertas que pasan `background` (p. ej. '#191e2b') traen HTML con
+   texto claro, así que conservan una variante de vidrio oscuro al final.
+   ========================================================================== */
+
+/* Fondo detrás de la alerta */
+.swal2-container.swal2-backdrop-show {
+  background: rgba(15, 23, 42, 0.32) !important;
+  backdrop-filter: blur(5px) saturate(120%);
+  -webkit-backdrop-filter: blur(5px) saturate(120%);
+}
+
+/* Panel de vidrio blanco */
+.swal2-container .swal2-popup {
+  border-radius: 28px !important;
+  padding: 1.8em 1.4em 1.5em !important;
+  color: #334155;
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 55%),
+    radial-gradient(90% 50% at 100% 100%, rgba(255, 140, 66, 0.10) 0%, rgba(255, 140, 66, 0) 60%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.82) 0%, rgba(248, 250, 252, 0.72) 100%);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow:
+    0 30px 80px rgba(15, 23, 42, 0.28),
+    0 0 32px rgba(242, 101, 34, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.04) !important;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+.swal2-container .swal2-title {
+  color: #0f172a;
+  font-weight: 800 !important;
+  font-size: 1.55em !important;
+  letter-spacing: -0.2px;
+  padding-top: 0.4em !important;
+}
+
+.swal2-container .swal2-html-container {
+  color: #475569;
+  font-size: 1em !important;
+  line-height: 1.5;
+}
+
+/* Campos de texto / select / textarea */
+.swal2-container .swal2-input,
+.swal2-container .swal2-textarea,
+.swal2-container .swal2-select,
+.swal2-container .swal2-file {
+  border-radius: 16px !important;
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  border: 1.5px solid rgba(203, 213, 225, 0.9) !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+  font-size: 16px !important; /* evita zoom en iOS */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.swal2-container .swal2-input::placeholder,
+.swal2-container .swal2-textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.swal2-container .swal2-input:focus,
+.swal2-container .swal2-textarea:focus,
+.swal2-container .swal2-select:focus {
+  background-color: #ffffff !important;
+  border-color: #f26522 !important;
+  box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.18) !important;
+  outline: none !important;
+}
+
+.swal2-container .swal2-input-label,
+.swal2-container .swal2-checkbox,
+.swal2-container .swal2-radio {
+  color: #334155;
+  background: transparent !important;
+}
+
+.swal2-container .swal2-validation-message {
+  margin: 1em 0 0 !important;
+  border-radius: 14px;
+  background: rgba(254, 226, 226, 0.75) !important;
+  border: 1px solid rgba(252, 165, 165, 0.6);
+  color: #b91c1c !important;
+}
+
+.swal2-container .swal2-validation-message::before {
+  background-color: #ef4444 !important;
+}
+
+/* Botones: pastilla de color plano (sin brillo ni degradado).
+   El de confirmar conserva su color (naranja, rojo...) */
+.swal2-container .swal2-actions {
+  gap: 10px;
+  margin-top: 1.4em !important;
+}
+
+.swal2-container .swal2-styled {
+  margin: 0 !important;
+  padding: 0.75em 1.6em !important;
+  border-radius: 999px !important;
+  font-weight: 800 !important;
+  font-size: 0.95em !important;
+  letter-spacing: 0.3px;
+  color: #ffffff !important;
+  border: none !important;
+  background-image: none !important;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.16) !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, filter 0.2s ease !important;
+}
+
+.swal2-container .swal2-styled:hover {
+  background-image: none !important;
+  filter: brightness(0.94);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2) !important;
+}
+
+.swal2-container .swal2-styled:active { transform: scale(0.97); }
+
+.swal2-container .swal2-styled:focus,
+.swal2-container .swal2-styled:focus-visible {
+  outline: none !important;
+  box-shadow:
+    0 0 0 3px rgba(242, 101, 34, 0.25),
+    0 6px 16px rgba(15, 23, 42, 0.16) !important;
+}
+
+/* Cancelar: vidrio claro con texto oscuro, sin importar cancelButtonColor */
+.swal2-container .swal2-styled.swal2-cancel {
+  background-color: rgba(241, 245, 249, 0.85) !important;
+  border: 1.5px solid rgba(203, 213, 225, 0.9) !important;
+  color: #334155 !important;
+  text-shadow: none;
+}
+
+.swal2-container .swal2-styled.swal2-cancel:hover {
+  background-color: rgba(226, 232, 240, 0.95) !important;
+  color: #0f172a !important;
+}
+
+/* Botón cerrar (×) */
+.swal2-container .swal2-close {
+  border-radius: 50% !important;
+  color: #94a3b8 !important;
+}
+
+.swal2-container .swal2-close:hover {
+  background: rgba(15, 23, 42, 0.06) !important;
+  color: #0f172a !important;
+}
+
+.swal2-container .swal2-close:focus { box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.2) !important; }
+
+/* Iconos: las piezas de la animación de "success" usan el color del popup */
+.swal2-container .swal2-icon.swal2-success [class^='swal2-success-circular-line'],
+.swal2-container .swal2-icon.swal2-success .swal2-success-fix {
+  background-color: transparent !important;
+}
+
+.swal2-container .swal2-footer {
+  border-top: 1px solid rgba(226, 232, 240, 0.9) !important;
+  color: #64748b;
+}
+
+.swal2-container .swal2-timer-progress-bar {
+  background: rgba(242, 101, 34, 0.7) !important;
+}
+
+.swal2-container .swal2-loader {
+  border-color: #f26522 transparent #f26522 transparent !important;
+}
+
+.swal2-container .swal2-image {
+  border-radius: 18px;
+}
+
+@media (max-width: 600px) {
+  .swal2-container .swal2-popup {
+    border-radius: 24px !important;
+    width: calc(100% - 32px) !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Variante oscura: alertas que pasan `background` en Swal.fire()
+   (SweetAlert lo pone como estilo en línea en el popup)
+   -------------------------------------------------------------------------- */
+.swal2-container .swal2-popup[style*="background"] {
+  color: #e2e8f0 !important;
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    radial-gradient(90% 50% at 100% 100%, rgba(255, 140, 66, 0.14) 0%, rgba(255, 140, 66, 0) 60%),
+    linear-gradient(160deg, rgba(60, 66, 80, 0.55) 0%, rgba(22, 26, 34, 0.68) 100%) !important;
+  backdrop-filter: blur(26px) saturate(190%) brightness(0.72);
+  -webkit-backdrop-filter: blur(26px) saturate(190%) brightness(0.72);
+  border: 1px solid rgba(255, 255, 255, 0.24) !important;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 0 40px rgba(255, 255, 255, 0.04) !important;
+}
+
+.swal2-container .swal2-popup[style*="background"] .swal2-title { color: #ffffff; }
+.swal2-container .swal2-popup[style*="background"] .swal2-html-container,
+.swal2-container .swal2-popup[style*="background"] .swal2-input-label { color: rgba(226, 232, 240, 0.86); }
+
+.swal2-container .swal2-popup[style*="background"] .swal2-input,
+.swal2-container .swal2-popup[style*="background"] .swal2-textarea,
+.swal2-container .swal2-popup[style*="background"] .swal2-select {
+  background-color: rgba(255, 255, 255, 0.09) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.swal2-container .swal2-popup[style*="background"] .swal2-input::placeholder,
+.swal2-container .swal2-popup[style*="background"] .swal2-textarea::placeholder {
+  color: rgba(226, 232, 240, 0.5) !important;
+}
+
+.swal2-container .swal2-popup[style*="background"] .swal2-styled.swal2-cancel {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-image: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  color: #e2e8f0 !important;
+}
+
+.swal2-container .swal2-popup[style*="background"] .swal2-styled.swal2-cancel:hover {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}

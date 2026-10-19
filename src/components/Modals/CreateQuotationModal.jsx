@@ -7,6 +7,7 @@ import {
   MapPin, Phone
 } from 'lucide-react';
 import mpLogo from '../../assets/Mercado-Pago.png';
+import '../../styles/Shared/CreateQuotationModal.css';
 
 const IVA_RATE = 0.16;
 
@@ -409,40 +410,40 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
   };
 
   return (
-    <div className="modal-fixed-overlay" style={{ zIndex: 20000 }}>
-      <div className="modal-box-card" style={{ maxWidth: '800px', height: '90vh', display: 'flex', flexDirection: 'column' }}>
+<div className="modal-fixed-overlay cqm-overlay" style={{ zIndex: 20000 }}>
+<div className="modal-box-card cqm-card">
         
-        <div className="modal-header-dark">
+<div className="modal-header-dark cqm-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Calculator size={24} color="#ff8800" />
+<span className="cqm-header-icon"><Calculator size={20} strokeWidth={2.4} /></span>
             <h2 className="cotiz-modal-title" style={{ margin: 0, fontSize: '1.2rem' }}>
               {prefillData?.isRecotizacionV2 || prefillData?.isDerived || prefillData?.id
                 ? `NUEVA VERSIÓN (V${(prefillData.version || 1) + 1}) DE ${prefillData.folio || '#' + prefillData.id}` 
                 : 'NUEVA COTIZACIÓN - ADMIN'}
             </h2>
           </div>
-          <button className="modal-close-icon" onClick={onClose}><X size={28} /></button>
+<button type="button" className="modal-close-icon cqm-close" onClick={onClose} aria-label="Cerrar"><X size={20} strokeWidth={2.6} /></button>
         </div>
 
-        <div className="modal-body-content" style={{ overflowY: 'auto', flex: 1, padding: '25px' }}>
+<div className="modal-body-content cqm-body">
           
           {step === 1 ? (
             <div className="step-selection">
-              <h3 style={{ marginBottom: '20px', color: '#222' }}>1. Seleccionar Servicio o Trabajo</h3>
+<h3 className="cqm-step-title">1. Seleccionar Servicio o Trabajo</h3>
               <div className="admin-search-box" style={{ position: 'relative' }}>
-                <Search style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
+<Search size={18} className="cqm-search-icon" />
                 <input 
                   type="text" 
                   placeholder="Buscar por cliente, propiedad o identificador..." 
-                  style={{ width: '100%', padding: '15px 15px 15px 50px', borderRadius: '12px', border: '1px solid #ddd', fontSize: '1rem' }}
+                  className="cqm-search-input"
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                 />
               </div>
 
-              <div className="servicios-results" style={{ marginTop: '20px', maxHeight: '420px', overflowY: 'auto', paddingRight: '5px' }}>
+<div className="servicios-results cqm-results">
                 {serviciosEncontrados.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '30px', color: '#777', background: '#f9f9f9', borderRadius: '12px', border: '1px dashed #ddd' }}>
+<div className="cqm-empty">
                     <AlertCircle size={32} color="#999" style={{ marginBottom: '10px', display: 'inline-block' }} />
                     <p style={{ margin: 0, fontWeight: '600' }}>No se encontraron servicios que coincidan con la búsqueda.</p>
                   </div>
@@ -454,34 +455,9 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
                         key={s.id} 
                         className={`servicio-item-card ${isSelected ? 'selected' : ''}`}
                         onClick={() => setServicioSeleccionado(s)}
-                        style={{ 
-                          display: 'flex',
-                          gap: '15px',
-                          padding: '15px', 
-                          border: '2px solid', 
-                          borderRadius: '12px', 
-                          marginBottom: '12px', 
-                          cursor: 'pointer', 
-                          transition: 'all 0.2s ease-in-out',
-                          background: isSelected ? '#fff8f4' : '#ffffff',
-                          borderColor: isSelected ? '#f26624' : '#e2e8f0',
-                          boxShadow: isSelected ? '0 4px 12px rgba(242,102,36,0.1)' : '0 2px 4px rgba(0,0,0,0.02)',
-                        }}
                       >
                         {/* Fachada Thumbnail */}
-                        <div style={{ 
-                          width: '90px', 
-                          height: '90px', 
-                          borderRadius: '8px', 
-                          overflow: 'hidden', 
-                          flexShrink: 0,
-                          backgroundColor: '#f1f5f9',
-                          border: '1px solid #cbd5e1',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          position: 'relative'
-                        }}>
+                        <div className="cqm-thumb">
                           {s.foto_fachada ? (
                             <img 
                               src={s.foto_fachada} 
@@ -509,14 +485,7 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
                             <span style={{ fontWeight: '800', color: '#f26624', fontSize: '0.95rem' }}>
                               #{s.curp || s.identificador_curp || s.id}
                             </span>
-                            <span style={{ 
-                              fontSize: '0.75rem', 
-                              background: isSelected ? 'rgba(242,102,36,0.15)' : '#f1f5f9', 
-                              color: isSelected ? '#f26624' : '#475569', 
-                              padding: '3px 10px', 
-                              borderRadius: '20px',
-                              fontWeight: '700'
-                            }}>
+                            <span className={`cqm-chip ${isSelected ? 'selected' : ''}`}>
                               {s.propiedad_tipo || s.tipoPropiedad || 'Servicio'}
                             </span>
                           </div>
@@ -557,9 +526,10 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
               </div>
 
               {servicioSeleccionado && (
-                <button 
+                <button
+                  type="button"
+                  className="cqm-btn primary block"
                   onClick={() => setStep(2)}
-                  style={{ width: '100%', padding: '15px', background: '#1c252e', color: '#fff', border: 'none', borderRadius: '12px', marginTop: '20px', fontWeight: 'bold', cursor: 'pointer' }}
                 >
                   CONTINUAR A DETALLES
                 </button>
@@ -567,18 +537,18 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
             </div>
           ) : (
             <div className="step-details">
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+<div className="cqm-tabs">
                 <button 
-                  className={`tab-btn-mini ${tab === 'manual' ? 'active' : ''}`} 
+                  type="button"
+                  className={`tab-btn-mini cqm-tab ${tab === 'manual' ? 'active' : ''}`}
                   onClick={() => setTab('manual')}
-                  style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #ddd', background: tab === 'manual' ? '#1c252e' : '#fff', color: tab === 'manual' ? '#fff' : '#333', fontWeight: 'bold' }}
                 >
                   REGISTRO MANUAL
                 </button>
                 <button 
-                  className={`tab-btn-mini ${tab === 'archivo' ? 'active' : ''}`} 
+                  type="button"
+                  className={`tab-btn-mini cqm-tab ${tab === 'archivo' ? 'active' : ''}`}
                   onClick={() => setTab('archivo')}
-                  style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #ddd', background: tab === 'archivo' ? '#1c252e' : '#fff', color: tab === 'archivo' ? '#fff' : '#333', fontWeight: 'bold' }}
                 >
                   CARGAR ARCHIVO
                 </button>
@@ -587,27 +557,17 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
               {tab === 'manual' ? (
                 <div className="manual-form">
                   {isUnifiedBatch && loteServicios.length > 0 && (
-                    <div style={{ background: '#1e293b', padding: '16px', borderRadius: '14px', marginBottom: '20px', border: '2px solid #334155' }}>
-                      <div style={{ color: '#f8fafc', fontWeight: '800', fontSize: '0.9rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+<div className="cqm-lote-box">
+<div className="cqm-lote-title">
                         📦 COTIZACIÓN UNIFICADA DE LOTE ({loteServicios.length} SERVICIOS)
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+<div className="cqm-lote-tabs">
                         {loteServicios.map((s, idx) => (
                           <button
                             key={idx}
                             type="button"
                             onClick={() => setActiveTabLote(idx)}
-                            style={{
-                              padding: '8px 16px',
-                              background: activeTabLote === idx ? 'linear-gradient(135deg, #F26522, #ea580c)' : '#334155',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '10px',
-                              fontWeight: activeTabLote === idx ? '800' : '600',
-                              cursor: 'pointer',
-                              whiteSpace: 'nowrap',
-                              fontSize: '0.85rem'
-                            }}
+                            className={`cqm-lote-tab ${activeTabLote === idx ? 'active' : ''}`}
                           >
                             Servicio #{idx + 1}
                           </button>
@@ -621,84 +581,84 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
                       const srv = loteServicios[activeTabLote];
                       return (
                         <div key={activeTabLote}>
-                          <div style={{ background: '#f1f5f9', padding: '12px 16px', borderRadius: '10px', marginBottom: '15px', fontWeight: '800', color: '#0f172a', borderLeft: '4px solid #F26522' }}>
+<div className="cqm-lote-banner">
                             Editando Partidas: {srv.titulo}
                           </div>
-                          <h4 style={{ color: '#f26624', borderBottom: '1px solid #f26624', paddingBottom: '5px', marginBottom: '15px', fontWeight: '800' }}>1. CONCEPTOS ({srv.titulo})</h4>
+<h4 className="cqm-section-title">1. CONCEPTOS ({srv.titulo})</h4>
                           {srv.filasConceptos.map(f => (
-                            <div key={f.id} style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '15px' }}>
-                              <div style={{ width: '100%', marginBottom: '10px' }}>
-                                 <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '5px' }}>Descripción del Servicio</label>
+                            <div key={f.id}className="cqm-row">
+<div className="cqm-row-main">
+<label className="cqm-label">Descripción del Servicio</label>
                                  <input 
                                    placeholder="Ej. Cambio de carbones..." 
-                                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #94a3b8', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input"
                                    value={f.desc}
                                    onChange={(e) => updateFilaLote(activeTabLote, 'filasConceptos', f.id, 'desc', e.target.value)}
                                  />
                               </div>
-                              <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', width: '100%' }}>
-                                 <div style={{ flex: 1 }}>
-                                    <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '5px' }}>Cant.</label>
+<div className="cqm-row-nums">
+<div className="cqm-row-num">
+<label className="cqm-label">Cant.</label>
                                     <input 
                                       type="number" 
-                                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #94a3b8', textAlign: 'center', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input center"
                                       value={f.cant}
                                       onChange={(e) => updateFilaLote(activeTabLote, 'filasConceptos', f.id, 'cant', e.target.value)}
                                     />
                                  </div>
-                                 <div style={{ flex: 1 }}>
-                                    <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '5px' }}>Precio U. ($)</label>
+<div className="cqm-row-num">
+<label className="cqm-label">Precio U. ($)</label>
                                     <input 
                                       type="number" 
-                                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #94a3b8', textAlign: 'right', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input right"
                                       value={f.precio}
                                       onChange={(e) => updateFilaLote(activeTabLote, 'filasConceptos', f.id, 'precio', e.target.value)}
                                     />
                                  </div>
-                                 <button type="button" onClick={() => removeFilaLote(activeTabLote, 'filasConceptos', f.id)} style={{ padding: '10px 15px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#ef4444', cursor: 'pointer', height: '42px', display: 'flex', alignItems: 'center' }}><Trash2 size={18} /></button>
+                                 <button type="button" onClick={() => removeFilaLote(activeTabLote, 'filasConceptos', f.id)}className="cqm-trash-btn" aria-label="Eliminar fila"><Trash2 size={18} /></button>
                               </div>
                             </div>
                           ))}
-                          <button type="button" onClick={() => addFilaLote(activeTabLote, 'filasConceptos')} style={{ width: '100%', padding: '8px', background: '#f5f5f5', border: '1px dashed #ccc', borderRadius: '8px', marginBottom: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#666', fontWeight: 'bold' }}>
+                          <button type="button" onClick={() => addFilaLote(activeTabLote, 'filasConceptos')}className="cqm-add-btn">
                             <Plus size={16} /> AGREGAR CONCEPTO A ESTE SERVICIO
                           </button>
 
-                          <h4 style={{ color: '#f26624', borderBottom: '1px solid #f26624', paddingBottom: '5px', marginBottom: '15px', fontWeight: '800' }}>2. MATERIALES ({srv.titulo})</h4>
+<h4 className="cqm-section-title">2. MATERIALES ({srv.titulo})</h4>
                           {srv.filasMateriales.map(f => (
-                            <div key={f.id} style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '15px' }}>
-                              <div style={{ width: '100%', marginBottom: '10px' }}>
-                                 <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '5px' }}>Nombre del Material</label>
+                            <div key={f.id}className="cqm-row">
+<div className="cqm-row-main">
+<label className="cqm-label">Nombre del Material</label>
                                  <input 
                                    placeholder="Ej. Carbones..." 
-                                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #94a3b8', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input"
                                    value={f.desc}
                                    onChange={(e) => updateFilaLote(activeTabLote, 'filasMateriales', f.id, 'desc', e.target.value)}
                                  />
                               </div>
-                              <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', width: '100%' }}>
-                                 <div style={{ flex: 1 }}>
-                                    <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '5px' }}>Cant.</label>
+<div className="cqm-row-nums">
+<div className="cqm-row-num">
+<label className="cqm-label">Cant.</label>
                                     <input 
                                       type="number" 
-                                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #94a3b8', textAlign: 'center', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input center"
                                       value={f.cant}
                                       onChange={(e) => updateFilaLote(activeTabLote, 'filasMateriales', f.id, 'cant', e.target.value)}
                                     />
                                  </div>
-                                 <div style={{ flex: 1 }}>
-                                    <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '5px' }}>Costo U. ($)</label>
+<div className="cqm-row-num">
+<label className="cqm-label">Costo U. ($)</label>
                                     <input 
                                       type="number" 
-                                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #94a3b8', textAlign: 'right', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input right"
                                       value={f.precio}
                                       onChange={(e) => updateFilaLote(activeTabLote, 'filasMateriales', f.id, 'precio', e.target.value)}
                                     />
                                  </div>
-                                 <button type="button" onClick={() => removeFilaLote(activeTabLote, 'filasMateriales', f.id)} style={{ padding: '10px 15px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#ef4444', cursor: 'pointer', height: '42px', display: 'flex', alignItems: 'center' }}><Trash2 size={18} /></button>
+                                 <button type="button" onClick={() => removeFilaLote(activeTabLote, 'filasMateriales', f.id)}className="cqm-trash-btn" aria-label="Eliminar fila"><Trash2 size={18} /></button>
                               </div>
                             </div>
                           ))}
-                          <button type="button" onClick={() => addFilaLote(activeTabLote, 'filasMateriales')} style={{ width: '100%', padding: '8px', background: '#f5f5f5', border: '1px dashed #ccc', borderRadius: '8px', marginBottom: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#666', fontWeight: 'bold' }}>
+                          <button type="button" onClick={() => addFilaLote(activeTabLote, 'filasMateriales')}className="cqm-add-btn">
                             <Plus size={16} /> AGREGAR MATERIAL A ESTE SERVICIO
                           </button>
                         </div>
@@ -706,81 +666,81 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
                     })()
                   ) : (
                     <>
-                      <h4 style={{ color: '#f26624', borderBottom: '1px solid #f26624', paddingBottom: '5px', marginBottom: '15px', fontWeight: '800' }}>1. CONCEPTOS DE SERVICIO</h4>
+<h4 className="cqm-section-title">1. CONCEPTOS DE SERVICIO</h4>
                       {filasConceptos.map(f => (
-                        <div key={f.id} style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '15px' }}>
-                          <div style={{ width: '100%', marginBottom: '10px' }}>
-                             <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '5px' }}>Descripción del Servicio</label>
+                        <div key={f.id}className="cqm-row">
+<div className="cqm-row-main">
+<label className="cqm-label">Descripción del Servicio</label>
                              <input 
                                placeholder="Ej. Cambio de carbones a máquina..." 
-                               style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #94a3b8', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input"
                                value={f.desc}
                                onChange={(e) => updateFila(setFilasConceptos, f.id, 'desc', e.target.value)}
                              />
                           </div>
-                          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', width: '100%' }}>
-                             <div style={{ flex: 1 }}>
-                                <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '5px' }}>Cant.</label>
+<div className="cqm-row-nums">
+<div className="cqm-row-num">
+<label className="cqm-label">Cant.</label>
                                 <input 
                                   type="number" 
-                                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #94a3b8', textAlign: 'center', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input center"
                                   value={f.cant}
                                   onChange={(e) => updateFila(setFilasConceptos, f.id, 'cant', e.target.value)}
                                 />
                              </div>
-                             <div style={{ flex: 1 }}>
-                                <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '5px' }}>Precio U. ($)</label>
+<div className="cqm-row-num">
+<label className="cqm-label">Precio U. ($)</label>
                                 <input 
                                   type="number" 
-                                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #94a3b8', textAlign: 'right', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input right"
                                   value={f.precio}
                                   onChange={(e) => updateFila(setFilasConceptos, f.id, 'precio', e.target.value)}
                                 />
                              </div>
-                             <button type="button" onClick={() => removeFila(setFilasConceptos, f.id)} style={{ padding: '10px 15px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#ef4444', cursor: 'pointer', height: '42px', display: 'flex', alignItems: 'center' }}><Trash2 size={18} /></button>
+                             <button type="button" onClick={() => removeFila(setFilasConceptos, f.id)}className="cqm-trash-btn" aria-label="Eliminar fila"><Trash2 size={18} /></button>
                           </div>
                         </div>
                       ))}
-                      <button type="button" onClick={() => addFila(setFilasConceptos)} style={{ width: '100%', padding: '8px', background: '#f5f5f5', border: '1px dashed #ccc', borderRadius: '8px', marginBottom: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#666', fontWeight: 'bold' }}>
+                      <button type="button" onClick={() => addFila(setFilasConceptos)}className="cqm-add-btn">
                         <Plus size={16} /> AGREGAR CONCEPTO
                       </button>
 
-                      <h4 style={{ color: '#f26624', borderBottom: '1px solid #f26624', paddingBottom: '5px', marginBottom: '15px', fontWeight: '800' }}>2. MATERIALES</h4>
+<h4 className="cqm-section-title">2. MATERIALES</h4>
                       {filasMateriales.map(f => (
-                        <div key={f.id} style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '15px' }}>
-                          <div style={{ width: '100%', marginBottom: '10px' }}>
-                             <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '5px' }}>Nombre del Material</label>
+                        <div key={f.id}className="cqm-row">
+<div className="cqm-row-main">
+<label className="cqm-label">Nombre del Material</label>
                              <input 
                                placeholder="Ej. Carbones..." 
-                               style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #94a3b8', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input"
                                value={f.desc}
                                onChange={(e) => updateFila(setFilasMateriales, f.id, 'desc', e.target.value)}
                              />
                           </div>
-                          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', width: '100%' }}>
-                             <div style={{ flex: 1 }}>
-                                <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '5px' }}>Cant.</label>
+<div className="cqm-row-nums">
+<div className="cqm-row-num">
+<label className="cqm-label">Cant.</label>
                                 <input 
                                   type="number" 
-                                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #94a3b8', textAlign: 'center', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input center"
                                   value={f.cant}
                                   onChange={(e) => updateFila(setFilasMateriales, f.id, 'cant', e.target.value)}
                                 />
                              </div>
-                             <div style={{ flex: 1 }}>
-                                <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '5px' }}>Costo U. ($)</label>
+<div className="cqm-row-num">
+<label className="cqm-label">Costo U. ($)</label>
                                 <input 
                                   type="number" 
-                                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #94a3b8', textAlign: 'right', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input right"
                                   value={f.precio}
                                   onChange={(e) => updateFila(setFilasMateriales, f.id, 'precio', e.target.value)}
                                 />
                              </div>
-                             <button type="button" onClick={() => removeFila(setFilasMateriales, f.id)} style={{ padding: '10px 15px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#ef4444', cursor: 'pointer', height: '42px', display: 'flex', alignItems: 'center' }}><Trash2 size={18} /></button>
+                             <button type="button" onClick={() => removeFila(setFilasMateriales, f.id)}className="cqm-trash-btn" aria-label="Eliminar fila"><Trash2 size={18} /></button>
                           </div>
                         </div>
                       ))}
-                      <button type="button" onClick={() => addFila(setFilasMateriales)} style={{ width: '100%', padding: '8px', background: '#f5f5f5', border: '1px dashed #ccc', borderRadius: '8px', marginBottom: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#666', fontWeight: 'bold' }}>
+                      <button type="button" onClick={() => addFila(setFilasMateriales)}className="cqm-add-btn">
                         <Plus size={16} /> AGREGAR MATERIAL
                       </button>
                     </>
@@ -788,40 +748,40 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
 
                   <textarea 
                     placeholder="Observaciones para el CLIENTE..."
-                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '2px solid #94a3b8', minHeight: '80px', marginBottom: '15px', background: '#fff', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input cqm-textarea"
                     value={observaciones}
                     onChange={(e) => setObservaciones(e.target.value)}
                   />
 
-                  <div style={{ background: '#fff8e1', padding: '12px', borderRadius: '8px', border: '1px solid #ffe082' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#d97706', display: 'block', marginBottom: '5px' }}>
+<div className="cqm-internal">
+<label className="cqm-internal-label">
                       COMENTARIOS INTERNOS (Solo Admin/Técnico):
                     </label>
                     <textarea 
                       placeholder="Notas que el cliente NO verá..."
-                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '2px solid #d97706', minHeight: '80px', background: '#fffde7', color: '#0f172a', fontWeight: '600' }}
+className="cqm-input cqm-textarea internal"
                       value={observacionesInternas}
                       onChange={(e) => setObservacionesInternas(e.target.value)}
                     />
                   </div>
                 </div>
               ) : (
-                <div className="file-upload-zone" style={{ padding: '40px', border: '2px dashed #ddd', borderRadius: '12px', textAlign: 'center', background: '#f9f9f9', marginBottom: '20px' }}>
-                  <Upload size={48} color="#999" style={{ marginBottom: '15px' }} />
-                  <p style={{ color: '#555', marginBottom: '15px' }}>{archivo ? `Archivo seleccionado: ${archivo.name}` : 'Suelte el archivo aquí o haga clic para buscar'}</p>
+<div className="file-upload-zone cqm-file-zone">
+<Upload size={44} className="cqm-file-icon" />
+<p className="cqm-file-text">{archivo ? `Archivo seleccionado: ${archivo.name}` : 'Suelte el archivo aquí o haga clic para buscar'}</p>
                   <input 
                     type="file" 
                     onChange={(e) => setArchivo(e.target.files[0])}
                     style={{ display: 'none' }}
                     id="file-input"
                   />
-                  <button onClick={() => document.getElementById('file-input').click()} style={{ padding: '10px 20px', background: '#1c252e', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+<button type="button" className="cqm-btn primary" onClick={() => document.getElementById('file-input').click()}>
                     SELECCIONAR ARCHIVO
                   </button>
                 </div>
               )}
 
-              <div className="modal-summary-footer" style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8f9fa', padding: '15px', borderRadius: '12px' }}>
+<div className="modal-summary-footer cqm-summary">
                 {/* Desglose de precios */}
                 {tab === 'manual' && (() => {
                   const { subtotal, iva, comisionMP, total } = calcularTotales();
@@ -844,7 +804,7 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
                       </div>
                       <div style={{ borderTop: '2px solid #ddd', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '0.9rem', color: '#333', fontWeight: '700' }}>TOTAL A COBRAR AL CLIENTE:</span>
-                        <h3 style={{ margin: 0, color: '#ff8800', fontSize: '1.5rem' }}>{fmt(total)}</h3>
+<h3 className="cqm-total">{fmt(total)}</h3>
                       </div>
                     </div>
                   );
@@ -852,15 +812,16 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
                 {tab === 'archivo' && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.9rem', color: '#666' }}>TOTAL ESTIMADO:</span>
-                    <h3 style={{ margin: 0, color: '#ff8800', fontSize: '1.5rem' }}>—</h3>
+<h3 className="cqm-total">—</h3>
                   </div>
                 )}
-                <div className="footer-btns-container" style={{ display: 'flex', gap: '10px', width: '100%', justifyContent: 'flex-end', marginTop: '4px' }}>
-                  <button onClick={() => setStep(1)} style={{ padding: '12px 20px', background: '#eee', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>VOLVER</button>
+<div className="footer-btns-container cqm-footer-btns">
+<button type="button" className="cqm-btn secondary" onClick={() => setStep(1)}>VOLVER</button>
                   <button 
                     onClick={handleGuardar} 
+                    type="button"
+                    className="cqm-btn primary"
                     disabled={loading}
-                    style={{ padding: '12px 30px', background: '#ff8800', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 12px rgba(255,136,0,0.3)' }}
                   >
                     {loading ? 'ENVIANDO...' : 'GUARDAR Y ENVIAR'}
                   </button>

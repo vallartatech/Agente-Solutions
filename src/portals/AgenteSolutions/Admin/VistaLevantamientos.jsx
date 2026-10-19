@@ -440,7 +440,7 @@ const VistaLevantamientos = () => {
                   {cargando ? (
                     <tr>
                       <td colSpan="5">
-                        <CasaLoader texto="Cargando levantamientos..." fondoOscuro />
+                        <CasaLoader texto="Cargando levantamientos..." />
                       </td>
                     </tr>
                   ) : serviciosFiltrados.length > 0 ? (
@@ -481,7 +481,7 @@ const VistaLevantamientos = () => {
                                s.assigned_to ? 'Programado' : 'Por Asignar'}
                             </span>
                           ) : (
-                            <span style={{ fontWeight: '700', color: '#e2e8f0' }}>
+                            <span style={{ fontWeight: '700', color: '#334155' }}>
                               {s.tecnico_nombre || "Técnico Agente"}
                             </span>
                           )}
@@ -772,8 +772,8 @@ const VistaLevantamientos = () => {
               </button>
             </div>
 
-            <p style={{ fontSize: '0.9rem', color: '#cbd5e1', marginBottom: '16px' }}>
-              Servicio: <strong style={{ color: '#fff' }}>{servicioSeleccionado?.title}</strong>
+            <p style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '16px' }}>
+              Servicio: <strong style={{ color: '#0f172a' }}>{servicioSeleccionado?.title}</strong>
             </p>
 
             <form onSubmit={manejarConfirmarAgenda}>
@@ -845,10 +845,10 @@ const VistaLevantamientos = () => {
 
             {modalClientePaso === 1 ? (
               <div>
-                <p style={{ fontSize: '0.9rem', color: '#cbd5e1', marginBottom: '14px' }}>
+                <p style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '14px' }}>
                   Un técnico ha sido asignado para tu visita técnica:
                 </p>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.95)', padding: '16px', borderRadius: '16px', marginBottom: '20px', color: '#334155' }}>
                   <p style={{ margin: '0 0 6px 0', fontSize: '0.9rem' }}>
                     <strong>Técnico:</strong> {servicioSeleccionado.tecnico_nombre || "Técnico Agente"}
                   </p>
@@ -872,7 +872,7 @@ const VistaLevantamientos = () => {
                   <button 
                     type="button" 
                     className="lev-btn-submit-modal" 
-                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', marginTop: 0 }}
+                    style={{ background: 'rgba(241,245,249,0.85)', border: '1.5px solid rgba(203,213,225,0.9)', color: '#334155', boxShadow: '0 4px 12px rgba(15,23,42,0.08)', marginTop: 0 }}
                     onClick={() => setModalClientePaso(2)}
                   >
                     REAGENDAR
@@ -907,7 +907,7 @@ const VistaLevantamientos = () => {
                   <button 
                     type="button" 
                     className="lev-btn-submit-modal" 
-                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', marginTop: 0 }}
+                    style={{ background: 'rgba(241,245,249,0.85)', border: '1.5px solid rgba(203,213,225,0.9)', color: '#334155', boxShadow: '0 4px 12px rgba(15,23,42,0.08)', marginTop: 0 }}
                     onClick={() => setModalClientePaso(1)}
                   >
                     VOLVER
@@ -958,14 +958,14 @@ const VistaLevantamientos = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
                 <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' }}>NOMBRE</span>
-                <p style={{ margin: '2px 0 0 0', fontWeight: '700', fontSize: '1rem', color: '#fff' }}>
+                <p style={{ margin: '2px 0 0 0', fontWeight: '700', fontSize: '1rem', color: '#0f172a' }}>
                   {detallePropiedad.propiedad_nombre || detallePropiedad.title}
                 </p>
               </div>
 
               <div>
                 <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' }}>DIRECCIÓN</span>
-                <p style={{ margin: '2px 0 0 0', fontWeight: '600', fontSize: '0.9rem', color: '#cbd5e1' }}>
+                <p style={{ margin: '2px 0 0 0', fontWeight: '600', fontSize: '0.9rem', color: '#475569' }}>
                   {detallePropiedad.direccion || "No especificada"}
                 </p>
               </div>
@@ -973,7 +973,7 @@ const VistaLevantamientos = () => {
               {detallePropiedad.cliente_nombre && (
                 <div>
                   <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' }}>CLIENTE / PROPIETARIO</span>
-                  <p style={{ margin: '2px 0 0 0', fontWeight: '600', fontSize: '0.9rem', color: '#cbd5e1' }}>
+                  <p style={{ margin: '2px 0 0 0', fontWeight: '600', fontSize: '0.9rem', color: '#475569' }}>
                     {detallePropiedad.cliente_nombre}
                   </p>
                 </div>
@@ -982,7 +982,7 @@ const VistaLevantamientos = () => {
               {detallePropiedad.description && (
                 <div>
                   <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' }}>NOTAS / INSTRUCCIONES</span>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: '#94a3b8', background: 'rgba(255,255,255,0.04)', padding: '10px', borderRadius: '8px' }}>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: '#475569', background: 'rgba(241,245,249,0.8)', padding: '10px', borderRadius: '12px' }}>
                     {detallePropiedad.description}
                   </p>
                 </div>
@@ -992,7 +992,7 @@ const VistaLevantamientos = () => {
             <button 
               type="button" 
               className="lev-btn-submit-modal" 
-              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', marginTop: '20px' }}
+              style={{ background: 'rgba(241,245,249,0.85)', border: '1.5px solid rgba(203,213,225,0.9)', color: '#334155', boxShadow: '0 4px 12px rgba(15,23,42,0.08)', marginTop: '20px' }}
               onClick={() => setModalDetalleVisible(false)}
             >
               CERRAR

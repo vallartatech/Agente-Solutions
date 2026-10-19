@@ -386,7 +386,7 @@ const VistaUsuarios = () => {
                     className={`vu-filter-menu-item ${filtro === "TODOS" ? "selected" : ""}`}
                     onClick={() => { setFiltro("TODOS"); setFilterDropdownOpen(false); }}
                   >
-                    <Users size={14} />
+                    <span className="vu-menu-icon orange"><Users size={16} strokeWidth={2.4} /></span>
                     <span>{isClientPortalUser ? "Todos los Técnicos" : "Todos los Usuarios"}</span>
                     <span className="vu-menu-badge">{listaUsuarios.length}</span>
                   </button>
@@ -396,7 +396,7 @@ const VistaUsuarios = () => {
                     className={`vu-filter-menu-item ${filtro === "TECNICOS_AGENTE" ? "selected" : ""}`}
                     onClick={() => { setFiltro("TECNICOS_AGENTE"); setFilterDropdownOpen(false); }}
                   >
-                    <Wrench size={14} color="#0284c7" />
+                    <span className="vu-menu-icon blue"><Wrench size={16} strokeWidth={2.4} /></span>
                     <span>{isClientPortalUser ? "Mis Técnicos Agente" : "Técnicos Agente"}</span>
                     <span className="vu-menu-badge">{countTecnicosAgente}</span>
                   </button>
@@ -406,7 +406,7 @@ const VistaUsuarios = () => {
                     className={`vu-filter-menu-item ${filtro === "TECNICOS_RED" ? "selected" : ""}`}
                     onClick={() => { setFiltro("TECNICOS_RED"); setFilterDropdownOpen(false); }}
                   >
-                    <Wrench size={14} color="#06b6d4" />
+                    <span className="vu-menu-icon cyan"><Wrench size={16} strokeWidth={2.4} /></span>
                     <span>Técnicos de la Red</span>
                     <span className="vu-menu-badge">{countTecnicosRed}</span>
                   </button>
@@ -417,7 +417,7 @@ const VistaUsuarios = () => {
                       className={`vu-filter-menu-item ${filtro === "CALIFICADOS" ? "selected" : ""}`}
                       onClick={() => { setFiltro("CALIFICADOS"); setFilterDropdownOpen(false); }}
                     >
-                      <Star size={14} color="#f59e0b" fill="#f59e0b" />
+                      <span className="vu-menu-icon amber"><Star size={16} strokeWidth={2.4} fill="#ffffff" /></span>
                       <span>Historial de Calificados</span>
                       <span className="vu-menu-badge">{countCalificados}</span>
                     </button>
@@ -430,7 +430,7 @@ const VistaUsuarios = () => {
                         className={`vu-filter-menu-item ${filtro === "CLIENTES" ? "selected" : ""}`}
                         onClick={() => { setFiltro("CLIENTES"); setFilterDropdownOpen(false); }}
                       >
-                        <User size={14} color="#16a34a" />
+                        <span className="vu-menu-icon green"><User size={16} strokeWidth={2.4} /></span>
                         <span>Clientes</span>
                         <span className="vu-menu-badge">{countClientes}</span>
                       </button>
@@ -440,7 +440,7 @@ const VistaUsuarios = () => {
                         className={`vu-filter-menu-item ${filtro === "CONTRATISTAS" ? "selected" : ""}`}
                         onClick={() => { setFiltro("CONTRATISTAS"); setFilterDropdownOpen(false); }}
                       >
-                        <HardHat size={14} color="#0d9488" />
+                        <span className="vu-menu-icon teal"><HardHat size={16} strokeWidth={2.4} /></span>
                         <span>Contratistas</span>
                         <span className="vu-menu-badge">{countContratistas}</span>
                       </button>
@@ -450,7 +450,7 @@ const VistaUsuarios = () => {
                         className={`vu-filter-menu-item ${filtro === "AUTONOMOS" ? "selected" : ""}`}
                         onClick={() => { setFiltro("AUTONOMOS"); setFilterDropdownOpen(false); }}
                       >
-                        <Briefcase size={14} color="#8b5cf6" />
+                        <span className="vu-menu-icon violet"><Briefcase size={16} strokeWidth={2.4} /></span>
                         <span>Autónomos</span>
                         <span className="vu-menu-badge">{countAutonomos}</span>
                       </button>
@@ -460,21 +460,21 @@ const VistaUsuarios = () => {
                         className={`vu-filter-menu-item ${filtro === "ADMINS" ? "selected" : ""}`}
                         onClick={() => { setFiltro("ADMINS"); setFilterDropdownOpen(false); }}
                       >
-                        <Shield size={14} color="#ea580c" />
+                        <span className="vu-menu-icon dark"><Shield size={16} strokeWidth={2.4} /></span>
                         <span>Administradores</span>
                         <span className="vu-menu-badge">{countAdmins}</span>
                       </button>
                     </>
                   )}
 
-                  <div style={{ height: '1px', background: 'rgba(0,0,0,0.08)', margin: '4px 0' }} />
+                  <div className="vu-menu-divider" />
 
                   <button
                     type="button"
                     className={`vu-filter-menu-item ${filtro === "ACTIVOS" ? "selected-green" : ""}`}
                     onClick={() => { setFiltro("ACTIVOS"); setFilterDropdownOpen(false); }}
                   >
-                    <CheckCircle2 size={14} color="#10b981" />
+                    <span className="vu-menu-icon green"><CheckCircle2 size={16} strokeWidth={2.4} /></span>
                     <span>Activos</span>
                     <span className="vu-menu-badge green">{activosCount}</span>
                   </button>
@@ -485,7 +485,7 @@ const VistaUsuarios = () => {
                       className={`vu-filter-menu-item ${filtro === "BLOQUEADOS" ? "selected-red" : ""}`}
                       onClick={() => { setFiltro("BLOQUEADOS"); setFilterDropdownOpen(false); }}
                     >
-                      <Lock size={14} color="#ef4444" />
+                      <span className="vu-menu-icon red"><Lock size={16} strokeWidth={2.4} /></span>
                       <span>Bloqueados / Inactivos</span>
                       <span className="vu-menu-badge red">{bloqueadosCount}</span>
                     </button>

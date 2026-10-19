@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './styles/Shared/SweetAlertGlass.css'
 import App from './App.jsx'
 
 // Capturar el evento de instalación lo antes posible (puede dispararse antes de que React monte InstallPrompt)

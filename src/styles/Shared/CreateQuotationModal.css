@@ -1,0 +1,482 @@
+/* ==========================================================================
+   MODAL "NUEVA COTIZACIÓN" (CreateQuotationModal) — LIQUID GLASS BLANCO
+   Mismo vidrio que SweetAlertGlass.css / .folder-modal.
+   Botones de color planos (sin brillo). Se acota con .cqm-* para no
+   chocar con .modal-box-card / .modal-header-dark de VistaCotizaciones.css.
+   ========================================================================== */
+
+.cqm-overlay {
+    background: rgba(15, 23, 42, 0.32) !important;
+    backdrop-filter: blur(5px) saturate(120%);
+    -webkit-backdrop-filter: blur(5px) saturate(120%);
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.cqm-overlay .cqm-card {
+    width: 100%;
+    max-width: 800px;
+    height: 90vh;
+    height: 90dvh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 28px;
+    overflow: hidden;
+    color: #334155;
+    background:
+        radial-gradient(120% 60% at 0% 0%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 55%),
+        radial-gradient(90% 50% at 100% 100%, rgba(255, 140, 66, 0.10) 0%, rgba(255, 140, 66, 0) 60%),
+        linear-gradient(160deg, rgba(255, 255, 255, 0.88) 0%, rgba(241, 245, 249, 0.8) 100%);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow:
+        0 30px 80px rgba(15, 23, 42, 0.28),
+        0 0 32px rgba(242, 101, 34, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 1);
+    font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif;
+    box-sizing: border-box;
+}
+
+/* Encabezado blanco (antes negro) */
+.cqm-overlay .cqm-header {
+    flex-shrink: 0;
+    gap: 12px;
+    padding: 18px 22px !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.84) 100%) !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+    color: #0f172a !important;
+}
+
+.cqm-overlay .cqm-header h2 {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+    font-size: 1.1rem !important;
+    letter-spacing: -0.2px;
+    line-height: 1.25;
+}
+
+.cqm-header-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: #f26522;
+    color: #fff;
+}
+
+.cqm-overlay .cqm-close {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50% !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    background: rgba(241, 245, 249, 0.85) !important;
+    color: #475569 !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), inset 0 1px 0 #fff;
+    transition: background-color 0.2s ease;
+}
+
+.cqm-overlay .cqm-close:hover { background: rgba(226, 232, 240, 0.95) !important; }
+
+.cqm-overlay .cqm-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(242, 101, 34, 0.45) transparent;
+}
+
+.cqm-step-title {
+    margin: 0 0 16px;
+    color: #0f172a;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+/* Buscador */
+.cqm-search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #f26522;
+    pointer-events: none;
+}
+
+.cqm-search-input {
+    width: 100%;
+    padding: 14px 16px 14px 46px;
+    border-radius: 16px;
+    border: 1.5px solid rgba(203, 213, 225, 0.9);
+    background: rgba(255, 255, 255, 0.75);
+    color: #0f172a;
+    font-size: 16px; /* evita zoom en iOS */
+    font-family: inherit;
+    box-sizing: border-box;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.cqm-search-input::placeholder { color: #94a3b8; }
+
+.cqm-search-input:focus,
+.cqm-input:focus {
+    outline: none;
+    background: #fff;
+    border-color: #f26522;
+    box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.18);
+}
+
+/* Lista de servicios */
+.cqm-results {
+    margin-top: 16px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 2px 4px 2px 0;
+}
+
+.cqm-empty {
+    padding: 30px;
+    text-align: center;
+    color: #64748b;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1.5px dashed rgba(148, 163, 184, 0.6);
+    border-radius: 18px;
+}
+
+.cqm-overlay .servicio-item-card {
+    display: flex;
+    gap: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: 18px;
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.62);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06), inset 0 1px 0 #fff;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cqm-overlay .servicio-item-card:hover {
+    transform: translateY(-1px);
+    border-color: #fdba74;
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.cqm-overlay .servicio-item-card.selected {
+    border-color: #f26522;
+    background: rgba(255, 247, 237, 0.92);
+    box-shadow: 0 6px 18px rgba(242, 101, 34, 0.14), inset 0 1px 0 #fff;
+}
+
+.cqm-thumb {
+    position: relative;
+    width: 88px;
+    height: 88px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 14px;
+    background: #f1f5f9;
+    border: 1px solid rgba(203, 213, 225, 0.8);
+}
+
+.cqm-chip {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(241, 245, 249, 0.95);
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.cqm-chip.selected {
+    background: rgba(242, 101, 34, 0.12);
+    color: #ea580c;
+}
+
+/* Botones planos */
+.cqm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cqm-btn.block { width: 100%; margin-top: 18px; padding: 14px; }
+
+.cqm-btn.primary {
+    border: none;
+    background: #f26522;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(242, 101, 34, 0.25);
+}
+
+.cqm-btn.primary:hover:not(:disabled) { background: #ea580c; transform: translateY(-1px); }
+
+.cqm-btn.secondary {
+    border: 1.5px solid rgba(203, 213, 225, 0.9);
+    background: rgba(241, 245, 249, 0.85);
+    color: #334155;
+}
+
+.cqm-btn.secondary:hover:not(:disabled) { background: rgba(226, 232, 240, 0.95); color: #0f172a; border-color: rgba(203, 213, 225, 0.9); }
+.cqm-btn:active:not(:disabled) { transform: scale(0.97); }
+.cqm-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Pestañas Manual / Archivo: control segmentado de vidrio */
+.cqm-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    padding: 5px;
+    border-radius: 999px;
+    background: rgba(241, 245, 249, 0.85);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.cqm-tab {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: #475569;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cqm-tab:hover { color: #0f172a; border-color: transparent; }
+
+.cqm-tab.active {
+    background: #fff;
+    color: #ea580c;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+/* Lote unificado */
+.cqm-lote-box {
+    margin-bottom: 20px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255, 247, 237, 0.85);
+    border: 1.5px solid rgba(253, 186, 116, 0.7);
+}
+
+.cqm-lote-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: #9a3412;
+    font-size: 0.88rem;
+    font-weight: 800;
+}
+
+.cqm-lote-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+
+.cqm-lote-tab {
+    padding: 8px 16px;
+    border: 1px solid rgba(253, 186, 116, 0.7);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.8);
+    color: #c2410c;
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.cqm-lote-tab.active { background: #f26522; border-color: #f26522; color: #fff; font-weight: 800; }
+
+.cqm-lote-banner {
+    margin-bottom: 15px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.7);
+    border-left: 4px solid #f26522;
+    color: #0f172a;
+    font-weight: 800;
+}
+
+/* Conceptos y materiales */
+.cqm-section-title {
+    margin: 4px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1.5px solid rgba(242, 101, 34, 0.35);
+    color: #ea580c;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+}
+
+.cqm-row {
+    margin-bottom: 12px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05), inset 0 1px 0 #fff;
+}
+
+.cqm-row-main { width: 100%; margin-bottom: 10px; }
+.cqm-row-nums { display: flex; gap: 10px; align-items: flex-end; width: 100%; }
+.cqm-row-num { flex: 1; min-width: 0; }
+
+.cqm-label {
+    display: block;
+    margin: 0 0 5px 4px;
+    color: #334155;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.cqm-input {
+    width: 100%;
+    padding: 11px 13px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(203, 213, 225, 0.9);
+    background: rgba(255, 255, 255, 0.8);
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 16px; /* evita zoom en iOS */
+    font-weight: 600;
+    box-sizing: border-box;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.cqm-input::placeholder { color: #94a3b8; font-weight: 500; }
+.cqm-input.center { text-align: center; }
+.cqm-input.right { text-align: right; }
+
+.cqm-textarea { min-height: 84px; resize: vertical; margin-bottom: 14px; }
+
+.cqm-trash-btn {
+    height: 44px;
+    width: 44px;
+    flex-shrink: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    border: 1px solid rgba(252, 165, 165, 0.7);
+    background: rgba(254, 226, 226, 0.75);
+    color: #dc2626;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.cqm-trash-btn:hover { background: #fecaca; border-color: rgba(252, 165, 165, 0.9); }
+
+.cqm-add-btn {
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 14px;
+    border: 1.5px dashed rgba(148, 163, 184, 0.7);
+    background: rgba(255, 255, 255, 0.55);
+    color: #475569;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.cqm-add-btn:hover { background: rgba(255, 247, 237, 0.9); border-color: #fdba74; color: #c2410c; }
+
+/* Comentarios internos */
+.cqm-internal {
+    padding: 12px;
+    border-radius: 18px;
+    background: rgba(254, 243, 199, 0.6);
+    border: 1.5px solid rgba(252, 211, 77, 0.7);
+}
+
+.cqm-internal-label {
+    display: block;
+    margin: 0 0 6px 4px;
+    color: #b45309;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.cqm-textarea.internal {
+    margin-bottom: 0;
+    border-color: rgba(245, 158, 11, 0.6);
+    background: rgba(255, 251, 235, 0.9);
+}
+
+/* Cargar archivo */
+.cqm-file-zone {
+    margin-bottom: 20px;
+    padding: 36px 20px;
+    text-align: center;
+    border-radius: 18px;
+    border: 1.5px dashed rgba(148, 163, 184, 0.7);
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.cqm-file-icon { margin-bottom: 12px; color: #f26522; }
+.cqm-file-text { margin: 0 0 14px; color: #475569; word-break: break-word; }
+
+/* Resumen de precios */
+.cqm-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06), inset 0 1px 0 #fff;
+}
+
+.cqm-total { margin: 0; color: #f26522; font-size: 1.5rem; font-weight: 800; }
+
+.cqm-footer-btns {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 6px;
+}
+
+@media (max-width: 600px) {
+    .cqm-overlay { padding: 10px; }
+    .cqm-overlay .cqm-card { border-radius: 24px; height: 92dvh; }
+    .cqm-overlay .cqm-header { padding: 14px 16px !important; }
+    .cqm-overlay .cqm-header h2 { font-size: 0.98rem !important; }
+    .cqm-overlay .cqm-body { padding: 16px !important; }
+    .cqm-thumb { width: 72px; height: 72px; }
+    .cqm-footer-btns .cqm-btn { flex: 1; padding: 12px 14px; }
+}
