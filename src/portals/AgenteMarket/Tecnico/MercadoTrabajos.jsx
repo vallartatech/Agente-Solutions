@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
+import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig";
 import MaterialDateTimePicker, { formatDateTimeHuman } from '../../../components/Shared/MaterialDateTimePicker';
 import Swal from 'sweetalert2';
 import { 
@@ -357,10 +358,7 @@ export const extraerFotosDeTrabajo = (order) => {
 };
 
 const MercadoTrabajos = () => {
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyDgyTj0X6kgGoMV8NxQGDp4-Nx0bxJd0Hw"
-  });
+  const { isLoaded } = useJsApiLoader(GOOGLE_MAPS_LOADER);
 
   const navigate = useNavigate();
   const location = useLocation();

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindow, Polyline, Marker } from '@react-google-maps/api';
+import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig";
 import { Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield, X } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import '../../../styles/AgenteSolutions/Admin/VistaMapaEquipo.css';
@@ -169,10 +170,7 @@ const MAP_OPTIONS = {
 };
 
 const VistaMapaEquipo = () => {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyDgyTj0X6kgGoMV8NxQGDp4-Nx0bxJd0Hw'
-  });
+  const { isLoaded, loadError } = useJsApiLoader(GOOGLE_MAPS_LOADER);
 
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -25,6 +25,7 @@ import {
   MarkerF,
   Autocomplete,
 } from "@react-google-maps/api";
+import { GOOGLE_MAPS_LOADER } from "./Shared/googleMapsConfig";
 import "../styles/Shared/RegisterProperties.css";
 
 const containerStyle = {
@@ -37,9 +38,6 @@ const defaultCenter = {
   lat: 20.9673,
   lng: -89.6236,
 };
-
-// Librerias Google Maps
-const libraries = ["places"];
 
 const RegisterProperties = () => {
   const navigate = useNavigate(); 
@@ -81,11 +79,7 @@ const RegisterProperties = () => {
     }
   }, [navigate]); 
 
-  const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyDgyTj0X6kgGoMV8NxQGDp4-Nx0bxJd0Hw",
-    libraries: libraries,
-  });
+  const { isLoaded } = useJsApiLoader(GOOGLE_MAPS_LOADER);
 
   const [formData, setFormData] = useState({
     client_id: 1,

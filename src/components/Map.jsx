@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow, Polyline } from '@react-google-maps/api';
+import { GOOGLE_MAPS_LOADER } from "./Shared/googleMapsConfig";
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import logoAgente from '../assets/Logo_simple.png';
@@ -61,10 +62,7 @@ const Map = () => {
     }
   }, []);
 
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyDgyTj0X6kgGoMV8NxQGDp4-Nx0bxJd0Hw"
-  });
+  const { isLoaded } = useJsApiLoader(GOOGLE_MAPS_LOADER);
 
   const cargarDatos = async () => {
     try {

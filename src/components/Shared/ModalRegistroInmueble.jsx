@@ -16,6 +16,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import SelectorUbicacionMapa from './SelectorUbicacionMapa';
 import '../../styles/AgenteMarket/Cliente/ModalRegistroInmueble.css';
 import '../../styles/Shared/LiquidGlass.css';
 
@@ -56,7 +57,7 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
   const [fotoFile, setFotoFile] = useState(null);
   const [fotoPreview, setFotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [detectingGps, setDetectingGps] = useState(false);
+  const [mapaAbierto, setMapaAbierto] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
 
@@ -107,29 +108,6 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
       setFotoFile(file);
       setFotoPreview(URL.createObjectURL(file));
     }
-  };
-
-  // Detección de coordenadas GPS del navegador
-  const handleDetectGPS = () => {
-    if (!navigator.geolocation) {
-      alert('Tu navegador no soporta geolocalización GPS.');
-      return;
-    }
-
-    setDetectingGps(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
-        setFormData(prev => ({ ...prev, coordinates: coords }));
-        setDetectingGps(false);
-      },
-      (err) => {
-        console.warn('Error al obtener ubicación:', err);
-        setFormData(prev => ({ ...prev, coordinates: '20.967370, -89.592586' }));
-        setDetectingGps(false);
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
   };
 
   const handleSubmit = async (e) => {
@@ -416,18 +394,9 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
                 <button
                   type="button"
                   className="mri-gps-btn"
-                  onClick={handleDetectGPS}
-                  disabled={detectingGps}
+                  onClick={() => setMapaAbierto(true)}
                 >
-                  {detectingGps ? (
-                    <>
-                      <Loader2 size={15} className="animate-spin" /> OBTENIENDO...
-                    </>
-                  ) : (
-                    <>
-                      <MapPin size={15} /> FIJAR EN MAPA
-                    </>
-                  )}
+                  <MapPin size={15} /> {formData.coordinates ? 'MODIFICAR' : 'FIJAR EN MAPA'}
                 </button>
               </div>
             </div>
@@ -457,6 +426,13 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
           </div>
         </form>
       </div>
+
+      <SelectorUbicacionMapa
+        isOpen={mapaAbierto}
+        onClose={() => setMapaAbierto(false)}
+        onConfirm={(coords) => setFormData(prev => ({ ...prev, coordinates: coords }))}
+        coordenadasIniciales={formData.coordinates}
+      />
     </div>,
     document.body
   );
