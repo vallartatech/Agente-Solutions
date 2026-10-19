@@ -123,7 +123,12 @@ const emptyNoticeForm = (dateKey = null) => {
     event_date: key,
     dateMode: key === today ? 'today' : key === tomorrow ? 'tomorrow' : 'other',
     description: '',
-    important: false
+    important: false,
+    // Etiqueta libre ("Cita con un cliente", "Junta"...) y horario opcional
+    label: '',
+    allDay: true,
+    start_time: '09:00',
+    end_time: '10:00'
   };
 };
 
@@ -356,7 +361,10 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   // Helper para procesar un aviso o evento a un objeto estándar de calendario
   const processNoticeToEvent = useCallback((notice) => {
     const dateStr = notice.event_date;
-    const timeStr = notice.start_time ? notice.start_time.substring(0, 5) : 'Todo el día';
+    // "09:00 – 11:00", "09:00" o "Todo el día"
+    const timeStr = notice.start_time
+      ? `${notice.start_time.substring(0, 5)}${notice.end_time ? ` – ${notice.end_time.substring(0, 5)}` : ''}`
+      : 'Todo el día';
     const hourNum = notice.start_time ? parseInt(notice.start_time.split(':')[0], 10) : 9;
 
     let eventDate = new Date(`${dateStr}T${notice.start_time || '09:00:00'}`);
@@ -369,6 +377,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     else if (type === 'reunion') badge = '👥 Reunión';
     else if (type === 'mantenimiento') badge = '🔧 Mantto.';
     else if (type === 'otro') badge = '📌 Evento';
+    // La etiqueta del aviso ("Cita con un cliente", "Junta"...) tiene prioridad sobre el tipo
+    if (notice.label) badge = `${type === 'importante' ? '🔴' : '🏷️'} ${notice.label}`;
 
     const now = new Date();
     const todayDateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -378,7 +388,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       noticeId: notice.id,
       isNotice: true,
       rawNotice: notice,
-      titulo: notice.title,
+      // "Junta · Revisión mensual": la etiqueta se ve también en los recuadros del mes y la semana
+      titulo: notice.label ? `${notice.label} · ${notice.title}` : notice.title,
+      label: notice.label || null,
       type: notice.type,
       color: notice.color || '#10b981',
       descripcion: notice.description || 'Sin notas adicionales',
@@ -623,9 +635,15 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   };
 
   // Gestión de Avisos y Fumigaciones
+  // Etiquetas ya usadas por el equipo (sugerencias del formulario de aviso)
+  const [savedLabels, setSavedLabels] = useState([]);
+
   const handleOpenCreateNotice = (customDate = null) => {
     setNoticeForm(emptyNoticeForm(typeof customDate === 'string' ? customDate : null));
     setShowCreateNoticeModal(true);
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/labels`)
+      .then(res => setSavedLabels(Array.isArray(res.data) ? res.data : []))
+      .catch(() => { /* sin sugerencias: se puede escribir igual */ });
   };
 
   const handleCreateNotice = async (e) => {
@@ -647,6 +665,15 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       return;
     }
 
+    if (!noticeForm.allDay && (!noticeForm.start_time || (noticeForm.end_time && noticeForm.end_time <= noticeForm.start_time))) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Revisa el horario',
+        text: 'La hora de fin debe ser posterior a la de inicio.'
+      });
+      return;
+    }
+
     try {
       setSubmittingNotice(true);
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
@@ -656,7 +683,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       const payload = {
         title: noticeForm.title.trim(),
         event_date: noticeForm.event_date,
-        start_time: null,
+        label: noticeForm.label.trim() || null,
+        start_time: noticeForm.allDay ? null : noticeForm.start_time,
+        end_time: noticeForm.allDay ? null : (noticeForm.end_time || null),
         type: noticeForm.important ? 'importante' : 'aviso',
         description: noticeForm.description?.trim() || null,
         color: noticeForm.important ? '#ef4444' : '#f97316',
@@ -679,6 +708,10 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
         // Actualización optimista inmediata: aparece al instante en el calendario (0ms)
         setNoticesList(prev => [newNoticeEvent, ...prev.filter(n => n.noticeId !== newNoticeEvent.noticeId)]);
+        // La etiqueta usada queda disponible como sugerencia para la próxima vez
+        if (savedEvent.label) {
+          setSavedLabels(prev => [savedEvent.label, ...prev.filter(l => l.toLowerCase() !== savedEvent.label.toLowerCase())]);
+        }
         setShowCreateNoticeModal(false);
 
         // El backend informa si OneSignal realmente aceptó el envío
@@ -1968,8 +2001,17 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
             event_date: mode === 'today' ? todayKey : mode === 'tomorrow' ? tomorrowKey : prev.event_date
           }));
           const titleLength = noticeForm.title.length;
-          const previewTitle = `${noticeForm.important ? '🔴' : '📅'} ${noticeForm.title.trim() || 'Título del aviso'}`;
-          const previewBody = `${formatNoticeDate(noticeForm.event_date)}${noticeForm.description.trim() ? ` · ${noticeForm.description.trim()}` : ''}`;
+          // Mismo formato que arma el backend en la notificación push
+          const etiqueta = noticeForm.label.trim();
+          const horario = noticeForm.allDay
+            ? ''
+            : (noticeForm.end_time ? ` · ${noticeForm.start_time} a ${noticeForm.end_time}` : ` a las ${noticeForm.start_time}`);
+          const previewTitle = `${noticeForm.important ? '🔴' : '📅'} ${etiqueta ? `${etiqueta} · ` : ''}${noticeForm.title.trim() || 'Título del aviso'}`;
+          const previewBody = `${formatNoticeDate(noticeForm.event_date)}${horario}${noticeForm.description.trim() ? ` · ${noticeForm.description.trim()}` : ''}`;
+          const filtroEtiqueta = etiqueta.toLowerCase();
+          const sugerencias = savedLabels
+            .filter(l => !filtroEtiqueta || (l.toLowerCase().includes(filtroEtiqueta) && l.toLowerCase() !== filtroEtiqueta))
+            .slice(0, 6);
           const closeModal = () => { if (!submittingNotice) setShowCreateNoticeModal(false); };
 
           return (
@@ -2015,6 +2057,38 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       />
                     </div>
 
+                    {/* Etiqueta libre: lo que se escribe una vez queda como sugerencia para todo el equipo */}
+                    <div className="nq-field">
+                      <label htmlFor="nq-input-label">Etiqueta <span className="nq-optional">(opcional)</span></label>
+                      <input
+                        id="nq-input-label"
+                        type="text"
+                        className="nq-input"
+                        placeholder="Ej: Cita con un cliente, Junta, Mantenimiento"
+                        maxLength={60}
+                        list="nq-labels"
+                        value={noticeForm.label}
+                        onChange={(e) => setNoticeForm(prev => ({ ...prev, label: e.target.value }))}
+                      />
+                      <datalist id="nq-labels">
+                        {savedLabels.map(l => <option key={l} value={l} />)}
+                      </datalist>
+                      {sugerencias.length > 0 && (
+                        <div className="nq-label-chips">
+                          {sugerencias.map(l => (
+                            <button
+                              type="button"
+                              key={l}
+                              className="nq-label-chip"
+                              onClick={() => setNoticeForm(prev => ({ ...prev, label: l }))}
+                            >
+                              {l}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="nq-field">
                       <div className="nq-label-row">
                         <label>¿Cuándo?</label>
@@ -2040,6 +2114,43 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                           onChange={(e) => setNoticeForm(prev => ({ ...prev, event_date: e.target.value }))}
                           required
                         />
+                      )}
+                    </div>
+
+                    {/* Horario opcional: todo el día o de X a Y (ej. junta de 9:00 a 11:00) */}
+                    <div className="nq-field">
+                      <label>Horario</label>
+                      <div className="nq-date-chips">
+                        <button type="button" className={`nq-chip ${noticeForm.allDay ? 'active' : ''}`} onClick={() => setNoticeForm(prev => ({ ...prev, allDay: true }))}>
+                          Todo el día
+                        </button>
+                        <button type="button" className={`nq-chip ${!noticeForm.allDay ? 'active' : ''}`} onClick={() => setNoticeForm(prev => ({ ...prev, allDay: false }))}>
+                          <Clock size={15} /> Con horario
+                        </button>
+                      </div>
+                      {!noticeForm.allDay && (
+                        <div className="nq-time-row">
+                          <label className="nq-time-field">
+                            <span>Desde</span>
+                            <input
+                              type="time"
+                              className="nq-input nq-date-input"
+                              value={noticeForm.start_time}
+                              onChange={(e) => setNoticeForm(prev => ({ ...prev, start_time: e.target.value }))}
+                              required
+                            />
+                          </label>
+                          <label className="nq-time-field">
+                            <span>Hasta</span>
+                            <input
+                              type="time"
+                              className="nq-input nq-date-input"
+                              value={noticeForm.end_time}
+                              min={noticeForm.start_time}
+                              onChange={(e) => setNoticeForm(prev => ({ ...prev, end_time: e.target.value }))}
+                            />
+                          </label>
+                        </div>
                       )}
                     </div>
 

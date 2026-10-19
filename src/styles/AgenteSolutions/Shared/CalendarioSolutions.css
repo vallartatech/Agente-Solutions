@@ -1543,3 +1543,49 @@
     width: min(280px, calc(100vw - 48px));
   }
 }
+
+/* ── NUEVO AVISO: etiquetas sugeridas y horario ── */
+.cal-solutions .nq-label-chips,
+.nq-label-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* margin/padding propios: anulan los estilos globales de button de index.css */
+.nq-label-chip {
+  margin: 0;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nq-label-chip:hover {
+  border-style: solid;
+  border-color: var(--nq-accent, #f97316);
+  color: #ffffff;
+}
+
+.nq-time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.nq-time-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nq-time-field span {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
