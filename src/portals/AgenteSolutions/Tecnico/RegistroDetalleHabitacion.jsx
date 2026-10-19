@@ -415,6 +415,74 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
             </h2>
             
             <div className="rdh-modal-form" style={{ maxHeight: '65vh', overflowY: 'auto', paddingRight: '10px' }}>
+              {/* AIRE ACONDICIONADO: formulario sencillo o con ficha técnica (como calculadora básica / científica) */}
+              {esAire && (
+                <div className="rdh-ficha">
+                  <div className="rdh-ficha-switch" role="tablist" aria-label="Tipo de formulario">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={!mostrarFicha}
+                      className={!mostrarFicha ? 'active' : ''}
+                      onClick={() => setMostrarFicha(false)}
+                    >
+                      Sencillo
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={mostrarFicha}
+                      className={mostrarFicha ? 'active' : ''}
+                      onClick={() => setMostrarFicha(true)}
+                    >
+                      <SlidersHorizontal size={14} /> Ficha técnica
+                      {camposFichaLlenos > 0 && <span className="rdh-ficha-count">{camposFichaLlenos}</span>}
+                    </button>
+                  </div>
+
+                  {mostrarFicha && (
+                    <div className="rdh-ficha-panel">
+                      <p className="rdh-ficha-hint">Todos los campos son opcionales.</p>
+                      <div className="rdh-ficha-grid">
+                        {FICHA_AIRE.map(campo => (
+                          <div key={campo.key} className="rdh-ficha-field">
+                            <label htmlFor={`ficha-${campo.key}`}>{campo.label}</label>
+                            {campo.type === 'select' ? (
+                              <select
+                                id={`ficha-${campo.key}`}
+                                className="rdh-modal-input"
+                                value={ficha[campo.key] || ''}
+                                onChange={(e) => setFicha({ ...ficha, [campo.key]: e.target.value })}
+                              >
+                                <option value="">—</option>
+                                {campo.options.map(op => <option key={op} value={op}>{op}</option>)}
+                              </select>
+                            ) : (
+                              <>
+                                <input
+                                  id={`ficha-${campo.key}`}
+                                  type={campo.type === 'number' ? 'number' : 'text'}
+                                  className="rdh-modal-input"
+                                  placeholder={campo.placeholder}
+                                  list={campo.type === 'datalist' ? `ficha-list-${campo.key}` : undefined}
+                                  value={ficha[campo.key] || ''}
+                                  onChange={(e) => setFicha({ ...ficha, [campo.key]: e.target.value.toUpperCase() })}
+                                />
+                                {campo.type === 'datalist' && (
+                                  <datalist id={`ficha-list-${campo.key}`}>
+                                    {campo.options.map(op => <option key={op} value={op} />)}
+                                  </datalist>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               
               {/* === NUEVA SECCIÓN DE FOTOS (PRINCIPAL + GALERÍA) === */}
               <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '20px' }}>
@@ -763,73 +831,6 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
                 </>
               )}
 
-              {/* AIRE ACONDICIONADO: formulario sencillo o con ficha técnica (como calculadora básica / científica) */}
-              {esAire && (
-                <div className="rdh-ficha">
-                  <div className="rdh-ficha-switch" role="tablist" aria-label="Tipo de formulario">
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={!mostrarFicha}
-                      className={!mostrarFicha ? 'active' : ''}
-                      onClick={() => setMostrarFicha(false)}
-                    >
-                      Sencillo
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={mostrarFicha}
-                      className={mostrarFicha ? 'active' : ''}
-                      onClick={() => setMostrarFicha(true)}
-                    >
-                      <SlidersHorizontal size={14} /> Ficha técnica
-                      {camposFichaLlenos > 0 && <span className="rdh-ficha-count">{camposFichaLlenos}</span>}
-                    </button>
-                  </div>
-
-                  {mostrarFicha && (
-                    <div className="rdh-ficha-panel">
-                      <p className="rdh-ficha-hint">Todos los campos son opcionales.</p>
-                      <div className="rdh-ficha-grid">
-                        {FICHA_AIRE.map(campo => (
-                          <div key={campo.key} className="rdh-ficha-field">
-                            <label htmlFor={`ficha-${campo.key}`}>{campo.label}</label>
-                            {campo.type === 'select' ? (
-                              <select
-                                id={`ficha-${campo.key}`}
-                                className="rdh-modal-input"
-                                value={ficha[campo.key] || ''}
-                                onChange={(e) => setFicha({ ...ficha, [campo.key]: e.target.value })}
-                              >
-                                <option value="">—</option>
-                                {campo.options.map(op => <option key={op} value={op}>{op}</option>)}
-                              </select>
-                            ) : (
-                              <>
-                                <input
-                                  id={`ficha-${campo.key}`}
-                                  type={campo.type === 'number' ? 'number' : 'text'}
-                                  className="rdh-modal-input"
-                                  placeholder={campo.placeholder}
-                                  list={campo.type === 'datalist' ? `ficha-list-${campo.key}` : undefined}
-                                  value={ficha[campo.key] || ''}
-                                  onChange={(e) => setFicha({ ...ficha, [campo.key]: e.target.value.toUpperCase() })}
-                                />
-                                {campo.type === 'datalist' && (
-                                  <datalist id={`ficha-list-${campo.key}`}>
-                                    {campo.options.map(op => <option key={op} value={op} />)}
-                                  </datalist>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
 
               <div className="rdh-modal-field" style={{ alignItems: 'flex-start' }}>
                 <label style={{ marginTop: '15px' }}>COMENTARIOS</label>
