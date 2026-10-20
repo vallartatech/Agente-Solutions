@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { iniciarOneSignal, vincularUsuarioOneSignal } from "./components/Shared/oneSignalPush";
-import React, { useEffect } from "react";
+import React, { useEffect, lazy, Suspense } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./context/ProtectedRoute";
 import LoginAgente from "./components/Auth/Login";
@@ -16,6 +16,15 @@ import VistaNotificaciones from "./components/Shared/VistaNotificaciones";
 import UpdateModal from "./components/Shared/UpdateModal";
 import InstallPrompt from "./components/Shared/InstallPrompt";
 import LocationSharing from "./components/Shared/LocationSharing";
+
+// Decoración de temporada: el código del fantasma solo se descarga del 15 oct al 2 nov
+const HalloweenGhost = lazy(() => import("./components/Shared/HalloweenGhost"));
+const esTemporadaHalloween = () => {
+  const hoy = new Date();
+  const mes = hoy.getMonth();
+  const dia = hoy.getDate();
+  return (mes === 9 && dia >= 15) || (mes === 10 && dia <= 2);
+};
 import VistaMapaEquipo from "./portals/AgenteSolutions/Admin/VistaMapaEquipo";
 import VistaComprobantes from "./portals/AgenteSolutions/Shared/VistaComprobantes";
 import RegistroZonas from "./portals/AgenteSolutions/Tecnico/RegistroZonas";
@@ -263,6 +272,11 @@ function App() {
         <UpdateModal />
         <InstallPrompt />
         <LocationSharing />
+        {esTemporadaHalloween() && (
+          <Suspense fallback={null}>
+            <HalloweenGhost />
+          </Suspense>
+        )}
       </BrowserRouter>
     </AuthProvider>
   );

@@ -1,0 +1,122 @@
+/* Fantasma de Halloween que cruza la pantalla.
+   Solo se anima transform/opacity (GPU) y no usa backdrop-filter. */
+
+.hg-capa {
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* los toques pasan a través, salvo en el fantasma */
+  z-index: 950; /* sobre el contenido y el header, debajo de modales/alertas */
+  overflow: hidden;
+}
+
+.hg-vuelo {
+  position: absolute;
+  left: 0;
+  width: 64px;
+  will-change: transform;
+  animation: hg-cruzar linear forwards;
+}
+
+.hg-vuelo.hg-izquierda {
+  animation-direction: reverse;
+}
+
+.hg-vuelo.hg-izquierda .hg-fantasma {
+  transform: scaleX(-1);
+}
+
+@keyframes hg-cruzar {
+  from { transform: translate3d(-90px, 0, 0); }
+  to   { transform: translate3d(calc(100vw + 26px), 0, 0); }
+}
+
+.hg-flotar {
+  animation: hg-vaiven 1.6s ease-in-out infinite;
+}
+
+@keyframes hg-vaiven {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-4deg); }
+  50%      { transform: translate3d(0, -14px, 0) rotate(4deg); }
+}
+
+.hg-fantasma {
+  display: block;
+  width: 64px;
+  height: 72px;
+  pointer-events: auto;
+  cursor: pointer;
+  opacity: 0.9;
+  filter: drop-shadow(0 6px 14px rgba(120, 90, 160, 0.28));
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hg-cuerpo {
+  fill: rgba(255, 255, 255, 0.92);
+  stroke: rgba(150, 130, 180, 0.35);
+  stroke-width: 1.2;
+}
+
+.hg-ojo,
+.hg-boca {
+  fill: #3b3350;
+}
+
+.hg-mejilla {
+  fill: rgba(242, 101, 34, 0.25);
+}
+
+/* Al tocarlo: se encoge y desaparece */
+.hg-fantasma.hg-asustado {
+  pointer-events: none;
+  animation: hg-desvanecer 0.45s ease-in forwards;
+}
+
+@keyframes hg-desvanecer {
+  to { opacity: 0; transform: scale(0.3) translate3d(0, -30px, 0); }
+}
+
+/* "¡Bu!" y lluvia de dulces */
+.hg-susto {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.hg-bu {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 24px rgba(60, 40, 90, 0.18);
+  color: #3b3350;
+  font-weight: 700;
+  font-size: 15px;
+  animation: hg-bu-pop 1.4s ease-out forwards;
+}
+
+@keyframes hg-bu-pop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  15%  { opacity: 1; transform: translate(-50%, -90%) scale(1.08); }
+  70%  { opacity: 1; transform: translate(-50%, -110%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -140%) scale(0.95); }
+}
+
+.hg-dulce {
+  position: absolute;
+  font-size: 20px;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation: hg-dulce-salta 1s ease-out forwards;
+}
+
+@keyframes hg-dulce-salta {
+  0%   { opacity: 1; transform: translate(-50%, -50%) rotate(var(--ang)) translateY(0) rotate(calc(-1 * var(--ang))); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--ang)) translateY(-70px) rotate(calc(-1 * var(--ang))); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hg-capa { display: none; }
+}
