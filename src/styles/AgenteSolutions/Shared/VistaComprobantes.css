@@ -749,3 +749,63 @@
     border-radius: 26px 26px 0 0;
   }
 }
+
+/* ── Pantalla de subida (técnicos y admins: no ven la lista) ── */
+.vcb-intro {
+  max-width: 520px;
+  margin: 40px auto 0;
+  padding: 36px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  border-radius: 24px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vcb-intro-icon {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
+  background: rgba(242, 101, 34, 0.14);
+  color: #f26522;
+}
+
+.vcb-intro h1 {
+  margin: 4px 0 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.vcb-intro p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.vcb-intro-btn {
+  margin-top: 10px;
+  padding: 14px 26px;
+  font-size: 1rem;
+}
+
+.vcb-title .vcb-badge {
+  font-size: 0.78rem;
+}
+
+@media (max-width: 640px) {
+  .vcb-intro {
+    margin-top: 16px;
+  }
+
+  .vcb-intro-btn {
+    width: 100%;
+  }
+}
