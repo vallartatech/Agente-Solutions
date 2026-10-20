@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarDays, Shield, User, LogOut, Navigation } from 'lucide-react';
+import { CalendarDays, Shield, User, LogOut, Navigation, ReceiptText } from 'lucide-react';
 import defaultLogo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
 import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
@@ -104,6 +104,7 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
   const isServiciosActive = activeModule === 'servicios' || currentPath.includes('/tablero-servicios') || currentPath.includes('/servicios');
   const isMercadoActive = activeModule === 'mercado' || currentPath.includes('/red-autonomos');
   const isMapaActive = activeModule === 'mapa' || currentPath.includes('/mapa-equipo');
+  const isComprobantesActive = activeModule === 'comprobantes' || currentPath.includes('/comprobantes');
 
   return (
     <>
@@ -175,6 +176,14 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
             onClick={() => navigate('/tablero-servicios')}
           >
             SERVICIOS
+          </button>
+
+          <button
+            type="button"
+            className={`vcp-nav-btn ${isComprobantesActive ? 'active' : ''}`}
+            onClick={() => navigate('/comprobantes')}
+          >
+            COMPROBANTES
           </button>
 
           {canViewMap && (
@@ -266,6 +275,13 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
               onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
             >
               <User size={16} /> Mi Perfil
+            </button>
+            <button
+              type="button"
+              className="vcp-dropdown-item"
+              onClick={() => { setProfileDropdownOpen(false); navigate('/comprobantes'); }}
+            >
+              <ReceiptText size={16} /> Comprobantes
             </button>
             {canViewMap && (
               <button

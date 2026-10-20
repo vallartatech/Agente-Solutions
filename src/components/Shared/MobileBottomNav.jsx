@@ -12,7 +12,8 @@ import {
   Receipt,
   Wrench,
   Globe,
-  Navigation
+  Navigation,
+  ReceiptText
 } from 'lucide-react';
 import '../../styles/Shared/MobileBottomNav.css';
 
@@ -193,6 +194,17 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Cotizaciones"
         >
           <Receipt size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
+        {/* 5. COMPROBANTES */}
+        <button
+          type="button"
+          className={`vcp-mobile-nav-item ${currentPath.includes('/comprobantes') ? 'active' : ''}`}
+          onClick={() => navigate('/comprobantes')}
+          title="Comprobantes"
+          aria-label="Comprobantes"
+        >
+          <ReceiptText size={22} className="vcp-mobile-nav-icon" />
         </button>
       </nav>
     );

@@ -17,6 +17,7 @@ import UpdateModal from "./components/Shared/UpdateModal";
 import InstallPrompt from "./components/Shared/InstallPrompt";
 import LocationSharing from "./components/Shared/LocationSharing";
 import VistaMapaEquipo from "./portals/AgenteSolutions/Admin/VistaMapaEquipo";
+import VistaComprobantes from "./portals/AgenteSolutions/Shared/VistaComprobantes";
 import RegistroZonas from "./portals/AgenteSolutions/Tecnico/RegistroZonas";
 import CheckEmail from "./components/Auth/CheckEmail";
 import VerifyEmail from "./components/Auth/VerifyEmail";
@@ -228,6 +229,7 @@ const AppRoutes = () => {
 
       <Route path="/notificaciones" element={<VistaNotificaciones />} />
       <Route path="/mapa-equipo" element={<VistaMapaEquipo />} />
+      <Route path="/comprobantes" element={<ProtectedRoute><VistaComprobantes /></ProtectedRoute>} />
       <Route path="/trabajos-asignados" element={<TrabajosAsignados />} />
 
       {/* Vista de inicio del cliente sin Sidebar */}

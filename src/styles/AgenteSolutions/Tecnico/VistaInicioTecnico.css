@@ -349,7 +349,8 @@
 /* ── ACCESOS CON CONTADORES (VIDRIO NEGRO) ── */
 .vit-tiles {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* 4 accesos: en fila si caben, si no 2 × 2 */
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 14px;
 }
 

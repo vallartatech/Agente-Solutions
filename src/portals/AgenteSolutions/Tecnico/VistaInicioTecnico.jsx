@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   Wrench, ClipboardList, FileText, ChevronRight, MapPin, Clock, AlertTriangle,
-  CheckCircle2, Package, Navigation, CalendarDays, Sun, Moon, Sunset
+  CheckCircle2, Package, Navigation, CalendarDays, Sun, Moon, Sunset, ReceiptText
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import Header from '../../../components/Shared/Header';
@@ -240,6 +240,14 @@ const VistaInicioTecnico = () => {
                   </span>
                   <span className={`vit-tile-count ${cotizPorAtender ? 'is-alert' : ''}`}>
                     {cotizPorAtender || cotizaciones.length}
+                  </span>
+                </button>
+
+                <button type="button" className="vit-tile" onClick={() => navigate('/comprobantes')}>
+                  <span className="vit-tile-icon"><ReceiptText size={22} /></span>
+                  <span className="vit-tile-body">
+                    <span className="vit-tile-label">Comprobantes</span>
+                    <span className="vit-tile-sub">Sube notas y facturas</span>
                   </span>
                 </button>
               </section>

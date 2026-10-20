@@ -163,6 +163,16 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
                 <span className="vcp-tab-full">COTIZACIONES</span>
                 <span className="vcp-tab-short">COTIZACIONES</span>
               </button>
+
+              <button
+                type="button"
+                className={`vcp-nav-btn ${currentPath.includes('/comprobantes') ? 'active' : ''}`}
+                onClick={() => navigate('/comprobantes')}
+                title="Comprobantes"
+              >
+                <span className="vcp-tab-full">COMPROBANTES</span>
+                <span className="vcp-tab-short">COMPROBANTES</span>
+              </button>
             </>
           ) : (
             /* Menú para Técnicos Independientes de la Red (Roles 6 y 8) */
