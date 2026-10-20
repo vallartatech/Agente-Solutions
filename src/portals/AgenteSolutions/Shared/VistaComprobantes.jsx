@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import {
   ReceiptText as Receipt, Camera, ImagePlus, X, Send, CheckCircle2, Clock, Search,
-  FileText, Loader2, Plus
+  FileText, Trash2, Loader2, Inbox, Plus
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
@@ -28,11 +29,11 @@ const formularioVacio = () => ({ archivos: [], empresa: '', nota: '', monto: '' 
 
 const VistaComprobantes = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Solo los secretarios (y root) ven comprobantes; los demás únicamente suben
   const [permisos, setPermisos] = useState(null);
   const tieneBandeja = (permisos?.inbox_companies?.length || 0) > 0;
-  const vista = tieneBandeja ? 'bandeja' : 'subir';
+  const vista = searchParams.get('vista') === 'bandeja' && tieneBandeja ? 'bandeja' : 'mios';
 
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroEmpresa, setFiltroEmpresa] = useState('');
@@ -60,9 +61,12 @@ const VistaComprobantes = () => {
 
   useEffect(() => { cargarPermisos(); }, [cargarPermisos, user?.id]);
 
-  // La bandeja abre en Pendientes
+  // La bandeja abre en Pendientes; Mis comprobantes muestra todo
   useEffect(() => {
     setFiltroEstado(vista === 'bandeja' ? 'pendiente' : '');
+    setFiltroEmpresa('');
+    setBusqueda('');
+    setBusquedaAplicada('');
   }, [vista]);
 
   useEffect(() => {
@@ -75,12 +79,12 @@ const VistaComprobantes = () => {
 
   const cargar = useCallback(async (page = 1) => {
     if (!permisos) return;
-    if (!tieneBandeja) { setCargando(false); return; }
     const peticion = ++peticionRef.current;
     setCargando(true);
     try {
       const res = await axios.get(`${API}/comprobantes`, {
         params: {
+          vista,
           page,
           estado: filtroEstado || undefined,
           empresa: filtroEmpresa || undefined,
@@ -98,9 +102,11 @@ const VistaComprobantes = () => {
     } finally {
       if (peticion === peticionRef.current) setCargando(false);
     }
-  }, [permisos, tieneBandeja, filtroEstado, filtroEmpresa, busquedaAplicada]);
+  }, [permisos, vista, filtroEstado, filtroEmpresa, busquedaAplicada]);
 
   useEffect(() => { cargar(1); }, [cargar]);
+
+  const cambiarVista = (v) => setSearchParams(v === 'bandeja' ? { vista: 'bandeja' } : {});
 
   // ── Formulario de subida ──
   const abrirSubir = () => {
@@ -171,7 +177,8 @@ const VistaComprobantes = () => {
         showConfirmButton: false
       });
 
-      if (tieneBandeja) { cargar(1); cargarPermisos(); }
+      if (vista !== 'mios') cambiarVista('mios'); else cargar(1);
+      cargarPermisos();
     } catch (err) {
       Swal.fire({
         icon: 'error',
@@ -204,6 +211,26 @@ const VistaComprobantes = () => {
     }
   };
 
+  const borrar = async (item) => {
+    const ok = await Swal.fire({
+      icon: 'warning',
+      title: '¿Borrar este comprobante?',
+      text: 'El secretario ya no lo verá.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, borrar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444'
+    });
+    if (!ok.isConfirmed) return;
+    try {
+      await axios.delete(`${API}/comprobantes/${item.id}`);
+      setItems(prev => prev.filter(i => i.id !== item.id));
+      setPagina(prev => ({ ...prev, total: Math.max(0, prev.total - 1) }));
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'No se pudo borrar', text: err.response?.data?.error || 'Intenta de nuevo.' });
+    }
+  };
+
   const filtrosEstado = [
     { key: '', label: 'Todos' },
     { key: 'pendiente', label: 'Pendientes' },
@@ -215,34 +242,33 @@ const VistaComprobantes = () => {
       <Header activeModule="comprobantes" titulo="COMPROBANTES" />
 
       <main className="vcb-main">
-        {!permisos ? (
-          <div className="vcb-empty"><Loader2 size={26} className="vcb-spin" /> Cargando…</div>
-        ) : vista === 'subir' ? (
-          /* Técnicos y admins: solo envían; los comprobantes los ve el secretario */
-          <section className="vcb-intro">
-            <span className="vcb-intro-icon"><Receipt size={34} /></span>
-            <h1>Comprobantes</h1>
-            <p>Toma foto a la nota, ticket o factura, elige la empresa y agrega una nota. Le llegará al secretario correspondiente.</p>
-            <button type="button" className="vcb-btn-primary vcb-intro-btn" onClick={abrirSubir}>
-              <Plus size={18} /> Subir comprobante
-            </button>
-          </section>
-        ) : (
-        <>
         <div className="vcb-head">
           <div>
-            <h1 className="vcb-title">
-              <Receipt size={24} /> Comprobantes
-              {permisos?.pending_inbox > 0 && <span className="vcb-badge" title="Pendientes de confirmar">{permisos.pending_inbox}</span>}
-            </h1>
+            <h1 className="vcb-title"><Receipt size={24} /> Comprobantes</h1>
             <p className="vcb-subtitle">
-              Comprobantes que te enviaron{permisos?.inbox_companies?.length === 1 ? ` para ${empresaDe(permisos.inbox_companies[0]).nombre}` : ''}
+              {vista === 'bandeja'
+                ? `Comprobantes que te enviaron${permisos?.inbox_companies?.length === 1 ? ` para ${empresaDe(permisos.inbox_companies[0]).nombre}` : ''}`
+                : 'Sube notas, tickets o facturas de lo que compras para la empresa'}
             </p>
           </div>
-          <button type="button" className="vcb-btn-primary" onClick={abrirSubir}>
-            <Plus size={18} /> Subir comprobante
-          </button>
+          {permisos?.can_upload !== false && (
+            <button type="button" className="vcb-btn-primary" onClick={abrirSubir}>
+              <Plus size={18} /> Subir comprobante
+            </button>
+          )}
         </div>
+
+        {tieneBandeja && (
+          <div className="vcb-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected={vista === 'mios'} className={vista === 'mios' ? 'active' : ''} onClick={() => cambiarVista('mios')}>
+              Mis comprobantes
+            </button>
+            <button type="button" role="tab" aria-selected={vista === 'bandeja'} className={vista === 'bandeja' ? 'active' : ''} onClick={() => cambiarVista('bandeja')}>
+              <Inbox size={16} /> Bandeja
+              {permisos?.pending_inbox > 0 && <span className="vcb-badge">{permisos.pending_inbox}</span>}
+            </button>
+          </div>
+        )}
 
         <div className="vcb-filters">
           <div className="vcb-chips">
@@ -251,17 +277,19 @@ const VistaComprobantes = () => {
                 {f.label}
               </button>
             ))}
-            {permisos?.inbox_companies?.length > 1 && (
+            {vista === 'bandeja' && permisos?.inbox_companies?.length > 1 && (
               <select className="vcb-select" value={filtroEmpresa} onChange={(e) => setFiltroEmpresa(e.target.value)} aria-label="Empresa">
                 <option value="">Ambas empresas</option>
                 {EMPRESAS.map(e => <option key={e.key} value={e.key}>{e.nombre}</option>)}
               </select>
             )}
           </div>
-          <label className="vcb-search">
-            <Search size={16} />
-            <input type="search" placeholder="Buscar por nota o por quien lo envió" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-          </label>
+          {vista === 'bandeja' && (
+            <label className="vcb-search">
+              <Search size={16} />
+              <input type="search" placeholder="Buscar por nota o por quien lo envió" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+            </label>
+          )}
         </div>
 
         {cargando && items.length === 0 ? (
@@ -269,7 +297,8 @@ const VistaComprobantes = () => {
         ) : items.length === 0 ? (
           <div className="vcb-empty">
             <Receipt size={34} />
-            <strong>No hay comprobantes aquí</strong>
+            <strong>{vista === 'bandeja' ? 'No hay comprobantes aquí' : 'Aún no has subido comprobantes'}</strong>
+            {vista === 'mios' && <span>Toma foto a la nota o factura y elige la empresa.</span>}
           </div>
         ) : (
           <>
@@ -278,6 +307,7 @@ const VistaComprobantes = () => {
               {items.map(item => {
                 const emp = empresaDe(item.company);
                 const confirmado = item.status === 'confirmado';
+                const esMio = Number(item.user_id) === Number(user?.id);
                 return (
                   <li key={item.id} className={`vcb-card ${confirmado ? 'is-done' : ''}`}>
                     <div className="vcb-thumbs">
@@ -301,7 +331,8 @@ const VistaComprobantes = () => {
                       </div>
                       <p className="vcb-note">{item.note}</p>
                       <p className="vcb-meta">
-                        Enviado por <strong>{nombre(item.sender) || 'Usuario'}</strong> · {fecha(item.created_at)}
+                        {vista === 'bandeja' || !esMio ? <>Enviado por <strong>{nombre(item.sender) || 'Usuario'}</strong> · </> : 'Enviado · '}
+                        {fecha(item.created_at)}
                       </p>
 
                       <div className="vcb-card-foot">
@@ -314,7 +345,12 @@ const VistaComprobantes = () => {
                         )}
 
                         <div className="vcb-actions">
-                          {!confirmado && (
+                          {vista === 'mios' && esMio && !confirmado && (
+                            <button type="button" className="vcb-btn-link danger" onClick={() => borrar(item)}>
+                              <Trash2 size={14} /> Borrar
+                            </button>
+                          )}
+                          {vista === 'bandeja' && !confirmado && (
                             <button type="button" className="vcb-btn-confirm" onClick={() => confirmar(item)} disabled={confirmandoId === item.id}>
                               {confirmandoId === item.id ? <Loader2 size={16} className="vcb-spin" /> : <CheckCircle2 size={16} />}
                               Confirmar recibido
@@ -333,8 +369,6 @@ const VistaComprobantes = () => {
               </button>
             )}
           </>
-        )}
-        </>
         )}
       </main>
 
