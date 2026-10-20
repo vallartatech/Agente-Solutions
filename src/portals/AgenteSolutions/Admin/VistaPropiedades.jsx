@@ -104,12 +104,9 @@ const VistaPropiedades = () => {
     touchRpStartY.current = 0;
   };
 
-  // ESTADOS PARA EDICIÓN
+  // EDICIÓN: mismo formulario que "Registrar Propiedad" (ModalRegistroInmueble con `property`)
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [propiedadAEditar, setPropiedadAEditar] = useState(null);
-  const [editNombre, setEditNombre] = useState("");
-  const [editFoto, setEditFoto] = useState(null);
-  const [editando, setEditando] = useState(false);
 
   // CARPETAS (solo para organizar el catálogo; las comparten todos los admins)
   const [carpetas, setCarpetas] = useState([]);
@@ -627,47 +624,7 @@ const VistaPropiedades = () => {
 
   const abrirModalEditar = (propiedad) => {
     setPropiedadAEditar(propiedad);
-    setEditNombre(propiedad.nombre_propiedad || "");
-    setEditFoto(null);
     setMostrarModalEditar(true);
-  };
-
-  const handleUpdateProperty = async (e) => {
-    e.preventDefault();
-    setEditando(true);
-    try {
-      const token = localStorage.getItem('agente_token');
-      const formData = new FormData();
-      formData.append('property_name', editNombre);
-      if (editFoto) {
-        formData.append('facade_photo', editFoto);
-      }
-
-      const { data } = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/propiedades/${propiedadAEditar.id}/update`,
-        formData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
-
-      // Actualizar lista local
-      setListaPropiedades(prev => prev.map(p => 
-        p.id === propiedadAEditar.id 
-          ? { ...p, nombre_propiedad: data.property.property_name, foto_url: data.foto_url } 
-          : p
-      ));
-
-      setMostrarModalEditar(false);
-    } catch (error) {
-      console.error("Error al actualizar:", error);
-      alert("Hubo un error al actualizar la propiedad.");
-    } finally {
-      setEditando(false);
-    }
   };
 
   // --- CARPETAS ---
@@ -1791,58 +1748,14 @@ const VistaPropiedades = () => {
         </div>,
         document.body
       )}
-      {/* MODAL DE EDICIÓN DE PROPIEDAD */}
-      {mostrarModalEditar && createPortal(
-        <div className="folder-modal-overlay" onClick={() => !editando && setMostrarModalEditar(false)}>
-          <div className="folder-modal" onClick={(e) => e.stopPropagation()}>
-            <button type="button" className="folder-modal-close" onClick={() => setMostrarModalEditar(false)} aria-label="Cerrar">
-              <X size={20} strokeWidth={2.8} />
-            </button>
-
-            <form onSubmit={handleUpdateProperty}>
-              <h2><Pencil size={22} color="#F26522" /> Editar propiedad</h2>
-              <p className="folder-modal-sub">{propiedadAEditar?.nombre_propiedad || "Propiedad sin nombre"}</p>
-
-              <label className="glass-field-label" htmlFor="edit-prop-nombre">Nombre de la propiedad</label>
-              <input
-                id="edit-prop-nombre"
-                type="text"
-                className="glass-input"
-                value={editNombre}
-                onChange={(e) => setEditNombre(e.target.value)}
-                placeholder="Ej. Casa de la Playa"
-              />
-
-              <label className="glass-field-label">Nueva foto de fachada</label>
-              <label className="glass-file">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setEditFoto(e.target.files[0] || null)}
-                />
-                <span className="glass-file-btn"><ImageIcon size={16} strokeWidth={2.4} /> Elegir foto</span>
-                <span className="glass-file-name">{editFoto ? editFoto.name : "Ningún archivo seleccionado"}</span>
-              </label>
-              <small className="glass-field-hint">Déjalo vacío para mantener la foto actual.</small>
-
-              <div className="glass-actions">
-                <button
-                  type="button"
-                  className="glass-btn secondary"
-                  onClick={() => setMostrarModalEditar(false)}
-                  disabled={editando}
-                >
-                  Cancelar
-                </button>
-                <button type="submit" className="glass-btn primary" disabled={editando}>
-                  {editando ? <><Loader2 size={18} className="spin" /> Guardando...</> : "Guardar cambios"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* MODAL DE EDICIÓN DE PROPIEDAD: el mismo formulario de registro, con sus datos */}
+      <ModalRegistroInmueble
+        isOpen={mostrarModalEditar}
+        property={propiedadAEditar}
+        onClose={() => setMostrarModalEditar(false)}
+        onSuccess={() => obtenerPropiedades()}
+        user={user}
+      />
 
       {/* MODAL: ADMINISTRAR CARPETAS */}
       {mostrarModalCarpetas && createPortal(

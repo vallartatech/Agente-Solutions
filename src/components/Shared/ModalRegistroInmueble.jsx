@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import {
@@ -30,7 +30,44 @@ const TIPOS_INMUEBLE = [
   { value: 'Local Comercial', label: 'LOCAL COMERCIAL' }
 ];
 
-const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) => {
+const sinAcentos = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+// Formulario vacío (registro) o con los datos de la propiedad (edición)
+const formularioInicial = (property) => {
+  if (!property) {
+    return {
+      property_name: '',
+      type: 'Casa',
+      estado: 'Yucatán',
+      municipio: 'Mérida',
+      colonia: '',
+      calle: '',
+      numero: '',
+      cruzamientos: '',
+      coordinates: ''
+    };
+  }
+  const tipoRaw = property.type || property.tipo || '';
+  const tipo = TIPOS_INMUEBLE.find(t => sinAcentos(t.value) === sinAcentos(tipoRaw))?.value || tipoRaw || 'Casa';
+  return {
+    property_name: property.property_name ?? (property.nombre_propiedad === 'Propiedad sin nombre' ? '' : property.nombre_propiedad) ?? '',
+    type: tipo,
+    estado: property.estado || property.state || 'Yucatán',
+    municipio: property.municipio || '',
+    colonia: property.colonia || '',
+    calle: property.calle || '',
+    numero: property.numero || '',
+    cruzamientos: property.cruzamientos || '',
+    coordinates: property.coordenadas || property.coordinates || ''
+  };
+};
+
+/**
+ * Registrar o editar una propiedad con el mismo formulario.
+ * Con `property` entra en modo edición: precarga sus datos y guarda en /propiedades/{id}/update.
+ */
+const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser, property = null }) => {
+  const esEdicion = Boolean(property?.id);
   const { user: authUser } = useAuth();
   const user = propUser || authUser || (() => {
     try {
@@ -42,20 +79,10 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
 
   const fileInputRef = useRef(null);
 
-  const [formData, setFormData] = useState({
-    property_name: '',
-    type: 'Casa',
-    estado: 'Yucatán',
-    municipio: 'Mérida',
-    colonia: '',
-    calle: '',
-    numero: '',
-    cruzamientos: '',
-    coordinates: ''
-  });
+  const [formData, setFormData] = useState(() => formularioInicial(property));
 
   const [fotoFile, setFotoFile] = useState(null);
-  const [fotoPreview, setFotoPreview] = useState(null);
+  const [fotoPreview, setFotoPreview] = useState(property?.foto_url || null);
   const [loading, setLoading] = useState(false);
   const [mapaAbierto, setMapaAbierto] = useState(false);
   const [mensaje, setMensaje] = useState('');
@@ -96,7 +123,25 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
     touchStartY.current = 0;
   };
 
+  // En modo edición, cada vez que se abre carga los datos de esa propiedad
+  useEffect(() => {
+    if (!isOpen || !esEdicion) return;
+    setFormData(formularioInicial(property));
+    setFotoFile(null);
+    setFotoPreview(property?.foto_url || null);
+    setMensaje('');
+    setTipoMensaje('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, property?.id]);
+
   if (!isOpen) return null;
+
+  // Tipo que no está en el catálogo (propiedades antiguas): se agrega para no perderlo
+  const tiposOpciones = TIPOS_INMUEBLE.some(t => t.value === formData.type)
+    ? TIPOS_INMUEBLE
+    : [...TIPOS_INMUEBLE, { value: formData.type, label: String(formData.type).toUpperCase() }];
+  // Dirección con formato distinto que no se pudo separar: se muestra como referencia
+  const direccionSinSeparar = esEdicion && !formData.calle && !formData.numero && property?.direccion;
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -137,15 +182,20 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
       dataToSend.append('calle', formData.calle.trim());
       dataToSend.append('numero', formData.numero.trim());
       dataToSend.append('cruzamientos', formData.cruzamientos.trim());
-      dataToSend.append('coordinates', formData.coordinates || '20.967370, -89.592586');
+      if (esEdicion) {
+        // Editar: sin coordenadas inventadas; si no se tocan, se conservan las actuales
+        if (formData.coordinates) dataToSend.append('coordinates', formData.coordinates);
+      } else {
+        dataToSend.append('coordinates', formData.coordinates || '20.967370, -89.592586');
 
-      const clientId = user?.client_id || 1;
-      dataToSend.append('client_id', clientId);
-      if (user?.id) {
-        dataToSend.append('user_id', user.id);
-      }
-      if (user?.tenant_id) {
-        dataToSend.append('tenant_id', user.tenant_id);
+        const clientId = user?.client_id || 1;
+        dataToSend.append('client_id', clientId);
+        if (user?.id) {
+          dataToSend.append('user_id', user.id);
+        }
+        if (user?.tenant_id) {
+          dataToSend.append('tenant_id', user.tenant_id);
+        }
       }
 
       if (fotoFile) {
@@ -154,7 +204,9 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
       }
 
       const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/registro-propiedad`,
+        esEdicion
+          ? `${import.meta.env.VITE_API_BASE_URL}/propiedades/${property.id}/update`
+          : `${import.meta.env.VITE_API_BASE_URL}/registro-propiedad`,
         dataToSend,
         {
           headers: {
@@ -165,7 +217,7 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
 
       setLoading(false);
       setTipoMensaje('success');
-      setMensaje('¡Propiedad guardada exitosamente!');
+      setMensaje(esEdicion ? '¡Cambios guardados!' : '¡Propiedad guardada exitosamente!');
 
       const createdProperty = res.data?.property || res.data?.propiedad || res.data;
 
@@ -211,8 +263,8 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
           onTouchEnd={handleTouchEnd}
         >
           <div className="mri-header-text">
-            <span className="mri-tag">NUEVA PROPIEDAD</span>
-            <h2 className="mri-title">Registrar Propiedad</h2>
+            <span className="mri-tag">{esEdicion ? 'EDITAR PROPIEDAD' : 'NUEVA PROPIEDAD'}</span>
+            <h2 className="mri-title">{esEdicion ? (property.nombre_propiedad || 'Editar Propiedad') : 'Registrar Propiedad'}</h2>
           </div>
           <button className="mri-close-btn" onClick={onClose} title="Cerrar ventana" aria-label="Cerrar ventana" type="button">
             <X size={18} color="#ffffff" strokeWidth={2.6} />
@@ -264,10 +316,17 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
                 )}
 
                 <span className="mri-file-name">
-                  {fotoFile ? fotoFile.name : 'Ninguna imagen seleccionada'}
+                  {fotoFile ? fotoFile.name : (esEdicion && fotoPreview ? 'Foto actual · elige otra para cambiarla' : 'Ninguna imagen seleccionada')}
                 </span>
               </div>
             </div>
+
+            {direccionSinSeparar && (
+              <div className="mri-field-full mri-address-hint">
+                <strong>Dirección actual:</strong> {property.direccion}
+                <span>Llena calle, número, colonia y ciudad para actualizarla; si los dejas vacíos se conserva.</span>
+              </div>
+            )}
 
             {/* Tipo */}
             <div className="mri-field-one-third">
@@ -280,7 +339,7 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
                 value={formData.type}
                 onChange={handleChange}
               >
-                {TIPOS_INMUEBLE.map(t => (
+                {tiposOpciones.map(t => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>
@@ -417,10 +476,10 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser }) =
             >
               {loading ? (
                 <>
-                  <Loader2 size={18} className="animate-spin" /> GUARDANDO PROPIEDAD...
+                  <Loader2 size={18} className="animate-spin" /> {esEdicion ? 'GUARDANDO CAMBIOS...' : 'GUARDANDO PROPIEDAD...'}
                 </>
               ) : (
-                'GUARDAR PROPIEDAD'
+                esEdicion ? 'GUARDAR CAMBIOS' : 'GUARDAR PROPIEDAD'
               )}
             </button>
           </div>

@@ -240,3 +240,22 @@
     background: linear-gradient(160deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%) !important;
   }
 }
+
+/* Editar propiedad: dirección antigua que no se pudo separar en campos */
+.mri-overlay .mri-address-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #78350f;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.mri-overlay .mri-address-hint span {
+  color: #92400e;
+  font-size: 0.78rem;
+}
