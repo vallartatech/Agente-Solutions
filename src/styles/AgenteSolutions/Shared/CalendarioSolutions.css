@@ -2432,3 +2432,219 @@
     display: none; /* en celular basta la X del encabezado */
   }
 }
+
+/* ── ¿PARA QUIÉN?: selector de participantes del aviso ── */
+.nq-people {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nq-people-selected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nq-person-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px 5px 11px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(242, 101, 34, 0.12);
+  color: #c2410c;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nq-person-tag:hover {
+  background: rgba(242, 101, 34, 0.2);
+}
+
+.nq-people-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: #ffffff;
+  color: #94a3b8;
+}
+
+.nq-people-search:focus-within {
+  border-color: #f26522;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.15);
+}
+
+.nq-people-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #0f172a;
+  font: inherit;
+  font-size: 16px; /* evita el zoom de iOS */
+}
+
+.nq-people-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.nq-person {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #0f172a;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nq-person:hover {
+  background: #f1f5f9;
+}
+
+.nq-person.selected {
+  background: rgba(242, 101, 34, 0.08);
+}
+
+.nq-person-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.nq-person-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nq-person-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nq-person-role {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.nq-person-role.role-0,
+.nq-person-role.role-1 {
+  background: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+}
+
+.nq-person-role.role-2 {
+  background: rgba(14, 165, 233, 0.1);
+  color: #0369a1;
+}
+
+.nq-person-check {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  border: 1.5px solid #cbd5e1;
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+.nq-person.selected .nq-person-check {
+  background: #f26522;
+  border-color: #f26522;
+}
+
+.nq-people-empty {
+  padding: 14px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+/* Detalle: quiénes participan */
+.nd-people {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.nd-people-avatars {
+  display: inline-flex;
+}
+
+.nd-people-avatar {
+  width: 26px;
+  height: 26px;
+  margin-left: -6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #ffffff;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.nd-people-avatar:first-child {
+  margin-left: 0;
+}
+
+.nd-people-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nd-people-names {
+  color: #334155;
+}

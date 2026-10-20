@@ -36,6 +36,8 @@ import {
   Tag,
   Plus,
   Eye,
+  Users,
+  Check,
   Link2,
   CheckCircle2,
   CalendarPlus
@@ -133,9 +135,17 @@ const emptyNoticeForm = (dateKey = null) => {
     start_time: '09:00',
     end_time: '10:00',
     // Aviso anterior cuando este es el siguiente paso (seguimiento)
-    parent: null
+    parent: null,
+    // ¿Para quién? 'team' = todo el equipo · 'some' = solo los participantes elegidos (ids)
+    audience: 'team',
+    participants: []
   };
 };
+
+const ROLE_SHORT = { 0: 'Admin', 1: 'Admin', 2: 'Técnico' };
+const memberName = (m) => `${m?.first_name || ''} ${m?.last_name || ''}`.trim() || 'Usuario';
+const memberInitials = (m) => memberName(m).split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+const normalizeText = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -650,24 +660,35 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   // Partes opcionales del formulario que se abren solo si se necesitan
   const [nqUi, setNqUi] = useState({ showDetails: false, newLabel: false, showPreview: false });
 
+  // Admins y técnicos del equipo (selector "¿Para quién?")
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [peopleQuery, setPeopleQuery] = useState('');
+
   const handleOpenCreateNotice = (customDate = null) => {
     setNoticeForm(emptyNoticeForm(typeof customDate === 'string' ? customDate : null));
     setNqUi({ showDetails: false, newLabel: false, showPreview: false });
+    setPeopleQuery('');
     setShowCreateNoticeModal(true);
     axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/labels`)
       .then(res => setSavedLabels(Array.isArray(res.data) ? res.data : []))
       .catch(() => { /* sin sugerencias: se puede escribir igual */ });
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/team`)
+      .then(res => setTeamMembers(Array.isArray(res.data) ? res.data : []))
+      .catch(() => { /* sin lista: se puede publicar para todo el equipo */ });
   };
 
-  // Siguiente paso de un aviso: el formulario llega con la etiqueta y los detalles del anterior y queda ligado a él
+  // Siguiente paso de un aviso: el formulario llega con la etiqueta, los detalles y los participantes del anterior y queda ligado a él
   const handleOpenFollowUp = (parentNotice) => {
     const raw = parentNotice.rawNotice || {};
+    const prevParticipants = (raw.participants || []).map(p => Number(p.id));
     handleOpenCreateNotice();
     setNoticeForm(prev => ({
       ...prev,
       label: raw.label || '',
       description: raw.description || '',
-      parent: parentNotice
+      parent: parentNotice,
+      audience: prevParticipants.length ? 'some' : 'team',
+      participants: prevParticipants
     }));
     setSelectedNotice(null);
   };
@@ -747,6 +768,15 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       return;
     }
 
+    if (noticeForm.audience === 'some' && noticeForm.participants.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: '¿Para quién es?',
+        text: 'Elige al menos una persona o cambia a "Todo el equipo".'
+      });
+      return;
+    }
+
     if (!noticeForm.allDay && (!noticeForm.start_time || (noticeForm.end_time && noticeForm.end_time <= noticeForm.start_time))) {
       Swal.fire({
         icon: 'warning',
@@ -772,7 +802,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         description: noticeForm.description?.trim() || null,
         color: noticeForm.important ? '#ef4444' : '#f97316',
         notify_team: true,
-        parent_id: noticeForm.parent?.noticeId || null
+        parent_id: noticeForm.parent?.noticeId || null,
+        participant_ids: noticeForm.audience === 'some' ? noticeForm.participants : []
       };
 
       const res = await axios.post(
@@ -2102,6 +2133,20 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
             setNqUi(prev => ({ ...prev, newLabel: false }));
           };
           const closeModal = () => { if (!submittingNotice) setShowCreateNoticeModal(false); };
+          // Selector de participantes
+          const togglePersona = (id) => setNoticeForm(prev => {
+            const n = Number(id);
+            return {
+              ...prev,
+              participants: prev.participants.includes(n) ? prev.participants.filter(p => p !== n) : [...prev.participants, n]
+            };
+          });
+          const elegidos = noticeForm.participants
+            .map(id => teamMembers.find(m => Number(m.id) === id))
+            .filter(Boolean);
+          const q = normalizeText(peopleQuery.trim());
+          const miembrosFiltrados = q ? teamMembers.filter(m => normalizeText(memberName(m)).includes(q)) : teamMembers;
+          const faltanPersonas = noticeForm.audience === 'some' && noticeForm.participants.length === 0;
 
           return (
             <div className="solutions-submodal-overlay nq-overlay" onClick={closeModal}>
@@ -2118,7 +2163,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                     <p>
                       {noticeForm.parent
                         ? 'Quedará ligado al aviso anterior en el historial'
-                        : 'Aparecerá en el calendario y le llegará a todo el equipo'}
+                        : noticeForm.audience === 'some'
+                          ? 'Solo les llegará a las personas que elijas'
+                          : 'Aparecerá en el calendario y le llegará a todo el equipo'}
                     </p>
                   </div>
                   <button type="button" className="nq-close" onClick={closeModal} aria-label="Cerrar">
@@ -2281,6 +2328,70 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       </div>
                     </div>
 
+                    {/* ¿Para quién? Todo el equipo o personas elegidas (junta, trabajo...) */}
+                    <div className="nq-row">
+                      <Users size={17} className="nq-row-icon" aria-hidden="true" />
+                      <div className="nq-row-content">
+                        <span className="nq-row-label">¿Para quién?</span>
+                        <div className="nq-date-chips">
+                          <button type="button" className={`nq-chip ${noticeForm.audience === 'team' ? 'active' : ''}`} onClick={() => setNoticeForm(prev => ({ ...prev, audience: 'team' }))}>
+                            Todo el equipo
+                          </button>
+                          <button type="button" className={`nq-chip ${noticeForm.audience === 'some' ? 'active' : ''}`} onClick={() => setNoticeForm(prev => ({ ...prev, audience: 'some' }))}>
+                            {noticeForm.audience === 'some' && noticeForm.participants.length
+                              ? `${noticeForm.participants.length} persona${noticeForm.participants.length === 1 ? '' : 's'}`
+                              : 'Elegir personas'}
+                          </button>
+                        </div>
+
+                        {noticeForm.audience === 'some' && (
+                          <div className="nq-people">
+                            {elegidos.length > 0 && (
+                              <div className="nq-people-selected">
+                                {elegidos.map(m => (
+                                  <button type="button" key={m.id} className="nq-person-tag" onClick={() => togglePersona(m.id)} title="Quitar">
+                                    {memberName(m)} <X size={12} />
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            <label className="nq-people-search">
+                              <Search size={15} />
+                              <input
+                                type="search"
+                                placeholder="Buscar admin o técnico"
+                                value={peopleQuery}
+                                onChange={(e) => setPeopleQuery(e.target.value)}
+                                aria-label="Buscar persona"
+                              />
+                            </label>
+                            <ul className="nq-people-list" role="listbox" aria-multiselectable="true">
+                              {miembrosFiltrados.map(m => {
+                                const sel = noticeForm.participants.includes(Number(m.id));
+                                return (
+                                  <li key={m.id}>
+                                    <button type="button" role="option" aria-selected={sel} className={`nq-person ${sel ? 'selected' : ''}`} onClick={() => togglePersona(m.id)}>
+                                      <span className="nq-person-avatar">
+                                        {m.profile_picture ? <img src={m.profile_picture} alt="" /> : memberInitials(m)}
+                                      </span>
+                                      <span className="nq-person-name">
+                                        {memberName(m)}{Number(m.id) === Number(user?.id) ? ' (tú)' : ''}
+                                      </span>
+                                      <span className={`nq-person-role role-${m.role_id}`}>{ROLE_SHORT[m.role_id] || 'Equipo'}</span>
+                                      <span className="nq-person-check">{sel && <Check size={14} strokeWidth={3} />}</span>
+                                    </button>
+                                  </li>
+                                );
+                              })}
+                              {miembrosFiltrados.length === 0 && (
+                                <li className="nq-people-empty">{teamMembers.length ? 'Nadie coincide con la búsqueda' : 'Cargando equipo…'}</li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Detalles: se abren solo si se necesitan */}
                     {nqUi.showDetails || noticeForm.description ? (
                       <textarea
@@ -2342,9 +2453,17 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       <button type="button" className="nq-btn-cancel" onClick={closeModal} disabled={submittingNotice}>
                         Cancelar
                       </button>
-                      <button type="submit" className="nq-btn-submit" disabled={submittingNotice || !noticeForm.title.trim()}>
+                      <button type="submit" className="nq-btn-submit" disabled={submittingNotice || !noticeForm.title.trim() || faltanPersonas}>
                         <Send size={16} />
-                        <span>{submittingNotice ? 'Enviando…' : 'Publicar para el equipo'}</span>
+                        <span>
+                          {submittingNotice
+                            ? 'Enviando…'
+                            : faltanPersonas
+                              ? 'Elige al menos una persona'
+                              : noticeForm.audience === 'some'
+                                ? `Enviar a ${noticeForm.participants.length} persona${noticeForm.participants.length === 1 ? '' : 's'}`
+                                : 'Publicar para el equipo'}
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -2384,6 +2503,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
           const ordenKey = (n) => `${n.dateKey} ${n.rawNotice?.start_time || '00:00'}`;
           cadena.sort((a, b) => ordenKey(a).localeCompare(ordenKey(b)));
           const anterior = actual.parentId ? byId.get(actual.parentId) : null;
+          const participantes = raw.participants || [];
           const cerrarDetalle = () => { if (!completingNotice) setSelectedNotice(null); };
           const esImportante = actual.type === 'importante';
           const color = (raw.color || actual.color || '#f97316');
@@ -2428,6 +2548,28 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       <Link2 size={13} /> Sigue de: {anterior.rawNotice?.title || anterior.titulo} · {formatNoticeDate(anterior.dateKey)}
                     </button>
                   )}
+                  {/* Participantes (vacío = todo el equipo) */}
+                  <div className="nd-people">
+                    <Users size={14} />
+                    {participantes.length ? (
+                      <>
+                        <span className="nd-people-avatars">
+                          {participantes.slice(0, 5).map(p => (
+                            <span key={p.id} className="nd-people-avatar" title={memberName(p)}>
+                              {p.profile_picture ? <img src={p.profile_picture} alt="" /> : memberInitials(p)}
+                            </span>
+                          ))}
+                        </span>
+                        <span className="nd-people-names">
+                          {participantes.slice(0, 3).map(p => memberName(p).split(' ')[0]).join(', ')}
+                          {participantes.length > 3 ? ` y ${participantes.length - 3} más` : ''}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="nd-people-names">Todo el equipo</span>
+                    )}
+                  </div>
+
                   {notas && <p className="nd-notes">{notas}</p>}
 
                   {completado && (
@@ -2455,7 +2597,12 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                         autoFocus
                       />
                       <span className="nd-complete-hint">
-                        <Bell size={13} /> {completeStep.note.trim() ? 'El comentario le llegará a todo el equipo' : 'Si escribes un comentario, le llegará a todo el equipo'}
+                        <Bell size={13} /> {(() => {
+                          const destino = participantes.length
+                            ? `${participantes.length === 1 ? 'a la persona invitada' : `a las ${participantes.length} personas invitadas`}`
+                            : 'a todo el equipo';
+                          return completeStep.note.trim() ? `El comentario le llegará ${destino}` : `Si escribes un comentario, le llegará ${destino}`;
+                        })()}
                       </span>
                       <button type="button" className="nq-btn-submit nd-btn-done" onClick={() => handleCompleteNotice(true)} disabled={completingNotice}>
                         <CalendarPlus size={16} /> {completingNotice ? 'Guardando…' : 'Completar y agendar siguiente paso'}
