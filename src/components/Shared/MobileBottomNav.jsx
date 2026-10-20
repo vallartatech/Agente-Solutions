@@ -334,6 +334,16 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           <Wrench size={22} className="vcp-mobile-nav-icon" />
         </button>
 
+        <button
+          type="button"
+          className={`vcp-mobile-nav-item ${currentPath.includes('/comprobantes') ? 'active' : ''}`}
+          onClick={() => navigate('/comprobantes')}
+          title="Comprobantes"
+          aria-label="Comprobantes"
+        >
+          <ReceiptText size={22} className="vcp-mobile-nav-icon" />
+        </button>
+
         {canViewMap && (
           <button
             type="button"

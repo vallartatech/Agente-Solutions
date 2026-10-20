@@ -29,6 +29,7 @@ import ModalCalendarioCliente from './ModalCalendarioCliente';
 import ModalCalendarioSolutions from '../../AgenteSolutions/Shared/ModalCalendarioSolutions';
 import NotificationBell from '../../../components/Shared/NotificationBell';
 import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
+import Header from '../../../components/Shared/Header';
 import '../../../styles/Shared/Profile.css';
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80';
@@ -288,7 +289,8 @@ const PerfilCliente = () => {
 
   return (
     <div className="profile-liquid-root">
-      {/* Top Floating Action Bar */}
+      {/* Admins: el mismo encabezado que el resto de la app. Otros roles: barra propia del perfil */}
+      {showAdminNav ? <Header activeModule="perfil" /> : (
       <header className="profile-liquid-topbar" ref={dropdownRef}>
         <div className="profile-topbar-left">
           <img 
@@ -416,6 +418,7 @@ const PerfilCliente = () => {
           </button>
         </div>
       </header>
+      )}
 
       {/* ── PORTAL GLOBAL DE PERFIL FLOTANTE ── */}
       {profileDropdownOpen && createPortal(
@@ -876,8 +879,8 @@ const PerfilCliente = () => {
         />
       )}
 
-      {/* Responsive Bottom Navigation (Only Icons) */}
-      <MobileBottomNav />
+      {/* Responsive Bottom Navigation (Only Icons); el encabezado de admin ya la incluye */}
+      {!showAdminNav && <MobileBottomNav />}
 
     </div>
   );

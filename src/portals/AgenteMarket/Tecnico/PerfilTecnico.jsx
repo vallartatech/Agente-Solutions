@@ -30,6 +30,7 @@ import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
 import ModalCalendarioSolutions from '../../AgenteSolutions/Shared/ModalCalendarioSolutions';
 import NotificationBell from '../../../components/Shared/NotificationBell';
 import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
+import Header from '../../../components/Shared/Header';
 import '../../../styles/Shared/Profile.css';
 
 export const ESPECIALIDADES_CATALOGO = [
@@ -315,7 +316,8 @@ const PerfilTecnico = () => {
 
   return (
     <div className="profile-liquid-root">
-      {/* Top Floating Action Bar (Técnico Theme) */}
+      {/* Técnico oficial: el mismo encabezado que el resto de su portal. Red (6/8): barra propia del perfil */}
+      {isRol2 ? <Header activeModule="perfil" /> : (
       <header className="profile-liquid-topbar" ref={dropdownRef}>
         <div className="profile-topbar-left">
           <img 
@@ -448,6 +450,7 @@ const PerfilTecnico = () => {
           </button>
         </div>
       </header>
+      )}
 
       {/* ── PORTAL GLOBAL DE PERFIL FLOTANTE ── */}
       {profileDropdownOpen && createPortal(
@@ -945,8 +948,8 @@ const PerfilTecnico = () => {
         />
       )}
 
-      {/* Responsive Bottom Navigation (Only Icons) */}
-      <MobileBottomNav />
+      {/* Responsive Bottom Navigation (Only Icons); el encabezado del técnico oficial ya la incluye */}
+      {!isRol2 && <MobileBottomNav />}
 
     </div>
   );

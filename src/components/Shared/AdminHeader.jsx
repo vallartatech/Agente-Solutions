@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarDays, Shield, User, LogOut, Navigation, ReceiptText } from 'lucide-react';
+import { CalendarDays, Shield, User, LogOut, Navigation, ReceiptText, Globe, ChevronDown } from 'lucide-react';
 import defaultLogo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
 import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
@@ -21,6 +21,23 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
   const [appLogo, setAppLogo] = useState(defaultLogo);
   const [canViewMap, setCanViewMap] = useState(false);
   const dropdownRef = useRef(null);
+  const masBtnRef = useRef(null);
+  const [masAbierto, setMasAbierto] = useState(false);
+  const [masPos, setMasPos] = useState(null);
+
+  // El menú "Más" se cierra al navegar, con Escape o si la ventana cambia de tamaño
+  useEffect(() => { setMasAbierto(false); }, [location.pathname]);
+  useEffect(() => {
+    if (!masAbierto) return;
+    const cerrar = () => setMasAbierto(false);
+    const onKey = (e) => { if (e.key === 'Escape') cerrar(); };
+    window.addEventListener('resize', cerrar);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('resize', cerrar);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [masAbierto]);
 
   // Botón del mapa del equipo: solo para usuarios autorizados (el backend también lo valida)
   useEffect(() => {
@@ -106,6 +123,19 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
   const isMapaActive = activeModule === 'mapa' || currentPath.includes('/mapa-equipo');
   const isComprobantesActive = activeModule === 'comprobantes' || currentPath.includes('/comprobantes');
 
+  const masItems = [
+    { key: 'comprobantes', label: 'Comprobantes', Icon: ReceiptText, path: '/comprobantes', active: isComprobantesActive },
+    ...(canViewMap ? [{ key: 'mapa', label: 'Mapa en vivo', Icon: Navigation, path: '/mapa-equipo', active: isMapaActive }] : []),
+    ...(isRoot ? [{ key: 'mercado', label: 'Mercado / Red', Icon: Globe, path: '/red-autonomos', active: isMercadoActive }] : [])
+  ];
+  const masActivo = masItems.find(i => i.active);
+
+  const toggleMas = () => {
+    const r = masBtnRef.current?.getBoundingClientRect();
+    if (r) setMasPos({ top: r.bottom + 8, left: Math.min(r.left, window.innerWidth - 240) });
+    setMasAbierto(v => !v);
+  };
+
   return (
     <>
       <header className="vcp-header">
@@ -178,33 +208,18 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
             SERVICIOS
           </button>
 
+          {/* Apartados secundarios agrupados para que el menú no se amontone */}
           <button
             type="button"
-            className={`vcp-nav-btn ${isComprobantesActive ? 'active' : ''}`}
-            onClick={() => navigate('/comprobantes')}
+            ref={masBtnRef}
+            className={`vcp-nav-btn vcp-more-trigger ${masActivo ? 'active' : ''} ${masAbierto ? 'open' : ''}`}
+            onClick={toggleMas}
+            aria-haspopup="menu"
+            aria-expanded={masAbierto}
           >
-            COMPROBANTES
+            {masActivo ? masActivo.label.toUpperCase() : 'MÁS'}
+            <ChevronDown size={14} strokeWidth={2.6} className="vcp-more-chevron" />
           </button>
-
-          {canViewMap && (
-            <button
-              type="button"
-              className={`vcp-nav-btn ${isMapaActive ? 'active' : ''}`}
-              onClick={() => navigate('/mapa-equipo')}
-            >
-              MAPA EN VIVO
-            </button>
-          )}
-
-          {isRoot && (
-            <button
-              type="button"
-              className={`vcp-nav-btn ${isMercadoActive ? 'active' : ''}`}
-              onClick={() => navigate('/red-autonomos')}
-            >
-              MERCADO / RED
-            </button>
-          )}
         </nav>
 
         {/* SECCIÓN DERECHA: Calendario + Notificaciones + Perfil */}
@@ -237,6 +252,27 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
           </button>
         </div>
       </header>
+
+      {/* MENÚ "MÁS" (en portal: la barra de navegación recorta lo que se sale de ella) */}
+      {masAbierto && masPos && createPortal(
+        <div className="vcp-more-root">
+          <div className="vcp-more-backdrop" onClick={() => setMasAbierto(false)} />
+          <div className="vcp-more-menu" role="menu" style={{ top: masPos.top, left: masPos.left }}>
+            {masItems.map(({ key, label, Icon, path, active }) => (
+              <button
+                key={key}
+                type="button"
+                role="menuitem"
+                className={`vcp-more-item ${active ? 'active' : ''}`}
+                onClick={() => { setMasAbierto(false); navigate(path); }}
+              >
+                <Icon size={17} /> {label}
+              </button>
+            ))}
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* MODAL GLOBAL DE CALENDARIO */}
       <ModalCalendarioSolutions 
