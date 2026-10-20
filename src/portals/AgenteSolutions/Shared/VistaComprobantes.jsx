@@ -165,17 +165,32 @@ const VistaComprobantes = () => {
       form.archivos.forEach(a => a.preview && URL.revokeObjectURL(a.preview));
       setMostrarSubir(false);
 
+      // El backend informa si OneSignal realmente envió la push al secretario
       const empresa = empresaDe(form.empresa).nombre;
       const push = res.data?.push;
-      Swal.fire({
-        icon: push && !push.sent && push.recipients === 0 ? 'warning' : 'success',
-        title: 'Comprobante enviado',
-        text: push && !push.sent && push.recipients === 0
-          ? `Se guardó, pero ${empresa} aún no tiene un secretario asignado.`
-          : `Le llegó al secretario de ${empresa}.`,
-        timer: 2600,
-        showConfirmButton: false
-      });
+      if (push && !push.sent && push.recipients === 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Comprobante guardado',
+          text: `${empresa} aún no tiene un secretario asignado, así que no se notificó a nadie.`,
+          confirmButtonColor: '#f26522'
+        });
+      } else if (push && !push.sent) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Comprobante enviado',
+          text: `El secretario de ${empresa} lo verá en su campanita y su bandeja, pero no le llegó notificación al celular: aún no activa las notificaciones en su dispositivo.`,
+          confirmButtonColor: '#f26522'
+        });
+      } else {
+        Swal.fire({
+          icon: 'success',
+          title: 'Comprobante enviado',
+          text: `Se notificó al secretario de ${empresa}.`,
+          timer: 2600,
+          showConfirmButton: false
+        });
+      }
 
       if (vista !== 'mios') cambiarVista('mios'); else cargar(1);
       cargarPermisos();
