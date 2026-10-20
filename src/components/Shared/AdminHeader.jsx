@@ -217,7 +217,12 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
             aria-haspopup="menu"
             aria-expanded={masAbierto}
           >
-            {masActivo ? masActivo.label.toUpperCase() : 'MÁS'}
+            {masActivo ? (
+              <>
+                <span className="vcp-more-label-full">{masActivo.label.toUpperCase()}</span>
+                <span className="vcp-more-label-short">MÁS</span>
+              </>
+            ) : 'MÁS'}
             <ChevronDown size={14} strokeWidth={2.6} className="vcp-more-chevron" />
           </button>
         </nav>

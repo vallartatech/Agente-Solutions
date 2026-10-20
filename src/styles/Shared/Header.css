@@ -397,7 +397,7 @@
 .vcp-more-root {
   position: fixed;
   inset: 0;
-  z-index: 100050;
+  z-index: 1000002; /* encima del encabezado (999999) */
 }
 
 .vcp-more-backdrop {
@@ -458,4 +458,56 @@
 
 .vcp-more-item.active svg {
   color: #f26522;
+}
+
+/* ── Menú superior en pantallas medianas: se achica antes de cortarse ──
+   (doble clase para ganar a los estilos de cada pantalla que también definen .vcp-nav-btn) */
+.vcp-header .vcp-header-nav {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.vcp-more-label-short {
+  display: none;
+}
+
+@media (max-width: 1440px) {
+  .vcp-header .vcp-header-nav {
+    gap: 2px !important;
+  }
+
+  .vcp-header .vcp-header-nav .vcp-nav-btn.vcp-nav-btn {
+    padding: 7px 11px !important;
+    font-size: 0.76rem !important;
+    letter-spacing: 0.4px !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .vcp-header .vcp-header-nav .vcp-nav-btn.vcp-nav-btn {
+    padding: 6px 8px !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.2px !important;
+  }
+
+  /* El botón "Más" muestra solo "MÁS" aunque estés en Comprobantes o Mapa */
+  .vcp-more-label-full {
+    display: none;
+  }
+
+  .vcp-more-label-short {
+    display: inline;
+  }
+}
+
+@media (max-width: 1100px) {
+  .vcp-header .vcp-header-nav .vcp-nav-btn.vcp-nav-btn {
+    padding: 6px 6px !important;
+    font-size: 0.64rem !important;
+    letter-spacing: 0 !important;
+  }
+
+  .vcp-header .vcp-header-right {
+    gap: 8px !important;
+  }
 }
