@@ -511,3 +511,14 @@
     gap: 8px !important;
   }
 }
+
+/* ── Pestañas propias de una vista (ej. Detalle de propiedad) ── */
+.vcp-header .vcp-header-nav-tabs .vcp-nav-back {
+  color: #64748b;
+  margin-right: 6px;
+  border-color: rgba(100, 116, 139, 0.25);
+}
+
+.vcp-header .vcp-header-nav-tabs .vcp-nav-back:hover {
+  color: #f26522;
+}

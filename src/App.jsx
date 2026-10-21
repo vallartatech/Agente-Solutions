@@ -44,6 +44,7 @@ import VistaCotizaciones from "./portals/AgenteSolutions/Admin/VistaCotizaciones
 import VistaDashboard from "./portals/AgenteSolutions/Admin/VistaDashboard";
 import VistaDetalleCliente from "./portals/AgenteSolutions/Admin/VistaDetalleCliente";
 import VistaDetallePropiedadAdmin from "./portals/AgenteSolutions/Admin/VistaDetallePropiedad";
+import VistaTrabajoPropiedad from "./portals/AgenteSolutions/Admin/Expediente/VistaTrabajoPropiedad";
 import VistaLevantamientos from "./portals/AgenteSolutions/Admin/VistaLevantamientos";
 import VistaPropiedadesAdmin from "./portals/AgenteSolutions/Admin/VistaPropiedades";
 import VistaUsuarios from "./portals/AgenteSolutions/Admin/VistaUsuarios";
@@ -113,6 +114,14 @@ const DetallePropiedadWrapper = () => {
   const roleId = Number(user?.role_id);
   if (roleId === 0 || roleId === 1) return <VistaDetallePropiedadAdmin />;
   return <VistaDetallePropiedadAutonomo />;
+};
+
+// Detalle de un trabajo dentro del expediente de la propiedad: solo Root (0) y Admin (1)
+const TrabajoPropiedadWrapper = () => {
+  const { user } = useAuth();
+  const roleId = Number(user?.role_id);
+  if (roleId === 0 || roleId === 1) return <VistaTrabajoPropiedad />;
+  return <Navigate to="/propiedades" replace />;
 };
 
 const CalendarioWrapper = () => {
@@ -231,6 +240,7 @@ const AppRoutes = () => {
       <Route path="/assign-service" element={<AssignServiceForm />} />
       <Route path="/bodeguero" element={<VistaBodeguero />} />
       <Route path="/detalle-propiedad/:id" element={<DetallePropiedadWrapper />} />
+      <Route path="/detalle-propiedad/:id/trabajo/:uid" element={<TrabajoPropiedadWrapper />} />
       <Route path="/tablero-servicios" element={<VistaServiciosAdmin />} />
       <Route path="/detalle-tecnico" element={<VistaDetalleTecnico />} />
       <Route path="/reportes-globales" element={<VistaReportesGlobal />} />

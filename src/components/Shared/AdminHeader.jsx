@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarDays, Shield, User, LogOut, Navigation, ReceiptText, Globe, ChevronDown } from 'lucide-react';
+import { CalendarDays, Shield, User, LogOut, Navigation, ReceiptText, Globe, ChevronDown, ArrowLeft } from 'lucide-react';
 import defaultLogo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
 import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
@@ -11,7 +11,9 @@ import axios from 'axios';
 import { obtenerEstadoUbicacion, suscribirEstadoUbicacion } from './ubicacionService';
 import '../../styles/Shared/Header.css';
 
-const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
+// navTabs (opcional): reemplaza el menú principal por pestañas propias de la vista,
+// ej. [{ key, label, Icon, active, onClick }]. navBack: { label, onClick } para regresar.
+const AdminHeader = ({ activeModule, titulo, rolTexto, navTabs, navBack }) => {
   const { user, logoutGlobal, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -150,7 +152,26 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
           />
         </div>
 
-        {/* NAVEGACIÓN PRINCIPAL DEL ADMIN (ROL 1 / ROL 0) */}
+        {navTabs ? (
+          <nav className="vcp-header-nav vcp-header-nav-tabs">
+            {navBack && (
+              <button type="button" className="vcp-nav-btn vcp-nav-back" onClick={navBack.onClick}>
+                <ArrowLeft size={15} strokeWidth={2.6} /> {navBack.label}
+              </button>
+            )}
+            {navTabs.map(({ key, label, Icon, active, onClick }) => (
+              <button
+                key={key}
+                type="button"
+                className={`vcp-nav-btn ${active ? 'active' : ''}`}
+                onClick={onClick}
+              >
+                {Icon && <Icon size={15} strokeWidth={2.4} />} {label}
+              </button>
+            ))}
+          </nav>
+        ) : (
+        /* NAVEGACIÓN PRINCIPAL DEL ADMIN (ROL 1 / ROL 0) */
         <nav className="vcp-header-nav">
           <button
             type="button"
@@ -226,6 +247,7 @@ const AdminHeader = ({ activeModule, titulo, rolTexto }) => {
             <ChevronDown size={14} strokeWidth={2.6} className="vcp-more-chevron" />
           </button>
         </nav>
+        )}
 
         {/* SECCIÓN DERECHA: Calendario + Notificaciones + Perfil */}
         <div className="vcp-header-right" ref={dropdownRef}>
