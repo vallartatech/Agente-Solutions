@@ -597,12 +597,19 @@ const VistaPropiedades = () => {
     e.stopPropagation();
     if (menuTarjeta?.id === p.id) { setMenuTarjeta(null); return; }
     const rect = e.currentTarget.getBoundingClientRect();
-    const abrirArriba = rect.bottom + 380 > window.innerHeight;
+    // Se abre hacia el lado con más espacio, sin meterse bajo el encabezado;
+    // si aun así no cabe, se limita a la altura disponible y se desplaza por dentro
+    const MARGEN = 8;
+    const limiteSuperior = Math.max(document.querySelector('.vcp-header')?.getBoundingClientRect().bottom ?? 0, 0) + MARGEN;
+    const espacioAbajo = window.innerHeight - rect.bottom - MARGEN * 2;
+    const espacioArriba = rect.top - limiteSuperior - MARGEN;
+    const abrirArriba = espacioAbajo < 380 && espacioArriba > espacioAbajo;
     setMenuTarjeta({
       id: p.id,
       top: abrirArriba ? null : rect.bottom + 6,
       bottom: abrirArriba ? window.innerHeight - rect.top + 6 : null,
       right: window.innerWidth - rect.right,
+      maxHeight: Math.max(abrirArriba ? espacioArriba : espacioAbajo, 160),
     });
   };
 
@@ -1059,6 +1066,8 @@ const VistaPropiedades = () => {
                 top: menuTarjeta.top ?? 'auto',
                 bottom: menuTarjeta.bottom ?? 'auto',
                 right: menuTarjeta.right,
+                maxHeight: menuTarjeta.maxHeight,
+                overflowY: 'auto',
               }}
             >
               <div className="card-menu-title">{p.nombre_propiedad || "Propiedad sin nombre"}</div>
