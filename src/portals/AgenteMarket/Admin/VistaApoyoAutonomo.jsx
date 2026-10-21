@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Header from '../../../components/Shared/Header';
 import { useNavigate } from 'react-router-dom';
 import { HelpCircle, PhoneCall, MessageCircle, Users, Send, CheckCircle, ShieldAlert } from 'lucide-react';
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const VistaApoyoAutonomo = () => {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ const VistaApoyoAutonomo = () => {
   const handleSendRequest = (e) => {
     e.preventDefault();
     if (!reason.trim()) {
-      alert('Por favor describe el motivo del apoyo requerido.');
+      mostrarAviso('Por favor describe el motivo del apoyo requerido.');
       return;
     }
     // Simulamos el envío o abrimos WhatsApp con el mensaje estructurado

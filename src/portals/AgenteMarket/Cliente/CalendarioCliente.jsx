@@ -31,6 +31,7 @@ import {
   ArrowRight,
   AlertTriangle
 } from 'lucide-react';
+import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
 const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -375,7 +376,7 @@ const CalendarioCliente = () => {
     if (!selectedJobForQuotes?.id) return;
     let msg = '';
     if (action === 'reschedule') {
-      msg = prompt("Escribe una breve nota sobre qué horario te queda mejor:");
+      msg = await pedirTexto("Escribe una breve nota sobre qué horario te queda mejor:");
       if (msg === null) return;
     }
     try {
@@ -386,7 +387,7 @@ const CalendarioCliente = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
-        alert("✅ " + res.data.message);
+        mostrarAviso("✅ " + res.data.message);
         fetchJobs();
       }
     } catch (e) {
@@ -396,14 +397,14 @@ const CalendarioCliente = () => {
 
   const handleAcceptQuote = async (quote) => {
     const techName = quote.technicianName || 'este técnico';
-    if (!window.confirm(`¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}?`)) return;
+    if (!await confirmarAccion(`¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}?`)) return;
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quote.id}/accept`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
-        alert("🎉 " + res.data.message);
+        mostrarAviso("🎉 " + res.data.message);
         setShowQuotesModal(false);
         setActiveChatQuote(null);
         fetchJobs();
@@ -414,14 +415,14 @@ const CalendarioCliente = () => {
   };
 
   const handleDeleteJob = async (jobId) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar y cancelar esta publicación de la Red?")) return;
+    if (!await confirmarAccion("¿Estás seguro de que deseas eliminar y cancelar esta publicación de la Red?")) return;
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const res = await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${jobId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data?.success) {
-        alert("✅ Publicación eliminada.");
+        mostrarAviso("✅ Publicación eliminada.");
         setShowQuotesModal(false);
         fetchJobs();
       }
@@ -440,13 +441,13 @@ const CalendarioCliente = () => {
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
       if (res.data?.success) {
-        alert("🌐 " + res.data.message);
+        mostrarAviso("🌐 " + res.data.message);
         setShowQuotesModal(false);
         fetchJobs();
       }
     } catch (e) {
       console.error("Error reenviando solicitud a la red:", e);
-      alert(e.response?.data?.message || "Hubo un error al reenviar la solicitud a la red.");
+      mostrarAviso(e.response?.data?.message || "Hubo un error al reenviar la solicitud a la red.");
     }
   };
 

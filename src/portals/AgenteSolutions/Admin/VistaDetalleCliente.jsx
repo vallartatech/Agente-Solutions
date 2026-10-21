@@ -17,6 +17,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import "../../../styles/AgenteSolutions/Admin/VistaDetalleCliente.css";
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const VistaDetalleCliente = () => {
   const navigate = useNavigate();
@@ -97,10 +98,10 @@ const VistaDetalleCliente = () => {
 
       setCliente({ ...cliente, ...formData });
       setIsModalOpen(false);
-      alert(data.message || "¡Expediente actualizado con éxito!");
+      mostrarAviso(data.message || "¡Expediente actualizado con éxito!");
     } catch (error) {
       console.error("Error al actualizar perfil:", error);
-      alert(
+      mostrarAviso(
         "No se pudieron guardar los cambios: " +
           (error.response?.data?.message || error.message)
       );

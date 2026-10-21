@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from "axios";
 import { desvincularUsuarioOneSignal } from '../components/Shared/oneSignalPush';
+import { mostrarAviso } from '../utils/dialogos';
 
 const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
@@ -87,8 +88,10 @@ export const AuthProvider = ({ children }) => {
           const sessionData = JSON.parse(savedSession);
           if (new Date().getTime() > sessionData.expirationTime) {
             logoutGlobal();
-            alert('Tu sesión ha expirado por seguridad. Por favor, vuelve a iniciar sesión.');
-            window.location.href = '/'; 
+            clearInterval(intervalo);
+            // Se redirige cuando el usuario cierra el aviso
+            mostrarAviso('Tu sesión ha expirado por seguridad. Por favor, vuelve a iniciar sesión.', 'warning')
+              .then(() => { window.location.href = '/'; }); 
           }
         }
       }, 60000); 

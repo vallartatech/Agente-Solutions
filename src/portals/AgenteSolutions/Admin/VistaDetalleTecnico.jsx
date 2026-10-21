@@ -5,6 +5,7 @@ import {
   ChevronLeft, User, Mail, MapPin, ArrowRight, ShieldCheck, X, Save, Phone, Lock, CheckCircle, Briefcase, Clipboard, FileText, Clock
 } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Admin/VistaDetalleCliente.css';
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const ESPECIALIDADES_CATALOGO = [
   { id: 1, name: "Electricidad", icon: "⚡" },
@@ -167,10 +168,10 @@ const VistaDetalleTecnico = () => {
 
       setTecnico({ ...tecnico, ...formData, specialties: updatedSpecs });
       setIsModalOpen(false);
-      alert(data.message || '¡Perfil actualizado con éxito!');
+      mostrarAviso(data.message || '¡Perfil actualizado con éxito!');
     } catch (error) {
       console.error('Error al actualizar perfil:', error);
-      alert('No se pudieron guardar los cambios: ' + (error.response?.data?.message || error.message));
+      mostrarAviso('No se pudieron guardar los cambios: ' + (error.response?.data?.message || error.message));
     }
   };
 

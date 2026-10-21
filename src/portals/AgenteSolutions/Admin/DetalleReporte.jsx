@@ -8,6 +8,7 @@ import '../../../styles/AgenteSolutions/Tecnico/RegistroDetalleHabitacion.css';
 import logo from "../../../assets/Logo3.png";
 import casaImg from '../../../assets/propiedad_ejemplo.jpg';
 import mpLogo from '../../../assets/Mercado-Pago.png';
+import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const IVA_RATE = 0.16;
 
@@ -180,7 +181,7 @@ const DetalleReporte = () => {
 
     const handleCrearZona = async () => {
         const nombreZona = nuevaZonaOpcion === 'OTRA...' ? nuevaZonaTexto : nuevaZonaOpcion;
-        if (!nombreZona.trim()) return alert("Por favor, selecciona o escribe un nombre para la zona.");
+        if (!nombreZona.trim()) return mostrarAviso("Por favor, selecciona o escribe un nombre para la zona.");
         
         setGuardandoArea(true);
         try {
@@ -200,7 +201,7 @@ const DetalleReporte = () => {
             cargarReporte(); // Recargar datos
         } catch (error) {
             console.error("Error al crear zona:", error);
-            alert("Error al crear la zona.");
+            mostrarAviso("Error al crear la zona.");
         } finally {
             setGuardandoArea(false);
         }
@@ -208,7 +209,7 @@ const DetalleReporte = () => {
 
     const handleCrearEspacio = async () => {
         const nombreEspacio = nuevoEspacioOpcion === 'OTRA...' ? nuevoEspacioTexto : nuevoEspacioOpcion;
-        if (!nombreEspacio.trim() || !zonaParaNuevoEspacio) return alert("Por favor, selecciona o escribe un nombre para el espacio.");
+        if (!nombreEspacio.trim() || !zonaParaNuevoEspacio) return mostrarAviso("Por favor, selecciona o escribe un nombre para el espacio.");
         
         setGuardandoArea(true);
         try {
@@ -230,7 +231,7 @@ const DetalleReporte = () => {
             cargarReporte(); // Recargar datos
         } catch (error) {
             console.error("Error al crear espacio:", error);
-            alert("Error al crear el espacio.");
+            mostrarAviso("Error al crear el espacio.");
         } finally {
             setGuardandoArea(false);
         }
@@ -312,28 +313,28 @@ const DetalleReporte = () => {
 
     const handleEliminarZona = async (idZonaFallback, nombreZona) => {
         const idZona = idZonaFallback || await obtenerIdZona(nombreZona);
-        if (!idZona) return alert("Error: No se pudo localizar la zona en la base de datos.");
+        if (!idZona) return mostrarAviso("Error: No se pudo localizar la zona en la base de datos.");
         
-        if (window.confirm(`¿Estás seguro de eliminar la zona "${nombreZona}" y todo su contenido? Esta acción no se puede deshacer.`)) {
+        if (await confirmarAccion(`¿Estás seguro de eliminar la zona "${nombreZona}" y todo su contenido? Esta acción no se puede deshacer.`)) {
             try {
                 const token = localStorage.getItem('agente_token');
                 await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/property-areas/${idZona}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                alert("Zona eliminada con éxito.");
+                mostrarAviso("Zona eliminada con éxito.");
                 await cargarReporte(); 
             } catch (error) {
                 console.error("Error al eliminar zona:", error);
-                alert("Hubo un error al eliminar la zona.");
+                mostrarAviso("Hubo un error al eliminar la zona.");
             }
         }
     };
 
     const handleGuardarEdicionZona = async (idZonaFallback, nombreZonaActual) => {
-        if (!nuevoNombreZona.trim()) return alert("El nombre no puede estar vacío");
+        if (!nuevoNombreZona.trim()) return mostrarAviso("El nombre no puede estar vacío");
         
         const idZona = idZonaFallback || await obtenerIdZona(nombreZonaActual);
-        if (!idZona) return alert("Error: No se pudo localizar la zona en la base de datos.");
+        if (!idZona) return mostrarAviso("Error: No se pudo localizar la zona en la base de datos.");
 
         try {
             const token = localStorage.getItem('agente_token');
@@ -345,24 +346,24 @@ const DetalleReporte = () => {
             await cargarReporte();
         } catch (error) {
             console.error("Error al editar zona:", error);
-            alert("Error al editar el nombre de la zona.");
+            mostrarAviso("Error al editar el nombre de la zona.");
         }
     };
 
     // --- FUNCIONES PARA ELEMENTOS (INVENTARIO) ---
     const handleEliminarElemento = async (idElemento) => {
-        if (!idElemento) return alert("Error: ID del elemento no encontrado. No se puede eliminar.");
-        if (window.confirm("¿Seguro que deseas eliminar este elemento? Esta acción no se puede deshacer.")) {
+        if (!idElemento) return mostrarAviso("Error: ID del elemento no encontrado. No se puede eliminar.");
+        if (await confirmarAccion("¿Seguro que deseas eliminar este elemento? Esta acción no se puede deshacer.")) {
             try {
                 const token = localStorage.getItem('agente_token');
                 await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/property-components/${idElemento}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                alert("Elemento eliminado.");
+                mostrarAviso("Elemento eliminado.");
                 await cargarReporte();
             } catch (error) {
                 console.error(error);
-                alert("Hubo un error al eliminar el elemento.");
+                mostrarAviso("Hubo un error al eliminar el elemento.");
             }
         }
     };
@@ -424,30 +425,30 @@ const DetalleReporte = () => {
     };
 
     const handleEliminarCategoria = async (idCategoria) => {
-        if (!idCategoria) return alert("Esta categoría no puede ser eliminada directamente.");
-        if (!window.confirm("¿Seguro que deseas eliminar esta categoría? Se eliminarán también todos los elementos dentro de ella.")) return;
+        if (!idCategoria) return mostrarAviso("Esta categoría no puede ser eliminada directamente.");
+        if (!await confirmarAccion("¿Seguro que deseas eliminar esta categoría? Se eliminarán también todos los elementos dentro de ella.")) return;
 
         try {
             const token = localStorage.getItem('agente_token');
             await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/property-categories/${idCategoria}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            alert("Categoría eliminada.");
+            mostrarAviso("Categoría eliminada.");
             await cargarReporte();
         } catch (error) {
             console.error("Error al eliminar categoría:", error);
-            alert("Hubo un error al eliminar la categoría.");
+            mostrarAviso("Hubo un error al eliminar la categoría.");
         }
     };
 
     const guardarCategoria = async () => {
-        if (!nuevaCategoria) return alert("Ingresa el nombre de la categoría.");
+        if (!nuevaCategoria) return mostrarAviso("Ingresa el nombre de la categoría.");
         
         let idArea = selectedSubseccion.id;
         if (!idArea) {
             idArea = await obtenerIdZona(selectedSubseccion.nombre);
         }
-        if (!idArea) return alert("Error: No se encontró el ID de la habitación.");
+        if (!idArea) return mostrarAviso("Error: No se encontró el ID de la habitación.");
 
         try {
             const token = localStorage.getItem('agente_token');
@@ -463,18 +464,18 @@ const DetalleReporte = () => {
             await cargarReporte(); 
         } catch (error) {
             console.error(error);
-            alert("Hubo un error al registrar la categoría.");
+            mostrarAviso("Hubo un error al registrar la categoría.");
         }
     };
 
     const guardarElemento = async () => {
-        if (!elementoActual.sub_category) return alert("El nombre/tipo del elemento es obligatorio.");
+        if (!elementoActual.sub_category) return mostrarAviso("El nombre/tipo del elemento es obligatorio.");
         
         let idArea = selectedSubseccion.id;
         if (!idArea) {
             idArea = await obtenerIdZona(selectedSubseccion.nombre);
         }
-        if (!idArea) return alert("Error: No se encontró el ID de la habitación. (Intenta recargar la página)");
+        if (!idArea) return mostrarAviso("Error: No se encontró el ID de la habitación. (Intenta recargar la página)");
 
         try {
             const token = localStorage.getItem('agente_token');
@@ -505,7 +506,7 @@ const DetalleReporte = () => {
                 });
             }
 
-            alert(elementoActual.id ? "Elemento actualizado." : "Elemento agregado.");
+            mostrarAviso(elementoActual.id ? "Elemento actualizado." : "Elemento agregado.");
             setModalElementoVisible(false);
             setElementoActual({ id: null, sub_category: '', brand: '', model_or_color: '', quantity: 1, category: '', serial_number: '', observations: '', status: 'Bueno' });
             setPreviewImg(null);
@@ -518,7 +519,7 @@ const DetalleReporte = () => {
 
         } catch (error) {
             console.error("Error al guardar elemento:", error);
-            alert("Hubo un error al guardar el elemento.");
+            mostrarAviso("Hubo un error al guardar el elemento.");
         }
     };
 
@@ -576,16 +577,16 @@ const DetalleReporte = () => {
                 data.append('estimated_amount', totalGeneral.toFixed(2));
                 data.append('observations', observaciones);
             } else {
-                if (!archivoFisico) return alert("Selecciona un archivo");
+                if (!archivoFisico) return mostrarAviso("Selecciona un archivo");
                 data.append('file', archivoFisico);
             }
 
             await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones`, data);
-            alert("¡Cotización guardada exitosamente!");
+            mostrarAviso("¡Cotización guardada exitosamente!");
             setMostrarCotizacion(false);
         } catch (error) {
             console.error(error);
-            alert("Error al guardar la cotización.");
+            mostrarAviso("Error al guardar la cotización.");
         }
     };
 

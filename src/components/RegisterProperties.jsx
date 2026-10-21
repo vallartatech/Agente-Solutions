@@ -27,6 +27,7 @@ import {
 } from "@react-google-maps/api";
 import { GOOGLE_MAPS_LOADER } from "./Shared/googleMapsConfig";
 import "../styles/Shared/RegisterProperties.css";
+import { mostrarAviso } from '../utils/dialogos';
 
 const containerStyle = {
   width: "100%",
@@ -255,7 +256,7 @@ const RegisterProperties = () => {
       const detalleFinal = errorDelServidor ? errorDelServidor : errorDeRed;
       
       setMensaje("Fallo en iOS: " + detalleFinal);
-      alert("ATENCIÓN: " + detalleFinal); // Un alert para que no pase desapercibido en el celular
+      mostrarAviso("ATENCIÓN: " + detalleFinal); // Un alert para que no pase desapercibido en el celular
     }
     
   };

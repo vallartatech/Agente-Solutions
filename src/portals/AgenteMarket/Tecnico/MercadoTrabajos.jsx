@@ -20,6 +20,7 @@ import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
 import RegisterModal from '../../../components/Auth/Register';
 import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
 import ModalReportePdfTecnico from './ModalReportePdfTecnico';
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const mapContainerStyle = {
   width: '100%',
@@ -290,7 +291,7 @@ export const abrirEnGoogleMaps = (job) => {
     return;
   }
 
-  alert("No se encontraron coordenadas ni dirección para este trabajo.");
+  mostrarAviso("No se encontraron coordenadas ni dirección para este trabajo.");
 };
 
 // Función para normalizar y resolver URLs de fotos locales o remotas
@@ -1003,7 +1004,7 @@ const MercadoTrabajos = () => {
       }
     } catch (err) {
       console.error("Error al enviar mensaje:", err);
-      alert("No se pudo enviar el mensaje. Intenta de nuevo.");
+      mostrarAviso("No se pudo enviar el mensaje. Intenta de nuevo.");
     } finally {
       setSendingChat(false);
     }
@@ -1012,7 +1013,7 @@ const MercadoTrabajos = () => {
   const handleEnviarCotizacion = async () => {
     if (!selectedJob) return;
     if (!quotePrice) {
-      alert("Por favor ingresa una propuesta económica.");
+      mostrarAviso("Por favor ingresa una propuesta económica.");
       return;
     }
     try {
@@ -1023,7 +1024,7 @@ const MercadoTrabajos = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
-        alert("✅ " + res.data.message);
+        mostrarAviso("✅ " + res.data.message);
         setQuoteStep(1);
         setQuotePrice('');
         setQuoteMessage('');
@@ -1031,13 +1032,13 @@ const MercadoTrabajos = () => {
       }
     } catch (e) {
       console.error(e);
-      alert("Hubo un error al enviar tu cotización. Intenta de nuevo.");
+      mostrarAviso("Hubo un error al enviar tu cotización. Intenta de nuevo.");
     }
   };
 
   const handleProgramarVisita = async (jobId) => {
     if (!scheduleDate) {
-      alert("Por favor selecciona una fecha y hora para la visita.");
+      mostrarAviso("Por favor selecciona una fecha y hora para la visita.");
       return;
     }
     setSavingSchedule(true);
@@ -1049,13 +1050,13 @@ const MercadoTrabajos = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
-        alert("✅ " + res.data.message);
+        mostrarAviso("✅ " + res.data.message);
         setScheduleNotes('');
         fetchJobs();
       }
     } catch (e) {
       console.error("Error programando visita", e);
-      alert("Hubo un error al programar la visita. Intenta de nuevo.");
+      mostrarAviso("Hubo un error al programar la visita. Intenta de nuevo.");
     } finally {
       setSavingSchedule(false);
     }

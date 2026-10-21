@@ -4,6 +4,7 @@ import axios from 'axios';
 import { X, Plus, Trash2, Camera, FileText, Upload, Pencil } from 'lucide-react';
 import '../../styles/AgenteSolutions/Tecnico/TrabajoPropiedad.css';
 import '../../styles/Shared/ModalCrearCotizacion.css';
+import { mostrarAviso } from '../../utils/dialogos';
 
 const ModalCrearCotizacion = ({ 
   workOrderId, 
@@ -122,7 +123,7 @@ const ModalCrearCotizacion = ({
       } else if (targetServiceId) {
         formData.append('service_id', targetServiceId);
       } else {
-        alert("Falta ID de referencia para la cotización.");
+        mostrarAviso("Falta ID de referencia para la cotización.");
         setEnviandoCotizacion(false);
         return;
       }
@@ -148,7 +149,7 @@ const ModalCrearCotizacion = ({
       } else {
         if (!archivoCotizacion && !cotizacionExistente?.file_path) {
           setEnviandoCotizacion(false);
-          return alert("Por favor seleccione un archivo.");
+          return mostrarAviso("Por favor seleccione un archivo.");
         }
         if (archivoCotizacion) {
           formData.append('file', archivoCotizacion);
@@ -183,7 +184,7 @@ const ModalCrearCotizacion = ({
     } catch (error) {
       console.error("Error enviando cotización:", error);
       const msg = error.response?.data?.error || error.response?.data?.message || error.message || "Error desconocido";
-      alert("Hubo un error al enviar la cotización: " + msg);
+      mostrarAviso("Hubo un error al enviar la cotización: " + msg);
     } finally {
       setEnviandoCotizacion(false);
     }

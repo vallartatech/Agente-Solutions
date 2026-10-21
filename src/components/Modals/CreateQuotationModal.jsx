@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import mpLogo from '../../assets/Mercado-Pago.png';
 import '../../styles/Shared/CreateQuotationModal.css';
+import { mostrarAviso } from '../../utils/dialogos';
 
 const IVA_RATE = 0.16;
 
@@ -192,7 +193,7 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
   };
 
   const handleGuardar = async () => {
-    if (!servicioSeleccionado) return alert("Por favor seleccione un servicio.");
+    if (!servicioSeleccionado) return mostrarAviso("Por favor seleccione un servicio.");
     
     setLoading(true);
     try {
@@ -245,7 +246,7 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
           formData.append('estado', 'Por Pagar');
         }
       } else {
-        if (!archivo) return alert("Seleccione un archivo.");
+        if (!archivo) return mostrarAviso("Seleccione un archivo.");
         formData.append('file', archivo);
         formData.append('status', 'Por Pagar');
         formData.append('estado', 'Por Pagar');
@@ -387,7 +388,7 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
         });
         if (res.status === 201 || res.status === 200) {
           procesarTransicionPorPagarLocal(res.data?.cotizacion || res.data);
-          alert(successMsg);
+          mostrarAviso(successMsg);
           onSuccess();
           return;
         }
@@ -398,12 +399,12 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
       // Fallback local garantizado
       if (prefillData?.id || servicioSeleccionado) {
         procesarTransicionPorPagarLocal();
-        alert(successMsg);
+        mostrarAviso(successMsg);
         onSuccess();
       }
     } catch (error) {
       console.error("Error procesando cotización:", error);
-      alert("Hubo un error al procesar la cotización.");
+      mostrarAviso("Hubo un error al procesar la cotización.");
     } finally {
       setLoading(false);
     }

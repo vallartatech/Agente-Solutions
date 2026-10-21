@@ -3,6 +3,7 @@ import axios from 'axios';
 import Header from '../../../components/Shared/Header';
 import { useNavigate } from 'react-router-dom';
 import { Building2, CheckCircle, ArrowRightLeft, RefreshCw, AlertCircle, Phone, Mail, ShieldCheck } from 'lucide-react';
+import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const VistaGestionAutonomos = () => {
   const [activeTenants, setActiveTenants] = useState([]);
@@ -45,12 +46,12 @@ const VistaGestionAutonomos = () => {
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/tenants/${editingPlanTenant.id}/update-subscription-plan`, planForm);
       if (res.data.success) {
-        alert('✅ ' + res.data.message);
+        mostrarAviso('✅ ' + res.data.message);
         setEditingPlanTenant(null);
         fetchData();
       }
     } catch (error) {
-      alert('Error: ' + (error.response?.data?.error || error.message));
+      mostrarAviso('Error: ' + (error.response?.data?.error || error.message));
     }
   };
 
@@ -82,32 +83,32 @@ const VistaGestionAutonomos = () => {
   }, []);
 
   const handleApprove = async (id) => {
-    if (!window.confirm('¿Estás seguro de autorizar esta membresía de Autónomo? Se le asignará un código AUT_XX y permisos de dueño.')) {
+    if (!await confirmarAccion('¿Estás seguro de autorizar esta membresía de Autónomo? Se le asignará un código AUT_XX y permisos de dueño.')) {
       return;
     }
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/tenants/${id}/approve`);
       if (res.data.success) {
-        alert(res.data.message);
+        mostrarAviso(res.data.message);
         fetchData();
       }
     } catch (error) {
       console.error('Error al aprobar:', error);
-      alert('Error: ' + (error.response?.data?.error || error.message));
+      mostrarAviso('Error: ' + (error.response?.data?.error || error.message));
     }
   };
 
   const handleTransfer = async (e) => {
     e.preventDefault();
     if (!fromTenantId) {
-      alert('Por favor selecciona la empresa de origen.');
+      mostrarAviso('Por favor selecciona la empresa de origen.');
       return;
     }
     if (fromTenantId === toTenantId) {
-      alert('La empresa de origen y destino no pueden ser la misma.');
+      mostrarAviso('La empresa de origen y destino no pueden ser la misma.');
       return;
     }
-    if (!window.confirm('🚨 ¿Estás seguro de traspasar toda la cartera de clientes, técnicos y propiedades al nuevo destino? Esta acción afectará los accesos y filtros.')) {
+    if (!await confirmarAccion('🚨 ¿Estás seguro de traspasar toda la cartera de clientes, técnicos y propiedades al nuevo destino? Esta acción afectará los accesos y filtros.')) {
       return;
     }
 
@@ -120,7 +121,7 @@ const VistaGestionAutonomos = () => {
       });
 
       if (res.data.success) {
-        alert('✅ ¡Traspaso realizado con éxito! ' + res.data.message);
+        mostrarAviso('✅ ¡Traspaso realizado con éxito! ' + res.data.message);
         setFromTenantId('');
         setToTenantId('');
         setSuspendOld(false);
@@ -128,7 +129,7 @@ const VistaGestionAutonomos = () => {
       }
     } catch (error) {
       console.error('Error en traspaso:', error);
-      alert('Error en el traspaso: ' + (error.response?.data?.error || error.message));
+      mostrarAviso('Error en el traspaso: ' + (error.response?.data?.error || error.message));
     } finally {
       setTransfering(false);
     }

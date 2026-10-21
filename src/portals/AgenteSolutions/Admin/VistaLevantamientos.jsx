@@ -31,6 +31,7 @@ import Header from "../../../components/Shared/Header";
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import "../../../styles/AgenteSolutions/Admin/VistaLevantamientos.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const VistaLevantamientos = () => {
   const navigate = useNavigate();
@@ -216,7 +217,7 @@ const VistaLevantamientos = () => {
   const handleEnviarSolicitudLevantamiento = async (e) => {
     e.preventDefault();
     if (!formSolicitud.property_id) {
-      alert("Por favor selecciona una propiedad para solicitar el levantamiento.");
+      mostrarAviso("Por favor selecciona una propiedad para solicitar el levantamiento.");
       return;
     }
 
@@ -242,7 +243,7 @@ const VistaLevantamientos = () => {
       );
 
       if (res.data?.success || res.status === 200 || res.status === 201) {
-        alert("¡Levantamiento solicitado con éxito!");
+        mostrarAviso("¡Levantamiento solicitado con éxito!");
         setMostrarModalSolicitar(false);
         setFormSolicitud({
           property_id: "",
@@ -254,7 +255,7 @@ const VistaLevantamientos = () => {
       }
     } catch (error) {
       console.error("Error al solicitar levantamiento:", error);
-      alert(error.response?.data?.message || "Hubo un error al solicitar el levantamiento.");
+      mostrarAviso(error.response?.data?.message || "Hubo un error al solicitar el levantamiento.");
     } finally {
       setEnviandoSolicitud(false);
     }
@@ -282,13 +283,13 @@ const VistaLevantamientos = () => {
       );
 
       if (respuesta.data.success) {
-        alert("¡Visita técnica programada con éxito!");
+        mostrarAviso("¡Visita técnica programada con éxito!");
         setMostrarAsignar(false);
         cargarDatos();
       }
     } catch (error) {
       console.error("Error al asignar técnico:", error);
-      alert("Error al asignar técnico.");
+      mostrarAviso("Error al asignar técnico.");
     }
   };
 
@@ -314,12 +315,12 @@ const VistaLevantamientos = () => {
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       if (respuesta.data.success) {
-        alert("¡Cita confirmada! El técnico ha sido notificado.");
+        mostrarAviso("¡Cita confirmada! El técnico ha sido notificado.");
         setModalClientePaso(0);
         cargarDatos();
       }
     } catch (error) {
-      alert("Error al confirmar la cita.");
+      mostrarAviso("Error al confirmar la cita.");
     }
   };
 
@@ -338,12 +339,12 @@ const VistaLevantamientos = () => {
       );
 
       if (respuesta.data.success) {
-        alert("Solicitud enviada. El administrador revisará tu nueva fecha.");
+        mostrarAviso("Solicitud enviada. El administrador revisará tu nueva fecha.");
         setModalClientePaso(0);
         cargarDatos();
       }
     } catch (error) {
-      alert("Error al solicitar reprogramación.");
+      mostrarAviso("Error al solicitar reprogramación.");
     }
   };
 

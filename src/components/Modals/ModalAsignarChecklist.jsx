@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { X, Save, Plus, Trash2, CheckCircle, Wrench, Package, Settings, Calendar } from 'lucide-react';
+import { mostrarAviso } from '../../utils/dialogos';
 
 const ModalAsignarChecklist = ({ workOrder, onClose, onAssign }) => {
   const [tecnicos, setTecnicos] = useState([]);
@@ -85,20 +86,20 @@ const ModalAsignarChecklist = ({ workOrder, onClose, onAssign }) => {
   };
 
   const handleSaveTemplate = async () => {
-    if (!newTemplateName.trim()) return alert("Por favor ingresa un nombre para la plantilla");
+    if (!newTemplateName.trim()) return mostrarAviso("Por favor ingresa un nombre para la plantilla");
     setSavingTemplate(true);
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/checklist-templates`, {
         name: newTemplateName,
         content: checklist
       });
-      alert("Plantilla guardada con éxito");
+      mostrarAviso("Plantilla guardada con éxito");
       setTemplates([...templates, res.data.template]);
       setSelectedTemplateId(res.data.template.id);
       setNewTemplateName('');
     } catch (e) {
       console.error(e);
-      alert("Error al guardar plantilla");
+      mostrarAviso("Error al guardar plantilla");
     }
     setSavingTemplate(false);
   };
@@ -109,12 +110,12 @@ const ModalAsignarChecklist = ({ workOrder, onClose, onAssign }) => {
       await axios.put(`${import.meta.env.VITE_API_BASE_URL}/work-orders/${workOrder.dbId}/assign`, {
         custom_checklist: checklist
       });
-      alert("Checklist asignado correctamente");
+      mostrarAviso("Checklist asignado correctamente");
       onAssign();
     } catch (e) {
       console.error(e);
       const msg = e.response?.data?.error || e.response?.data?.message || "Error al asignar el checklist";
-      alert(msg);
+      mostrarAviso(msg);
     }
     setLoading(false);
   };

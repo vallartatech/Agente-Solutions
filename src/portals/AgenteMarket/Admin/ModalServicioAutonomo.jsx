@@ -4,6 +4,7 @@ import {
   X, FileText, Home, Wrench, MessageSquare, Camera, Trash2, PlusCircle, Globe, Users, Shield, AlertCircle, CheckCircle2, UserCheck, Clock, Calendar, Check
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Admin/ModalServicioAutonomo.css';
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
   const [propiedades, setPropiedades] = useState([]);
@@ -213,11 +214,11 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
   const handleAnadirAlCarrito = (e) => {
     e.preventDefault();
     if (!selectedPropertyId) {
-      alert("Por favor selecciona una propiedad primero.");
+      mostrarAviso("Por favor selecciona una propiedad primero.");
       return;
     }
     if (!nuevoServicio.tipo || !nuevoServicio.area_id || !nuevoServicio.descripcion) {
-      alert("Por favor completa los campos obligatorios (Tipo, Zona y Descripción).");
+      mostrarAviso("Por favor completa los campos obligatorios (Tipo, Zona y Descripción).");
       return;
     }
     setCarritoServicios([...carritoServicios, { ...nuevoServicio }]);
@@ -228,7 +229,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
     const mode = forcedMode || destinoEnvio;
 
     if (!selectedPropertyId) {
-      alert("Por favor selecciona una propiedad primero.");
+      mostrarAviso("Por favor selecciona una propiedad primero.");
       return;
     }
 
@@ -238,7 +239,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
     }
 
     if (lote.length === 0) {
-      alert("Por favor ingresa o añade al menos un problema a reportar.");
+      mostrarAviso("Por favor ingresa o añade al menos un problema a reportar.");
       return;
     }
 
@@ -246,7 +247,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
     const targetTechId = (!isToNetwork && selectedTechId) ? selectedTechId : null;
 
     if (!isToNetwork && tecnicos.length === 0) {
-      alert("No cuentas con técnicos vinculados actualmente. Te recomendamos enviarlo a la Red de Técnicos.");
+      mostrarAviso("No cuentas con técnicos vinculados actualmente. Te recomendamos enviarlo a la Red de Técnicos.");
       return;
     }
 

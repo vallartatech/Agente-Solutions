@@ -11,6 +11,7 @@ import {
   ChevronLeft, ArrowLeft, Loader2, Clock, Briefcase
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Cliente/DetallePropiedad.css';
+import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const DetallePropiedad = () => {
   const { id: idParam } = useParams();
@@ -78,28 +79,28 @@ const DetallePropiedad = () => {
         { email: emailCompartir }, 
         { headers: { 'Authorization': `Bearer ${token}` }}
       );
-      alert("Propiedad compartida exitosamente");
+      mostrarAviso("Propiedad compartida exitosamente");
       setEmailCompartir('');
       setMostrarModalCompartir(false);
       fetchUsuariosCompartidos();
     } catch (error) {
-      alert(error.response?.data?.error || "Error al compartir propiedad");
+      mostrarAviso(error.response?.data?.error || "Error al compartir propiedad");
     } finally {
       setLoadingCompartir(false);
     }
   };
 
   const handleRevocar = async (clientId) => {
-    if (!window.confirm("¿Estás seguro que deseas Desheredar esta propiedad? El usuario ya no podrá verla ni levantar reportes.")) return;
+    if (!await confirmarAccion("¿Estás seguro que deseas Desheredar esta propiedad? El usuario ya no podrá verla ni levantar reportes.")) return;
     try {
       const token = localStorage.getItem('agente_token');
       await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/propiedades/${id}/share/${clientId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      alert("Acceso revocado");
+      mostrarAviso("Acceso revocado");
       fetchUsuariosCompartidos();
     } catch (error) {
-      alert("Error al revocar acceso");
+      mostrarAviso("Error al revocar acceso");
     }
   };
 

@@ -9,6 +9,7 @@ import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase } from 'lucide-react';
 import { DARK_MAP_STYLES, getCategoryIcon } from '../Tecnico/MercadoTrabajos';
+import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
 const mapContainerStyle = {
   width: '100%',
@@ -494,14 +495,14 @@ const VistaRedAutonomo = () => {
       }
     } catch (err) {
       console.error("Error al enviar mensaje:", err);
-      alert("No se pudo enviar el mensaje. Intenta de nuevo.");
+      mostrarAviso("No se pudo enviar el mensaje. Intenta de nuevo.");
     } finally {
       setSendingClientChat(false);
     }
   };
 
   const handleRejectQuote = async (quoteId) => {
-    if (!window.confirm("¿Estás seguro de que deseas rechazar esta cotización?")) return;
+    if (!await confirmarAccion("¿Estás seguro de que deseas rechazar esta cotización?")) return;
     
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
@@ -509,12 +510,12 @@ const VistaRedAutonomo = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
-        alert("Cotización rechazada. El técnico ha sido notificado para mejorar su oferta.");
+        mostrarAviso("Cotización rechazada. El técnico ha sido notificado para mejorar su oferta.");
         fetchJobs();
       }
     } catch (e) {
       console.error(e);
-      alert("Hubo un error al rechazar la cotización.");
+      mostrarAviso("Hubo un error al rechazar la cotización.");
     }
   };
 
@@ -522,7 +523,7 @@ const VistaRedAutonomo = () => {
     if (!selectedJobForQuotes?.id) return;
     let msg = '';
     if (action === 'reschedule') {
-      msg = prompt("Escribe una breve nota sobre qué horario te queda mejor:");
+      msg = await pedirTexto("Escribe una breve nota sobre qué horario te queda mejor:");
       if (msg === null) return;
     }
     try {
@@ -533,18 +534,18 @@ const VistaRedAutonomo = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
-        alert("✅ " + res.data.message);
+        mostrarAviso("✅ " + res.data.message);
         fetchJobs();
       }
     } catch (e) {
       console.error("Error respondiendo visita", e);
-      alert("Hubo un error al responder. Intenta de nuevo.");
+      mostrarAviso("Hubo un error al responder. Intenta de nuevo.");
     }
   };
 
   const handleAcceptQuote = async (quote) => {
     const techName = quote.technicianName || (quote.technician ? `${quote.technician.first_name} ${quote.technician.last_name}` : 'este técnico');
-    if (!window.confirm(`¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
+    if (!await confirmarAccion(`¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
       return;
     }
 
@@ -554,7 +555,7 @@ const VistaRedAutonomo = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
-        alert("🎉 " + res.data.message);
+        mostrarAviso("🎉 " + res.data.message);
         setActiveTab('aceptados');
         setShowQuotesModal(false);
         setActiveChatQuote(null);
@@ -562,12 +563,12 @@ const VistaRedAutonomo = () => {
       }
     } catch (e) {
       console.error(e);
-      alert("Hubo un error al aceptar la cotización. Intenta de nuevo.");
+      mostrarAviso("Hubo un error al aceptar la cotización. Intenta de nuevo.");
     }
   };
 
   const handleDeleteJob = async (jobId) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar y cancelar esta publicación de la Red? Ya no será visible para los técnicos ni recibirá más cotizaciones.")) {
+    if (!await confirmarAccion("¿Estás seguro de que deseas eliminar y cancelar esta publicación de la Red? Ya no será visible para los técnicos ni recibirá más cotizaciones.")) {
       return;
     }
 
@@ -577,17 +578,17 @@ const VistaRedAutonomo = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data?.success) {
-        alert("✅ Publicación eliminada y cancelada con éxito.");
+        mostrarAviso("✅ Publicación eliminada y cancelada con éxito.");
         setShowQuotesModal(false);
         setSelectedJob(null);
         setActiveChatQuote(null);
         fetchJobs();
       } else {
-        alert(res.data?.message || "Hubo un error al eliminar.");
+        mostrarAviso(res.data?.message || "Hubo un error al eliminar.");
       }
     } catch (e) {
       console.error("Error al eliminar publicación:", e);
-      alert("Hubo un error al eliminar la publicación de la Red.");
+      mostrarAviso("Hubo un error al eliminar la publicación de la Red.");
     }
   };
 

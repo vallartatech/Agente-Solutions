@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AlertTriangle, Home, MapPin, Wrench, MessageSquare, ArrowLeft, Send, Phone } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Cliente/SOSView.css';
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const SOSView = () => {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ const SOSView = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.propiedadId) return alert("Por favor selecciona una propiedad.");
+    if (!formData.propiedadId) return mostrarAviso("Por favor selecciona una propiedad.");
     
     setSubmitting(true);
     try {
@@ -67,11 +68,11 @@ const SOSView = () => {
         }
       });
       
-      alert("¡SOS Enviado! Un técnico ha sido notificado de tu emergencia.");
+      mostrarAviso("¡SOS Enviado! Un técnico ha sido notificado de tu emergencia.");
       navigate(-1);
     } catch (error) {
       console.error("Error enviando SOS:", error);
-      alert("Hubo un error al enviar el SOS. Por favor intenta de nuevo.");
+      mostrarAviso("Hubo un error al enviar el SOS. Por favor intenta de nuevo.");
     } finally {
       setSubmitting(false);
     }

@@ -32,6 +32,7 @@ import NotificationBell from '../../../components/Shared/NotificationBell';
 import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import Header from '../../../components/Shared/Header';
 import '../../../styles/Shared/Profile.css';
+import { mostrarAviso } from '../../../utils/dialogos';
 
 export const ESPECIALIDADES_CATALOGO = [
   { id: 1, name: "Electricidad", icon: "⚡", desc: "Instalaciones, cableado, tableros y cortos" },
@@ -195,11 +196,11 @@ const PerfilTecnico = () => {
       });
 
       setIsModalOpen(false);
-      alert("¡Perfil y especialidades actualizados con éxito!");
+      mostrarAviso("¡Perfil y especialidades actualizados con éxito!");
     } catch (error) {
       console.error("Error al guardar perfil:", error);
       const errorMsg = error.response?.data?.message || error.response?.data?.error || "Hubo un error al actualizar los datos.";
-      alert(errorMsg);
+      mostrarAviso(errorMsg);
     } finally {
       setSavingSpecs(false);
     }
@@ -208,10 +209,10 @@ const PerfilTecnico = () => {
   const handleFileUpload = async (event, type) => {
     const file = event.target.files[0];
     if (!file) return;
-    if (!user?.id) return alert("Error: La sesión no tiene el ID.");
+    if (!user?.id) return mostrarAviso("Error: La sesión no tiene el ID.");
 
     if (file.size > 10 * 1024 * 1024) {
-      return alert("La imagen es muy pesada. Por favor elige una menor a 10MB.");
+      return mostrarAviso("La imagen es muy pesada. Por favor elige una menor a 10MB.");
     }
 
     const uploadData = new FormData();
@@ -236,11 +237,11 @@ const PerfilTecnico = () => {
         [type]: nuevaUrlNube
       });
 
-      alert(`¡${type === 'profile_picture' ? 'Foto de perfil' : 'Portada'} actualizada con éxito!`);
+      mostrarAviso(`¡${type === 'profile_picture' ? 'Foto de perfil' : 'Portada'} actualizada con éxito!`);
 
     } catch (error) {
       console.error("Error en handleFileUpload:", error);
-      alert("Error al subir la imagen.");
+      mostrarAviso("Error al subir la imagen.");
     } finally {
       setIsUploading(false);
     }

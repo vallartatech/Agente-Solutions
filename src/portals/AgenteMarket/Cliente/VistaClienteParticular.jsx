@@ -47,6 +47,7 @@ import {
 
 import defaultPropImg from '../../../assets/propiedad_ejemplo.jpg';
 import defaultLogo from '../../../assets/Logo4.png';
+import { mostrarAviso } from '../../../utils/dialogos';
 
 // Live Countdown Timer for Floating Subscription Card
 const SubscriptionCountdown = ({ targetDate }) => {
@@ -481,7 +482,7 @@ const VistaClienteParticular = () => {
       setCopiedToast(true);
       setTimeout(() => setCopiedToast(false), 3000);
     } else {
-      alert(`Información de la propiedad:\n${shareText}`);
+      mostrarAviso(`Información de la propiedad:\n${shareText}`);
     }
   };
 

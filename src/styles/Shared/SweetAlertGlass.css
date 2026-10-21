@@ -7,6 +7,11 @@
    texto claro, así que conservan una variante de vidrio oscuro al final.
    ========================================================================== */
 
+/* Siempre encima de los modales propios (llegan a z-index 10000005) */
+.swal2-container {
+  z-index: 2147483647 !important;
+}
+
 /* Fondo detrás de la alerta */
 .swal2-container.swal2-backdrop-show {
   background: rgba(15, 23, 42, 0.32) !important;

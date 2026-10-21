@@ -7,6 +7,7 @@ import {
   RotateCcw, X
 } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Admin/VistaBodeguero.css';
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const VistaBodeguero = () => {
   const [view, setView] = useState('SOLICITUDES');
@@ -132,7 +133,7 @@ const VistaBodeguero = () => {
       setSolicitudes(prev => prev.filter(s => s.id !== solicitud.id));
     } catch (error) {
       console.error('Error al finalizar despacho:', error);
-      alert('Error al marcar como entregado');
+      mostrarAviso('Error al marcar como entregado');
     }
   };
 

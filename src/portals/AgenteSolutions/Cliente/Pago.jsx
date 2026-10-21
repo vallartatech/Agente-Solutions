@@ -3,6 +3,7 @@ import axios from 'axios';
 import { X, CheckCircle2, Loader2, ShieldCheck, CreditCard, Banknote, Sparkles } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Cliente/Pagos.css';
 import mpLogo from '../../../assets/Mercado-Pago.png';
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const Pago = ({ cotizacion, onClose }) => {
   const [subiendo, setSubiendo] = useState(false);
@@ -86,12 +87,12 @@ const Pago = ({ cotizacion, onClose }) => {
       if (response.data?.init_point) {
         window.location.href = response.data.init_point;
       } else {
-        alert('No se recibió el enlace de pago. Intenta de nuevo.');
+        mostrarAviso('No se recibió el enlace de pago. Intenta de nuevo.');
         setSubiendo(false);
       }
     } catch (error) {
       console.error('Error iniciando MercadoPago:', error);
-      alert('Hubo un error al conectar con MercadoPago. Intenta más tarde.');
+      mostrarAviso('Hubo un error al conectar con MercadoPago. Intenta más tarde.');
       setSubiendo(false);
     }
   };
@@ -108,7 +109,7 @@ const Pago = ({ cotizacion, onClose }) => {
       setEfectivoEnviado(true);
     } catch (error) {
       console.error('Error solicitando efectivo:', error);
-      alert('Error al enviar la solicitud. Intenta de nuevo.');
+      mostrarAviso('Error al enviar la solicitud. Intenta de nuevo.');
     } finally {
       setEnviandoEfectivo(false);
     }
@@ -126,7 +127,7 @@ const Pago = ({ cotizacion, onClose }) => {
       setEfectivoEnviado(true);
     } catch (error) {
       console.error('Error solicitando efectivo para saldo restante:', error);
-      alert('Error al enviar la solicitud en efectivo.');
+      mostrarAviso('Error al enviar la solicitud en efectivo.');
     } finally {
       setEnviandoEfectivo(false);
     }

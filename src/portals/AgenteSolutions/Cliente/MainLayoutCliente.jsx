@@ -6,6 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 import NotificationBell from '../../../components/Shared/NotificationBell';
 import defaultLogo from "../../../assets/Logo4.png";
 import axios from "axios";
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const MainLayoutCliente = ({ children }) => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const MainLayoutCliente = ({ children }) => {
 
   const handleRequestPro = async (e) => {
     e.preventDefault();
-    if (!proCompanyName.trim()) return alert("Por favor ingresa el nombre de tu Empresa o Negocio.");
+    if (!proCompanyName.trim()) return mostrarAviso("Por favor ingresa el nombre de tu Empresa o Negocio.");
     setLoadingPro(true);
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/tenants/request-membership`, {
@@ -40,11 +41,11 @@ const MainLayoutCliente = ({ children }) => {
         email: proEmail,
         membership_type: 'autonomo'
       });
-      alert(isEditingPendingPro ? "¡Solicitud actualizada con éxito! Sigue en proceso de verificación." : "¡Solicitud enviada con éxito! El equipo de Root revisará tu cuenta y pronto serás Autónomo / PRO.");
+      mostrarAviso(isEditingPendingPro ? "¡Solicitud actualizada con éxito! Sigue en proceso de verificación." : "¡Solicitud enviada con éxito! El equipo de Root revisará tu cuenta y pronto serás Autónomo / PRO.");
       setPendingProTenant(res.data.tenant || { name: proCompanyName, phone: proPhone, email: proEmail, status: 'pending_approval' });
       setIsEditingPendingPro(false);
     } catch (error) {
-      alert(error.response?.data?.message || "Error al solicitar membresía PRO.");
+      mostrarAviso(error.response?.data?.message || "Error al solicitar membresía PRO.");
     } finally {
       setLoadingPro(false);
     }

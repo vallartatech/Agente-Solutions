@@ -15,6 +15,7 @@ import UniversalSearch from '../../../components/Shared/UniversalSearch';
 import '../../../styles/AgenteSolutions/Cliente/TableroScrum.css'; // Reutilizamos estilos
 import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteSolutions/Admin/VistaServiciosAdmin.css';
+import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const VistaServiciosAdmin = () => {
   const navigate = useNavigate();
@@ -403,7 +404,7 @@ const VistaServiciosAdmin = () => {
       await fetchOrders();
       cerrarModal();
     } catch (error) {
-      alert("No se pudo actualizar el estado del servicio.");
+      mostrarAviso("No se pudo actualizar el estado del servicio.");
     } finally {
       setProcesandoAccion(false);
     }
@@ -424,7 +425,7 @@ const VistaServiciosAdmin = () => {
       });
       await fetchOrders();
     } catch (e) {
-      alert("Error al actualizar el equipo de trabajo.");
+      mostrarAviso("Error al actualizar el equipo de trabajo.");
       setTecnicosEquipo(tecnicosEquipo); // revert
     } finally {
       setProcesandoAccion(false);
@@ -432,25 +433,25 @@ const VistaServiciosAdmin = () => {
   };
 
   const handleAssignBatch = async () => {
-    if (!window.confirm("¿Estás seguro de que deseas asignar este mismo equipo de trabajo a TODAS las solicitudes de este lote?")) return;
+    if (!await confirmarAccion("¿Estás seguro de que deseas asignar este mismo equipo de trabajo a TODAS las solicitudes de este lote?")) return;
     
     setProcesandoAccion(true);
     try {
       await axios.put(`${import.meta.env.VITE_API_BASE_URL}/work-orders/batch/${tareaSeleccionada.batch_id}/assign`, {
         tecnicos_ids: tecnicosEquipo
       });
-      alert("Equipo asignado a todo el lote correctamente.");
+      mostrarAviso("Equipo asignado a todo el lote correctamente.");
       await fetchOrders();
     } catch (e) {
       console.error(e);
-      alert("Error al asignar equipo al lote completo.");
+      mostrarAviso("Error al asignar equipo al lote completo.");
     } finally {
       setProcesandoAccion(false);
     }
   };
 
   const handleSaveSchedule = async (newDate, newTime, targetDbId = null) => {
-    if (!newDate || !newTime) return alert("Por favor selecciona tanto la fecha como la hora de visita.");
+    if (!newDate || !newTime) return mostrarAviso("Por favor selecciona tanto la fecha como la hora de visita.");
     
     // Combinar fecha y hora para el backend
     const scheduledAt = `${newDate} ${newTime}`;
@@ -461,20 +462,20 @@ const VistaServiciosAdmin = () => {
       await axios.put(`${import.meta.env.VITE_API_BASE_URL}/work-orders/${dbId}/assign`, {
         scheduled_at: scheduledAt
       });
-      alert("Cita programada y cliente notificado correctamente.");
+      mostrarAviso("Cita programada y cliente notificado correctamente.");
       fetchOrders();
       setTareaSeleccionada(prev => ({ ...prev, scheduledAt: scheduledAt }));
       setEditandoCita(false);
     } catch (error) {
       console.error(error);
-      alert("Error al programar la cita.");
+      mostrarAviso("Error al programar la cita.");
     } finally {
       setProcesandoAccion(false);
     }
   };
 
   const abrirSurvey = async () => {
-    if (!tareaSeleccionada.propertyId) return alert("Esta orden no tiene propiedad asociada.");
+    if (!tareaSeleccionada.propertyId) return mostrarAviso("Esta orden no tiene propiedad asociada.");
     
     setCargandoSurvey(true);
     setModalSurveyVisible(true);
@@ -488,7 +489,7 @@ const VistaServiciosAdmin = () => {
       }
     } catch (error) {
       console.error("Error cargando inventario:", error);
-      alert("No se pudo cargar el inventario de la propiedad.");
+      mostrarAviso("No se pudo cargar el inventario de la propiedad.");
     } finally {
       setCargandoSurvey(false);
     }
@@ -1448,8 +1449,8 @@ const VistaServiciosAdmin = () => {
                         <button 
                           className="modal-action-btn" 
                           disabled={procesandoAccion} 
-                          onClick={() => {
-                            if (window.confirm('¿Estás seguro de que deseas cancelar este servicio? Se moverá al apartado de rechazados.')) {
+                          onClick={async () => {
+                            if (await confirmarAccion('¿Estás seguro de que deseas cancelar este servicio? Se moverá al apartado de rechazados.')) {
                               cambiarEstadoTarea('Rechazado', activeTask.dbId);
                             }
                           }}
@@ -2312,7 +2313,7 @@ const VistaServiciosAdmin = () => {
           onClose={() => setShowModalCotizacion(false)}
           onSuccess={() => {
             fetchCotizaciones();
-            alert("Cotización gestionada con éxito");
+            mostrarAviso("Cotización gestionada con éxito");
           }}
         />
       )}
@@ -2326,7 +2327,7 @@ const VistaServiciosAdmin = () => {
             setCotizacionParaConfirmar(null);
           }}
           onPaymentConfirmed={async (res) => {
-            alert(res?.message || '¡Pago en efectivo confirmado exitosamente!');
+            mostrarAviso(res?.message || '¡Pago en efectivo confirmado exitosamente!');
             await fetchCotizaciones();
             await fetchOrders();
           }}

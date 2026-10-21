@@ -6,6 +6,7 @@ import {
   ChevronRight, Copy, UploadCloud, ShieldCheck, CreditCard, ShoppingCart 
 } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Cliente/Cotizaciones.css';
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const Cotizaciones = () => {
   const [tabActivo, setTabActivo] = useState('nuevas');
@@ -43,7 +44,7 @@ const Cotizaciones = () => {
     const yaExiste = carritoGuardado.some(item => String(item.id) === String(cot.id) || String(item.folio) === String(cot.folio));
 
     if (yaExiste) {
-      alert(`La cotización ${cot.folio || `#${cot.id}`} ya se encuentra agregada en tu Carrito de Compras.`);
+      mostrarAviso(`La cotización ${cot.folio || `#${cot.id}`} ya se encuentra agregada en tu Carrito de Compras.`);
       cerrarModal();
       navigate('/cotizaciones-pendientes');
       return;
@@ -67,7 +68,7 @@ const Cotizaciones = () => {
     localStorage.setItem('carrito_cotizaciones', JSON.stringify(nuevoCarrito));
     setCarritoCotizaciones(nuevoCarrito);
 
-    alert(`🛒 ¡Cotización ${nuevoItemCarrito.folio} enviada al Carrito de Compras con éxito!`);
+    mostrarAviso(`🛒 ¡Cotización ${nuevoItemCarrito.folio} enviada al Carrito de Compras con éxito!`);
     cerrarModal();
     navigate('/cotizaciones-pendientes');
   };
@@ -124,7 +125,7 @@ const Cotizaciones = () => {
 
   const handleFinalizarPago = () => {
     console.log(`Enviando comprobante para ${cotizacionSeleccionada.id}. Nota: ${motivoFeedback}`);
-    alert("Comprobante enviado con éxito.");
+    mostrarAviso("Comprobante enviado con éxito.");
     navigate('/'); 
   };
 

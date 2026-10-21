@@ -12,6 +12,7 @@ import {
 import '../../../styles/AgenteSolutions/Cliente/Cotizaciones.css';
 import '../../../styles/AgenteSolutions/Tecnico/TrabajoPropiedad.css';
 import mpLogo from '../../../assets/Mercado-Pago.png';
+import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const CotizacionesPendientes = () => {
   const navigate = useNavigate();
@@ -209,11 +210,11 @@ const CotizacionesPendientes = () => {
   }, []);
 
   // Eliminar servicio del carrito
-  const handleEliminarDelCarrito = (cot, e) => {
+  const handleEliminarDelCarrito = async (cot, e) => {
     if (e) e.stopPropagation();
     if (!cot) return;
 
-    if (window.confirm(`¿Deseas quitar la cotización "${cot.titulo || cot.folio}" del carrito?`)) {
+    if (await confirmarAccion(`¿Deseas quitar la cotización "${cot.titulo || cot.folio}" del carrito?`)) {
       const guardadas = JSON.parse(localStorage.getItem('carrito_cotizaciones') || '[]');
       const filtradas = guardadas.filter(item => String(item.id) !== String(cot.id) && String(item.folio) !== String(cot.folio));
       localStorage.setItem('carrito_cotizaciones', JSON.stringify(filtradas));
@@ -365,7 +366,7 @@ const CotizacionesPendientes = () => {
   // Abrir Modal de Pago para los ítems seleccionados
   const handleProcederPago = () => {
     if (cotizacionesSeleccionadas.length === 0) {
-      alert("Por favor selecciona al menos una cotización vigente para proceder al pago.");
+      mostrarAviso("Por favor selecciona al menos una cotización vigente para proceder al pago.");
       return;
     }
     setShowPagoModal(true);
@@ -398,7 +399,7 @@ const CotizacionesPendientes = () => {
           window.location.href = res.data.init_point;
           return;
         } else {
-          alert("No se pudo iniciar la pasarela de Mercado Pago. Por favor intenta de nuevo.");
+          mostrarAviso("No se pudo iniciar la pasarela de Mercado Pago. Por favor intenta de nuevo.");
         }
       } else {
         // Pago en Efectivo (Registrar en Backend y notificar a Admin y Root)
@@ -459,7 +460,7 @@ const CotizacionesPendientes = () => {
       }
     } catch (err) {
       console.error("Error al procesar pago:", err);
-      alert("Hubo un error al procesar la solicitud. Por favor intenta de nuevo.");
+      mostrarAviso("Hubo un error al procesar la solicitud. Por favor intenta de nuevo.");
     } finally {
       setProcesandoPago(false);
     }

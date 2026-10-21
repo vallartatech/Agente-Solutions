@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 import { reportarUbicacion } from "../../../components/Shared/ubicacionService";
+import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const TrabajoPropiedad = () => {
   const { user } = useAuth();
@@ -213,7 +214,7 @@ const TrabajoPropiedad = () => {
   };
 
   const handleFinalizar = async () => {
-    const confirmacion = window.confirm(`¿Estás seguro que deseas finalizar este reporte en la propiedad ${data?.propiedad_nombre}?`);
+    const confirmacion = await confirmarAccion(`¿Estás seguro que deseas finalizar este reporte en la propiedad ${data?.propiedad_nombre}?`);
     if (!confirmacion) return;
 
     try {
@@ -232,13 +233,13 @@ const TrabajoPropiedad = () => {
       setShowModalFinalizar(true);
     } catch (error) {
       console.error("Error finalizing job:", error);
-      alert("Hubo un error al finalizar el trabajo. Por favor intenta de nuevo.");
+      mostrarAviso("Hubo un error al finalizar el trabajo. Por favor intenta de nuevo.");
     }
   };
 
   // Lleva al listado de levantamientos y abre directamente el de esta propiedad
   const irALevantamiento = () => {
-    if (!data?.property_id) return alert("Esta orden no tiene propiedad asociada.");
+    if (!data?.property_id) return mostrarAviso("Esta orden no tiene propiedad asociada.");
     navigate('/trabajos-asignados', {
       state: {
         abrirPropiedadId: data.property_id,
@@ -249,7 +250,7 @@ const TrabajoPropiedad = () => {
   };
 
   const abrirSurvey = async () => {
-    if (!data?.property_id) return alert("Esta orden no tiene propiedad asociada.");
+    if (!data?.property_id) return mostrarAviso("Esta orden no tiene propiedad asociada.");
     
     setCargandoSurvey(true);
     setModalSurveyVisible(true);
@@ -427,7 +428,7 @@ const TrabajoPropiedad = () => {
       }
     } catch (error) {
       console.error("Error cargando inventario:", error);
-      alert("No se pudo cargar el inventario de la propiedad.");
+      mostrarAviso("No se pudo cargar el inventario de la propiedad.");
     } finally {
       setCargandoSurvey(false);
     }
@@ -474,7 +475,7 @@ const TrabajoPropiedad = () => {
       window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dir.trim())}`, '_blank');
       return;
     }
-    alert("Esta propiedad no tiene coordenadas ni dirección registradas.");
+    mostrarAviso("Esta propiedad no tiene coordenadas ni dirección registradas.");
   };
 
   const checklistObj = data?.custom_checklist 
