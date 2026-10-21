@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import axios from "axios";
@@ -589,7 +589,9 @@ const VistaPropiedades = () => {
   }, [accionesAbiertas]);
 
   // MENÚ ⋮ DE TARJETA (web y móvil)
-  const [menuTarjeta, setMenuTarjeta] = useState(null); // { id, top, bottom, right }
+  const [menuTarjeta, setMenuTarjeta] = useState(null); // { id, anchor: { top, bottom, right } }
+  const [menuPos, setMenuPos] = useState(null); // { top, maxHeight } calculado con la altura real del menú
+  const menuRef = useRef(null);
   // Equipo de trabajo del levantamiento (solo admins)
   const [equipoPropiedad, setEquipoPropiedad] = useState(null);
 
@@ -597,21 +599,31 @@ const VistaPropiedades = () => {
     e.stopPropagation();
     if (menuTarjeta?.id === p.id) { setMenuTarjeta(null); return; }
     const rect = e.currentTarget.getBoundingClientRect();
-    // Se abre hacia el lado con más espacio, sin meterse bajo el encabezado;
-    // si aun así no cabe, se limita a la altura disponible y se desplaza por dentro
-    const MARGEN = 8;
-    const limiteSuperior = Math.max(document.querySelector('.vcp-header')?.getBoundingClientRect().bottom ?? 0, 0) + MARGEN;
-    const espacioAbajo = window.innerHeight - rect.bottom - MARGEN * 2;
-    const espacioArriba = rect.top - limiteSuperior - MARGEN;
-    const abrirArriba = espacioAbajo < 380 && espacioArriba > espacioAbajo;
-    setMenuTarjeta({
-      id: p.id,
-      top: abrirArriba ? null : rect.bottom + 6,
-      bottom: abrirArriba ? window.innerHeight - rect.top + 6 : null,
-      right: window.innerWidth - rect.right,
-      maxHeight: Math.max(abrirArriba ? espacioArriba : espacioAbajo, 160),
-    });
+    setMenuPos(null);
+    setMenuTarjeta({ id: p.id, anchor: { top: rect.top, bottom: rect.bottom, right: window.innerWidth - rect.right } });
   };
+
+  // Coloca el menú donde quepa completo: abajo del botón, arriba, o recorrido dentro de la pantalla
+  // (nunca bajo el encabezado). Solo si es más alto que la pantalla se limita y se desplaza por dentro.
+  useLayoutEffect(() => {
+    if (!menuTarjeta || !menuRef.current) return;
+    const MARGEN = 8;
+    const alto = menuRef.current.scrollHeight;
+    const superior = Math.max(document.querySelector('.vcp-header')?.getBoundingClientRect().bottom ?? 0, 0) + MARGEN;
+    const inferior = window.innerHeight - MARGEN;
+    const disponible = inferior - superior;
+    if (alto >= disponible) {
+      setMenuPos({ top: superior, maxHeight: disponible });
+      return;
+    }
+    const { top: btnTop, bottom: btnBottom } = menuTarjeta.anchor;
+    let top = btnBottom + 6; // 1º abajo del botón
+    if (top + alto > inferior) {
+      const arriba = btnTop - 6 - alto; // 2º arriba del botón
+      top = arriba >= superior ? arriba : Math.max(superior, inferior - alto); // 3º pegado al borde inferior
+    }
+    setMenuPos({ top, maxHeight: null });
+  }, [menuTarjeta]);
 
   const ejecutarAccionMenu = (accion) => {
     setMenuTarjeta(null);
@@ -620,7 +632,11 @@ const VistaPropiedades = () => {
 
   useEffect(() => {
     if (!menuTarjeta) return;
-    const cerrar = () => setMenuTarjeta(null);
+    // Desplazarse dentro del propio menú no lo cierra; desplazar la página sí
+    const cerrar = (e) => {
+      if (e?.target instanceof Node && menuRef.current?.contains(e.target)) return;
+      setMenuTarjeta(null);
+    };
     window.addEventListener('scroll', cerrar, true);
     window.addEventListener('resize', cerrar);
     return () => {
@@ -990,7 +1006,17 @@ const VistaPropiedades = () => {
             <CasaLoader texto="Cargando propiedades..." />
           ) : propiedadesVisibles.length > 0 ? (
             propiedadesVisibles.map((p) => (
-              <div key={p.id} className="property-card vp-card-menu" style={{ position: 'relative' }}>
+              <div
+                key={p.id}
+                className="property-card vp-card-menu"
+                style={{ position: 'relative', cursor: 'pointer' }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Ver detalles de ${p.nombre_propiedad || 'la propiedad'}`}
+                // Tocar la tarjeta abre Detalles de propiedad (el botón ⋮ abre el menú sin entrar)
+                onClick={() => irADetallesPropiedad(p)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) irADetallesPropiedad(p); }}
+              >
                 
                 {/* Si es Root y la propiedad es de un autónomo externo */}
                 {isRoot && p.tenant_id && Number(p.tenant_id) !== 1 && (
@@ -1061,13 +1087,16 @@ const VistaPropiedades = () => {
           <>
             <div className="card-menu-backdrop" onClick={() => setMenuTarjeta(null)} />
             <div
+              ref={menuRef}
               className="card-menu-dropdown"
               style={{
-                top: menuTarjeta.top ?? 'auto',
-                bottom: menuTarjeta.bottom ?? 'auto',
-                right: menuTarjeta.right,
-                maxHeight: menuTarjeta.maxHeight,
-                overflowY: 'auto',
+                top: menuPos?.top ?? 0,
+                right: menuTarjeta.anchor.right,
+                maxHeight: menuPos?.maxHeight ?? undefined,
+                overflowY: menuPos?.maxHeight ? 'auto' : 'visible',
+                overscrollBehavior: 'contain',
+                // Oculto hasta medir su altura (evita un salto visible)
+                visibility: menuPos ? 'visible' : 'hidden',
               }}
             >
               <div className="card-menu-title">{p.nombre_propiedad || "Propiedad sin nombre"}</div>
