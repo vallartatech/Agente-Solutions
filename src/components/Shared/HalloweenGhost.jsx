@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import '../../styles/Shared/HalloweenGhost.css';
+import fantasmaImg from '../../assets/fantasma-halloween.png';
 
 // Primera aparición poco después de entrar, luego cada 60–120 s al azar
 const PRIMERA_APARICION_MS = 4000;
@@ -67,25 +68,19 @@ const HalloweenGhost = () => {
           onAnimationEnd={(e) => e.target === e.currentTarget && terminarVuelo()}
         >
           <div className="hg-flotar">
-            <svg
-              className={`hg-fantasma ${vuelo.asustado ? 'hg-asustado' : ''}`}
-              viewBox="0 0 64 72"
-              onClick={asustar}
-              onAnimationEnd={(e) => {
-                e.stopPropagation();
-                if (vuelo.asustado) terminarVuelo();
-              }}
-            >
-              <path
-                className="hg-cuerpo"
-                d="M32 2C16.5 2 6 13.5 6 29v39l8.7-6.5L23.3 68 32 61.5 40.7 68l8.6-6.5L58 68V29C58 13.5 47.5 2 32 2z"
+            <div className="hg-espejo">
+              <img
+                src={fantasmaImg}
+                alt=""
+                draggable="false"
+                className={`hg-fantasma ${vuelo.asustado ? 'hg-asustado' : ''}`}
+                onClick={asustar}
+                onAnimationEnd={(e) => {
+                  e.stopPropagation();
+                  if (vuelo.asustado) terminarVuelo();
+                }}
               />
-              <ellipse className="hg-ojo" cx="23.5" cy="28" rx="4" ry="5.5" />
-              <ellipse className="hg-ojo" cx="40.5" cy="28" rx="4" ry="5.5" />
-              <ellipse className="hg-boca" cx="32" cy="42" rx="4.5" ry="5.5" />
-              <ellipse className="hg-mejilla" cx="16" cy="37" rx="4" ry="2.4" />
-              <ellipse className="hg-mejilla" cx="48" cy="37" rx="4" ry="2.4" />
-            </svg>
+            </div>
           </div>
         </div>
       )}

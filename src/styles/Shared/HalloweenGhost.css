@@ -12,7 +12,7 @@
 .hg-vuelo {
   position: absolute;
   left: 0;
-  width: 64px;
+  width: 80px;
   will-change: transform;
   animation: hg-cruzar linear forwards;
 }
@@ -21,12 +21,17 @@
   animation-direction: reverse;
 }
 
-.hg-vuelo.hg-izquierda .hg-fantasma {
+/* La imagen mira a la izquierda: se voltea cuando vuela hacia la derecha */
+.hg-espejo {
   transform: scaleX(-1);
 }
 
+.hg-vuelo.hg-izquierda .hg-espejo {
+  transform: none;
+}
+
 @keyframes hg-cruzar {
-  from { transform: translate3d(-90px, 0, 0); }
+  from { transform: translate3d(-110px, 0, 0); }
   to   { transform: translate3d(calc(100vw + 26px), 0, 0); }
 }
 
@@ -41,28 +46,14 @@
 
 .hg-fantasma {
   display: block;
-  width: 64px;
-  height: 72px;
+  width: 80px;
+  height: auto;
   pointer-events: auto;
   cursor: pointer;
   opacity: 0.9;
+  user-select: none;
   filter: drop-shadow(0 6px 14px rgba(120, 90, 160, 0.28));
   -webkit-tap-highlight-color: transparent;
-}
-
-.hg-cuerpo {
-  fill: rgba(255, 255, 255, 0.92);
-  stroke: rgba(150, 130, 180, 0.35);
-  stroke-width: 1.2;
-}
-
-.hg-ojo,
-.hg-boca {
-  fill: #3b3350;
-}
-
-.hg-mejilla {
-  fill: rgba(242, 101, 34, 0.25);
 }
 
 /* Al tocarlo: se encoge y desaparece */
