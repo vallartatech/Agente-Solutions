@@ -522,3 +522,28 @@
 .vcp-header .vcp-header-nav-tabs .vcp-nav-back:hover {
   color: #f26522;
 }
+
+/* ── Botón de chats con contador de no leídos ── */
+.vcp-chat-btn {
+  position: relative;
+}
+
+.vcp-chat-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #f26522;
+  border: 2px solid #0f172a;
+  color: #ffffff;
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1;
+  box-sizing: content-box;
+}

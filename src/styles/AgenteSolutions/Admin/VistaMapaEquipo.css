@@ -552,3 +552,14 @@
     right: 12px;
   }
 }
+
+/* En qué propiedad registrada está ahora (detectado por GPS) */
+.vme-person-place {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #34d399;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

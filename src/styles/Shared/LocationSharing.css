@@ -146,3 +146,80 @@
     left: 12px;
   }
 }
+
+/* ── Ubicación pausada (solo quien tiene el permiso) ── */
+.loc-share-pill.is-paused {
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #e9d5ff;
+}
+
+.loc-share-pill.is-paused svg {
+  color: #c084fc;
+}
+
+.loc-share-toggle {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(168, 85, 247, 0.18);
+  color: #e9d5ff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.loc-share-toggle.reanudar {
+  background: rgba(16, 185, 129, 0.18);
+  color: #a7f3d0;
+}
+
+.loc-share-toggle:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Estados al pausar: Ocupado, En junta... */
+.loc-share-estados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 10px;
+}
+
+.loc-share-estado {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.loc-share-estado.activo {
+  border-color: rgba(168, 85, 247, 0.6);
+  background: rgba(168, 85, 247, 0.2);
+  color: #f3e8ff;
+}
+
+.loc-share-otro {
+  width: 100%;
+  margin: -2px 0 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
+  font: inherit;
+  font-size: 16px; /* evita el zoom de iOS */
+  outline: none;
+  box-sizing: border-box;
+}

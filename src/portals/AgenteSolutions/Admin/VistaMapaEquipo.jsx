@@ -16,6 +16,7 @@ const STATUS = {
   online: { color: '#10b981', label: 'En línea' },
   recent: { color: '#f59e0b', label: 'Reciente' },
   old: { color: '#64748b', label: 'Inactivo' },
+  paused: { color: '#a855f7', label: 'Ubicación pausada' },
   none: { color: '#475569', label: 'Sin ubicación' }
 };
 
@@ -26,11 +27,15 @@ const SOURCE_LABEL = {
 };
 
 const statusOf = (m) => {
+  if (m.paused) return 'paused';
   if (!m.last_location) return 'none';
   if (m.online) return 'online';
   const mins = (Date.now() - new Date(m.last_location.recorded_at).getTime()) / 60000;
   return mins <= RECENT_MINUTES ? 'recent' : 'old';
 };
+
+// "09:05" en la hora del dispositivo
+const horaCorta = (iso) => (iso ? new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : '');
 
 const timeAgo = (iso) => {
   if (!iso) return '';
@@ -236,7 +241,7 @@ const VistaMapaEquipo = () => {
       .filter(m => !onlyOnline || m.online)
       .filter(m => !q || m.name.toLowerCase().includes(q))
       .sort((a, b) => {
-        const order = { online: 0, recent: 1, old: 2, none: 3 };
+        const order = { online: 0, recent: 1, old: 2, paused: 3, none: 4 };
         const diff = order[statusOf(a)] - order[statusOf(b)];
         if (diff !== 0) return diff;
         return a.name.localeCompare(b.name);
@@ -358,11 +363,15 @@ const VistaMapaEquipo = () => {
                       <span className="vme-person-name">{m.name}</span>
                       <span className="vme-person-meta">
                         {m.role_id === 2 ? 'Técnico' : 'Admin'} · {
-                          !m.sharing && !m.last_location ? 'No comparte ubicación'
+                          m.paused ? `${m.pause_status || 'Ocupado'} · ubicación pausada${m.paused_at ? ` · ${timeAgo(m.paused_at)}` : ''}`
+                          : !m.sharing && !m.last_location ? 'No comparte ubicación'
                             : m.last_location ? `${STATUS[st].label} · ${timeAgo(m.last_location.recorded_at)}`
                               : 'Sin ubicación todavía'
                         }
                       </span>
+                      {m.place && (
+                        <span className="vme-person-place">📍 En {m.place.nombre} desde {horaCorta(m.place.desde)}</span>
+                      )}
                     </span>
                   </button>
                 </li>
@@ -463,6 +472,9 @@ const VistaMapaEquipo = () => {
                     </button>
                     <strong>{selected.name}</strong>
                     <span>{selected.role_id === 2 ? 'Técnico' : 'Admin'} · {STATUS[statusOf(selected)].label}</span>
+                    {selected.place && (
+                      <span className="vme-person-place">📍 En {selected.place.nombre} desde {horaCorta(selected.place.desde)}</span>
+                    )}
                     <span>{SOURCE_LABEL[selected.last_location.source] || ''} · {timeAgo(selected.last_location.recorded_at)}</span>
                     {selected.last_location.accuracy != null && <span>Precisión ±{Math.round(selected.last_location.accuracy)} m</span>}
                     <div className="vme-info-actions">

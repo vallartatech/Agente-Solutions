@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { CalendarDays, Shield, User, LogOut, Navigation, ReceiptText, Globe, ChevronDown, ArrowLeft } from 'lucide-react';
 import defaultLogo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
+import BotonChats from './BotonChats';
 import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
@@ -260,6 +261,8 @@ const AdminHeader = ({ activeModule, titulo, rolTexto, navTabs, navBack }) => {
             >
               <CalendarDays size={18} strokeWidth={2.2} />
             </button>
+
+            <BotonChats />
 
             <NotificationBell />
           </div>

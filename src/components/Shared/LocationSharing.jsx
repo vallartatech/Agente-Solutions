@@ -7,6 +7,7 @@ import {
   refrescarEstadoUbicacion,
   suscribirEstadoUbicacion,
   cambiarConsentimientoUbicacion,
+  cambiarPausaUbicacion,
   enviarPosicion
 } from './ubicacionService';
 import '../../styles/Shared/LocationSharing.css';
@@ -16,6 +17,8 @@ const SEND_EVERY_MS = 45000;      // envío periódico mientras la app está abi
 const MIN_GAP_MS = 20000;         // nunca más seguido que esto
 const MOVE_THRESHOLD_M = 50;      // si se movió más de esto, se envía antes
 const ASK_AGAIN_DAYS = 3;
+// Estados al pausar la ubicación (quien tiene el permiso); "Otro" permite escribir uno
+const ESTADOS_PAUSA = ['Ocupado', 'En junta', 'En llamada', 'Comiendo', 'Fuera de oficina', 'Otro'];
 
 const distanciaMetros = (a, b) => {
   const R = 6371000;
@@ -78,9 +81,9 @@ const LocationSharing = () => {
     return () => clearTimeout(timer);
   }, [isTracked, estado, user?.id]);
 
-  // Envío en vivo mientras la app está visible
+  // Envío en vivo mientras la app está visible (nunca mientras la ubicación está pausada)
   useEffect(() => {
-    if (!isTracked || !estado?.consent || !navigator.geolocation) return;
+    if (!isTracked || !estado?.consent || estado?.paused || !navigator.geolocation) return;
     let watchId = null;
 
     const onPosition = (pos) => {
@@ -135,35 +138,105 @@ const LocationSharing = () => {
       clearInterval(heartbeat);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [isTracked, estado?.consent]);
+  }, [isTracked, estado?.consent, estado?.paused]);
+
+  const [cambiandoPausa, setCambiandoPausa] = useState(false);
+  const [estadoElegido, setEstadoElegido] = useState('Ocupado');
+  const [estadoOtro, setEstadoOtro] = useState('');
+  const pausada = Boolean(estado?.paused);
+  const puedePausar = Boolean(estado?.can_pause);
+  const estadoPausa = estado?.pause_status || 'Ubicación pausada';
+  const estadoAGuardar = estadoElegido === 'Otro' ? estadoOtro.trim() : estadoElegido;
+
+  const alternarPausa = async () => {
+    if (!pausada && !estadoAGuardar) return;
+    setCambiandoPausa(true);
+    try {
+      await cambiarPausaUbicacion(!pausada, pausada ? null : estadoAGuardar);
+      if (!pausada) setGpsError(null);
+      lastSent.current = { at: 0, coords: null, first: true }; // al reanudar se registra de inmediato
+      setPanelOpen(false);
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'No se pudo cambiar', text: err.response?.data?.error || 'Inténtalo de nuevo.' });
+    } finally {
+      setCambiandoPausa(false);
+    }
+  };
 
   if (!isTracked || !estado?.consent) return null;
 
-  // El indicador solo informa; si el GPS falla, al tocarlo explica cómo activarlo
+  // El indicador informa; si el GPS falla explica cómo activarlo, y con permiso permite pausar
+  const mostrarPanel = panelOpen && (gpsError || puedePausar);
   return createPortal(
     <div className="loc-share">
-      {panelOpen && gpsError && (
+      {mostrarPanel && (
         <div className="loc-share-panel" role="dialog" aria-label="Ubicación">
           <button type="button" className="loc-share-panel-close" onClick={() => setPanelOpen(false)} aria-label="Cerrar">
             <X size={16} />
           </button>
-          <strong>Activa tu ubicación</strong>
-          <p className="loc-share-warn">
-            {gpsError === 'denied'
-              ? 'Tu navegador bloqueó el GPS. Actívalo en el candado 🔒 de la barra de direcciones y recarga la página.'
-              : 'No se pudo obtener tu ubicación. Revisa que el GPS del celular esté encendido.'}
-          </p>
+          {puedePausar ? (
+            <>
+              <strong>{pausada ? estadoPausa : 'En línea · compartiendo ubicación'}</strong>
+              {pausada ? (
+                <p>Tu ubicación está pausada. En el mapa del equipo apareces como «{estadoPausa}».</p>
+              ) : (
+                <>
+                  <p>Si la pausas, en el mapa del equipo aparecerás con este estado:</p>
+                  <div className="loc-share-estados">
+                    {ESTADOS_PAUSA.map(e => (
+                      <button
+                        type="button"
+                        key={e}
+                        className={`loc-share-estado ${estadoElegido === e ? 'activo' : ''}`}
+                        onClick={() => setEstadoElegido(e)}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                  {estadoElegido === 'Otro' && (
+                    <input
+                      className="loc-share-otro"
+                      placeholder="Ej. En obra, Visitando cliente"
+                      maxLength={40}
+                      value={estadoOtro}
+                      onChange={e => setEstadoOtro(e.target.value)}
+                      autoFocus
+                    />
+                  )}
+                </>
+              )}
+              <button
+                type="button"
+                className={`loc-share-toggle ${pausada ? 'reanudar' : ''}`}
+                onClick={alternarPausa}
+                disabled={cambiandoPausa || (!pausada && !estadoAGuardar)}
+              >
+                {pausada ? <MapPin size={15} /> : <MapPinOff size={15} />}
+                {cambiandoPausa ? 'Guardando…' : pausada ? 'Volver a En línea' : `Pausar · ${estadoAGuardar || 'escribe un estado'}`}
+              </button>
+            </>
+          ) : (
+            <strong>Activa tu ubicación</strong>
+          )}
+          {gpsError && !pausada && (
+            <p className="loc-share-warn">
+              {gpsError === 'denied'
+                ? 'Tu navegador bloqueó el GPS. Actívalo en el candado 🔒 de la barra de direcciones y recarga la página.'
+                : 'No se pudo obtener tu ubicación. Revisa que el GPS del celular esté encendido.'}
+            </p>
+          )}
         </div>
       )}
       <button
         type="button"
-        className={`loc-share-pill ${gpsError ? 'has-error' : ''}`}
-        onClick={() => { if (gpsError) setPanelOpen(o => !o); }}
-        title="Ubicación compartida"
+        className={`loc-share-pill ${gpsError && !pausada ? 'has-error' : ''} ${pausada ? 'is-paused' : ''}`}
+        onClick={() => { if ((gpsError && !pausada) || puedePausar) setPanelOpen(o => !o); }}
+        title={pausada ? `${estadoPausa} · ubicación pausada` : 'Ubicación compartida'}
       >
-        {gpsError ? <MapPinOff size={14} /> : <MapPin size={14} />}
-        <span>{gpsError === 'denied' ? 'GPS bloqueado' : 'Ubicación'}</span>
-        {!gpsError && <span className="loc-share-dot" />}
+        {pausada || gpsError ? <MapPinOff size={14} /> : <MapPin size={14} />}
+        <span>{pausada ? estadoPausa : gpsError === 'denied' ? 'GPS bloqueado' : puedePausar ? 'En línea' : 'Ubicación'}</span>
+        {!gpsError && !pausada && <span className="loc-share-dot" />}
       </button>
     </div>,
     document.body

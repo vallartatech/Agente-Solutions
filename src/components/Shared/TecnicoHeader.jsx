@@ -7,6 +7,7 @@ import defaultLogo from '../../assets/Logo4.png';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
 import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
 import NotificationBell from './NotificationBell';
+import BotonChats from './BotonChats';
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
 import '../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
@@ -231,6 +232,8 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
             >
               <CalendarDays size={18} color="#ffffff" strokeWidth={2.2} />
             </button>
+
+            <BotonChats className="vcp-header-icon-btn vcp-nav-icon-btn" />
 
             <NotificationBell triggerClassName="vcp-header-icon-btn vcp-nav-icon-btn" />
           </div>

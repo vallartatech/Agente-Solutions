@@ -2164,7 +2164,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       {noticeForm.parent
                         ? 'Quedará ligado al aviso anterior en el historial'
                         : noticeForm.audience === 'some'
-                          ? 'Solo les llegará a las personas que elijas'
+                          ? 'Solo lo verán y recibirán las personas que elijas'
                           : 'Aparecerá en el calendario y le llegará a todo el equipo'}
                     </p>
                   </div>

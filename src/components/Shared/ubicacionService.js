@@ -44,6 +44,13 @@ export const cambiarConsentimientoUbicacion = async (enabled) => {
   return refrescarEstadoUbicacion();
 };
 
+// Pausar (con un estado: "En junta", "Ocupado"...) o reanudar la ubicación propia
+// (solo quien tiene el permiso can_pause)
+export const cambiarPausaUbicacion = async (paused, status = null) => {
+  await axios.post(`${API}/ubicacion/pausa`, { paused, status });
+  return refrescarEstadoUbicacion();
+};
+
 const leerPosicion = () => new Promise((resolve, reject) => {
   if (!navigator.geolocation) {
     reject(new Error('Este navegador no permite obtener la ubicación.'));

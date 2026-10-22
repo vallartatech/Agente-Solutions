@@ -27,6 +27,7 @@ const esTemporadaHalloween = () => {
 };
 import VistaMapaEquipo from "./portals/AgenteSolutions/Admin/VistaMapaEquipo";
 import VistaComprobantes from "./portals/AgenteSolutions/Shared/VistaComprobantes";
+import VistaChats from "./portals/AgenteSolutions/Shared/VistaChats";
 import RegistroZonas from "./portals/AgenteSolutions/Tecnico/RegistroZonas";
 import CheckEmail from "./components/Auth/CheckEmail";
 import VerifyEmail from "./components/Auth/VerifyEmail";
@@ -249,6 +250,8 @@ const AppRoutes = () => {
       <Route path="/notificaciones" element={<VistaNotificaciones />} />
       <Route path="/mapa-equipo" element={<VistaMapaEquipo />} />
       <Route path="/comprobantes" element={<ProtectedRoute><VistaComprobantes /></ProtectedRoute>} />
+      <Route path="/chats" element={<ProtectedRoute><VistaChats /></ProtectedRoute>} />
+      <Route path="/chats/:id" element={<ProtectedRoute><VistaChats /></ProtectedRoute>} />
       <Route path="/trabajos-asignados" element={<TrabajosAsignados />} />
 
       {/* Vista de inicio del cliente sin Sidebar */}
