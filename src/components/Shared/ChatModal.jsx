@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Send, X, MessageSquare, ShieldCheck, User as UserIcon } from 'lucide-react';
 import '../../styles/Shared/ChatModal.css';
+import { mostrarAviso } from '../../utils/dialogos';
 
 const ChatModal = ({
   quoteId,
@@ -108,7 +109,7 @@ const ChatModal = ({
       }
     } catch (err) {
       console.error("Error al enviar mensaje de chat:", err);
-      alert("No se pudo enviar el mensaje. Intenta de nuevo.");
+      mostrarAviso("No se pudo enviar el mensaje. Intenta de nuevo.");
     } finally {
       setSending(false);
     }

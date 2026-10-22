@@ -88,7 +88,7 @@ const AssignWorkModal = ({ cotizacion, onClose, onAssign }) => {
   };
 
   const handleSaveTemplate = async () => {
-    if (!newTemplateName.trim()) return alert("Por favor ingresa un nombre para la plantilla");
+    if (!newTemplateName.trim()) return mostrarAviso("Por favor ingresa un nombre para la plantilla");
     setSavingTemplate(true);
     try {
       const token = localStorage.getItem('agente_token');
@@ -102,12 +102,12 @@ const AssignWorkModal = ({ cotizacion, onClose, onAssign }) => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Plantilla guardada con éxito");
+        mostrarAviso("Plantilla guardada con éxito");
         setTemplates([...templates, data.template]);
         setSelectedTemplateId(data.template.id);
         setNewTemplateName('');
       } else {
-        alert("Error al guardar: " + data.message);
+        mostrarAviso("Error al guardar: " + data.message);
       }
     } catch (e) {
       console.error(e);
@@ -117,7 +117,7 @@ const AssignWorkModal = ({ cotizacion, onClose, onAssign }) => {
 
   const handleSubmit = async () => {
     if (!tecnicoId || !fechaInicio) {
-      return alert("Por favor selecciona un técnico y una fecha/hora.");
+      return mostrarAviso("Por favor selecciona un técnico y una fecha/hora.");
     }
     setLoading(true);
     try {
@@ -141,14 +141,14 @@ const AssignWorkModal = ({ cotizacion, onClose, onAssign }) => {
 
       const data = await res.json();
       if (res.ok) {
-        alert("Trabajo asignado correctamente");
+        mostrarAviso("Trabajo asignado correctamente");
         onAssign();
       } else {
-        alert("Error: " + data.message);
+        mostrarAviso("Error: " + data.message);
       }
     } catch (e) {
       console.error(e);
-      alert("Error de red");
+      mostrarAviso("Error de red");
     }
     setLoading(false);
   };
@@ -273,3 +273,5 @@ const AssignWorkModal = ({ cotizacion, onClose, onAssign }) => {
 };
 
 export default AssignWorkModal;
+
+import { mostrarAviso } from '../../utils/dialogos';

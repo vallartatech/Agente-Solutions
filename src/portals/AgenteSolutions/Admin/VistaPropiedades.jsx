@@ -20,6 +20,7 @@ import {
   MoreVertical, Eye, ClipboardCheck, ClipboardList, Pencil, Trash2, Users,
   Folder, FolderPlus, FolderInput, FolderOpen, ArrowLeft, FolderX, Check
 } from "lucide-react";
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const COLORES_CARPETA = ["#F26522", "#2563eb", "#10b981", "#8b5cf6", "#e11d48", "#0f172a"];
 
@@ -441,11 +442,11 @@ const VistaPropiedades = () => {
   const handleSubmitReportarProblema = async (e) => {
     e.preventDefault();
     if (!propiedadReporteId) {
-      alert("Por favor selecciona una propiedad.");
+      mostrarAviso("Por favor selecciona una propiedad.");
       return;
     }
     if (!nuevoProblema.tipo || !nuevoProblema.area_id || !nuevoProblema.descripcion) {
-      alert("Por favor completa los campos obligatorios (Tipo, Zona y Descripción).");
+      mostrarAviso("Por favor completa los campos obligatorios (Tipo, Zona y Descripción).");
       return;
     }
 
@@ -488,7 +489,7 @@ const VistaPropiedades = () => {
       }
     } catch (error) {
       console.error("Error enviando reporte:", error);
-      alert("Hubo un error al enviar el reporte.");
+      mostrarAviso("Hubo un error al enviar el reporte.");
     } finally {
       setLoadingSubmitProblema(false);
     }
@@ -531,12 +532,12 @@ const VistaPropiedades = () => {
       if (respuesta.data && (respuesta.data.success || respuesta.status === 200 || respuesta.status === 201)) {
         setPasoModal(2); 
       } else {
-        alert(respuesta.data?.message || "No se pudo crear la solicitud de servicio.");
+        mostrarAviso(respuesta.data?.message || "No se pudo crear la solicitud de servicio.");
       }
     } catch (error) {
       console.error("Error al reportar:", error);
       const msg = error.response?.data?.message || error.message || "Hubo un error al solicitar el servicio.";
-      alert(msg);
+      mostrarAviso(msg);
     } finally {
       setEnviandoServicio(false);
     }

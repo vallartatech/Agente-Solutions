@@ -20,6 +20,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../../../components/Shared/Header";
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosAsignados.css";
+import { mostrarAviso } from '../../../utils/dialogos';
 
 
 
@@ -65,7 +66,7 @@ const TrabajosAsignados = () => {
       window.open(url, "_blank");
       return;
     }
-    alert("Esta propiedad no tiene coordenadas ni dirección registradas.");
+    mostrarAviso("Esta propiedad no tiene coordenadas ni dirección registradas.");
   };
 
   const verDetalle = (servicio) => {

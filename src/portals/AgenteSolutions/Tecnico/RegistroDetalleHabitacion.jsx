@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react'; 
 import axios from 'axios';
 import "../../../styles/AgenteSolutions/Tecnico/RegistroDetalleHabitacion.css";
-import { ArrowLeft, Plus, Trash2, X, Loader2, ImageIcon, Edit3, Eye, SlidersHorizontal } from 'lucide-react';
+import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
+import "../../../styles/Shared/LiquidGlass.css";
+import "../../../styles/AgenteSolutions/Tecnico/LevantamientoZonas.css";
+import { ArrowLeft, Plus, Trash2, X, Loader2, ImageIcon, Edit3, Eye, SlidersHorizontal, Wrench, Camera, Tag, Hash, Ruler, Palette, Package, Box, Layers, MessageSquare } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
+import RutaLevantamiento from './RutaLevantamiento';
+import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 // Ficha técnica opcional de aire acondicionado ("modo avanzado" del formulario).
 // Todos los campos son opcionales; se guardan en property_components.specs (JSON).
@@ -72,7 +77,7 @@ const obtenerColorHex = (val) => {
   return null;
 };
 
-const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, alVolver }) => {
+const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, alVolver, ruta }) => {
   const [componentes, setComponentes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -192,9 +197,9 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
     let subCat = nuevoRegistro.sub_category;
     if (categoriaActiva?.name === 'PINTURA') {
       subCat = 'COLORIMETRÍA';
-      if (!nuevoRegistro.model_or_color) return alert("El campo TONO es obligatorio.");
+      if (!nuevoRegistro.model_or_color) return mostrarAviso("El campo TONO es obligatorio.");
     } else {
-      if (!subCat) return alert("El campo TIPO es obligatorio.");
+      if (!subCat) return mostrarAviso("El campo TIPO es obligatorio.");
     }
 
     setGuardando(true);
@@ -252,14 +257,14 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
       fetchComponentes(); 
     } catch (error) {
       console.error("Error al guardar:", error);
-      alert("Hubo un error al guardar el elemento.");
+      mostrarAviso("Hubo un error al guardar el elemento.");
     } finally {
       setGuardando(false);
     }
   };
   
   const eliminarComponente = async (id) => {
-    if(window.confirm("¿Seguro que deseas eliminar este elemento?")) {
+    if(await confirmarAccion("¿Seguro que deseas eliminar este elemento?")) {
       try {
         // ✅ INYECTAR TOKEN AL ELIMINAR
         const token = localStorage.getItem('agente_token');
@@ -268,7 +273,7 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
         });
         fetchComponentes();
       } catch (error) {
-        alert("Error al eliminar");
+        mostrarAviso("Error al eliminar");
       }
     }
   };
@@ -279,142 +284,131 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
     ...(itemDetalle.galleries ? itemDetalle.galleries.map(g => g.image_path) : [])
   ] : [];
 
+  const esPintura = categoriaActiva?.name === 'PINTURA';
+  const columnas = esPintura ? '1.3fr 1fr 1fr 0.8fr 130px' : '1fr 1fr 0.6fr 1fr 130px';
+  const rutaCategoria = [
+    ...(ruta || [{ label: habitacion?.name || 'Área', onClick: alVolver }]),
+    { label: categoriaActiva?.name || 'Categoría', Icon: Wrench },
+  ];
+
   return (
-    <>
+    <div className="lz-page">
       <Header />
-      <div className="rdh-body-wrapper">
-      <div className="rdh-info-row">
-        <button onClick={alVolver} style={{ background: '#f26624', color: 'white', border: 'none', borderRadius: '20px', padding: '6px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', fontWeight: 'bold' }}>
-          <ArrowLeft size={16} style={{ marginRight: '8px' }}/> VOLVER
-        </button>
-        <div className="rdh-data-pill">CURP <strong>{propertyCurp || "S/N"}</strong></div>
-        <div className="rdh-data-pill">ID ÁREA <strong>{habitacion?.id}</strong></div>
-        <div className="rdh-date-box">FECHA DE REGISTRO</div>
-      </div>
+      <main className="lz-container">
+        <RutaLevantamiento items={rutaCategoria} />
 
-      <div className="rdh-main-card">
-        <div className="rdh-header-grid">
-          <div className="rdh-name-pill-large">
-            <h3>{habitacion?.name || "HABITACIÓN PRINCIPAL"}</h3>
-          </div>
-          <div className="rdh-category-indicator">{categoriaActiva?.name || "CATEGORÍA"}</div>
-        </div>
-
-        <div className="rdh-content-layout">
-          <div className="rdh-table-container">
-            <div className="rdh-table-header" style={{ gridTemplateColumns: categoriaActiva?.name === 'PINTURA' ? '1.2fr 1fr 1fr 1fr 120px' : '1fr 1fr 0.5fr 1fr 120px' }}>
-              {categoriaActiva?.name === 'PINTURA' ? (
-                <>
-                  <span>TONO / COLOR</span>
-                  <span>MARCA</span>
-                  <span>CLAVE / FÓRMULA</span>
-                  <span>ÁREA (M²)</span>
-                </>
-              ) : (
-                <>
-                  <span>MARCA</span>
-                  <span>MODELO</span>
-                  <span>CANTIDAD</span>
-                  <span>TIPO</span>
-                </>
-              )}
-              <span></span>
+        {/* ENCABEZADO: área + categoría */}
+        <section className="lz-card lz-hero">
+          <div className="lz-hero-info">
+            <span className="lz-hero-icon"><Wrench size={24} /></span>
+            <div className="lz-hero-textos">
+              <h1>{categoriaActiva?.name || "CATEGORÍA"}</h1>
+              <p>{habitacion?.name || "HABITACIÓN PRINCIPAL"}</p>
+              <div className="lz-chips">
+                <span className="lz-chip">CURP <strong>{propertyCurp || "S/N"}</strong></span>
+                <span className="lz-chip">ID área <strong>{habitacion?.id}</strong></span>
+                <span className="lz-chip naranja">{componentes.length} {componentes.length === 1 ? 'elemento' : 'elementos'}</span>
+              </div>
             </div>
-            
-            {loading ? (
-              <p style={{textAlign: 'center', color: 'white', padding: '20px'}}>Cargando elementos...</p>
-            ) : componentes.length > 0 ? (
-              componentes.map((reg) => (
-                <div key={reg.id} className="rdh-table-row" style={{ gridTemplateColumns: categoriaActiva?.name === 'PINTURA' ? '1.2fr 1fr 1fr 1fr 120px' : '1fr 1fr 0.5fr 1fr 120px' }}>
-                  {categoriaActiva?.name === 'PINTURA' ? (
+          </div>
+          <div className="lz-acciones">
+            <button type="button" className="lz-btn lz-btn-glass" onClick={alVolver}>
+              <ArrowLeft size={18} /> <span className="lz-btn-txt">Volver</span>
+            </button>
+            <button type="button" className="lz-btn lz-btn-primary" onClick={abrirModalCreacion}>
+              <Plus size={18} strokeWidth={2.8} /> {esPintura ? 'Agregar color' : 'Agregar elemento'}
+            </button>
+          </div>
+        </section>
+
+        {/* TABLA DE ELEMENTOS */}
+        <section className="lz-card lz-panel">
+          {loading ? (
+            <div className="lz-vacio"><Loader2 size={28} className="animate-spin" /><p>Cargando elementos...</p></div>
+          ) : componentes.length > 0 ? (
+            <div className="lz-tabla">
+              <div className="lz-tabla-cab" style={{ gridTemplateColumns: columnas }}>
+                {esPintura ? (
+                  <><span>Tono / color</span><span>Marca</span><span>Clave / fórmula</span><span>Área (m²)</span></>
+                ) : (
+                  <><span>Marca</span><span>Modelo</span><span>Cantidad</span><span>Tipo</span></>
+                )}
+                <span></span>
+              </div>
+
+              {componentes.map((reg) => (
+                <div key={reg.id} className="lz-tabla-fila" style={{ gridTemplateColumns: columnas }}>
+                  {esPintura ? (
                     <>
-                      <span data-label="Tono" style={{ fontWeight: 'bold', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                      <span data-label="Tono" style={{ fontWeight: 800, color: '#0f172a' }}>
                         {(() => {
                           const colorHex = obtenerColorHex(reg.model_or_color) || obtenerColorHex(reg.serial_number);
-                          if (colorHex) {
-                            return (
-                              <span 
-                                style={{
-                                  width: '20px',
-                                  height: '20px',
-                                  borderRadius: '50%',
-                                  backgroundColor: colorHex,
-                                  border: '2px solid white',
-                                  boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
-                                  display: 'inline-block',
-                                  flexShrink: 0
-                                }} 
-                                title={`Color detectado: ${colorHex}`}
-                              />
-                            );
-                          }
-                          return <span style={{ fontSize: '1.2rem' }}>🎨</span>;
+                          return colorHex
+                            ? <span className="lz-color" style={{ backgroundColor: colorHex }} title={`Color detectado: ${colorHex}`} />
+                            : <span style={{ marginRight: '6px' }}>🎨</span>;
                         })()}
                         {reg.model_or_color || 'N/A'}
                       </span>
                       <span data-label="Marca">{reg.brand || 'N/A'}</span>
                       <span data-label="Clave">{reg.serial_number || 'N/A'}</span>
-                      <span data-label="Área" style={{ fontWeight: 'bold' }}>{reg.quantity} m²</span>
+                      <span data-label="Área" style={{ fontWeight: 800 }}>{reg.quantity} m²</span>
                     </>
                   ) : (
                     <>
-                      <span data-label="Marca">{reg.brand || 'N/A'}</span>
+                      <span data-label="Marca" style={{ fontWeight: 800, color: '#0f172a' }}>{reg.brand || 'N/A'}</span>
                       <span data-label="Modelo">{reg.model_or_color || 'N/A'}</span>
                       <span data-label="Cantidad">{reg.quantity}</span>
                       <span data-label="Tipo">{reg.sub_category}</span>
                     </>
                   )}
-                  
-                  {/* SECCIÓN DE BOTONES: DETALLE, EDITAR Y ELIMINAR */}
-                  <div style={{display: 'flex', gap: '10px', justifyContent: 'flex-end'}}>
-                    <button onClick={() => setItemDetalle(reg)} style={{background: 'none', border: 'none', cursor: 'pointer', color: '#333'}} title="Ver Detalles">
-                      <Eye size={20} />
+
+                  {/* DETALLE, EDITAR Y ELIMINAR */}
+                  <div className="lz-tabla-acciones">
+                    <button type="button" className="lz-icon-btn" onClick={() => setItemDetalle(reg)} title="Ver detalles">
+                      <Eye size={16} />
                     </button>
-                    <button onClick={() => abrirModalEdicion(reg)} style={{background: 'none', border: 'none', cursor: 'pointer', color: '#333'}} title="Editar">
-                      <Edit3 size={20} />
+                    <button type="button" className="lz-icon-btn" onClick={() => abrirModalEdicion(reg)} title="Editar">
+                      <Edit3 size={16} />
                     </button>
-                    <button onClick={() => eliminarComponente(reg.id)} style={{background: 'none', border: 'none', cursor: 'pointer', color: '#ff4d4d'}} title="Eliminar">
-                      <Trash2 size={20} className="rdh-icon-del" />
+                    <button type="button" className="lz-icon-btn peligro" onClick={() => eliminarComponente(reg.id)} title="Eliminar">
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
-              ))
-            ) : (
-              <p style={{textAlign: 'center', color: '#ccc', fontStyle: 'italic', padding: '20px'}}>
-                No hay elementos registrados en {categoriaActiva?.name}.
-              </p>
-            )}
-          </div>
-
-          <div className="rdh-side-controls">
-            <button className="rdh-btn-plus-sq" onClick={abrirModalCreacion}>
-              <Plus size={35} strokeWidth={4} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="rdh-actions-outer">
-        <button className="rdh-btn-save-3d" onClick={alVolver}>GUARDAR CATEGORÍA</button>
-      </div>
+              ))}
+            </div>
+          ) : (
+            <div className="lz-vacio">
+              <Wrench size={40} />
+              <p>No hay elementos registrados en {categoriaActiva?.name}.</p>
+              <button type="button" className="lz-btn lz-btn-primary" onClick={abrirModalCreacion}>
+                <Plus size={18} strokeWidth={2.8} /> {esPintura ? 'Agregar color' : 'Agregar elemento'}
+              </button>
+            </div>
+          )}
+        </section>
+      </main>
 
       {/* MODAL CON FOTO, GALERÍA, SERIE Y COMENTARIOS */}
       {isModalOpen && (
-        <div className="rdh-modal-overlay">
-          <div className="rdh-modal-content" style={{ width: '500px', maxWidth: '95vw', backgroundColor: '#f8fafc' }}>
-            <button className="rdh-modal-close" onClick={() => setIsModalOpen(false)}>
-              <X size={24} strokeWidth={3} />
-            </button>
-            
-            {/* TÍTULO DINÁMICO */}
-            <h2 className="rdh-modal-title" style={{ color: '#1e293b' }}>
-              {modoEdicion 
-                ? (categoriaActiva?.name === 'PINTURA' ? 'EDITAR COLORIMETRÍA' : 'EDITAR PRODUCTO') 
-                : (categoriaActiva?.name === 'PINTURA' ? 'NUEVA COLORIMETRÍA / PINTURA' : 'NUEVO PRODUCTO')
-              }
-            </h2>
-            
-            <div className="rdh-modal-form" style={{ maxHeight: '65vh', overflowY: 'auto', paddingRight: '10px' }}>
+        <div className="rp-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="rp-modal lz-modal-producto" onClick={(e) => e.stopPropagation()}>
+            <div className="rp-header">
+              <div className="rp-header-text">
+                <span className="rp-tag">{categoriaActiva?.name || 'CATEGORÍA'}</span>
+                {/* TÍTULO DINÁMICO */}
+                <h2 className="rp-title">
+                  {modoEdicion
+                    ? (esPintura ? 'Editar colorimetría' : 'Editar producto')
+                    : (esPintura ? 'Nueva colorimetría' : 'Nuevo producto')}
+                </h2>
+              </div>
+              <button type="button" className="rp-close" onClick={() => setIsModalOpen(false)} aria-label="Cerrar">
+                <X size={18} strokeWidth={2.6} />
+              </button>
+            </div>
+
+            <div className="rp-form">
               {/* AIRE ACONDICIONADO: formulario sencillo o con ficha técnica (como calculadora básica / científica) */}
               {esAire && (
                 <div className="rdh-ficha">
@@ -483,370 +477,193 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
                 </div>
               )}
 
-              
-              {/* === NUEVA SECCIÓN DE FOTOS (PRINCIPAL + GALERÍA) === */}
-              <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '20px' }}>
-                
-              {/* FOTO PRINCIPAL (ACTUALIZADA CON BOTÓN DE ICONO) */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div 
-                    className="rdh-foto-box"
-                    onClick={() => document.getElementById('fotoProducto').click()}
-                  >
-                    {previewImg ? (
-                      <img src={previewImg} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <>
-                        <ImageIcon size={40} color="#ccc" />
-                        <span style={{ fontSize: '10px', color: '#ccc', marginTop: '5px', fontWeight: 'bold', textAlign: 'center' }}>
-                          {modoEdicion ? 'CAMBIAR FOTO' : 'FOTO PRINCIPAL'}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <input type="file" id="fotoProducto" hidden accept="image/*" onChange={handleFileSelect} />
-                  
-                  {/* BOTÓN CONSOLIDADO DE QUITAR FOTO NUEVA (compacto y rojo) */}
-                  {selectedFile && (
-                    <div style={{ display: 'flex', marginTop: '8px', justifyContent: 'center' }}>
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSelectedFile(null); // Limpiamos el archivo seleccionado
-                          
-                          // Lógica de reseteo inteligente
-                          if (modoEdicion) {
-                            const itemOriginal = componentes.find(c => c.id === idEditando);
-                            setPreviewImg(itemOriginal?.image_path || null);
-                          } else {
-                            setPreviewImg(null);
-                          }
-                          
-                          // Reseteamos el input file
-                          document.getElementById('fotoProducto').value = "";
-                        }} 
-                        title="Quitar foto nueva" // Texto para accesibilidad
-                        style={{ 
-                          background: '#e02424', // Un rojo más intenso para el botón
-                          border: 'none', 
-                          color: 'white', 
-                          cursor: 'pointer', 
-                          borderRadius: '50%', // Lo hace un círculo perfecto
-                          width: '32px', // Tamaño compacto
-                          height: '32px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: 0,
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)' // Pequeña sombra para realzarlo
+              {/* FOTOS: principal + galería */}
+              <div className="rp-group">
+                <label className="rp-label"><Camera size={16} color="#ff8c42" /> Fotos</label>
+                <input type="file" id="fotoProducto" hidden accept="image/*" onChange={handleFileSelect} />
+                <input type="file" id="fotoGaleria" hidden accept="image/*" multiple onChange={(e) => { handleGallerySelect(e); e.target.value = null; }} />
+
+                <div className="lz-fotos-prod">
+                  {/* FOTO PRINCIPAL */}
+                  {previewImg ? (
+                    <div className="lz-foto-tile" onClick={() => document.getElementById('fotoProducto').click()} title="Cambiar foto principal">
+                      <img src={previewImg} alt="Foto principal" />
+                      <span className="lz-foto-badge">Principal</span>
+                      {selectedFile && (
+                        <button
+                          type="button"
+                          className="lz-foto-quitar"
+                          title="Quitar foto nueva"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedFile(null);
+                            // Lógica de reseteo inteligente
+                            if (modoEdicion) {
+                              const itemOriginal = componentes.find(c => c.id === idEditando);
+                              setPreviewImg(itemOriginal?.image_path || null);
+                            } else {
+                              setPreviewImg(null);
+                            }
+                            document.getElementById('fotoProducto').value = "";
+                          }}
+                        >
+                          <X size={13} strokeWidth={3} />
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <button type="button" className="lz-foto-tile vacia" onClick={() => document.getElementById('fotoProducto').click()}>
+                      <span className="lz-fuente-icono naranja"><Camera size={18} /></span>
+                      <small>{modoEdicion ? 'Cambiar foto' : 'Foto principal'}</small>
+                    </button>
+                  )}
+
+                  {/* FOTOS DE GALERÍA YA GUARDADAS */}
+                  {galeriaExistente.map((foto, i) => (
+                    <div key={`ex-${i}`} className="lz-foto-tile">
+                      <img src={foto.image_path} alt={`galeria-bd-${i}`} />
+                      <button
+                        type="button"
+                        className="lz-foto-quitar"
+                        title="Eliminar foto"
+                        onClick={() => {
+                          setGaleriaExistente(prev => prev.filter((_, idx) => idx !== i));
+                          setRemovedGalleryIds(prev => [...prev, foto.id]);
                         }}
                       >
-                        <X size={18} strokeWidth={3} /> {/* La 'X' blanca centradita */}
+                        <X size={13} strokeWidth={3} />
                       </button>
                     </div>
-                  )}
-                </div>
-              {/* FOTOS DE GALERÍA (EXTRA) */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div 
-                    className="rdh-gallery-box"
-                    title="Agregar fotos extra"
-                    onClick={() => document.getElementById('fotoGaleria').click()}
-                    style={{ position: 'relative', overflow: 'hidden', padding: (galeriaArchivos.length > 0 || galeriaExistente.length > 0) ? '5px' : '0' }}
-                  >
-                    {(galeriaArchivos.length > 0 || galeriaExistente.length > 0) ? (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', width: '100%', height: '100%', justifyContent: 'center', alignContent: 'center' }}>
-                        
-                        {/* Mostrar fotos limpias de la BD */}
-                        {galeriaExistente.map((foto, i) => (
-                           <div 
-                             key={`ex-${i}`} 
-                             style={{ 
-                               position: 'relative', 
-                               width: (galeriaArchivos.length + galeriaExistente.length) > 1 ? '45%' : '90%', 
-                               height: (galeriaArchivos.length + galeriaExistente.length) > 1 ? '45%' : '90%'
-                             }}
-                           >
-                             <img 
-                               src={foto.image_path} 
-                               alt={`galeria-bd-${i}`} 
-                               style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} 
-                             />
-                             <button
-                               type="button"
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 setGaleriaExistente(prev => prev.filter((_, idx) => idx !== i));
-                                 setRemovedGalleryIds(prev => [...prev, foto.id]);
-                               }}
-                               title="Eliminar foto"
-                               style={{
-                                 position: 'absolute',
-                                 top: '-2px',
-                                 right: '-2px',
-                                 background: '#e02424',
-                                 color: '#ffffff',
-                                 border: '1px solid #ffffff',
-                                 borderRadius: '50%',
-                                 width: '16px',
-                                 height: '16px',
-                                 cursor: 'pointer',
-                                 display: 'flex',
-                                 alignItems: 'center',
-                                 justifyContent: 'center',
-                                 fontSize: '11px',
-                                 fontWeight: 'bold',
-                                 zIndex: 10,
-                                 boxShadow: '0px 1px 3px rgba(0,0,0,0.3)',
-                                 padding: 0,
-                                 lineHeight: 1
-                               }}
-                             >
-                               ×
-                             </button>
-                           </div>
-                        ))}
+                  ))}
 
-                        {/* Mostrar fotos recién seleccionadas */}
-                        {galeriaArchivos.slice(0, 4 - galeriaExistente.length).map((file, i) => (
-                           <div 
-                             key={`new-${i}`} 
-                             style={{ 
-                               position: 'relative', 
-                               width: (galeriaArchivos.length + galeriaExistente.length) > 1 ? '45%' : '90%', 
-                               height: (galeriaArchivos.length + galeriaExistente.length) > 1 ? '45%' : '90%'
-                             }}
-                           >
-                             <img 
-                               src={URL.createObjectURL(file)} 
-                               alt={`galeria-new-${i}`} 
-                               style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} 
-                             />
-                             <button
-                               type="button"
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 setGaleriaArchivos(prev => prev.filter((_, idx) => idx !== i));
-                               }}
-                               title="Eliminar foto nueva"
-                               style={{
-                                 position: 'absolute',
-                                 top: '-2px',
-                                 right: '-2px',
-                                 background: '#e02424',
-                                 color: '#ffffff',
-                                 border: '1px solid #ffffff',
-                                 borderRadius: '50%',
-                                 width: '16px',
-                                 height: '16px',
-                                 cursor: 'pointer',
-                                 display: 'flex',
-                                 alignItems: 'center',
-                                 justifyContent: 'center',
-                                 fontSize: '11px',
-                                 fontWeight: 'bold',
-                                 zIndex: 10,
-                                 boxShadow: '0px 1px 3px rgba(0,0,0,0.3)',
-                                 padding: 0,
-                                 lineHeight: 1
-                               }}
-                             >
-                               ×
-                             </button>
-                           </div>
-                        ))}
-
-                      </div>
-                    ) : (
-                      <>
-                        <Plus size={40} color="#ccc" className="gallery-icon" />
-                        <span className="gallery-text" style={{ fontSize: '10px', color: '#ccc', marginTop: '5px', fontWeight: 'bold', textAlign: 'center' }}>
-                          AGREGAR MÁS
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  {/* Atributo 'multiple' permite seleccionar varios archivos a la vez */}
-                  <input type="file" id="fotoGaleria" hidden accept="image/*" multiple onChange={(e) => { handleGallerySelect(e); e.target.value = null; }} />
-                  
-
-
-                  {/* TEXTO INDICADOR DE CUÁNTAS FOTOS HAY EN TOTAL */}
-                  {(galeriaArchivos.length > 0 || galeriaExistente.length > 0) && (
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '8px', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: '11px', color: '#f26624', fontWeight: 'bold' }}>
-                        {(galeriaArchivos.length + galeriaExistente.length)} fotos extra
-                      </span>
-                    </div>
-                  )}
-
-                  {/* BOTÓN CONSOLIDADO DE QUITAR FOTOS NUEVAS (compacto y rojo) */}
-
-                  {galeriaArchivos.length > 0 && (
-                    <div style={{ display: 'flex', marginTop: '8px', justifyContent: 'center' }}>
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setGaleriaArchivos([]); // Limpia solo las fotos nuevas en memoria
-                        }} 
-                        title="Quitar fotos nuevas"
-                        style={{ 
-                          background: '#e02424', 
-                          border: 'none', 
-                          color: 'white', 
-                          cursor: 'pointer', 
-                          borderRadius: '50%', 
-                          width: '32px', 
-                          height: '32px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: 0,
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)' 
-                        }}
+                  {/* FOTOS DE GALERÍA RECIÉN SELECCIONADAS */}
+                  {galeriaArchivos.slice(0, 4 - galeriaExistente.length).map((file, i) => (
+                    <div key={`new-${i}`} className="lz-foto-tile">
+                      <img src={URL.createObjectURL(file)} alt={`galeria-new-${i}`} />
+                      <button
+                        type="button"
+                        className="lz-foto-quitar"
+                        title="Eliminar foto nueva"
+                        onClick={() => setGaleriaArchivos(prev => prev.filter((_, idx) => idx !== i))}
                       >
-                        <X size={18} strokeWidth={3} />
+                        <X size={13} strokeWidth={3} />
                       </button>
                     </div>
-                  )}
+                  ))}
+
+                  <button type="button" className="lz-foto-tile vacia" onClick={() => document.getElementById('fotoGaleria').click()} title="Agregar fotos extra">
+                    <span className="lz-fuente-icono azul"><Plus size={18} strokeWidth={2.8} /></span>
+                    <small>Agregar más</small>
+                  </button>
                 </div>
 
-
+                {(galeriaArchivos.length > 0 || galeriaExistente.length > 0) && (
+                  <small className="lz-fotos-nota">
+                    {galeriaArchivos.length + galeriaExistente.length} {galeriaArchivos.length + galeriaExistente.length === 1 ? 'foto extra' : 'fotos extra'}
+                  </small>
+                )}
               </div>
 
-
-              {categoriaActiva?.name === 'PINTURA' ? (
+              {esPintura ? (
                 <>
-                  <div className="rdh-modal-field">
-                    <label style={{ color: '#1e293b' }}>TONO *</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
-                      <input 
-                        type="text" 
-                        className="rdh-modal-input" 
-                        placeholder="Ej. BLANCO OSTIÓN, GRIS" 
-                        value={nuevoRegistro.model_or_color} 
+                  <div className="rp-group">
+                    <label className="rp-label"><Palette size={16} color="#ff8c42" /> Tono *</label>
+                    <div className="lz-input-color">
+                      <input
+                        type="text"
+                        className="lz-input"
+                        placeholder="Ej. BLANCO OSTIÓN, GRIS"
+                        value={nuevoRegistro.model_or_color}
                         onChange={(e) => setNuevoRegistro({...nuevoRegistro, model_or_color: e.target.value.toUpperCase()})}
-                        style={{ flex: 1 }}
                       />
                       {(() => {
                         const colorHex = obtenerColorHex(nuevoRegistro.model_or_color) || obtenerColorHex(nuevoRegistro.serial_number);
-                        if (colorHex) {
-                          return (
-                            <div 
-                              style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                backgroundColor: colorHex,
-                                border: '2px solid white',
-                                boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                                flexShrink: 0
-                              }} 
-                              title={`Color detectado: ${colorHex}`}
-                            />
-                          );
-                        }
-                        return null;
+                        return colorHex ? <span className="lz-swatch" style={{ backgroundColor: colorHex }} title={`Color detectado: ${colorHex}`} /> : null;
                       })()}
                     </div>
                   </div>
-                  <div className="rdh-modal-field">
-                    <label style={{ color: '#1e293b' }}>MARCA</label>
-                    <input 
-                      type="text" 
-                      className="rdh-modal-input" 
-                      placeholder="Ej. COMEX, SHERWIN" 
-                      value={nuevoRegistro.brand} 
+                  <div className="rp-group">
+                    <label className="rp-label"><Tag size={16} color="#ff8c42" /> Marca</label>
+                    <input
+                      type="text"
+                      className="lz-input"
+                      placeholder="Ej. COMEX, SHERWIN"
+                      value={nuevoRegistro.brand}
                       onChange={(e) => setNuevoRegistro({...nuevoRegistro, brand: e.target.value.toUpperCase()})}
                     />
                   </div>
-                  <div className="rdh-modal-field">
-                    <label style={{ color: '#1e293b' }}>CLAVE</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
-                      <input 
-                        type="text" 
-                        className="rdh-modal-input" 
-                        placeholder="Ej. #FF5733 o código..." 
-                        value={nuevoRegistro.serial_number} 
+                  <div className="rp-group">
+                    <label className="rp-label"><Hash size={16} color="#ff8c42" /> Clave</label>
+                    <div className="lz-input-color">
+                      <input
+                        type="text"
+                        className="lz-input"
+                        placeholder="Ej. #FF5733 o código..."
+                        value={nuevoRegistro.serial_number}
                         onChange={(e) => setNuevoRegistro({...nuevoRegistro, serial_number: e.target.value.toUpperCase()})}
-                        style={{ flex: 1 }}
                       />
                       {(() => {
                         const colorHex = obtenerColorHex(nuevoRegistro.serial_number);
-                        if (colorHex) {
-                          return (
-                            <div 
-                              style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                backgroundColor: colorHex,
-                                border: '2px solid white',
-                                boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                                flexShrink: 0
-                              }} 
-                              title={`Color detectado: ${colorHex}`}
-                            />
-                          );
-                        }
-                        return null;
+                        return colorHex ? <span className="lz-swatch" style={{ backgroundColor: colorHex }} title={`Color detectado: ${colorHex}`} /> : null;
                       })()}
                     </div>
                   </div>
-                  <div className="rdh-modal-field">
-                    <label style={{ color: '#1e293b' }}>M² *</label>
-                    <input 
-                      type="number" 
-                      min="0.01" 
-                      step="0.01" 
-                      className="rdh-modal-input" 
+                  <div className="rp-group">
+                    <label className="rp-label"><Ruler size={16} color="#ff8c42" /> M² *</label>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      className="lz-input"
                       placeholder="Metros cuadrados"
-                      value={nuevoRegistro.quantity} 
+                      value={nuevoRegistro.quantity}
                       onChange={(e) => setNuevoRegistro({...nuevoRegistro, quantity: e.target.value})}
                     />
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="rdh-modal-field">
-                    <label>TIPO *</label>
-                    <input type="text" className="rdh-modal-input" placeholder="Ej. ENCHUFE, FOCO" value={nuevoRegistro.sub_category} onChange={(e) => setNuevoRegistro({...nuevoRegistro, sub_category: e.target.value.toUpperCase()})}/>
+                  <div className="rp-group">
+                    <label className="rp-label"><Package size={16} color="#ff8c42" /> Tipo *</label>
+                    <input type="text" className="lz-input" placeholder="Ej. ENCHUFE, FOCO" value={nuevoRegistro.sub_category} onChange={(e) => setNuevoRegistro({...nuevoRegistro, sub_category: e.target.value.toUpperCase()})}/>
                   </div>
-                  <div className="rdh-modal-field">
-                    <label>MARCA</label>
-                    <input type="text" className="rdh-modal-input" value={nuevoRegistro.brand} onChange={(e) => setNuevoRegistro({...nuevoRegistro, brand: e.target.value.toUpperCase()})}/>
+                  <div className="lz-campos-2">
+                    <div className="rp-group">
+                      <label className="rp-label"><Tag size={16} color="#ff8c42" /> Marca</label>
+                      <input type="text" className="lz-input" value={nuevoRegistro.brand} onChange={(e) => setNuevoRegistro({...nuevoRegistro, brand: e.target.value.toUpperCase()})}/>
+                    </div>
+                    <div className="rp-group">
+                      <label className="rp-label"><Box size={16} color="#ff8c42" /> Modelo</label>
+                      <input type="text" className="lz-input" value={nuevoRegistro.model_or_color} onChange={(e) => setNuevoRegistro({...nuevoRegistro, model_or_color: e.target.value.toUpperCase()})}/>
+                    </div>
                   </div>
-                  <div className="rdh-modal-field">
-                    <label>MODELO</label>
-                    <input type="text" className="rdh-modal-input" value={nuevoRegistro.model_or_color} onChange={(e) => setNuevoRegistro({...nuevoRegistro, model_or_color: e.target.value.toUpperCase()})}/>
-                  </div>
-                  <div className="rdh-modal-field">
-                    <label>NO. SERIE</label>
-                    <input type="text" className="rdh-modal-input" placeholder="S/N" value={nuevoRegistro.serial_number} onChange={(e) => setNuevoRegistro({...nuevoRegistro, serial_number: e.target.value.toUpperCase()})}/>
-                  </div>
-                  <div className="rdh-modal-field">
-                    <label>CANTIDAD *</label>
-                    <input type="number" min="0.1" step="0.1" className="rdh-modal-input" value={nuevoRegistro.quantity} onChange={(e) => setNuevoRegistro({...nuevoRegistro, quantity: e.target.value})}/>
+                  <div className="lz-campos-2">
+                    <div className="rp-group">
+                      <label className="rp-label"><Hash size={16} color="#ff8c42" /> No. serie</label>
+                      <input type="text" className="lz-input" placeholder="S/N" value={nuevoRegistro.serial_number} onChange={(e) => setNuevoRegistro({...nuevoRegistro, serial_number: e.target.value.toUpperCase()})}/>
+                    </div>
+                    <div className="rp-group">
+                      <label className="rp-label"><Layers size={16} color="#ff8c42" /> Cantidad *</label>
+                      <input type="number" min="0.1" step="0.1" className="lz-input" value={nuevoRegistro.quantity} onChange={(e) => setNuevoRegistro({...nuevoRegistro, quantity: e.target.value})}/>
+                    </div>
                   </div>
                 </>
               )}
 
-
-              <div className="rdh-modal-field" style={{ alignItems: 'flex-start' }}>
-                <label style={{ marginTop: '15px' }}>COMENTARIOS</label>
-                <textarea 
-                  className="rdh-modal-input" 
-                  style={{ height: 'auto', paddingTop: '10px', resize: 'vertical', minHeight: '60px' }}
-                  rows="3" 
+              <div className="rp-group">
+                <label className="rp-label"><MessageSquare size={16} color="#ff8c42" /> Comentarios</label>
+                <textarea
+                  rows="3"
                   placeholder="Detalla daños o notas especiales..."
-                  value={nuevoRegistro.observations} 
+                  value={nuevoRegistro.observations}
                   onChange={(e) => setNuevoRegistro({...nuevoRegistro, observations: e.target.value})}
                 />
               </div>
 
-              <div className="rdh-modal-btn-container" style={{ marginTop: '20px' }}>
-                <button className="rdh-btn-save-3d modal-btn" onClick={guardarComponente} disabled={guardando}>
-                  {guardando ? <Loader2 size={20} className="animate-spin" /> : (modoEdicion ? 'ACTUALIZAR' : 'GUARDAR')}
+              <div className="rp-footer lz-modal-pie">
+                <button type="button" className="lz-btn lz-btn-glass" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+                <button type="submit" className="lz-btn lz-btn-primary" onClick={guardarComponente} disabled={guardando}>
+                  {guardando ? <Loader2 size={18} className="animate-spin" /> : (modoEdicion ? 'Actualizar' : 'Guardar')}
                 </button>
               </div>
             </div>
@@ -867,7 +684,7 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
               
               {/* COLUMNA IZQUIERDA: FOTOS EN FILA */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <label style={{ fontWeight: 'bold', fontSize: '15px', marginBottom: '15px', color: '#333' }}>FOTOS DEL PRODUCTO:</label>
+                <label style={{ fontWeight: 800, fontSize: '0.8rem', letterSpacing: '0.5px', marginBottom: '12px', color: '#475569' }}>FOTOS DEL PRODUCTO</label>
                 
                 {fotosItem.length > 0 ? (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
@@ -885,28 +702,28 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
                     ))}
                   </div>
                 ) : (
-                  <div style={{width: '100%', height: '120px', backgroundColor: '#999', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                    <span style={{color: '#fff', fontWeight: 'bold'}}>SIN FOTOS REGISTRADAS</span>
+                  <div className="lz-foto-vacia" style={{ height: '120px', cursor: 'default' }}>
+                    <ImageIcon size={30} /> SIN FOTOS REGISTRADAS
                   </div>
                 )}
               </div>
 
               {/* COLUMNA DERECHA: DATOS */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', backgroundColor: '#999', padding: '25px', borderRadius: '15px', color: 'white', justifyContent: 'flex-start' }}>
+              <div className="lz-detalle-datos">
                 {categoriaActiva?.name === 'PINTURA' ? (
                   <>
-                    <div style={{ fontSize: '15px' }}><strong style={{color: '#fff'}}>TONO / COLOR:</strong> {itemDetalle.model_or_color || 'N/A'}</div>
-                    <div style={{ fontSize: '15px' }}><strong style={{color: '#fff'}}>MARCA:</strong> {itemDetalle.brand || 'N/A'}</div>
-                    <div style={{ fontSize: '15px' }}><strong style={{color: '#fff'}}>CLAVE / FÓRMULA:</strong> {itemDetalle.serial_number || 'N/A'}</div>
-                    <div style={{ fontSize: '15px' }}><strong style={{color: '#fff'}}>ÁREA ESTIMADA:</strong> {itemDetalle.quantity} m²</div>
+                    <div style={{ fontSize: '15px' }}><strong>TONO / COLOR:</strong> {itemDetalle.model_or_color || 'N/A'}</div>
+                    <div style={{ fontSize: '15px' }}><strong>MARCA:</strong> {itemDetalle.brand || 'N/A'}</div>
+                    <div style={{ fontSize: '15px' }}><strong>CLAVE / FÓRMULA:</strong> {itemDetalle.serial_number || 'N/A'}</div>
+                    <div style={{ fontSize: '15px' }}><strong>ÁREA ESTIMADA:</strong> {itemDetalle.quantity} m²</div>
                   </>
                 ) : (
                   <>
-                    <div style={{ fontSize: '15px' }}><strong style={{color: '#fff'}}>TIPO:</strong> {itemDetalle.sub_category}</div>
-                    <div style={{ fontSize: '15px' }}><strong style={{color: '#fff'}}>MARCA:</strong> {itemDetalle.brand || 'N/A'}</div>
-                    <div style={{ fontSize: '15px' }}><strong style={{color: '#fff'}}>MODELO:</strong> {itemDetalle.model_or_color || 'N/A'}</div>
-                    <div style={{ fontSize: '15px' }}><strong style={{color: '#fff'}}>NO. SERIE:</strong> {itemDetalle.serial_number || 'S/N'}</div>
-                    <div style={{ fontSize: '15px' }}><strong style={{color: '#fff'}}>CANTIDAD:</strong> {itemDetalle.quantity}</div>
+                    <div style={{ fontSize: '15px' }}><strong>TIPO:</strong> {itemDetalle.sub_category}</div>
+                    <div style={{ fontSize: '15px' }}><strong>MARCA:</strong> {itemDetalle.brand || 'N/A'}</div>
+                    <div style={{ fontSize: '15px' }}><strong>MODELO:</strong> {itemDetalle.model_or_color || 'N/A'}</div>
+                    <div style={{ fontSize: '15px' }}><strong>NO. SERIE:</strong> {itemDetalle.serial_number || 'S/N'}</div>
+                    <div style={{ fontSize: '15px' }}><strong>CANTIDAD:</strong> {itemDetalle.quantity}</div>
                     {(() => {
                       const specs = parseSpecs(itemDetalle.specs);
                       const filas = FICHA_AIRE.filter(c => specs[c.key]);
@@ -922,8 +739,8 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
                     })()}
                   </>
                 )}
-                <div style={{ marginTop: '10px', fontSize: '15px' }}><strong style={{color: '#fff'}}>OBSERVACIONES:</strong></div>
-                <div style={{ backgroundColor: '#777', padding: '15px', borderRadius: '10px', minHeight: '80px', fontStyle: 'italic', fontSize: '14px', overflowY: 'auto' }}>
+                <div style={{ marginTop: '10px', fontSize: '15px' }}><strong>OBSERVACIONES:</strong></div>
+                <div className="lz-detalle-obs">
                   {itemDetalle.observations || 'Sin observaciones del técnico.'}
                 </div>
               </div>
@@ -935,22 +752,15 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
 
       {/* LIGHTBOX PARA IMAGEN AMPLIADA */}
       {imagenAmpliada && (
-        <div 
-          onClick={() => setImagenAmpliada(null)}
-          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}
-        >
-          <img src={imagenAmpliada} alt="Zoom" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }} />
-          <button 
-             onClick={() => setImagenAmpliada(null)} 
-             style={{ position: 'absolute', top: '20px', right: '30px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
-          >
-             <X size={40} />
+        <div className="lz-lightbox" onClick={() => setImagenAmpliada(null)}>
+          <img src={imagenAmpliada} alt="Zoom" />
+          <button type="button" className="lz-icon-btn" onClick={() => setImagenAmpliada(null)} aria-label="Cerrar">
+            <X size={22} />
           </button>
         </div>
       )}
 
-      </div>
-    </>
+    </div>
   );
 };
 

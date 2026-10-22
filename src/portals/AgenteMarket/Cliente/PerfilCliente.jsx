@@ -31,6 +31,7 @@ import NotificationBell from '../../../components/Shared/NotificationBell';
 import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import Header from '../../../components/Shared/Header';
 import '../../../styles/Shared/Profile.css';
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80';
 
@@ -173,21 +174,21 @@ const PerfilCliente = () => {
       });
 
       setIsModalOpen(false);
-      alert("¡Datos actualizados con éxito!");
+      mostrarAviso("¡Datos actualizados con éxito!");
     } catch (error) {
       console.error("Error en handleSaveProfile:", error);
       const errorMsg = error.response?.data?.message || error.response?.data?.error || "Hubo un error al actualizar los datos.";
-      alert(errorMsg);
+      mostrarAviso(errorMsg);
     }
   };
 
   const handleFileUpload = async (event, type) => {
     const file = event.target.files[0];
     if (!file) return;
-    if (!user?.id) return alert("Error: La sesión no tiene el ID.");
+    if (!user?.id) return mostrarAviso("Error: La sesión no tiene el ID.");
 
     if (file.size > 10 * 1024 * 1024) {
-      return alert("La imagen es muy pesada. Por favor elige una menor a 10MB.");
+      return mostrarAviso("La imagen es muy pesada. Por favor elige una menor a 10MB.");
     }
 
     const uploadData = new FormData();
@@ -212,11 +213,11 @@ const PerfilCliente = () => {
         [type]: nuevaUrlNube
       });
 
-      alert(`¡${type === 'profile_picture' ? 'Foto de perfil' : 'Portada'} actualizada con éxito!`);
+      mostrarAviso(`¡${type === 'profile_picture' ? 'Foto de perfil' : 'Portada'} actualizada con éxito!`);
 
     } catch (error) {
       console.error("Error en handleFileUpload:", error);
-      alert("Error al subir la imagen.");
+      mostrarAviso("Error al subir la imagen.");
     } finally {
       setIsUploading(false);
     }

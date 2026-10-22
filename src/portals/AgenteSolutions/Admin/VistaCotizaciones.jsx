@@ -22,6 +22,7 @@ import ModalConfirmarPagoEfectivo from "../../../components/Modals/ModalConfirma
 import UniversalSearch from "../../../components/Shared/UniversalSearch";
 import Pago from "../Cliente/Pago";
 import mpLogo from "../../../assets/Mercado-Pago.png";
+import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const VistaCotizaciones = () => {
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ const VistaCotizaciones = () => {
     if (!cot) return;
 
     if (cot.status === 'Rechazado') {
-      if (!window.confirm('¿Deseas aceptar esta cotización que habías rechazado?')) {
+      if (!await confirmarAccion('¿Deseas aceptar esta cotización que habías rechazado?')) {
         return;
       }
     }
@@ -194,7 +195,7 @@ const VistaCotizaciones = () => {
       if (paymentStatus) {
         if (paymentStatus === 'success' && quoteIdParam) {
           if (collectionStatus === 'rejected' || collectionStatus === 'cancelled') {
-            alert('La transacción fue cancelada o rechazada. No se ha cobrado ningún monto.');
+            mostrarAviso('La transacción fue cancelada o rechazada. No se ha cobrado ningún monto.');
           } else {
             axios.post(`${import.meta.env.VITE_API_BASE_URL}/mercadopago/verify`, { 
               quote_id: quoteIdParam,
@@ -205,18 +206,18 @@ const VistaCotizaciones = () => {
                 if (res.data.status === 'success') {
                   cargarCotizaciones();
                   setFiltro('Pagadas');
-                  alert('¡Tu pago fue validado y procesado con éxito a través de MercadoPago!');
+                  mostrarAviso('¡Tu pago fue validado y procesado con éxito a través de MercadoPago!');
                 } else {
-                  alert('El pago no se detectó o está en proceso de validación. Si lo completaste, se actualizará en breve.');
+                  mostrarAviso('El pago no se detectó o está en proceso de validación. Si lo completaste, se actualizará en breve.');
                 }
               }).catch(err => {
                 console.error(err);
               });
           }
         } else if (paymentStatus === 'failure') {
-          alert('El pago no pudo ser procesado o fue cancelado.');
+          mostrarAviso('El pago no pudo ser procesado o fue cancelado.');
         } else if (paymentStatus === 'pending') {
-          alert('Tu pago está en proceso. Te notificaremos en cuanto MercadoPago o el banco lo apruebe.');
+          mostrarAviso('Tu pago está en proceso. Te notificaremos en cuanto MercadoPago o el banco lo apruebe.');
         }
         window.history.replaceState({}, document.title, window.location.pathname);
       }
@@ -348,7 +349,7 @@ const VistaCotizaciones = () => {
     if (!cot) return;
     try {
       const tecnicoNombre = cot.tecnico || 'Técnico';
-      const confirmacion = window.confirm(`¿Confirmas que deseas enviar la solicitud de recotización (V2) al técnico ${tecnicoNombre}?`);
+      const confirmacion = await confirmarAccion(`¿Confirmas que deseas enviar la solicitud de recotización (V2) al técnico ${tecnicoNombre}?`);
       if (!confirmacion) return;
 
       const cotizLocales = JSON.parse(localStorage.getItem('carrito_cotizaciones') || '[]');
@@ -396,7 +397,7 @@ const VistaCotizaciones = () => {
         console.warn("API de notificaciones a técnico offline, usado respaldo local:", e);
       }
 
-      alert(`📩 ¡Solicitud de recotización V2 enviada al técnico ${tecnicoNombre}! La cotización V1 permanece guardada en el historial.`);
+      mostrarAviso(`📩 ¡Solicitud de recotización V2 enviada al técnico ${tecnicoNombre}! La cotización V1 permanece guardada en el historial.`);
       setCotizacionSeleccionada(null);
       cargarCotizaciones();
     } catch (error) {
@@ -536,10 +537,10 @@ const VistaCotizaciones = () => {
       await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones/${cotizacionSeleccionada.id}/validar-pago`);
       setCotizacionSeleccionada(prev => ({ ...prev, status: 'Pagado' }));
       cargarCotizaciones();
-      alert("¡Pago validado y servicio programado!");
+      mostrarAviso("¡Pago validado y servicio programado!");
     } catch (error) {
       console.error('Error validando pago:', error);
-      alert('Hubo un error al validar el pago.');
+      mostrarAviso('Hubo un error al validar el pago.');
     } finally {
       setProcesando(false);
     }
@@ -563,7 +564,7 @@ const VistaCotizaciones = () => {
       setMensajeChat('');
     } catch (e) {
       console.error(e);
-      alert('Error al enviar el mensaje');
+      mostrarAviso('Error al enviar el mensaje');
     } finally {
       setEnviandoMensaje(false);
     }
@@ -2584,7 +2585,7 @@ const VistaCotizaciones = () => {
             setCotizacionEfectivoParaConfirmar(null);
           }}
           onPaymentConfirmed={async (res) => {
-            alert(res?.message || '¡Pago en efectivo confirmado exitosamente!');
+            mostrarAviso(res?.message || '¡Pago en efectivo confirmado exitosamente!');
             await cargarCotizaciones();
             setCotizacionSeleccionada(null);
           }}

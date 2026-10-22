@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { mostrarAviso } from '../utils/dialogos';
 
 const AssignServiceForm = () => {
   const [propertyId, setPropertyId] = useState(22); 
@@ -52,12 +53,12 @@ const AssignServiceForm = () => {
 
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/services/assign`, payload);
-      alert('¡Servicio asignado correctamente!');
+      mostrarAviso('¡Servicio asignado correctamente!');
       console.log("Respuesta de Laravel:", response.data);
       
     } catch (error) {
       console.error("Error al guardar:", error);
-      alert('Hubo un error al guardar el servicio.');
+      mostrarAviso('Hubo un error al guardar el servicio.');
     }
     
   };

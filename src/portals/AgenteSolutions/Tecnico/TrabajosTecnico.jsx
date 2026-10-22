@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import Header from "../../../components/Shared/Header";
 import UniversalSearch from '../../../components/Shared/UniversalSearch';
+import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const TrabajosTecnico = () => {
   const [mostrarModalChecklist, setMostrarModalChecklist] = useState(false);
@@ -99,7 +100,7 @@ const TrabajosTecnico = () => {
 
   const handleConfirmArrival = async (e, item) => {
     e.stopPropagation();
-    const confirmacion = window.confirm(`¿Confirmas que ya has llegado a la propiedad ${item.property_name || ''}?`);
+    const confirmacion = await confirmarAccion(`¿Confirmas que ya has llegado a la propiedad ${item.property_name || ''}?`);
     if (!confirmacion) return;
 
     let lat = null;
@@ -124,11 +125,11 @@ const TrabajosTecnico = () => {
         longitude: lng
       });
 
-      alert("📍 ¡Llegada confirmada correctamente!");
+      mostrarAviso("📍 ¡Llegada confirmada correctamente!");
       fetchServicios();
     } catch (error) {
       console.error("Error al confirmar llegada:", error);
-      alert("No se pudo registrar la llegada. Intenta de nuevo.");
+      mostrarAviso("No se pudo registrar la llegada. Intenta de nuevo.");
     }
   };
 

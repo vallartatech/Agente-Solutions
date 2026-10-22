@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosTecnico.css";
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const RegistrarVentaCruzada = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const RegistrarVentaCruzada = () => {
 
   const handleSubmit = () => {
     if (!formData.folio || !formData.descripcion) {
-      alert('Completa todos los campos obligatorios.');
+      mostrarAviso('Completa todos los campos obligatorios.');
       return;
     }
 

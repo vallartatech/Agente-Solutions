@@ -9,6 +9,7 @@ import {
   ChevronLeft, ArrowLeft, Loader2, Clock, Briefcase
 } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Cliente/DetallePropiedad.css';
+import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const VistaDetallePropiedad = () => {
   const { id: idParam } = useParams();
@@ -76,28 +77,28 @@ const VistaDetallePropiedad = () => {
         { email: emailCompartir }, 
         { headers: { 'Authorization': `Bearer ${token}` }}
       );
-      alert("Propiedad compartida exitosamente");
+      mostrarAviso("Propiedad compartida exitosamente");
       setEmailCompartir('');
       setMostrarModalCompartir(false);
       fetchUsuariosCompartidos();
     } catch (error) {
-      alert(error.response?.data?.error || "Error al compartir propiedad");
+      mostrarAviso(error.response?.data?.error || "Error al compartir propiedad");
     } finally {
       setLoadingCompartir(false);
     }
   };
 
   const handleRevocar = async (clientId) => {
-    if (!window.confirm("¿Estás seguro que deseas Desheredar esta propiedad? El usuario ya no podrá verla ni levantar reportes.")) return;
+    if (!await confirmarAccion("¿Estás seguro que deseas Desheredar esta propiedad? El usuario ya no podrá verla ni levantar reportes.")) return;
     try {
       const token = localStorage.getItem('agente_token');
       await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/propiedades/${id}/share/${clientId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      alert("Acceso revocado");
+      mostrarAviso("Acceso revocado");
       fetchUsuariosCompartidos();
     } catch (error) {
-      alert("Error al revocar acceso");
+      mostrarAviso("Error al revocar acceso");
     }
   };
 
@@ -173,7 +174,7 @@ const VistaDetallePropiedad = () => {
   const handleAnadirAlCarrito = (e) => {
     e.preventDefault();
     if (!nuevoServicio.tipo || !nuevoServicio.area_id || !nuevoServicio.descripcion) {
-      alert("Por favor completa los campos obligatorios (Tipo, Zona y Descripción).");
+      mostrarAviso("Por favor completa los campos obligatorios (Tipo, Zona y Descripción).");
       return;
     }
     
@@ -189,7 +190,7 @@ const VistaDetallePropiedad = () => {
     }
 
     if (lote.length === 0) {
-      alert("No has añadido ningún problema a la lista.");
+      mostrarAviso("No has añadido ningún problema a la lista.");
       return;
     }
 
@@ -231,14 +232,14 @@ const VistaDetallePropiedad = () => {
         });
       }));
 
-      alert("✅ Solicitudes enviadas con éxito. Un técnico las revisará pronto.");
+      mostrarAviso("✅ Solicitudes enviadas con éxito. Un técnico las revisará pronto.");
       setMostrarModalServicio(false);
       setCarritoServicios([]);
       setNuevoServicio({ tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', fotos: [] });
       fetchDashboardData(); 
     } catch (error) {
       console.error("Error enviando lote:", error);
-      alert("❌ Hubo un error al enviar algunas solicitudes. Por favor, intenta de nuevo.");
+      mostrarAviso("❌ Hubo un error al enviar algunas solicitudes. Por favor, intenta de nuevo.");
     } finally {
       setLoadingSubmit(false);
     }

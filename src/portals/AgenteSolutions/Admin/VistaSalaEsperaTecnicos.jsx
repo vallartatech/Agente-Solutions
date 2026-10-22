@@ -3,6 +3,7 @@ import axios from 'axios';
 import Header from '../../../components/Shared/Header';
 import { useNavigate } from 'react-router-dom';
 import { UserCheck, Clock, Phone, Mail, RefreshCw, CheckCircle, AlertCircle, Eye, X, MessageSquare, Building2, Calendar, User } from 'lucide-react';
+import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const VistaSalaEsperaTecnicos = () => {
   const [pendingTechs, setPendingTechs] = useState([]);
@@ -32,20 +33,20 @@ const VistaSalaEsperaTecnicos = () => {
   }, []);
 
   const handleApproveTech = async (userId) => {
-    if (!window.confirm('¿Estás seguro de autorizar y dar de alta a este Técnico? Podrá iniciar sesión e ingresar a tu empresa inmediatamente.')) {
+    if (!await confirmarAccion('¿Estás seguro de autorizar y dar de alta a este Técnico? Podrá iniciar sesión e ingresar a tu empresa inmediatamente.')) {
       return;
     }
 
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/tenants/approve-technician/${userId}`);
       if (res.data.success) {
-        alert('✅ ' + res.data.message);
+        mostrarAviso('✅ ' + res.data.message);
         setSelectedTechDetails(null);
         fetchPendingTechs();
       }
     } catch (error) {
       console.error('Error al aprobar técnico:', error);
-      alert('Error: ' + (error.response?.data?.error || error.message));
+      mostrarAviso('Error: ' + (error.response?.data?.error || error.message));
     }
   };
 

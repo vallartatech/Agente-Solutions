@@ -1,15 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
-import "../../../styles/AgenteSolutions/Tecnico/RegistroDetalleHabitacion.css"; 
-import { Plus, ArrowLeft, ImageIcon, Loader2, Edit3, Eye, X, CheckCircle, Trash2 } from 'lucide-react';
+import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
+import "../../../styles/Shared/LiquidGlass.css";
+import "../../../styles/AgenteSolutions/Tecnico/LevantamientoZonas.css";
+import { Plus, ArrowLeft, ImageIcon, Loader2, Edit3, Eye, X, CheckCircle, Trash2, Camera, DoorOpen, Wrench, ChevronRight, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // IMPORTAMOS LA VISTA DEL NIVEL 5
 import RegistroDetalleHabitacion from './RegistroDetalleHabitacion'; 
 import Header from '../../../components/Shared/Header';
+import RutaLevantamiento from './RutaLevantamiento';
+import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
-const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) => {
+const ICONOS_CATEGORIAS = {
+  "ELÉCTRICO": "🔌",
+  "PLOMERÍA": "🚰",
+  "AIRE ACONDICIONADO": "❄️",
+  "ELECTRODOMÉSTICOS": "📺",
+  "MUEBLES": "🪑",
+  "CARPINTERÍA": "🔨",
+  "PINTURA": "🎨",
+  "ILUMINACIÓN": "💡",
+  "ACABADOS": "🧱"
+};
+
+const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId, ruta }) => {
   const navigate = useNavigate();
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +51,6 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
   const [actualizando, setActualizando] = useState(false);
   
   // HOVER EFFECT AND LIGHTBOX Y MENÚ FOTO
-  const [isHovered, setIsHovered] = useState(false);
   const [imagenAmpliada, setImagenAmpliada] = useState(null);
   const cameraRef = React.useRef(null);
   const galleryRef = React.useRef(null);
@@ -82,7 +97,7 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
 
   const guardarCategorias = async () => {
     if (categoriasSeleccionadas.length === 0 && !nuevaCategoria) {
-      return alert("Selecciona al menos una categoría o escribe una nueva.");
+      return mostrarAviso("Selecciona al menos una categoría o escribe una nueva.");
     }
 
     setGuardando(true);
@@ -112,7 +127,7 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
       fetchCategorias(); 
     } catch (error) {
       console.error("Error al guardar categorías:", error);
-      alert("Hubo un error al registrar las categorías.");
+      mostrarAviso("Hubo un error al registrar las categorías.");
     } finally {
       setGuardando(false);
     }
@@ -127,7 +142,7 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
   };
 
   const eliminarCategoria = async (id, name) => {
-    if (window.confirm(`¿Estás seguro de eliminar la categoría "${name}" y todos sus equipos?`)) {
+    if (await confirmarAccion(`¿Estás seguro de eliminar la categoría "${name}" y todos sus equipos?`)) {
       try {
         const token = localStorage.getItem('agente_token');
         await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/property-categories/${id}`, {
@@ -136,13 +151,13 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
         fetchCategorias();
       } catch (error) {
         console.error("Error al eliminar categoría:", error);
-        alert("No se pudo eliminar la categoría.");
+        mostrarAviso("No se pudo eliminar la categoría.");
       }
     }
   };
 
   const editarCategoria = async (id, oldName) => {
-    const nuevoNombre = window.prompt("Ingresa el nuevo nombre para la categoría:", oldName);
+    const nuevoNombre = await pedirTexto("Ingresa el nuevo nombre para la categoría:", oldName);
     if (nuevoNombre && nuevoNombre.trim() !== "" && nuevoNombre !== oldName) {
       try {
         const token = localStorage.getItem('agente_token');
@@ -153,7 +168,7 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
         fetchCategorias();
       } catch (error) {
         console.error("Error al editar categoría:", error);
-        alert("No se pudo editar el nombre de la categoría.");
+        mostrarAviso("No se pudo editar el nombre de la categoría.");
       }
     }
   };
@@ -185,19 +200,19 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
           'Authorization': `Bearer ${token}`
         }
       });
-      alert("Zona actualizada correctamente");
+      mostrarAviso("Zona actualizada correctamente");
       alVolver(); // Volvemos después de guardar
     } catch (error) {
       console.error("Error al actualizar zona", error);
-      alert("Error al actualizar la zona");
+      mostrarAviso("Error al actualizar la zona");
     } finally {
       setActualizando(false);
     }
   };
 
   const finalizarLevantamiento = async () => {
-    if (!servicioId) return alert("Error: ID de servicio no encontrado.");
-    if (!window.confirm("¿Seguro que deseas FINALIZAR todo el levantamiento? Esta propiedad pasará a la pestaña de finalizados.")) return;
+    if (!servicioId) return mostrarAviso("Error: ID de servicio no encontrado.");
+    if (!await confirmarAccion("¿Seguro que deseas FINALIZAR todo el levantamiento? Esta propiedad pasará a la pestaña de finalizados.")) return;
     
     // Mostramos estado de carga general (aprovechamos actualizando)
     setActualizando(true);
@@ -207,11 +222,11 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
         { status: 'completed' },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
-      alert("¡Levantamiento finalizado con éxito!");
+      mostrarAviso("¡Levantamiento finalizado con éxito!");
       navigate("/trabajos-asignados");
     } catch (error) {
        console.error(error);
-       alert("No se pudo finalizar el levantamiento.");
+       mostrarAviso("No se pudo finalizar el levantamiento.");
     } finally {
        setActualizando(false);
     }
@@ -224,11 +239,11 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
       await axios.post(`${import.meta.env.VITE_API_BASE_URL}/properties/${habitacion.property_id}/finalize-survey`, {}, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      alert("¡Registro de zonas completado con éxito! Ahora puedes solicitar servicios para estas áreas.");
+      mostrarAviso("¡Registro de zonas completado con éxito! Ahora puedes solicitar servicios para estas áreas.");
       navigate(-1);
     } catch (error) {
       console.error("Error al finalizar registro:", error);
-      alert("Error al enviar la notificación al administrador.");
+      mostrarAviso("Error al enviar la notificación al administrador.");
     }
   };
 
@@ -237,359 +252,204 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
   // Solo los administradores finalizan el levantamiento
   const isAdmin = [0, 1].includes(Number(user?.role_id));
 
+  const cerrarModal = () => {
+    setIsModalOpen(false);
+    setCreandoNuevaCategoria(false);
+    setCategoriasSeleccionadas([]);
+  };
+
+  const rutaBase = ruta || [{ label: 'Zona', onClick: alVolver }];
+  const rutaArea = [...rutaBase, { label: habitacion?.name || 'Área', Icon: DoorOpen }];
+
   // ========================================================
   // PUENTE AL NIVEL 5: Si hay categoría activa, mostramos la otra vista
   // ========================================================
   if (categoriaActiva) {
     return (
-      <RegistroDetalleHabitacion 
-        habitacion={habitacion} 
-        categoriaActiva={categoriaActiva} 
+      <RegistroDetalleHabitacion
+        habitacion={habitacion}
+        categoriaActiva={categoriaActiva}
         propertyCurp={propertyCurp}
         alVolver={() => setCategoriaActiva(null)} // Al darle "VOLVER" allá, regresa aquí
+        ruta={[
+          ...rutaBase,
+          { label: habitacion?.name || 'Área', Icon: DoorOpen, onClick: () => setCategoriaActiva(null) },
+        ]}
       />
     );
   }
 
   return (
-    <>
+    <div className="lz-page">
       <Header />
-      <div className="dh-body-wrapper">
-      <div className="dh-modal-container">
-        
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', gap: '15px' }}>
-          <button onClick={alVolver} style={{ background: '#f26624', color: 'white', border: 'none', borderRadius: '20px', padding: '10px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', fontWeight: 'bold' }}>
-            <ArrowLeft size={18} style={{ marginRight: '8px' }}/> VOLVER
-          </button>
-          
-          <div style={{marginLeft: 'auto', display: 'flex', gap: '10px', alignItems: 'center'}}>
-            <div className="dh-data-pill">FOLIO {propertyCurp || "S/N"}</div>
-            <div className="dh-data-pill">ID ÁREA {habitacion?.id}</div>
-            <div className="dh-date-box">FECHA <br /> DE REGISTRO</div>
-          </div>
-        </div>
+      <main className="lz-container">
+        <RutaLevantamiento items={rutaArea} />
 
-        <div className="dh-main-card">
-          <div className="dh-top-grid">
-            <div className="dh-name-pill">
-              <h3>{habitacion?.name || "HABITACIÓN PRINCIPAL"}</h3>
-            </div>
-            <div 
-              className="dh-image-upload" 
-              style={{ position: 'relative', cursor: 'pointer', overflow: 'hidden' }}
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
-            >
-              <input type="file" ref={cameraRef} hidden accept="image/*" onChange={handleFileSelect} />
-              <input type="file" ref={galleryRef} hidden accept="image/*" onChange={handleFileSelect} />
-              
-              {previewImg ? (
-                <>
-                  <img src={previewImg} alt="Zona" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '15px' }} />
-                  {isHovered && (
-                    <div style={{
-                      position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
-                      backgroundColor: 'rgba(0,0,0,0.6)', 
-                      borderRadius: '15px', 
-                      display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: '25px'
-                    }}>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); openPhotoMenu(); }}
-                        style={{ background: 'none', border: 'none', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', padding: 0 }}
-                      >
-                        <Edit3 size={20} />
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '4px' }}>Cambiar</span>
-                      </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setImagenAmpliada(previewImg); }}
-                        style={{ background: 'none', border: 'none', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', padding: 0 }}
-                      >
-                        <Eye size={20} />
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '4px' }}>Visualizar</span>
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="dh-image-placeholder" onClick={openPhotoMenu} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
-                  <ImageIcon size={50} color="#636363" />
-                  <span style={{ fontSize: '12px', color: '#636363', marginTop: '10px', fontWeight: 'bold' }}>AGREGAR FOTO</span>
+        {/* ÁREA: foto + nombre + descripción + acciones */}
+        <section className="lz-card lz-zona-detalle" style={{ alignItems: 'stretch' }}>
+          <div className="lz-foto">
+            <input type="file" ref={cameraRef} hidden accept="image/*" capture="environment" onChange={handleFileSelect} />
+            <input type="file" ref={galleryRef} hidden accept="image/*" onChange={handleFileSelect} />
+
+            {previewImg ? (
+              <>
+                <img src={previewImg} alt="Área" />
+                <div className="lz-foto-botones">
+                  <button type="button" className="lz-foto-cambiar" onClick={openPhotoMenu}>
+                    <Camera size={13} /> Cambiar
+                  </button>
+                  <button type="button" className="lz-foto-cambiar" onClick={() => setImagenAmpliada(previewImg)}>
+                    <Eye size={13} /> Ver
+                  </button>
                 </div>
-              )}
+              </>
+            ) : (
+              <button type="button" className="lz-foto-vacia" onClick={openPhotoMenu}>
+                <span className="lz-foto-vacia-icono"><Camera size={22} /></span>
+                <strong>Agregar foto</strong>
+                <small>Cámara o galería</small>
+              </button>
+            )}
+          </div>
+
+          <div className="lz-zona-datos">
+            <div className="lz-zona-nombre">
+              <h1>{habitacion?.name || "HABITACIÓN PRINCIPAL"}</h1>
             </div>
-            <div className="dh-description-box">
-              <span className="dh-label-italic">DESCRIPCIÓN</span>
-              <textarea 
-                className="dh-textarea" 
+
+            <div className="lz-chips">
+              <span className="lz-chip">Folio <strong>{propertyCurp || "S/N"}</strong></span>
+              <span className="lz-chip">ID área <strong>{habitacion?.id}</strong></span>
+              <span className="lz-chip naranja">{categorias.length} {categorias.length === 1 ? 'categoría' : 'categorías'}</span>
+              {selectedFile && <span className="lz-chip verde">Foto nueva sin guardar</span>}
+            </div>
+
+            <label className="lz-campo">
+              <span>Descripción</span>
+              <textarea
+                className="lz-textarea"
                 placeholder="Escribe aquí los detalles generales de la habitación..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-              ></textarea>
-            </div>
-          </div>
+              />
+            </label>
 
-          <div className="dh-bottom-row-layout">
-            <div className="dh-bottom-grid">
-              <div className="dh-mantenimiento-header">
-                <span className="dh-label-italic" style={{color: '#333'}}>LISTA DE MANTENIMIENTO</span>
-                <button className="dh-btn-plus-small" onClick={() => setIsModalOpen(true)}>
-                  <Plus size={24} strokeWidth={4} />
-                </button>
-              </div>
-
-              {/* LISTA DINÁMICA DE CATEGORÍAS (Pills) */}
-              <div className="dh-pills-grid">
-                {loading ? (
-                  <p>Cargando...</p>
-                ) : categorias.length > 0 ? (
-                  categorias.map((cat) => (
-                    <div 
-                      key={cat.id} 
-                      className="dh-category-pill active" 
-                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', paddingRight: '15px' }}
-                      onClick={() => setCategoriaActiva(cat)}
-                    >
-                      <span>{cat.name}</span>
-                      <div style={{ display: 'flex', gap: '10px' }} onClick={(e) => e.stopPropagation()}>
-                        <Edit3 size={18} style={{ cursor: 'pointer', color: 'white' }} onClick={(e) => { e.stopPropagation(); editarCategoria(cat.id, cat.name); }} />
-                        <Trash2 size={18} style={{ cursor: 'pointer', color: 'white' }} onClick={(e) => { e.stopPropagation(); eliminarCategoria(cat.id, cat.name); }} />
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p style={{ gridColumn: '1 / -1', color: '#666', fontStyle: 'italic' }}>
-                    No hay categorías. Agrega "ELÉCTRICO", "PLOMERÍA", etc.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="dh-footer-actions">
-              <button className="dh-btn-save-3d dh-btn-save-zone" onClick={actualizarZona} disabled={actualizando}>
-                {actualizando ? <Loader2 className="animate-spin" size={24} /> : 'GUARDAR ZONA'}
+            <div className="lz-acciones">
+              <button type="button" className="lz-btn lz-btn-glass" onClick={alVolver}>
+                <ArrowLeft size={18} /> <span className="lz-btn-txt">Volver</span>
               </button>
-              
+              <button type="button" className="lz-btn lz-btn-primary" onClick={actualizarZona} disabled={actualizando}>
+                {actualizando ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Guardar zona
+              </button>
               {servicioId && isAdmin ? (
-                <button
-                  onClick={finalizarLevantamiento}
-                  disabled={actualizando}
-                  className="dh-btn-finalizar-3d"
-                >
-                  <CheckCircle size={22} /> FINALIZAR LEVANTAMIENTO
+                <button type="button" className="lz-btn lz-btn-success" onClick={finalizarLevantamiento} disabled={actualizando}>
+                  <CheckCircle size={18} /> Finalizar levantamiento
                 </button>
               ) : servicioId ? null : isClient ? (
-                <button 
-                  onClick={finalizarRegistroCliente}
-                  className="dh-btn-finalizar-3d"
-                >
-                  <CheckCircle size={22} /> FINALIZAR MI REGISTRO
+                <button type="button" className="lz-btn lz-btn-success" onClick={finalizarRegistroCliente}>
+                  <CheckCircle size={18} /> Finalizar mi registro
                 </button>
               ) : null}
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+
+        {/* LISTA DE MANTENIMIENTO (categorías) */}
+        <section className="lz-card lz-panel">
+          <div className="lz-panel-titulo">
+            <h2><Wrench size={18} /> Lista de mantenimiento</h2>
+            <button type="button" className="lz-btn lz-btn-primary lz-btn-sm" onClick={() => setIsModalOpen(true)}>
+              <Plus size={16} strokeWidth={2.8} /> Agregar categoría
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="lz-vacio"><Loader2 size={28} className="animate-spin" /><p>Cargando categorías...</p></div>
+          ) : categorias.length > 0 ? (
+            <div className="lz-cats">
+              {categorias.map((cat) => (
+                <div key={cat.id} className="lz-cat" onClick={() => setCategoriaActiva(cat)}>
+                  <span className="lz-cat-emoji">{ICONOS_CATEGORIAS[cat.name] || '🛠️'}</span>
+                  <span className="lz-cat-nombre">{cat.name}</span>
+                  <button type="button" className="lz-icon-btn" onClick={(e) => { e.stopPropagation(); editarCategoria(cat.id, cat.name); }} title="Editar nombre">
+                    <Edit3 size={15} />
+                  </button>
+                  <button type="button" className="lz-icon-btn peligro" onClick={(e) => { e.stopPropagation(); eliminarCategoria(cat.id, cat.name); }} title="Eliminar categoría">
+                    <Trash2 size={15} />
+                  </button>
+                  <ChevronRight size={18} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="lz-vacio">
+              <Wrench size={40} />
+              <p>No hay categorías. Agrega &quot;ELÉCTRICO&quot;, &quot;PLOMERÍA&quot;, etc.</p>
+            </div>
+          )}
+        </section>
+      </main>
 
       {/* MODAL PARA AGREGAR NUEVA CATEGORÍA */}
       {isModalOpen && createPortal(
-        <div 
-          className="rdh-modal-overlay" 
-          onClick={() => {
-            setIsModalOpen(false);
-            setCreandoNuevaCategoria(false);
-            setCategoriasSeleccionadas([]);
-          }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-            background: 'rgba(15, 23, 42, 0.78)',
-            backdropFilter: 'blur(6px)'
-          }}
-        >
-          <div 
-            className="rdh-modal-content" 
-            style={{ 
-              width: '600px', 
-              maxWidth: '95vw', 
-              maxHeight: '86vh',
-              overflowY: 'auto',
-              padding: '30px',
-              zIndex: 10000000,
-              margin: 'auto',
-              position: 'relative'
-            }} 
-            onClick={e => e.stopPropagation()}
-          >
-            <button className="rdh-modal-close" onClick={() => {
-              setIsModalOpen(false);
-              setCreandoNuevaCategoria(false);
-              setCategoriasSeleccionadas([]);
-            }}>
-              <X size={24} strokeWidth={3} />
-            </button>
-            <div className="rdh-modal-title" style={{ marginBottom: '20px' }}>
-              <h2>NUEVA CATEGORÍA</h2>
+        <div className="rp-overlay" onClick={cerrarModal}>
+          <div className="rp-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="rp-header">
+              <div className="rp-header-text">
+                <span className="rp-tag">{habitacion?.name || 'ÁREA'}</span>
+                <h2 className="rp-title">Agregar categorías</h2>
+              </div>
+              <button type="button" className="rp-close" onClick={cerrarModal} aria-label="Cerrar">
+                <X size={18} strokeWidth={2.6} />
+              </button>
             </div>
-            
-            <div className="rdh-modal-form" style={{ padding: '0 10px 10px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={{fontWeight: 900, fontSize: 13, marginBottom: 15, color: '#333', letterSpacing: '0.5px', textTransform: 'uppercase'}}>
-                  SELECCIONA LAS CATEGORÍAS A AGREGAR
-                </label>
-                
-                <div className="cat-multi-select-grid" style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', 
-                  gap: '12px', 
-                  padding: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.45)',
-                  border: '1px solid rgba(0,0,0,0.05)',
-                  borderRadius: '16px',
-                  marginBottom: '20px'
-                }}>
-                  {(() => {
-                    const ICONOS_CATEGORIAS = {
-                      "ELÉCTRICO": "🔌",
-                      "PLOMERÍA": "🚰",
-                      "AIRE ACONDICIONADO": "❄️",
-                      "ELECTRODOMÉSTICOS": "📺",
-                      "MUEBLES": "🪑",
-                      "CARPINTERÍA": "🔨",
-                      "PINTURA": "🎨",
-                      "ILUMINACIÓN": "💡",
-                      "ACABADOS": "🧱"
-                    };
 
-                    return OPCIONES_CAT_PREDEFINIDAS.map(opc => {
-                      const isSelected = categoriasSeleccionadas.includes(opc);
-                      const emoji = ICONOS_CATEGORIAS[opc] || "🛠️";
-                      return (
-                        <button
-                          key={opc}
-                          type="button"
-                          onClick={() => toggleCatSelection(opc)}
-                          style={{
-                            padding: '15px 10px',
-                            borderRadius: '14px',
-                            border: '2px solid',
-                            borderColor: isSelected ? '#F26522' : 'transparent',
-                            backgroundColor: isSelected ? '#F26522' : 'white',
-                            color: isSelected ? 'white' : '#1e293b',
-                            cursor: 'pointer',
-                            fontSize: '0.82rem',
-                            fontWeight: '800',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '8px',
-                            transition: 'all 0.2s ease',
-                            boxShadow: isSelected ? '0 6px 15px rgba(242,101,34,0.3)' : '0 2px 4px rgba(0,0,0,0.04)',
-                            transform: isSelected ? 'translateY(-2px)' : 'none'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isSelected) {
-                              e.currentTarget.style.borderColor = '#F26522';
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.06)';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isSelected) {
-                              e.currentTarget.style.borderColor = 'transparent';
-                              e.currentTarget.style.transform = 'none';
-                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.04)';
-                            }
-                          }}
-                        >
-                          <span style={{ fontSize: '1.8rem' }}>{emoji}</span>
-                          <span style={{ textAlign: 'center', lineHeight: '1.2' }}>{opc}</span>
-                        </button>
-                      );
-                    });
-                  })()}
-                  
+            <div className="rp-form">
+              <div className="rp-group">
+                <label className="rp-label"><Wrench size={16} color="#ff8c42" /> Selecciona las categorías a agregar</label>
+                <div className="lz-opciones">
+                  {OPCIONES_CAT_PREDEFINIDAS.map(opc => (
+                    <button
+                      key={opc}
+                      type="button"
+                      className={`lz-opcion lz-opcion-emoji ${categoriasSeleccionadas.includes(opc) ? 'on' : ''}`}
+                      onClick={() => toggleCatSelection(opc)}
+                    >
+                      <span>{ICONOS_CATEGORIAS[opc] || '🛠️'}</span>
+                      <span>{opc}</span>
+                    </button>
+                  ))}
                   <button
                     type="button"
+                    className={`lz-opcion lz-opcion-emoji ${creandoNuevaCategoria ? 'on' : ''}`}
                     onClick={() => setCreandoNuevaCategoria(!creandoNuevaCategoria)}
-                    style={{
-                      padding: '15px 10px',
-                      borderRadius: '14px',
-                      border: '2px solid',
-                      borderColor: creandoNuevaCategoria ? '#F26522' : 'transparent',
-                      backgroundColor: creandoNuevaCategoria ? '#F26522' : 'white',
-                      color: creandoNuevaCategoria ? 'white' : '#1e293b',
-                      cursor: 'pointer',
-                      fontSize: '0.82rem',
-                      fontWeight: '800',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s ease',
-                      boxShadow: creandoNuevaCategoria ? '0 6px 15px rgba(242,101,34,0.3)' : '0 2px 4px rgba(0,0,0,0.04)',
-                      transform: creandoNuevaCategoria ? 'translateY(-2px)' : 'none'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!creandoNuevaCategoria) {
-                        e.currentTarget.style.borderColor = '#F26522';
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.06)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!creandoNuevaCategoria) {
-                        e.currentTarget.style.borderColor = 'transparent';
-                        e.currentTarget.style.transform = 'none';
-                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.04)';
-                      }
-                    }}
                   >
-                    <span style={{ fontSize: '1.8rem' }}>✨</span>
+                    <span>✨</span>
                     <span>OTRA...</span>
                   </button>
                 </div>
-
-                {creandoNuevaCategoria && (
-                  <input 
-                    className="rdh-modal-input" 
-                    style={{ 
-                      width: '100%', 
-                      padding: '12px 18px', 
-                      borderRadius: '12px', 
-                      border: '2px solid #ddd', 
-                      fontSize: '14px', 
-                      textTransform: 'uppercase', 
-                      backgroundColor: '#fff', 
-                      color: '#333',
-                      boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)',
-                      transition: 'border-color 0.2s'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#F26522'}
-                    onBlur={(e) => e.target.style.borderColor = '#ddd'}
-                    type="text" 
-                    value={nuevaCategoria} 
-                    onChange={(e) => setNuevaCategoria(e.target.value.toUpperCase())} 
-                    placeholder="ESCRIBE LA NUEVA CATEGORÍA..." 
-                    autoFocus 
-                  />
-                )}
               </div>
-            </div>
 
-            <div className="rdh-modal-btn-container" style={{ gap: '15px', marginTop: '10px', padding: '0 10px 10px' }}>
-              <button className="dh-btn-save-3d" style={{ background: '#777', boxShadow: '0 6px 0px #444', height: '45px', padding: '0 30px', fontSize: '16px' }} onClick={() => {
-                setIsModalOpen(false);
-                setCreandoNuevaCategoria(false);
-                setCategoriasSeleccionadas([]);
-              }}>CANCELAR</button>
-              <button className="dh-btn-save-3d" style={{ height: '45px', padding: '0 30px', fontSize: '16px' }} onClick={guardarCategorias} disabled={guardando}>
-                {guardando ? <Loader2 size={16} className="animate-spin" /> : 'AGREGAR'}
-              </button>
+              {creandoNuevaCategoria && (
+                <div className="rp-group">
+                  <label className="rp-label">Nombre de la categoría</label>
+                  <input
+                    className="lz-input"
+                    type="text"
+                    value={nuevaCategoria}
+                    onChange={(e) => setNuevaCategoria(e.target.value.toUpperCase())}
+                    placeholder="Escribe la nueva categoría..."
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              <div className="rp-footer lz-modal-pie">
+                <button type="button" className="lz-btn lz-btn-glass" onClick={cerrarModal}>Cancelar</button>
+                <button type="submit" className="lz-btn lz-btn-primary" onClick={guardarCategorias} disabled={guardando}>
+                  {guardando ? <Loader2 size={16} className="animate-spin" /> : <Plus size={18} />} Agregar
+                </button>
+              </div>
             </div>
           </div>
         </div>,
@@ -598,48 +458,18 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
 
       {/* MODAL DE SELECCIÓN DE FOTO */}
       {isPhotoMenuOpen && createPortal(
-        <div 
-          className="rdh-modal-overlay" 
-          onClick={() => setIsPhotoMenuOpen(false)} 
-          style={{ 
-            position: 'fixed', 
-            inset: 0, 
-            zIndex: 10000005, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            background: 'rgba(15, 23, 42, 0.85)',
-            backdropFilter: 'blur(4px)'
-          }}
-        >
-          <div className="rdh-modal-content" style={{ maxWidth: '400px', padding: '0', backgroundColor: '#1a1a1a', border: '1px solid #333', zIndex: 10000006, margin: 'auto' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ color: '#F26522', borderBottom: '1px solid #333', margin: 0, padding: '20px', textAlign: 'center', fontSize: '1.2rem' }}>Seleccionar Foto</h3>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <button 
-                onClick={() => selectPhotoSource('camera')}
-                style={{ background: 'transparent', border: 'none', padding: '15px', color: 'white', borderBottom: '1px solid #333', fontSize: '1rem', cursor: 'pointer', transition: 'background 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                📷 Tomar Foto
-              </button>
-              <button 
-                onClick={() => selectPhotoSource('gallery')}
-                style={{ background: 'transparent', border: 'none', padding: '15px', color: 'white', borderBottom: '1px solid #333', fontSize: '1rem', cursor: 'pointer', transition: 'background 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                🖼️ Elegir de la Galería
-              </button>
-              <button 
-                onClick={() => setIsPhotoMenuOpen(false)}
-                style={{ background: 'transparent', border: 'none', padding: '15px', color: '#a0a0a0', fontSize: '1rem', cursor: 'pointer', transition: 'background 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                Cancelar
-              </button>
-            </div>
+        <div className="rp-overlay lz-fuente" onClick={() => setIsPhotoMenuOpen(false)}>
+          <div className="lz-fuente-menu" onClick={e => e.stopPropagation()}>
+            <h3>Seleccionar foto</h3>
+            <button type="button" className="lz-fuente-opcion" onClick={() => selectPhotoSource('camera')}>
+              <span className="lz-fuente-icono naranja"><Camera size={20} /></span>
+              <span className="lz-fuente-texto"><strong>Tomar foto</strong><small>Usa la cámara del dispositivo</small></span>
+            </button>
+            <button type="button" className="lz-fuente-opcion" onClick={() => selectPhotoSource('gallery')}>
+              <span className="lz-fuente-icono azul"><ImageIcon size={20} /></span>
+              <span className="lz-fuente-texto"><strong>Elegir de la galería</strong><small>Sube una imagen guardada</small></span>
+            </button>
+            <button type="button" className="lz-btn lz-btn-glass" onClick={() => setIsPhotoMenuOpen(false)}>Cancelar</button>
           </div>
         </div>,
         document.body
@@ -647,22 +477,15 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId }) =
 
       {/* LIGHTBOX PARA IMAGEN AMPLIADA */}
       {imagenAmpliada && createPortal(
-        <div 
-          onClick={() => setImagenAmpliada(null)}
-          style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.88)', zIndex: 10000010, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}
-        >
-          <img src={imagenAmpliada} alt="Zoom" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }} />
-          <button 
-             onClick={() => setImagenAmpliada(null)} 
-             style={{ position: 'absolute', top: '20px', right: '30px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
-          >
-             <X size={40} />
+        <div className="lz-lightbox" onClick={() => setImagenAmpliada(null)}>
+          <img src={imagenAmpliada} alt="Zoom" />
+          <button type="button" className="lz-icon-btn" onClick={() => setImagenAmpliada(null)} aria-label="Cerrar">
+            <X size={22} />
           </button>
         </div>,
         document.body
       )}
-      </div>
-    </>
+    </div>
   );
 };
 

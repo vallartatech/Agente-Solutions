@@ -5,6 +5,7 @@ import axios from "axios";
 import "../../../styles/AgenteSolutions/Admin/ReporteTrabajo.css";
 import logo from '../../../assets/Logo3.png';
 import { Printer, ChevronLeft, Save, Trash2, X, Maximize2, Plus } from 'lucide-react';
+import { mostrarAviso } from '../../../utils/dialogos';
 
 const ReporteTrabajo = () => {
   const componentRef = useRef();
@@ -160,7 +161,7 @@ const ReporteTrabajo = () => {
 
   const handleSave = async () => {
     if (!trabajoId || trabajoId === "null" || trabajoId === "undefined") {
-      alert("Error: No se pudo identificar el trabajo. Por favor, regrese e intente de nuevo.");
+      mostrarAviso("Error: No se pudo identificar el trabajo. Por favor, regrese e intente de nuevo.");
       return;
     }
 
@@ -175,10 +176,10 @@ const ReporteTrabajo = () => {
         service_id: isWorkOrder ? null : trabajoId,
         work_order_id: isWorkOrder ? trabajoId : null
       });
-      alert("¡Reporte guardado con éxito!");
+      mostrarAviso("¡Reporte guardado con éxito!");
     } catch (error) {
       console.error("Error saving report:", error);
-      alert("Error al guardar el reporte.");
+      mostrarAviso("Error al guardar el reporte.");
     } finally {
       setSaving(false);
     }

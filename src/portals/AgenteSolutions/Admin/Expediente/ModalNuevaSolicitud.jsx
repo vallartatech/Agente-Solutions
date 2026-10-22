@@ -1,23 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import {
   X, FileText, Home, Wrench, MessageSquare, Camera, ImageIcon, PlusCircle,
-  UserCheck, User, ClipboardList, Hammer
+  Users, User, ClipboardList, Hammer, ChevronRight, CheckCircle2, CalendarClock
 } from 'lucide-react';
 import { API, authHeaders } from './flujoTrabajo';
 import '../../../../styles/AgenteSolutions/Admin/VistaPropiedades.css';
 import '../../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
+import '../../../../styles/Shared/LiquidGlass.css';
 
 // Solicitud de trabajo o de levantamiento para una propiedad, con técnico (rol 2) asignado.
 // Reutiliza el diseño "Reportar Problema" (rp-*) de Propiedades.
-const FORM_VACIO = { tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', fotos: [], supervisor: '' };
+const FORM_VACIO = { tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', fotos: [], supervisor: '', fecha: '', hora: '' };
+
+// Solo root (0) y administrador (1) programan la visita desde aquí
+const esAdministrador = () => {
+  try {
+    const rol = Number(JSON.parse(localStorage.getItem('agente_session') || '{}')?.userData?.role_id);
+    return rol === 0 || rol === 1;
+  } catch {
+    return false;
+  }
+};
+
+const hoyISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// Id del registro recién creado, si la API lo devuelve
+const idCreado = (d = {}) => d.id || d.work_order_id || d.workOrderId || d.service_id || d.servicio_id || d.insertId || d.data?.id;
 
 const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
   const [modo, setModo] = useState('trabajo');
   const [form, setForm] = useState(FORM_VACIO);
-  const [tecnicoId, setTecnicoId] = useState('');
+  const [tecnicoIds, setTecnicoIds] = useState([]);
   const [tecnicos, setTecnicos] = useState([]);
   const [cargandoTecnicos, setCargandoTecnicos] = useState(true);
   const [zonas, setZonas] = useState([]);
@@ -28,6 +48,8 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
   const [menuFoto, setMenuFoto] = useState(false);
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
+  const navigate = useNavigate();
+  const esAdmin = esAdministrador();
 
   useEffect(() => {
     const headers = authHeaders();
@@ -82,9 +104,37 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
     e.target.value = '';
   };
 
-  const nombreTecnico = () => {
-    const t = tecnicos.find((x) => String(x.id) === String(tecnicoId));
-    return t ? `${t.first_name || ''} ${t.last_name || ''}`.trim() : null;
+  // El administrador registra él mismo las zonas de la propiedad
+  const realizarLevantamientoPropio = () => {
+    const curp = propiedad.custom_curp || propiedad.curp || '';
+    localStorage.setItem('current_property_id', propiedad.id);
+    window.dispatchEvent(new Event('sync-agente-ids'));
+    onClose();
+    navigate(`/RegistroZonas/${encodeURIComponent(curp)}`, { state: { id: propiedad.id, curp, nombre: propiedad.property_name || propiedad.nombre_propiedad || '' } });
+  };
+
+  const toggleTecnico = (id) =>
+    setTecnicoIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
+
+  const nombresEquipo = () => {
+    const nombres = tecnicoIds
+      .map((id) => tecnicos.find((t) => t.id === id))
+      .filter(Boolean)
+      .map((t) => `${t.first_name || ''} ${t.last_name || ''}`.trim());
+    return nombres.length ? nombres.join(', ') : null;
+  };
+
+  // Si la API no devolvió el id, se toma el registro más reciente del expediente
+  const buscarCreado = async (kind) => {
+    try {
+      const res = await axios.get(`${API}/propiedades/${propiedad.id}/expediente`, { headers: authHeaders() });
+      const t = (res.data?.trabajos || [])
+        .filter((x) => (kind === 'levantamiento') === (x.kind === 'levantamiento'))
+        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
+      return t ? (t.id || t.db_id || Number(String(t.uid).match(/\d+$/)?.[0]) || null) : null;
+    } catch {
+      return null;
+    }
   };
 
   const enviar = async (e) => {
@@ -94,10 +144,19 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
       Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Completa el tipo, la zona y la descripción.', confirmButtonColor: '#f26522' });
       return;
     }
+    // La visita se refleja en el calendario: el administrador siempre la programa
+    if (esAdmin && (!form.fecha || !form.hora)) {
+      Swal.fire({ icon: 'warning', title: 'Falta la fecha u hora', text: 'Indica la fecha y la hora de la visita para que aparezca en el calendario.', confirmButtonColor: '#f26522' });
+      return;
+    }
 
     setEnviando(true);
     try {
-      const idTec = tecnicoId ? Number(tecnicoId) : null;
+      const ids = tecnicoIds.map(Number);
+      const idTec = ids[0] || null;
+      const headers = authHeaders();
+      const visita = esAdmin && form.fecha && form.hora ? `${form.fecha} ${form.hora}` : null;
+      let sinProgramar = false;
       if (modo === 'trabajo') {
         const fd = new FormData();
         fd.append('property_id', propiedad.id);
@@ -109,12 +168,22 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
           : form.descripcion);
         if (idTec) fd.append('tecnico_id', idTec);
         form.fotos.forEach((foto, i) => fd.append(`evidence_${i + 1}`, foto));
-        await axios.post(`${API}/work-orders/cliente`, fd, {
-          headers: { ...authHeaders(), 'Content-Type': 'multipart/form-data' },
+        const res = await axios.post(`${API}/work-orders/cliente`, fd, {
+          headers: { ...headers, 'Content-Type': 'multipart/form-data' },
         });
+        // Equipo de varios técnicos: mismo endpoint que el tablero de servicios
+        if (ids.length > 1 || visita) {
+          const ordenId = idCreado(res.data) || await buscarCreado('trabajo');
+          if (ordenId) {
+            if (ids.length > 1) await axios.put(`${API}/work-orders/${ordenId}/assign`, { tecnicos_ids: ids }, { headers });
+            if (visita) await axios.put(`${API}/work-orders/${ordenId}/assign`, { scheduled_at: visita }, { headers });
+          } else {
+            sinProgramar = true;
+          }
+        }
       } else {
-        const tec = nombreTecnico();
-        await axios.post(`${API}/servicios`, {
+        const tec = nombresEquipo();
+        const res = await axios.post(`${API}/servicios`, {
           property_id: propiedad.id,
           title: 'Levantamiento Inicial',
           description: form.descripcion.trim() ||
@@ -123,13 +192,31 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
           supervisor_name: form.supervisor.trim() || tec || 'El propietario',
           technician_id: idTec,
           tecnico_id: idTec,
-        }, { headers: authHeaders() });
+          ...(visita && { scheduled_start: `${visita}:00` }),
+        }, { headers });
+        // Misma agenda que la vista de Levantamientos
+        if (visita) {
+          const servicioId = idCreado(res.data) || await buscarCreado('levantamiento');
+          if (servicioId) {
+            await axios.put(`${API}/servicios/${servicioId}/asignar`, { tecnico_id: idTec, scheduled_start: `${visita}:00` }, { headers });
+          } else {
+            sinProgramar = true;
+          }
+        }
+        // Los demás técnicos se suman al equipo del levantamiento
+        for (const extra of ids.slice(1)) {
+          await axios.post(`${API}/propiedades/${propiedad.id}/equipo-levantamiento`, { technician_id: extra }, { headers });
+        }
       }
 
       Swal.fire({
         icon: 'success',
         title: modo === 'trabajo' ? '¡Trabajo solicitado!' : '¡Levantamiento solicitado!',
-        text: idTec ? `Se asignó a ${nombreTecnico()}.` : 'Puedes asignar un técnico después desde Servicios.',
+        text: [
+          idTec ? `Se asignó a ${nombresEquipo()}.` : 'Puedes asignar un técnico después desde Servicios.',
+          visita && !sinProgramar && `Visita programada: ${new Date(`${form.fecha}T${form.hora}`).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}.`,
+          sinProgramar && 'No se pudo completar la asignación o la agenda; revísala desde Servicios.',
+        ].filter(Boolean).join(' '),
         confirmButtonColor: '#f26522',
       });
       onCreada?.();
@@ -175,17 +262,93 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
               {propiedad.property_name || propiedad.nombre_propiedad || propiedad.address}
             </p>
 
-            <div className="rp-group">
-              <label className="rp-label"><UserCheck size={16} color="#ff8c42" /> Técnico asignado (Rol 2)</label>
-              <select value={tecnicoId} onChange={(e) => setTecnicoId(e.target.value)} disabled={cargandoTecnicos}>
-                <option value="">
-                  {cargandoTecnicos ? 'Cargando técnicos...' : tecnicos.length ? 'Sin asignar por ahora' : 'No hay técnicos de rol 2'}
-                </option>
-                {tecnicos.map((t) => (
-                  <option key={t.id} value={t.id}>{`${t.first_name || ''} ${t.last_name || ''}`.trim()} ({t.email})</option>
-                ))}
-              </select>
+            {modo === 'levantamiento' && (
+              <>
+                <button type="button" className="xp-rp-propio" onClick={realizarLevantamientoPropio}>
+                  <span className="xp-rp-propio-icon"><Camera size={20} /></span>
+                  <span className="xp-rp-propio-texto">
+                    <strong>{zonas.length ? 'Editar mi levantamiento' : 'Realizar mi propio levantamiento'}</strong>
+                    <span>Registra tú mismo las zonas y equipos de la propiedad.</span>
+                  </span>
+                  <ChevronRight size={18} />
+                </button>
+                <span className="xp-rp-separador">o solicítalo a un técnico</span>
+              </>
+            )}
+
+            <div className="xp-equipo">
+              <label className="rp-label">
+                <Users size={16} color="#ff8c42" /> Equipo de trabajo <span className="xp-equipo-hint">(Selecciona uno o más)</span>
+              </label>
+              {cargandoTecnicos ? (
+                <p className="xp-equipo-vacio">Cargando técnicos...</p>
+              ) : !tecnicos.length ? (
+                <p className="xp-equipo-vacio">No hay técnicos de rol 2 vinculados.</p>
+              ) : (
+                <div className="xp-equipo-grid">
+                  {tecnicos.map((t) => {
+                    const on = tecnicoIds.includes(t.id);
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        className={`xp-equipo-card ${on ? 'on' : ''}`}
+                        onClick={() => toggleTecnico(t.id)}
+                        aria-pressed={on}
+                        title={`${t.first_name || ''} ${t.last_name || ''}`.trim()}
+                      >
+                        {t.profile_picture_url ? (
+                          <img
+                            src={t.profile_picture_url}
+                            alt=""
+                            onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+                          />
+                        ) : null}
+                        <span className="xp-equipo-iniciales" style={{ display: t.profile_picture_url ? 'none' : 'flex' }}>
+                          {t.first_name?.charAt(0)}{t.last_name?.charAt(0)}
+                        </span>
+                        <span className="xp-equipo-nombre">{t.first_name} {t.last_name ? `${t.last_name.charAt(0)}.` : ''}</span>
+                        {on && <CheckCircle2 size={17} className="xp-equipo-check" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {!cargandoTecnicos && tecnicos.length > 0 && !tecnicoIds.length && (
+                <small className="xp-equipo-nota">Sin asignar por ahora: puedes asignarlo después desde Servicios.</small>
+              )}
             </div>
+
+            {esAdmin && (
+              <div className="xp-equipo">
+                <label className="rp-label">
+                  <CalendarClock size={16} color="#ff8c42" /> Programar visita *
+                </label>
+                <div className="xp-visita">
+                  <label>
+                    <span>Fecha</span>
+                    <input
+                      type="date"
+                      className="xp-rp-input"
+                      required
+                      min={hoyISO()}
+                      value={form.fecha}
+                      onChange={(e) => setForm({ ...form, fecha: e.target.value })}
+                    />
+                  </label>
+                  <label>
+                    <span>Hora</span>
+                    <input
+                      type="time"
+                      required
+                      className="xp-rp-input"
+                      value={form.hora}
+                      onChange={(e) => setForm({ ...form, hora: e.target.value })}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
 
             {modo === 'trabajo' ? (
               <>

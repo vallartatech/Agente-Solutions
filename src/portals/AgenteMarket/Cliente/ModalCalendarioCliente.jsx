@@ -36,6 +36,7 @@ import {
   ExternalLink,
   Star
 } from 'lucide-react';
+import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
 const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -583,7 +584,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
       }
     } catch (err) {
       console.error("Error enviando mensaje", err);
-      alert("No se pudo enviar el mensaje.");
+      mostrarAviso("No se pudo enviar el mensaje.");
     } finally {
       setSendingClientChat(false);
     }
@@ -593,7 +594,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
     if (!selectedJobForQuotes?.id) return;
     let msg = '';
     if (action === 'reschedule') {
-      msg = prompt("Escribe una breve nota sobre qué horario te queda mejor:");
+      msg = await pedirTexto("Escribe una breve nota sobre qué horario te queda mejor:");
       if (msg === null) return;
     }
     try {
@@ -604,7 +605,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
-        alert("✅ " + res.data.message);
+        mostrarAviso("✅ " + res.data.message);
         fetchJobs();
       }
     } catch (e) {
@@ -614,7 +615,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
 
   const handleAcceptQuote = async (quote) => {
     const techName = quote.technicianName || 'este técnico';
-    if (!window.confirm(`¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
+    if (!await confirmarAccion(`¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
       return;
     }
     try {
@@ -623,26 +624,26 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
-        alert("🎉 " + res.data.message);
+        mostrarAviso("🎉 " + res.data.message);
         setShowQuotesModal(false);
         setActiveChatQuote(null);
         fetchJobs();
       }
     } catch (e) {
       console.error(e);
-      alert("Hubo un error al aceptar la cotización.");
+      mostrarAviso("Hubo un error al aceptar la cotización.");
     }
   };
 
   const handleRejectQuote = async (quoteId) => {
-    if (!window.confirm("¿Estás seguro de que deseas rechazar esta cotización?")) return;
+    if (!await confirmarAccion("¿Estás seguro de que deseas rechazar esta cotización?")) return;
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quoteId}/reject`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
-        alert("Cotización rechazada.");
+        mostrarAviso("Cotización rechazada.");
         fetchJobs();
       }
     } catch (e) {
@@ -651,14 +652,14 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
   };
 
   const handleDeleteJob = async (jobId) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar y cancelar esta publicación de la Red?")) return;
+    if (!await confirmarAccion("¿Estás seguro de que deseas eliminar y cancelar esta publicación de la Red?")) return;
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const res = await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${jobId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data?.success) {
-        alert("✅ Publicación eliminada con éxito.");
+        mostrarAviso("✅ Publicación eliminada con éxito.");
         setShowQuotesModal(false);
         setActiveChatQuote(null);
         fetchJobs();
@@ -678,14 +679,14 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
       if (res.data?.success) {
-        alert("🌐 " + res.data.message);
+        mostrarAviso("🌐 " + res.data.message);
         setShowQuotesModal(false);
         setActiveChatQuote(null);
         fetchJobs();
       }
     } catch (e) {
       console.error("Error reenviando solicitud a la red:", e);
-      alert(e.response?.data?.message || "Hubo un error al reenviar la solicitud a la red.");
+      mostrarAviso(e.response?.data?.message || "Hubo un error al reenviar la solicitud a la red.");
     }
   };
 
