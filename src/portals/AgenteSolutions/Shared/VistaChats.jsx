@@ -368,6 +368,17 @@ const VistaChats = () => {
     if (el) pegadoAbajo.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   };
 
+  // Al abrir el teclado (o el panel de emojis) la zona de mensajes se encoge:
+  // si estabas viendo el final, se mantiene el último mensaje a la vista, como en WhatsApp
+  const hayConversacion = Boolean(conv);
+  useEffect(() => {
+    const el = mensajesRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => { if (pegadoAbajo.current) bajarAlFinal(); });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [chatId, hayConversacion]);
+
   const cargarAnteriores = async () => {
     if (!conv?.mensajes?.length || cargandoAnteriores) return;
     setCargandoAnteriores(true);

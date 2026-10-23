@@ -1299,6 +1299,25 @@ button.vch-persona:hover {
 }
 
 @media (max-width: 900px) {
+  /* Dentro de una conversación, como en WhatsApp: sin el encabezado de la app ni la barra de abajo,
+     para que con el teclado abierto se vean los mensajes. La flecha ← regresa a la lista. */
+  .vch-root.con-chat .vcp-header,
+  .vch-root.con-chat .vcp-mobile-bottom-nav {
+    display: none !important;
+  }
+
+  .vch-root.con-chat .vch-layout {
+    padding: 0;
+  }
+
+  .vch-root.con-chat .vch-conv-head {
+    padding-top: calc(8px + env(safe-area-inset-top));
+  }
+
+  .vch-root.con-chat .vch-escribir {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+
   .vch-panel {
     height: 230px;
   }
