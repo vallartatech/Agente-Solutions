@@ -1,16 +1,23 @@
 import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindow, Polyline, Marker } from '@react-google-maps/api';
 import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig";
-import { Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield, X } from 'lucide-react';
+import {
+  Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield, X,
+  Building2, Eye, MapPinOff, Loader2,
+} from 'lucide-react';
 import Header from '../../../components/Shared/Header';
+import { useAuth } from '../../../context/AuthContext';
 import '../../../styles/AgenteSolutions/Admin/VistaMapaEquipo.css';
+import '../../../styles/AgenteSolutions/Admin/VistaMapaPropiedades.css';
 
 const API = import.meta.env.VITE_API_BASE_URL;
 const TEAM_REFRESH_MS = 20000;
 const ROUTE_REFRESH_MS = 30000;
 const RECENT_MINUTES = 60;
 const MERIDA = { lat: 20.9674, lng: -89.5926 };
+const SIN_CARPETA = 'sin-carpeta';
 
 const STATUS = {
   online: { color: '#10b981', label: 'En línea' },
@@ -67,6 +74,20 @@ const thumb = (url, size = 96) => {
   return url.replace('/upload/', `/upload/c_fill,g_face,w_${size},h_${size},f_auto,q_auto/`);
 };
 
+// Versión ligera de imágenes de Cloudinary para el mapa (el logo completo, sin recortar)
+const ligera = (url, size = 96, modo = 'c_pad,b_white') => {
+  if (!url || !/res\.cloudinary\.com\/.+\/upload\//.test(url)) return url;
+  return url.replace('/upload/', `/upload/${modo},w_${size},h_${size},f_auto,q_auto/`);
+};
+
+const sinAcentos = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+// "20.9674, -89.5926" -> { lat, lng }
+const parseCoords = (texto) => {
+  const [lat, lng] = String(texto || '').split(',').map(n => parseFloat(n));
+  return Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0) ? { lat, lng } : null;
+};
+
 // Marcador HTML ligero: solo la foto (o iniciales) con borde del color de estado.
 // Sin sombras ni animaciones: el navegador lo reacomoda en cada cuadro del zoom.
 // memo: solo se redibuja si cambia algo que se ve (no en cada actualización del equipo).
@@ -93,6 +114,26 @@ const PersonMarker = memo(({ member, color, selected, onClick }) => {
   prev.color === next.color &&
   prev.selected === next.selected
 );
+
+// Marcador de propiedad: logo de la empresa (carpeta) o, si no tiene, un círculo de color con un edificio
+const MarcadorPropiedad = memo(({ propiedad, carpeta, seleccionado, onClick }) => {
+  const [fallo, setFallo] = useState(false);
+  const logo = carpeta?.logo_url && !fallo ? carpeta.logo_url : null;
+  const color = carpeta?.color || '#F26522';
+  return (
+    <button
+      type="button"
+      className={`vmp-marcador ${logo ? 'con-logo' : ''} ${seleccionado ? 'seleccionado' : ''}`}
+      style={{ borderColor: color, background: logo ? '#ffffff' : color }}
+      onClick={(e) => { e.stopPropagation(); onClick(propiedad.id); }}
+      title={propiedad.nombre_propiedad}
+    >
+      {logo
+        ? <img src={ligera(logo)} alt="" draggable={false} decoding="async" onError={() => setFallo(true)} />
+        : <Building2 size={18} color="#ffffff" strokeWidth={2.4} />}
+    </button>
+  );
+});
 
 // Centra el marcador sobre la coordenada
 const centerOverlay = (width, height) => ({ x: -(width / 2), y: -(height / 2) });
@@ -174,9 +215,21 @@ const MAP_OPTIONS = {
   styles: MAP_STYLES
 };
 
+// Mapa en vivo: el equipo (ubicación en tiempo real) y las propiedades registradas en un solo mapa.
+// El equipo solo lo ve quien tiene permiso de ubicación; las propiedades, Root (0) y Admin (1).
 const VistaMapaEquipo = () => {
   const { isLoaded, loadError } = useJsApiLoader(GOOGLE_MAPS_LOADER);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const puedeVerPropiedades = [0, 1].includes(Number(user?.role_id));
 
+  const [pestana, setPestana] = useState(() =>
+    searchParams.get('capa') === 'propiedades' && puedeVerPropiedades ? 'propiedades' : 'equipo'
+  );
+  const [capas, setCapas] = useState({ equipo: true, propiedades: puedeVerPropiedades });
+
+  // ── Equipo ──
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
@@ -187,13 +240,26 @@ const VistaMapaEquipo = () => {
   const [selectedId, setSelectedId] = useState(null);
   const [routePoints, setRoutePoints] = useState([]);
   const [infoOpen, setInfoOpen] = useState(false);
+
+  // ── Propiedades ──
+  const [propiedades, setPropiedades] = useState([]);
+  const [carpetas, setCarpetas] = useState([]);
+  const [cargandoProps, setCargandoProps] = useState(puedeVerPropiedades);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtro, setFiltro] = useState('todas'); // 'todas' | id de carpeta | SIN_CARPETA
+  const [propSelId, setPropSelId] = useState(null);
+
   const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef(null);
   const fittedRef = useRef(false);
 
+  const verEquipo = !forbidden;
+
+  // Solo una ventana de información abierta a la vez (persona o propiedad)
   const handleMarkerClick = useCallback((id) => {
     setSelectedId(id);
     setInfoOpen(true);
+    setPropSelId(null);
   }, []);
 
   const fetchTeam = useCallback(async () => {
@@ -215,6 +281,30 @@ const VistaMapaEquipo = () => {
     const id = setInterval(() => { if (!document.hidden) fetchTeam(); }, TEAM_REFRESH_MS);
     return () => clearInterval(id);
   }, [fetchTeam]);
+
+  const cargarPropiedades = useCallback(async () => {
+    if (!puedeVerPropiedades) return;
+    setCargandoProps(true);
+    try {
+      const [rp, rc] = await Promise.all([
+        axios.get(`${API}/propiedades`),
+        axios.get(`${API}/property-folders`).catch(() => ({ data: [] }))
+      ]);
+      setPropiedades(Array.isArray(rp.data) ? rp.data : []);
+      setCarpetas(Array.isArray(rc.data) ? rc.data : []);
+    } catch (err) {
+      console.error('[Mapa] Error al cargar las propiedades:', err);
+    } finally {
+      setCargandoProps(false);
+    }
+  }, [puedeVerPropiedades]);
+
+  useEffect(() => { cargarPropiedades(); }, [cargarPropiedades]);
+
+  // Sin permiso para el equipo: se queda solo con las propiedades
+  useEffect(() => {
+    if (forbidden && puedeVerPropiedades) setPestana('propiedades');
+  }, [forbidden, puedeVerPropiedades]);
 
   // Recorrido del día de la persona seleccionada
   useEffect(() => {
@@ -248,28 +338,77 @@ const VistaMapaEquipo = () => {
       });
   }, [members, search, roleFilter, onlyOnline]);
 
-  const onMap = filtered.filter(m => m.last_location);
+  const onMap = verEquipo && capas.equipo ? filtered.filter(m => m.last_location) : [];
   const selected = members.find(m => m.id === selectedId) || null;
   const tramosRuta = useMemo(() => buildRouteSegments(routePoints), [routePoints]);
   const countOnline = members.filter(m => m.online).length;
 
-  // Encuadrar a todos la primera vez que hay ubicaciones
-  useEffect(() => {
-    if (!isLoaded || !mapRef.current || fittedRef.current || onMap.length === 0) return;
-    const bounds = new window.google.maps.LatLngBounds();
-    onMap.forEach(m => bounds.extend({ lat: m.last_location.lat, lng: m.last_location.lng }));
-    if (onMap.length === 1) {
-      mapRef.current.setCenter(bounds.getCenter());
-      mapRef.current.setZoom(15);
-    } else {
-      mapRef.current.fitBounds(bounds, 60);
-      // Si todos están casi en el mismo punto, fitBounds acerca demasiado: se limita el zoom
-      window.google.maps.event.addListenerOnce(mapRef.current, 'idle', () => {
-        if (mapRef.current.getZoom() > MAX_FIT_ZOOM) mapRef.current.setZoom(MAX_FIT_ZOOM);
-      });
+  // ── Propiedades: filtros por búsqueda y por empresa (carpeta) ──
+  const carpetaPorId = useMemo(() => Object.fromEntries(carpetas.map(c => [c.id, c])), [carpetas]);
+  const carpetaDe = (p) => (p.folder_id ? carpetaPorId[p.folder_id] : null);
+  const conPosicion = useMemo(() => propiedades.map(p => ({ ...p, pos: parseCoords(p.coordenadas) })), [propiedades]);
+
+  const propsFiltradas = useMemo(() => {
+    const q = sinAcentos(busqueda.trim());
+    return conPosicion.filter(p => {
+      if (filtro === SIN_CARPETA && p.folder_id) return false;
+      if (filtro !== 'todas' && filtro !== SIN_CARPETA && Number(p.folder_id) !== Number(filtro)) return false;
+      if (!q) return true;
+      const carpeta = carpetaPorId[p.folder_id]?.name;
+      return [p.nombre_propiedad, p.direccion, p.propietario, carpeta].some(v => sinAcentos(v).includes(q));
+    });
+  }, [conPosicion, filtro, busqueda, carpetaPorId]);
+
+  const propsEnMapa = useMemo(() => (capas.propiedades ? propsFiltradas.filter(p => p.pos) : []), [propsFiltradas, capas.propiedades]);
+  const propsSinUbicacion = propsFiltradas.filter(p => !p.pos).length;
+  const propSeleccionada = propsEnMapa.find(p => p.id === propSelId) || null;
+
+  const conteos = useMemo(() => {
+    const porCarpeta = {};
+    let sinCarpeta = 0;
+    conPosicion.forEach(p => {
+      if (p.folder_id) porCarpeta[p.folder_id] = (porCarpeta[p.folder_id] || 0) + 1;
+      else sinCarpeta += 1;
+    });
+    return { porCarpeta, sinCarpeta };
+  }, [conPosicion]);
+
+  // Encuadrar en todo lo que se está mostrando (personas y propiedades)
+  const encuadrar = useCallback((puntos) => {
+    const map = mapRef.current;
+    if (!map || !window.google || puntos.length === 0) return;
+    if (puntos.length === 1) {
+      map.setCenter(puntos[0]);
+      map.setZoom(15);
+      return;
     }
+    const bounds = new window.google.maps.LatLngBounds();
+    puntos.forEach(p => bounds.extend(p));
+    map.fitBounds(bounds, 60);
+    // Si todo está casi en el mismo punto, fitBounds acerca demasiado: se limita el zoom
+    window.google.maps.event.addListenerOnce(map, 'idle', () => {
+      if (map.getZoom() > MAX_FIT_ZOOM) map.setZoom(MAX_FIT_ZOOM);
+    });
+  }, []);
+
+  const puntosVisibles = useMemo(() => [
+    ...onMap.map(m => ({ lat: m.last_location.lat, lng: m.last_location.lng })),
+    ...propsEnMapa.map(p => p.pos),
+  ], [onMap, propsEnMapa]);
+
+  // La primera vez, cuando ya cargó todo lo que se va a mostrar
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current || fittedRef.current || loading || cargandoProps) return;
+    if (puntosVisibles.length === 0) return;
+    encuadrar(puntosVisibles);
     fittedRef.current = true;
-  }, [isLoaded, onMap]);
+  }, [isLoaded, loading, cargandoProps, puntosVisibles, encuadrar]);
+
+  // Al cambiar de empresa se encuadra en sus propiedades
+  useEffect(() => {
+    if (!fittedRef.current || !propsEnMapa.length) return;
+    encuadrar(propsEnMapa.map(p => p.pos));
+  }, [filtro]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelect = (m) => {
     if (selectedId === m.id) {
@@ -278,14 +417,41 @@ const VistaMapaEquipo = () => {
       return;
     }
     setSelectedId(m.id);
+    setPropSelId(null);
     setInfoOpen(Boolean(m.last_location));
     if (m.last_location && mapRef.current) {
+      if (!capas.equipo) setCapas(c => ({ ...c, equipo: true }));
       mapRef.current.panTo({ lat: m.last_location.lat, lng: m.last_location.lng });
       if (mapRef.current.getZoom() < 14) mapRef.current.setZoom(15);
     }
   };
 
-  if (forbidden) {
+  const seleccionarPropiedad = useCallback((id) => {
+    setPropSelId(id);
+    setInfoOpen(false);
+  }, []);
+
+  const irAPropiedad = (p) => {
+    seleccionarPropiedad(p.id);
+    if (!capas.propiedades) setCapas(c => ({ ...c, propiedades: true }));
+    if (mapRef.current) {
+      mapRef.current.panTo(p.pos);
+      if (mapRef.current.getZoom() < 15) mapRef.current.setZoom(15);
+    }
+  };
+
+  const irADetalles = (p) => {
+    localStorage.setItem('current_property_id', p.id);
+    navigate(`/detalle-propiedad/${p.id}`);
+  };
+
+  const alternarCapa = (capa) => {
+    setCapas(c => ({ ...c, [capa]: !c[capa] }));
+    if (capa === 'equipo') setInfoOpen(false);
+    if (capa === 'propiedades') setPropSelId(null);
+  };
+
+  if (forbidden && !puedeVerPropiedades) {
     return (
       <div className="vme-root">
         <Header activeModule="mapa" />
@@ -306,96 +472,185 @@ const VistaMapaEquipo = () => {
         <aside className="vme-sidebar">
           <div className="vme-sidebar-head">
             <div>
-              <h2><Navigation size={18} /> Mapa del equipo</h2>
-              <p>
-                <span className="vme-online-dot" /> {countOnline} en línea de {members.length}
-                {lastRefresh && <> · actualizado {lastRefresh.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</>}
-              </p>
-            </div>
-            <button type="button" className="vme-icon-btn" onClick={fetchTeam} title="Actualizar">
-              <RefreshCw size={16} />
-            </button>
-          </div>
-
-          <div className="vme-search">
-            <Search size={15} />
-            <input
-              type="text"
-              placeholder="Buscar persona..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-
-          <div className="vme-filters">
-            <button type="button" className={`vme-chip ${roleFilter === 'all' ? 'active' : ''}`} onClick={() => setRoleFilter('all')}>
-              <Users size={13} /> Todos
-            </button>
-            <button type="button" className={`vme-chip ${roleFilter === 'tech' ? 'active' : ''}`} onClick={() => setRoleFilter('tech')}>
-              <Wrench size={13} /> Técnicos
-            </button>
-            <button type="button" className={`vme-chip ${roleFilter === 'admin' ? 'active' : ''}`} onClick={() => setRoleFilter('admin')}>
-              <Shield size={13} /> Admins
-            </button>
-            <label className="vme-toggle">
-              <input type="checkbox" checked={onlyOnline} onChange={(e) => setOnlyOnline(e.target.checked)} />
-              Solo en línea
-            </label>
-          </div>
-
-          <ul className="vme-list">
-            {loading && <li className="vme-empty">Cargando equipo…</li>}
-            {!loading && filtered.length === 0 && <li className="vme-empty">No hay personas con estos filtros.</li>}
-            {filtered.map(m => {
-              const st = statusOf(m);
-              return (
-                <li key={m.id}>
-                  <button
-                    type="button"
-                    className={`vme-person ${selectedId === m.id ? 'selected' : ''}`}
-                    onClick={() => handleSelect(m)}
-                  >
-                    <span className="vme-avatar" style={{ borderColor: STATUS[st].color }}>
-                      {m.profile_picture ? <img src={thumb(m.profile_picture)} alt="" loading="lazy" decoding="async" /> : initials(m.name)}
-                      <span className="vme-avatar-dot" style={{ background: STATUS[st].color }} />
-                    </span>
-                    <span className="vme-person-info">
-                      <span className="vme-person-name">{m.name}</span>
-                      <span className="vme-person-meta">
-                        {m.role_id === 2 ? 'Técnico' : 'Admin'} · {
-                          m.paused ? `${m.pause_status || 'Ocupado'} · ubicación pausada${m.paused_at ? ` · ${timeAgo(m.paused_at)}` : ''}`
-                          : !m.sharing && !m.last_location ? 'No comparte ubicación'
-                            : m.last_location ? `${STATUS[st].label} · ${timeAgo(m.last_location.recorded_at)}`
-                              : 'Sin ubicación todavía'
-                        }
-                      </span>
-                      {m.place && (
-                        <span className="vme-person-place">📍 En {m.place.nombre} desde {horaCorta(m.place.desde)}</span>
-                      )}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-
-          {selected && (
-            <div className="vme-route">
-              <h3>Recorrido de hoy · {selected.name.split(' ')[0]}</h3>
-              {routePoints.length === 0 ? (
-                <p className="vme-empty">Sin movimientos registrados hoy.</p>
+              <h2><Navigation size={18} /> Mapa en vivo</h2>
+              {pestana === 'equipo' ? (
+                <p>
+                  <span className="vme-online-dot" /> {countOnline} en línea de {members.length}
+                  {lastRefresh && <> · actualizado {lastRefresh.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</>}
+                </p>
               ) : (
-                <ol>
-                  {[...routePoints].reverse().slice(0, 12).map((p, i) => (
-                    <li key={`${p.recorded_at}-${i}`}>
-                      <span>{new Date(p.recorded_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
-                      {SOURCE_LABEL[p.source] || p.source}
-                      {p.work_order_id ? ` #${p.work_order_id}` : ''}
-                    </li>
-                  ))}
-                </ol>
+                <p>{propsFiltradas.length - propsSinUbicacion} en el mapa{propsSinUbicacion > 0 ? ` · ${propsSinUbicacion} sin ubicación` : ''}</p>
               )}
             </div>
+            <button
+              type="button"
+              className="vme-icon-btn"
+              onClick={pestana === 'equipo' ? fetchTeam : cargarPropiedades}
+              title="Actualizar"
+              aria-label="Actualizar"
+            >
+              <RefreshCw size={16} className={pestana === 'propiedades' && cargandoProps ? 'vmp-girar' : ''} />
+            </button>
+          </div>
+
+          {/* Equipo / Propiedades */}
+          {verEquipo && puedeVerPropiedades && (
+            <div className="vme-tabs" role="tablist">
+              <button type="button" role="tab" aria-selected={pestana === 'equipo'} className={pestana === 'equipo' ? 'active' : ''} onClick={() => setPestana('equipo')}>
+                <Users size={14} /> Equipo <span>{members.length}</span>
+              </button>
+              <button type="button" role="tab" aria-selected={pestana === 'propiedades'} className={pestana === 'propiedades' ? 'active' : ''} onClick={() => setPestana('propiedades')}>
+                <Building2 size={14} /> Propiedades <span>{conPosicion.length}</span>
+              </button>
+            </div>
+          )}
+
+          {pestana === 'equipo' ? (
+            <>
+              <div className="vme-search">
+                <Search size={15} />
+                <input
+                  type="text"
+                  placeholder="Buscar persona..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+
+              <div className="vme-filters">
+                <button type="button" className={`vme-chip ${roleFilter === 'all' ? 'active' : ''}`} onClick={() => setRoleFilter('all')}>
+                  <Users size={13} /> Todos
+                </button>
+                <button type="button" className={`vme-chip ${roleFilter === 'tech' ? 'active' : ''}`} onClick={() => setRoleFilter('tech')}>
+                  <Wrench size={13} /> Técnicos
+                </button>
+                <button type="button" className={`vme-chip ${roleFilter === 'admin' ? 'active' : ''}`} onClick={() => setRoleFilter('admin')}>
+                  <Shield size={13} /> Admins
+                </button>
+                <label className="vme-toggle">
+                  <input type="checkbox" checked={onlyOnline} onChange={(e) => setOnlyOnline(e.target.checked)} />
+                  Solo en línea
+                </label>
+              </div>
+
+              <ul className="vme-list">
+                {loading && <li className="vme-empty">Cargando equipo…</li>}
+                {!loading && filtered.length === 0 && <li className="vme-empty">No hay personas con estos filtros.</li>}
+                {filtered.map(m => {
+                  const st = statusOf(m);
+                  return (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        className={`vme-person ${selectedId === m.id ? 'selected' : ''}`}
+                        onClick={() => handleSelect(m)}
+                      >
+                        <span className="vme-avatar" style={{ borderColor: STATUS[st].color }}>
+                          {m.profile_picture ? <img src={thumb(m.profile_picture)} alt="" loading="lazy" decoding="async" /> : initials(m.name)}
+                          <span className="vme-avatar-dot" style={{ background: STATUS[st].color }} />
+                        </span>
+                        <span className="vme-person-info">
+                          <span className="vme-person-name">{m.name}</span>
+                          <span className="vme-person-meta">
+                            {m.role_id === 2 ? 'Técnico' : 'Admin'} · {
+                              m.paused ? `${m.pause_status || 'Ocupado'} · ubicación pausada${m.paused_at ? ` · ${timeAgo(m.paused_at)}` : ''}`
+                              : !m.sharing && !m.last_location ? 'No comparte ubicación'
+                                : m.last_location ? `${STATUS[st].label} · ${timeAgo(m.last_location.recorded_at)}`
+                                  : 'Sin ubicación todavía'
+                            }
+                          </span>
+                          {m.place && (
+                            <span className="vme-person-place">📍 En {m.place.nombre} desde {horaCorta(m.place.desde)}</span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {selected && (
+                <div className="vme-route">
+                  <h3>Recorrido de hoy · {selected.name.split(' ')[0]}</h3>
+                  {routePoints.length === 0 ? (
+                    <p className="vme-empty">Sin movimientos registrados hoy.</p>
+                  ) : (
+                    <ol>
+                      {[...routePoints].reverse().slice(0, 12).map((p, i) => (
+                        <li key={`${p.recorded_at}-${i}`}>
+                          <span>{new Date(p.recorded_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
+                          {SOURCE_LABEL[p.source] || p.source}
+                          {p.work_order_id ? ` #${p.work_order_id}` : ''}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <label className="vmp-buscar">
+                <Search size={16} />
+                <input type="search" placeholder="Buscar propiedad, empresa o dirección" value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+              </label>
+
+              {/* Filtro por empresa (carpeta) */}
+              <div className="vmp-filtros">
+                <button type="button" className={`vmp-filtro ${filtro === 'todas' ? 'on' : ''}`} onClick={() => setFiltro('todas')}>
+                  Todas <span>{conPosicion.length}</span>
+                </button>
+                {carpetas.filter(c => conteos.porCarpeta[c.id]).map(c => (
+                  <button
+                    type="button"
+                    key={c.id}
+                    className={`vmp-filtro ${Number(filtro) === c.id ? 'on' : ''}`}
+                    style={{ '--c': c.color || '#F26522' }}
+                    onClick={() => setFiltro(c.id)}
+                  >
+                    {c.logo_url ? <img src={ligera(c.logo_url, 48)} alt="" /> : <span className="vmp-filtro-punto" />}
+                    {c.name} <span>{conteos.porCarpeta[c.id]}</span>
+                  </button>
+                ))}
+                {conteos.sinCarpeta > 0 && (
+                  <button type="button" className={`vmp-filtro ${filtro === SIN_CARPETA ? 'on' : ''}`} onClick={() => setFiltro(SIN_CARPETA)}>
+                    Sin empresa <span>{conteos.sinCarpeta}</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="vmp-items">
+                {cargandoProps && !propiedades.length ? (
+                  <div className="vmp-vacio"><Loader2 size={22} className="vmp-girar" /></div>
+                ) : !propsFiltradas.length ? (
+                  <div className="vmp-vacio">Ninguna propiedad coincide.</div>
+                ) : propsFiltradas.map(p => {
+                  const carpeta = carpetaDe(p);
+                  return (
+                    <button
+                      type="button"
+                      key={p.id}
+                      className={`vmp-item ${p.id === propSelId ? 'activo' : ''} ${!p.pos ? 'sin-pos' : ''}`}
+                      onClick={() => (p.pos ? irAPropiedad(p) : irADetalles(p))}
+                      title={p.pos ? 'Ver en el mapa' : 'Sin ubicación GPS: abrir detalles'}
+                    >
+                      <span className="vmp-item-img" style={{ borderColor: carpeta?.color || '#334155' }}>
+                        {carpeta?.logo_url
+                          ? <img src={ligera(carpeta.logo_url, 80)} alt="" />
+                          : p.foto_url ? <img src={ligera(p.foto_url, 80, 'c_fill')} alt="" className="foto" /> : <Building2 size={18} />}
+                      </span>
+                      <span className="vmp-item-cuerpo">
+                        <strong>{p.nombre_propiedad || 'Propiedad sin nombre'}</strong>
+                        <small>{carpeta ? carpeta.name : (p.propietario || 'Sin empresa')}</small>
+                        <small className="vmp-item-dir">
+                          {p.pos ? (p.direccion || 'Sin dirección') : <><MapPinOff size={12} /> Sin ubicación GPS</>}
+                        </small>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
           )}
         </aside>
 
@@ -411,6 +666,18 @@ const VistaMapaEquipo = () => {
             </div>
           )}
 
+          {/* Capas visibles en el mapa */}
+          {verEquipo && puedeVerPropiedades && (
+            <div className="vme-capas">
+              <button type="button" className={capas.equipo ? 'on' : ''} onClick={() => alternarCapa('equipo')} aria-pressed={capas.equipo}>
+                <Users size={14} /> Equipo
+              </button>
+              <button type="button" className={capas.propiedades ? 'on' : ''} onClick={() => alternarCapa('propiedades')} aria-pressed={capas.propiedades}>
+                <Building2 size={14} /> Propiedades
+              </button>
+            </div>
+          )}
+
           {isLoaded && (
             <GoogleMap
               mapContainerClassName="vme-map-canvas"
@@ -418,21 +685,21 @@ const VistaMapaEquipo = () => {
               zoom={12}
               onLoad={(map) => { mapRef.current = map; }}
               onTilesLoaded={() => { if (!mapReady) setMapReady(true); }}
-              onClick={() => setInfoOpen(false)}
+              onClick={() => { setInfoOpen(false); setPropSelId(null); }}
               options={MAP_OPTIONS}
             >
               {/* Recorrido del día: continuo (con flechas) donde hay datos seguidos;
                   punteado donde la app estuvo cerrada y no se sabe el camino exacto */}
-              {selected && tramosRuta.continuos.map((path, i) => (
+              {selected && capas.equipo && tramosRuta.continuos.map((path, i) => (
                 <Polyline key={`cb-${i}`} path={path} options={ROUTE_CASING} />
               ))}
-              {selected && tramosRuta.continuos.map((path, i) => (
+              {selected && capas.equipo && tramosRuta.continuos.map((path, i) => (
                 <Polyline key={`c-${i}`} path={path} options={ROUTE_SOLID} />
               ))}
-              {selected && tramosRuta.sinDatos.map((path, i) => (
+              {selected && capas.equipo && tramosRuta.sinDatos.map((path, i) => (
                 <Polyline key={`d-${i}`} path={path} options={ROUTE_GAP} />
               ))}
-              {selected && tramosRuta.inicio && (
+              {selected && capas.equipo && tramosRuta.inicio && (
                 <Marker
                   position={tramosRuta.inicio}
                   title="Inicio del recorrido de hoy"
@@ -440,6 +707,24 @@ const VistaMapaEquipo = () => {
                   icon={{ path: window.google.maps.SymbolPath.CIRCLE, scale: 6, fillColor: '#10b981', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 2 }}
                 />
               )}
+
+              {/* Propiedades debajo de las personas */}
+              {propsEnMapa.map(p => (
+                <OverlayViewF
+                  key={`p-${p.id}`}
+                  position={p.pos}
+                  mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                  getPixelPositionOffset={centerOverlay}
+                  zIndex={p.id === propSelId ? 900 : 50}
+                >
+                  <MarcadorPropiedad
+                    propiedad={p}
+                    carpeta={carpetaDe(p)}
+                    seleccionado={p.id === propSelId}
+                    onClick={seleccionarPropiedad}
+                  />
+                </OverlayViewF>
+              ))}
 
               {onMap.map(m => (
                 <OverlayViewF
@@ -458,7 +743,7 @@ const VistaMapaEquipo = () => {
                 </OverlayViewF>
               ))}
 
-              {selected?.last_location && infoOpen && (
+              {selected?.last_location && infoOpen && capas.equipo && (
                 <InfoWindow
                   position={{ lat: selected.last_location.lat, lng: selected.last_location.lng }}
                   onCloseClick={() => setInfoOpen(false)}
@@ -492,14 +777,53 @@ const VistaMapaEquipo = () => {
                   </div>
                 </InfoWindow>
               )}
+
+              {propSeleccionada && (
+                <InfoWindow
+                  position={propSeleccionada.pos}
+                  onCloseClick={() => setPropSelId(null)}
+                  options={{ pixelOffset: new window.google.maps.Size(0, -26), headerDisabled: true }}
+                >
+                  <div className="vmp-info">
+                    <button type="button" className="vmp-info-cerrar" onClick={() => setPropSelId(null)} aria-label="Cerrar"><X size={16} /></button>
+                    {propSeleccionada.foto_url && <img className="vmp-info-foto" src={ligera(propSeleccionada.foto_url, 480, 'c_fill')} alt="" />}
+                    <div className="vmp-info-cuerpo">
+                      {carpetaDe(propSeleccionada) && (
+                        <span className="vmp-info-empresa" style={{ '--c': carpetaDe(propSeleccionada).color || '#F26522' }}>
+                          {carpetaDe(propSeleccionada).logo_url && <img src={ligera(carpetaDe(propSeleccionada).logo_url, 48)} alt="" />}
+                          {carpetaDe(propSeleccionada).name}
+                        </span>
+                      )}
+                      <strong>{propSeleccionada.nombre_propiedad || 'Propiedad sin nombre'}</strong>
+                      {propSeleccionada.direccion && <p>{propSeleccionada.direccion}</p>}
+                      <div className="vmp-info-acciones">
+                        <button type="button" className="vmp-btn-primary" onClick={() => irADetalles(propSeleccionada)}>
+                          <Eye size={15} /> Ver detalles
+                        </button>
+                        <a
+                          className="vmp-btn-sec"
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${propSeleccionada.pos.lat},${propSeleccionada.pos.lng}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <Navigation size={15} /> Cómo llegar
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </InfoWindow>
+              )}
             </GoogleMap>
           )}
 
           <div className="vme-legend">
-            {['online', 'recent', 'old'].map(k => (
+            {verEquipo && capas.equipo && ['online', 'recent', 'old'].map(k => (
               <span key={k}><i style={{ background: STATUS[k].color }} /> {STATUS[k].label}</span>
             ))}
-            {selected && routePoints.length > 1 && (
+            {capas.propiedades && puedeVerPropiedades && (
+              <span><Building2 size={12} className="vme-legend-prop" /> Propiedad</span>
+            )}
+            {selected && capas.equipo && routePoints.length > 1 && (
               <>
                 <span><b className="vme-legend-line" /> Recorrido</span>
                 <span><b className="vme-legend-line dashed" /> Sin datos (app cerrada)</span>

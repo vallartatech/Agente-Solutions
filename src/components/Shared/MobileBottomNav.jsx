@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { obtenerEstadoUbicacion, suscribirEstadoUbicacion } from './ubicacionService';
 import {
   Home,
   Users,
@@ -16,7 +15,6 @@ import {
   Navigation,
   ReceiptText,
   LayoutGrid,
-  MapPinned,
   X
 } from 'lucide-react';
 import '../../styles/Shared/MobileBottomNav.css';
@@ -33,15 +31,6 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
   const isRoot = role === 0;
   const isAdminRole1 = role === 1;
 
-  // Ícono del mapa en vivo: solo para usuarios autorizados (el backend también lo valida)
-  const [canViewMap, setCanViewMap] = useState(false);
-  useEffect(() => {
-    if (!isRoot && !isAdminRole1) return;
-    let active = true;
-    obtenerEstadoUbicacion().then(estado => { if (active) setCanViewMap(Boolean(estado?.can_view_map)); });
-    const unsub = suscribirEstadoUbicacion(estado => setCanViewMap(Boolean(estado?.can_view_map)));
-    return () => { active = false; unsub(); };
-  }, [isRoot, isAdminRole1, userId]);
   const isMapaActive = activeModule === 'mapa' || currentPath.includes('/mapa-equipo');
 
   // Panel "Más" de la barra del admin (Comprobantes, mapas, Mercado...): se cierra al navegar
@@ -272,8 +261,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
   if (isAdminRole1 || isRoot) {
     // Mismas opciones que "MÁS ▾" del encabezado en computadora
     const masItemsAdmin = [
-      { key: 'mapa-propiedades', label: 'Mapa de propiedades', Icon: MapPinned, path: '/mapa-propiedades', active: currentPath.includes('/mapa-propiedades') },
-      ...(canViewMap ? [{ key: 'mapa', label: 'Mapa en vivo', Icon: Navigation, path: '/mapa-equipo', active: isMapaActive }] : []),
+      { key: 'mapa', label: 'Mapa en vivo', Icon: Navigation, path: '/mapa-equipo', active: isMapaActive },
       ...(isRoot ? [{ key: 'mercado', label: 'Mercado / Red', Icon: Globe, path: '/red-autonomos', active: isMercadoActive }] : []),
     ];
 

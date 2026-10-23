@@ -563,3 +563,93 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ── MAPA EN VIVO UNIFICADO: pestañas Equipo / Propiedades y capas del mapa ── */
+.vme-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* padding/margin propios: anulan los estilos globales de button de index.css */
+.vme-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: #94a3b8;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vme-tabs button:hover { color: #ffffff; }
+
+.vme-tabs button.active {
+  background: #f97316;
+  color: #ffffff;
+}
+
+.vme-tabs button span {
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.72rem;
+}
+
+.vme-capas {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.88);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.vme-capas button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 12px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: line-through;
+}
+
+.vme-capas button.on {
+  border-color: rgba(249, 115, 22, 0.6);
+  background: rgba(249, 115, 22, 0.16);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.vme-legend-prop { color: #f97316; }
+
+@media (max-width: 900px) {
+  .vme-sidebar .vmp-items {
+    flex: none;
+    overflow: visible;
+  }
+}

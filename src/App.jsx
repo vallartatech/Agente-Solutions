@@ -28,7 +28,6 @@ const esTemporadaHalloween = () => {
   return (mes === 9 && dia >= 15) || (mes === 10 && dia <= 2);
 };
 import VistaMapaEquipo from "./portals/AgenteSolutions/Admin/VistaMapaEquipo";
-import VistaMapaPropiedades from "./portals/AgenteSolutions/Admin/VistaMapaPropiedades";
 import VistaComprobantes from "./portals/AgenteSolutions/Shared/VistaComprobantes";
 import VistaChats from "./portals/AgenteSolutions/Shared/VistaChats";
 import RegistroZonas from "./portals/AgenteSolutions/Tecnico/RegistroZonas";
@@ -297,7 +296,8 @@ const AppRoutes = () => {
 
       <Route path="/notificaciones" element={<VistaNotificaciones />} />
       <Route path="/mapa-equipo" element={<VistaMapaEquipo />} />
-      <Route path="/mapa-propiedades" element={<ProtectedRoute allowedRoles={[0, 1]}><VistaMapaPropiedades /></ProtectedRoute>} />
+      {/* El mapa de propiedades se unió al Mapa en vivo */}
+      <Route path="/mapa-propiedades" element={<Navigate to="/mapa-equipo?capa=propiedades" replace />} />
       <Route path="/comprobantes" element={<ProtectedRoute><VistaComprobantes /></ProtectedRoute>} />
       <Route path="/chats" element={<ProtectedRoute><VistaChats /></ProtectedRoute>} />
       <Route path="/chats/:id" element={<ProtectedRoute><VistaChats /></ProtectedRoute>} />

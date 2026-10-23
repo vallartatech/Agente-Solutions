@@ -898,7 +898,7 @@ const VistaPropiedades = () => {
                   <button
                     type="button"
                     className="tb-actions-btn"
-                    onClick={() => navigate('/mapa-propiedades')}
+                    onClick={() => navigate('/mapa-equipo?capa=propiedades')}
                     title="Mapa de propiedades"
                     aria-label="Ver las propiedades en el mapa"
                   >
