@@ -28,7 +28,9 @@ import {
   Camera,
   Layers,
   ChevronRight,
-  Eye
+  Eye,
+  Folder,
+  ArrowLeft
 } from 'lucide-react';
 
 // Propiedades de demostración con fotografías arquitectónicas si aún no hay registros en la base de datos
@@ -95,6 +97,9 @@ const VistaInicioAdmin = () => {
   const [mostrarModalRegistro, setMostrarModalRegistro] = useState(false);
   const [mostrarModalSolicitud, setMostrarModalSolicitud] = useState(false);
   const [statsVersion, setStatsVersion] = useState(0);
+  // Carpetas (empresas) del catálogo de Propiedades: agrupan el carrusel de inmuebles
+  const [carpetas, setCarpetas] = useState([]);
+  const [carpetaAbiertaId, setCarpetaAbiertaId] = useState(null);
 
   // Cargar propiedades de Agente Solutions
   const fetchPropiedades = useCallback(async (autoSelectId = null) => {
@@ -127,6 +132,25 @@ const VistaInicioAdmin = () => {
   useEffect(() => {
     fetchPropiedades();
   }, [fetchPropiedades]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('agente_token');
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/property-folders`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+      .then(res => setCarpetas(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setCarpetas([]));
+  }, []);
+
+  // Solo se muestran carpetas que tienen inmuebles; los que no tienen carpeta van sueltos
+  const carpetasConInmuebles = useMemo(() => carpetas
+    .map(c => ({ ...c, total: propiedades.filter(p => Number(p.folder_id) === Number(c.id)).length }))
+    .filter(c => c.total > 0), [carpetas, propiedades]);
+  const carpetaAbierta = carpetasConInmuebles.find(c => Number(c.id) === Number(carpetaAbiertaId)) || null;
+  const idsCarpetas = useMemo(() => new Set(carpetasConInmuebles.map(c => Number(c.id))), [carpetasConInmuebles]);
+  const propiedadesVisibles = carpetaAbierta
+    ? propiedades.filter(p => Number(p.folder_id) === Number(carpetaAbierta.id))
+    : propiedades.filter(p => !p.folder_id || !idsCarpetas.has(Number(p.folder_id)));
 
   // Propiedad activa seleccionada
   const activeProperty = useMemo(() => {
@@ -286,11 +310,43 @@ const VistaInicioAdmin = () => {
             {/* Carrusel Horizontal de Miniaturas (Selector de Inmuebles) */}
             <div className="vcp-prop-carousel-block">
               <div className="vcp-prop-category-label">
-                CAMBIAR INMUEBLE ({propiedades.length})
+                {carpetaAbierta
+                  ? `${carpetaAbierta.name} (${carpetaAbierta.total})`
+                  : `CAMBIAR INMUEBLE (${propiedades.length})`}
               </div>
 
               <div className="vcp-thumbs-track">
-                {propiedades.map((prop, idx) => {
+                {carpetaAbierta ? (
+                  <div
+                    className="vcp-thumb-card via-folder via-folder-back"
+                    onClick={() => setCarpetaAbiertaId(null)}
+                    title="Regresar a todas las carpetas"
+                  >
+                    <ArrowLeft size={20} />
+                    <span className="via-folder-name">Volver</span>
+                  </div>
+                ) : carpetasConInmuebles.map(c => {
+                  const tieneActiva = Number(activeProperty?.folder_id) === Number(c.id);
+                  return (
+                    <div
+                      key={`carpeta-${c.id}`}
+                      className={`vcp-thumb-card via-folder ${tieneActiva ? 'active' : ''}`}
+                      style={{ '--folder-color': c.color || '#f26522' }}
+                      onClick={() => setCarpetaAbiertaId(c.id)}
+                      title={`Abrir carpeta: ${c.name} (${c.total})`}
+                    >
+                      {c.logo_url ? (
+                        <img src={c.logo_url} alt="" className="via-folder-logo" draggable={false} />
+                      ) : (
+                        <Folder size={22} />
+                      )}
+                      <span className="via-folder-name">{c.name}</span>
+                      <span className="via-folder-count">{c.total}</span>
+                    </div>
+                  );
+                })}
+
+                {propiedadesVisibles.map((prop, idx) => {
                   const isActive = prop.id === activeProperty?.id;
                   const thumbImg = getPropImage(prop);
                   return (
