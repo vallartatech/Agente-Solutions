@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { obtenerEstadoUbicacion, suscribirEstadoUbicacion } from './ubicacionService';
@@ -13,7 +14,10 @@ import {
   Wrench,
   Globe,
   Navigation,
-  ReceiptText
+  ReceiptText,
+  LayoutGrid,
+  MapPinned,
+  X
 } from 'lucide-react';
 import '../../styles/Shared/MobileBottomNav.css';
 
@@ -39,6 +43,10 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
     return () => { active = false; unsub(); };
   }, [isRoot, isAdminRole1, userId]);
   const isMapaActive = activeModule === 'mapa' || currentPath.includes('/mapa-equipo');
+
+  // Panel "Más" de la barra del admin (Comprobantes, mapas, Mercado...): se cierra al navegar
+  const [masAbierto, setMasAbierto] = useState(false);
+  useEffect(() => { setMasAbierto(false); }, [location.pathname]);
 
   const irAlInicio = () => {
     if (!user) return navigate('/');
@@ -262,7 +270,16 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
   // 2. CASO ADMINISTRADOR (ROL 1) O ROOT (ROL 0):
   // Módulos del header superior de administrador
   if (isAdminRole1 || isRoot) {
+    // Mismas opciones que "MÁS ▾" del encabezado en computadora
+    const masItemsAdmin = [
+      { key: 'comprobantes', label: 'Comprobantes', Icon: ReceiptText, path: '/comprobantes', active: currentPath.includes('/comprobantes') },
+      { key: 'mapa-propiedades', label: 'Mapa de propiedades', Icon: MapPinned, path: '/mapa-propiedades', active: currentPath.includes('/mapa-propiedades') },
+      ...(canViewMap ? [{ key: 'mapa', label: 'Mapa en vivo', Icon: Navigation, path: '/mapa-equipo', active: isMapaActive }] : []),
+      ...(isRoot ? [{ key: 'mercado', label: 'Mercado / Red', Icon: Globe, path: '/red-autonomos', active: isMercadoActive }] : []),
+    ];
+
     return (
+      <>
       <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Administrador">
         <button 
           type="button" 
@@ -334,40 +351,45 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           <Wrench size={22} className="vcp-mobile-nav-icon" />
         </button>
 
+        {/* Lo demás (igual que "MÁS ▾" en computadora): así siempre cabe la barra */}
         <button
           type="button"
-          className={`vcp-mobile-nav-item ${currentPath.includes('/comprobantes') ? 'active' : ''}`}
-          onClick={() => navigate('/comprobantes')}
-          title="Comprobantes"
-          aria-label="Comprobantes"
+          className={`vcp-mobile-nav-item ${masItemsAdmin.some(i => i.active) || masAbierto ? 'active' : ''}`}
+          onClick={() => setMasAbierto(v => !v)}
+          title="Más opciones"
+          aria-label="Más opciones"
+          aria-expanded={masAbierto}
         >
-          <ReceiptText size={22} className="vcp-mobile-nav-icon" />
+          <LayoutGrid size={22} className="vcp-mobile-nav-icon" />
         </button>
-
-        {canViewMap && (
-          <button
-            type="button"
-            className={`vcp-mobile-nav-item ${isMapaActive ? 'active' : ''}`}
-            onClick={() => navigate('/mapa-equipo')}
-            title="Mapa en vivo"
-            aria-label="Mapa en vivo"
-          >
-            <Navigation size={22} className="vcp-mobile-nav-icon" />
-          </button>
-        )}
-
-        {isRoot && (
-          <button
-            type="button"
-            className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`}
-            onClick={() => navigate('/red-autonomos')} 
-            title="Mercado / Red"
-            aria-label="Mercado / Red"
-          >
-            <Globe size={22} className="vcp-mobile-nav-icon" />
-          </button>
-        )}
       </nav>
+      {masAbierto && createPortal(
+        <div className="vcp-mas-overlay" onClick={() => setMasAbierto(false)}>
+          <div className="vcp-mas-sheet" onClick={e => e.stopPropagation()} role="menu" aria-label="Más opciones">
+            <div className="vcp-mas-grabber" />
+            <div className="vcp-mas-head">
+              <strong>Más opciones</strong>
+              <button type="button" className="vcp-mas-cerrar" onClick={() => setMasAbierto(false)} aria-label="Cerrar"><X size={18} /></button>
+            </div>
+            <div className="vcp-mas-grid">
+              {masItemsAdmin.map(({ key, label, Icon, path, active }) => (
+                <button
+                  type="button"
+                  key={key}
+                  role="menuitem"
+                  className={`vcp-mas-item ${active ? 'active' : ''}`}
+                  onClick={() => { setMasAbierto(false); navigate(path); }}
+                >
+                  <span className="vcp-mas-icono"><Icon size={22} /></span>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      </>
     );
   }
 
