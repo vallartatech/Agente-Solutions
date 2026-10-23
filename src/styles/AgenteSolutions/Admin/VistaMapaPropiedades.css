@@ -4,8 +4,10 @@
    ========================================================================== */
 
 .vmp-root {
-  min-height: 100vh;
-  min-height: 100dvh;
+  /* La página mide justo la pantalla: el mapa y la lista se reparten el espacio bajo el encabezado */
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background: #0b1120;
@@ -18,9 +20,10 @@
   min-height: 0;
   display: grid;
   grid-template-columns: 360px 1fr;
+  /* La fila no crece con la lista: la lista hace scroll y el mapa conserva su alto */
+  grid-template-rows: minmax(0, 1fr);
   gap: 16px;
   padding: 16px;
-  height: calc(100dvh - 90px);
   box-sizing: border-box;
 }
 
@@ -39,6 +42,7 @@
   border-radius: 18px;
   background: #0f172a;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
 }
 
 .vmp-lista-head {
@@ -162,10 +166,14 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
+
+.vmp-items::-webkit-scrollbar { display: none; }
 
 .vmp-item {
   display: flex;
@@ -421,12 +429,23 @@
 
 /* ── Celular: mapa arriba, lista abajo ── */
 @media (max-width: 900px) {
+  .vmp-root {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
   .vmp-layout {
     grid-template-columns: 1fr;
     grid-template-rows: 55dvh auto;
     height: auto;
     padding: 10px 10px calc(80px + env(safe-area-inset-bottom));
     gap: 10px;
+  }
+
+  /* En celular la lista también tiene su propio scroll en vez de alargar la página */
+  .vmp-lista {
+    max-height: 70dvh;
   }
 
   .vmp-mapa {

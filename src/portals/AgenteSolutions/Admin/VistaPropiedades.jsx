@@ -556,16 +556,13 @@ const VistaPropiedades = () => {
     navigate(isClient ? `/DetallePropiedad/${p.id}` : `/detalle-propiedad/${p.id}`);
   };
 
+  // Ver levantamiento abre la vista de zonas (Levantamiento de zonas) de esta propiedad
   const irAVerLevantamiento = (p) => {
     localStorage.setItem('current_property_id', p.id);
     window.dispatchEvent(new Event('sync-agente-ids'));
-    if (p.id_levantamiento) {
-      localStorage.setItem('current_levantamiento_id', p.id_levantamiento);
-      navigate(`/detalle-reporte/${p.id_levantamiento}`);
-    } else {
-      // Si no hay servicio pero hay zonas, vamos al reporte usando el ID de propiedad
-      navigate(`/detalle-reporte/prop_${p.id}`);
-    }
+    navigate(`/RegistroZonas/${encodeURIComponent(p.curp)}`, {
+      state: { id: p.id, curp: p.curp, nombre: p.property_name || p.nombre_propiedad || '' }
+    });
   };
 
   const irARegistroZonas = (p) => navigate(`/RegistroZonas/${encodeURIComponent(p.curp)}`);

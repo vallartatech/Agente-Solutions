@@ -403,24 +403,26 @@ const VistaComprobantes = () => {
               {/* 1. Fotos */}
               <section>
                 <span className="vcb-label">1. Foto de la nota o factura</span>
-                <div className="vcb-upload-grid">
-                  {form.archivos.map((a, i) => (
-                    <div key={i} className="vcb-upload-item">
-                      {a.preview ? <img src={a.preview} alt="" /> : <span className="vcb-upload-pdf"><FileText size={22} /> PDF</span>}
-                      <button type="button" className="vcb-upload-remove" onClick={() => quitarArchivo(i)} aria-label="Quitar"><X size={14} /></button>
-                    </div>
-                  ))}
-                  {form.archivos.length < MAX_ARCHIVOS && (
-                    <>
-                      <button type="button" className="vcb-upload-add" onClick={() => camaraRef.current?.click()}>
-                        <Camera size={22} /> Tomar foto
-                      </button>
-                      <button type="button" className="vcb-upload-add" onClick={() => galeriaRef.current?.click()}>
-                        <ImagePlus size={22} /> Galería / PDF
-                      </button>
-                    </>
-                  )}
-                </div>
+                {form.archivos.length < MAX_ARCHIVOS && (
+                  <div className="vcb-upload-actions">
+                    <button type="button" className="vcb-upload-add" onClick={() => camaraRef.current?.click()}>
+                      <Camera size={24} /> Tomar foto
+                    </button>
+                    <button type="button" className="vcb-upload-add" onClick={() => galeriaRef.current?.click()}>
+                      <ImagePlus size={24} /> Galería / PDF
+                    </button>
+                  </div>
+                )}
+                {form.archivos.length > 0 && (
+                  <div className="vcb-upload-grid">
+                    {form.archivos.map((a, i) => (
+                      <div key={i} className="vcb-upload-item">
+                        {a.preview ? <img src={a.preview} alt="" /> : <span className="vcb-upload-pdf"><FileText size={22} /> PDF</span>}
+                        <button type="button" className="vcb-upload-remove" onClick={() => quitarArchivo(i)} aria-label="Quitar"><X size={14} /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <input ref={camaraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { agregarArchivos(e.target.files); e.target.value = ''; }} />
                 <input ref={galeriaRef} type="file" accept="image/*,application/pdf" multiple hidden onChange={(e) => { agregarArchivos(e.target.files); e.target.value = ''; }} />
               </section>

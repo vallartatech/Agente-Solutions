@@ -243,17 +243,17 @@ const VistaChats = () => {
   const [fondo, setFondo] = useState('default');
   const [fondoAbierto, setFondoAbierto] = useState(false);
   const [guardandoFondo, setGuardandoFondo] = useState(false);
-  const fondoRef = useRef(null);
 
   useEffect(() => {
     axios.get(`${API}/chats/preferencias`).then(res => setFondo(res.data?.fondo || 'default')).catch(() => {});
   }, []);
 
-  const guardarFondo = async ({ clave = null, archivo = null }) => {
+  // Solo fondos predefinidos: subir imagen está desactivado por ahora para no llenar el almacenamiento
+  const guardarFondo = async ({ clave }) => {
     setGuardandoFondo(true);
     try {
       const data = new FormData();
-      if (archivo) data.append('imagen', await comprimirImagen(archivo)); else data.append('fondo', clave);
+      data.append('fondo', clave);
       const res = await axios.post(`${API}/chats/fondo`, data);
       setFondo(res.data.fondo || 'default');
       setFondoAbierto(false);
@@ -1091,17 +1091,6 @@ const VistaChats = () => {
                   {fondo === clave && <Check size={16} strokeWidth={3} className="vch-fondo-check" />}
                 </button>
               ))}
-              <button
-                type="button"
-                className={`vch-fondo subir ${fondo?.startsWith('http') ? 'on' : ''}`}
-                style={fondo?.startsWith('http') ? { background: cssFondo(fondo) } : undefined}
-                onClick={() => fondoRef.current?.click()}
-                disabled={guardandoFondo}
-              >
-                {guardandoFondo ? <Loader2 size={20} className="vch-spin" /> : <ImagePlus size={20} />}
-                <span>{fondo?.startsWith('http') ? 'Tu imagen' : 'Subir imagen'}</span>
-              </button>
-              <input ref={fondoRef} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) guardarFondo({ archivo: f }); }} />
             </div>
           </div>
         </div>,

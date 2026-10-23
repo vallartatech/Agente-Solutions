@@ -524,7 +524,8 @@ html, body {
 .profile-three-col-viewport {
   width: 100%;
   display: grid;
-  grid-template-columns: 270px 1.15fr 1.35fr;
+  /* minmax(0, …): la galería de propiedades no puede ensanchar su columna, hace scroll dentro */
+  grid-template-columns: 270px minmax(0, 1.15fr) minmax(0, 1.35fr);
   gap: 20px;
   position: relative;
   z-index: 10;
@@ -932,6 +933,7 @@ html, body {
    COLUMN 3: PROPERTIES SHOWCASE & GALLERY (RIGHT)
    ══════════════════════════════════════════════════════════════════════════ */
 .profile-col-properties {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1085,6 +1087,7 @@ html, body {
   flex-direction: column;
   gap: 6px;
   width: 100%;
+  min-width: 0;
 }
 
 .profile-thumbs-label {

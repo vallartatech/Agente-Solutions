@@ -103,10 +103,13 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-width: none;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
+
+.vch-lista-items::-webkit-scrollbar { display: none; }
 
 .vch-item {
   display: flex;
@@ -340,6 +343,7 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: none;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
@@ -348,6 +352,8 @@
     radial-gradient(circle at 20% 10%, rgba(242, 101, 34, 0.04), transparent 40%),
     #0b1120;
 }
+
+.vch-mensajes::-webkit-scrollbar { display: none; }
 
 .vch-anteriores {
   align-self: center;
@@ -629,7 +635,10 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-width: none;
 }
+
+.vch-personas::-webkit-scrollbar { display: none; }
 
 .vch-persona {
   width: 100%;

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   LayoutGrid, FileText, History, Search, SlidersHorizontal, Plus, MapPin, Tag,
-  Building2, Check, LayoutDashboard, Inbox
+  Building2, Check, LayoutDashboard, Inbox, ClipboardList
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import CasaLoader from '../../../components/Shared/CasaLoader';
@@ -112,6 +112,14 @@ const VistaDetallePropiedad = () => {
   const activos = trabajos.filter(esActivo).length;
   const filtrosActivos = (filtroEstado !== 'todos') + (filtroTipo !== 'todos');
 
+  // Misma vista de zonas que "Ver levantamiento" en el catálogo de propiedades
+  const verLevantamiento = () => {
+    const curp = propiedad.custom_curp || propiedad.curp || '';
+    localStorage.setItem('current_property_id', propiedad.id || id);
+    window.dispatchEvent(new Event('sync-agente-ids'));
+    navigate(`/RegistroZonas/${encodeURIComponent(curp)}`, { state: { id: propiedad.id || id, curp, nombre } });
+  };
+
   return (
     <div className="xp-page">
       {header}
@@ -195,6 +203,10 @@ const VistaDetallePropiedad = () => {
                   </div>
                 )}
               </div>
+
+              <button type="button" className="xp-btn-glass xp-btn-solicitud" onClick={verLevantamiento} title="Ver levantamiento de zonas">
+                <ClipboardList size={18} strokeWidth={2.4} /> <span>Ver levantamiento</span>
+              </button>
 
               <button type="button" className="xp-btn-primary xp-btn-solicitud" onClick={() => setModalSolicitud(true)}>
                 <Plus size={18} strokeWidth={2.8} /> <span>Nueva solicitud</span>

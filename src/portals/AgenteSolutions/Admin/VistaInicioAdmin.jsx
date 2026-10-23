@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AdminHeader from '../../../components/Shared/AdminHeader';
 import ModalRegistroInmueble from '../../../components/Shared/ModalRegistroInmueble';
+import ModalNuevaSolicitud from './Expediente/ModalNuevaSolicitud';
 import { useAuth } from '../../../context/AuthContext';
 import defaultPropImg from '../../../assets/propiedad_ejemplo.jpg';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
@@ -18,9 +19,7 @@ import {
   AlertCircle,
   Clock,
   CheckCircle2,
-  AlertTriangle,
   Plus,
-  Share2,
   Building2,
   Edit3,
   Calendar,
@@ -28,7 +27,8 @@ import {
   Receipt,
   Camera,
   Layers,
-  ChevronRight
+  ChevronRight,
+  Eye
 } from 'lucide-react';
 
 // Propiedades de demostración con fotografías arquitectónicas si aún no hay registros en la base de datos
@@ -92,8 +92,9 @@ const VistaInicioAdmin = () => {
   const [propiedades, setPropiedades] = useState(FALLBACK_PROPERTIES);
   const [selectedPropId, setSelectedPropId] = useState(null);
   const [propertyStats, setPropertyStats] = useState({ sos: 0, pendientes: 0, proceso: 0, listos: 0 });
-  const [copiedToast, setCopiedToast] = useState(false);
   const [mostrarModalRegistro, setMostrarModalRegistro] = useState(false);
+  const [mostrarModalSolicitud, setMostrarModalSolicitud] = useState(false);
+  const [statsVersion, setStatsVersion] = useState(0);
 
   // Cargar propiedades de Agente Solutions
   const fetchPropiedades = useCallback(async (autoSelectId = null) => {
@@ -157,7 +158,7 @@ const VistaInicioAdmin = () => {
       }
     };
     fetchStats();
-  }, [activeProperty?.id]);
+  }, [activeProperty?.id, statsVersion]);
 
   const getPropImage = (prop) => {
     if (!prop) return defaultPropImg;
@@ -221,13 +222,6 @@ const VistaInicioAdmin = () => {
       return;
     }
     window.open(`https://www.google.com/maps`, '_blank');
-  };
-
-  const handleShareProperty = () => {
-    const textToCopy = `Propiedad: ${activeProperty?.nombre_propiedad || 'Inmueble'} | Dirección: ${activeProperty?.address || activeProperty?.direccion || 'Mérida'}`;
-    navigator.clipboard?.writeText(textToCopy);
-    setCopiedToast(true);
-    setTimeout(() => setCopiedToast(false), 2000);
   };
 
   const clientNameDisplay = activeProperty?.propietario
@@ -499,39 +493,13 @@ const VistaInicioAdmin = () => {
 
             {/* Botones de Acción Operativa de la Propiedad */}
             <div className="vcp-actions-grid">
-              {/* SOS */}
-              <button 
-                className="vcp-btn vcp-btn-sos"
-                onClick={() => navigate('/SOSView', { state: { propiedad: activeProperty } })}
-                title="Gestión de Emergencias SOS"
-              >
-                <AlertTriangle size={17} /> SOS
-              </button>
-
-              {/* Asignar Servicio */}
+              {/* Asignar Servicio: solicitud de trabajo o levantamiento para la propiedad activa */}
               <button 
                 className="vcp-btn vcp-btn-service"
-                onClick={() => navigate('/assign-service', { state: { propiedad: activeProperty } })}
-                title="Asignar o Crear Nueva Orden de Servicio"
+                onClick={() => setMostrarModalSolicitud(true)}
+                title="Solicitar trabajo o levantamiento para esta propiedad"
               >
                 <Wrench size={17} /> ASIGNAR SERVICIO
-              </button>
-
-              {/* Compartir Ficha */}
-              <button 
-                className="vcp-btn vcp-btn-share"
-                onClick={handleShareProperty}
-                title="Copiar datos de la propiedad"
-              >
-                {copiedToast ? (
-                  <>
-                    <CheckCircle2 size={17} /> ¡COPIADO!
-                  </>
-                ) : (
-                  <>
-                    <Share2 size={17} /> COMPARTIR
-                  </>
-                )}
               </button>
 
               {/* Ver Levantamiento */}
@@ -541,6 +509,16 @@ const VistaInicioAdmin = () => {
                 title="Ver Levantamientos Técnicos de esta Propiedad"
               >
                 <ClipboardList size={17} /> LEVANTAMIENTO
+              </button>
+
+              {/* Ver Detalle de la Propiedad */}
+              <button 
+                className="vcp-btn vcp-btn-share"
+                style={{ gridColumn: '1 / -1' }}
+                onClick={() => navigate(`/detalle-propiedad/${activeProperty?.id}`)}
+                title="Ver el detalle completo de esta propiedad"
+              >
+                <Eye size={17} /> VER DETALLE DE PROPIEDAD
               </button>
             </div>
           </div>
@@ -557,6 +535,15 @@ const VistaInicioAdmin = () => {
         }}
         user={user}
       />
+
+      {/* MODAL NUEVA SOLICITUD (TRABAJO / LEVANTAMIENTO) DE LA PROPIEDAD ACTIVA */}
+      {mostrarModalSolicitud && activeProperty && (
+        <ModalNuevaSolicitud
+          propiedad={activeProperty}
+          onClose={() => setMostrarModalSolicitud(false)}
+          onCreada={() => setStatsVersion(v => v + 1)}
+        />
+      )}
     </div>
   );
 };
