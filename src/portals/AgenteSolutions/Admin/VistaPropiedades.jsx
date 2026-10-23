@@ -18,7 +18,7 @@ import {
   LayoutDashboard, ChevronLeft, PlusCircle, Plus, Globe, FileText, Home, Wrench, 
   MessageSquare, Camera, UserCheck, ImageIcon, Loader2,
   MoreVertical, Eye, ClipboardCheck, ClipboardList, Pencil, Trash2, Users,
-  Folder, FolderPlus, FolderInput, FolderOpen, ArrowLeft, FolderX, Check
+  Folder, FolderPlus, FolderInput, FolderOpen, ArrowLeft, FolderX, Check, MapPinned
 } from "lucide-react";
 import { mostrarAviso } from '../../../utils/dialogos';
 
@@ -721,6 +721,65 @@ const VistaPropiedades = () => {
     }
   };
 
+  // Logo de la empresa de la carpeta (se ve en el catálogo y en el Mapa de propiedades)
+  const logoInputRef = useRef(null);
+  const carpetaLogoRef = useRef(null);
+  const [subiendoLogo, setSubiendoLogo] = useState(null); // id de la carpeta
+
+  const gestionarLogoCarpeta = async (carpeta) => {
+    carpetaLogoRef.current = carpeta;
+    if (!carpeta.logo_url) {
+      logoInputRef.current?.click();
+      return;
+    }
+    const r = await Swal.fire({
+      title: `Logo de ${carpeta.name}`,
+      imageUrl: carpeta.logo_url,
+      imageHeight: 90,
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: 'Cambiar logo',
+      denyButtonText: 'Quitar logo',
+      cancelButtonText: 'Cerrar',
+      confirmButtonColor: '#F26522',
+      denyButtonColor: '#d33'
+    });
+    if (r.isConfirmed) {
+      logoInputRef.current?.click();
+    } else if (r.isDenied) {
+      try {
+        const token = localStorage.getItem('agente_token');
+        await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/property-folders/${carpeta.id}/logo`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        setCarpetas(prev => prev.map(c => c.id === carpeta.id ? { ...c, logo_url: null } : c));
+      } catch (error) {
+        Swal.fire('Error', 'No se pudo quitar el logo.', 'error');
+      }
+    }
+  };
+
+  const onLogoElegido = async (e) => {
+    const archivo = e.target.files?.[0];
+    e.target.value = '';
+    const carpeta = carpetaLogoRef.current;
+    if (!archivo || !carpeta) return;
+    setSubiendoLogo(carpeta.id);
+    try {
+      const token = localStorage.getItem('agente_token');
+      const fd = new FormData();
+      fd.append('logo', archivo);
+      const { data } = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/property-folders/${carpeta.id}/logo`, fd, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setCarpetas(prev => prev.map(c => c.id === carpeta.id ? { ...c, logo_url: data.logo_url } : c));
+    } catch (error) {
+      Swal.fire('Error', error.response?.data?.error || 'No se pudo subir el logo.', 'error');
+    } finally {
+      setSubiendoLogo(null);
+    }
+  };
+
   const moverPropiedadACarpeta = async (folderId) => {
     if (!propiedadAMover) return;
     setMoviendoPropiedad(true);
@@ -831,6 +890,18 @@ const VistaPropiedades = () => {
                     onBusquedaChange={setBusquedaCatalogo}
                   />
                 </div>
+
+                {puedeOrganizar && (
+                  <button
+                    type="button"
+                    className="tb-actions-btn"
+                    onClick={() => navigate('/mapa-propiedades')}
+                    title="Mapa de propiedades"
+                    aria-label="Ver las propiedades en el mapa"
+                  >
+                    <MapPinned size={20} />
+                  </button>
+                )}
 
                 {puedeOrganizar && (
                   <button
@@ -963,11 +1034,22 @@ const VistaPropiedades = () => {
             </button>
             <span className="folder-breadcrumb-sep">/</span>
             <span className="folder-breadcrumb-name">
-              <FolderOpen size={18} strokeWidth={2.4} /> {carpetaActual.name}
+              {carpetaActual.logo_url
+                ? <img src={carpetaActual.logo_url} alt="" className="folder-logo-mini" />
+                : <FolderOpen size={18} strokeWidth={2.4} />} {carpetaActual.name}
             </span>
             <span className="vu-count-pill">{propiedadesVisibles.length}</span>
             <button type="button" className="folder-breadcrumb-icon" title="Renombrar carpeta" onClick={() => renombrarCarpeta(carpetaActual)}>
               <Pencil size={16} />
+            </button>
+            <button
+              type="button"
+              className="folder-breadcrumb-icon"
+              title={carpetaActual.logo_url ? 'Cambiar o quitar logo' : 'Agregar logo de la empresa'}
+              onClick={() => gestionarLogoCarpeta(carpetaActual)}
+              disabled={subiendoLogo === carpetaActual.id}
+            >
+              {subiendoLogo === carpetaActual.id ? <Loader2 size={16} className="spin" /> : <ImageIcon size={16} />}
             </button>
           </div>
         )}
@@ -995,7 +1077,9 @@ const VistaPropiedades = () => {
                   )}
                 </div>
                 <div className="folder-card-bar">
-                  <Folder size={18} strokeWidth={2.6} />
+                  {c.logo_url
+                    ? <img src={c.logo_url} alt="" className="folder-logo-mini" />
+                    : <Folder size={18} strokeWidth={2.6} />}
                   <h3>{c.name}</h3>
                   <span className="folder-card-count">{props.length}</span>
                 </div>
@@ -1796,6 +1880,9 @@ const VistaPropiedades = () => {
         user={user}
       />
 
+      {/* Archivo del logo de carpeta (se abre desde la carpeta o desde "Carpetas") */}
+      <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden onChange={onLogoElegido} />
+
       {/* MODAL: ADMINISTRAR CARPETAS */}
       {mostrarModalCarpetas && createPortal(
         <div className="folder-modal-overlay" onClick={() => setMostrarModalCarpetas(false)}>
@@ -1844,12 +1931,23 @@ const VistaPropiedades = () => {
                     className="folder-list-open"
                     onClick={() => { setCarpetaAbierta(c.id); setMostrarModalCarpetas(false); }}
                   >
-                    <Folder size={20} color={c.color || '#F26522'} fill={c.color || '#F26522'} fillOpacity={0.2} />
+                    {c.logo_url
+                      ? <img src={c.logo_url} alt="" className="folder-logo-mini" />
+                      : <Folder size={20} color={c.color || '#F26522'} fill={c.color || '#F26522'} fillOpacity={0.2} />}
                     <span className="folder-list-name">{c.name}</span>
                     <span className="folder-list-count">{totalEnCarpeta(c.id)}</span>
                   </button>
                   <button type="button" className="folder-list-icon" title="Renombrar" onClick={() => renombrarCarpeta(c)}>
                     <Pencil size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="folder-list-icon"
+                    title={c.logo_url ? 'Cambiar o quitar logo' : 'Agregar logo de la empresa'}
+                    onClick={() => { setMostrarModalCarpetas(false); gestionarLogoCarpeta(c); }}
+                    disabled={subiendoLogo === c.id}
+                  >
+                    {subiendoLogo === c.id ? <Loader2 size={16} className="spin" /> : <ImageIcon size={16} />}
                   </button>
                   <button type="button" className="folder-list-icon danger" title="Eliminar" onClick={() => eliminarCarpeta(c)}>
                     <Trash2 size={16} />

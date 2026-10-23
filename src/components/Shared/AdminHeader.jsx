@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarDays, Shield, User, LogOut, Navigation, ReceiptText, Globe, ChevronDown, ArrowLeft } from 'lucide-react';
+import { CalendarDays, Shield, User, LogOut, Navigation, ReceiptText, Globe, ChevronDown, ArrowLeft, MapPinned } from 'lucide-react';
 import defaultLogo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
 import BotonChats from './BotonChats';
@@ -125,9 +125,11 @@ const AdminHeader = ({ activeModule, titulo, rolTexto, navTabs, navBack }) => {
   const isMercadoActive = activeModule === 'mercado' || currentPath.includes('/red-autonomos');
   const isMapaActive = activeModule === 'mapa' || currentPath.includes('/mapa-equipo');
   const isComprobantesActive = activeModule === 'comprobantes' || currentPath.includes('/comprobantes');
+  const isMapaPropiedadesActive = activeModule === 'mapa-propiedades' || currentPath.includes('/mapa-propiedades');
 
   const masItems = [
     { key: 'comprobantes', label: 'Comprobantes', Icon: ReceiptText, path: '/comprobantes', active: isComprobantesActive },
+    { key: 'mapa-propiedades', label: 'Mapa de propiedades', Icon: MapPinned, path: '/mapa-propiedades', active: isMapaPropiedadesActive },
     ...(canViewMap ? [{ key: 'mapa', label: 'Mapa en vivo', Icon: Navigation, path: '/mapa-equipo', active: isMapaActive }] : []),
     ...(isRoot ? [{ key: 'mercado', label: 'Mercado / Red', Icon: Globe, path: '/red-autonomos', active: isMercadoActive }] : [])
   ];

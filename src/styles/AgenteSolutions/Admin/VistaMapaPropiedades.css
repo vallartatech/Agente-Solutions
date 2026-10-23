@@ -1,0 +1,439 @@
+/* ==========================================================================
+   MAPA DE PROPIEDADES (.vmp-*)
+   Lista con filtros por empresa (carpeta) + mapa con el logo de cada empresa.
+   ========================================================================== */
+
+.vmp-root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #0b1120;
+  color: #e2e8f0;
+  font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+}
+
+.vmp-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 16px;
+  padding: 16px;
+  height: calc(100dvh - 90px);
+  box-sizing: border-box;
+}
+
+/* index.css pone padding a todo <button>: aquí cada botón define el suyo */
+.vmp-root button {
+  font-family: inherit;
+}
+
+/* ── Lista ── */
+.vmp-lista {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vmp-lista-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vmp-lista-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.vmp-lista-head h1 svg {
+  color: #f26522;
+}
+
+.vmp-lista-head p {
+  margin: 4px 0 0;
+  color: #94a3b8;
+  font-size: 0.82rem;
+}
+
+.vmp-icon-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.vmp-buscar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #64748b;
+}
+
+.vmp-buscar input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #e2e8f0;
+  font: inherit;
+  font-size: 16px;
+}
+
+.vmp-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 110px;
+  overflow-y: auto;
+}
+
+.vmp-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vmp-filtro img {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  object-fit: contain;
+  background: #ffffff;
+}
+
+.vmp-filtro > span {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.vmp-filtro-punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c, #f26522);
+}
+
+.vmp-filtro.on {
+  border-color: #f26522;
+  background: rgba(242, 101, 34, 0.16);
+  color: #ffffff;
+}
+
+.vmp-items {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vmp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vmp-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.vmp-item.activo {
+  background: rgba(242, 101, 34, 0.12);
+}
+
+.vmp-item.sin-pos {
+  opacity: 0.6;
+}
+
+.vmp-item-img {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 2px solid #334155;
+  background: #ffffff;
+  color: #64748b;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.vmp-item-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.vmp-item-img img.foto {
+  object-fit: cover;
+}
+
+.vmp-item-cuerpo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.vmp-item-cuerpo strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #f1f5f9;
+  font-size: 0.92rem;
+}
+
+.vmp-item-cuerpo small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #94a3b8;
+  font-size: 0.76rem;
+}
+
+.vmp-item-dir {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #64748b !important;
+}
+
+.vmp-vacio {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 30px 10px;
+  color: #64748b;
+  text-align: center;
+}
+
+/* ── Mapa ── */
+.vmp-mapa {
+  min-height: 0;
+  display: flex;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0f172a;
+}
+
+.vmp-mapa-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Marcador: logo de la empresa en un círculo blanco con el borde del color de la carpeta */
+.vmp-marcador {
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 50% !important;
+  border: 3px solid #f26522;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+}
+
+.vmp-marcador.con-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 3px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.vmp-marcador.seleccionado {
+  width: 54px;
+  height: 54px;
+  border-width: 4px;
+  box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.35), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Tarjeta al tocar una propiedad */
+.vmp-info {
+  position: relative;
+  width: 250px;
+  color: #0f172a;
+  font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+}
+
+.vmp-info-cerrar {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.65);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.vmp-info-foto {
+  display: block;
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.vmp-info-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 2px 2px;
+}
+
+.vmp-info-empresa {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px 3px 4px;
+  border-radius: 999px;
+  border: 1.5px solid var(--c, #f26522);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.vmp-info-empresa img {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+.vmp-info-cuerpo strong {
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.vmp-info-cuerpo p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.vmp-info-acciones {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.vmp-btn-primary,
+.vmp-btn-sec {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.vmp-btn-primary {
+  border: none;
+  background: linear-gradient(135deg, #ff8c42 0%, #f26522 100%);
+  color: #ffffff;
+}
+
+.vmp-btn-sec {
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.vmp-girar {
+  animation: vmpGirar 0.9s linear infinite;
+}
+
+@keyframes vmpGirar { to { transform: rotate(360deg); } }
+
+/* ── Celular: mapa arriba, lista abajo ── */
+@media (max-width: 900px) {
+  .vmp-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 55dvh auto;
+    height: auto;
+    padding: 10px 10px calc(80px + env(safe-area-inset-bottom));
+    gap: 10px;
+  }
+
+  .vmp-mapa {
+    order: -1;
+  }
+
+  .vmp-lista {
+    min-height: 50dvh;
+  }
+}
