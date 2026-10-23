@@ -16,6 +16,8 @@ import VistaNotificaciones from "./components/Shared/VistaNotificaciones";
 import UpdateModal from "./components/Shared/UpdateModal";
 import InstallPrompt from "./components/Shared/InstallPrompt";
 import LocationSharing from "./components/Shared/LocationSharing";
+import IndicadorSubida from "./components/Shared/IndicadorSubida";
+import { instalarProgresoSubida } from "./components/Shared/progresoSubida";
 
 // Decoración de temporada: el código del fantasma solo se descarga del 15 oct al 2 nov
 const HalloweenGhost = lazy(() => import("./components/Shared/HalloweenGhost"));
@@ -103,6 +105,8 @@ import VistaCotizacionPrint from "./portals/AgenteSolutions/Admin/VistaCotizacio
 
 
 axios.defaults.headers.common["Accept"] = "application/json";
+// "Subiendo… 45%" en cualquier pantalla que suba fotos, videos o archivos
+instalarProgresoSubida();
 
 const PropiedadesWrapper = () => {
   const { user } = useAuth();
@@ -287,6 +291,7 @@ function App() {
         <UpdateModal />
         <InstallPrompt />
         <LocationSharing />
+        <IndicadorSubida />
         {esTemporadaHalloween() && (
           <Suspense fallback={null}>
             <HalloweenGhost />

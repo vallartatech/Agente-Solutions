@@ -1,0 +1,155 @@
+/* ==========================================================================
+   INDICADOR GLOBAL DE SUBIDA (.isub-*)
+   Tarjeta flotante abajo al centro, encima de todo (modales y barra inferior incluidos).
+   ========================================================================== */
+
+.isub {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 2147483000;
+  transform: translateX(-50%);
+  width: min(360px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  color: #e2e8f0;
+  font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+  box-sizing: border-box;
+  animation: isubEntrar 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none; /* no bloquea la pantalla */
+}
+
+@keyframes isubEntrar {
+  from { opacity: 0; transform: translate(-50%, 16px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Nube con flecha que sube */
+.isub-nube {
+  position: relative;
+  flex-shrink: 0;
+  width: 46px;
+  height: 36px;
+}
+
+.isub-nube-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.isub-nube-forma {
+  fill: rgba(242, 101, 34, 0.18);
+  stroke: #fb923c;
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.isub-flecha {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -30%);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 900;
+  animation: isubFlecha 1s ease-in-out infinite;
+}
+
+@keyframes isubFlecha {
+  0% { opacity: 0; transform: translate(-50%, 10%); }
+  40% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -90%); }
+}
+
+/* Fase "Guardando en la nube": la nube late */
+.isub.procesando .isub-nube-svg {
+  animation: isubLatido 1.2s ease-in-out infinite;
+}
+
+@keyframes isubLatido {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.isub-cuerpo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.isub-titulo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.isub-titulo strong {
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.isub-titulo small {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.isub-barra {
+  position: relative;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.isub-barra-relleno {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff8c42 0%, #f26522 100%);
+  transition: width 0.25s ease;
+}
+
+/* Guardando en la nube: brillo que recorre la barra (avance indeterminado) */
+.isub.procesando .isub-barra-relleno {
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.55) 50%, transparent 100%) 0 0 / 40% 100% no-repeat,
+    linear-gradient(90deg, #ff8c42 0%, #f26522 100%);
+  animation: isubBrillo 1.1s linear infinite;
+}
+
+@keyframes isubBrillo {
+  from { background-position: -40% 0, 0 0; }
+  to { background-position: 140% 0, 0 0; }
+}
+
+/* En celular, por encima de la barra de navegación inferior */
+@media (max-width: 900px) {
+  .isub {
+    bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .isub,
+  .isub-flecha,
+  .isub.procesando .isub-nube-svg,
+  .isub.procesando .isub-barra-relleno {
+    animation: none;
+  }
+}
