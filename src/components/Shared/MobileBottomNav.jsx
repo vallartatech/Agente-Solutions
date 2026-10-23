@@ -272,7 +272,6 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
   if (isAdminRole1 || isRoot) {
     // Mismas opciones que "MÁS ▾" del encabezado en computadora
     const masItemsAdmin = [
-      { key: 'comprobantes', label: 'Comprobantes', Icon: ReceiptText, path: '/comprobantes', active: currentPath.includes('/comprobantes') },
       { key: 'mapa-propiedades', label: 'Mapa de propiedades', Icon: MapPinned, path: '/mapa-propiedades', active: currentPath.includes('/mapa-propiedades') },
       ...(canViewMap ? [{ key: 'mapa', label: 'Mapa en vivo', Icon: Navigation, path: '/mapa-equipo', active: isMapaActive }] : []),
       ...(isRoot ? [{ key: 'mercado', label: 'Mercado / Red', Icon: Globe, path: '/red-autonomos', active: isMercadoActive }] : []),
@@ -301,42 +300,24 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           <Users size={22} className="vcp-mobile-nav-icon" />
         </button>
 
+        {/* Propiedades y Levantamientos en un solo botón (dentro se cambia con el selector) */}
         <button 
           type="button" 
-          className={`vcp-mobile-nav-item ${isPropiedadesActive ? 'active' : ''}`} 
+          className={`vcp-mobile-nav-item ${isPropiedadesActive || isLevantamientosActive ? 'active' : ''}`} 
           onClick={() => navigate('/propiedades')} 
-          title="Propiedades"
-          aria-label="Propiedades"
+          title="Propiedades y levantamientos"
+          aria-label="Propiedades y levantamientos"
         >
           <Building2 size={22} className="vcp-mobile-nav-icon" />
         </button>
 
+        {/* Cotizaciones y Reportes en un solo botón (dentro se cambia con el selector) */}
         <button 
           type="button" 
-          className={`vcp-mobile-nav-item ${isLevantamientosActive ? 'active' : ''}`} 
-          onClick={() => navigate('/levantamientos')} 
-          title="Levantamientos"
-          aria-label="Levantamientos"
-        >
-          <ClipboardList size={22} className="vcp-mobile-nav-icon" />
-        </button>
-
-        <button 
-          type="button" 
-          className={`vcp-mobile-nav-item ${isReportesActive ? 'active' : ''}`} 
-          onClick={() => navigate('/reportes-globales')} 
-          title="Reportes"
-          aria-label="Reportes"
-        >
-          <FileText size={22} className="vcp-mobile-nav-icon" />
-        </button>
-
-        <button 
-          type="button" 
-          className={`vcp-mobile-nav-item ${isCotizacionesActive ? 'active' : ''}`} 
+          className={`vcp-mobile-nav-item ${isCotizacionesActive || isReportesActive ? 'active' : ''}`} 
           onClick={() => navigate('/vista-cotizaciones')} 
-          title="Cotizaciones"
-          aria-label="Cotizaciones"
+          title="Cotización y reporte"
+          aria-label="Cotización y reporte"
         >
           <Receipt size={22} className="vcp-mobile-nav-icon" />
         </button>

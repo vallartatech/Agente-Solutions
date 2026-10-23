@@ -1,0 +1,64 @@
+/* ==========================================================================
+   SELECTOR DE VISTAS HERMANAS (.src-*): Cotizaciones|Reportes, Propiedades|Levantamientos — vidrio blanco, pestaña activa naranja plana
+   ========================================================================== */
+
+.src-selector {
+  display: inline-flex;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.40) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
+  font-family: 'Outfit', sans-serif;
+  box-sizing: border-box;
+}
+
+.src-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #334155;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.src-tab svg { color: #f26522; flex-shrink: 0; }
+
+.src-tab:hover:not(.on) { background: rgba(255, 255, 255, 0.6); }
+
+.src-tab.on {
+  background: #f26522;
+  color: #ffffff;
+  cursor: default;
+}
+
+.src-tab.on svg { color: #ffffff; }
+
+.src-count {
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #f26522;
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .src-selector { display: flex; width: 100%; }
+  .src-tab { flex: 1; justify-content: center; padding: 8px 10px; font-size: 0.74rem; }
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { 
   X, Plus, Trash2, Calculator, 
@@ -410,8 +411,9 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
     }
   };
 
-  return (
-<div className="modal-fixed-overlay cqm-overlay" style={{ zIndex: 20000 }}>
+  // En portal y por encima del encabezado (z-index 999999) para que no tape la parte de arriba
+  return createPortal(
+<div className="modal-fixed-overlay cqm-overlay" style={{ zIndex: 1000000 }}>
 <div className="modal-box-card cqm-card">
         
 <div className="modal-header-dark cqm-header">
@@ -529,7 +531,7 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
               {servicioSeleccionado && (
                 <button
                   type="button"
-                  className="cqm-btn primary block"
+                  className="cqm-btn primary block cqm-continuar"
                   onClick={() => setStep(2)}
                 >
                   CONTINUAR A DETALLES
@@ -833,7 +835,8 @@ className="cqm-input cqm-textarea internal"
 
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

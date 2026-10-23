@@ -5,6 +5,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import UniversalSearch from "../../../components/Shared/UniversalSearch"; 
 import Header from "../../../components/Shared/Header"; 
+import SelectorVistas from "../../../components/Shared/SelectorVistas";
 import ModalCompraEspacios from "../../../components/Shared/ModalCompraEspacios";
 import ModalRegistroInmueble from "../../../components/Shared/ModalRegistroInmueble";
 import CasaLoader from "../../../components/Shared/CasaLoader";
@@ -816,11 +817,16 @@ const VistaPropiedades = () => {
       <main className="vu-main-container">
         {!isClient && (
           <div className="vu-action-bar">
-            <div className="vu-page-title-badge">
-              <span style={{ fontSize: '1.05rem' }}>🏠</span>
-              <span>CATÁLOGO DE PROPIEDADES</span>
-              <span className="vu-count-pill">{listaPropiedades.length}</span>
-            </div>
+            {/* Root y admin: Propiedades comparte botón con Levantamientos */}
+            {isRoot || isAgenteAdmin ? (
+              <SelectorVistas grupo="propiedades" activo="propiedades" conteo={listaPropiedades.length} />
+            ) : (
+              <div className="vu-page-title-badge">
+                <span style={{ fontSize: '1.05rem' }}>🏠</span>
+                <span>CATÁLOGO DE PROPIEDADES</span>
+                <span className="vu-count-pill">{listaPropiedades.length}</span>
+              </div>
+            )}
           </div>
         )}
 

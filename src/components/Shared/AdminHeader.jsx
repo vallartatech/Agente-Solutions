@@ -117,18 +117,19 @@ const AdminHeader = ({ activeModule, titulo, rolTexto, navTabs, navBack }) => {
 
   const isInicioActive = activeModule === 'inicio' || currentPath === '/vistaroot' || currentPath === '/vistaadmin';
   const isUsuariosActive = activeModule === 'usuarios' || currentPath.includes('/usuarios');
-  const isPropiedadesActive = activeModule === 'propiedades' || currentPath.includes('/propiedades');
-  const isLevantamientosActive = activeModule === 'levantamientos' || currentPath.includes('/levantamientos');
-  const isReportesActive = activeModule === 'reportes' || currentPath.includes('/reporte');
-  const isCotizacionesActive = activeModule === 'cotizaciones' || currentPath.includes('/cotizacion');
+  // Propiedades y Levantamientos comparten un botón; dentro se cambia con el selector de la vista
+  // (el mapa de propiedades va en "Más", no cuenta aquí)
+  const isPropLevActive = activeModule === 'propiedades' || activeModule === 'levantamientos'
+    || ((currentPath.includes('/propiedades') || currentPath.includes('/levantamientos')) && !currentPath.includes('/mapa-propiedades'));
+  // Reportes y Cotizaciones comparten un botón; dentro se cambia con el selector de la vista
+  const isReporteCotizacionActive = activeModule === 'reportes' || activeModule === 'cotizaciones'
+    || currentPath.includes('/reporte') || currentPath.includes('/cotizacion');
   const isServiciosActive = activeModule === 'servicios' || currentPath.includes('/tablero-servicios') || currentPath.includes('/servicios');
   const isMercadoActive = activeModule === 'mercado' || currentPath.includes('/red-autonomos');
   const isMapaActive = activeModule === 'mapa' || currentPath.includes('/mapa-equipo');
-  const isComprobantesActive = activeModule === 'comprobantes' || currentPath.includes('/comprobantes');
   const isMapaPropiedadesActive = activeModule === 'mapa-propiedades' || currentPath.includes('/mapa-propiedades');
 
   const masItems = [
-    { key: 'comprobantes', label: 'Comprobantes', Icon: ReceiptText, path: '/comprobantes', active: isComprobantesActive },
     { key: 'mapa-propiedades', label: 'Mapa de propiedades', Icon: MapPinned, path: '/mapa-propiedades', active: isMapaPropiedadesActive },
     ...(canViewMap ? [{ key: 'mapa', label: 'Mapa en vivo', Icon: Navigation, path: '/mapa-equipo', active: isMapaActive }] : []),
     ...(isRoot ? [{ key: 'mercado', label: 'Mercado / Red', Icon: Globe, path: '/red-autonomos', active: isMercadoActive }] : [])
@@ -194,34 +195,18 @@ const AdminHeader = ({ activeModule, titulo, rolTexto, navTabs, navBack }) => {
 
           <button
             type="button"
-            className={`vcp-nav-btn ${isPropiedadesActive ? 'active' : ''}`}
+            className={`vcp-nav-btn ${isPropLevActive ? 'active' : ''}`}
             onClick={() => navigate('/propiedades')}
           >
-            PROPIEDADES
+            PROPIEDADES Y LEVANTAMIENTOS
           </button>
 
           <button
             type="button"
-            className={`vcp-nav-btn ${isLevantamientosActive ? 'active' : ''}`}
-            onClick={() => navigate('/levantamientos')}
-          >
-            LEVANTAMIENTOS
-          </button>
-
-          <button
-            type="button"
-            className={`vcp-nav-btn ${isReportesActive ? 'active' : ''}`}
-            onClick={() => navigate('/reportes-globales')}
-          >
-            REPORTE
-          </button>
-
-          <button
-            type="button"
-            className={`vcp-nav-btn ${isCotizacionesActive ? 'active' : ''}`}
+            className={`vcp-nav-btn ${isReporteCotizacionActive ? 'active' : ''}`}
             onClick={() => navigate('/vista-cotizaciones')}
           >
-            COTIZACION
+            COTIZACIÓN Y REPORTE
           </button>
 
           <button

@@ -6,6 +6,7 @@ import "../../../styles/AgenteSolutions/Admin/VistaCotizaciones.css";
 import "../../../styles/AgenteSolutions/Tecnico/MercadoTrabajos.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 import Header from "../../../components/Shared/Header";
+import SelectorVistas from "../../../components/Shared/SelectorVistas";
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import AssignWorkModal from "../../../components/Modals/AssignWorkModal";
 import { 
@@ -142,6 +143,14 @@ const VistaCotizaciones = () => {
   const [filtroOrigen, setFiltroOrigen] = useState('todos'); // 'todos' | 'admin' | 'tecnicos' | 'proveedores'
   const [cotizacionesFiltradas, setCotizacionesFiltradas] = useState([]);
   const [esTecnico, setEsTecnico] = useState(false);
+  // Root y admin: Cotizaciones comparte botón con Reportes (selector arriba de la lista)
+  const [esAdminPanel] = useState(() => {
+    try {
+      return [0, 1].includes(Number(JSON.parse(localStorage.getItem('agente_session') || '{}')?.userData?.role_id));
+    } catch {
+      return false;
+    }
+  });
 
   const [propiedadCotizKey, setPropiedadCotizKey] = useState(null);
 
@@ -956,11 +965,15 @@ const VistaCotizaciones = () => {
         
         {/* ── BARRA DE TÍTULO ── */}
         <div className="cotiz-action-bar">
-          <div className="cotiz-page-title-badge">
-            <FileText size={18} className="cotiz-title-icon" />
-            <span>COTIZACIONES</span>
-            <span className="cotiz-count-pill">{cotizaciones.length}</span>
-          </div>
+          {esAdminPanel ? (
+            <SelectorVistas grupo="cotizaciones" activo="cotizaciones" conteo={cotizaciones.length} />
+          ) : (
+            <div className="cotiz-page-title-badge">
+              <FileText size={18} className="cotiz-title-icon" />
+              <span>COTIZACIONES</span>
+              <span className="cotiz-count-pill">{cotizaciones.length}</span>
+            </div>
+          )}
         </div>
 
         {/* ── BARRA UNIFICADA: BUSCADOR + FILTROS + NUEVA COTIZACIÓN ── */}

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Shared/Header';
+import SelectorVistas from '../../../components/Shared/SelectorVistas';
 import CasaLoader from '../../../components/Shared/CasaLoader';
 import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import { useAuth } from '../../../context/AuthContext';
@@ -55,6 +56,8 @@ const resolverFotoPropiedad = (prop) => {
 const VistaReportesGlobal = () => {
   const { user } = useAuth();
   const isTech = Boolean(user?.role_id === 6 || user?.role_id === 8 || user?.role_id === 2);
+  // Root y admin: Reportes comparte botón con Cotizaciones
+  const esAdminPanel = [0, 1].includes(Number(user?.role_id));
   const navigate = useNavigate();
 
   const [reportes, setReportes] = useState([]);
@@ -370,11 +373,15 @@ const VistaReportesGlobal = () => {
       <main className="rg-main-container">
         {/* TÍTULO */}
         <div className="rg-action-bar">
-          <div className="rg-page-title-badge">
-            <FileText size={18} className="rg-title-icon" />
-            <span>{pageHeading}</span>
-            <span className="rg-count-pill">{propiedadesConReportes.length}</span>
-          </div>
+          {esAdminPanel ? (
+            <SelectorVistas grupo="cotizaciones" activo="reportes" conteo={propiedadesConReportes.length} />
+          ) : (
+            <div className="rg-page-title-badge">
+              <FileText size={18} className="rg-title-icon" />
+              <span>{pageHeading}</span>
+              <span className="rg-count-pill">{propiedadesConReportes.length}</span>
+            </div>
+          )}
         </div>
 
         {/* BUSCADOR (mismo estilo que Usuarios) */}

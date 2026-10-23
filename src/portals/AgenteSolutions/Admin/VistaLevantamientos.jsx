@@ -28,6 +28,7 @@ import UniversalSearch from "../../../components/Shared/UniversalSearch";
 import ModalCalendarioCliente from "../../AgenteMarket/Cliente/ModalCalendarioCliente";
 import NotificationBell from "../../../components/Shared/NotificationBell";
 import Header from "../../../components/Shared/Header";
+import SelectorVistas from "../../../components/Shared/SelectorVistas";
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import "../../../styles/AgenteSolutions/Admin/VistaLevantamientos.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
@@ -38,6 +39,8 @@ const VistaLevantamientos = () => {
   const location = useLocation();
   const { user, logout, logoutGlobal } = useAuth();
   const isClient = user?.role_id === 3;
+  // Root y admin: Levantamientos comparte botón con Propiedades
+  const esAdminPanel = [0, 1].includes(Number(user?.role_id));
 
   const [tabActual, setTabActual] = useState("PENDIENTES");
   const [serviciosFiltrados, setServiciosFiltrados] = useState([]);
@@ -357,11 +360,15 @@ const VistaLevantamientos = () => {
         
         {/* Top Action Bar */}
         <div className="lev-action-bar">
-          <div className="lev-page-title-badge">
-            <ClipboardList size={18} className="lev-title-icon" />
-            <span>DIRECTORIO DE LEVANTAMIENTOS</span>
-            <span className="lev-count-pill">{servicios.length}</span>
-          </div>
+          {esAdminPanel ? (
+            <SelectorVistas grupo="propiedades" activo="levantamientos" conteo={servicios.length} />
+          ) : (
+            <div className="lev-page-title-badge">
+              <ClipboardList size={18} className="lev-title-icon" />
+              <span>DIRECTORIO DE LEVANTAMIENTOS</span>
+              <span className="lev-count-pill">{servicios.length}</span>
+            </div>
+          )}
         </div>
 
         {/* ── BARRA UNIFICADA: BUSCADOR + BOTÓN ÚNICO (FILTROS Y SOLICITUD) ── */}

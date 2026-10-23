@@ -90,9 +90,10 @@
     flex: 1;
     overflow-y: auto;
     padding: 22px !important;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(242, 101, 34, 0.45) transparent;
+    scrollbar-width: none;
 }
+
+.cqm-overlay .cqm-body::-webkit-scrollbar { display: none; }
 
 .cqm-step-title {
     margin: 0 0 16px;
@@ -135,12 +136,19 @@
     box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.18);
 }
 
-/* Lista de servicios */
+/* Lista de servicios: sin scroll propio, solo hace scroll el cuerpo del modal */
 .cqm-results {
     margin-top: 16px;
-    max-height: 420px;
-    overflow-y: auto;
-    padding: 2px 4px 2px 0;
+    padding: 2px;
+}
+
+/* "Continuar a detalles" queda fijo abajo mientras se recorre la lista */
+.cqm-btn.block.cqm-continuar {
+    position: sticky;
+    bottom: 0;
+    margin-top: 6px;
+    z-index: 2;
+    box-shadow: 0 -10px 24px rgba(255, 255, 255, 0.9), 0 6px 16px rgba(242, 101, 34, 0.25);
 }
 
 .cqm-empty {
