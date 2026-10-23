@@ -4,6 +4,12 @@
    con el mismo vidrio blanco "liquid glass".
    ========================================================================== */
 
+/* index.css pone padding a todo <button>: en los botones redondos ocultaba el ícono */
+.sum-close,
+.sum-locate {
+  padding: 0;
+}
+
 .sum-overlay {
   position: fixed;
   inset: 0;

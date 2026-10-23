@@ -3,6 +3,13 @@
    Página oscura como el resto de la app; hoja de subida en vidrio blanco.
    ========================================================================== */
 
+/* index.css pone padding a todo <button>: en los botones redondos ocultaba el ícono */
+.vcb-close,
+.vcb-upload-remove,
+.vcb-viewer-close {
+  padding: 0;
+}
+
 .vcb-root {
   min-height: 100vh;
   min-height: 100dvh;
