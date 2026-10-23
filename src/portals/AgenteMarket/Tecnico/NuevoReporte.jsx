@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import "../../../styles/AgenteSolutions/Tecnico/ReporteIndividual.css";
+import "../../../styles/AgenteMarket/Tecnico/ReporteIndividual.css";
 import { Camera, ChevronLeft, Loader2, Image as ImageIcon } from 'lucide-react';
 import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
 import Swal from 'sweetalert2';

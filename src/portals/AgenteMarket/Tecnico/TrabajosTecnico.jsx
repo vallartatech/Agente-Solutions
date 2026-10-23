@@ -4,9 +4,11 @@ import { useAuth } from "../../../context/AuthContext";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import "../../../styles/AgenteMarket/Tecnico/TrabajosTecnico.css";
+import "../../../styles/Shared/ToolbarAcciones.css";
+import "../../../styles/AgenteMarket/Tecnico/TrabajosTecnicoGlass.css";
 import { 
   Search, Package, Wrench, CheckCircle2, Lock, Settings, 
-  Calendar, Clock, MapPin, AlertTriangle, ChevronRight, X, ChevronLeft
+  Calendar, Clock, MapPin, AlertTriangle, ChevronRight, X, LayoutGrid
 } from 'lucide-react';
 import Header from "../../../components/Shared/Header";
 import UniversalSearch from '../../../components/Shared/UniversalSearch';
@@ -403,6 +405,14 @@ const TrabajosTecnico = () => {
         
         <div className="tt-col tt-col-main">
           <h4 className="tt-property-title">{item.property_name || "Sin Nombre"}</h4>
+          {item.es_levantamiento && (
+            <span className={`tt-survey-tag ${item.tiene_levantamiento ? 'is-started' : 'is-pending'}`}>
+              <LayoutGrid size={12} />
+              {item.tiene_levantamiento
+                ? `Levantamiento${item.zonas_registradas ? ` · ${item.zonas_registradas} ${item.zonas_registradas === 1 ? 'zona' : 'zonas'}` : ''}`
+                : 'Levantamiento por realizar'}
+            </span>
+          )}
         </div>
 
         <div className="tt-col tt-col-info">
@@ -415,42 +425,18 @@ const TrabajosTecnico = () => {
             <span>Hora de visita: {new Date(item.scheduled_start || item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
 
-          <div style={{ marginTop: '6px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="ttg-arrival-row" onClick={(e) => e.stopPropagation()}>
             {item.arrival_status === 'EN_SITIO' ? (
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '4px 10px',
-                borderRadius: '20px',
-                backgroundColor: '#d1fae5',
-                color: '#065f46',
-                fontWeight: 'bold',
-                fontSize: '0.75rem',
-                border: '1px solid #10b981'
-              }}>
-                🟢 En el lugar {item.arrived_at ? `(${new Date(item.arrived_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` : ''}
+              <span className="ttg-arrival is-here">
+                <MapPin size={12} /> En el lugar {item.arrived_at ? `(${new Date(item.arrived_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` : ''}
               </span>
             ) : (
               <button
                 type="button"
+                className="ttg-arrival"
                 onClick={(e) => handleConfirmArrival(e, item)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  backgroundColor: '#fff3ed',
-                  color: '#f26522',
-                  fontWeight: 'bold',
-                  fontSize: '0.75rem',
-                  border: '1px solid #f26522',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
               >
-                📍 ¡Ya llegué al lugar!
+                <MapPin size={12} /> ¡Ya llegué al lugar!
               </button>
             )}
           </div>
@@ -481,6 +467,19 @@ const TrabajosTecnico = () => {
     ...itemsCheck.herramientas
   ].every(item => item === true);
 
+  const abrirChecklist = () => {
+    if (materialRecibido) {
+      const updated = { ...itemsCheck };
+      Object.keys(updated).forEach(k => {
+        if (Array.isArray(updated[k])) {
+          updated[k] = updated[k].map(() => true);
+        }
+      });
+      setItemsCheck(updated);
+    }
+    setMostrarModalChecklist(true);
+  };
+
   const confirmarRecepcion = () => {
     setMaterialRecibido(true);
     if (user?.id) {
@@ -491,52 +490,59 @@ const TrabajosTecnico = () => {
   };
 
   return (
-    <>
+    <div className="ttg-root">
     <Header />
     <div className="tt-body">
-      
-      {/* BOTÓN REGRESAR */}
-      <div style={{ marginBottom: '15px' }}>
-        <button 
-          onClick={() => navigate(-1)} 
-          style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#F26522', color: 'white', padding: '8px 25px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
-        >
-          <ChevronLeft size={18} />
-          <span>REGRESAR</span>
-        </button>
+
+      {/* ── TÍTULO ── */}
+      <div className="ttg-action-bar">
+        <div className="ttg-page-title-badge">
+          <Wrench size={18} className="ttg-title-icon" />
+          <span>MIS TRABAJOS</span>
+          <span className="ttg-count-pill">{tableroData.asignados.length + tableroData.futuros.length}</span>
+        </div>
       </div>
 
-      <div className="tt-search-row">
-        <div className="tt-search-wrapper-super">
-          <UniversalSearch 
+      {/* ── BARRA UNIFICADA: BUSCADOR + LISTA DE RUTA ── */}
+      <div className="tb-toolbar ttg-toolbar">
+        <div className="tb-toolbar-search">
+          <UniversalSearch
             data={servicios}
             setFilteredData={setServiciosFiltrados}
             placeholder="BUSCAR POR FOLIO, PROPIEDAD O CLIENTE..."
             type="TECNICO_TABLERO"
           />
         </div>
-        
+
         {!isTecnicoRed && (
-          <button 
-              className={`btn-open-checklist ${materialRecibido ? 'recibido' : 'pendiente'}`}
-              onClick={() => {
-                if (materialRecibido) {
-                  const updated = { ...itemsCheck };
-                  Object.keys(updated).forEach(k => {
-                    if (Array.isArray(updated[k])) {
-                      updated[k] = updated[k].map(() => true);
-                    }
-                  });
-                  setItemsCheck(updated);
-                }
-                setMostrarModalChecklist(true);
-              }}
-            >
+          <button
+            type="button"
+            className={`ttg-route-btn ${materialRecibido ? 'is-ready' : 'is-pending'}`}
+            onClick={abrirChecklist}
+            title={materialRecibido ? 'Material listo' : 'Lista de ruta'}
+            aria-label={materialRecibido ? 'Material listo' : 'Abrir lista de ruta'}
+          >
             {materialRecibido ? <CheckCircle2 size={20} /> : <Package size={20} />}
-            <span>{materialRecibido ? "MATERIAL LISTO" : "LISTA DE RUTA"}</span>
+            {!materialRecibido && <span className="ttg-route-dot" />}
           </button>
         )}
       </div>
+
+      {/* Aviso del checklist obligatorio: arriba de los trabajos, no encima de ellos */}
+      {(!materialRecibido && !isTecnicoRed) && (
+        <div className="tt-checklist-gate" role="alert">
+          <div className="tt-checklist-gate-icon">
+            <Lock size={22} />
+          </div>
+          <div className="tt-checklist-gate-text">
+            <strong>Paso obligatorio: confirma tu lista de ruta</strong>
+            <span>Antes de iniciar tus trabajos marca el material, equipo y herramientas que llevas. Tus trabajos se desbloquean al confirmar.</span>
+          </div>
+          <button type="button" className="tt-checklist-gate-btn" onClick={abrirChecklist}>
+            <Package size={16} /> Confirmar lista de ruta
+          </button>
+        </div>
+      )}
 
       <div className="tt-mobile-tabs">
         <button 
@@ -643,9 +649,6 @@ const TrabajosTecnico = () => {
         </div>
 
       </div>
-        {(!materialRecibido && !isTecnicoRed) && (
-          <div className="lock-overlay-msg">Debe confirmar recepción de material para desbloquear</div>
-        )}
 
       {!isTecnicoRed && (
         <AnimatePresence>
@@ -658,7 +661,7 @@ const TrabajosTecnico = () => {
                 exit={{ scale: 0.9, opacity: 0 }}    // Usamos motion aquí
               >
                 <div className="tt-modal-header">
-                  <h3>📦 CONFIRMACIÓN DE MATERIAL</h3>
+                  <h3><Package size={18} /> Confirmación de material</h3>
                   {!materialRecibido && <span className="pills-alert">Obligatorio</span>}
                 </div>
               
@@ -734,7 +737,7 @@ const TrabajosTecnico = () => {
       </AnimatePresence>
       )}
     </div>
-    </>
+    </div>
   );
 };
 

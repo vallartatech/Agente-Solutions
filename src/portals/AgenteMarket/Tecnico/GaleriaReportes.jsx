@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
-import "../../../styles/AgenteSolutions/Tecnico/GaleriaReportes.css";
+import "../../../styles/AgenteMarket/Tecnico/GaleriaReportes.css";
 import { ChevronLeft, FileText, Camera, CheckCircle2, Trash2, Edit3, Loader2, X, Upload, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -116,10 +116,6 @@ const GaleriaReportes = () => {
 
   const handleFileChange = (stageKey, file) => {
     if (!file) return;
-    if (file.size > 12 * 1024 * 1024) {
-      Swal.fire('Imagen muy pesada', 'Por favor selecciona una foto menor a 12MB.', 'warning');
-      return;
-    }
     const previewUrl = URL.createObjectURL(file);
     setSlotData(prev => ({
       ...prev,
@@ -145,7 +141,7 @@ const GaleriaReportes = () => {
     const dataForSlot = slotData[stage.key];
     const existingReport = getReportForSlot(stage);
 
-    const descToSave = (dataForSlot.description || (existingReport ? existingReport.description : '')).trim();
+    const descToSave = dataForSlot.description.trim();
 
     if (!descToSave) {
       Swal.fire({
@@ -170,13 +166,8 @@ const GaleriaReportes = () => {
     setSubmittingKey(stage.key);
 
     try {
-      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-      const headers = {
-        'Content-Type': 'multipart/form-data',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      };
-
       const formData = new FormData();
+      // Incluir tag identificador en la descripción
       const cleanDesc = descToSave.replace(/\[(ANTES|DURANTE|DESPUÉS|DESPUES|EXTRA)\]/gi, '').trim();
       const finalDesc = `${stage.tag} ${cleanDesc}`;
       
@@ -188,10 +179,14 @@ const GaleriaReportes = () => {
 
       if (existingReport && existingReport.id) {
         // Actualizar reporte existente
-        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/servicios/reportes/${existingReport.id}?_method=PUT`, formData, { headers });
+        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/servicios/reportes/${existingReport.id}?_method=PUT`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
       } else {
         // Crear nuevo reporte
-        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/servicios/${trabajoId}/reportes`, formData, { headers });
+        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/servicios/${trabajoId}/reportes`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
       }
 
       Swal.fire({
@@ -236,9 +231,7 @@ const GaleriaReportes = () => {
 
     if (result.isConfirmed) {
       try {
-        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/reportes/${reportId}`, { headers });
+        await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/reportes/${reportId}`);
         Swal.fire({
           icon: 'success',
           title: 'Eliminado',
@@ -387,7 +380,7 @@ const GaleriaReportes = () => {
                       padding: '20px',
                       display: 'flex',
                       flexDirection: 'column',
-                      justifyContent: 'space-between',
+                      justify: 'space-between',
                       transition: 'all 0.3s ease',
                       position: 'relative'
                     }}

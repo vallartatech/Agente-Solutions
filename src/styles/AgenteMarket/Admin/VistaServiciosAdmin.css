@@ -1,0 +1,439 @@
+/* ==========================================================================
+   GESTIÓN GLOBAL DE SERVICIOS - WHITE LIQUID GLASS
+   Mismo lenguaje visual que Usuarios / Reportes / Cotizaciones.
+   Todas las reglas van con el prefijo .sv-glass-page para ganarle al <style>
+   embebido del componente y a TableroScrum.css (que comparte el portal cliente).
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+.scrum-container.sv-glass-page {
+  background: url('../../../assets/geometric-poly-bg.png') center center / cover no-repeat fixed;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
+  padding: 0 0 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Contenido centrado con el mismo ancho que las demás vistas */
+.sv-glass-page > .sv-action-bar,
+.sv-glass-page > .sv-toolbar,
+.sv-glass-page > .scrum-tabs-mobile,
+.sv-glass-page > .scrum-board-layout {
+  width: 96% !important;
+  max-width: 1480px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box;
+}
+
+/* ── BARRA DE TÍTULO ── */
+.sv-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+
+.sv-page-title-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.40) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  padding: 7px 18px;
+  border-radius: 24px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #0f172a;
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
+}
+
+.sv-title-icon { color: #f26522; }
+
+.sv-count-pill {
+  background: #f26522;
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.74rem;
+  font-weight: 900;
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.35);
+}
+
+/* ── BARRA UNIFICADA: BOTONES ICONO ── */
+/* z-index por encima de las pestañas móviles (sticky, z-index 100) para que el menú del filtro quede al frente */
+.sv-toolbar {
+  position: relative;
+  z-index: 200;
+  margin-bottom: 16px;
+}
+
+.sv-icon-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  padding: 0;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sv-icon-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Botón de filtro (igual al filtro de Usuarios / Cotizaciones) */
+.sv-filter-btn {
+  position: relative;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
+}
+
+.sv-filter-btn:hover,
+.sv-filter-btn.open {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(242, 101, 34, 0.6);
+  color: #f26522;
+}
+
+.sv-filter-btn.filtered { color: #f26522; }
+
+.sv-filter-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f26522;
+  box-shadow: 0 0 8px rgba(242, 101, 34, 0.7);
+}
+
+/* Chip que indica qué sección se está viendo */
+.sv-seccion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 96%;
+  max-width: 1480px;
+  margin: 0 auto 14px;
+  box-sizing: border-box;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #ea580c;
+}
+
+/* ── COLUMNAS DEL TABLERO COMO TARJETAS DE VIDRIO ── */
+.sv-glass-page .scrum-column {
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.28) 50%,
+      rgba(255, 255, 255, 0.45) 100%),
+    rgba(255, 255, 255, 0.22);
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  border-radius: 22px;
+  padding: 14px;
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14), inset 0 2px 2px rgba(255, 255, 255, 0.9);
+}
+
+.sv-glass-page .column-header {
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: none;
+  position: relative;
+}
+
+/* Línea de color por estado, discreta */
+.sv-glass-page .column-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 36px;
+  height: 3px;
+  border-radius: 3px;
+  background: #94a3b8;
+}
+
+.sv-glass-page .col-sos .column-header::after { background: #ef4444; }
+.sv-glass-page .col-unassigned .column-header::after { background: #8b5cf6; }
+.sv-glass-page .col-todo .column-header::after { background: #0f172a; }
+.sv-glass-page .col-progress .column-header::after { background: #f26522; }
+.sv-glass-page .col-done .column-header::after { background: #10b981; }
+.sv-glass-page .col-rejected .column-header::after { background: #dc2626; }
+
+.sv-glass-page .column-title-text {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #0f172a;
+}
+
+.sv-glass-page .col-sos .column-title-text,
+.sv-glass-page .col-rejected .column-title-text { color: #dc2626; }
+
+.sv-glass-page .column-badge {
+  background: #f26522;
+  color: #ffffff;
+  font-weight: 900;
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.3);
+}
+
+.sv-date-filter {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.7);
+  color: #ea580c;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  outline: none;
+  cursor: pointer;
+}
+
+.sv-date-filter:focus {
+  border-color: #f26522;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.18);
+}
+
+.sv-glass-page .empty-column-message {
+  margin: 6px 0;
+  padding: 32px 16px;
+  border-radius: 16px;
+  border: 2px dashed rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.35);
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.sv-glass-page .empty-column-message p { margin: 0; }
+
+/* ── TARJETAS DE SERVICIO ── */
+.sv-glass-page .task-card-premium {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-left: 4px solid #cbd5e1;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 10px;
+  font-family: inherit;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.07), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+}
+
+.sv-glass-page .task-card-premium:hover {
+  transform: translateY(-2px);
+  border-color: rgba(242, 101, 34, 0.45);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
+}
+
+.sv-glass-page .task-card-premium.is-sos { border-left-color: #ef4444; background: rgba(255, 245, 245, 0.88); }
+.sv-glass-page .task-card-premium.is-unassigned { border-left-color: #8b5cf6; }
+.sv-glass-page .task-card-premium.is-active { border-left-color: #f26522; }
+.sv-glass-page .task-card-premium.is-done { border-left-color: #10b981; }
+.sv-glass-page .task-card-premium.is-overdue { border-left-color: #ef4444 !important; }
+
+.sv-glass-page .prop-badge-card {
+  font-size: 0.66rem;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+  padding-bottom: 6px;
+}
+
+.sv-glass-page .task-title-card {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 8px 0 10px;
+}
+
+/* ── PESTAÑAS DE COLUMNAS EN MÓVIL ── */
+.sv-glass-page .scrum-tabs-mobile {
+  top: 8px;
+  padding: 6px;
+  margin-top: 0;
+  margin-bottom: 14px;
+  border-radius: 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.55) 100%);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.9);
+}
+
+.sv-glass-page .scrum-tabs-mobile .tab-btn {
+  padding: 8px 4px;
+  border-radius: 12px;
+  font-family: 'Outfit', sans-serif;
+}
+
+.sv-glass-page .scrum-tabs-mobile .tab-btn.active { background: rgba(255, 255, 255, 0.85); }
+
+.sv-glass-page .scrum-tabs-mobile .active-line { bottom: 2px; }
+
+/* ==========================================================================
+   MODAL ORDEN DE TRABAJO (se monta en body, por eso no usa .sv-glass-page)
+   ========================================================================== */
+.modal-view-overlay.sv-modal-overlay {
+  background: rgba(6, 8, 12, 0.4) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+.modal-card-container.sv-modal-card {
+  max-width: 560px;
+  border-radius: 26px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.86) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3), inset 0 2px 2px rgba(255, 255, 255, 0.95);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Encabezado claro; el estado se marca con una franja superior de color */
+.sv-modal-card .modal-top-indicator {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: #0f172a;
+  border-top: 4px solid #94a3b8;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 14px 20px;
+}
+
+.sv-modal-card .modal-top-indicator.sos { border-top-color: #ef4444; }
+.sv-modal-card .modal-top-indicator.unassigned { border-top-color: #8b5cf6; }
+.sv-modal-card .modal-top-indicator.todo { border-top-color: #0f172a; }
+.sv-modal-card .modal-top-indicator.progress { border-top-color: #f26522; }
+.sv-modal-card .modal-top-indicator.done { border-top-color: #10b981; }
+.sv-modal-card .modal-top-indicator.is-bitacora { border-top-color: #f26522; }
+
+.sv-modal-card .indicator-content {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.6px;
+  color: #0f172a;
+}
+
+.sv-modal-card .dot-blink { background: #f26522; }
+
+.sv-modal-card .nav-back-icon { color: #ea580c; }
+
+.sv-modal-card .close-modal-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.sv-modal-card .close-modal-btn span { color: #334155 !important; }
+
+.sv-modal-card .close-modal-btn:hover {
+  background: rgba(242, 101, 34, 0.15);
+  transform: rotate(90deg);
+}
+
+.sv-modal-card .close-modal-btn:hover span { color: #ea580c !important; }
+
+.sv-modal-card .info-item {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.sv-modal-card .task-main-heading {
+  font-family: 'Outfit', sans-serif;
+  color: #0f172a;
+}
+
+.sv-modal-card .modal-action-btn {
+  border-radius: 14px;
+  font-family: 'Outfit', sans-serif;
+}
+
+.sv-modal-card .modal-action-btn.variant-orange {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.sv-modal-card .modal-action-btn.variant-dark,
+.sv-modal-card .modal-action-btn.variant-black {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+.sv-modal-card .modal-action-btn.variant-green {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+
+/* ==========================================================================
+   RESPONSIVO
+   ========================================================================== */
+@media (max-width: 900px) {
+  .scrum-container.sv-glass-page {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom));
+  }
+
+  .sv-glass-page > .sv-action-bar,
+  .sv-glass-page > .sv-toolbar,
+  .sv-glass-page > .scrum-tabs-mobile,
+  .sv-glass-page > .scrum-board-layout {
+    width: 94% !important;
+  }
+
+  .sv-action-bar { margin-top: 12px; margin-bottom: 12px; }
+}
+
+@media (max-width: 768px) {
+  .sv-glass-page > .scrum-board-layout { padding: 0 !important; }
+
+  .sv-seccion-chip { width: 94%; }
+
+  .sv-glass-page .scrum-column { min-height: 45vh; }
+
+  /* El modal de orden de trabajo sale desde abajo */
+  .modal-view-overlay.sv-modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .modal-card-container.sv-modal-card {
+    max-width: 100%;
+    max-height: 92vh !important;
+    margin: 0 !important;
+    border-radius: 26px 26px 0 0;
+    border-bottom: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .sv-page-title-badge { font-size: 0.72rem; padding: 5px 12px; }
+
+  .sv-icon-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 12px;
+  }
+}

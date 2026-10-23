@@ -586,3 +586,124 @@
     object-fit: cover;
     border-radius: 8px;
 }
+/* ── FICHA TÉCNICA OPCIONAL (AIRE ACONDICIONADO): modo sencillo / ficha técnica ── */
+.rdh-ficha {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* Va hasta arriba del formulario para que se vea al abrirlo */
+  margin: 0 0 14px;
+}
+
+.rdh-ficha-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #e2e8f0;
+}
+
+/* padding/margin propios: anulan los estilos globales de button de index.css */
+.rdh-ficha-switch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #475569;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.rdh-ficha-switch button.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+}
+
+.rdh-ficha-count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #0ea5e9;
+  color: #ffffff;
+  font-size: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rdh-ficha-panel {
+  padding: 14px;
+  border-radius: 16px;
+  background: #f0f9ff;
+  border: 1.5px dashed #7dd3fc;
+}
+
+.rdh-ficha-hint {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0369a1;
+}
+
+.rdh-ficha-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+}
+
+.rdh-ficha-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rdh-ficha-field label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: #334155;
+}
+
+.rdh-ficha-field .rdh-modal-input {
+  width: 100%;
+  height: 40px;
+  font-size: 16px;
+}
+
+.rdh-ficha-detalle {
+  margin-top: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(14, 165, 233, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.rdh-ficha-detalle strong {
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.rdh-ficha-detalle span {
+  font-weight: 800;
+}
+
+@media (max-width: 560px) {
+  .rdh-ficha-grid {
+    grid-template-columns: 1fr;
+  }
+}

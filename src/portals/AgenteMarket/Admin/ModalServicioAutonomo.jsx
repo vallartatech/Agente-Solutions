@@ -88,12 +88,15 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
+      // La red solo asigna técnicos de la red: los Técnicos Agente (rol 2) son de uso interno
+      const soloTecnicosRed = (lista) => lista.filter(u => [6, 8].includes(Number(u.role_id)));
+
       // Intentar primero endpoint de técnicos vinculados
       let techs = [];
       try {
         const resTecnicos = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`, { headers });
-        if (Array.isArray(resTecnicos.data) && resTecnicos.data.length > 0) {
-          techs = resTecnicos.data;
+        if (Array.isArray(resTecnicos.data)) {
+          techs = soloTecnicosRed(resTecnicos.data);
         }
       } catch {
         // Fallback a /usuarios
@@ -102,7 +105,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
       if (techs.length === 0) {
         const resUsuarios = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios`, { headers });
         const all = Array.isArray(resUsuarios.data) ? resUsuarios.data : [];
-        techs = all.filter(u => [2, 6, 8].includes(Number(u.role_id)));
+        techs = soloTecnicosRed(all);
       }
 
       setTecnicos(techs);

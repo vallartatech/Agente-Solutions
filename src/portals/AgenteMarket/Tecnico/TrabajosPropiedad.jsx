@@ -7,7 +7,7 @@ import Swal from 'sweetalert2';
 import ModalCrearCotizacion from "../../../components/Shared/ModalCrearCotizacion";
 import ChatModal from "../../../components/Shared/ChatModal";
 import "../../../styles/AgenteMarket/Tecnico/TrabajoPropiedad.css";
-import "../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css";
+import "../../../styles/AgenteMarket/Tecnico/MercadoTrabajosBase.css";
 import { 
   MapPin, Phone, User, Wrench, Clock, 
   ChevronLeft, Navigation, CheckCircle2, AlertCircle,
@@ -16,6 +16,7 @@ import {
   Plus, Trash2, Upload, Calculator, Calendar, MessageCircle, Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
+import { reportarUbicacion } from "../../../components/Shared/ubicacionService";
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const TrabajoPropiedad = () => {
@@ -224,6 +225,9 @@ const TrabajoPropiedad = () => {
         status: 'Listo'
       });
 
+      // Registrar dónde se finalizó (solo si el técnico aceptó compartir su ubicación)
+      reportarUbicacion('job_update', Number(realId) || null);
+
       // El aviso al admin (campanita + push) lo envía el backend al cambiar el estado a "Listo"
 
       setShowModalFinalizar(true);
@@ -231,6 +235,18 @@ const TrabajoPropiedad = () => {
       console.error("Error finalizing job:", error);
       mostrarAviso("Hubo un error al finalizar el trabajo. Por favor intenta de nuevo.");
     }
+  };
+
+  // Lleva al listado de levantamientos y abre directamente el de esta propiedad
+  const irALevantamiento = () => {
+    if (!data?.property_id) return mostrarAviso("Esta orden no tiene propiedad asociada.");
+    navigate('/trabajos-asignados', {
+      state: {
+        abrirPropiedadId: data.property_id,
+        curp: data.custom_curp || null,
+        servicioId: getRealId(id)
+      }
+    });
   };
 
   const abrirSurvey = async () => {
@@ -713,7 +729,7 @@ const TrabajoPropiedad = () => {
               
               <div className="tp-flow-buttons">
 
-                <button className="tp-btn-consult variant-dark" onClick={abrirSurvey}>
+                <button className="tp-btn-consult variant-dark" onClick={irALevantamiento}>
                   <Layout size={18} />
                   <span>CONSULTAR LEVANTAMIENTO</span>
                 </button>

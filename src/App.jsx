@@ -102,6 +102,38 @@ import VistaDetallePropiedadCliente from "./portals/AgenteSolutions/Cliente/Vist
 
 import RegisteRoot from "./components/Auth/Register";
 import VistaCotizacionPrint from "./portals/AgenteSolutions/Admin/VistaCotizacionPrint";
+import CasaLoader from "./components/Shared/CasaLoader";
+import { esRed } from "./utils/entorno";
+
+/* ------PANTALLAS PROPIAS DE LA RED (AgenteMarket) ------*/
+// Copias de las pantallas internas que también usa la red: se editan sin afectar al uso interno.
+// Carga diferida: su código y su CSS solo se descargan cuando entra un usuario de la red.
+const RedUsuarios = lazy(() => import("./portals/AgenteMarket/Admin/VistaUsuarios"));
+const RedLevantamientos = lazy(() => import("./portals/AgenteMarket/Admin/VistaLevantamientos"));
+const RedReportesGlobal = lazy(() => import("./portals/AgenteMarket/Admin/VistaReportesGlobal"));
+const RedCotizaciones = lazy(() => import("./portals/AgenteMarket/Admin/VistaCotizaciones"));
+const RedServiciosAdmin = lazy(() => import("./portals/AgenteMarket/Admin/VistaServiciosAdmin"));
+const RedBodeguero = lazy(() => import("./portals/AgenteMarket/Admin/VistaBodeguero"));
+const RedProductos = lazy(() => import("./portals/AgenteMarket/Admin/ProductosView"));
+const RedProductoDetalle = lazy(() => import("./portals/AgenteMarket/Admin/ProductoDetalleView"));
+const RedDashboard = lazy(() => import("./portals/AgenteMarket/Admin/VistaDashboard"));
+const RedSalaEsperaTecnicos = lazy(() => import("./portals/AgenteMarket/Admin/VistaSalaEsperaTecnicos"));
+const RedDetalleReporte = lazy(() => import("./portals/AgenteMarket/Admin/DetalleReporte"));
+const RedReporteTrabajoAdmin = lazy(() => import("./portals/AgenteMarket/Admin/ReporteTrabajo"));
+const RedDetalleCliente = lazy(() => import("./portals/AgenteMarket/Admin/VistaDetalleCliente"));
+const RedDetalleTecnico = lazy(() => import("./portals/AgenteMarket/Admin/VistaDetalleTecnico"));
+const RedCotizacionPrint = lazy(() => import("./portals/AgenteMarket/Admin/VistaCotizacionPrint"));
+const RedTrabajosTecnico = lazy(() => import("./portals/AgenteMarket/Tecnico/TrabajosTecnico"));
+const RedTrabajoPropiedad = lazy(() => import("./portals/AgenteMarket/Tecnico/TrabajosPropiedad"));
+const RedGaleriaReportes = lazy(() => import("./portals/AgenteMarket/Tecnico/GaleriaReportes"));
+const RedNuevoReporte = lazy(() => import("./portals/AgenteMarket/Tecnico/NuevoReporte"));
+const RedReporteIndividual = lazy(() => import("./portals/AgenteMarket/Tecnico/ReporteIndividual"));
+const RedDetalleTrabajo = lazy(() => import("./portals/AgenteMarket/Tecnico/DetalleTrabajo"));
+const RedCheckList = lazy(() => import("./portals/AgenteMarket/Tecnico/Checklist"));
+const RedTrabajoInicio = lazy(() => import("./portals/AgenteMarket/Tecnico/TrabajoInicio"));
+const RedTrabajosAsignados = lazy(() => import("./portals/AgenteMarket/Tecnico/TrabajosAsignados"));
+const RedRegistroZonas = lazy(() => import("./portals/AgenteMarket/Tecnico/RegistroZonas"));
+const RedLevantamientoPropiedad = lazy(() => import("./portals/AgenteMarket/Tecnico/LevantamientoPropiedad"));
 
 
 axios.defaults.headers.common["Accept"] = "application/json";
@@ -128,6 +160,13 @@ const TrabajoPropiedadWrapper = () => {
   const roleId = Number(user?.role_id);
   if (roleId === 0 || roleId === 1) return <VistaTrabajoPropiedad />;
   return <Navigate to="/propiedades" replace />;
+};
+
+// Misma URL para los dos entornos: la red (roles 4-8) recibe su propia copia de la pantalla
+const PorEntorno = ({ interno, red }) => {
+  const { user } = useAuth();
+  if (!esRed(user)) return interno;
+  return <Suspense fallback={<CasaLoader />}>{red}</Suspense>;
 };
 
 const CalendarioWrapper = () => {
@@ -182,7 +221,7 @@ const AppRoutes = () => {
       <Route path="/detalle-reporte/:id" element={
         user?.role_id === 3
           ? <MainLayoutCliente><DetalleReporte /></MainLayoutCliente>
-          : <DetalleReporte />
+          : <PorEntorno interno={<DetalleReporte />} red={<RedDetalleReporte />} />
       } />
 
       <Route path="/VistaRoot" element={<VistaInicioAdmin />} />
@@ -198,38 +237,42 @@ const AppRoutes = () => {
       />
 
       {/* ------RUTAS DE LA VISTA DEL TECNICO (LIBERADAS) ------*/}
-      <Route path="/trabajos-tecnico" element={<TrabajosTecnico />} />
-      <Route path="/Checklist/:id" element={<CheckList />} />
-      <Route path="/detalleTrabajo/:id" element={<DetalleTrabajo />} />
-      <Route path="/galeria-reportes/:id?" element={<GaleriaReportes />} />
-      <Route path="/reporte-individual/:id?" element={<ReporteIndividual />} />
-      <Route path="/nuevo-reporte" element={<NuevoReporte />} />
-      <Route path="/trabajo-inicio/:id" element={<TrabajoInicio />} />
-      <Route path="/trabajo-propiedad/:id" element={<TrabajoPropiedad />} />
-      <Route path="/trabajo_propiedad/:id" element={<TrabajoPropiedad />} />
+      <Route path="/trabajos-tecnico" element={<PorEntorno interno={<TrabajosTecnico />} red={<RedTrabajosTecnico />} />} />
+      <Route path="/Checklist/:id" element={<PorEntorno interno={<CheckList />} red={<RedCheckList />} />} />
+      <Route path="/detalleTrabajo/:id" element={<PorEntorno interno={<DetalleTrabajo />} red={<RedDetalleTrabajo />} />} />
+      <Route path="/galeria-reportes/:id?" element={<PorEntorno interno={<GaleriaReportes />} red={<RedGaleriaReportes />} />} />
+      <Route path="/reporte-individual/:id?" element={<PorEntorno interno={<ReporteIndividual />} red={<RedReporteIndividual />} />} />
+      <Route path="/nuevo-reporte" element={<PorEntorno interno={<NuevoReporte />} red={<RedNuevoReporte />} />} />
+      <Route path="/trabajo-inicio/:id" element={<PorEntorno interno={<TrabajoInicio />} red={<RedTrabajoInicio />} />} />
+      <Route path="/trabajo-propiedad/:id" element={<PorEntorno interno={<TrabajoPropiedad />} red={<RedTrabajoPropiedad />} />} />
+      <Route path="/trabajo_propiedad/:id" element={<PorEntorno interno={<TrabajoPropiedad />} red={<RedTrabajoPropiedad />} />} />
       <Route path="/venta-cruzada" element={<VentaCruzada />} />
       <Route path="/registrar-venta-cruzada" element={<RegistrarVentaCruzada />} />
-      <Route path="/levantamiento-propiedad" element={<LevantamientoPropiedad />} />
-      <Route path="/RegistroZonas/:curp" element={<RegistroZonas />} />
+      <Route path="/levantamiento-propiedad" element={<PorEntorno interno={<LevantamientoPropiedad />} red={<RedLevantamientoPropiedad />} />} />
+      <Route path="/RegistroZonas/:curp" element={<PorEntorno interno={<RegistroZonas />} red={<RedRegistroZonas />} />} />
 
       {/* ------RUTAS DE LA VISTA DEL ADMIN (LIBERADAS) ------*/}
       <Route path="/vista-cotizaciones" element={
-        user?.role_id === 3 ? <MainLayoutCliente><VistaCotizaciones /></MainLayoutCliente> : <VistaCotizaciones />
+        user?.role_id === 3
+          ? <MainLayoutCliente><VistaCotizaciones /></MainLayoutCliente>
+          : <PorEntorno interno={<VistaCotizaciones />} red={<RedCotizaciones />} />
       } />
       <Route path="/levantamientos" element={
-        user?.role_id === 3 ? <MainLayoutCliente><VistaLevantamientos /></MainLayoutCliente> : <VistaLevantamientos />
+        user?.role_id === 3
+          ? <MainLayoutCliente><VistaLevantamientos /></MainLayoutCliente>
+          : <PorEntorno interno={<VistaLevantamientos />} red={<RedLevantamientos />} />
       } />
       <Route path="/mi-perfil" element={<Profile />} />
       <Route path="/profile" element={<Profile />} />
 
 
-      <Route path="/detalle-producto" element={<ProductoDetalleView />} />
-      <Route path="/vista-producto" element={<ProductosView />} />
-      <Route path="/dashboard" element={<VistaDashboard />} />
-      <Route path="/detalle-cliente" element={<VistaDetalleCliente />} />
-      <Route path="/usuarios" element={<VistaUsuarios />} />
+      <Route path="/detalle-producto" element={<PorEntorno interno={<ProductoDetalleView />} red={<RedProductoDetalle />} />} />
+      <Route path="/vista-producto" element={<PorEntorno interno={<ProductosView />} red={<RedProductos />} />} />
+      <Route path="/dashboard" element={<PorEntorno interno={<VistaDashboard />} red={<RedDashboard />} />} />
+      <Route path="/detalle-cliente" element={<PorEntorno interno={<VistaDetalleCliente />} red={<RedDetalleCliente />} />} />
+      <Route path="/usuarios" element={<PorEntorno interno={<VistaUsuarios />} red={<RedUsuarios />} />} />
       <Route path="/gestion-autonomos" element={<VistaGestionAutonomos />} />
-      <Route path="/sala-espera-tecnicos" element={<VistaSalaEsperaTecnicos />} />
+      <Route path="/sala-espera-tecnicos" element={<PorEntorno interno={<VistaSalaEsperaTecnicos />} red={<RedSalaEsperaTecnicos />} />} />
       <Route path="/mi-codigo-autonomo" element={<VistaCodigoAutonomo />} />
       <Route path="/apoyo-autonomo" element={<VistaApoyoAutonomo />} />
       <Route path="/red-autonomos" element={<VistaRedAutonomo />} />
@@ -244,13 +287,13 @@ const AppRoutes = () => {
       <Route path="/map" element={<Map />} />
       <Route path="/customize-login" element={<CustomizeLogin />} />
       <Route path="/assign-service" element={<AssignServiceForm />} />
-      <Route path="/bodeguero" element={<VistaBodeguero />} />
+      <Route path="/bodeguero" element={<PorEntorno interno={<VistaBodeguero />} red={<RedBodeguero />} />} />
       <Route path="/detalle-propiedad/:id" element={<DetallePropiedadWrapper />} />
       <Route path="/detalle-propiedad/:id/trabajo/:uid" element={<TrabajoPropiedadWrapper />} />
-      <Route path="/tablero-servicios" element={<VistaServiciosAdmin />} />
-      <Route path="/detalle-tecnico" element={<VistaDetalleTecnico />} />
-      <Route path="/reportes-globales" element={<VistaReportesGlobal />} />
-      <Route path="/reporte-trabajo-admin/:id?" element={<ReporteTrabajoAdmin />} />
+      <Route path="/tablero-servicios" element={<PorEntorno interno={<VistaServiciosAdmin />} red={<RedServiciosAdmin />} />} />
+      <Route path="/detalle-tecnico" element={<PorEntorno interno={<VistaDetalleTecnico />} red={<RedDetalleTecnico />} />} />
+      <Route path="/reportes-globales" element={<PorEntorno interno={<VistaReportesGlobal />} red={<RedReportesGlobal />} />} />
+      <Route path="/reporte-trabajo-admin/:id?" element={<PorEntorno interno={<ReporteTrabajoAdmin />} red={<RedReporteTrabajoAdmin />} />} />
 
       <Route path="/notificaciones" element={<VistaNotificaciones />} />
       <Route path="/mapa-equipo" element={<VistaMapaEquipo />} />
@@ -258,7 +301,7 @@ const AppRoutes = () => {
       <Route path="/comprobantes" element={<ProtectedRoute><VistaComprobantes /></ProtectedRoute>} />
       <Route path="/chats" element={<ProtectedRoute><VistaChats /></ProtectedRoute>} />
       <Route path="/chats/:id" element={<ProtectedRoute><VistaChats /></ProtectedRoute>} />
-      <Route path="/trabajos-asignados" element={<TrabajosAsignados />} />
+      <Route path="/trabajos-asignados" element={<PorEntorno interno={<TrabajosAsignados />} red={<RedTrabajosAsignados />} />} />
 
       {/* Vista de inicio del cliente sin Sidebar */}
       <Route path="/VistaInicioCliente" element={<VistaInicioCliente />} />
@@ -276,7 +319,7 @@ const AppRoutes = () => {
 
 
       <Route path="/registro" element={<RegistroCliente />} />
-      <Route path="/imprimir-cotizacion" element={<VistaCotizacionPrint />} />
+      <Route path="/imprimir-cotizacion" element={<PorEntorno interno={<VistaCotizacionPrint />} red={<RedCotizacionPrint />} />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

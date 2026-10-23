@@ -1,0 +1,6295 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ========================================
+   MERCADO DE TRABAJOS - LUXURY DARK UI (INSPIRATION OUTLETBUDDY & AGENTE)
+   ======================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+.mercado-container {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  background-color: #0b0d13;
+  padding: 0;
+  color: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* ── TOP NAVIGATION BAR (VCP HEADER REPLICA) ── */
+.vcp-header {
+  height: 72px;
+  background: #14161d;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: relative;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+}
+
+.vcp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.vcp-brand-logo {
+  height: 54px;
+  max-width: 250px;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+
+.vcp-brand-logo:hover {
+  transform: scale(1.04);
+}
+
+.vcp-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.vcp-header-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.vcp-nav-btn {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.vcp-nav-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.vcp-nav-btn.active {
+  color: #f26522;
+  background: rgba(242, 101, 34, 0.14);
+  border: 1px solid rgba(242, 101, 34, 0.35);
+}
+
+.vcp-tab-short {
+  display: none !important;
+}
+
+@media (max-width: 850px) {
+  .vcp-tab-full {
+    display: none !important;
+  }
+  .vcp-tab-short {
+    display: inline !important;
+  }
+}
+
+.vcp-nav-icon-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+  margin-right: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.vcp-nav-icon-btn svg {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+  stroke-width: 2.2px !important;
+  display: block !important;
+  pointer-events: none;
+}
+
+.vcp-nav-icon-btn:hover {
+  background: #f26522;
+  border-color: #ff7836;
+  color: #ffffff;
+  transform: translateY(-1px) scale(1.06);
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.6);
+}
+
+.vcp-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.vcp-user-info-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.vcp-user-role-badge {
+  font-size: 0.60rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.vcp-user-name {
+  font-size: 0.86rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vcp-avatar-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #f26522;
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vcp-avatar-btn:hover {
+  transform: scale(1.06);
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.6);
+}
+
+.vcp-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vcp-avatar-initial {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.vcp-dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999998;
+}
+
+.vcp-profile-dropdown {
+  position: absolute;
+  top: 56px;
+  right: 0;
+  background: #181a24;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85);
+  padding: 12px 10px 10px 10px;
+  width: 230px;
+  z-index: 9999999;
+  animation: vcpFadeDown 0.18s ease-out;
+}
+
+@media (max-width: 768px) {
+  .vcp-profile-dropdown {
+    position: fixed !important;
+    top: 64px !important;
+    right: 12px !important;
+    left: auto !important;
+    width: 230px !important;
+    z-index: 9999999 !important;
+  }
+}
+
+/* ── PORTAL FLOATING PROFILE DROPDOWN (TECNICO HEADER) ── */
+.tecnico-profile-portal-root {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+}
+
+.tecnico-profile-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  z-index: 1 !important;
+}
+
+.tecnico-profile-dropdown {
+  position: fixed !important;
+  top: 68px !important;
+  right: 14px !important;
+  left: auto !important;
+  bottom: auto !important;
+  width: 240px !important;
+  max-width: calc(100vw - 28px) !important;
+  background: #181a24 !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  padding: 12px 10px 10px 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  z-index: 2 !important;
+  animation: tecnicoFadeDown 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+@keyframes tecnicoFadeDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tecnico-dropdown-user-header {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 4px !important;
+  padding: 4px 6px 8px 6px !important;
+}
+
+.tecnico-dropdown-role-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  background: rgba(242, 101, 34, 0.2) !important;
+  border: 1px solid rgba(242, 101, 34, 0.55) !important;
+  color: #ff8548 !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  padding: 3px 8px !important;
+  border-radius: 20px !important;
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.25) !important;
+}
+
+.tecnico-dropdown-role-icon {
+  color: #ff8548 !important;
+}
+
+.tecnico-dropdown-user-name {
+  font-size: 0.88rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.2px !important;
+  margin-top: 2px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  width: 100% !important;
+}
+
+.tecnico-dropdown-user-email {
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+  color: #94a3b8 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  width: 100% !important;
+}
+
+.tecnico-dropdown-divider {
+  height: 1px !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  margin: 2px 0 4px 0 !important;
+  width: 100% !important;
+}
+
+.tecnico-dropdown-item {
+  width: 100% !important;
+  background: transparent !important;
+  border: none !important;
+  color: #cbd5e1 !important;
+  font-size: 0.84rem !important;
+  font-weight: 700 !important;
+  padding: 10px 14px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-align: left !important;
+  transition: all 0.15s ease !important;
+  box-sizing: border-box !important;
+}
+
+.tecnico-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+.tecnico-dropdown-item.logout {
+  color: #f87171 !important;
+}
+
+.tecnico-dropdown-item.logout:hover {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #fca5a5 !important;
+}
+
+@keyframes vcpFadeDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.vcp-dropdown-user-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 4px 6px 8px 6px;
+}
+
+.vcp-dropdown-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(242, 101, 34, 0.2);
+  border: 1px solid rgba(242, 101, 34, 0.55);
+  color: #ff8548;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.25);
+}
+
+.vcp-dropdown-role-icon {
+  color: #ff8548;
+}
+
+.vcp-dropdown-user-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.vcp-dropdown-user-email {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.vcp-dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 2px 0 4px 0;
+  width: 100%;
+}
+
+.vcp-dropdown-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.vcp-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.vcp-dropdown-item.logout {
+  color: #f87171;
+}
+
+.vcp-dropdown-item.logout:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+.vcp-dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 6px 0;
+}
+
+/* ── MAIN CONTENT CONTAINER (FULL MAP BACKGROUND WITH FLOATING CARD OVERLAY) ── */
+.mercado-content {
+  position: relative;
+  height: calc(100vh - 72px);
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  display: block;
+}
+
+.mercado-mobile-toggle-btn {
+  display: none;
+}
+
+/* ===== LEFT SIDEBAR (DARK GLASSMORPHISM FLOATING OVER MAP - STYLE IMAGE 2) ===== */
+.mercado-sidebar {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  bottom: 24px;
+  width: 420px;
+  max-width: calc(100vw - 48px);
+  background: linear-gradient(145deg,
+      rgba(15, 23, 42, 0.85) 0%,
+      rgba(10, 15, 28, 0.78) 50%,
+      rgba(15, 23, 42, 0.84) 100%) !important;
+  backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 
+    0 24px 60px rgba(0, 0, 0, 0.65), 
+    inset 0 1px 1px rgba(255, 255, 255, 0.20),
+    0 8px 32px rgba(0, 0, 0, 0.45) !important;
+  overflow: visible !important;
+  z-index: 10;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Sidebar Collapsed State (Desktop) - Se oculta a la izquierda dejando la pestaña visible */
+@media (min-width: 769px) {
+  .mercado-sidebar.sidebar-collapsed {
+    transform: translateX(calc(-100% - 24px)) !important;
+    pointer-events: auto !important;
+  }
+}
+
+/* ─── PESTAÑA LATERAL CON FLECHA (DARK LIQUID GLASS EDGE TAB) ─── */
+.mercado-sidebar-edge-tab {
+  position: absolute;
+  top: 70px;
+  left: calc(100% - 1.5px);
+  width: 36px;
+  height: 72px;
+  background: linear-gradient(145deg,
+      rgba(24, 32, 52, 0.85) 0%,
+      rgba(18, 24, 40, 0.80) 50%,
+      rgba(22, 30, 48, 0.85) 100%) !important;
+  backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
+  border-left: none !important;
+  border-radius: 0 18px 18px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #ffffff;
+  box-shadow: 
+    8px 4px 20px rgba(0, 0, 0, 0.45), 
+    inset 0 1px 1px rgba(255, 255, 255, 0.20) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 25;
+  padding: 0;
+  outline: none;
+}
+
+.mercado-sidebar-edge-tab:hover {
+  background: linear-gradient(145deg,
+      rgba(242, 101, 34, 0.45) 0%,
+      rgba(24, 32, 52, 0.90) 100%) !important;
+  border-color: #f26522 !important;
+  box-shadow: 10px 4px 26px rgba(0, 0, 0, 0.75), 0 0 16px rgba(242, 101, 34, 0.35) !important;
+}
+
+.mercado-sidebar-edge-tab svg {
+  stroke: #ffffff;
+  transition: transform 0.2s ease, stroke 0.2s ease;
+}
+
+.mercado-sidebar-edge-tab:hover svg {
+  stroke: #f26522;
+  transform: scale(1.15);
+}
+
+@media (max-width: 768px) {
+  .mercado-sidebar-edge-tab {
+    display: none !important;
+  }
+}
+
+.mercado-sidebar-header {
+  padding: 16px 18px 12px;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+  background: linear-gradient(180deg, rgba(242, 101, 34, 0.12) 0%, rgba(15, 23, 42, 0.40) 100%) !important;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: 24px 24px 0 0;
+}
+
+.mercado-sidebar-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mercado-sidebar-eyebrow {
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #f26522;
+}
+
+.mercado-sidebar-live-pill {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(74, 222, 128, 0.14);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: #4ade80;
+  letter-spacing: 0.5px;
+}
+
+.mercado-sidebar-subtitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.mercado-sidebar-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Search & Filter Row */
+.mercado-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.mercado-search-row .mercado-search-box {
+  flex: 1;
+  margin-top: 0;
+}
+
+/* Filter Toggle Button (Liquid Glass) */
+.mercado-filter-btn {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.mercado-filter-btn svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+  display: block !important;
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0 !important;
+}
+
+.mercado-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.mercado-filter-btn.active {
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.35) 0%, rgba(242, 101, 34, 0.15) 100%) !important;
+  border-color: #f26522 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(242, 101, 34, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3) !important;
+}
+
+.mercado-filter-btn.has-active:not(.active) {
+  border-color: rgba(242, 101, 34, 0.75) !important;
+  color: #f26522;
+}
+
+.mercado-filter-badge-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f26522;
+  box-shadow: 0 0 8px #f26522;
+  border: 1.5px solid #0f172a;
+}
+
+/* Filter Panel (Dark Liquid Glass) */
+.mercado-filter-panel {
+  background: linear-gradient(160deg, rgba(24, 32, 52, 0.94) 0%, rgba(15, 23, 42, 0.96) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  animation: filterPanelFadeIn 0.22s ease-out;
+}
+
+@keyframes filterPanelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mercado-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+}
+
+.mercado-filter-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+}
+
+.mercado-filter-reset-link {
+  background: transparent;
+  border: none;
+  color: #f26522;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.mercado-filter-reset-link:hover {
+  background: rgba(242, 101, 34, 0.15);
+  text-decoration: underline;
+}
+
+.mercado-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mercado-filter-group-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.mercado-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.mercado-filter-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.mercado-filter-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.mercado-filter-chip.active {
+  background: rgba(242, 101, 34, 0.24) !important;
+  border-color: #f26522 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.35) !important;
+  font-weight: 800 !important;
+}
+
+.mercado-filter-custom-date-box {
+  width: 100%;
+}
+
+.mercado-filter-date-picker {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  color: #ffffff;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.mercado-filter-date-picker::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.mercado-filter-date-picker:focus {
+  border-color: #f26522 !important;
+  box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.25) !important;
+}
+
+.mercado-filter-select {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 11.5px;
+  color: #ffffff;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mercado-filter-select option {
+  background: #141b2d;
+  color: #ffffff;
+  padding: 8px;
+}
+
+.mercado-filter-select:focus {
+  border-color: #f26522 !important;
+  box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.25) !important;
+}
+
+.mercado-filter-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.mercado-filter-panel-done-btn {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  border: none;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(242, 101, 34, 0.35);
+  transition: all 0.2s ease;
+}
+
+.mercado-filter-panel-done-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.5);
+}
+
+/* Search Box (Image 4 Style) */
+.mercado-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.mercado-search-icon {
+  position: absolute;
+  left: 14px;
+  color: #798394;
+  pointer-events: none;
+}
+
+.mercado-search-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 12px;
+  padding: 10px 36px 10px 38px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: #ffffff;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.mercado-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.mercado-search-input:focus {
+  background: rgba(255, 255, 255, 0.10) !important;
+  border-color: #f26522 !important;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.mercado-search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.mercado-search-clear:hover {
+  color: #ffffff;
+}
+
+/* Sidebar Tab Selector */
+.mercado-sidebar-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: rgba(10, 15, 28, 0.45) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+}
+
+.mercado-tab-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.mercado-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mercado-tab-btn.active {
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.85) 0%, rgba(234, 88, 12, 0.95) 100%) !important;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+}
+
+.mercado-tab-btn.active.tab-accepted {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.85) 0%, rgba(21, 128, 61, 0.95) 100%) !important;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+}
+
+.mercado-tab-badge {
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+/* Job Cards Stream (Sidebar Body) */
+.mercado-job-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: transparent !important;
+  border-radius: 0 0 24px 24px;
+}
+
+.mercado-job-list::-webkit-scrollbar {
+  width: 4px;
+}
+.mercado-job-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+}
+
+/* Empty State Card */
+.mercado-empty-state-card {
+  padding: 40px 20px;
+  text-align: center;
+  color: #798394;
+  background: transparent !important;
+}
+
+.mercado-empty-state-card .empty-icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+.mercado-empty-state-card h4 {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 6px;
+}
+
+.mercado-empty-state-card p {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ===== JOB CARDS (DARK LUXURY LIQUID GLASS) ===== */
+.mercado-job-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 16px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+  flex-shrink: 0 !important;
+  min-height: fit-content !important;
+  height: auto !important;
+}
+
+.mercado-job-card:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(242, 101, 34, 0.6) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(242, 101, 34, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.22) !important;
+}
+
+.mercado-job-card.active {
+  background: rgba(242, 101, 34, 0.15) !important;
+  border-color: #f26522 !important;
+  box-shadow: 0 0 0 1.5px #f26522, 0 12px 30px rgba(242, 101, 34, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+}
+
+.mercado-job-card.accepted-job {
+  border-color: rgba(34, 197, 94, 0.35) !important;
+}
+
+.mercado-job-card.accepted-job:hover {
+  background: rgba(34, 197, 94, 0.08) !important;
+  border-color: #22c55e !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(34, 197, 94, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.22) !important;
+}
+
+.mercado-job-card.accepted-job.active {
+  background: rgba(34, 197, 94, 0.15) !important;
+  border-color: #22c55e !important;
+  box-shadow: 0 0 0 1.5px #22c55e, 0 12px 30px rgba(34, 197, 94, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Inner flex with circular avatar (Image 4) */
+.mercado-card-inner-flex {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.mercado-card-avatar-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(242, 101, 34, 0.12);
+  border: 1px solid rgba(242, 101, 34, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mercado-card-avatar-circle.accepted {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.mercado-card-content-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.mercado-job-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.mercado-job-colonia-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #f26522;
+  background: rgba(242, 101, 34, 0.1);
+  padding: 3px 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(242, 101, 34, 0.25);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mercado-job-card-title {
+  margin: 0 0 5px 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.35;
+}
+
+.mercado-job-card-desc {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mercado-job-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+}
+
+.mercado-ofertas-count {
+  font-weight: 700;
+  color: #f26522;
+  background: rgba(242, 101, 34, 0.12);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.mercado-fecha-tag {
+  color: #798394;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mercado-job-badge-disponible {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 3px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.mercado-job-badge {
+  background: linear-gradient(135deg, #f26522, #ea580c);
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 14px;
+  white-space: nowrap;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+}
+
+.mercado-job-badge.badge-rejected {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.mercado-job-badge.badge-pending {
+  background: linear-gradient(135deg, #f26522, #ea580c);
+}
+
+/* Accepted Card Rows */
+.mercado-accepted-pill-tag {
+  font-size: 10px;
+  font-weight: 900;
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  letter-spacing: 0.5px;
+}
+
+.mercado-accepted-price-tag {
+  font-size: 15px;
+  font-weight: 900;
+  color: #4ade80;
+}
+
+.mercado-accepted-address-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 4px;
+}
+
+.mercado-accepted-client-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.mercado-accepted-client-row strong {
+  color: #ffffff;
+}
+
+.mercado-job-visit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.mercado-coord-link {
+  color: #f26522;
+  font-weight: 800;
+  font-size: 11.5px;
+}
+
+/* Message Alert inside Card */
+.mercado-job-msg-alert {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-size: 11px;
+  color: #bae6fd;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.mercado-msg-dot-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  animation: livePulse 1.2s infinite;
+  flex-shrink: 0;
+}
+
+/* ===== MAP SECTION (FULL BACKGROUND) ===== */
+.mercado-map-section {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 0;
+  border: none;
+  background: #14161f;
+  box-shadow: none;
+  z-index: 1;
+}
+
+.mercado-loading-map {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #798394;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.mercado-map-top-bar {
+  position: absolute;
+  top: 20px;
+  left: 468px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: left 0.3s ease;
+}
+
+.mercado-map-overlay-badge {
+  background: rgba(20, 22, 31, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(242, 101, 34, 0.4);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 12.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.mercado-map-theme-btn {
+  background: rgba(20, 22, 31, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 12.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.mercado-map-theme-btn:hover {
+  background: rgba(30, 34, 48, 0.95);
+  border-color: #f26522;
+  color: #f26522;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(242, 101, 34, 0.25);
+}
+
+.mercado-map-theme-btn:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.mercado-map-live-dot {
+  width: 8px;
+  height: 8px;
+  background: #f26522;
+  border-radius: 50%;
+  animation: livePulse 1.8s infinite;
+}
+
+/* InfoWindow Dark Mode (Image 4 Style) */
+.mercado-info-window.dark {
+  font-family: 'Inter', sans-serif;
+  padding: 4px;
+  max-width: 230px;
+  color: #ffffff;
+}
+
+.mercado-info-window.dark h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.mercado-info-zona {
+  margin: 4px 0 10px 0;
+  font-size: 12px;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mercado-btn-details {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.35);
+}
+
+.mercado-btn-details:hover {
+  background: #ff7438;
+  transform: translateY(-1px);
+}
+
+/* ========================================
+   MODALS (DETALLE, COTIZACIÓN & CHAT) - DARK MODE
+   ======================================== */
+.mercado-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(5, 6, 9, 0.88);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000005 !important;
+  padding: 20px;
+  animation: overlayFadeIn 0.25s ease-out;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.mercado-premium-modal {
+  background: #14161f;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 980px;
+  height: 90vh;
+  max-height: 820px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(242, 101, 34, 0.15);
+  animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #ffffff;
+}
+
+.mercado-premium-header {
+  padding: 18px 24px;
+  background: #181b25;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.mercado-premium-header h2 {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+}
+
+.mercado-modal-close {
+  font-size: 24px;
+  cursor: pointer;
+  color: #798394;
+  line-height: 1;
+  transition: all 0.2s;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.mercado-modal-close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mercado-premium-body {
+  display: flex;
+  flex-direction: row;
+  overflow-y: auto;
+  flex: 1;
+  background: #11131a;
+}
+
+.mercado-premium-details {
+  flex: 0.95;
+  padding: 22px;
+  background: #151821;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.mercado-premium-form {
+  flex: 1.25;
+  padding: 22px;
+  background: #11131a;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+/* Gallery & Photo in Modal */
+.mercado-gallery-type-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+.mercado-gallery-type-badge.facade {
+  background: rgba(242, 101, 34, 0.15);
+  color: #f26522;
+  border: 1px solid rgba(242, 101, 34, 0.35);
+}
+
+.mercado-gallery-type-badge.problem {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.mercado-premium-image-wrapper {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  background: #0d0f14;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.mercado-premium-image-wrapper:hover {
+  border-color: #f26522;
+  box-shadow: 0 10px 30px rgba(242, 101, 34, 0.25);
+}
+
+.mercado-premium-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.mercado-image-zoom-badge {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(15, 17, 24, 0.88);
+  backdrop-filter: blur(6px);
+  color: #ffffff;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+}
+
+.mercado-thumbnails-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.mercado-thumb-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.mercado-thumb-item {
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  flex-shrink: 0;
+  background: #0a0c10;
+  transition: all 0.2s ease;
+}
+
+.mercado-thumb-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mercado-thumb-item.active {
+  border-color: #f26522;
+  box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.4);
+}
+
+.mercado-thumb-badge {
+  font-size: 9px;
+  font-weight: 800;
+  color: #798394;
+}
+
+.mercado-thumb-badge.active {
+  color: #f26522;
+}
+
+.mercado-no-photo-placeholder {
+  height: 160px;
+  background: #181b24;
+  border: 1.5px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #798394;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* Problem Detail Box */
+.mercado-problem-detail-box {
+  background: #181b24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mercado-problem-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.mercado-problem-detail-desc {
+  font-size: 12.5px;
+  color: #cbd5e1;
+  line-height: 1.5;
+  background: #12141c;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mercado-problem-detail-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  color: #798394;
+  padding-top: 4px;
+}
+
+/* Scheduler Box */
+.mercado-hero-scheduler-box {
+  background: #181b24;
+  border: 1.5px solid rgba(34, 197, 94, 0.35);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mercado-hero-scheduler-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mercado-hero-scheduler-header strong {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mercado-hero-scheduler-badge {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.mercado-hero-scheduler-trigger-btn {
+  width: 100%;
+  background: #12141c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s;
+}
+
+.mercado-hero-scheduler-trigger-btn:hover {
+  border-color: #22c55e;
+  background: #181b24;
+}
+
+.mercado-hero-scheduler-btn {
+  width: 100%;
+  padding: 11px 18px;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+}
+
+.mercado-hero-scheduler-btn:hover:not(:disabled) {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+/* Accepted Address Box */
+.mercado-accepted-address-box {
+  background: #181b24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mercado-address-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mercado-address-label {
+  font-size: 11px;
+  font-weight: 900;
+  color: #4ade80;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.mercado-maps-btn {
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.mercado-maps-btn:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+.mercado-address-text {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.4;
+}
+
+/* Facade card in address box */
+.mercado-facade-card-accepted {
+  background: #12141c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mercado-facade-card-accepted:hover {
+  border-color: #f26522;
+  background: #191c26;
+}
+
+.mercado-facade-card-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.mercado-facade-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mercado-facade-card-tag {
+  font-size: 10px;
+  font-weight: 800;
+  color: #f26522;
+}
+
+.mercado-facade-card-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mercado-facade-card-zoom {
+  font-size: 10.5px;
+  color: #798394;
+}
+
+.mercado-facade-card-empty {
+  font-size: 11.5px;
+  color: #798394;
+  padding: 6px 0;
+}
+
+/* Action Buttons (Chat & Arrival Alert) */
+.mercado-contact-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.mercado-contact-action-btn {
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.mercado-contact-action-btn.chat-action {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.35);
+}
+
+.mercado-contact-action-btn.chat-action:hover {
+  background: #ff7438;
+  transform: translateY(-1px);
+}
+
+.mercado-contact-action-btn.arrival-action {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+}
+
+.mercado-contact-action-btn.arrival-action:hover:not(:disabled) {
+  background: #0369a1;
+  transform: translateY(-1px);
+}
+
+.mercado-contact-action-btn.arrival-action.sent {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1.5px solid rgba(34, 197, 94, 0.4);
+  box-shadow: none;
+}
+
+.mercado-arrival-toast-banner {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1.5px solid rgba(34, 197, 94, 0.4);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #4ade80;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* Accepted Price Box */
+.mercado-accepted-price-box {
+  background: #181b24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mercado-accepted-price-label {
+  font-size: 12.5px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.mercado-accepted-price-val {
+  font-size: 18px;
+  font-weight: 900;
+  color: #4ade80;
+}
+
+/* Chat Tab Header in Modal */
+.mercado-modal-header-tabs {
+  display: flex;
+  background: #12141c;
+  padding: 4px;
+  border-radius: 12px;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mercado-modal-header-tab {
+  padding: 7px 14px;
+  border: none;
+  background: transparent;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #798394;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  position: relative;
+}
+
+.mercado-modal-header-tab.active {
+  background: #1e222e;
+  color: #f26522;
+  border: 1px solid rgba(242, 101, 34, 0.3);
+}
+
+.mercado-tab-alert-dot {
+  width: 7px;
+  height: 7px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: livePulse 1.2s infinite;
+}
+
+/* Chat Integrated Panel */
+.mercado-embedded-chat-panel {
+  display: flex;
+  flex-direction: column;
+  background: #11131a;
+  min-height: 480px;
+  max-height: 80vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.mercado-chat-header {
+  padding: 14px 18px;
+  background: #181b24;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.mercado-chat-header-title h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mercado-chat-online-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(34, 197, 94, 0.14);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.mercado-chat-online-dot {
+  width: 6px;
+  height: 6px;
+  background: #4ade80;
+  border-radius: 50%;
+  animation: livePulse 1.5s infinite;
+}
+
+.mercado-chat-messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #11131a;
+}
+
+.mercado-chat-empty-state {
+  margin: auto;
+  text-align: center;
+  padding: 30px 20px;
+  color: #798394;
+  max-width: 300px;
+}
+
+.mercado-chat-empty-state .icon-wrap {
+  width: 48px;
+  height: 48px;
+  background: rgba(242, 101, 34, 0.12);
+  border: 1px solid rgba(242, 101, 34, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+  color: #f26522;
+}
+
+.mercado-chat-empty-state p {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 4px;
+}
+
+.mercado-chat-empty-state span {
+  font-size: 11.5px;
+  color: #798394;
+  line-height: 1.4;
+}
+
+/* Chat Bubbles */
+.mercado-chat-bubble-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 82%;
+}
+
+.mercado-chat-bubble-row.sent {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.mercado-chat-bubble-row.received {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.mercado-chat-bubble-sender {
+  font-size: 10px;
+  font-weight: 800;
+  color: #798394;
+  margin-bottom: 2px;
+}
+
+.mercado-chat-bubble {
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.mercado-chat-bubble-row.sent .mercado-chat-bubble {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  border-bottom-right-radius: 3px;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.3);
+}
+
+.mercado-chat-bubble-row.received .mercado-chat-bubble {
+  background: #1e222e;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom-left-radius: 3px;
+}
+
+.mercado-chat-bubble-time {
+  font-size: 9.5px;
+  color: #5d6778;
+  margin-top: 3px;
+}
+
+/* Input Bar */
+.mercado-chat-input-bar {
+  padding: 12px 16px;
+  background: #181b24;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.mercado-chat-input-bar input {
+  flex: 1;
+  background: #12141c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 12.5px;
+  outline: none;
+}
+
+.mercado-chat-input-bar input:focus {
+  border-color: #f26522;
+  box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.25);
+}
+
+.mercado-chat-send-btn {
+  background: #f26522;
+  color: #ffffff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.mercado-chat-send-btn:hover:not(:disabled) {
+  background: #ff7438;
+}
+
+.mercado-chat-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Lightbox */
+.mercado-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 9, 0.94);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+  padding: 25px;
+}
+
+.mercado-lightbox-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mercado-lightbox-img {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 16px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(242, 101, 34, 0.5);
+}
+
+.mercado-lightbox-close {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  background: #f26522;
+  color: white;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+.mercado-lightbox-close:hover {
+  background: #ff7438;
+  transform: scale(1.1);
+}
+
+/* Modal Open Chat Big Button */
+.mercado-open-chat-card-btn {
+  width: 100%;
+  background: #181b24;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 13px 18px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mercado-open-chat-card-btn:hover {
+  border-color: #f26522;
+  background: #1e222e;
+}
+
+/* Chat banner alert */
+.mercado-chat-alert-banner {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.mercado-chat-alert-icon {
+  font-size: 16px;
+}
+
+.mercado-chat-alert-text {
+  font-size: 12px;
+  color: #bae6fd;
+}
+
+.mercado-chat-alert-text strong {
+  color: #38bdf8;
+  display: block;
+}
+
+/* Mobile Responsive */
+@media (max-width: 900px) {
+  .vcp-header {
+    padding: 0 14px;
+    height: 64px;
+  }
+  
+  .vcp-brand-logo {
+    height: 42px;
+  }
+
+  .mercado-content {
+    position: relative;
+    height: calc(100vh - 64px);
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    display: block;
+  }
+
+  .mercado-map-section {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 0;
+    border: none;
+    z-index: 1;
+  }
+
+  .mercado-sidebar {
+    position: absolute;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: unset;
+    height: 65vh;
+    border-radius: 24px 24px 0 0;
+    z-index: 50;
+    transform: translateY(calc(100% - 70px));
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .mercado-map-top-bar {
+    left: 14px !important;
+    top: 14px !important;
+    gap: 8px !important;
+  }
+
+  .mercado-map-overlay-badge {
+    padding: 6px 12px !important;
+    font-size: 11.5px !important;
+  }
+
+  .mercado-map-theme-btn {
+    padding: 6px 12px !important;
+    font-size: 11.5px !important;
+  }
+
+  .mercado-sidebar.mobile-open {
+    transform: translateY(0);
+  }
+
+  .mercado-mobile-drag-handle {
+    display: block;
+    width: 44px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    margin: 0 auto 8px;
+    cursor: pointer;
+  }
+
+  .mercado-mobile-toggle-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    position: fixed !important;
+    bottom: 85px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 100 !important;
+    background: linear-gradient(135deg, #f26522, #ea580c) !important;
+    color: #ffffff !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+    border-radius: 30px !important;
+    padding: 10px 22px !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(242, 101, 34, 0.5) !important;
+    cursor: pointer !important;
+    gap: 8px !important;
+    width: auto !important;
+    max-width: 240px !important;
+    height: auto !important;
+    min-height: unset !important;
+    white-space: nowrap !important;
+  }
+
+  .mercado-premium-body {
+    flex-direction: column;
+  }
+}
+
+/* ========================================================
+   TABLERO KANBAN DE SERVICIOS ACEPTADOS (LUXURY DARK UI)
+   ======================================================== */
+
+.mercado-kanban-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 72px);
+  overflow: hidden;
+  background: #0b0d13;
+  padding: 16px 24px 20px;
+  gap: 16px;
+  max-width: 1750px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.mercado-kanban-header-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.mercado-kanban-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.mercado-kanban-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mercado-kanban-btn-back {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.mercado-kanban-btn-back:hover {
+  background: #f26522;
+  border-color: #f26522;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.mercado-kanban-main-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mercado-kanban-refresh-btn {
+  background: linear-gradient(135deg, #f26522, #ea580c);
+  color: #ffffff;
+  border: none;
+  border-radius: 22px;
+  padding: 9px 18px;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.4);
+  transition: all 0.2s ease;
+}
+
+.mercado-kanban-refresh-btn:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(242, 101, 34, 0.6);
+}
+
+/* Kanban Search Bar */
+.mercado-kanban-search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.mercado-kanban-search-input {
+  width: 100%;
+  background: #141722;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 30px;
+  padding: 12px 42px 12px 44px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.mercado-kanban-search-input::placeholder {
+  color: #798394;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.mercado-kanban-search-input:focus {
+  border-color: #f26522;
+  background: #191d2a;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.25);
+}
+
+.mercado-kanban-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #f26522;
+  pointer-events: none;
+}
+
+.mercado-kanban-search-clear {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Kanban Active/Done Filter Tabs */
+.mercado-kanban-filter-tabs {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.mercado-kanban-tab-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  border-bottom: 2.5px solid transparent;
+}
+
+.mercado-kanban-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mercado-kanban-tab-btn.active {
+  color: #f26522;
+  border-bottom-color: #f26522;
+  background: rgba(242, 101, 34, 0.1);
+}
+
+.mercado-kanban-tab-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 900;
+  background: rgba(242, 101, 34, 0.2);
+  color: #f26522;
+}
+
+.mercado-kanban-tab-btn.active .mercado-kanban-tab-badge {
+  background: #f26522;
+  color: #ffffff;
+}
+
+/* Kanban Columns Board */
+.mercado-kanban-board {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+}
+
+@media (max-width: 1200px) {
+  .mercado-kanban-board {
+    grid-template-columns: repeat(4, 300px);
+  }
+}
+
+.mercado-kanban-column {
+  background: #13151f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.mercado-kanban-column.col-sos {
+  border-top: 4px solid #ef4444;
+}
+
+.mercado-kanban-column.col-coordinar {
+  border-top: 4px solid #8b5cf6;
+}
+
+.mercado-kanban-column.col-visita {
+  border-top: 4px solid #f59e0b;
+}
+
+.mercado-kanban-column.col-proceso {
+  border-top: 4px solid #06b6d4;
+}
+
+.mercado-kanban-column.col-done {
+  border-top: 4px solid #10b981;
+}
+
+.mercado-kanban-col-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: #171a26;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mercado-kanban-col-title {
+  font-size: 12.5px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mercado-kanban-col-badge {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.mercado-kanban-col-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mercado-kanban-col-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.mercado-kanban-col-body::-webkit-scrollbar-thumb {
+  background: #2a2e3d;
+  border-radius: 4px;
+}
+
+/* Kanban Cards (Image 3 Luxury Dark Style) */
+.mercado-kanban-card {
+  background: #181b26;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mercado-kanban-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(242, 101, 34, 0.6);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 16px rgba(242, 101, 34, 0.2);
+}
+
+.mercado-kanban-card.urgent {
+  border-left: 4px solid #ef4444;
+}
+
+.mercado-kanban-card.coordinating {
+  border-left: 4px solid #8b5cf6;
+}
+
+.mercado-kanban-card.scheduled {
+  border-left: 4px solid #f59e0b;
+}
+
+.mercado-kanban-card.in-progress {
+  border-left: 4px solid #06b6d4;
+}
+
+.mercado-kanban-card.completed {
+  border-left: 4px solid #10b981;
+}
+
+.mercado-kanban-card-client {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #f26522;
+  letter-spacing: 0.5px;
+}
+
+.mercado-kanban-card-addr {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  line-height: 1.35;
+}
+
+.mercado-kanban-card-item {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.mercado-kanban-card-desc {
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mercado-kanban-card-schedule {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mercado-kanban-card-schedule.has-date {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+}
+
+.mercado-kanban-card-schedule.pending {
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: #c084fc;
+}
+
+.mercado-kanban-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 2px;
+}
+
+.mercado-kanban-card-price {
+  font-size: 13.5px;
+  font-weight: 900;
+  color: #4ade80;
+}
+
+.mercado-kanban-card-btn-action {
+  font-size: 11px;
+  font-weight: 800;
+  color: #f26522;
+  background: rgba(242, 101, 34, 0.12);
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISTA 3: GESTIÓN DE USUARIOS / CONTACTOS (LUXURY DARK THEME)
+   ════════════════════════════════════════════════════════════ */
+.mercado-users-view {
+  width: 100%;
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  background: #0b0d13;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.mercado-users-header-card {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+.mercado-users-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.mercado-users-title-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.mercado-users-main-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mercado-users-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mercado-users-btn-new {
+  background: #f26522;
+  color: #ffffff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.4);
+}
+
+.mercado-users-btn-new:hover {
+  background: #ff7836;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(242, 101, 34, 0.6);
+}
+
+.mercado-users-btn-refresh {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 9px 15px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.mercado-users-btn-refresh:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.mercado-users-search-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.mercado-users-search-box {
+  flex: 1;
+  min-width: 280px;
+  background: #0f121a;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  transition: all 0.2s ease;
+}
+
+.mercado-users-search-box:focus-within {
+  border-color: #f26522;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.2);
+}
+
+.mercado-users-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  outline: none;
+}
+
+.mercado-users-search-input::placeholder {
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ─── KPI Metrics Bar ─── */
+.mercado-users-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.mercado-users-kpi-card {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.mercado-users-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(242, 101, 34, 0.4);
+}
+
+.mercado-users-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.mercado-users-kpi-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.mercado-users-kpi-val {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  line-height: 1.1;
+}
+
+.mercado-users-kpi-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.mercado-users-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mercado-user-chip-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 0.80rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.mercado-user-chip-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.mercado-user-chip-btn.active {
+  background: rgba(242, 101, 34, 0.18);
+  border-color: #f26522;
+  color: #f26522;
+  box-shadow: 0 0 12px rgba(242, 101, 34, 0.25);
+}
+
+.mercado-user-chip-badge {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.mercado-user-chip-btn.active .mercado-user-chip-badge {
+  background: #f26522;
+  color: #ffffff;
+}
+
+/* ─── Grid de Tarjetas de Usuarios ─── */
+.mercado-users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.mercado-user-card {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.mercado-user-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(242, 101, 34, 0.4);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+}
+
+.mercado-user-card-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mercado-user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #1e2433;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #ffffff;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.mercado-user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mercado-user-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mercado-user-name {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.mercado-user-name:hover {
+  color: #f26522;
+}
+
+.mercado-user-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.mercado-user-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.mercado-user-status-dot.active {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+.mercado-user-status-dot.inactive {
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+.mercado-user-info-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.80rem;
+  color: #cbd5e1;
+}
+
+.mercado-user-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mercado-user-info-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mercado-user-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mercado-user-btn-action {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.mercado-user-btn-action:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.mercado-user-btn-action.whatsapp {
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.mercado-user-btn-action.whatsapp:hover {
+  background: rgba(34, 197, 94, 0.25);
+  color: #ffffff;
+}
+
+.mercado-user-btn-action.primary {
+  color: #f26522;
+  background: rgba(242, 101, 34, 0.12);
+  border-color: rgba(242, 101, 34, 0.3);
+}
+
+.mercado-user-btn-action.primary:hover {
+  background: #f26522;
+  color: #ffffff;
+}
+
+/* ─── Modal / Desglose de Historial de Trabajos del Cliente ─── */
+.mercado-client-jobs-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.mercado-client-jobs-modal {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.mercado-client-jobs-header {
+  padding: 20px 24px;
+  background: #181b28;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mercado-client-jobs-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mercado-client-job-item {
+  background: #0f121a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mercado-client-job-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mercado-client-job-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.mercado-client-job-price {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #4ade80;
+}
+
+.mercado-client-job-desc {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.mercado-client-job-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.76rem;
+  color: #64748b;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISTA 1: NUEVO TABLERO OPERATIVO 3 COLUMNAS (NO-SCROLL LAYOUT)
+   ════════════════════════════════════════════════════════════ */
+.mercado-container {
+  min-height: 100vh;
+  background-color: #0b0d13;
+  padding: 0;
+  color: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Mode Tablero: 100% viewport locked, no body/window scroll */
+.mercado-container.mercado-tablero-mode {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.mercado-container.mercado-tablero-mode .vcp-header {
+  height: 54px !important;
+  min-height: 54px !important;
+  max-height: 54px !important;
+  padding: 0 16px !important;
+  flex-shrink: 0 !important;
+}
+
+.mercado-container.mercado-tablero-mode .vcp-brand-logo {
+  height: 42px !important;
+}
+
+.mercado-board-workspace {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  height: calc(100vh - 54px);
+  max-height: calc(100vh - 54px);
+  padding: 6px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #0b0d13;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Top Header Bar */
+.mercado-board-header {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 5px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.mercado-board-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mercado-board-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mercado-board-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.96rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.3px;
+}
+
+.mercado-board-total-badge {
+  background: rgba(242, 101, 34, 0.2);
+  color: #f26522;
+  border: 1px solid rgba(242, 101, 34, 0.35);
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 12px;
+}
+
+.mercado-board-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mercado-board-search-box {
+  background: #0f121a;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  width: 220px;
+  transition: all 0.2s ease;
+}
+
+.mercado-board-search-box:focus-within {
+  border-color: #f26522;
+  box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.2);
+}
+
+.mercado-board-search-input {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 600;
+  outline: none;
+  width: 100%;
+}
+
+.mercado-board-search-input::placeholder {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.mercado-board-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mercado-board-filter-chips::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.mercado-board-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.mercado-board-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.mercado-board-chip.active {
+  background: rgba(242, 101, 34, 0.2);
+  border-color: #f26522;
+  color: #f26522;
+  box-shadow: 0 0 8px rgba(242, 101, 34, 0.25);
+}
+
+/* ─── MOBILE SEGMENTED TAB BAR (Hidden on desktop) ─── */
+.mercado-board-mobile-tab-bar {
+  display: none;
+  align-items: center;
+  background: rgba(15, 18, 26, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.mercado-board-mobile-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.mercado-board-mobile-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.mercado-board-mobile-tab-btn.active {
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.25) 0%, rgba(234, 88, 12, 0.16) 100%);
+  border-color: rgba(242, 101, 34, 0.6);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(242, 101, 34, 0.25), inset 0 0 10px rgba(242, 101, 34, 0.12);
+}
+
+.mercado-board-mobile-tab-pill {
+  font-size: 0.62rem;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 1px 6px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.mercado-board-mobile-tab-btn.active .mercado-board-mobile-tab-pill {
+  background: #f26522;
+  color: #ffffff;
+}
+
+.mercado-board-mobile-tab-pill.folio {
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mercado-board-mobile-tab-pill.progress {
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.mercado-board-mobile-tab-btn.active .mercado-board-mobile-tab-pill.progress {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+}
+
+/* ─── MOBILE PROGRESS CARD (Hidden on desktop, shown above Mis Trabajos on mobile) ─── */
+.mercado-board-mobile-progress-card {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  background: #0f121a;
+  border: 1.5px solid rgba(242, 101, 34, 0.35);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 12px rgba(242, 101, 34, 0.1);
+  box-sizing: border-box;
+}
+
+.mercado-board-mobile-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.mercado-board-mobile-progress-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mercado-board-mobile-progress-label {
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #f26522;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.mercado-board-mobile-progress-folio {
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.mercado-board-mobile-progress-step-pill {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 1px 8px;
+  border-radius: 10px;
+}
+
+.mercado-board-mobile-stepper {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.mercado-board-mobile-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mercado-board-mobile-step-item:hover {
+  transform: translateY(-1px);
+}
+
+.mercado-board-mobile-step-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #151824;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  transition: all 0.2s ease;
+}
+
+.mercado-board-mobile-step-item.completed .mercado-board-mobile-step-icon {
+  background: #16a34a;
+  border-color: #22c55e;
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+.mercado-board-mobile-step-item.current .mercado-board-mobile-step-icon {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  border-color: #f97316;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.55);
+  transform: scale(1.08);
+}
+
+.mercado-board-mobile-step-label {
+  font-size: 0.60rem;
+  font-weight: 800;
+  color: #64748b;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.mercado-board-mobile-step-item.completed .mercado-board-mobile-step-label {
+  color: #4ade80;
+}
+
+.mercado-board-mobile-step-item.current .mercado-board-mobile-step-label {
+  color: #f26522;
+  font-weight: 900;
+}
+
+/* ─── MOBILE SUBNAV (Hidden on desktop) ─── */
+.mercado-board-mobile-subnav {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: rgba(20, 23, 34, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
+
+.mercado-board-subnav-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mercado-board-subnav-back-btn:hover {
+  background: rgba(242, 101, 34, 0.18);
+  border-color: #f26522;
+  color: #ffffff;
+}
+
+.mercado-board-subnav-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mercado-board-subnav-folio {
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #f26522;
+  background: rgba(242, 101, 34, 0.15);
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(242, 101, 34, 0.3);
+}
+
+.mercado-board-subnav-stage-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* ─── 3 COLUMNS MAIN WORKSPACE ─── */
+.mercado-board-3col-layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 230px;
+  gap: 8px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  height: calc(100% - 64px);
+  overflow: hidden;
+}
+
+@media (max-width: 1200px) {
+  .mercado-board-3col-layout {
+    grid-template-columns: 250px minmax(0, 1fr) 210px;
+  }
+}
+
+/* ═══════════════════════════════════════
+   COLUMNA 1: LISTA DE TRABAJOS (IZQUIERDA - ÚNICO SCROLL DEL SISTEMA)
+   ═══════════════════════════════════════ */
+.mercado-board-col-list {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.mercado-board-col-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.mercado-board-col-list-title {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mercado-board-job-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto !important; /* ONLY SCROLLABLE AREA */
+  overflow-x: hidden;
+  padding-right: 3px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Custom scrollbar styling for Col 1 */
+.mercado-board-job-cards-list::-webkit-scrollbar {
+  width: 5px;
+}
+.mercado-board-job-cards-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+.mercado-board-job-cards-list::-webkit-scrollbar-thumb {
+  background: rgba(242, 101, 34, 0.4);
+  border-radius: 4px;
+}
+.mercado-board-job-cards-list::-webkit-scrollbar-thumb:hover {
+  background: #f26522;
+}
+
+.mercado-board-job-card {
+  background: #0f121a;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.mercado-board-job-card:hover {
+  border-color: rgba(242, 101, 34, 0.4);
+  transform: translateY(-1px);
+  background: #161a25;
+}
+
+.mercado-board-job-card.selected {
+  border-color: #f26522;
+  background: rgba(242, 101, 34, 0.09);
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.22), inset 0 0 0 1px #f26522;
+}
+
+.mercado-board-job-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.mercado-board-job-folio {
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: #f26522;
+  background: rgba(242, 101, 34, 0.15);
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+
+.mercado-board-job-status-pill {
+  font-size: 0.60rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.mercado-board-job-status-pill.in-progress {
+  background: rgba(242, 101, 34, 0.2);
+  color: #f26522;
+  border: 1px solid rgba(242, 101, 34, 0.4);
+}
+
+.mercado-board-job-status-pill.scheduled {
+  background: rgba(139, 92, 246, 0.2);
+  color: #c084fc;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+}
+
+.mercado-board-job-status-pill.done {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.mercado-board-job-status-pill.sos {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  animation: pulseSOS 1.5s infinite;
+}
+
+.mercado-board-job-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mercado-board-job-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.mercado-board-job-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mercado-board-job-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 3px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+/* ═══════════════════════════════════════
+   COLUMNA 2: DETALLE DEL TRABAJO (CENTRO - COMPACTO Y SNUG)
+   ═══════════════════════════════════════ */
+.mercado-board-col-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto !important;
+  justify-content: flex-start;
+  padding-right: 2px;
+}
+
+.mercado-board-col-detail::-webkit-scrollbar {
+  width: 4px;
+}
+
+.mercado-board-col-detail::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+/* ─── Fila Superior: Datos del Cliente + Consiste en (Izquierda) vs Propiedad / Fachada (Derecha) ─── */
+.mercado-board-mid-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  flex-shrink: 0;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .mercado-board-mid-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mercado-board-left-info-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.mercado-board-card {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 7px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.mercado-board-card.compact {
+  padding: 6px 9px;
+}
+
+.mercado-board-card-title {
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #f26522;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+}
+
+.mercado-board-boxes-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mercado-board-info-box {
+  background: #0f121a;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  padding: 3px 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.mercado-board-info-box-label {
+  font-size: 0.54rem;
+  font-weight: 900;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.mercado-board-info-box-val {
+  font-size: 0.70rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mercado-board-card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.62rem;
+  color: #94a3b8;
+}
+
+.mercado-board-card-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Client Details Grid (Side by side Nombre & Teléfono) */
+.mercado-board-client-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.mercado-board-client-item {
+  background: #0f121a;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  padding: 3px 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.mercado-board-client-label {
+  font-size: 0.56rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.mercado-board-client-val {
+  font-size: 0.70rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Tarjeta Derecha: Propiedad / Fachada / Folio ─── */
+.mercado-board-property-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 5px;
+  background: linear-gradient(135deg, #161924 0%, #10131d 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mercado-board-property-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.mercado-board-property-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mercado-board-banner-tag {
+  background: #f26522;
+  color: #ffffff;
+  font-size: 0.58rem;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.mercado-board-property-type-pill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.62rem;
+  color: #cbd5e1;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.mercado-board-property-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mercado-board-btn-gps {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.mercado-board-btn-gps:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.mercado-board-btn-call {
+  background: #f26522;
+  color: #ffffff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.66rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(242, 101, 34, 0.4);
+  transition: all 0.2s ease;
+}
+
+.mercado-board-btn-call:hover {
+  background: #ff7836;
+  transform: translateY(-1px);
+}
+
+.mercado-board-btn-pdf {
+  background: linear-gradient(135deg, #f26522, #ea580c);
+  color: #ffffff;
+  border: 1px solid rgba(242, 101, 34, 0.6);
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 0.66rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(242, 101, 34, 0.4);
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+}
+
+.mercado-board-btn-pdf:hover {
+  background: #ff7836;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.6);
+}
+
+.mercado-board-property-content {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+.mercado-board-property-facade-box {
+  width: 108px;
+  min-width: 108px;
+  height: 82px;
+  min-height: 82px;
+  max-height: 82px;
+  border-radius: 7px;
+  overflow: hidden;
+  position: relative;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  background: #0a0d14;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mercado-board-property-facade-box:hover {
+  transform: scale(1.02);
+  border-color: #f26522;
+}
+
+.mercado-board-banner-facade-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mercado-board-banner-facade-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  background: rgba(242, 101, 34, 0.08);
+}
+
+.mercado-board-facade-zoom-badge {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  font-size: 0.48rem;
+  font-weight: 900;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(3px);
+  color: #ffffff;
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.2px;
+}
+
+.mercado-board-property-address-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mercado-board-property-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.84rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.2px;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mercado-board-property-zone {
+  font-size: 0.66rem;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Tarjeta: Evidencias del Cliente ─── */
+.mercado-board-client-evidence-card {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 5px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mercado-board-client-evidence-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.mercado-board-client-photo-grid {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 1px 0 2px;
+}
+
+.mercado-board-client-photo-grid::-webkit-scrollbar {
+  height: 3px;
+}
+
+.mercado-board-client-photo-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.mercado-board-client-photo-thumb {
+  position: relative;
+  width: 76px;
+  height: 52px;
+  min-width: 76px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  background: #0b0e15;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mercado-board-client-photo-thumb:hover {
+  border-color: #f26522;
+  transform: scale(1.04);
+  box-shadow: 0 3px 10px rgba(242, 101, 34, 0.35);
+}
+
+.mercado-board-client-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mercado-board-client-photo-badge {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  font-size: 0.50rem;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.2px;
+  z-index: 2;
+}
+
+.mercado-board-client-empty-note {
+  font-size: 0.66rem;
+  color: #64748b;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+/* ─── Tarjeta: Reporte del Técnico (4 fotos) ─── */
+.mercado-board-evidence-card {
+  flex-shrink: 0;
+}
+
+.mercado-board-evidence-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-bottom: 2px;
+}
+
+.mercado-board-btn-open-gallery {
+  background: rgba(242, 101, 34, 0.15);
+  color: #f26522;
+  border: 1px solid rgba(242, 101, 34, 0.35);
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s ease;
+  letter-spacing: 0.2px;
+}
+
+.mercado-board-btn-open-gallery:hover {
+  background: #f26522;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(242, 101, 34, 0.35);
+}
+
+.mercado-board-evidence-counter {
+  font-size: 0.62rem;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 5px;
+  letter-spacing: 0.2px;
+}
+
+.mercado-board-evidence-counter.ready {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.mercado-board-evidence-counter.pending {
+  background: rgba(234, 179, 8, 0.2);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.mercado-board-evidence-counter.info {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.mercado-board-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.mercado-board-photo-slot {
+  height: 72px;
+  border-radius: 8px;
+  background: #0b0e15;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.mercado-board-photo-slot.empty {
+  border: 1.5px dashed rgba(255, 255, 255, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mercado-board-photo-slot.empty:hover {
+  border-color: #f26522;
+  background: rgba(242, 101, 34, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.2);
+}
+
+.mercado-board-photo-empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+}
+
+.mercado-board-photo-empty-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(242, 101, 34, 0.12);
+  border: 1px solid rgba(242, 101, 34, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.mercado-board-photo-slot.empty:hover .mercado-board-photo-empty-circle {
+  transform: scale(1.1);
+  background: rgba(242, 101, 34, 0.2);
+}
+
+.mercado-board-photo-slot-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  letter-spacing: 0.2px;
+}
+
+.mercado-board-photo-req-badge {
+  font-size: 0.52rem;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.mercado-board-photo-req-badge.req {
+  background: rgba(234, 179, 8, 0.18);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+.mercado-board-photo-req-badge.opt {
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Filled Slot */
+.mercado-board-photo-slot.filled {
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.mercado-board-photo-slot.filled:hover {
+  border-color: #f26522;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 12px rgba(242, 101, 34, 0.25);
+}
+
+.mercado-board-photo-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.mercado-board-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.mercado-board-photo-slot.filled:hover .mercado-board-photo-img {
+  transform: scale(1.05);
+}
+
+.mercado-board-photo-slot-pill {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: #4ade80;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.54rem;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  z-index: 2;
+}
+
+.mercado-board-photo-actions-overlay {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 3px;
+  opacity: 0;
+  z-index: 3;
+  transition: opacity 0.2s ease;
+}
+
+.mercado-board-photo-slot:hover .mercado-board-photo-actions-overlay {
+  opacity: 1;
+}
+
+.mercado-board-photo-btn-icon {
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mercado-board-photo-btn-icon:hover {
+  background: #f26522;
+  border-color: #f26522;
+  transform: scale(1.1);
+}
+
+.mercado-board-photo-btn-icon.delete:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.mercado-board-evidence-notice {
+  font-size: 0.66rem;
+  padding: 3px 6px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+.mercado-board-evidence-notice.warning {
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  color: #facc15;
+}
+
+.mercado-board-evidence-notice.success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: #4ade80;
+}
+
+/* ═══════════════════════════════════════
+   BOTONES PRINCIPALES DE FLUJO
+   ═══════════════════════════════════════ */
+.mercado-board-flow-card {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mercado-board-flow-buttons-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 1.15fr 0.95fr;
+  gap: 8px;
+}
+
+.mercado-board-flow-btn {
+  height: 40px;
+  border-radius: 9px;
+  border: none;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+
+/* Botón 1: Iniciar Reporte */
+.mercado-board-flow-btn.btn-start {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 12px rgba(242, 101, 34, 0.4);
+}
+
+.mercado-board-flow-btn.btn-start:hover {
+  background: linear-gradient(135deg, #ff7836 0%, #f26522 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(242, 101, 34, 0.5);
+}
+
+/* Botón 1 (Alternativo): Continuar Reporte */
+.mercado-board-flow-btn.btn-continue {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.4);
+}
+
+.mercado-board-flow-btn.btn-continue:hover {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(37, 99, 235, 0.5);
+}
+
+/* Botón 3: Finalizar Trabajo */
+.mercado-board-flow-btn.btn-finish {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(34, 197, 94, 0.35);
+}
+
+.mercado-board-flow-btn.btn-finish:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  transform: translateY(-1px);
+}
+
+.mercado-board-flow-btn.btn-finish:disabled {
+  background: #1c202b;
+  color: #64748b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.75;
+}
+
+/* Botón 4: Programar Segunda Visita */
+.mercado-board-flow-btn.btn-second-visit {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+}
+
+.mercado-board-flow-btn.btn-second-visit:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.mercado-board-flow-btn.btn-second-visit.has-visit {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #8b5cf6;
+  color: #c084fc;
+}
+
+/* ═══════════════════════════════════════
+   COLUMNA 3: PROGRESO DEL SERVICIO (DERECHA - SIN SCROLL)
+   ═══════════════════════════════════════ */
+.mercado-board-col-progress {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.mercado-board-col-progress-header {
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.mercado-board-progress-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Vertical Stepper Container */
+.mercado-board-stepper-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  padding: 2px 0;
+  overflow: hidden !important;
+}
+
+.mercado-board-stepper-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  cursor: pointer;
+  padding: 1px 0;
+}
+
+/* Connecting Line */
+.mercado-board-stepper-line {
+  position: absolute;
+  top: 22px;
+  left: 13px;
+  width: 2px;
+  height: calc(100% + 4px);
+  background: rgba(255, 255, 255, 0.12);
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.mercado-board-stepper-line.active {
+  background: linear-gradient(to bottom, #f26522, #eab308);
+  box-shadow: 0 0 8px rgba(242, 101, 34, 0.6);
+}
+
+.mercado-board-stepper-line.done {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+/* Circular Node Icon (Sketch Image 3) */
+.mercado-board-step-node {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #0f121a;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  z-index: 2;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mercado-board-stepper-item.completed .mercado-board-step-node {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: #22c55e;
+  color: #4ade80;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+.mercado-board-stepper-item.current .mercado-board-step-node {
+  background: rgba(242, 101, 34, 0.2);
+  border-color: #f26522;
+  color: #f26522;
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.6);
+}
+
+.mercado-board-step-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mercado-board-step-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #94a3b8;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mercado-board-stepper-item.completed .mercado-board-step-title,
+.mercado-board-stepper-item.current .mercado-board-step-title {
+  color: #ffffff;
+}
+
+.mercado-board-step-desc {
+  font-size: 0.60rem;
+  color: #64748b;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mercado-board-step-item.current .mercado-board-step-desc {
+  color: #f26522;
+  font-weight: 600;
+}
+
+.mercado-board-step-badge {
+  font-size: 0.54rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 4px;
+  width: fit-content;
+  text-transform: uppercase;
+}
+
+.mercado-board-step-badge.done {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.mercado-board-step-badge.current {
+  background: rgba(242, 101, 34, 0.2);
+  color: #f26522;
+}
+
+.mercado-board-step-badge.pending {
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
+}
+
+/* ─── Modal para Segunda Visita ─── */
+.mercado-second-visit-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.mercado-second-visit-modal {
+  background: #141722;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.mercado-second-visit-header {
+  padding: 18px 22px;
+  background: #181b28;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mercado-second-visit-body {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mercado-second-visit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mercado-second-visit-label {
+  font-size: 0.80rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.mercado-second-visit-input,
+.mercado-second-visit-textarea {
+  background: #0f121a;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 0.88rem;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mercado-second-visit-input:focus,
+.mercado-second-visit-textarea:focus {
+  border-color: #f26522;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.2);
+}
+
+.mercado-second-visit-footer {
+  padding: 16px 22px;
+  background: #181b28;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.mercado-second-visit-btn-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mercado-second-visit-btn-submit {
+  background: #f26522;
+  border: none;
+  color: #ffffff;
+  padding: 9px 20px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.4);
+  transition: all 0.2s ease;
+}
+
+.mercado-second-visit-btn-submit:hover:not(:disabled) {
+  background: #ff7836;
+  transform: translateY(-2px);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   MOBILE & TABLET RESPONSIVENESS (TABLERO, NAVBAR, MAPA, DRAWER, MODALS)
+   ═════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .mercado-container.mercado-tablero-mode {
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: unset !important;
+    overflow-y: auto !important;
+  }
+
+  .mercado-board-workspace {
+    height: auto !important;
+    min-height: calc(100vh - 54px) !important;
+    max-height: unset !important;
+    overflow-y: visible !important;
+    padding: 8px 10px 85px !important;
+    gap: 8px !important;
+  }
+
+  .mercado-board-header {
+    padding: 8px 10px !important;
+    gap: 8px !important;
+  }
+
+  .mercado-board-mobile-tab-bar {
+    display: flex !important;
+  }
+
+  .mercado-board-mobile-progress-card {
+    display: flex !important;
+  }
+
+  .mercado-board-mobile-subnav {
+    display: flex !important;
+  }
+
+  .mercado-board-3col-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    overflow: visible !important;
+    gap: 8px !important;
+  }
+
+  /* Control de visibilidad de pestañas móviles */
+  .mercado-board-col-list.is-mobile-hidden,
+  .mercado-board-col-detail.is-mobile-hidden,
+  .mercado-board-col-progress {
+    display: none !important;
+  }
+
+  .mercado-board-col-list.is-mobile-active,
+  .mercado-board-col-detail.is-mobile-active {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+    max-height: unset !important;
+    height: auto !important;
+    overflow: visible !important;
+    animation: fadeInTableroTab 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes fadeInTableroTab {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .mercado-board-col-list {
+    max-height: unset !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 8px !important;
+  }
+
+  .mercado-board-job-cards-list {
+    max-height: unset !important;
+    overflow: visible !important;
+  }
+
+  .mercado-board-col-detail {
+    max-height: unset !important;
+    height: auto !important;
+    overflow: visible !important;
+    gap: 8px !important;
+    padding-right: 0 !important;
+  }
+
+  .mercado-board-mid-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Mercado Split Screen => Full Map + Bottom Sheet Drawer */
+  .mercado-content {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    height: calc(100vh - 56px) !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .mercado-map-section {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+  }
+
+  .mercado-map-overlay-badge {
+    top: 10px !important;
+    left: 10px !important;
+    font-size: 11px !important;
+    padding: 5px 12px !important;
+    z-index: 10 !important;
+  }
+
+  /* Floating Pill Toggle Button */
+  .mercado-mobile-toggle-btn {
+    display: inline-flex !important;
+    position: fixed !important;
+    bottom: 82px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 35 !important;
+    background: linear-gradient(135deg, #f26522 0%, #ea580c 100%) !important;
+    color: #ffffff !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+    padding: 0 20px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    width: auto !important;
+    min-width: 150px !important;
+    max-width: 240px !important;
+    border-radius: 30px !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 800 !important;
+    font-size: 13px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    box-shadow: 0 8px 25px rgba(242, 101, 34, 0.6), 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .mercado-mobile-toggle-btn:active {
+    transform: translateX(-50%) scale(0.96) !important;
+  }
+
+  /* Uber-like Bottom Sheet Drawer */
+  .mercado-sidebar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    height: 75vh !important;
+    max-height: 85vh !important;
+    z-index: 40 !important;
+    border-radius: 24px 24px 0 0 !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
+    border-bottom: none !important;
+    background: linear-gradient(145deg,
+        rgba(15, 23, 42, 0.90) 0%,
+        rgba(10, 15, 28, 0.84) 100%) !important;
+    backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(200%) contrast(108%) !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.20) !important;
+    transform: translateY(calc(100% - 68px)) !important;
+    transition: transform 0.35s cubic-bezier(0.32, 1.25, 0.6, 1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .mercado-sidebar.mobile-open {
+    transform: translateY(0) !important;
+  }
+
+  .mercado-mobile-drag-handle {
+    display: block !important;
+    width: 44px !important;
+    height: 5px !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-radius: 10px !important;
+    margin: 0 auto 8px !important;
+    cursor: pointer !important;
+  }
+
+  .mercado-sidebar-header {
+    flex-shrink: 0 !important;
+    padding: 10px 16px 12px !important;
+    cursor: pointer !important;
+    background: linear-gradient(180deg, rgba(242, 101, 34, 0.12) 0%, rgba(15, 23, 42, 0.5) 100%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10) !important;
+  }
+
+  .mercado-sidebar-subtitle {
+    font-size: 17px !important;
+  }
+
+  .mercado-sidebar-desc {
+    font-size: 11.5px !important;
+  }
+
+  .mercado-sidebar-tabs-container {
+    flex-shrink: 0 !important;
+  }
+
+  .mercado-job-list {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 14px 16px 130px 16px !important;
+    background: transparent !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+
+  .mercado-job-card {
+    flex-shrink: 0 !important;
+    min-height: fit-content !important;
+    height: auto !important;
+    padding: 14px 16px !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Unified Mobile Header (Single Row, No Overflow) */
+  .vcp-header {
+    height: 56px !important;
+    min-height: 56px !important;
+    max-height: 56px !important;
+    padding: 0 10px !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    z-index: 100 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .vcp-header-left {
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .vcp-brand-logo {
+    height: 30px !important;
+    max-height: 30px !important;
+    max-width: 95px !important;
+    object-fit: contain !important;
+  }
+
+  .vcp-header-nav {
+    display: none !important;
+  }
+
+  .vcp-nav-btn {
+    padding: 6px 9px !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.3px !important;
+    border-radius: 7px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  .vcp-nav-icon-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border-radius: 8px !important;
+    margin-right: 2px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .vcp-nav-icon-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+  }
+
+  .vcp-header-right {
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .vcp-user-info-text {
+    display: none !important;
+  }
+
+  .vcp-avatar-btn {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+  }
+
+  /* Board Responsiveness */
+  .mercado-board-header {
+    padding: 8px 10px;
+  }
+
+  .mercado-board-header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .mercado-board-header-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .mercado-board-search-box {
+    flex: 1;
+    width: auto;
+  }
+
+  .mercado-board-flow-buttons-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .mercado-board-flow-btn {
+    height: 44px !important;
+    font-size: 0.80rem !important;
+  }
+
+  .mercado-board-banner-meta-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px;
+  }
+
+  .mercado-board-property-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mercado-board-property-facade-box {
+    width: 100% !important;
+    height: 140px !important;
+  }
+
+  /* Users / Clientes View Responsive */
+  .mercado-users-container {
+    padding: 12px 10px 24px !important;
+    max-width: 100% !important;
+  }
+
+  .mercado-users-kpis-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .mercado-users-search-row {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .mercado-users-search-box {
+    width: 100% !important;
+  }
+
+  .mercado-users-filter-chips {
+    width: 100% !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 4px !important;
+  }
+
+  .mercado-users-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Modals on Mobile: Bottom-Sheet Drawer Style */
+  .mercado-modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .mercado-premium-modal {
+    border-radius: 24px 24px 0 0 !important;
+    max-height: 92vh !important;
+    width: 100% !important;
+    border-bottom: none !important;
+    margin: 0 !important;
+  }
+
+  .mercado-premium-body {
+    flex-direction: column !important;
+    max-height: calc(92vh - 120px) !important;
+  }
+
+  .mercado-premium-details {
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 14px !important;
+    max-height: none !important;
+  }
+
+  .mercado-premium-form {
+    padding: 14px !important;
+    max-height: none !important;
+  }
+
+  .mercado-premium-info-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .mercado-second-visit-modal {
+    max-width: 95% !important;
+    border-radius: 18px !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+  }
+
+  .mercado-client-jobs-modal {
+    width: 96% !important;
+    max-height: 90vh !important;
+    border-radius: 20px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PREMIUM MODAL FORM & BUTTONS (HIGH CONTRAST DARK LUXURY)
+   ═══════════════════════════════════════════════════════════════ */
+.mercado-premium-footer {
+  padding: 16px 24px;
+  background: #181b25;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.mercado-btn-cancel {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.22) !important;
+  padding: 12px 22px !important;
+  border-radius: 12px !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.2s ease !important;
+  font-family: inherit !important;
+}
+
+.mercado-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+.mercado-premium-submit {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 12px 26px !important;
+  border-radius: 12px !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-shadow: 0 4px 18px rgba(242, 101, 34, 0.45) !important;
+  transition: all 0.22s ease !important;
+  font-family: inherit !important;
+  letter-spacing: 0.3px !important;
+}
+
+.mercado-premium-submit:hover {
+  background: linear-gradient(135deg, #ff7a38 0%, #f26522 100%) !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 25px rgba(242, 101, 34, 0.6) !important;
+}
+
+.mercado-premium-submit:active {
+  transform: translateY(0);
+}
+
+.mercado-premium-input {
+  width: 100%;
+  background: #181b24 !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  padding: 12px 14px 12px 42px !important;
+  color: #ffffff !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  outline: none !important;
+  font-family: inherit !important;
+  transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
+}
+
+.mercado-premium-input:focus {
+  border-color: #f26522 !important;
+  background: #1f2330 !important;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.3) !important;
+}
+
+.mercado-premium-textarea {
+  width: 100%;
+  background: #181b24 !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  color: #ffffff !important;
+  font-size: 13.5px !important;
+  font-family: inherit !important;
+  outline: none !important;
+  resize: vertical !important;
+  line-height: 1.5 !important;
+  transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
+}
+
+.mercado-premium-textarea:focus {
+  border-color: #f26522 !important;
+  background: #1f2330 !important;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.3) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TABLERO HORARIO DE VISITA BOX & MODAL
+   ═══════════════════════════════════════════════════════════════ */
+.mercado-board-schedule-action-box {
+  background: #131722;
+  border: 1.5px solid rgba(242, 101, 34, 0.35);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: all 0.25s ease;
+}
+
+.mercado-board-schedule-action-box.mandatory {
+  background: rgba(245, 158, 11, 0.07);
+  border: 1.5px dashed rgba(245, 158, 11, 0.65);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
+  animation: scheduleBorderGlow 2s infinite ease-in-out;
+}
+
+@keyframes scheduleBorderGlow {
+  0%, 100% { border-color: rgba(245, 158, 11, 0.5); box-shadow: 0 0 12px rgba(245, 158, 11, 0.15); }
+  50% { border-color: rgba(245, 158, 11, 0.95); box-shadow: 0 0 22px rgba(245, 158, 11, 0.35); }
+}
+
+.mercado-board-schedule-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.mercado-board-schedule-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mercado-board-schedule-label {
+  font-size: 11px;
+  font-weight: 900;
+  color: #f26522;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: uppercase;
+}
+
+.mercado-board-schedule-status-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.mercado-board-schedule-status-tag.confirmed {
+  background: rgba(34, 197, 94, 0.16);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.mercado-board-schedule-status-tag.pending {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.mercado-board-schedule-status-tag.mandatory {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  animation: pulseTag 1.5s infinite;
+}
+
+@keyframes pulseTag {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; filter: brightness(1.2); }
+}
+
+.mercado-board-schedule-time-text {
+  font-size: 12.5px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mercado-board-schedule-time-text strong {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.mercado-board-schedule-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.mercado-board-schedule-countdown.imminent {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
+}
+
+.mercado-board-schedule-countdown.upcoming {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.mercado-board-schedule-countdown.inprogress {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.mercado-board-schedule-countdown.future {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.mercado-board-schedule-not-set {
+  color: #fbbf24;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.mercado-board-schedule-change-btn {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  border: none;
+  padding: 9px 15px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.35);
+  transition: all 0.2s ease;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.mercado-board-schedule-change-btn.mandatory {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45);
+  animation: btnPulse 1.8s infinite alternate;
+}
+
+@keyframes btnPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.025); }
+}
+
+.mercado-board-schedule-change-btn:hover {
+  background: linear-gradient(135deg, #ff7a38 0%, #f26522 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.5);
+}
+
+/* Uber Floating Nav Panel Dynamic Schedule Row */
+.mercado-uber-schedule-banner {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.mercado-uber-schedule-banner.has-date {
+  border-color: rgba(56, 189, 248, 0.3);
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.mercado-uber-schedule-banner.missing {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.mercado-uber-quick-schedule-btn {
+  background: #f26522;
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.mercado-uber-quick-schedule-btn:hover {
+  background: #ff7a38;
+}
+
+.mercado-schedule-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 12, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3500;
+  padding: 20px;
+  animation: overlayFadeIn 0.2s ease-out;
+}
+
+.mercado-schedule-modal {
+  background: #141722;
+  border: 1.5px solid rgba(242, 101, 34, 0.4);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 25px rgba(242, 101, 34, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mercado-schedule-modal-header {
+  padding: 16px 20px;
+  background: #181c2a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mercado-schedule-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mercado-schedule-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #11131a;
+}
+
+.mercado-schedule-form-group label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.mercado-schedule-datetime-input {
+  width: 100%;
+  background: #181b24;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 11px 14px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.mercado-schedule-datetime-input:focus {
+  border-color: #f26522;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.25);
+}
+
+.mercado-schedule-modal-footer {
+  padding: 14px 20px;
+  background: #181c2a;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.mercado-schedule-textarea {
+  width: 100%;
+  background: #181b24;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 11px 14px;
+  color: #ffffff;
+  font-size: 13.5px;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.mercado-schedule-textarea:focus {
+  border-color: #f26522;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.25);
+}
+
+.mercado-schedule-btn-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.mercado-schedule-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.mercado-schedule-btn-save {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%);
+  color: #ffffff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.4);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.mercado-schedule-btn-save:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff7a38 0%, #f26522 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.55);
+}
+
+.mercado-schedule-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   SIDEBAR TABS & LIVE GPS UBER-STYLE NAVIGATION PANEL
+   ========================================================================== */
+
+.mercado-sidebar-tabs-container,
+.mercado-sidebar-tabs {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 20px !important;
+  padding: 10px 16px 12px !important;
+  background: transparent !important;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.10) !important;
+  border-radius: 0 !important;
+}
+
+/* Botón Circular Único (Sin texto, compacto) */
+.mercado-sidebar-tab-circle-btn,
+.mercado-tab-circle-btn {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  outline: none !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+}
+
+.mercado-sidebar-tab-circle-btn:hover,
+.mercado-tab-circle-btn:hover {
+  transform: translateY(-1.5px) scale(1.08) !important;
+}
+
+/* El Círculo Pequeño con fondo Liquid Glass idéntico a la Card */
+.mercado-tab-circle {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  /* Fondo Liquid Glass igual a la card */
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.20) !important;
+}
+
+/* Íconos blancos */
+.mercado-tab-circle svg {
+  width: 19px !important;
+  height: 19px !important;
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+  stroke-width: 2.2px !important;
+  display: block !important;
+  transition: transform 0.2s ease, stroke 0.2s ease !important;
+}
+
+/* Badge con el conteo compacto */
+.mercado-tab-circle .mercado-sidebar-tab-badge {
+  position: absolute !important;
+  top: -3px !important;
+  right: -3px !important;
+  min-width: 17px !important;
+  height: 17px !important;
+  padding: 0 4px !important;
+  border-radius: 10px !important;
+  background: rgba(15, 23, 42, 0.90) !important;
+  border: 1.2px solid rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+  line-height: 1 !important;
+}
+
+/* Hover State */
+.mercado-sidebar-tab-circle-btn:hover .mercado-tab-circle,
+.mercado-tab-circle-btn:hover .mercado-tab-circle {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.40) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.30) !important;
+}
+
+/* ACTIVE STATE (Círculo Activo con resplandor blanco liquid glass) */
+.mercado-sidebar-tab-circle-btn.active .mercado-tab-circle,
+.mercado-tab-circle-btn.active .mercado-tab-circle {
+  background: rgba(255, 255, 255, 0.22) !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.45), 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+  transform: scale(1.08) !important;
+}
+
+.mercado-sidebar-tab-circle-btn.active .mercado-tab-circle svg,
+.mercado-tab-circle-btn.active .mercado-tab-circle svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.mercado-sidebar-tab-circle-btn.active .mercado-tab-circle .mercado-sidebar-tab-badge,
+.mercado-tab-circle-btn.active .mercado-tab-circle .mercado-sidebar-tab-badge {
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+
+/* Legacy fallback support */
+.mercado-sidebar-tab-button {
+  background: transparent;
+  border: none;
+  padding: 10px 8px;
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-family: inherit;
+}
+
+/* Smart Glow Pulse Animation */
+@keyframes glowPulseAnimation {
+  0% {
+    box-shadow: 0 0 0 0 rgba(242, 101, 34, 0.7);
+    border-color: #f26522;
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(242, 101, 34, 0);
+    border-color: #fb923c;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(242, 101, 34, 0);
+    border-color: #f26522;
+  }
+}
+
+.mercado-job-card.is-urgent-glow {
+  border: 1.5px solid #f26522 !important;
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.12) 0%, rgba(20, 22, 31, 0.95) 100%) !important;
+  animation: glowPulseAnimation 2s infinite ease-in-out;
+}
+
+.mercado-smart-time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.4);
+  animation: badgeBlink 1.5s infinite alternate;
+}
+
+@keyframes badgeBlink {
+  0% { opacity: 0.85; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1.02); }
+}
+
+
+
+
