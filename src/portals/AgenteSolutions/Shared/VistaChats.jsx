@@ -18,6 +18,20 @@ const POLL_CONVERSACION = 3000;
 const POLL_LISTA = 8000;
 const MAX_ARCHIVO_MB = 12; // límite de subida del servidor
 
+// Stickers: incluir un tipo que no es imagen hace que Android abra el explorador de archivos
+// (y no la galería), para poder entrar a la carpeta de stickers de WhatsApp.
+const ACCEPT_STICKERS = 'image/webp,image/png,image/gif,image/jpeg,.webp,.png,.gif,.jpg,.jpeg,application/octet-stream';
+const TIPO_POR_EXTENSION = { webp: 'image/webp', png: 'image/png', gif: 'image/gif', jpg: 'image/jpeg', jpeg: 'image/jpeg' };
+
+// Devuelve el archivo como imagen válida para sticker, o null si no lo es.
+// Algunos exploradores entregan los .webp sin tipo: se corrige por la extensión.
+const comoImagenSticker = (f) => {
+  const tipo = TIPO_POR_EXTENSION[(f.name.split('.').pop() || '').toLowerCase()];
+  if (f.type && Object.values(TIPO_POR_EXTENSION).includes(f.type)) return f;
+  if (!tipo) return null;
+  return new File([f], f.name, { type: tipo, lastModified: f.lastModified });
+};
+
 const EMOJIS = [
   '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘',
   '😋', '😛', '😜', '🤪', '🤗', '🤭', '🤫', '🤔', '🤐', '😐', '😑', '😶', '😏', '😒', '🙄', '😬',
@@ -488,7 +502,10 @@ const VistaChats = () => {
     if (!archivos.length) return;
     setSubiendoSticker(equipo ? 'equipo' : 'mios');
     const fallidos = [];
-    for (const f of archivos) {
+    for (const original of archivos) {
+      // El explorador de archivos deja elegir cualquier cosa: solo se aceptan imágenes
+      const f = comoImagenSticker(original);
+      if (!f) { fallidos.push(`${original.name}: no es una imagen (.webp, .png, .gif o .jpg)`); continue; }
       const conservar = ['image/png', 'image/webp', 'image/gif'].includes(f.type);
       if (conservar && f.size > 4 * 1024 * 1024) { fallidos.push(`${f.name}: pesa más de 4 MB`); continue; }
       try {
@@ -893,8 +910,10 @@ const VistaChats = () => {
                         </div>
                       ) : (
                         <div className="vch-stickers-panel">
-                          <input ref={stickerRef} type="file" accept="image/png,image/webp,image/gif,image/jpeg" multiple hidden onChange={e => subirStickers(e, false)} />
-                          <input ref={stickerEquipoRef} type="file" accept="image/png,image/webp,image/gif,image/jpeg" multiple hidden onChange={e => subirStickers(e, true)} />
+                          {/* Sin "accept" de solo imágenes: en Android eso abre la galería, que no muestra
+                              la carpeta de stickers de WhatsApp (.nomedia). Así abre el explorador de archivos. */}
+                          <input ref={stickerRef} type="file" accept={ACCEPT_STICKERS} multiple hidden onChange={e => subirStickers(e, false)} />
+                          <input ref={stickerEquipoRef} type="file" accept={ACCEPT_STICKERS} multiple hidden onChange={e => subirStickers(e, true)} />
                           {stickers === null ? (
                             <div className="vch-panel-vacio"><Loader2 size={18} className="vch-spin" /></div>
                           ) : (
