@@ -676,6 +676,8 @@
     height: 110px;
 }
 
+.rt-texto-impreso { display: none; }
+
 /* Las celdas "no-print" de la tabla deben seguir siendo celdas */
 .materiales-table th.no-print,
 .materiales-table td.no-print {
@@ -1417,6 +1419,33 @@
     /* ~3 cm para el sello */
     .rt-pagina .linea-firma {
         height: 30mm !important;
+    }
+
+    /* Descripción y observaciones: solo el texto, con la altura que realmente ocupa */
+    .rt-pagina .editable-textarea { display: none !important; }
+
+    .rt-pagina .rt-texto-impreso {
+        display: block !important;
+        font-size: 0.65rem;
+        line-height: 1.3;
+        color: #000 !important;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .rt-pagina .descripcion-box,
+    .rt-pagina .observaciones-box {
+        padding: 4px 6px !important;
+    }
+
+    /* Pie compacto y siempre junto a las firmas */
+    .rt-pagina .rt-pie-linea { margin: 1px 0 !important; }
+
+    .rt-pagina .reporte-footer {
+        break-before: avoid !important;
+        page-break-before: avoid !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
     }
 
     .rt-pie-editable {

@@ -786,6 +786,8 @@ const ReporteTrabajo = () => {
                   placeholder="Escribe aquí el resumen de las actividades realizadas..."
                   disabled={isClient}
                 />
+                {/* Al imprimir se usa el texto (ocupa solo lo que mide), no el cuadro de edición */}
+                <div className="rt-texto-impreso">{reportData.descripcion}</div>
               </div>
             </div>
 
@@ -877,6 +879,7 @@ const ReporteTrabajo = () => {
                   onChange={(e) => updateField(null, 'observaciones', e.target.value)}
                   disabled={isClient}
                 />
+                <div className="rt-texto-impreso">{reportData.observaciones}</div>
               </div>
             </div>
 
