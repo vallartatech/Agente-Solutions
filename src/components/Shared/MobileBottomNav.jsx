@@ -320,7 +320,22 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           <Wrench size={22} className="vcp-mobile-nav-icon" />
         </button>
 
-        {/* Lo demás (igual que "MÁS ▾" en computadora): así siempre cabe la barra */}
+        {/* Lo demás (igual que "MÁS ▾" en computadora): así siempre cabe la barra.
+            Si solo hay una opción (Admin), el botón lleva directo a ella */}
+        {masItemsAdmin.length === 1 ? (() => {
+          const { label, Icon, path, active } = masItemsAdmin[0];
+          return (
+            <button
+              type="button"
+              className={`vcp-mobile-nav-item ${active ? 'active' : ''}`}
+              onClick={() => navigate(path)}
+              title={label}
+              aria-label={label}
+            >
+              <Icon size={22} className="vcp-mobile-nav-icon" />
+            </button>
+          );
+        })() : (
         <button
           type="button"
           className={`vcp-mobile-nav-item ${masItemsAdmin.some(i => i.active) || masAbierto ? 'active' : ''}`}
@@ -331,6 +346,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         >
           <LayoutGrid size={22} className="vcp-mobile-nav-icon" />
         </button>
+        )}
       </nav>
       {masAbierto && createPortal(
         <div className="vcp-mas-overlay" onClick={() => setMasAbierto(false)}>

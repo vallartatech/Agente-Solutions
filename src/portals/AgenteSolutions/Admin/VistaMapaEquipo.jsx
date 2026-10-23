@@ -5,7 +5,7 @@ import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindow, Polyl
 import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig";
 import {
   Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield, X,
-  Building2, Eye, MapPinOff, Loader2,
+  Building2, Eye, MapPinOff, Loader2, SlidersHorizontal, Check,
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
@@ -134,6 +134,55 @@ const MarcadorPropiedad = memo(({ propiedad, carpeta, seleccionado, onClick }) =
     </button>
   );
 });
+
+// Botón de filtro junto al buscador: abre un panel con las opciones y se cierra al tocar fuera
+const FiltroMenu = ({ activo, children }) => {
+  const [abierto, setAbierto] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrar = (e) => { if (!ref.current?.contains(e.target)) setAbierto(false); };
+    const conTecla = (e) => { if (e.key === 'Escape') setAbierto(false); };
+    document.addEventListener('pointerdown', cerrar);
+    document.addEventListener('keydown', conTecla);
+    return () => {
+      document.removeEventListener('pointerdown', cerrar);
+      document.removeEventListener('keydown', conTecla);
+    };
+  }, [abierto]);
+
+  return (
+    <div className="vme-filtro" ref={ref}>
+      <button
+        type="button"
+        className={`vme-filtro-btn ${activo ? 'activo' : ''} ${abierto ? 'abierto' : ''}`}
+        onClick={() => setAbierto(v => !v)}
+        aria-haspopup="true"
+        aria-expanded={abierto}
+        title="Filtros"
+        aria-label="Filtros"
+      >
+        <SlidersHorizontal size={16} />
+        {activo > 0 && <span className="vme-filtro-badge">{activo}</span>}
+      </button>
+      {abierto && (
+        <div className="vme-filtro-panel" onClick={(e) => { if (e.target.closest('[data-cierra]')) setAbierto(false); }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const OpcionFiltro = ({ activa, onClick, children }) => (
+  <button type="button" className={`vme-filtro-opcion ${activa ? 'activa' : ''}`} onClick={onClick} data-cierra="">
+    <span className="vme-filtro-opcion-txt">{children}</span>
+    {activa && <Check size={15} />}
+  </button>
+);
+
+const ROLES_FILTRO = { all: 'Todos', tech: 'Técnicos', admin: 'Admins' };
 
 // Centra el marcador sobre la coordenada
 const centerOverlay = (width, height) => ({ x: -(width / 2), y: -(height / 2) });
@@ -507,31 +556,43 @@ const VistaMapaEquipo = () => {
 
           {pestana === 'equipo' ? (
             <>
-              <div className="vme-search">
-                <Search size={15} />
-                <input
-                  type="text"
-                  placeholder="Buscar persona..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+              <div className="vme-buscador">
+                <div className="vme-search">
+                  <Search size={15} />
+                  <input
+                    type="text"
+                    placeholder="Buscar persona..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+                <FiltroMenu activo={(roleFilter !== 'all' ? 1 : 0) + (onlyOnline ? 1 : 0)}>
+                  <span className="vme-filtro-titulo">Rol</span>
+                  <OpcionFiltro activa={roleFilter === 'all'} onClick={() => setRoleFilter('all')}><Users size={14} /> Todos</OpcionFiltro>
+                  <OpcionFiltro activa={roleFilter === 'tech'} onClick={() => setRoleFilter('tech')}><Wrench size={14} /> Técnicos</OpcionFiltro>
+                  <OpcionFiltro activa={roleFilter === 'admin'} onClick={() => setRoleFilter('admin')}><Shield size={14} /> Admins</OpcionFiltro>
+                  <span className="vme-filtro-titulo">Estado</span>
+                  <label className="vme-filtro-switch">
+                    <span><span className="vme-online-dot" /> Solo en línea</span>
+                    <input type="checkbox" checked={onlyOnline} onChange={(e) => setOnlyOnline(e.target.checked)} />
+                  </label>
+                </FiltroMenu>
               </div>
 
-              <div className="vme-filters">
-                <button type="button" className={`vme-chip ${roleFilter === 'all' ? 'active' : ''}`} onClick={() => setRoleFilter('all')}>
-                  <Users size={13} /> Todos
-                </button>
-                <button type="button" className={`vme-chip ${roleFilter === 'tech' ? 'active' : ''}`} onClick={() => setRoleFilter('tech')}>
-                  <Wrench size={13} /> Técnicos
-                </button>
-                <button type="button" className={`vme-chip ${roleFilter === 'admin' ? 'active' : ''}`} onClick={() => setRoleFilter('admin')}>
-                  <Shield size={13} /> Admins
-                </button>
-                <label className="vme-toggle">
-                  <input type="checkbox" checked={onlyOnline} onChange={(e) => setOnlyOnline(e.target.checked)} />
-                  Solo en línea
-                </label>
-              </div>
+              {(roleFilter !== 'all' || onlyOnline) && (
+                <div className="vme-filtros-activos">
+                  {roleFilter !== 'all' && (
+                    <button type="button" className="vme-filtro-tag" onClick={() => setRoleFilter('all')} title="Quitar filtro">
+                      {ROLES_FILTRO[roleFilter]} <X size={12} />
+                    </button>
+                  )}
+                  {onlyOnline && (
+                    <button type="button" className="vme-filtro-tag" onClick={() => setOnlyOnline(false)} title="Quitar filtro">
+                      Solo en línea <X size={12} />
+                    </button>
+                  )}
+                </div>
+              )}
 
               <ul className="vme-list">
                 {loading && <li className="vme-empty">Cargando equipo…</li>}
@@ -590,34 +651,42 @@ const VistaMapaEquipo = () => {
             </>
           ) : (
             <>
-              <label className="vmp-buscar">
-                <Search size={16} />
-                <input type="search" placeholder="Buscar propiedad, empresa o dirección" value={busqueda} onChange={e => setBusqueda(e.target.value)} />
-              </label>
-
-              {/* Filtro por empresa (carpeta) */}
-              <div className="vmp-filtros">
-                <button type="button" className={`vmp-filtro ${filtro === 'todas' ? 'on' : ''}`} onClick={() => setFiltro('todas')}>
-                  Todas <span>{conPosicion.length}</span>
-                </button>
-                {carpetas.filter(c => conteos.porCarpeta[c.id]).map(c => (
-                  <button
-                    type="button"
-                    key={c.id}
-                    className={`vmp-filtro ${Number(filtro) === c.id ? 'on' : ''}`}
-                    style={{ '--c': c.color || '#F26522' }}
-                    onClick={() => setFiltro(c.id)}
-                  >
-                    {c.logo_url ? <img src={ligera(c.logo_url, 48)} alt="" /> : <span className="vmp-filtro-punto" />}
-                    {c.name} <span>{conteos.porCarpeta[c.id]}</span>
-                  </button>
-                ))}
-                {conteos.sinCarpeta > 0 && (
-                  <button type="button" className={`vmp-filtro ${filtro === SIN_CARPETA ? 'on' : ''}`} onClick={() => setFiltro(SIN_CARPETA)}>
-                    Sin empresa <span>{conteos.sinCarpeta}</span>
-                  </button>
-                )}
+              <div className="vme-buscador">
+                <label className="vmp-buscar">
+                  <Search size={16} />
+                  <input type="search" placeholder="Buscar propiedad, empresa o dirección" value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+                </label>
+                {/* Filtro por empresa (carpeta) */}
+                <FiltroMenu activo={filtro !== 'todas' ? 1 : 0}>
+                  <span className="vme-filtro-titulo">Empresa</span>
+                  <div className="vme-filtro-lista">
+                    <OpcionFiltro activa={filtro === 'todas'} onClick={() => setFiltro('todas')}>
+                      <Building2 size={14} /> Todas <small>{conPosicion.length}</small>
+                    </OpcionFiltro>
+                    {carpetas.filter(c => conteos.porCarpeta[c.id]).map(c => (
+                      <OpcionFiltro key={c.id} activa={Number(filtro) === c.id} onClick={() => setFiltro(c.id)}>
+                        {c.logo_url
+                          ? <img src={ligera(c.logo_url, 48)} alt="" />
+                          : <span className="vmp-filtro-punto" style={{ '--c': c.color || '#F26522' }} />}
+                        {c.name} <small>{conteos.porCarpeta[c.id]}</small>
+                      </OpcionFiltro>
+                    ))}
+                    {conteos.sinCarpeta > 0 && (
+                      <OpcionFiltro activa={filtro === SIN_CARPETA} onClick={() => setFiltro(SIN_CARPETA)}>
+                        <MapPinOff size={14} /> Sin empresa <small>{conteos.sinCarpeta}</small>
+                      </OpcionFiltro>
+                    )}
+                  </div>
+                </FiltroMenu>
               </div>
+
+              {filtro !== 'todas' && (
+                <div className="vme-filtros-activos">
+                  <button type="button" className="vme-filtro-tag" onClick={() => setFiltro('todas')} title="Quitar filtro">
+                    {filtro === SIN_CARPETA ? 'Sin empresa' : (carpetaPorId[filtro]?.name || 'Empresa')} <X size={12} />
+                  </button>
+                </div>
+              )}
 
               <div className="vmp-items">
                 {cargandoProps && !propiedades.length ? (

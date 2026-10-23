@@ -215,7 +215,17 @@ const AdminHeader = ({ activeModule, titulo, rolTexto, navTabs, navBack }) => {
             SERVICIOS
           </button>
 
-          {/* Apartados secundarios agrupados para que el menú no se amontone */}
+          {/* Apartados secundarios agrupados para que el menú no se amontone.
+              Si solo hay uno (Admin), va directo: un menú con una sola opción no aporta nada */}
+          {masItems.length === 1 ? (
+            <button
+              type="button"
+              className={`vcp-nav-btn ${masItems[0].active ? 'active' : ''}`}
+              onClick={() => navigate(masItems[0].path)}
+            >
+              {masItems[0].label.toUpperCase()}
+            </button>
+          ) : (
           <button
             type="button"
             ref={masBtnRef}
@@ -232,6 +242,7 @@ const AdminHeader = ({ activeModule, titulo, rolTexto, navTabs, navBack }) => {
             ) : 'MÁS'}
             <ChevronDown size={14} strokeWidth={2.6} className="vcp-more-chevron" />
           </button>
+          )}
         </nav>
         )}
 
