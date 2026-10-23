@@ -667,6 +667,15 @@
 
 .rt-logo-subir:hover { border-color: #fdba74; }
 
+/* Espacio alto sobre la línea de firma: algunas empresas usan sellos grandes */
+.rt-pagina .firmas-section {
+    margin-top: 24px;
+}
+
+.rt-pagina .linea-firma {
+    height: 110px;
+}
+
 /* Las celdas "no-print" de la tabla deben seguir siendo celdas */
 .materiales-table th.no-print,
 .materiales-table td.no-print {
@@ -1399,6 +1408,15 @@
         padding: 0 !important;
         border: none !important;
         background: none !important;
+    }
+
+    .rt-pagina .firmas-section {
+        margin-top: 10px !important;
+    }
+
+    /* ~3 cm para el sello */
+    .rt-pagina .linea-firma {
+        height: 30mm !important;
     }
 
     .rt-pie-editable {
