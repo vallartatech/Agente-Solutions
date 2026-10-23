@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { comprimirFormData } from './comprimirImagen';
 
 // Progreso de TODAS las subidas de archivos de la app, sin tocar cada pantalla:
 // un interceptor de axios detecta los envíos con archivos (FormData con Blob/File),
@@ -8,6 +9,9 @@ import axios from 'axios';
 //  - 'subiendo': el archivo viaja del dispositivo al servidor (hay porcentaje real)
 //  - 'procesando': ya llegó al servidor y este lo está guardando en la nube (Cloudinary)
 // Para que una petición no muestre el indicador: axios.post(url, data, { sinProgreso: true })
+//
+// También comprime las fotos (JPEG/HEIC grandes) de cualquier envío antes de subirlas,
+// para que una foto de iPhone no ocupe varios MB. Para enviar el original: { sinComprimir: true }
 
 const subidas = new Map();
 const oyentes = new Set();
@@ -65,6 +69,14 @@ export const instalarProgresoSubida = () => {
       }
       if (typeof original === 'function') original(evento);
     };
+    return config;
+  });
+
+  // Registrado después del de progreso para que corra ANTES (axios ejecuta los de petición en orden inverso):
+  // así el indicador muestra el peso ya comprimido.
+  axios.interceptors.request.use(async (config) => {
+    if (config.sinComprimir || typeof FormData === 'undefined' || !(config.data instanceof FormData)) return config;
+    config.data = await comprimirFormData(config.data);
     return config;
   });
 

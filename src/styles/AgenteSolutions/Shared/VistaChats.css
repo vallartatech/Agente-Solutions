@@ -1261,14 +1261,26 @@ button.vch-persona:hover {
 
 .vch-fondos {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* minmax(0, 1fr): las tarjetas no pueden ensanchar la cuadrícula (eso causaba el scroll de lado) */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
+  min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding: 3px;
 }
+
+.vch-fondos::-webkit-scrollbar { display: none; }
 
 .vch-fondo {
   position: relative;
-  aspect-ratio: 3 / 4;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  aspect-ratio: 4 / 5;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1336,3 +1348,116 @@ button.vch-persona:hover {
     height: 128px;
   }
 }
+
+/* ==========================================================================
+   DISEÑO DE LA APP: fondo de triángulos + paneles de vidrio oscuro
+   (lista de chats y conversación iguales; los textos claros de arriba se conservan)
+   ========================================================================== */
+.vch-root {
+  background: url('../../../assets/geometric-poly-bg.png') center center / cover no-repeat fixed;
+}
+
+.vch-lista,
+.vch-conv {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(155deg, rgba(15, 23, 42, 0.78) 0%, rgba(11, 17, 32, 0.86) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.32),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.12),
+    inset 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Reflejo suave en la esquina superior, como el canto de un cristal */
+.vch-lista::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(120% 40% at 0% 0%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 60%);
+}
+
+.vch-conv-head { background: rgba(15, 23, 42, 0.6); }
+
+/* Botones planos, sin degradado */
+.vch-btn-nuevo,
+.vch-lista .vch-btn-primary {
+  background: #f26522;
+  box-shadow: none;
+}
+
+.vch-btn-nuevo:hover { background: #ea580c; }
+
+/* Ventanas del chat (Nuevo chat, información, fondo): vidrio oscuro y sin capa negra alrededor */
+.vch-overlay {
+  background: transparent;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.vch-modal {
+  position: relative;
+  isolation: isolate;
+  font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+  background: linear-gradient(155deg, rgba(30, 41, 59, 0.72) 0%, rgba(15, 23, 42, 0.82) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.45),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.16),
+    inset 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+.vch-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(120% 40% at 0% 0%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 60%);
+}
+
+.vch-modal button,
+.vch-modal input { font-family: inherit; }
+
+.vch-modal .vch-buscar,
+.vch-modal .vch-input {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.vch-modal .vch-btn-primary:not(:disabled) {
+  background: #f26522;
+  box-shadow: none;
+}
+
+.vch-modal .vch-btn-primary:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+@media (max-width: 900px) {
+  .vch-lista,
+  .vch-conv { border: none; box-shadow: none; }
+}
+
+/* Nombre del fondo: cabe en la tarjeta aunque sea largo ("Predeterminado") */
+.vch-fondo > span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.74rem;
+}
+
+@media (max-width: 420px) {
+  .vch-fondos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
