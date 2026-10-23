@@ -7,7 +7,7 @@ import "../../../styles/AgenteSolutions/Admin/ReporteTrabajo.css";
 import logo from '../../../assets/Logo3.png';
 import {
   Printer, ChevronLeft, Save, Trash2, X, Maximize2, Plus, History, Calendar, Clock,
-  ImagePlus, Check, Upload, ShieldCheck, ArrowUpRight,
+  ImagePlus, Check, Upload, ShieldCheck, ArrowUpRight, Pencil,
 } from 'lucide-react';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 import { useAuth } from '../../../context/AuthContext';
@@ -206,6 +206,143 @@ const ModalLogo = ({ trabajo, actual, puedeBorrar, onElegir, onCerrar }) => {
   );
 };
 
+// ---- Pie de página: el de Agente Solutions o el de la empresa para la que se emite ----
+const LEYENDA_PIE = "Este documento es un comprobante oficial de los trabajos realizados.";
+const PIE_AGENTE = {
+  id: null,
+  empresa: "AGENTE SOLUTIONS - Resolviendo tus necesidades",
+  telefono: "(999) 123-4567",
+  email: "soporte@agentesolutions.com",
+  leyenda: LEYENDA_PIE,
+};
+
+const lineaContacto = (pie) =>
+  [pie.telefono && `Tel: ${pie.telefono}`, pie.email && `Email: ${pie.email}`].filter(Boolean).join(' | ');
+
+const TextoPie = ({ pie }) => (
+  <>
+    <span className="rt-pie-linea">{pie.leyenda || LEYENDA_PIE}</span>
+    <span className="rt-pie-linea">{pie.empresa}</span>
+    {lineaContacto(pie) && <span className="rt-pie-linea">{lineaContacto(pie)}</span>}
+  </>
+);
+
+const PIE_VACIO = { empresa: '', telefono: '', email: '', leyenda: LEYENDA_PIE };
+
+const ModalPie = ({ actual, puedeBorrar, onElegir, onCerrar }) => {
+  const [cargando, setCargando] = useState(true);
+  const [pies, setPies] = useState([]);
+  const [nuevo, setNuevo] = useState(null); // formulario abierto
+  const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => {
+    axios.get(`${API}/report-footers`)
+      .then(({ data }) => setPies(data || []))
+      .catch(() => mostrarAviso("No se pudieron cargar los pies de página guardados."))
+      .finally(() => setCargando(false));
+  }, []);
+
+  const guardar = async (e) => {
+    e.preventDefault();
+    if (!nuevo.empresa.trim()) {
+      mostrarAviso("Escribe el nombre de la empresa.", 'warning');
+      return;
+    }
+    setGuardando(true);
+    try {
+      const { data } = await axios.post(`${API}/report-footers`, nuevo);
+      setPies(prev => [...prev, data]);
+      onElegir(data);
+    } catch (error) {
+      mostrarAviso(error.response?.data?.error || "No se pudo guardar el pie de página.");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const borrar = async (pie) => {
+    if (!(await confirmarAccion(`¿Quitar el pie de "${pie.empresa}" de la lista? Los reportes ya guardados lo conservan.`))) return;
+    try {
+      await axios.delete(`${API}/report-footers/${pie.id}`);
+      setPies(prev => prev.filter(p => p.id !== pie.id));
+    } catch {
+      mostrarAviso("No se pudo quitar el pie de página.");
+    }
+  };
+
+  const campo = (clave, etiqueta, props = {}) => (
+    <label className="rt-campo">
+      <span>{etiqueta}</span>
+      <input value={nuevo[clave]} onChange={(e) => setNuevo(prev => ({ ...prev, [clave]: e.target.value }))} {...props} />
+    </label>
+  );
+
+  return (
+    <div className="rt-modal-fondo" onClick={onCerrar}>
+      <div className="rt-modal" onClick={e => e.stopPropagation()}>
+        <div className="rt-modal__cabecera">
+          <div>
+            <h3>Pie de página</h3>
+            <p>Elige los datos de la empresa que aparecen al final del reporte.</p>
+          </div>
+          <button type="button" className="rt-icon-btn" onClick={onCerrar} aria-label="Cerrar"><X size={18} /></button>
+        </div>
+
+        <div className="rt-modal__cuerpo">
+          {nuevo ? (
+            <form className="rt-pie-form" onSubmit={guardar}>
+              {campo('empresa', 'Empresa / razón social', { placeholder: 'Ej. Empresa SA de CV', autoFocus: true })}
+              <div className="rt-pie-form__fila">
+                {campo('telefono', 'Teléfono', { placeholder: 'Ej. 999 123 4567' })}
+                {campo('email', 'Email', { type: 'email', placeholder: 'Ej. contacto@empresa.com' })}
+              </div>
+              {campo('leyenda', 'Leyenda')}
+
+              <div className="rt-pie-preview">
+                <span>Vista previa</span>
+                <div className="reporte-footer"><TextoPie pie={{ ...nuevo, empresa: nuevo.empresa || 'Nombre de la empresa' }} /></div>
+              </div>
+
+              <div className="rt-pie-form__acciones">
+                <button type="button" className="rt-btn rt-btn--ghost" onClick={() => setNuevo(null)}>Cancelar</button>
+                <button type="submit" className="rt-btn rt-btn--primary" disabled={guardando}>
+                  <Check size={16} /> {guardando ? "Guardando..." : "Guardar y usar"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="rt-pie-lista">
+              {[PIE_AGENTE, ...pies].map(pie => {
+                const activo = (actual?.id ?? null) === pie.id;
+                return (
+                  <div key={pie.id ?? 'agente'} className={`rt-pie-opcion ${activo ? 'activa' : ''}`}>
+                    <button type="button" className="rt-pie-opcion__btn" onClick={() => onElegir(pie)}>
+                      <span className="rt-pie-opcion__titulo">
+                        {pie.id === null ? 'Agente Solutions (predeterminado)' : pie.empresa}
+                        {activo && <span className="rt-logo-opcion__check"><Check size={14} /></span>}
+                      </span>
+                      <span className="reporte-footer"><TextoPie pie={pie} /></span>
+                    </button>
+                    {puedeBorrar && pie.id !== null && (
+                      <button type="button" className="rt-logo-opcion__borrar" onClick={() => borrar(pie)} title="Quitar de la lista">
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              {cargando && <p className="rt-modal__nota">Cargando pies guardados...</p>}
+              <button type="button" className="rt-logo-subir rt-pie-nuevo" onClick={() => setNuevo(PIE_VACIO)}>
+                <Plus size={18} /> <span>Nuevo pie de empresa</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ReporteTrabajo = () => {
   const componentRef = useRef();
   const servicioRef = useRef(null); // datos frescos del servicio, para completar versiones antiguas
@@ -239,6 +376,7 @@ const ReporteTrabajo = () => {
   const [saving, setSaving] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null); // Para el modal de zoom
   const [modalLogo, setModalLogo] = useState(false);
+  const [modalPie, setModalPie] = useState(false);
 
   // Historial de versiones
   const [versiones, setVersiones] = useState([]);
@@ -251,6 +389,7 @@ const ReporteTrabajo = () => {
   const [reportInicial] = useState(() => ({
     folio: `FT-${new Date().getFullYear()}-${String(cleanIdForFolio(trabajoId)).padStart(3, '0')}`,
     logoUrl: null,
+    pie: null, // null = pie de Agente Solutions
     fechaTrabajo: servicio?.fecha_programada || new Date().toLocaleDateString("es-MX"),
     horaInicio: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
     horaFin: "02:00 PM",
@@ -430,6 +569,13 @@ const ReporteTrabajo = () => {
         imagenes: currentImages.includes(url) ? currentImages.filter(img => img !== url) : [...currentImages, url],
       };
     });
+  };
+
+  const elegirPie = (pie) => {
+    if ((pie.id ?? null) !== (reportData.pie?.id ?? null)) {
+      updateField(null, 'pie', pie.id === null ? null : pie);
+    }
+    setModalPie(false);
   };
 
   const elegirLogo = (url) => {
@@ -751,11 +897,16 @@ const ReporteTrabajo = () => {
             </div>
 
             {/* Pie de página */}
-            <div className="reporte-footer">
-              <p>Este documento es un comprobante oficial de los trabajos realizados.</p>
-              <p>AGENTE SOLUTIONS - Resolviendo tus necesidades</p>
-              <p>Tel: (999) 123-4567 | Email: soporte@agentesolutions.com</p>
-            </div>
+            {isClient ? (
+              <div className="reporte-footer">
+                <TextoPie pie={reportData.pie || PIE_AGENTE} />
+              </div>
+            ) : (
+              <button type="button" className="reporte-footer rt-pie-editable" onClick={() => setModalPie(true)} title="Cambiar pie de página">
+                <TextoPie pie={reportData.pie || PIE_AGENTE} />
+                <span className="rt-logo-editable__hint"><Pencil size={12} /> Cambiar pie de página</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -827,6 +978,15 @@ const ReporteTrabajo = () => {
           puedeBorrar={esAdmin}
           onElegir={elegirLogo}
           onCerrar={() => setModalLogo(false)}
+        />
+      )}
+
+      {modalPie && (
+        <ModalPie
+          actual={reportData.pie}
+          puedeBorrar={esAdmin}
+          onElegir={elegirPie}
+          onCerrar={() => setModalPie(false)}
         />
       )}
     </div>,
