@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { MapPin, MapPinOff, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -32,6 +33,7 @@ const distanciaMetros = (a, b) => {
 
 const LocationSharing = () => {
   const { user } = useAuth();
+  const { pathname } = useLocation();
   const isTracked = TRACKED_ROLES.includes(Number(user?.role_id));
   const [estado, setEstado] = useState(null);
   const [gpsError, setGpsError] = useState(null);
@@ -163,7 +165,9 @@ const LocationSharing = () => {
     }
   };
 
-  if (!isTracked || !estado?.consent) return null;
+  // El indicador solo se muestra en el Mapa en vivo (en otras pantallas tapaba controles, ej. el chat).
+  // El envío de ubicación sigue funcionando igual en todas las pantallas.
+  if (!isTracked || !estado?.consent || !pathname.startsWith('/mapa-equipo')) return null;
 
   // El indicador informa; si el GPS falla explica cómo activarlo, y con permiso permite pausar
   const mostrarPanel = panelOpen && (gpsError || puedePausar);
