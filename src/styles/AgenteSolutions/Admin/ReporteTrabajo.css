@@ -650,6 +650,23 @@
     font-family: inherit;
 }
 
+/* index.css da a todo <button> padding 0.6em 1.2em y borde morado al pasar el mouse:
+   en botones pequeños eso aplasta el ícono. Cada botón del editor define su propio relleno. */
+.rt-icon-btn,
+.rt-link,
+.rt-logo-opcion__borrar,
+.rt-logo-subir {
+    padding: 0;
+}
+
+.rt-btn--primary:hover,
+.rt-btn--dark:hover,
+.rt-version:hover:not(.activa) {
+    border-color: transparent;
+}
+
+.rt-logo-subir:hover { border-color: #fdba74; }
+
 /* Las celdas "no-print" de la tabla deben seguir siendo celdas */
 .materiales-table th.no-print,
 .materiales-table td.no-print {

@@ -361,7 +361,12 @@ const VistaReportesGlobal = () => {
           titulo: tituloTrabajo,
           descripcion: serviceData?.description
         },
-        imagenes: reports.map(r => r.image_url || r.image_path).filter(Boolean)
+        // Solo las fotos que se ven en las tarjetas de etapas (una por etapa, sin repetir)
+        imagenes: [...new Set(
+          STAGES.map(st => getReportForStage(reports, st))
+            .map(r => r?.image_url || r?.image_path)
+            .filter(Boolean)
+        )]
       }
     });
   };
