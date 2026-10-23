@@ -40,8 +40,42 @@ import {
   Check,
   Link2,
   CheckCircle2,
-  CalendarPlus
+  CalendarPlus,
+  Cake,
+  Bug,
+  Pin,
+  Megaphone,
+  Siren,
+  Zap,
+  Hourglass,
+  AlertCircle,
+  ClipboardList,
+  Home,
+  SlidersHorizontal
 } from 'lucide-react';
+
+// Íconos de línea (en lugar de emojis) por tipo de evento; toman el color del texto
+const ICONO_AVISO = { importante: AlertCircle, fumigacion: Bug, reunion: Users, mantenimiento: Wrench, otro: Pin };
+const ICONO_TIEMPO = { overdue: Siren, today: Zap, future: CalendarDays, uncoordinated: Hourglass, completed: CheckCircle2 };
+
+const IconoEvento = ({ job, size = 12 }) => {
+  let Icono;
+  if (job.isBirthday) Icono = Cake;
+  else if (job.isNotice) Icono = job.rawNotice?.completed_at ? CheckCircle2 : (ICONO_AVISO[job.type] || Megaphone);
+  else Icono = ICONO_TIEMPO[job.timingCategory] || Clock;
+  return <Icono size={size} strokeWidth={2.4} className="cal-ico" aria-hidden="true" />;
+};
+
+// Opciones del menú "Filtrar"
+const FILTROS_CALENDARIO = [
+  { key: 'all', label: 'Todos', Icon: CalendarIcon },
+  { key: 'notices', label: 'Avisos', Icon: Megaphone, dot: 'dot-notice' },
+  { key: 'birthdays', label: 'Cumpleaños', Icon: Cake, dot: 'dot-birthday' },
+  { key: 'overdue', label: 'Atrasados', Icon: Siren, dot: 'dot-overdue' },
+  { key: 'today', label: 'Citas hoy', Icon: Zap, dot: 'dot-today' },
+  { key: 'future', label: 'Próximos', Icon: CalendarDays, dot: 'dot-future' },
+  { key: 'uncoordinated', label: 'Por coordinar', Icon: Hourglass, dot: 'dot-uncoordinated' },
+];
 
 // Fecha local YYYY-MM-DD (toISOString usa UTC y en la noche de México ya marca el día siguiente)
 const toLocalDateKey = (date) => {
@@ -85,7 +119,7 @@ const buildBirthdayEvent = (bday, yr) => {
     id: `bday_${bday.user_id}_${yr}`,
     isBirthday: true,
     bdayUser: bday,
-    titulo: `🎂 Cumpleaños de ${bday.name}`,
+    titulo: `Cumpleaños de ${bday.name}`,
     type: 'cumpleanos',
     color: '#ec4899',
     descripcion: `¡Cumpleaños de ${bday.name}! Felicitaciones del equipo Agente Solutions.`,
@@ -100,9 +134,9 @@ const buildBirthdayEvent = (bday, yr) => {
     cliente: bday.name,
     statusType: 'birthday',
     timingCategory: 'birthday',
-    timingBadge: '🎂 Cumpleaños',
+    timingBadge: 'Cumpleaños',
     timingRelative: `Cumpleaños de ${bday.name}`,
-    statusLabel: `🎂 ${bday.name}`,
+    statusLabel: bday.name,
     isOverdue: false,
     isToday: dateKey === toLocalDateKey(new Date()),
     isFuture: false,
@@ -187,6 +221,19 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const [miniCalDate, setMiniCalDate] = useState(new Date());
   const [currentView, setCurrentView] = useState('month'); // 'month' | 'week' | 'agenda'
   const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'overdue' | 'today' | 'future' | 'uncoordinated' | 'completed'
+  const [filtroAbierto, setFiltroAbierto] = useState(false);
+  const filtroRef = useRef(null);
+
+  useEffect(() => {
+    if (!filtroAbierto) return;
+    const cerrar = (e) => { if (!filtroRef.current?.contains(e.target)) setFiltroAbierto(false); };
+    document.addEventListener('mousedown', cerrar);
+    document.addEventListener('touchstart', cerrar, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', cerrar);
+      document.removeEventListener('touchstart', cerrar);
+    };
+  }, [filtroAbierto]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -245,42 +292,42 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     const isCompleted = normStatus === 'terminado' || normStatus === 'listo' || normStatus === 'finalizado' || normStatus === 'completado';
 
     let timingCategory = 'uncoordinated';
-    let timingBadge = '⏳ Por Coordinar';
+    let timingBadge = 'Por Coordinar';
     let timingRelative = 'Sin fecha agendada';
     let statusLabel = 'Horario Por Coordinar';
     let statusType = 'uncoordinated';
 
     if (isCompleted) {
       timingCategory = 'completed';
-      timingBadge = '✓ Finalizado';
+      timingBadge = 'Finalizado';
       timingRelative = 'Trabajo Concluido';
       statusLabel = 'Trabajo Terminado';
       statusType = 'confirmed';
     } else if (!hasScheduledDate) {
       timingCategory = 'uncoordinated';
-      timingBadge = '⏳ Por Coordinar';
+      timingBadge = 'Por Coordinar';
       timingRelative = 'Coordinación pendiente';
-      statusLabel = '⏳ Horario Por Coordinar';
+      statusLabel = 'Horario Por Coordinar';
       statusType = 'uncoordinated';
     } else if (eventDate < todayStart) {
       const diffMs = todayStart.getTime() - eventDate.getTime();
       const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
       timingCategory = 'overdue';
-      timingBadge = '🚨 Atrasada';
+      timingBadge = 'Atrasada';
       timingRelative = `Atrasada por ${diffDays} día${diffDays > 1 ? 's' : ''}`;
-      statusLabel = `⚠️ Cita Vencida (${diffDays}d)`;
+      statusLabel = `Cita Vencida (${diffDays}d)`;
       statusType = 'overdue';
     } else if (isToday) {
       timingCategory = 'today';
-      timingBadge = '⚡ Hoy';
+      timingBadge = 'Hoy';
       timingRelative = `Hoy a las ${timeFormatted}`;
-      statusLabel = `🔥 Cita Hoy (${timeFormatted})`;
+      statusLabel = `Cita Hoy (${timeFormatted})`;
       statusType = 'today';
     } else {
       const diffMs = eventDate.getTime() - todayEnd.getTime();
       const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
       timingCategory = 'future';
-      timingBadge = '📅 Próxima';
+      timingBadge = 'Próxima';
       timingRelative = diffDays <= 7 ? `En ${diffDays} día${diffDays > 1 ? 's' : ''}` : `El ${eventDate.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}`;
       statusLabel = `En ${diffDays} día${diffDays > 1 ? 's' : ''} (${timeFormatted})`;
       statusType = 'future';
@@ -386,16 +433,16 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     if (isNaN(eventDate.getTime())) eventDate = new Date();
 
     const type = notice.type || 'aviso';
-    let badge = '📢 Aviso';
-    if (type === 'importante') badge = '🔴 Importante';
-    else if (type === 'fumigacion') badge = '🐜 Fumigación';
-    else if (type === 'reunion') badge = '👥 Reunión';
-    else if (type === 'mantenimiento') badge = '🔧 Mantto.';
-    else if (type === 'otro') badge = '📌 Evento';
+    let badge = 'Aviso';
+    if (type === 'importante') badge = 'Importante';
+    else if (type === 'fumigacion') badge = 'Fumigación';
+    else if (type === 'reunion') badge = 'Reunión';
+    else if (type === 'mantenimiento') badge = 'Mantto.';
+    else if (type === 'otro') badge = 'Evento';
     // La etiqueta del aviso ("Cita con un cliente", "Junta"...) tiene prioridad sobre el tipo
-    if (notice.label) badge = `${type === 'importante' ? '🔴' : '🏷️'} ${notice.label}`;
+    if (notice.label) badge = notice.label;
     const isDone = Boolean(notice.completed_at);
-    if (isDone) badge = `✅ ${notice.label || 'Completado'}`;
+    if (isDone) badge = notice.label || 'Completado';
     const baseTitle = notice.label ? `${notice.label} · ${notice.title}` : notice.title;
 
     const now = new Date();
@@ -1077,6 +1124,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const countToday = allEvents.filter(e => e.isToday).length;
   const countFuture = allEvents.filter(e => e.isFuture).length;
   const countUncoordinated = allEvents.filter(e => e.isUncoordinated).length;
+  const conteoFiltro = {
+    all: countAll, notices: countNotices, birthdays: countBirthdays, overdue: countOverdue,
+    today: countToday, future: countFuture, uncoordinated: countUncoordinated,
+  };
+  const filtroActual = FILTROS_CALENDARIO.find(f => f.key === selectedFilter) || FILTROS_CALENDARIO[0];
 
   // Próximo servicio destacado (Up Next)
   const upNextJob = useMemo(() => {
@@ -1423,6 +1475,42 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
               </div>
 
               <div className="cal-controls-right">
+                {/* Filtros (avisos, cumpleaños, atrasados...) en un menú para no llenar la pantalla */}
+                <div className="cal-filtro-wrap" ref={filtroRef}>
+                  <button
+                    type="button"
+                    className={`cal-filtro-btn ${selectedFilter !== 'all' ? 'con-filtro' : ''} ${filtroAbierto ? 'abierto' : ''}`}
+                    onClick={() => setFiltroAbierto(v => !v)}
+                    aria-haspopup="menu"
+                    aria-expanded={filtroAbierto}
+                  >
+                    <SlidersHorizontal size={15} strokeWidth={2.4} />
+                    <span>{filtroActual.key === 'all' ? 'Filtrar' : filtroActual.label}</span>
+                    <span className="cal-filtro-count">{conteoFiltro[filtroActual.key]}</span>
+                    <ChevronDown size={14} strokeWidth={2.6} />
+                  </button>
+                  {filtroAbierto && (
+                    <div className="cal-filtro-menu" role="menu">
+                      {FILTROS_CALENDARIO.map(({ key, label, Icon, dot }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={selectedFilter === key}
+                          className={`cal-filtro-item ${selectedFilter === key ? 'on' : ''} ${key === 'overdue' && countOverdue > 0 ? 'alerta' : ''}`}
+                          onClick={() => { setSelectedFilter(key); setFiltroAbierto(false); }}
+                        >
+                          {dot ? <span className={`legend-dot ${dot}`} /> : <span className="cal-filtro-dot-vacio" />}
+                          <Icon size={15} strokeWidth={2.4} />
+                          <span className="cal-filtro-label">{label}</span>
+                          <span className="cal-filtro-num">{conteoFiltro[key]}</span>
+                          {selectedFilter === key && <Check size={14} strokeWidth={3} />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 {/* Búsqueda rápida */}
                 <div className="cal-search-box">
                   <Search size={15} className="cal-search-icon" />
@@ -1464,71 +1552,6 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   </button>
                 </div>
               </div>
-            </div>
-
-            {/* Barra de Filtros y Leyenda */}
-            <div className="scheduler-legend-bar">
-              <span style={{ color: '#94a3b8', fontWeight: 800 }}>Filtrar:</span>
-              <button 
-                className={`legend-item ${selectedFilter === 'all' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter('all')}
-              >
-                Todos ({countAll})
-              </button>
-
-              <button 
-                className={`legend-item legend-notice ${selectedFilter === 'notices' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'notices' ? 'all' : 'notices')}
-                title="Avisos generales, fumigaciones y eventos del equipo"
-              >
-                <span className="legend-dot dot-notice"></span>
-                <span>📢 Avisos ({countNotices})</span>
-              </button>
-
-              <button 
-                className={`legend-item legend-birthday ${selectedFilter === 'birthdays' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'birthdays' ? 'all' : 'birthdays')}
-                title="Cumpleaños detectados de administradores y técnicos"
-              >
-                <span className="legend-dot dot-birthday"></span>
-                <span>🎂 Cumpleaños ({countBirthdays})</span>
-              </button>
-
-              <button 
-                className={`legend-item legend-overdue ${selectedFilter === 'overdue' ? 'active' : ''} ${countOverdue > 0 ? 'has-overdue' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'overdue' ? 'all' : 'overdue')}
-                title="Citas cuya fecha programada ya pasó y no han concluido"
-              >
-                <span className="legend-dot dot-overdue"></span>
-                <span>🚨 Atrasados {countOverdue > 0 ? `(${countOverdue})` : '(0)'}</span>
-              </button>
-
-              <button 
-                className={`legend-item legend-today ${selectedFilter === 'today' ? 'active' : ''} ${countToday > 0 ? 'has-today' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'today' ? 'all' : 'today')}
-                title="Citas y avisos programados para el día de hoy"
-              >
-                <span className="legend-dot dot-today"></span>
-                <span>⚡ Citas Hoy {countToday > 0 ? `(${countToday})` : '(0)'}</span>
-              </button>
-
-              <button 
-                className={`legend-item legend-future ${selectedFilter === 'future' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'future' ? 'all' : 'future')}
-                title="Citas agendadas para días futuros"
-              >
-                <span className="legend-dot dot-future"></span>
-                <span>📅 Próximos {countFuture > 0 ? `(${countFuture})` : '(0)'}</span>
-              </button>
-
-              <button 
-                className={`legend-item legend-uncoordinated ${selectedFilter === 'uncoordinated' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'uncoordinated' ? 'all' : 'uncoordinated')}
-                title="Trabajos asignados sin fecha definida"
-              >
-                <span className="legend-dot dot-uncoordinated"></span>
-                <span>⏳ Por Coordinar {countUncoordinated > 0 ? `(${countUncoordinated})` : '(0)'}</span>
-              </button>
             </div>
 
             {/* Contenedor Canvas del Calendario */}
@@ -1585,12 +1608,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                               title={`${job.titulo}\n${job.timingBadge}\nHorario: ${job.calendarTime}`}
                             >
                               <div className="chip-compact-row">
-                                {job.isBirthday ? (
-                                  <span style={{ fontSize: '0.72rem', lineHeight: 1 }}>🎂</span>
-                                ) : job.isNotice ? (
-                                  <span style={{ fontSize: '0.72rem', lineHeight: 1 }}>
-                                    {job.type === 'fumigacion' ? '🐜' : (job.type === 'reunion' ? '👥' : (job.type === 'mantenimiento' ? '🔧' : '📢'))}
-                                  </span>
+                                {job.isBirthday || job.isNotice ? (
+                                  <IconoEvento job={job} size={11} />
                                 ) : (
                                   <>
                                     {job.timingCategory === 'overdue' && <span className="chip-mini-dot dot-overdue"></span>}
@@ -1602,7 +1621,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                                 )}
 
                                 <span className="chip-compact-time" style={job.isBirthday ? { color: '#fbcfe8' } : (job.isNotice ? { color: job.color } : {})}>
-                                  {job.hasScheduledDate ? job.calendarTime : (job.isBirthday || job.isNotice ? '📌' : '⏳')}
+                                  {job.hasScheduledDate ? job.calendarTime : (job.isBirthday || job.isNotice ? <Pin size={10} className="cal-ico" /> : <Hourglass size={10} className="cal-ico" />)}
                                 </span>
                                 <span className="chip-compact-title" style={job.isBirthday ? { color: '#fdf2f8' } : {}}>
                                   {job.titulo}
@@ -1671,8 +1690,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                                     title={job.titulo}
                                   >
                                     <div className="week-event-time">
-                                      {job.isNotice ? (job.type === 'fumigacion' ? '🐜' : '📢') : <Clock size={10} />} {job.calendarTime}
-                                      {job.timingCategory === 'overdue' && <span style={{ color: '#fca5a5' }}>🚨</span>}
+                                      {job.isNotice || job.isBirthday ? <IconoEvento job={job} size={10} /> : <Clock size={10} />} {job.calendarTime}
+                                      {job.timingCategory === 'overdue' && <Siren size={10} className="cal-ico" style={{ color: '#fca5a5' }} />}
                                     </div>
                                     <div className="week-event-title">
                                       {job.titulo}
@@ -1725,7 +1744,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                                   className={`agenda-status-pill pill-${job.statusType} pill-timing-${job.timingCategory}`}
                                   style={job.isNotice ? { background: `${job.color}30`, color: job.color } : (job.isBirthday ? { background: 'rgba(236,72,153,0.25)', color: '#f472b6' } : {})}
                                 >
-                                  {job.timingBadge}
+                                  <IconoEvento job={job} size={11} /> {job.timingBadge}
                                 </span>
                               </div>
 
@@ -1828,13 +1847,13 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
             {/* 2. Tarjeta "Up Next / Próximo Servicio" */}
             <div>
               <div className="sidebar-section-title">
-                <span>⚡ Próximo Servicio</span>
+                <span className="cal-ico-text"><Zap size={15} className="cal-ico" /> Próximo Servicio</span>
               </div>
               {upNextJob ? (
                 <div className={`up-next-card ${upNextJob.timingCategory === 'overdue' ? 'is-overdue-alert' : ''}`}>
                   <div className="up-next-badge-row">
                     <span className={`up-next-pill ${upNextJob.timingCategory === 'overdue' ? 'pill-overdue-banner' : ''}`}>
-                      {upNextJob.timingCategory === 'overdue' ? '🚨 CITA ATRASADA' : (upNextJob.timingCategory === 'today' ? '⚡ CITA DE HOY' : 'PRÓXIMA CITA')}
+                      <IconoEvento job={upNextJob} size={12} /> {upNextJob.timingCategory === 'overdue' ? 'CITA ATRASADA' : (upNextJob.timingCategory === 'today' ? 'CITA DE HOY' : 'PRÓXIMA CITA')}
                     </span>
                     <span className="up-next-time-tag">
                       <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} />
@@ -1845,13 +1864,13 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   <h4 className="up-next-title">{upNextJob.titulo}</h4>
 
                   <div className="up-next-details">
-                    <div>📍 {upNextJob.calle || upNextJob.zona}</div>
-                    <div>🧑‍💼 {upNextJob.cliente || 'Cliente'}</div>
+                    <div className="cal-ico-text"><MapPin size={13} className="cal-ico" /> {upNextJob.calle || upNextJob.zona}</div>
+                    <div className="cal-ico-text"><User size={13} className="cal-ico" /> {upNextJob.cliente || 'Cliente'}</div>
                     {upNextJob.assigned_tech_name && (
-                      <div>🧑‍🔧 Técnico: {upNextJob.assigned_tech_name}</div>
+                      <div className="cal-ico-text"><Wrench size={13} className="cal-ico" /> Técnico: {upNextJob.assigned_tech_name}</div>
                     )}
                     <div style={{ color: upNextJob.timingCategory === 'overdue' ? '#fca5a5' : '#fdba74', fontWeight: 800, fontSize: '0.76rem' }}>
-                      📅 {upNextJob.timingRelative}
+                      <span className="cal-ico-text"><CalendarDays size={13} className="cal-ico" /> {upNextJob.timingRelative}</span>
                     </div>
                   </div>
 
@@ -1873,7 +1892,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
             {/* 3. Resumen Rápido de Actividad */}
             <div>
               <div className="sidebar-section-title">
-                <span>📋 Resumen de Citas ({countAll})</span>
+                <span className="cal-ico-text"><ClipboardList size={15} className="cal-ico" /> Resumen de Citas ({countAll})</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {allEvents.slice(0, 4).map((job) => (
@@ -1887,15 +1906,15 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '0.7rem' }}>
                       <span>{job.calendarTime}</span>
-                      <span style={{ fontWeight: 800, color: job.timingCategory === 'overdue' ? '#fca5a5' : (job.timingCategory === 'today' ? '#fdba74' : '#6ee7b7') }}>
-                        {job.timingBadge}
+                      <span style={{ fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px', color: job.timingCategory === 'overdue' ? '#fca5a5' : (job.timingCategory === 'today' ? '#fdba74' : '#6ee7b7') }}>
+                        <IconoEvento job={job} size={11} /> {job.timingBadge}
                       </span>
                     </div>
                     <div style={{ fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {job.titulo}
                     </div>
                     <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                      🧑‍💼 {job.cliente}
+                      <span className="cal-ico-text"><User size={11} className="cal-ico" /> {job.cliente}</span>
                     </div>
                   </div>
                 ))}
@@ -1913,9 +1932,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
             style={{ zIndex: 1000000000 }}
             onClick={(e) => e.target === e.currentTarget && setShowDetailModal(false)}
           >
-            <div className="mercado-premium-modal" style={{ maxWidth: '980px', width: '95%' }}>
+            <div className="mercado-premium-modal cal-wo-modal" style={{ maxWidth: '980px', width: '95%' }}>
               <div className="mercado-premium-header">
-                <h2>📋 Detalle de Orden de Trabajo #{selectedJob.id}</h2>
+                <h2 className="cal-ico-text"><ClipboardList size={20} /> Detalle de Orden de Trabajo #{selectedJob.id}</h2>
                 <button className="mercado-modal-close" onClick={() => setShowDetailModal(false)} aria-label="Cerrar modal">
                   <X size={18} />
                 </button>
@@ -1967,10 +1986,10 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       {selectedJob.descripcion}
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', color: '#334155' }}>
-                      <div>📍 <strong>Propiedad:</strong> {selectedJob.zona}</div>
-                      <div>🏠 <strong>Dirección:</strong> {selectedJob.calle}</div>
-                      <div>🧑‍💼 <strong>Cliente:</strong> {selectedJob.cliente} {selectedJob.clientPhone ? `(${selectedJob.clientPhone})` : ''}</div>
-                      <div>⚡ <strong>Prioridad:</strong> {selectedJob.priority}</div>
+                      <div className="cal-ico-text"><MapPin size={14} /> <strong>Propiedad:</strong> {selectedJob.zona}</div>
+                      <div className="cal-ico-text"><Home size={14} /> <strong>Dirección:</strong> {selectedJob.calle}</div>
+                      <div className="cal-ico-text"><User size={14} /> <strong>Cliente:</strong> {selectedJob.cliente} {selectedJob.clientPhone ? `(${selectedJob.clientPhone})` : ''}</div>
+                      <div className="cal-ico-text"><Zap size={14} /> <strong>Prioridad:</strong> {selectedJob.priority}</div>
                     </div>
                   </div>
                 </div>
@@ -1988,7 +2007,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                         background: selectedJob.isCompleted ? '#dcfce7' : (selectedJob.isOverdue ? '#fee2e2' : '#ffedd5'),
                         color: selectedJob.isCompleted ? '#166534' : (selectedJob.isOverdue ? '#991b1b' : '#9a3412')
                       }}>
-                        {selectedJob.timingBadge}
+                        <IconoEvento job={selectedJob} size={12} /> {selectedJob.timingBadge}
                       </span>
                     </div>
 
@@ -1996,38 +2015,89 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                     <div className="solutions-wo-field-group">
                       <label className="solutions-wo-field-label">Técnico Asignado</label>
                       {isAdmin ? (
-                        <select 
-                          className="solutions-wo-input"
-                          value={editTecnicoId}
-                          onChange={(e) => setEditTecnicoId(e.target.value)}
-                        >
-                          <option value="">-- Sin técnico asignado --</option>
-                          {tecnicosList.map(t => (
-                            <option key={t.id} value={t.id}>
-                              {t.first_name} {t.last_name || ''} ({t.email})
-                            </option>
-                          ))}
-                        </select>
+                        /* Tarjetas con foto, igual que al solicitar un trabajo */
+                        <div className="cal-tec-grid" role="radiogroup" aria-label="Técnico asignado">
+                          <button
+                            type="button"
+                            role="radio"
+                            aria-checked={!editTecnicoId}
+                            className={`cal-tec-card ${!editTecnicoId ? 'on' : ''}`}
+                            onClick={() => setEditTecnicoId('')}
+                          >
+                            <span className="cal-tec-iniciales cal-tec-ninguno"><User size={20} /></span>
+                            <span className="cal-tec-nombre">Sin asignar</span>
+                          </button>
+                          {tecnicosList.map(t => {
+                            const on = String(editTecnicoId) === String(t.id);
+                            const foto = t.profile_picture_url || t.profile_picture || t.foto;
+                            return (
+                              <button
+                                key={t.id}
+                                type="button"
+                                role="radio"
+                                aria-checked={on}
+                                className={`cal-tec-card ${on ? 'on' : ''}`}
+                                onClick={() => setEditTecnicoId(String(t.id))}
+                                title={`${t.first_name || ''} ${t.last_name || ''}`.trim()}
+                              >
+                                {foto ? (
+                                  <img
+                                    src={foto}
+                                    alt=""
+                                    onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+                                  />
+                                ) : null}
+                                <span className="cal-tec-iniciales" style={{ display: foto ? 'none' : 'flex' }}>
+                                  {t.first_name?.charAt(0)}{t.last_name?.charAt(0)}
+                                </span>
+                                <span className="cal-tec-nombre">{t.first_name} {t.last_name ? `${t.last_name.charAt(0)}.` : ''}</span>
+                                {on && <CheckCircle2 size={16} className="cal-tec-check" />}
+                              </button>
+                            );
+                          })}
+                        </div>
                       ) : (
                         <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>
-                          🧑‍🔧 {selectedJob.assigned_tech_name || 'Sin asignar'}
+                          <span className="cal-ico-text"><Wrench size={15} /> {selectedJob.assigned_tech_name || 'Sin asignar'}</span>
                         </div>
                       )}
                     </div>
 
                     {/* Fecha y Hora de la Cita */}
                     <div className="solutions-wo-field-group">
-                      <label className="solutions-wo-field-label">Fecha y Hora Programada</label>
+                      <label className="solutions-wo-field-label">Programar visita</label>
                       {isAdmin ? (
-                        <input 
-                          type="datetime-local"
-                          className="solutions-wo-input"
-                          value={editScheduledAt}
-                          onChange={(e) => setEditScheduledAt(e.target.value)}
-                        />
+                        <div className="cal-wo-visita">
+                          {/* Fecha y hora por separado, igual que al solicitar un trabajo */}
+                          <label>
+                            <span>Fecha</span>
+                            <input
+                              type="date"
+                              className="solutions-wo-input"
+                              value={editScheduledAt.split(/[T ]/)[0] || ''}
+                              onChange={(e) => {
+                                const hora = editScheduledAt.split(/[T ]/)[1] || '09:00';
+                                setEditScheduledAt(e.target.value ? `${e.target.value}T${hora}` : '');
+                              }}
+                            />
+                          </label>
+                          <label>
+                            <span>Hora</span>
+                            <input
+                              type="time"
+                              className="solutions-wo-input"
+                              value={(editScheduledAt.split(/[T ]/)[1] || '').substring(0, 5)}
+                              disabled={!editScheduledAt}
+                              onChange={(e) => {
+                                const fecha = editScheduledAt.split(/[T ]/)[0];
+                                if (fecha && e.target.value) setEditScheduledAt(`${fecha}T${e.target.value}`);
+                              }}
+                            />
+                          </label>
+                        </div>
                       ) : (
                         <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>
-                          📅 {selectedJob.hasScheduledDate ? new Date(selectedJob.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' }) : 'Horario Por Coordinar'}
+                          <CalendarDays size={15} style={{ verticalAlign: '-2px', marginRight: '6px' }} />{selectedJob.hasScheduledDate ? new Date(selectedJob.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' }) : 'Horario Por Coordinar'}
                         </div>
                       )}
                     </div>

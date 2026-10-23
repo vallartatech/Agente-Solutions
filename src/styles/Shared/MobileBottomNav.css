@@ -13,7 +13,8 @@
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
-    height: 58px !important;
+    /* 58px de barra + el área de la rayita de inicio del iPhone (requiere viewport-fit=cover) */
+    height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
     z-index: 9999 !important;
     background: linear-gradient(180deg,
         rgba(20, 24, 34, 0.92) 0%,

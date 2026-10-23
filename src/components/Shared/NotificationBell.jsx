@@ -555,7 +555,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
               {filteredNotifications.length === 0 ? (
                 <div className="nb-empty-state">
                   <div className="nb-empty-icon-box">
-                    <CheckCircle2 size={24} color="#10b981" />
+                    <CheckCircle2 size={24} color="#f26522" />
                   </div>
                   <p className="nb-empty-title">Estás al día</p>
                   <p className="nb-empty-desc">No hay notificaciones pendientes en esta categoría.</p>

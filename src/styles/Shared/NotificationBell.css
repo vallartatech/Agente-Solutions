@@ -131,15 +131,18 @@
 /* ── NOTIFICATION FLOATING POPOVER (MOCKUP DESIGN) ── */
 .nb-card-popover {
   position: fixed !important;
-  background: #ffffff;
-  border-radius: 28px;
-  padding: 22px 20px 18px 20px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.97) 0%, rgba(248, 250, 252, 0.95) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-radius: 24px;
+  padding: 20px 18px 16px 18px;
   box-shadow: 
     0 24px 70px rgba(0, 0, 0, 0.45),
     0 4px 18px rgba(0, 0, 0, 0.12),
     0 0 0 1px rgba(0, 0, 0, 0.08);
   z-index: 999999999 !important;
-  font-family: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   color: #0f172a;
   box-sizing: border-box;
   animation: nbPopoverIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -166,10 +169,10 @@
 
 .nb-title {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.22rem;
   font-weight: 800;
   color: #0f172a;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.2px;
 }
 
 .nb-close-btn {
@@ -197,10 +200,12 @@
 .nb-tabs-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
   overflow-x: auto;
-  padding-bottom: 8px;
+  padding: 4px;
   margin-bottom: 14px;
+  border-radius: 14px;
+  background: #f1f5f9;
   scrollbar-width: none;
 }
 
@@ -209,9 +214,11 @@
 }
 
 .nb-tab-pill {
-  padding: 7px 16px;
-  border-radius: 30px;
-  font-size: 0.78rem;
+  flex: 1 0 auto;
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.76rem;
   font-weight: 700;
   background: transparent;
   border: none;
@@ -224,13 +231,13 @@
 
 .nb-tab-pill:hover {
   color: #0f172a;
-  background: #f1f5f9;
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .nb-tab-pill.active {
-  background: #000000;
+  background: #f26522;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 3px 10px rgba(242, 101, 34, 0.28);
 }
 
 /* ── LIST CONTAINER ── */
@@ -256,9 +263,10 @@
 
 /* ── NOTIFICATION ITEM CARD ── */
 .nb-item-card {
-  background: #f8fafc;
-  border: 1px solid #f1f5f9;
-  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid transparent;
+  border-radius: 14px;
   padding: 12px 14px;
   display: flex;
   align-items: center;
@@ -269,8 +277,9 @@
 }
 
 .nb-item-card:hover {
-  background: #f1f5f9;
-  border-color: #e2e8f0;
+  background: #fff7ed;
+  border-color: #fed7aa;
+  border-left-color: #f26522;
   transform: translateY(-1.5px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
 }
@@ -325,10 +334,11 @@
 }
 
 .nb-item-category {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #64748b;
-  letter-spacing: 0.2px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: #ea580c;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
 }
 
 .nb-item-message {
@@ -364,8 +374,8 @@
 .nb-empty-icon-box {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
-  background: #ecfdf5;
+  border-radius: 14px;
+  background: #fff7ed;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -394,23 +404,26 @@
 }
 
 .nb-footer-btn {
-  background: none;
-  border: none;
-  color: #ff6b00;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.82rem;
+  width: 100%;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  color: #ea580c;
+  font-family: inherit;
+  font-size: 0.8rem;
   font-weight: 800;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  padding: 4px 8px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  padding: 10px 12px;
 }
 
 .nb-footer-btn:hover {
-  color: #ea580c;
-  transform: translateX(3px);
+  background: #ffedd5;
+  border-color: #fdba74;
 }
 
 /* Responsive */
@@ -519,7 +532,7 @@
 }
 
 .nb-push-banner-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: inherit;
   font-size: 0.82rem;
   font-weight: 700;
   color: #0f172a;
@@ -540,7 +553,7 @@
   border: none;
   border-radius: 9px;
   padding: 6px 12px;
-  font-family: 'Outfit', sans-serif;
+  font-family: inherit;
   font-size: 0.74rem;
   font-weight: 700;
   cursor: pointer;

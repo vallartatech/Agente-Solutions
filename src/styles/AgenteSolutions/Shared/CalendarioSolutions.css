@@ -813,6 +813,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
@@ -2073,8 +2075,9 @@
 }
 
 .nq-light .nq-btn-submit {
-  background: linear-gradient(135deg, #ff8c42 0%, var(--nq-accent) 100%);
-  box-shadow: 0 8px 20px var(--nq-accent-soft);
+  /* Botón de color plano, sin degradado ni brillo */
+  background: var(--nq-accent);
+  box-shadow: none;
 }
 
 .nq-light .nq-btn-submit:disabled {
@@ -2500,6 +2503,7 @@
   padding: 4px;
   max-height: 220px;
   overflow-y: auto;
+  scrollbar-width: none;
   border-radius: 14px;
   background: #ffffff;
   border: 1px solid rgba(148, 163, 184, 0.3);
@@ -2648,3 +2652,382 @@
 .nd-people-names {
   color: #334155;
 }
+
+/* ── Íconos de línea (antes emojis): heredan el color del texto ── */
+.cal-ico { flex-shrink: 0; vertical-align: -1px; }
+
+.cal-ico-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.up-next-pill,
+.agenda-status-pill,
+.solutions-wo-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── Menú "Filtrar" junto al buscador (reemplaza la fila de filtros) ── */
+.cal-filtro-wrap { position: relative; }
+
+.cal-filtro-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.cal-filtro-btn:hover,
+.cal-filtro-btn.abierto { background: rgba(255, 255, 255, 0.12); }
+
+.cal-filtro-btn.con-filtro { border-color: #f26522; background: rgba(242, 101, 34, 0.18); }
+
+.cal-filtro-count {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f26522;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.cal-filtro-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  min-width: 230px;
+  padding: 6px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cal-filtro-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cal-filtro-item:hover { background: rgba(255, 255, 255, 0.08); }
+.cal-filtro-item.on { background: rgba(242, 101, 34, 0.2); }
+.cal-filtro-item.alerta .cal-filtro-num { background: rgba(239, 68, 68, 0.25); color: #fca5a5; }
+
+.cal-filtro-item .legend-dot,
+.cal-filtro-dot-vacio { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+.cal-filtro-label { flex: 1; }
+
+.cal-filtro-num {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .cal-filtro-menu { left: auto; right: 0; }
+}
+
+/* Scroll invisible en el formulario de "Nuevo aviso" y su lista de personas */
+.nq-body::-webkit-scrollbar,
+.nq-people-list::-webkit-scrollbar { display: none; }
+
+/* ══ Tarjeta "Próximo Servicio": sin pulso, acento a la izquierda ══ */
+.cal-solutions .up-next-card {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-left: 4px solid #f26522 !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+  gap: 10px !important;
+}
+
+.cal-solutions .up-next-card.is-overdue-alert {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  border-left-color: #ef4444 !important;
+  box-shadow: none !important;
+}
+
+.cal-solutions .up-next-pill {
+  background: rgba(242, 101, 34, 0.16);
+  color: #fdba74;
+  box-shadow: none;
+  padding: 4px 10px;
+  letter-spacing: 0.6px;
+}
+
+/* La etiqueta ya no crece y se encoge */
+.cal-solutions .pill-overdue-banner {
+  animation: none !important;
+  background: rgba(239, 68, 68, 0.16) !important;
+  color: #fca5a5 !important;
+}
+
+.cal-solutions .up-next-time-tag {
+  display: inline-flex;
+  align-items: center;
+  color: #94a3b8;
+}
+
+.cal-solutions .up-next-title {
+  font-size: 0.95rem;
+  line-height: 1.3;
+  text-shadow: none;
+}
+
+.cal-solutions .up-next-details {
+  gap: 6px;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+}
+
+.cal-solutions .up-next-details .cal-ico { color: #94a3b8; }
+
+.cal-solutions .btn-up-next-action {
+  background: #f26522;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: none;
+}
+
+.cal-solutions .btn-up-next-action:hover {
+  background: #ea580c;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ══ Detalle del aviso: encabezado con etiqueta, título más sobrio y pie ordenado ══ */
+.nq-light.nd-window .nq-header {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.nd-kind {
+  flex: 0 1 auto;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-size: 0.74rem;
+  letter-spacing: 0.6px;
+}
+
+.nq-header .nd-kind + .nq-close { margin-left: auto; }
+
+.nq-light .nd-title {
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.nq-light .nd-when {
+  font-size: 0.86rem;
+}
+
+.nq-light .nd-done {
+  border-radius: 12px;
+}
+
+.nq-light .nd-delete {
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.nq-light .nd-delete:hover {
+  background: rgba(220, 38, 38, 0.12);
+  text-decoration: none;
+}
+
+/* ══ Detalle de Orden de Trabajo (calendario) ══ */
+.cal-wo-modal,
+.cal-wo-modal button,
+.cal-wo-modal input,
+.cal-wo-modal select {
+  font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif !important;
+}
+
+.cal-wo-modal .mercado-premium-body {
+  /* Dos columnas reales (el estilo base lo pone en fila y la derecha quedaba angosta) */
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) !important;
+  align-items: start;
+  scrollbar-width: none;
+}
+
+.cal-wo-modal .mercado-premium-body > * { min-width: 0; }
+
+.cal-wo-modal .mercado-premium-body::-webkit-scrollbar { display: none; }
+
+.cal-wo-modal .mercado-premium-header h2 {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.cal-wo-modal .solutions-wo-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+}
+
+.cal-wo-modal .solutions-wo-field-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.6px;
+}
+
+.cal-wo-modal .solutions-wo-input {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* Botón principal plano (sin degradado ni brillo) */
+.cal-wo-modal .solutions-btn-primary {
+  background: #f26522;
+  border-radius: 12px;
+  padding: 12px 18px;
+  box-shadow: none;
+}
+
+.cal-wo-modal .solutions-btn-primary:hover:not(:disabled) {
+  background: #ea580c;
+  transform: none;
+  box-shadow: none;
+}
+
+.cal-wo-modal .solutions-btn-secondary {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+/* Técnicos con foto (mismo estilo que "Solicitar trabajo") */
+.cal-tec-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 210px;
+  overflow-y: auto;
+  padding: 6px 6px 2px 0;
+  scrollbar-width: none;
+}
+
+.cal-tec-grid::-webkit-scrollbar { display: none; }
+
+.cal-tec-card {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px 8px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.cal-tec-card:hover { border-color: #fdba74; }
+.cal-tec-card.on { border-color: #f26522; background: #fff7f0; }
+
+.cal-tec-card img,
+.cal-tec-iniciales {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+  box-sizing: border-box;
+}
+
+.cal-tec-iniciales {
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cal-tec-ninguno { display: flex; }
+
+.cal-tec-nombre {
+  max-width: 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #475569;
+  text-align: center;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.cal-tec-card.on .cal-tec-nombre { color: #c2410c; }
+
+@media (max-width: 760px) {
+  .cal-wo-modal .mercado-premium-body { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 420px) {
+  .cal-tec-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.cal-tec-check {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  color: #f26522;
+  background: #ffffff;
+  border-radius: 50%;
+}
+
+/* Fecha y hora en dos campos */
+.cal-wo-visita { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cal-wo-visita label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.cal-wo-visita label > span { font-size: 0.78rem; font-weight: 700; color: #64748b; }
+.cal-wo-visita .solutions-wo-input:disabled { opacity: 0.55; cursor: not-allowed; }
+
