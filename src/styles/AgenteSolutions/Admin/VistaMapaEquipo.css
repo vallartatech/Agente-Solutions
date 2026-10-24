@@ -12,7 +12,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 340px 1fr;
+  grid-template-columns: 340px minmax(0, 1fr);
   gap: 16px;
   padding: 16px;
   height: calc(100dvh - 90px);
@@ -423,7 +423,7 @@
 /* ── CELULAR: mapa arriba, lista abajo ── */
 @media (max-width: 900px) {
   .vme-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 46dvh auto;
     height: auto;
     padding: 12px 12px calc(96px + env(safe-area-inset-bottom, 0px));
@@ -567,7 +567,7 @@
 /* ── MAPA EN VIVO UNIFICADO: pestañas Equipo / Propiedades y capas del mapa ── */
 .vme-tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 4px;
   padding: 4px;
   border-radius: 12px;
@@ -842,3 +842,51 @@
 }
 
 .vme-filtro-tag:hover { background: rgba(249, 115, 22, 0.26); }
+
+/* ── RESPONSIVO: nada debe salirse del ancho de la pantalla ──
+   Una columna "1fr" toma como mínimo el texto más largo (p. ej. una dirección) y empujaba
+   el mapa y la lista fuera de la pantalla en celular. */
+.vme-root {
+  overflow-x: hidden;
+}
+
+.vme-sidebar,
+.vme-map {
+  min-width: 0;
+}
+
+.vme-sidebar .vmp-item-cuerpo {
+  flex: 1;
+}
+
+.vme-tabs button {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .vme-legend {
+    max-width: calc(100% - 24px);
+    box-sizing: border-box;
+  }
+
+  /* El aviso "En línea" flotante no debe tapar el final de la lista */
+  .vme-sidebar {
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .vme-capas button,
+  .vme-tabs button {
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 0.74rem;
+  }
+
+  .vme-legend {
+    gap: 6px 10px;
+    padding: 6px 10px;
+    font-size: 0.66rem;
+  }
+}
