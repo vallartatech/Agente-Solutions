@@ -51,7 +51,8 @@ import {
   AlertCircle,
   ClipboardList,
   Home,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Lock
 } from 'lucide-react';
 
 // Íconos de línea (en lugar de emojis) por tipo de evento; toman el color del texto
@@ -171,6 +172,7 @@ const emptyNoticeForm = (dateKey = null) => {
     // Aviso anterior cuando este es el siguiente paso (seguimiento)
     parent: null,
     // ¿Para quién? 'team' = todo el equipo · 'some' = solo los participantes elegidos (ids)
+    // · 'private' = solo quien lo publica, sin notificar a nadie
     audience: 'team',
     participants: []
   };
@@ -443,7 +445,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     if (notice.label) badge = notice.label;
     const isDone = Boolean(notice.completed_at);
     if (isDone) badge = notice.label || 'Completado';
-    const baseTitle = notice.label ? `${notice.label} · ${notice.title}` : notice.title;
+    // Los privados llevan candado en la cuadrícula para distinguirlos de los del equipo
+    const baseTitle = `${notice.is_private ? '🔒 ' : ''}${notice.label ? `${notice.label} · ${notice.title}` : notice.title}`;
 
     const now = new Date();
     const todayDateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -734,7 +737,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       label: raw.label || '',
       description: raw.description || '',
       parent: parentNotice,
-      audience: prevParticipants.length ? 'some' : 'team',
+      audience: raw.is_private ? 'private' : (prevParticipants.length ? 'some' : 'team'),
       participants: prevParticipants
     }));
     setSelectedNotice(null);
@@ -775,7 +778,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         Swal.fire({
           icon: 'success',
           title: '¡Completado!',
-          text: note ? 'Se notificó tu comentario a todo el equipo.' : undefined,
+          text: note && !selectedNotice.rawNotice?.is_private ? 'Se notificó tu comentario a todo el equipo.' : undefined,
           timer: 1800,
           showConfirmButton: false
         });
@@ -838,7 +841,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      // Todo aviso se notifica siempre a todo el equipo
+      // Todo aviso se notifica (al equipo o a las personas elegidas), salvo los privados
+      const esPrivado = noticeForm.audience === 'private';
       const payload = {
         title: noticeForm.title.trim(),
         event_date: noticeForm.event_date,
@@ -848,7 +852,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         type: noticeForm.important ? 'importante' : 'aviso',
         description: noticeForm.description?.trim() || null,
         color: noticeForm.important ? '#ef4444' : '#f97316',
-        notify_team: true,
+        notify_team: !esPrivado,
+        is_private: esPrivado,
         parent_id: noticeForm.parent?.noticeId || null,
         participant_ids: noticeForm.audience === 'some' ? noticeForm.participants : []
       };
@@ -877,7 +882,15 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
         // El backend informa si OneSignal realmente aceptó el envío
         const push = res.data?.push;
-        if (push && !push.sent) {
+        if (esPrivado) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Aviso privado guardado',
+            text: 'Solo tú puedes verlo. No se notificó a nadie.',
+            timer: 2200,
+            showConfirmButton: false
+          });
+        } else if (push && !push.sent) {
           Swal.fire({
             icon: 'warning',
             title: 'Aviso publicado, push no enviada',
@@ -2233,9 +2246,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                     <p>
                       {noticeForm.parent
                         ? 'Quedará ligado al aviso anterior en el historial'
-                        : noticeForm.audience === 'some'
-                          ? 'Solo lo verán y recibirán las personas que elijas'
-                          : 'Aparecerá en el calendario y le llegará a todo el equipo'}
+                        : noticeForm.audience === 'private'
+                          ? 'Solo tú lo verás en tu calendario. No se notifica a nadie'
+                          : noticeForm.audience === 'some'
+                            ? 'Solo lo verán y recibirán las personas que elijas'
+                            : 'Aparecerá en el calendario y le llegará a todo el equipo'}
                     </p>
                   </div>
                   <button type="button" className="nq-close" onClick={closeModal} aria-label="Cerrar">
@@ -2412,6 +2427,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                               ? `${noticeForm.participants.length} persona${noticeForm.participants.length === 1 ? '' : 's'}`
                               : 'Elegir personas'}
                           </button>
+                          <button type="button" className={`nq-chip ${noticeForm.audience === 'private' ? 'active' : ''}`} onClick={() => setNoticeForm(prev => ({ ...prev, audience: 'private' }))}>
+                            <Lock size={14} aria-hidden="true" /> Privado
+                          </button>
                         </div>
 
                         {noticeForm.audience === 'some' && (
@@ -2492,11 +2510,13 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       <span className="nq-switch"><span className="nq-switch-knob" /></span>
                     </button>
 
-                    {/* Vista previa de la notificación: bajo demanda */}
-                    <button type="button" className="nq-link-btn nq-link-muted" onClick={() => setNqUi(prev => ({ ...prev, showPreview: !prev.showPreview }))}>
-                      <Eye size={15} /> {nqUi.showPreview ? 'Ocultar vista previa' : 'Ver cómo llegará'}
-                    </button>
-                    {nqUi.showPreview && (
+                    {/* Vista previa de la notificación: bajo demanda (un privado no notifica) */}
+                    {noticeForm.audience !== 'private' && (
+                      <button type="button" className="nq-link-btn nq-link-muted" onClick={() => setNqUi(prev => ({ ...prev, showPreview: !prev.showPreview }))}>
+                        <Eye size={15} /> {nqUi.showPreview ? 'Ocultar vista previa' : 'Ver cómo llegará'}
+                      </button>
+                    )}
+                    {nqUi.showPreview && noticeForm.audience !== 'private' && (
                       <div className="nq-preview-card">
                         <img src="/Logo_192.png" alt="" className="nq-preview-logo" />
                         <div className="nq-preview-content">
@@ -2530,9 +2550,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                             ? 'Enviando…'
                             : faltanPersonas
                               ? 'Elige al menos una persona'
-                              : noticeForm.audience === 'some'
-                                ? `Enviar a ${noticeForm.participants.length} persona${noticeForm.participants.length === 1 ? '' : 's'}`
-                                : 'Publicar para el equipo'}
+                              : noticeForm.audience === 'private'
+                                ? 'Guardar solo para mí'
+                                : noticeForm.audience === 'some'
+                                  ? `Enviar a ${noticeForm.participants.length} persona${noticeForm.participants.length === 1 ? '' : 's'}`
+                                  : 'Publicar para el equipo'}
                         </span>
                       </button>
                     </div>
@@ -2618,10 +2640,12 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       <Link2 size={13} /> Sigue de: {anterior.rawNotice?.title || anterior.titulo} · {formatNoticeDate(anterior.dateKey)}
                     </button>
                   )}
-                  {/* Participantes (vacío = todo el equipo) */}
+                  {/* Participantes (vacío = todo el equipo; privado = solo quien lo publicó) */}
                   <div className="nd-people">
-                    <Users size={14} />
-                    {participantes.length ? (
+                    {raw.is_private ? <Lock size={14} /> : <Users size={14} />}
+                    {raw.is_private ? (
+                      <span className="nd-people-names">Privado · solo tú lo ves</span>
+                    ) : participantes.length ? (
                       <>
                         <span className="nd-people-avatars">
                           {participantes.slice(0, 5).map(p => (
@@ -2668,6 +2692,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       />
                       <span className="nd-complete-hint">
                         <Bell size={13} /> {(() => {
+                          if (raw.is_private) return 'Es privado: el comentario queda solo para ti';
                           const destino = participantes.length
                             ? `${participantes.length === 1 ? 'a la persona invitada' : `a las ${participantes.length} personas invitadas`}`
                             : 'a todo el equipo';
