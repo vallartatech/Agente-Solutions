@@ -67,6 +67,24 @@ const IconoEvento = ({ job, size = 12 }) => {
   return <Icono size={size} strokeWidth={2.4} className="cal-ico" aria-hidden="true" />;
 };
 
+// Color de cada evento (mismo que sus puntos de la leyenda): puntos del mes en celular y hoja del día
+const COLOR_TIEMPO = { overdue: '#ef4444', today: '#ff6600', future: '#06b6d4', uncoordinated: '#eab308', completed: '#10b981' };
+const colorEvento = (job) => {
+  if (job.isBirthday) return '#ec4899';
+  if (job.isNotice) return job.color || '#f97316';
+  return COLOR_TIEMPO[job.timingCategory] || '#94a3b8';
+};
+
+// Segunda línea en la hoja del día: quién y en qué estado está
+const detalleEvento = (job) => {
+  if (job.isBirthday) return 'Cumpleaños';
+  if (job.isNotice) {
+    const raw = job.rawNotice || {};
+    return [job.timingBadge, raw.is_private && 'Privado', raw.completed_at && 'Completado'].filter(Boolean).join(' · ');
+  }
+  return [job.cliente, job.assigned_tech_name && `Técnico: ${job.assigned_tech_name}`, job.timingBadge].filter(Boolean).join(' · ');
+};
+
 // Opciones del menú "Filtrar"
 const FILTROS_CALENDARIO = [
   { key: 'all', label: 'Todos', Icon: CalendarIcon },
@@ -671,6 +689,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     setEditScheduledAt(job.scheduled_at ? job.scheduled_at.substring(0, 16) : '');
     setShowDetailModal(true);
   };
+
+  // Día abierto en la hoja "todo lo del día" (dateKey) al tocar una fecha con eventos
+  const [diaAbierto, setDiaAbierto] = useState(null);
 
   const handleEventClick = (job) => {
     if (job.isBirthday) {
@@ -1593,7 +1614,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                         className={`cal-day-cell ${!cell.isCurrentMonth ? 'other-month' : ''} ${cell.isToday ? 'is-today' : ''}`}
                         onClick={() => {
                           if (cell.events.length > 0) {
-                            handleEventClick(cell.events[0]);
+                            setDiaAbierto(cell.dateKey);
                           } else if (isAdmin) {
                             handleOpenCreateNotice(cell.dateKey);
                           }
@@ -1607,6 +1628,16 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                             </span>
                           )}
                         </div>
+
+                        {/* En celular el texto no cabe: un punto de color por evento (máx. 3) y "+N" */}
+                        {cell.events.length > 0 && (
+                          <div className="cal-day-dots" aria-hidden="true">
+                            {cell.events.slice(0, 3).map(job => (
+                              <span key={job.id} className="cal-day-dot" style={{ background: colorEvento(job) }} />
+                            ))}
+                            {cell.events.length > 3 && <span className="cal-day-more">+{cell.events.length - 3}</span>}
+                          </div>
+                        )}
 
                         <div className="cal-events-list">
                           {cell.events.map((job) => (
@@ -2189,6 +2220,70 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         )}
 
         {/* ── MODAL SUBMODAL: CREAR AVISO (siempre se notifica a todo el equipo) ── */}
+        {/* ── HOJA DEL DÍA: todo lo de una fecha, legible también en celular ── */}
+        {diaAbierto && (() => {
+          const eventosDia = filteredEvents
+            .filter(e => e.dateKey === diaAbierto)
+            .sort((a, b) => (a.hasScheduledDate === b.hasScheduledDate
+              ? a.calendarDate - b.calendarDate
+              : (a.hasScheduledDate ? 1 : -1)));
+          const cerrarDia = () => setDiaAbierto(null);
+
+          return (
+            <div className="solutions-submodal-overlay nq-overlay" onClick={cerrarDia}>
+              <div className="nq-window nq-light cal-dia-window" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="cal-dia-title">
+                <div className="nq-header">
+                  <span className="nq-header-badge" aria-hidden="true"><CalendarDays size={18} /></span>
+                  <div className="nq-header-text">
+                    <h3 id="cal-dia-title">{formatNoticeDate(diaAbierto)}</h3>
+                    <p>{eventosDia.length} evento{eventosDia.length === 1 ? '' : 's'}</p>
+                  </div>
+                  <button type="button" className="nq-close" onClick={cerrarDia} aria-label="Cerrar">
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="nq-body cal-dia-body">
+                  {eventosDia.length === 0 ? (
+                    <p className="cal-dia-empty">No hay eventos este día con el filtro actual.</p>
+                  ) : (
+                    <ul className="cal-dia-list">
+                      {eventosDia.map(job => (
+                        <li key={job.id}>
+                          <button
+                            type="button"
+                            className="cal-dia-item"
+                            style={{ '--ev-color': colorEvento(job) }}
+                            onClick={() => { cerrarDia(); handleEventClick(job); }}
+                          >
+                            <span className="cal-dia-ico"><IconoEvento job={job} size={16} /></span>
+                            <span className="cal-dia-main">
+                              <span className="cal-dia-title">{job.titulo}</span>
+                              {detalleEvento(job) && <span className="cal-dia-sub">{detalleEvento(job)}</span>}
+                            </span>
+                            <span className="cal-dia-time">{job.calendarTime}</span>
+                            <ChevronRight size={16} className="cal-dia-chevron" aria-hidden="true" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {isAdmin && (
+                  <div className="nq-footer">
+                    <div className="nq-footer-actions">
+                      <button type="button" className="nq-btn-submit" onClick={() => { cerrarDia(); handleOpenCreateNotice(diaAbierto); }}>
+                        <Plus size={16} /> Aviso para este día
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         {showCreateNoticeModal && (() => {
           const todayKey = toLocalDateKey(new Date());
           const tomorrowKey = toLocalDateKey(new Date(Date.now() + 24 * 60 * 60 * 1000));

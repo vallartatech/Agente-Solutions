@@ -3031,3 +3031,148 @@
 .cal-wo-visita label > span { font-size: 0.78rem; font-weight: 700; color: #64748b; }
 .cal-wo-visita .solutions-wo-input:disabled { opacity: 0.55; cursor: not-allowed; }
 
+/* ==========================================================================
+   MES EN CELULAR (PUNTOS DE COLOR) Y HOJA DEL DÍA
+   En pantallas angostas el texto de los eventos no cabe en la celda: se
+   muestran puntos y al tocar la fecha se abre la hoja con todo lo del día.
+   ========================================================================== */
+.cal-day-dots {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .cal-solutions .cal-events-list,
+  .cal-solutions .cal-day-count-badge {
+    display: none;
+  }
+
+  .cal-solutions .cal-day-dots {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    margin-top: 6px;
+  }
+
+  .cal-solutions .cal-day-cell {
+    cursor: pointer;
+  }
+}
+
+.cal-day-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cal-day-more {
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #94a3b8;
+}
+
+.cal-dia-window {
+  max-width: 460px;
+}
+
+.cal-dia-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cal-dia-item {
+  --ev-color: #f97316;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-left: 4px solid var(--ev-color);
+  background: #ffffff;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.cal-dia-item:hover {
+  background: #f8fafc;
+}
+
+.cal-dia-item:active {
+  transform: scale(0.98);
+}
+
+.cal-dia-item:focus-visible {
+  outline: 2px solid var(--ev-color);
+  outline-offset: 2px;
+}
+
+.cal-dia-ico {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ev-color);
+  background: rgba(148, 163, 184, 0.14);
+  background: color-mix(in srgb, var(--ev-color) 14%, transparent);
+}
+
+.cal-dia-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cal-dia-title {
+  color: #0f172a;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cal-dia-sub {
+  color: #64748b;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cal-dia-time {
+  flex-shrink: 0;
+  color: var(--ev-color);
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.cal-dia-chevron {
+  flex-shrink: 0;
+  color: #cbd5e1;
+}
+
+.cal-dia-empty {
+  margin: 0;
+  padding: 24px 0;
+  color: #64748b;
+  text-align: center;
+}
