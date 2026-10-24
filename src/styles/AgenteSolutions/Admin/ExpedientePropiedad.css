@@ -957,6 +957,35 @@
 .xp-equipo-vacio,
 .xp-equipo-nota { margin: 0; font-size: 0.8rem; color: #64748b !important; }
 
+/* Rol de cada persona (técnico / admin) y quién encabeza la cuadrilla */
+.xp-equipo-rol {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.xp-equipo-card.on .xp-equipo-rol { background: #ffedd5; color: #c2410c; }
+.xp-equipo-rol.lider { background: #f26522 !important; color: #ffffff !important; }
+
+.xp-equipo-cuadrilla {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #9a3412 !important;
+  line-height: 1.4;
+}
+
+.xp-equipo-cuadrilla svg { flex-shrink: 0; margin-top: 2px; }
+
 /* Programar visita (solo administradores) */
 .xp-visita { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .xp-visita label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }

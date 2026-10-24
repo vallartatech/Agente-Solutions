@@ -12,19 +12,21 @@ import '../../../../styles/AgenteSolutions/Admin/VistaPropiedades.css';
 import '../../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
 import '../../../../styles/Shared/LiquidGlass.css';
 
-// Solicitud de trabajo o de levantamiento para una propiedad, con técnico (rol 2) asignado.
+// Solicitud de trabajo o de levantamiento para una propiedad, asignada a técnicos (rol 2) y/o admins (rol 1).
+// Si se eligen varias personas, forman una cuadrilla: la primera elegida es la responsable.
 // Reutiliza el diseño "Reportar Problema" (rp-*) de Propiedades.
 const FORM_VACIO = { tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', fotos: [], supervisor: '', fecha: '', hora: '' };
 
-// Solo root (0) y administrador (1) programan la visita desde aquí
-const esAdministrador = () => {
+const sesion = () => {
   try {
-    const rol = Number(JSON.parse(localStorage.getItem('agente_session') || '{}')?.userData?.role_id);
-    return rol === 0 || rol === 1;
+    return JSON.parse(localStorage.getItem('agente_session') || '{}')?.userData || {};
   } catch {
-    return false;
+    return {};
   }
 };
+
+// Solo root (0) y administrador (1) programan la visita desde aquí
+const esAdministrador = () => [0, 1].includes(Number(sesion().role_id));
 
 const hoyISO = () => {
   const d = new Date();
@@ -53,10 +55,15 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
 
   useEffect(() => {
     const headers = authHeaders();
+    const miId = String(sesion().id ?? '');
+    // Técnicos y admins, sin quien está solicitando; primero los técnicos
     axios.get(`${API}/usuarios`, { headers })
-      .then((res) => (res.data || []).filter((u) => Number(u.role_id) === 2))
+      .then((res) => (res.data || []).filter((u) => [1, 2].includes(Number(u.role_id))))
       .catch(() => axios.get(`${API}/usuarios/tecnicos`, { headers }).then((r) => r.data || []))
-      .then((lista) => setTecnicos(lista.map((u) => ({ ...u, id: String(u.id).replace(/^u_/, '') }))))
+      .then((lista) => setTecnicos(lista
+        .map((u) => ({ ...u, id: String(u.id).replace(/^u_/, '') }))
+        .filter((u) => u.id !== miId)
+        .sort((a, b) => Number(b.role_id) - Number(a.role_id))))
       .catch(() => setTecnicos([]))
       .finally(() => setCargandoTecnicos(false));
 
@@ -171,12 +178,16 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
         const res = await axios.post(`${API}/work-orders/cliente`, fd, {
           headers: { ...headers, 'Content-Type': 'multipart/form-data' },
         });
-        // Equipo de varios técnicos: mismo endpoint que el tablero de servicios
+        // Cuadrilla y visita en una sola llamada (mismo endpoint que el tablero de servicios):
+        // notifica a cada integrante como asignado. En dos llamadas, la de la fecha
+        // se tomaba como reprogramación y llegaba un segundo aviso.
         if (ids.length > 1 || visita) {
           const ordenId = idCreado(res.data) || await buscarCreado('trabajo');
           if (ordenId) {
-            if (ids.length > 1) await axios.put(`${API}/work-orders/${ordenId}/assign`, { tecnicos_ids: ids }, { headers });
-            if (visita) await axios.put(`${API}/work-orders/${ordenId}/assign`, { scheduled_at: visita }, { headers });
+            await axios.put(`${API}/work-orders/${ordenId}/assign`, {
+              ...(ids.length && { tecnicos_ids: ids }),
+              ...(visita && { scheduled_at: visita }),
+            }, { headers });
           } else {
             sinProgramar = true;
           }
@@ -281,13 +292,14 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
                 <Users size={16} color="#ff8c42" /> Equipo de trabajo <span className="xp-equipo-hint">(Selecciona uno o más)</span>
               </label>
               {cargandoTecnicos ? (
-                <p className="xp-equipo-vacio">Cargando técnicos...</p>
+                <p className="xp-equipo-vacio">Cargando equipo...</p>
               ) : !tecnicos.length ? (
-                <p className="xp-equipo-vacio">No hay técnicos de rol 2 vinculados.</p>
+                <p className="xp-equipo-vacio">No hay técnicos ni administradores disponibles.</p>
               ) : (
                 <div className="xp-equipo-grid">
                   {tecnicos.map((t) => {
                     const on = tecnicoIds.includes(t.id);
+                    const lider = tecnicoIds.length > 1 && tecnicoIds[0] === t.id;
                     return (
                       <button
                         key={t.id}
@@ -308,6 +320,9 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
                           {t.first_name?.charAt(0)}{t.last_name?.charAt(0)}
                         </span>
                         <span className="xp-equipo-nombre">{t.first_name} {t.last_name ? `${t.last_name.charAt(0)}.` : ''}</span>
+                        <span className={`xp-equipo-rol ${lider ? 'lider' : ''}`}>
+                          {lider ? 'Responsable' : Number(t.role_id) === 1 ? 'Admin' : 'Técnico'}
+                        </span>
                         {on && <CheckCircle2 size={17} className="xp-equipo-check" />}
                       </button>
                     );
@@ -316,6 +331,12 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
               )}
               {!cargandoTecnicos && tecnicos.length > 0 && !tecnicoIds.length && (
                 <small className="xp-equipo-nota">Sin asignar por ahora: puedes asignarlo después desde Servicios.</small>
+              )}
+              {tecnicoIds.length > 1 && (
+                <small className="xp-equipo-nota xp-equipo-cuadrilla">
+                  <Users size={13} /> Cuadrilla de {tecnicoIds.length} personas. Todas recibirán la notificación;
+                  la primera que elegiste queda como responsable.
+                </small>
               )}
             </div>
 
