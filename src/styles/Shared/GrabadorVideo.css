@@ -1,0 +1,172 @@
+/* Grabadora de video de evidencia (corte automático) */
+.gv-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(2, 6, 23, 0.92);
+}
+
+.gv-caja {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.gv-cerrar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.7);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.gv-pantalla {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #000000;
+  aspect-ratio: 3 / 4;
+  max-height: 70vh;
+}
+
+.gv-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gv-video.espejo { transform: scaleX(-1); }
+
+.gv-contador {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.gv-punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: gv-parpadeo 1s infinite;
+}
+
+@keyframes gv-parpadeo { 50% { opacity: 0.3; } }
+
+.gv-barra {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.gv-barra > div {
+  height: 100%;
+  width: 0;
+  background: #f26522;
+  animation-name: gv-avance;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes gv-avance { to { width: 100%; } }
+
+.gv-aviso {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.gv-controles {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 76px;
+}
+
+.gv-grabar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 5px solid #ffffff;
+  background: #ef4444;
+  cursor: pointer;
+  transition: border-radius 0.2s, transform 0.2s;
+}
+
+.gv-grabar.on {
+  border-radius: 18px;
+  transform: scale(0.85);
+}
+
+.gv-grabar:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.gv-hint {
+  min-width: 44px;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.gv-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.gv-btn.primario { background: #f26522; color: #ffffff; }
+.gv-btn.secundario { background: rgba(255, 255, 255, 0.14); color: #ffffff; }
+
+.gv-btn.icono {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.gv-btn.icono:disabled { opacity: 0.4; cursor: not-allowed; }

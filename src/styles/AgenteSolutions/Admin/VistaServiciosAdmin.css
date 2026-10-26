@@ -759,6 +759,227 @@
   color: #f26522;
 }
 
+/* Equipo de trabajo: lista desplegable con buscador (como Mapa en vivo) */
+.svm-eq-resumen {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.svm-eq-resumen-der {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.svm-eq-pila { display: flex; }
+.svm-eq-pila .svm-eq-mini + .svm-eq-mini { margin-left: -10px; }
+
+.svm-eq-mini,
+.svm-eq-avatar {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+}
+
+.svm-eq-mini img,
+.svm-eq-mini .svm-eq-iniciales {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  object-fit: cover;
+  box-sizing: border-box;
+}
+
+.svm-eq-avatar img,
+.svm-eq-avatar .svm-eq-iniciales {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+  object-fit: cover;
+  box-sizing: border-box;
+}
+
+.svm-eq-iniciales {
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.svm-eq-cuenta {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #0f172a;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.svm-eq-cuenta.vacio { color: #8b5cf6; }
+
+.svm-eq-flecha {
+  flex-shrink: 0;
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+}
+
+.svm-eq-flecha.on { transform: rotate(180deg); }
+
+.svm-eq-panel {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.svm-eq-herramientas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.svm-eq-buscar {
+  flex: 1 1 180px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.85);
+  color: #94a3b8;
+}
+
+.svm-eq-buscar input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 16px; /* evita el zoom de iOS */
+}
+
+.svm-eq-filtros {
+  display: flex;
+  padding: 3px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.svm-eq-filtros button {
+  padding: 7px 11px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: #64748b;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.svm-eq-filtros button.on {
+  background: #f26522;
+  color: #ffffff;
+}
+
+.svm-eq-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 264px;
+  overflow-y: auto;
+  padding: 2px;
+  overscroll-behavior: contain;
+}
+
+.svm-eq-fila {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.75);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.svm-eq-fila:hover { border-color: rgba(242, 101, 34, 0.35); }
+.svm-eq-fila:disabled { cursor: wait; }
+
+.svm-eq-fila.on {
+  border-color: #f26522;
+  background: rgba(255, 247, 237, 0.95);
+}
+
+.svm-eq-fila.on .svm-eq-avatar img,
+.svm-eq-fila.on .svm-eq-avatar .svm-eq-iniciales { border-color: #f26522; }
+
+.svm-eq-datos {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.svm-eq-datos strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #0f172a;
+  font-size: 0.88rem;
+}
+
+.svm-eq-datos small {
+  color: #64748b;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.svm-eq-fila.on .svm-eq-datos small { color: #ea580c; }
+
+.svm-eq-check {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  color: #f26522;
+}
+
+.svm-eq-check.on { border: none; }
+
+.svm-eq-vacio {
+  margin: 6px 0;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.82rem;
+}
+
 /* Programar visita */
 .svm-visit-row {
   display: grid;

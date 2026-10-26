@@ -633,6 +633,7 @@
 }
 
 .rg-upload-opciones .rg-upload-btn { flex: 1; }
+button.rg-upload-btn { font-family: inherit; }
 
 .rg-stage-tech {
   display: flex;

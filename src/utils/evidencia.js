@@ -1,5 +1,5 @@
-// Evidencias de reporte: la 4ª (EXTRA) puede ser un video de máximo 5 segundos.
-export const VIDEO_MAX_SEGUNDOS = 5;
+// Evidencias de reporte: la 4ª (EXTRA) puede ser un video de máximo 4 segundos.
+export const VIDEO_MAX_SEGUNDOS = 4;
 export const VIDEO_MAX_MB = 12;
 
 export const esVideoUrl = (url) =>

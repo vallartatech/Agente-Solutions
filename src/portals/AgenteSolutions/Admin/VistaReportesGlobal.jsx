@@ -10,6 +10,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Upload, CheckCircle2, Pencil, Calendar, ClipboardList, Image as ImageIcon, Camera, Video, Images } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
+import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
 import '../../../styles/Shared/UniversalSearch.css';
 import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteSolutions/Admin/VistaReportesGlobal.css';
@@ -128,14 +129,20 @@ const VistaReportesGlobal = () => {
   };
 
   const [previewEsVideo, setPreviewEsVideo] = useState(false);
+  const [grabando, setGrabando] = useState(false);
 
-  const handleImageChange = async (e) => {
+  const handleImageChange = (e) => {
     const file = e.target.files[0];
     e.target.value = '';
+    usarArchivo(file);
+  };
+
+  // yaValidado: el video viene de la grabadora propia, que ya respeta el límite
+  const usarArchivo = async (file, yaValidado = false) => {
     if (!file) return;
     const esVideo = file.type.startsWith('video/');
     if (esVideo && !selectedStage?.permiteVideo) return;
-    if (esVideo) {
+    if (esVideo && !yaValidado) {
       const motivo = await validarVideoEvidencia(file);
       if (motivo) {
         Swal.fire('Video no válido', motivo, 'warning');
@@ -678,8 +685,9 @@ const VistaReportesGlobal = () => {
                 />
                 <div className="rg-upload-opciones">
                   <label htmlFor="report-image-camara" className="rg-upload-btn"><Camera size={18} /> Tomar foto</label>
-                  {selectedStage?.permiteVideo && (
-                    <label htmlFor="report-video-camara" className="rg-upload-btn"><Video size={18} /> Grabar video</label>
+                  {selectedStage?.permiteVideo && (puedeGrabarEnApp()
+                    ? <button type="button" className="rg-upload-btn" onClick={() => setGrabando(true)}><Video size={18} /> Grabar video</button>
+                    : <label htmlFor="report-video-camara" className="rg-upload-btn"><Video size={18} /> Grabar video</label>
                   )}
                 </div>
                 <label htmlFor="report-image-upload" className="rg-upload-btn">
@@ -709,6 +717,14 @@ const VistaReportesGlobal = () => {
           </div>
         </div>,
         document.body
+      )}
+
+      {grabando && (
+        <GrabadorVideo
+          maxSegundos={VIDEO_MAX_SEGUNDOS}
+          onCerrar={() => setGrabando(false)}
+          onListo={(file) => { usarArchivo(file, true); setGrabando(false); }}
+        />
       )}
 
       {/* MODAL ZOOM */}

@@ -9,6 +9,7 @@ import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
 import Header from '../../../components/Shared/Header';
 import { useAuth } from "../../../context/AuthContext";
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
+import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
 
 const STAGES = [
   {
@@ -73,8 +74,15 @@ const GaleriaReportes = () => {
   const entradaRef = useRef(null);
   const etapaArchivo = useRef(null);
   const [menuEtapa, setMenuEtapa] = useState(null);
+  const [grabadorEtapa, setGrabadorEtapa] = useState(null);
 
   const abrirArchivo = (stage, modo) => {
+    // Grabar: con la grabadora propia, que corta sola al llegar al límite
+    if (modo === 'video' && puedeGrabarEnApp()) {
+      setMenuEtapa(null);
+      setGrabadorEtapa(stage);
+      return;
+    }
     const el = entradaRef.current;
     if (!el) return;
     el.accept = modo === 'video' ? 'video/*' : modo === 'foto' ? 'image/*' : (stage.permiteVideo ? 'image/*,video/*' : 'image/*');
@@ -128,11 +136,12 @@ const GaleriaReportes = () => {
     return posicion !== -1 ? (sinTag[posicion] || null) : null;
   };
 
-  const handleFileChange = async (stage, file) => {
+  // yaValidado: el video viene de la grabadora propia, que ya respeta el límite
+  const handleFileChange = async (stage, file, yaValidado = false) => {
     if (!file) return;
     const esVideo = file.type.startsWith('video/');
     if (esVideo && !stage.permiteVideo) return;
-    if (esVideo) {
+    if (esVideo && !yaValidado) {
       const motivo = await validarVideoEvidencia(file);
       if (motivo) {
         Swal.fire({ icon: 'warning', title: 'Video no válido', text: motivo, confirmButtonColor: '#F26522' });
@@ -685,6 +694,14 @@ const GaleriaReportes = () => {
             </div>
           )}
         </div>
+
+        {grabadorEtapa && (
+          <GrabadorVideo
+            maxSegundos={VIDEO_MAX_SEGUNDOS}
+            onCerrar={() => setGrabadorEtapa(null)}
+            onListo={(file) => { handleFileChange(grabadorEtapa, file, true); setGrabadorEtapa(null); }}
+          />
+        )}
 
         <input
           type="file"

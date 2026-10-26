@@ -5,8 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Clock, CheckCircle2, Circle, X, UserCircle, Calendar, 
   ArrowLeft, Camera, Layout, FileText, Maximize2, AlertTriangle, Timer, Settings, Filter,
-  MapPin, Navigation, Users, Package, Zap, Banknote, ListChecks, Hash, ClipboardList, ShieldCheck
+  MapPin, Navigation, Users, Package, Zap, Banknote, ListChecks, Hash, ClipboardList, ShieldCheck,
+  Search, ChevronDown
 } from 'lucide-react';
+
+const ROL_EQUIPO = { 0: 'Root', 1: 'Admin', 2: 'Técnico', 8: 'Cuadrilla' };
 import Header from '../../../components/Shared/Header';
 import CasaLoader from '../../../components/Shared/CasaLoader';
 import ModalAsignarChecklist from '../../../components/Modals/ModalAsignarChecklist';
@@ -28,6 +31,10 @@ const VistaServiciosAdmin = () => {
   const [seccionTab, setSeccionTab] = useState('activos'); // 'activos' o 'finalizados'
   const [modalVisible, setModalVisible] = useState(false);
   const [tareaSeleccionada, setTareaSeleccionada] = useState(null);
+  // Equipo de trabajo como lista desplegable con buscador (como Mapa en vivo)
+  const [equipoAbierto, setEquipoAbierto] = useState(false);
+  const [busquedaEquipo, setBusquedaEquipo] = useState('');
+  const [filtroRolEquipo, setFiltroRolEquipo] = useState('todos');
   const [verBitacora, setVerBitacora] = useState(false);
   const [imagenExpandida, setImagenExpandida] = useState(null);
   const [procesandoAccion, setProcesandoAccion] = useState(false);
@@ -189,6 +196,7 @@ const VistaServiciosAdmin = () => {
         fechaSolucion: ['Listo', 'Finalizado'].includes(item.status) ? new Date(item.updated_at).toLocaleDateString() : 'Pendiente',
         tecnico: nombreTecnico || 'Pendiente de asignar',
         tecnicoId: item.tecnico_id,
+        tieneReporte: Number(item.work_reports_count || 0) > 0,
         // La pivote puede venir vacía aunque tecnico_id esté lleno (asignaciones viejas)
         tecnicosIds: [...new Set([...(item.technicians || []).map(t => Number(t.id)), ...(item.tecnico_id ? [Number(item.tecnico_id)] : [])])],
         propertyId: item.property_id,
@@ -383,6 +391,9 @@ const VistaServiciosAdmin = () => {
 
   // --- ACCIONES ---
   const abrirModal = (tarea) => {
+    setEquipoAbierto(false);
+    setBusquedaEquipo('');
+    setFiltroRolEquipo('todos');
     setTareaSeleccionada(tarea);
     setActiveBatchTab(0);
     setVerBitacora(false);
@@ -1053,44 +1064,116 @@ const VistaServiciosAdmin = () => {
                       </button>
                     </div>
 
+                    {(() => {
+                      const idsEquipo = tecnicosEquipo.map(Number);
+                      const personas = [
+                        ...tecnicos,
+                        // Asignados que no vienen en la lista del equipo: se muestran igual para que se vean marcados
+                        ...idsEquipo
+                          .filter(tid => !tecnicos.some(t => Number(t.id) === tid))
+                          .map(tid => ({ id: tid, first_name: tareaSeleccionada?.tecnico || 'Asignado', last_name: '' }))
+                      ];
+                      const asignados = personas.filter(t => idsEquipo.includes(Number(t.id)));
+                      const texto = busquedaEquipo.trim().toLowerCase();
+                      const visibles = personas
+                        .filter(t => filtroRolEquipo === 'todos'
+                          || (filtroRolEquipo === 'admins' ? [0, 1].includes(Number(t.role_id)) : ![0, 1].includes(Number(t.role_id))))
+                        .filter(t => !texto || `${t.first_name || ''} ${t.last_name || ''}`.toLowerCase().includes(texto))
+                        // Los asignados primero
+                        .sort((a, b) => Number(idsEquipo.includes(Number(b.id))) - Number(idsEquipo.includes(Number(a.id))));
+                      const abierto = equipoAbierto || asignados.length === 0;
+                      const avatar = (t, clase) => (
+                        <span className={clase}>
+                          {t.profile_picture_url ? (
+                            <img
+                              src={t.profile_picture_url}
+                              alt=""
+                              onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+                            />
+                          ) : null}
+                          <span className="svm-eq-iniciales" style={{ display: t.profile_picture_url ? 'none' : 'flex' }}>
+                            {t.first_name?.charAt(0)}{t.last_name?.charAt(0)}
+                          </span>
+                        </span>
+                      );
+
+                      return (
                     <div className="svm-section">
-                      <label className="svm-section-label">
-                        <Users size={16} /> Equipo de trabajo <span className="svm-section-hint">(Selecciona uno o más)</span>
-                      </label>
-                      <div className="svm-team-grid">
-                        {[
-                          ...tecnicos,
-                          // Asignados que no vienen en la lista del equipo: se muestran igual para que se vean marcados
-                          ...tecnicosEquipo
-                            .filter(tid => !tecnicos.some(t => Number(t.id) === Number(tid)))
-                            .map(tid => ({ id: Number(tid), first_name: tareaSeleccionada?.tecnico || 'Asignado', last_name: '' }))
-                        ].map(t => {
-                          const isSelected = tecnicosEquipo.map(Number).includes(Number(t.id));
-                          return (
-                            <button
-                              type="button"
-                              key={t.id}
-                              className={`svm-tech ${isSelected ? 'on' : ''}`}
-                              onClick={() => toggleTecnicoEquipo(t.id, activeTask ? activeTask.dbId : null)}
-                              aria-pressed={isSelected}
-                              title={`${t.first_name || ''} ${t.last_name || ''}`.trim()}
-                            >
-                              {t.profile_picture_url ? (
-                                <img
-                                  src={t.profile_picture_url}
-                                  alt=""
-                                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
-                                />
-                              ) : null}
-                              <span className="svm-tech-iniciales" style={{ display: t.profile_picture_url ? 'none' : 'flex' }}>
-                                {t.first_name?.charAt(0)}{t.last_name?.charAt(0)}
+                      {/* Resumen: quiénes están asignados; al tocarlo se despliega la lista */}
+                      <button type="button" className="svm-eq-resumen" onClick={() => setEquipoAbierto(!abierto)} aria-expanded={abierto}>
+                        <span className="svm-section-label" style={{ margin: 0 }}>
+                          <Users size={16} /> Equipo de trabajo
+                        </span>
+                        <span className="svm-eq-resumen-der">
+                          {asignados.length > 0 ? (
+                            <>
+                              <span className="svm-eq-pila">
+                                {asignados.slice(0, 3).map(t => <React.Fragment key={t.id}>{avatar(t, 'svm-eq-mini')}</React.Fragment>)}
                               </span>
-                              <span className="svm-tech-nombre">{t.first_name} {t.last_name ? `${t.last_name.charAt(0)}.` : ''}</span>
-                              {isSelected && <CheckCircle2 size={17} className="svm-tech-check" />}
-                            </button>
-                          );
-                        })}
-                      </div>
+                              <span className="svm-eq-cuenta">
+                                {asignados.length === 1 ? `${asignados[0].first_name || ''} ${asignados[0].last_name || ''}`.trim() : `${asignados.length} asignados`}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="svm-eq-cuenta vacio">Sin asignar</span>
+                          )}
+                          <ChevronDown size={18} className={`svm-eq-flecha ${abierto ? 'on' : ''}`} />
+                        </span>
+                      </button>
+
+                      {abierto && (
+                        <div className="svm-eq-panel">
+                          <div className="svm-eq-herramientas">
+                            <label className="svm-eq-buscar">
+                              <Search size={15} />
+                              <input
+                                type="search"
+                                placeholder="Buscar persona..."
+                                value={busquedaEquipo}
+                                onChange={(e) => setBusquedaEquipo(e.target.value)}
+                              />
+                            </label>
+                            <div className="svm-eq-filtros" role="tablist">
+                              {[['todos', 'Todos'], ['tecnicos', 'Técnicos'], ['admins', 'Admins']].map(([id, txt]) => (
+                                <button
+                                  key={id}
+                                  type="button"
+                                  role="tab"
+                                  aria-selected={filtroRolEquipo === id}
+                                  className={filtroRolEquipo === id ? 'on' : ''}
+                                  onClick={() => setFiltroRolEquipo(id)}
+                                >
+                                  {txt}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="svm-eq-lista">
+                            {visibles.map(t => {
+                              const isSelected = idsEquipo.includes(Number(t.id));
+                              return (
+                                <button
+                                  type="button"
+                                  key={t.id}
+                                  className={`svm-eq-fila ${isSelected ? 'on' : ''}`}
+                                  onClick={() => toggleTecnicoEquipo(t.id, activeTask ? activeTask.dbId : null)}
+                                  aria-pressed={isSelected}
+                                  disabled={procesandoAccion}
+                                >
+                                  {avatar(t, 'svm-eq-avatar')}
+                                  <span className="svm-eq-datos">
+                                    <strong>{`${t.first_name || ''} ${t.last_name || ''}`.trim()}</strong>
+                                    <small>{ROL_EQUIPO[Number(t.role_id)] || 'Técnico'}{isSelected ? ' · Asignado' : ''}</small>
+                                  </span>
+                                  <span className={`svm-eq-check ${isSelected ? 'on' : ''}`}>{isSelected && <CheckCircle2 size={20} />}</span>
+                                </button>
+                              );
+                            })}
+                            {!visibles.length && <p className="svm-eq-vacio">Nadie coincide con la búsqueda.</p>}
+                          </div>
+                        </div>
+                      )}
 
                       {tareaSeleccionada.batch_id && tecnicosEquipo.length > 0 && (
                         <button
@@ -1104,6 +1187,8 @@ const VistaServiciosAdmin = () => {
                         </button>
                       )}
                     </div>
+                      );
+                    })()}
 
                     {/* PROGRAMAR VISITA, LISTA DE MATERIALES Y BOTONES INFERIORES */}
                     {(() => {
@@ -1389,7 +1474,7 @@ const VistaServiciosAdmin = () => {
                           className="svm-btn primary svm-btn-full"
                           onClick={() => abrirGaleriaReporte(activeTask)}
                         >
-                          <ClipboardList size={18} /> {activeTask.estado === 'review' ? 'Revisar / editar reporte' : 'Realizar reporte'}
+                          <ClipboardList size={18} /> {activeTask.estado === 'review' ? 'Revisar / editar reporte' : (activeTask.tieneReporte ? 'Consultar reporte' : 'Realizar reporte')}
                         </button>
                         <button
                           type="button"
