@@ -11,6 +11,7 @@ import BotonChats from './BotonChats';
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
 import '../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
+import '../../styles/Shared/EncabezadoMovil.css';
 
 const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, usersCount }) => {
   const navigate = useNavigate();

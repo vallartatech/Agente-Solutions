@@ -11,6 +11,7 @@ import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
 import { obtenerEstadoUbicacion, suscribirEstadoUbicacion } from './ubicacionService';
 import '../../styles/Shared/Header.css';
+import '../../styles/Shared/EncabezadoMovil.css';
 
 // navTabs (opcional): reemplaza el menú principal por pestañas propias de la vista,
 // ej. [{ key, label, Icon, active, onClick }]. navBack: { label, onClick } para regresar.
