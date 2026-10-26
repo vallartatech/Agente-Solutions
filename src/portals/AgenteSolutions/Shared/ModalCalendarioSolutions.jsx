@@ -275,7 +275,6 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const [noticeForm, setNoticeForm] = useState(() => emptyNoticeForm());
 
   // Estados de edición de Cita / Técnico (Admins)
-  const [editTecnicoId, setEditTecnicoId] = useState('');
   const [editScheduledAt, setEditScheduledAt] = useState('');
   const [savingChanges, setSavingChanges] = useState(false);
 
@@ -360,6 +359,18 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       statusType = 'future';
     }
 
+    // Todos los asignados de la orden (equipo N:M + el técnico principal), sin repetir
+    const asignados = [];
+    [...(order.technicians || []), order.tecnico, order.technician].filter(Boolean).forEach(t => {
+      if (!t.id || asignados.some(a => Number(a.id) === Number(t.id))) return;
+      asignados.push({
+        id: t.id,
+        nombre: `${t.first_name || ''} ${t.last_name || ''}`.trim() || t.name || 'Asignado',
+        foto: t.profile_picture_url || (String(t.profile_picture || '').startsWith('http') ? t.profile_picture : null),
+        role_id: t.role_id
+      });
+    });
+
     // Resolver técnico
     let assignedTechName = '';
     let techId = order.tecnico_id || order.assigned_to || null;
@@ -429,6 +440,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       hasScheduledDate,
       assigned_tech_name: assignedTechName,
       tecnico_id: techId,
+      asignados,
       cliente: clientName,
       clientPhone,
       fotos,
@@ -692,7 +704,6 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const handleOpenDetailModal = (job) => {
     setSelectedJob(job);
     setActivePhoto(job.fotos?.[0] || job.foto || null);
-    setEditTecnicoId(job.tecnico_id || '');
     setEditScheduledAt(job.scheduled_at ? job.scheduled_at.substring(0, 16) : '');
     setShowDetailModal(true);
   };
@@ -1092,15 +1103,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const payload = {};
-      if (editTecnicoId) {
-        payload.tecnico_id = Number(editTecnicoId);
-      } else if (selectedJob.tecnico_id) {
-        payload.tecnicos_ids = []; // eligió "Sin asignar": quitar al que estaba
-      }
-      if (editScheduledAt) {
-        payload.scheduled_at = editScheduledAt;
-      }
+      // En la agenda solo se cambia el horario; el equipo se asigna desde el tablero de servicios
+      if (!editScheduledAt) return;
+      const payload = { scheduled_at: editScheduledAt };
 
       const res = await axios.put(
         `${import.meta.env.VITE_API_BASE_URL}/work-orders/${selectedJob.id}/assign`,
@@ -1111,7 +1116,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       if (res.status === 200 || res.data?.success) {
         Swal.fire({
           icon: 'success',
-          title: 'Cita y Técnico Actualizados',
+          title: 'Horario Actualizado',
           text: 'Los cambios se han guardado exitosamente en el calendario.',
           timer: 2000,
           showConfirmButton: false
@@ -2064,62 +2069,51 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       </span>
                     </div>
 
-                    {/* Formulario de Asignación de Técnico */}
+                    {/* Quiénes están asignados (solo lectura: el equipo se asigna en el tablero de servicios) */}
                     <div className="solutions-wo-field-group">
-                      <label className="solutions-wo-field-label">Técnico Asignado</label>
-                      {isAdmin ? (
-                        /* Tarjetas con foto, igual que al solicitar un trabajo */
-                        <div className="cal-tec-grid" role="radiogroup" aria-label="Técnico asignado">
-                          <button
-                            type="button"
-                            role="radio"
-                            aria-checked={!editTecnicoId}
-                            className={`cal-tec-card ${!editTecnicoId ? 'on' : ''}`}
-                            onClick={() => setEditTecnicoId('')}
-                          >
-                            <span className="cal-tec-iniciales cal-tec-ninguno"><User size={20} /></span>
-                            <span className="cal-tec-nombre">Sin asignar</span>
-                          </button>
-                          {[
-                            ...tecnicosList,
-                            // El asignado actual siempre aparece, aunque no venga en la lista del equipo
-                            ...(selectedJob.tecnico_id && !tecnicosList.some(t => String(t.id) === String(selectedJob.tecnico_id))
-                              ? [{ id: selectedJob.tecnico_id, first_name: selectedJob.assigned_tech_name || 'Asignado', last_name: '' }]
-                              : [])
-                          ].map(t => {
-                            const on = String(editTecnicoId) === String(t.id);
-                            const foto = t.profile_picture_url || t.profile_picture || t.foto;
-                            return (
-                              <button
-                                key={t.id}
-                                type="button"
-                                role="radio"
-                                aria-checked={on}
-                                className={`cal-tec-card ${on ? 'on' : ''}`}
-                                onClick={() => setEditTecnicoId(String(t.id))}
-                                title={`${t.first_name || ''} ${t.last_name || ''}`.trim()}
-                              >
-                                {foto ? (
-                                  <img
-                                    src={foto}
-                                    alt=""
-                                    onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
-                                  />
-                                ) : null}
-                                <span className="cal-tec-iniciales" style={{ display: foto ? 'none' : 'flex' }}>
-                                  {t.first_name?.charAt(0)}{t.last_name?.charAt(0)}
-                                </span>
-                                <span className="cal-tec-nombre">{t.first_name} {t.last_name ? `${t.last_name.charAt(0)}.` : ''}</span>
-                                {on && <CheckCircle2 size={16} className="cal-tec-check" />}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>
-                          <span className="cal-ico-text"><Wrench size={15} /> {selectedJob.assigned_tech_name || 'Sin asignar'}</span>
-                        </div>
-                      )}
+                      {(() => {
+                        const asignados = (selectedJob.asignados?.length
+                          ? selectedJob.asignados
+                          : (selectedJob.tecnico_id ? [{ id: selectedJob.tecnico_id, nombre: selectedJob.assigned_tech_name || 'Asignado' }] : []))
+                          .map(a => {
+                            // La foto ya resuelta (URL completa) viene en la lista del equipo
+                            const delEquipo = tecnicosList.find(t => Number(t.id) === Number(a.id));
+                            return { ...a, foto: delEquipo?.profile_picture_url || a.foto, role_id: a.role_id ?? delEquipo?.role_id };
+                          });
+                        return (
+                          <>
+                            <label className="solutions-wo-field-label">
+                              {asignados.length > 1 ? `Equipo asignado (${asignados.length})` : 'Técnico asignado'}
+                            </label>
+                            {asignados.length ? (
+                              <div className="cal-asig-lista">
+                                {asignados.map(a => (
+                                  <div key={a.id} className="cal-asig-fila">
+                                    {a.foto ? (
+                                      <img
+                                        src={a.foto}
+                                        alt=""
+                                        onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+                                      />
+                                    ) : null}
+                                    <span className="cal-asig-iniciales" style={{ display: a.foto ? 'none' : 'flex' }}>
+                                      {a.nombre.split(' ').map(p => p.charAt(0)).slice(0, 2).join('')}
+                                    </span>
+                                    <span className="cal-asig-datos">
+                                      <strong>{a.nombre}</strong>
+                                      <small>{Number(a.role_id) === 1 || Number(a.role_id) === 0 ? 'Admin' : 'Técnico'}</small>
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="cal-asig-vacio">
+                                <User size={16} /> Sin asignar{isAdmin ? ' · asígnalo desde el tablero de servicios' : ''}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
 
                     {/* Fecha y Hora de la Cita */}
@@ -2171,7 +2165,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                           style={{ width: '100%', justifyContent: 'center' }}
                         >
                           <Save size={16} />
-                          <span>{savingChanges ? 'Guardando...' : 'Guardar Horario y Técnico'}</span>
+                          <span>{savingChanges ? 'Guardando...' : 'Guardar horario'}</span>
                         </button>
                       </div>
                     )}
