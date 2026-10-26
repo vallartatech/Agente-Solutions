@@ -7,7 +7,7 @@ import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig"
 import {
   Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield, X,
   Building2, Eye, MapPinOff, Loader2, SlidersHorizontal, Check, Moon, Sun, ChevronUp, ChevronDown,
-  Clock, Crosshair, GripHorizontal, Route,
+  Clock, Crosshair, GripHorizontal, Route, Maximize, Minimize,
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
@@ -148,9 +148,13 @@ const FiltroMenu = ({ activo, children }) => {
     const conTecla = (e) => { if (e.key === 'Escape') setAbierto(false); };
     document.addEventListener('pointerdown', cerrar);
     document.addEventListener('keydown', conTecla);
+    // En celular el panel flota sobre la pantalla (position: fixed); el desenfoque de la tarjeta
+    // lo atraparía dentro de ella, así que se apaga mientras el panel está abierto (ver CSS)
+    document.body.classList.add('vme-filtro-abierto');
     return () => {
       document.removeEventListener('pointerdown', cerrar);
       document.removeEventListener('keydown', conTecla);
+      document.body.classList.remove('vme-filtro-abierto');
     };
   }, [abierto]);
 
@@ -177,14 +181,25 @@ const FiltroMenu = ({ activo, children }) => {
   );
 };
 
-const OpcionFiltro = ({ activa, onClick, children }) => (
-  <button type="button" className={`vme-filtro-opcion ${activa ? 'activa' : ''}`} onClick={onClick} data-cierra="">
+// multiple: la opción se marca/desmarca sin cerrar el panel (filtros de varias opciones)
+const OpcionFiltro = ({ activa, onClick, children, multiple = false }) => (
+  <button
+    type="button"
+    className={`vme-filtro-opcion ${activa ? 'activa' : ''} ${multiple ? 'es-multiple' : ''}`}
+    onClick={onClick}
+    {...(multiple ? {} : { 'data-cierra': '' })}
+  >
     <span className="vme-filtro-opcion-txt">{children}</span>
-    {activa && <Check size={15} />}
+    {multiple
+      ? <span className="vme-filtro-check" aria-hidden="true">{activa && <Check size={12} />}</span>
+      : activa && <Check size={15} />}
   </button>
 );
 
-const ROLES_FILTRO = { all: 'Todos', tech: 'Técnicos', admin: 'Admins' };
+const ROLES_FILTRO = { tech: 'Técnicos', admin: 'Admins' };
+
+// Agrega o quita un valor de una lista (filtros de varias opciones)
+const alternarEnLista = (lista, valor) => (lista.includes(valor) ? lista.filter(v => v !== valor) : [...lista, valor]);
 
 // Ancho máximo de los globos de Google: en celular se reduce para que quepan sin deslizar de lado
 const anchoGlobo = (max) => Math.max(180, Math.min(max, window.innerWidth - 110));
@@ -268,7 +283,7 @@ const buildRouteSegments = (points) => {
 const MAP_OPTIONS = {
   streetViewControl: false,
   mapTypeControl: false,
-  fullscreenControl: true,
+  fullscreenControl: false, // se usa un botón propio de vidrio (ver .vme-pantalla-btn)
   clickableIcons: false,
   keyboardShortcuts: false,
   gestureHandling: 'greedy', // en celular se mueve con un dedo
@@ -444,7 +459,7 @@ const VistaMapaEquipo = () => {
   const [forbidden, setForbidden] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(null);
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all'); // all | tech | admin
+  const [roles, setRoles] = useState([]); // vacío = todos; puede tener 'tech' y/o 'admin'
   const [onlyOnline, setOnlyOnline] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [routePoints, setRoutePoints] = useState([]);
@@ -455,7 +470,7 @@ const VistaMapaEquipo = () => {
   const [carpetas, setCarpetas] = useState([]);
   const [cargandoProps, setCargandoProps] = useState(puedeVerPropiedades);
   const [busqueda, setBusqueda] = useState('');
-  const [filtro, setFiltro] = useState('todas'); // 'todas' | id de carpeta | SIN_CARPETA
+  const [empresas, setEmpresas] = useState([]); // vacío = todas; ids de carpeta y/o SIN_CARPETA
   const [propSelId, setPropSelId] = useState(null);
 
   // Celular: la tarjeta flota sobre el mapa; al bajarla queda el mapa completo a la vista
@@ -472,6 +487,28 @@ const VistaMapaEquipo = () => {
     });
   };
   const mapRef = useRef(null);
+
+  // Pantalla completa del mapa con los controles propios incluidos (capas, leyenda, sol/luna)
+  const mapaSeccionRef = useRef(null);
+  const [enPantallaCompleta, setEnPantallaCompleta] = useState(false);
+  const puedePantallaCompleta = Boolean(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  useEffect(() => {
+    const cambio = () => setEnPantallaCompleta(Boolean(document.fullscreenElement || document.webkitFullscreenElement));
+    document.addEventListener('fullscreenchange', cambio);
+    document.addEventListener('webkitfullscreenchange', cambio);
+    return () => {
+      document.removeEventListener('fullscreenchange', cambio);
+      document.removeEventListener('webkitfullscreenchange', cambio);
+    };
+  }, []);
+  const alternarPantallaCompleta = () => {
+    const el = mapaSeccionRef.current;
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+    } else if (el) {
+      (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
+    }
+  };
   const fittedRef = useRef(false);
 
   const verEquipo = !forbidden;
@@ -548,7 +585,7 @@ const VistaMapaEquipo = () => {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return members
-      .filter(m => roleFilter === 'all' || (roleFilter === 'tech' ? m.role_id === 2 : m.role_id === 1))
+      .filter(m => roles.length === 0 || roles.some(r => (r === 'tech' ? m.role_id === 2 : m.role_id === 1)))
       .filter(m => !onlyOnline || m.online)
       .filter(m => !q || m.name.toLowerCase().includes(q))
       .sort((a, b) => {
@@ -557,7 +594,7 @@ const VistaMapaEquipo = () => {
         if (diff !== 0) return diff;
         return a.name.localeCompare(b.name);
       });
-  }, [members, search, roleFilter, onlyOnline]);
+  }, [members, search, roles, onlyOnline]);
 
   const onMap = verEquipo && capas.equipo ? filtered.filter(m => m.last_location) : [];
   const selected = members.find(m => m.id === selectedId) || null;
@@ -576,13 +613,12 @@ const VistaMapaEquipo = () => {
   const propsFiltradas = useMemo(() => {
     const q = sinAcentos(busqueda.trim());
     return conPosicion.filter(p => {
-      if (filtro === SIN_CARPETA && p.folder_id) return false;
-      if (filtro !== 'todas' && filtro !== SIN_CARPETA && Number(p.folder_id) !== Number(filtro)) return false;
+      if (empresas.length && !empresas.includes(p.folder_id ? Number(p.folder_id) : SIN_CARPETA)) return false;
       if (!q) return true;
       const carpeta = carpetaPorId[p.folder_id]?.name;
       return [p.nombre_propiedad, p.direccion, p.propietario, carpeta].some(v => sinAcentos(v).includes(q));
     });
-  }, [conPosicion, filtro, busqueda, carpetaPorId]);
+  }, [conPosicion, empresas, busqueda, carpetaPorId]);
 
   const propsEnMapa = useMemo(() => (capas.propiedades ? propsFiltradas.filter(p => p.pos) : []), [propsFiltradas, capas.propiedades]);
   const propsSinUbicacion = propsFiltradas.filter(p => !p.pos).length;
@@ -629,11 +665,11 @@ const VistaMapaEquipo = () => {
     fittedRef.current = true;
   }, [isLoaded, loading, cargandoProps, puntosVisibles, encuadrar]);
 
-  // Al cambiar de empresa se encuadra en sus propiedades
+  // Al cambiar las empresas elegidas se encuadra en sus propiedades
   useEffect(() => {
     if (!fittedRef.current || !propsEnMapa.length) return;
     encuadrar(propsEnMapa.map(p => p.pos));
-  }, [filtro]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [empresas]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelect = (m) => {
     if (selectedId === m.id) {
@@ -675,6 +711,19 @@ const VistaMapaEquipo = () => {
     if (capa === 'equipo') setInfoOpen(false);
     if (capa === 'propiedades') setPropSelId(null);
   };
+
+  // "Mostrar Equipo / Propiedades" dentro del filtro (en celular reemplaza a las pestañas)
+  const seccionMostrar = puedeVerPropiedades && (
+    <div className="vme-filtro-mostrar">
+      <span className="vme-filtro-titulo">Mostrar</span>
+      <OpcionFiltro activa={pestana === 'equipo'} onClick={() => setPestana('equipo')}>
+        <Users size={14} /> Equipo {forbidden ? <Lock size={12} /> : <small>{members.length}</small>}
+      </OpcionFiltro>
+      <OpcionFiltro activa={pestana === 'propiedades'} onClick={() => setPestana('propiedades')}>
+        <Building2 size={14} /> Propiedades <small>{conPosicion.length}</small>
+      </OpcionFiltro>
+    </div>
+  );
 
   if (forbidden && !puedeVerPropiedades) {
     return (
@@ -767,6 +816,12 @@ const VistaMapaEquipo = () => {
               <button type="button" className="vme-sin-permiso-btn" onClick={fetchTeam}>
                 <RefreshCw size={14} /> Volver a intentar
               </button>
+              {/* En celular las pestañas viven en el filtro: desde aquí se puede regresar a Propiedades */}
+              {puedeVerPropiedades && (
+                <button type="button" className="vme-sin-permiso-btn" onClick={() => setPestana('propiedades')}>
+                  <Building2 size={14} /> Ver propiedades
+                </button>
+              )}
             </div>
           ) : pestana === 'equipo' ? (
             <>
@@ -780,11 +835,12 @@ const VistaMapaEquipo = () => {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
-                <FiltroMenu activo={(roleFilter !== 'all' ? 1 : 0) + (onlyOnline ? 1 : 0)}>
-                  <span className="vme-filtro-titulo">Rol</span>
-                  <OpcionFiltro activa={roleFilter === 'all'} onClick={() => setRoleFilter('all')}><Users size={14} /> Todos</OpcionFiltro>
-                  <OpcionFiltro activa={roleFilter === 'tech'} onClick={() => setRoleFilter('tech')}><Wrench size={14} /> Técnicos</OpcionFiltro>
-                  <OpcionFiltro activa={roleFilter === 'admin'} onClick={() => setRoleFilter('admin')}><Shield size={14} /> Admins</OpcionFiltro>
+                <FiltroMenu activo={roles.length + (onlyOnline ? 1 : 0)}>
+                  {seccionMostrar}
+                  <span className="vme-filtro-titulo">Rol <small>(puedes elegir varios)</small></span>
+                  <OpcionFiltro multiple activa={roles.length === 0} onClick={() => setRoles([])}><Users size={14} /> Todos</OpcionFiltro>
+                  <OpcionFiltro multiple activa={roles.includes('tech')} onClick={() => setRoles(r => alternarEnLista(r, 'tech'))}><Wrench size={14} /> Técnicos</OpcionFiltro>
+                  <OpcionFiltro multiple activa={roles.includes('admin')} onClick={() => setRoles(r => alternarEnLista(r, 'admin'))}><Shield size={14} /> Admins</OpcionFiltro>
                   <span className="vme-filtro-titulo">Estado</span>
                   <label className="vme-filtro-switch">
                     <span><span className="vme-online-dot" /> Solo en línea</span>
@@ -793,13 +849,13 @@ const VistaMapaEquipo = () => {
                 </FiltroMenu>
               </div>
 
-              {(roleFilter !== 'all' || onlyOnline) && (
+              {(roles.length > 0 || onlyOnline) && (
                 <div className="vme-filtros-activos">
-                  {roleFilter !== 'all' && (
-                    <button type="button" className="vme-filtro-tag" onClick={() => setRoleFilter('all')} title="Quitar filtro">
-                      {ROLES_FILTRO[roleFilter]} <X size={12} />
+                  {roles.map(r => (
+                    <button key={r} type="button" className="vme-filtro-tag" onClick={() => setRoles(lista => lista.filter(x => x !== r))} title="Quitar filtro">
+                      {ROLES_FILTRO[r]} <X size={12} />
                     </button>
-                  )}
+                  ))}
                   {onlyOnline && (
                     <button type="button" className="vme-filtro-tag" onClick={() => setOnlyOnline(false)} title="Quitar filtro">
                       Solo en línea <X size={12} />
@@ -853,14 +909,15 @@ const VistaMapaEquipo = () => {
                   <input type="search" placeholder="Buscar propiedad, empresa o dirección" value={busqueda} onChange={e => setBusqueda(e.target.value)} />
                 </label>
                 {/* Filtro por empresa (carpeta) */}
-                <FiltroMenu activo={filtro !== 'todas' ? 1 : 0}>
-                  <span className="vme-filtro-titulo">Empresa</span>
+                <FiltroMenu activo={empresas.length}>
+                  {seccionMostrar}
+                  <span className="vme-filtro-titulo">Empresa <small>(puedes elegir varias)</small></span>
                   <div className="vme-filtro-lista">
-                    <OpcionFiltro activa={filtro === 'todas'} onClick={() => setFiltro('todas')}>
+                    <OpcionFiltro multiple activa={empresas.length === 0} onClick={() => setEmpresas([])}>
                       <Building2 size={14} /> Todas <small>{conPosicion.length}</small>
                     </OpcionFiltro>
                     {carpetas.filter(c => conteos.porCarpeta[c.id]).map(c => (
-                      <OpcionFiltro key={c.id} activa={Number(filtro) === c.id} onClick={() => setFiltro(c.id)}>
+                      <OpcionFiltro key={c.id} multiple activa={empresas.includes(Number(c.id))} onClick={() => setEmpresas(e => alternarEnLista(e, Number(c.id)))}>
                         {c.logo_url
                           ? <img src={ligera(c.logo_url, 48)} alt="" />
                           : <span className="vmp-filtro-punto" style={{ '--c': c.color || '#F26522' }} />}
@@ -868,7 +925,7 @@ const VistaMapaEquipo = () => {
                       </OpcionFiltro>
                     ))}
                     {conteos.sinCarpeta > 0 && (
-                      <OpcionFiltro activa={filtro === SIN_CARPETA} onClick={() => setFiltro(SIN_CARPETA)}>
+                      <OpcionFiltro multiple activa={empresas.includes(SIN_CARPETA)} onClick={() => setEmpresas(e => alternarEnLista(e, SIN_CARPETA))}>
                         <MapPinOff size={14} /> Sin empresa <small>{conteos.sinCarpeta}</small>
                       </OpcionFiltro>
                     )}
@@ -876,11 +933,13 @@ const VistaMapaEquipo = () => {
                 </FiltroMenu>
               </div>
 
-              {filtro !== 'todas' && (
+              {empresas.length > 0 && (
                 <div className="vme-filtros-activos">
-                  <button type="button" className="vme-filtro-tag" onClick={() => setFiltro('todas')} title="Quitar filtro">
-                    {filtro === SIN_CARPETA ? 'Sin empresa' : (carpetaPorId[filtro]?.name || 'Empresa')} <X size={12} />
-                  </button>
+                  {empresas.map(id => (
+                    <button key={id} type="button" className="vme-filtro-tag" onClick={() => setEmpresas(e => e.filter(x => x !== id))} title="Quitar filtro">
+                      {id === SIN_CARPETA ? 'Sin empresa' : (carpetaPorId[id]?.name || 'Empresa')} <X size={12} />
+                    </button>
+                  ))}
                 </div>
               )}
 
@@ -919,7 +978,7 @@ const VistaMapaEquipo = () => {
           )}
         </aside>
 
-        <section className="vme-map">
+        <section ref={mapaSeccionRef} className={`vme-map ${mapaOscuro ? 'es-oscuro' : ''}`}>
           {loadError && <div className="vme-map-msg">No se pudo cargar Google Maps.</div>}
 
           {/* Pantalla de carga liviana (solo un círculo que gira) hasta que el mapa termina de dibujarse */}
@@ -954,7 +1013,7 @@ const VistaMapaEquipo = () => {
           {isLoaded && (
             <button
               type="button"
-              className={`vme-tema-btn ${mapaOscuro ? 'es-oscuro' : ''}`}
+              className={`vme-tema-btn ${mapaOscuro ? 'es-oscuro' : ''} ${puedePantallaCompleta ? '' : 'sin-pantalla'}`}
               onClick={alternarMapaOscuro}
               title={mapaOscuro ? 'Mapa claro' : 'Mapa oscuro'}
               aria-label={mapaOscuro ? 'Cambiar a mapa claro' : 'Cambiar a mapa oscuro'}
@@ -962,6 +1021,20 @@ const VistaMapaEquipo = () => {
               {/* Los dos íconos siempre montados: uno sale girando y el otro entra (animación en CSS) */}
               <Moon size={18} className="vme-tema-icono vme-tema-luna" aria-hidden="true" />
               <Sun size={18} className="vme-tema-icono vme-tema-sol" aria-hidden="true" />
+            </button>
+          )}
+
+          {/* Pantalla completa propia (la de Google era un cuadro blanco sin estilo).
+              Se oculta donde el navegador no la permite, p. ej. Safari de iPhone. */}
+          {isLoaded && puedePantallaCompleta && (
+            <button
+              type="button"
+              className={`vme-pantalla-btn ${mapaOscuro ? 'es-oscuro' : ''}`}
+              onClick={alternarPantallaCompleta}
+              title={enPantallaCompleta ? 'Salir de pantalla completa' : 'Pantalla completa'}
+              aria-label={enPantallaCompleta ? 'Salir de pantalla completa' : 'Ver mapa en pantalla completa'}
+            >
+              {enPantallaCompleta ? <Minimize size={18} /> : <Maximize size={18} />}
             </button>
           )}
 

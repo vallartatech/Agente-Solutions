@@ -28,7 +28,6 @@ import {
   Camera,
   Layers,
   ChevronRight,
-  ChevronDown,
   ChevronUp,
   Eye,
   Folder,
@@ -100,6 +99,20 @@ const VistaInicioAdmin = () => {
   const [mostrarModalSolicitud, setMostrarModalSolicitud] = useState(false);
   const [statsVersion, setStatsVersion] = useState(0);
   const [isMobilePropProfileOpen, setIsMobilePropProfileOpen] = useState(false); // Pestaña colapsable en móvil
+  // Al cerrar se deja montado un momento para que se vea la animación de bajada
+  const [cerrandoPerfil, setCerrandoPerfil] = useState(false);
+  const alternarPerfilMovil = () => {
+    if (cerrandoPerfil) return;
+    if (!isMobilePropProfileOpen) {
+      setIsMobilePropProfileOpen(true);
+      return;
+    }
+    setCerrandoPerfil(true);
+    setTimeout(() => {
+      setIsMobilePropProfileOpen(false);
+      setCerrandoPerfil(false);
+    }, 340); // igual que la animación de cierre en VistaInicioAdmin.css
+  };
   // Carpetas (empresas) del catálogo de Propiedades: agrupan el carrusel de inmuebles
   const [carpetas, setCarpetas] = useState([]);
   const [carpetaAbiertaId, setCarpetaAbiertaId] = useState(null);
@@ -504,10 +517,10 @@ const VistaInicioAdmin = () => {
             </div>
 
             {/* Pestaña Desplegable del Perfil de la Propiedad (SOLO RESPONSIVO / MOBILE) */}
-            <div className="vcp-mobile-prop-drawer-wrap">
+            <div className="vcp-mobile-prop-drawer-wrap via-perfil-drawer">
               <div
-                className={`vcp-mobile-prop-drawer-tab ${isMobilePropProfileOpen ? 'is-open' : ''}`}
-                onClick={() => setIsMobilePropProfileOpen(!isMobilePropProfileOpen)}
+                className={`vcp-mobile-prop-drawer-tab ${isMobilePropProfileOpen && !cerrandoPerfil ? 'is-open' : ''}`}
+                onClick={alternarPerfilMovil}
                 title={isMobilePropProfileOpen ? "Ocultar detalles del perfil de la propiedad" : "Desplegar detalles del perfil de la propiedad"}
               >
                 <div className="vcp-drawer-tab-main">
@@ -519,13 +532,17 @@ const VistaInicioAdmin = () => {
 
                 <div className="vcp-drawer-tab-btn">
                   <span>DETALLES</span>
-                  {isMobilePropProfileOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  {/* Cerrado: flecha arriba (el panel sube). Abierto: gira hacia abajo para guardarlo */}
+                  <ChevronUp size={16} className="via-perfil-flecha" />
                 </div>
               </div>
 
               {isMobilePropProfileOpen && (
-                <div className="vcp-mobile-prop-drawer-content">
-                  {renderPropertyProfileCard(true)}
+                <div className={`vcp-mobile-prop-drawer-content ${cerrandoPerfil ? 'is-cerrando' : ''}`}>
+                  {/* Envoltura para que el alto se cierre poco a poco al guardar (ver CSS) */}
+                  <div className="via-perfil-drawer-inner">
+                    {renderPropertyProfileCard(true)}
+                  </div>
                 </div>
               )}
             </div>

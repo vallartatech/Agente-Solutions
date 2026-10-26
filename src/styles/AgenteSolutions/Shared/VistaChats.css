@@ -1539,3 +1539,80 @@ button.vch-persona:hover {
 
 .vch-soltar svg { color: #f26522; }
 .vch-soltar span { color: #94a3b8; font-size: 0.85rem; }
+
+
+/* ==========================================================================
+   CELULAR · LISTA DE CHATS: sin tarjeta gris alrededor; la lista va directo sobre el
+   fondo de triángulos y CADA conversación es una tarjeta de vidrio líquido oscuro.
+   La conversación abierta (.con-chat) sigue a pantalla completa.
+   ========================================================================== */
+@media (max-width: 900px) {
+  /* "fixed" no funciona bien en Safari de iPhone: el fondo se queda quieto con la página */
+  .vch-root { background-attachment: scroll; }
+
+  .vch-root:not(.con-chat) .vch-layout {
+    padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
+  }
+
+  /* El contenedor de la lista ya no es tarjeta: transparente */
+  .vch-root:not(.con-chat) .vch-lista {
+    padding: 0;
+    gap: 12px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  .vch-root:not(.con-chat) .vch-lista::before { display: none; }
+
+  /* Título sobre el fondo claro: oscuro para que se lea */
+  .vch-root:not(.con-chat) .vch-lista-head { padding: 0 2px; }
+  .vch-root:not(.con-chat) .vch-lista-head h1 { color: #0f172a; }
+
+  /* Buscador en vidrio oscuro */
+  .vch-root:not(.con-chat) .vch-buscar {
+    background: rgba(24, 29, 39, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    color: #cbd5e1;
+  }
+
+  .vch-root:not(.con-chat) .vch-buscar input::placeholder { color: #94a3b8; }
+
+  /* Cada conversación: tarjeta de vidrio líquido */
+  .vch-root:not(.con-chat) .vch-lista-items {
+    gap: 10px;
+    padding: 2px 2px 8px;
+  }
+
+  .vch-root:not(.con-chat) .vch-item {
+    padding: 12px;
+    border-radius: 18px;
+    border: 1.5px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(135deg,
+        rgba(51, 58, 72, 0.8) 0%,
+        rgba(24, 29, 39, 0.74) 50%,
+        rgba(40, 46, 58, 0.8) 100%);
+    backdrop-filter: blur(20px) saturate(170%);
+    -webkit-backdrop-filter: blur(20px) saturate(170%);
+    box-shadow:
+      0 10px 26px rgba(0, 0, 0, 0.22),
+      inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    transition: transform 0.18s ease, border-color 0.2s ease;
+  }
+
+  .vch-root:not(.con-chat) .vch-item:active { transform: scale(0.98); }
+
+  .vch-root:not(.con-chat) .vch-item.activo {
+    border-color: rgba(255, 140, 66, 0.6);
+    background: linear-gradient(135deg, rgba(120, 60, 30, 0.75) 0%, rgba(40, 30, 30, 0.75) 100%);
+  }
+
+  /* Aviso "Aún no tienes chats" sobre el fondo claro */
+  .vch-root:not(.con-chat) .vch-vacio { color: #334155; }
+  .vch-root:not(.con-chat) .vch-vacio svg { color: #475569; }
+}
