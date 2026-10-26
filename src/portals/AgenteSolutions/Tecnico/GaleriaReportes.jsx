@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import "../../../styles/AgenteSolutions/Tecnico/GaleriaReportes.css";
-import { ChevronLeft, FileText, Camera, CheckCircle2, Trash2, Edit3, Loader2, X, Upload, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, FileText, Camera, CheckCircle2, Trash2, Edit3, Loader2, X, Upload, AlertTriangle, Image as ImageIcon, Video, Images } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
@@ -69,11 +69,20 @@ const GaleriaReportes = () => {
     EXTRA: { file: null, preview: null, description: '', isEditing: false }
   });
 
-  const fileInputRefs = {
-    ANTES: useRef(null),
-    DURANTE: useRef(null),
-    DESPUES: useRef(null),
-    EXTRA: useRef(null)
+  // Un solo input de archivo: antes de abrirlo se ajusta a cámara (foto / video) o galería
+  const entradaRef = useRef(null);
+  const etapaArchivo = useRef(null);
+  const [menuEtapa, setMenuEtapa] = useState(null);
+
+  const abrirArchivo = (stage, modo) => {
+    const el = entradaRef.current;
+    if (!el) return;
+    el.accept = modo === 'video' ? 'video/*' : modo === 'foto' ? 'image/*' : (stage.permiteVideo ? 'image/*,video/*' : 'image/*');
+    if (modo === 'galeria') el.removeAttribute('capture');
+    else el.setAttribute('capture', 'environment');
+    etapaArchivo.current = stage;
+    setMenuEtapa(null);
+    el.click();
   };
 
   const fetchReportes = async () => {
@@ -435,9 +444,9 @@ const GaleriaReportes = () => {
                       <div 
                         onClick={() => {
                           if (isDone && report?.image_url) {
-                            setImagenExpandida(report.image_url);
+                            if (!displayEsVideo) setImagenExpandida(report.image_url);
                           } else if (!isSaving) {
-                            fileInputRefs[stage.key].current.click();
+                            setMenuEtapa(menuEtapa === stage.key ? null : stage.key);
                           }
                         }}
                         style={{
@@ -460,13 +469,14 @@ const GaleriaReportes = () => {
                         {displayImage ? (
                           <>
                             {displayEsVideo ? (
+                              // Se reproduce en el mismo cuadro, con sus controles
                               <video
                                 src={displayImage}
-                                muted
-                                loop
-                                autoPlay
+                                controls
                                 playsInline
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                preload="metadata"
+                                onClick={(e) => { if (isDone) e.stopPropagation(); }}
+                                style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
                               />
                             ) : (
                               <img
@@ -475,7 +485,7 @@ const GaleriaReportes = () => {
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                               />
                             )}
-                            {isDone && (
+                            {isDone && !displayEsVideo && (
                               <div style={{
                                 position: 'absolute',
                                 bottom: '10px',
@@ -504,13 +514,28 @@ const GaleriaReportes = () => {
                           </div>
                         )}
 
-                        <input 
-                          type="file"
-                          ref={fileInputRefs[stage.key]}
-                          onChange={(e) => { handleFileChange(stage, e.target.files[0]); e.target.value = ''; }}
-                          accept={stage.permiteVideo ? 'image/*,video/*' : 'image/*'}
-                          style={{ display: 'none' }}
-                        />
+                        {/* Elegir de dónde sale la evidencia */}
+                        {menuEtapa === stage.key && !isDone && (
+                          <div
+                            onClick={(e) => { e.stopPropagation(); setMenuEtapa(null); }}
+                            style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.82)', backdropFilter: 'blur(3px)', display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', gap: '8px', padding: '16px' }}
+                          >
+                            {[
+                              { modo: 'foto', icono: <Camera size={18} />, texto: 'Tomar foto' },
+                              ...(stage.permiteVideo ? [{ modo: 'video', icono: <Video size={18} />, texto: `Grabar video (máx. ${VIDEO_MAX_SEGUNDOS} s)` }] : []),
+                              { modo: 'galeria', icono: <Images size={18} />, texto: 'Elegir de la galería' }
+                            ].map(op => (
+                              <button
+                                key={op.modo}
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); abrirArchivo(stage, op.modo); }}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '11px', borderRadius: '12px', border: 'none', background: op.modo === 'galeria' ? 'rgba(255,255,255,0.14)' : '#F26522', color: 'white', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer' }}
+                              >
+                                {op.icono} {op.texto}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       {/* VISTA COMPLETADA VS VISTA FORMULARIO */}
@@ -660,6 +685,13 @@ const GaleriaReportes = () => {
             </div>
           )}
         </div>
+
+        <input
+          type="file"
+          ref={entradaRef}
+          onChange={(e) => { if (etapaArchivo.current) handleFileChange(etapaArchivo.current, e.target.files[0]); e.target.value = ''; }}
+          style={{ display: 'none' }}
+        />
 
         {/* MODAL ZOOM PARA AMPLIAR IMAGEN AL HACER CLIC */}
         {imagenExpandida && (

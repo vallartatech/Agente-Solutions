@@ -619,6 +619,21 @@
   display: block;
 }
 
+/* El video se reproduce en el mismo cuadro */
+.rg-stage-image video.rg-stage-video {
+  object-fit: contain;
+  background: #000000;
+  cursor: default;
+}
+
+.rg-upload-opciones {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.rg-upload-opciones .rg-upload-btn { flex: 1; }
+
 .rg-stage-tech {
   display: flex;
   align-items: center;

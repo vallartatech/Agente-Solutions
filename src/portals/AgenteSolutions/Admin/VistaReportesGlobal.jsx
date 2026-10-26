@@ -7,7 +7,7 @@ import SelectorVistas from '../../../components/Shared/SelectorVistas';
 import CasaLoader from '../../../components/Shared/CasaLoader';
 import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import { useAuth } from '../../../context/AuthContext';
-import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Upload, CheckCircle2, Pencil, Calendar, ClipboardList, Image as ImageIcon } from 'lucide-react';
+import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Upload, CheckCircle2, Pencil, Calendar, ClipboardList, Image as ImageIcon, Camera, Video, Images } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import '../../../styles/Shared/UniversalSearch.css';
@@ -576,13 +576,13 @@ const VistaReportesGlobal = () => {
 
                     <div className="rg-stage-image">
                       {esVideoUrl(r.image_url || r.image_path) ? (
+                        // Se reproduce en el mismo cuadro, con sus controles
                         <video
                           src={r.image_url || r.image_path}
-                          muted
-                          loop
-                          autoPlay
+                          controls
                           playsInline
-                          onClick={() => setZoomImage(r.image_url || r.image_path)}
+                          preload="metadata"
+                          className="rg-stage-video"
                         />
                       ) : (
                         <img
@@ -666,6 +666,9 @@ const VistaReportesGlobal = () => {
                 <label className="rg-label">
                   <Upload size={15} /> {selectedStage?.permiteVideo ? `Foto o video (máx. ${VIDEO_MAX_SEGUNDOS} s)` : 'Fotografía de evidencia'} {modalMode === 'add' && <span className="rg-required">*</span>}
                 </label>
+                {/* Cámara (foto o video) o galería */}
+                <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} style={{ display: 'none' }} id="report-image-camara" />
+                <input type="file" accept="video/*" capture="environment" onChange={handleImageChange} style={{ display: 'none' }} id="report-video-camara" />
                 <input
                   type="file"
                   accept={selectedStage?.permiteVideo ? 'image/*,video/*' : 'image/*'}
@@ -673,8 +676,14 @@ const VistaReportesGlobal = () => {
                   style={{ display: 'none' }}
                   id="report-image-upload"
                 />
+                <div className="rg-upload-opciones">
+                  <label htmlFor="report-image-camara" className="rg-upload-btn"><Camera size={18} /> Tomar foto</label>
+                  {selectedStage?.permiteVideo && (
+                    <label htmlFor="report-video-camara" className="rg-upload-btn"><Video size={18} /> Grabar video</label>
+                  )}
+                </div>
                 <label htmlFor="report-image-upload" className="rg-upload-btn">
-                  <Upload size={18} />
+                  <Images size={18} />
                   {formData.image
                     ? (previewEsVideo ? 'Cambiar video seleccionado' : 'Cambiar imagen seleccionada')
                     : (modalMode === 'edit'
