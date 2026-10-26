@@ -400,6 +400,13 @@ const VistaServiciosAdmin = () => {
     setTareaSeleccionada(null);
   };
 
+  // Las tareas del tablero son órdenes de trabajo: el backend necesita "work_order-ID"
+  // (con el ID solo, guarda/busca las evidencias como si fueran de un servicio)
+  const abrirGaleriaReporte = (tarea) => {
+    const trabajoId = `work_order-${tarea.dbId}`;
+    navigate(`/galeria-reportes/${trabajoId}`, { state: { trabajoId, servicio: tarea, from: '/tablero-servicios' } });
+  };
+
   const cambiarEstadoTarea = async (nuevoEstadoLaravel, targetDbId = null) => {
     setProcesandoAccion(true);
     const dbId = targetDbId || tareaSeleccionada.dbId;
@@ -1380,7 +1387,7 @@ const VistaServiciosAdmin = () => {
                         <button
                           type="button"
                           className="svm-btn primary svm-btn-full"
-                          onClick={() => navigate(`/galeria-reportes/${activeTask.dbId}`, { state: { trabajoId: activeTask.dbId, servicio: activeTask, from: '/tablero-servicios' } })}
+                          onClick={() => abrirGaleriaReporte(activeTask)}
                         >
                           <ClipboardList size={18} /> {activeTask.estado === 'review' ? 'Revisar / editar reporte' : 'Realizar reporte'}
                         </button>
@@ -1402,7 +1409,7 @@ const VistaServiciosAdmin = () => {
                         <button
                           type="button"
                           className="svm-btn primary svm-btn-full"
-                          onClick={() => navigate(`/galeria-reportes/${activeTask.dbId}`, { state: { trabajoId: activeTask.dbId, servicio: activeTask, from: '/tablero-servicios' } })}
+                          onClick={() => abrirGaleriaReporte(activeTask)}
                         >
                           <Camera size={18} /> Consultar reporte de trabajo
                         </button>
