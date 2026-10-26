@@ -4,7 +4,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Clock, CheckCircle2, Circle, X, UserCircle, Calendar, 
-  ArrowLeft, Camera, Layout, FileText, Maximize2, AlertTriangle, Timer, Settings, Filter
+  ArrowLeft, Camera, Layout, FileText, Maximize2, AlertTriangle, Timer, Settings, Filter,
+  MapPin, Navigation, Users, Package, Zap, Banknote, ListChecks, Hash, ClipboardList
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import CasaLoader from '../../../components/Shared/CasaLoader';
@@ -865,7 +866,8 @@ const VistaServiciosAdmin = () => {
         );
       })()}
 
-      {modalVisible && tareaSeleccionada && (
+      {/* Mientras la cotización está abierta se oculta la orden (si no, la tapa); al cerrarla vuelve */}
+      {modalVisible && tareaSeleccionada && !showModalCotizacion && (
         (() => {
           const activeTask = tareaSeleccionada.isBatch ? tareaSeleccionada.batchTasks[activeBatchTab] : tareaSeleccionada;
           return createPortal(
@@ -891,23 +893,23 @@ const VistaServiciosAdmin = () => {
                   <span className="dot-blink"></span>
                   {verBitacora ? 'DETALLES TÉCNICOS' : (tareaSeleccionada.isBatch ? 'ORDEN DE TRABAJO (LOTE)' : 'ORDEN DE TRABAJO')}
                </div>
-               <button className="close-modal-btn" onClick={cerrarModal}><span style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>✕</span></button>
+               <button className="close-modal-btn" onClick={cerrarModal} aria-label="Cerrar"><X size={18} strokeWidth={2.6} /></button>
             </div>
 
             {tareaSeleccionada.isBatch && !verBitacora && (
               <div style={{ 
-                background: 'linear-gradient(135deg, #1e293b, #0f172a)', 
-                padding: '16px 20px', 
-                borderBottom: '2px solid #334155',
+                background: 'rgba(255, 255, 255, 0.7)',
+                padding: '16px 20px',
+                borderBottom: '1px solid rgba(15, 23, 42, 0.08)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '12px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                  <span style={{ color: '#f8fafc', fontWeight: '800', fontSize: '0.85rem', letterSpacing: '0.5px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    ⚡ Servicios incluidos en este lote ({tareaSeleccionada.batchTasks.length})
+                  <span style={{ color: '#0f172a', fontWeight: '800', fontSize: '0.85rem', letterSpacing: '0.5px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Package size={16} color="#f26522" /> Servicios incluidos en este lote ({tareaSeleccionada.batchTasks.length})
                   </span>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'rgba(255,255,255,0.1)', padding: '3px 12px', borderRadius: '12px' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', background: 'rgba(15, 23, 42, 0.05)', padding: '3px 12px', borderRadius: '12px' }}>
                     Haz clic para navegar entre servicios
                   </span>
                 </div>
@@ -958,13 +960,12 @@ const VistaServiciosAdmin = () => {
             <div className="modal-inner-scroll">
                 {!verBitacora ? (
                   <div className="task-details-view">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#666', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '12px', background: '#f5f5f5', padding: '6px 12px', borderRadius: '8px', width: 'fit-content', border: '1px solid #eee' }}>
-                      <Calendar size={14} />
-                      <span>FECHA REPORTE: {activeTask.fechaInicio}</span>
+                    <div className="svm-meta">
+                      <span className="svm-chip"><Calendar size={13} /> {activeTask.fechaInicio}</span>
+                      <span className="svm-chip"><Hash size={13} /> WKF-ORD-{activeTask.dbId}</span>
                     </div>
-                    
-                    <div style={{ color: '#F26522', fontWeight: 'bold', marginBottom: '5px' }}>{activeTask.propiedad}</div>
-                    <span className="wkf-id">WKF-ORD-{activeTask.dbId}</span>
+
+                    <div className="svm-address"><MapPin size={16} /> <span>{activeTask.propiedad}</span></div>
 
                     {(() => {
                       const rawModalDesc = activeTask.descripcion || activeTask.description || '';
@@ -995,125 +996,89 @@ const VistaServiciosAdmin = () => {
                       return (
                         <>
                           {is2daReq && (
-                            <div style={{ background: '#fff7ed', border: '2px solid #ea580c', borderRadius: '14px', padding: '14px', margin: '12px 0', boxShadow: '0 4px 14px rgba(234,88,12,0.15)' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c2410c', fontWeight: '900', fontSize: '0.95rem' }}>
-                                <AlertTriangle size={20} color="#ea580c" />
+                            <div className="svm-alert">
+                              <div className="svm-alert-title">
+                                <AlertTriangle size={18} />
                                 <span>SOLICITUD DE SEGUNDA VISITA PENDIENTE</span>
                               </div>
-                              <p style={{ margin: '6px 0 0 0', fontSize: '0.85rem', color: '#431407', lineHeight: '1.4' }}>
+                              <p>
                                 Fecha Propuesta por Técnico: <strong>{fechaProp2da || 'Por definir'}</strong>
                                 {motivo2da && <span style={{ display: 'block', marginTop: '2px' }}>Motivo: <em>"{motivo2da}"</em></span>}
                               </p>
                             </div>
                           )}
 
-                          <h3 className="task-main-heading" style={{ marginTop: '5px' }}>{cleanModalDesc || activeTask.titulo}</h3>
-                          <p className="task-long-desc">{activeTask.titulo}</p>
+                          <h3 className="task-main-heading svm-title">{cleanModalDesc || activeTask.titulo}</h3>
+                          <p className="task-long-desc svm-subtitle">{activeTask.titulo}</p>
                         </>
                       );
                     })()}
                     
-                    {activeTask.arrival_status === 'EN_SITIO' && (
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#dcfce7', color: '#166534', padding: '6px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', marginTop: '10px' }}>
-                        <span style={{ width: '10px', height: '10px', background: '#22c55e', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px rgba(34, 197, 94, 0.6)' }}></span>
-                        En el lugar ({activeTask.arrived_at})
+                    {(activeTask.arrival_status === 'EN_SITIO' || activeTask.tecnicoId) && (
+                      <div className="svm-meta">
+                        {activeTask.arrival_status === 'EN_SITIO' && (
+                          <span className="svm-chip is-live"><span className="svm-live-dot" /> En el lugar ({activeTask.arrived_at})</span>
+                        )}
+                        {activeTask.tecnicoId && (
+                          <button type="button" className="svm-chip svm-chip-btn" onClick={() => navigate(`/map?techId=${activeTask.tecnicoId}`)}>
+                            <Navigation size={13} /> Ver GPS
+                          </button>
+                        )}
                       </div>
                     )}
-                    
-                    {activeTask.tecnicoId && (
-                      <button 
-                        onClick={() => navigate(`/map?techId=${activeTask.tecnicoId}`)}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          background: '#f8fafc',
-                          color: '#0f172a',
-                          padding: '6px 14px',
-                          borderRadius: '20px',
-                          fontSize: '0.8rem',
-                          fontWeight: '800',
-                          marginTop: '10px',
-                          marginLeft: activeTask.arrival_status === 'EN_SITIO' ? '8px' : '0px',
-                          border: '1.5px solid #cbd5e1',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                        }}
-                        onMouseOver={(e) => { 
-                          e.currentTarget.style.background = '#F26522'; 
-                          e.currentTarget.style.color = '#ffffff';
-                          e.currentTarget.style.borderColor = '#F26522';
-                        }}
-                        onMouseOut={(e) => { 
-                          e.currentTarget.style.background = '#f8fafc'; 
-                          e.currentTarget.style.color = '#0f172a';
-                          e.currentTarget.style.borderColor = '#cbd5e1';
-                        }}
-                      >
-                        📍 Ver GPS
-                      </button>
-                    )}
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', margin: '15px 0' }}>
-                      <button className="modal-action-btn variant-orange" onClick={() => setVerBitacora(true)}>
-                        <Camera size={18} /> Ver Evidencias y Proceso
-                      </button>
 
-                      <button className="modal-action-btn variant-dark" onClick={abrirSurvey}>
-                        <Layout size={18} /> CONSULTAR LEVANTAMIENTO DE LA PROPIEDAD
+                    <div className="svm-actions">
+                      <button type="button" className="svm-btn primary" onClick={() => setVerBitacora(true)}>
+                        <Camera size={18} /> Evidencias y proceso
+                      </button>
+                      <button type="button" className="svm-btn glass" onClick={abrirSurvey}>
+                        <Layout size={18} /> Levantamiento de la propiedad
                       </button>
                     </div>
-                    
 
-
-                    <div style={{ marginTop: '15px', background: '#fcfcfc', padding: '15px', borderRadius: '12px', border: '1px solid #f0f0f0' }}>
-                      <label style={{ fontSize: '0.65rem', fontWeight: '800', color: '#888', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px' }}>
-                        <Settings size={14}/> EQUIPO DE TRABAJO (Selecciona uno o más)
+                    <div className="svm-section">
+                      <label className="svm-section-label">
+                        <Users size={16} /> Equipo de trabajo <span className="svm-section-hint">(Selecciona uno o más)</span>
                       </label>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px', maxHeight: '140px', overflowY: 'auto' }}>
+                      <div className="svm-team-grid">
                         {tecnicos.map(t => {
                           const isSelected = tecnicosEquipo.includes(t.id);
                           return (
-                            <div 
-                              key={t.id} 
+                            <button
+                              type="button"
+                              key={t.id}
+                              className={`svm-tech ${isSelected ? 'on' : ''}`}
                               onClick={() => toggleTecnicoEquipo(t.id, activeTask ? activeTask.dbId : null)}
-                              style={{
-                                background: isSelected ? '#fff9f5' : 'white',
-                                border: `1px solid ${isSelected ? '#F26522' : '#eee'}`,
-                                borderRadius: '10px', padding: '6px', cursor: 'pointer',
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', position: 'relative'
-                              }}
+                              aria-pressed={isSelected}
+                              title={`${t.first_name || ''} ${t.last_name || ''}`.trim()}
                             >
                               {t.profile_picture_url ? (
-                                <img 
-                                  src={t.profile_picture_url} 
-                                  alt="Técnico" 
-                                  style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #eee' }}
-                                  onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                                <img
+                                  src={t.profile_picture_url}
+                                  alt=""
+                                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
                                 />
                               ) : null}
-                              <div className="tech-avatar-fallback" style={{ display: t.profile_picture_url ? 'none' : 'flex', background: '#f5f5f5', color: '#999', fontSize: '0.8rem', width: '38px', height: '38px', borderRadius: '50%', alignItems: 'center', justifyContent: 'center' }}>
+                              <span className="svm-tech-iniciales" style={{ display: t.profile_picture_url ? 'none' : 'flex' }}>
                                 {t.first_name?.charAt(0)}{t.last_name?.charAt(0)}
-                              </div>
-                              <span style={{ fontSize: '0.65rem', fontWeight: '700', color: '#666', textAlign: 'center' }}>{t.first_name} {t.last_name?.charAt(0)}.</span>
-                              {isSelected && <div style={{ position: 'absolute', top: '-5px', right: '-5px', color: '#F26522', background: 'white', borderRadius: '50%' }}><CheckCircle2 size={16} /></div>}
-                            </div>
+                              </span>
+                              <span className="svm-tech-nombre">{t.first_name} {t.last_name ? `${t.last_name.charAt(0)}.` : ''}</span>
+                              {isSelected && <CheckCircle2 size={17} className="svm-tech-check" />}
+                            </button>
                           );
                         })}
                       </div>
 
                       {tareaSeleccionada.batch_id && tecnicosEquipo.length > 0 && (
-                        <div style={{ marginTop: '12px' }}>
-                          <button 
-                            className="modal-action-btn"
-                            onClick={handleAssignBatch}
-                            disabled={procesandoAccion}
-                            style={{ background: '#0284c7', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', width: '100%', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                          >
-                            <span style={{ fontSize: '16px' }}>📦</span> ASIGNAR EQUIPO A TODO EL LOTE MÚLTIPLE
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          className="svm-btn glass svm-btn-full"
+                          onClick={handleAssignBatch}
+                          disabled={procesandoAccion}
+                          style={{ marginTop: '12px' }}
+                        >
+                          <Package size={17} /> Asignar equipo a todo el lote
+                        </button>
                       )}
                     </div>
 
@@ -1132,133 +1097,87 @@ const VistaServiciosAdmin = () => {
 
                       if (isNetworkJob) {
                         return (
-                          <div style={{
-                            background: '#fff7ed',
-                            border: '1.5px solid #ea580c',
-                            borderRadius: '12px',
-                            padding: '14px 16px',
-                            marginTop: '15px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            boxShadow: '0 2px 8px rgba(234, 88, 12, 0.08)'
-                          }}>
-                            <span style={{ fontSize: '24px' }}>⚡</span>
+                          <div className="svm-notice">
+                            <span className="svm-notice-icon"><Zap size={18} /></span>
                             <div>
-                              <strong style={{ color: '#c2410c', fontSize: '0.88rem', display: 'block' }}>
-                                SERVICIO SOLICITADO EN LA RED DE TÉCNICOS
-                              </strong>
-                              <span style={{ color: '#9a3412', fontSize: '0.78rem', lineHeight: '1.4', display: 'block', marginTop: '2px' }}>
-                                Este trabajo es de atención inmediata al momento (On-demand). No requiere programar fecha de visita ni asignación de materiales.
-                              </span>
+                              <strong>Servicio solicitado en la red de técnicos</strong>
+                              <span>Atención inmediata (on-demand). No requiere programar fecha de visita ni asignar materiales.</span>
                             </div>
                           </div>
                         );
                       }
 
+                      const citaBloqueada = Boolean(activeTask.scheduledAt && !editandoCita);
+
                       return (
                         <>
-                          <div className="ts-schedule-block" style={{ marginTop: '15px' }}>
-                            <div className="info-item" style={{ 
-                              gridColumn: 'span 2', 
-                              background: '#fff9f0', 
-                              padding: '15px', 
-                              borderRadius: '12px', 
-                              border: '1px dashed #F26522',
-                              marginTop: '10px'
-                            }}>
-                              <Calendar size={20} color="#F26522" />
-                              <div style={{ flex: 1 }}>
-                                <label style={{ color: '#F26522', fontWeight: '900', fontSize: '0.75rem' }}>
-                                  PROGRAMAR VISITA (NOTIFICA AL CLIENTE)
-                                </label>
-                                <div style={{ display: 'flex', gap: '8px', marginTop: '10px', alignItems: 'center' }}>
-                                  <div className="input-with-icon" style={{ flex: 1.1, position: 'relative' }}>
-                                    <Calendar size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#F26522', pointerEvents: 'none', zIndex: 1 }} />
-                                    <input 
-                                      type="date" 
-                                      defaultValue={activeTask.scheduledAt ? new Date(activeTask.scheduledAt).toISOString().split('T')[0] : ''}
-                                      id="input-date-visit"
-                                      onClick={(e) => !e.target.disabled && e.target.showPicker()}
-                                      disabled={activeTask.scheduledAt && !editandoCita}
-                                      style={{ 
-                                        width: '100%', padding: '12px 10px 12px 30px', 
-                                        border: '1px solid #ccc', borderRadius: '10px', 
-                                        outline: 'none', background: (activeTask.scheduledAt && !editandoCita) ? '#f0f0f0' : 'white', fontSize: '0.85rem',
-                                        color: '#333', fontWeight: '600', display: 'block', cursor: (activeTask.scheduledAt && !editandoCita) ? 'default' : 'pointer'
-                                      }}
-                                    />
-                                  </div>
-                                  <div className="input-with-icon" style={{ flex: 0.9, position: 'relative' }}>
-                                    <Clock size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#F26522', pointerEvents: 'none', zIndex: 1 }} />
-                                    <input 
-                                      type="time" 
-                                      id="input-time-visit"
-                                      defaultValue={activeTask.scheduledAt ? new Date(activeTask.scheduledAt).toISOString().split('T')[1].substring(0,5) : ''}
-                                      onClick={(e) => !e.target.disabled && e.target.showPicker()}
-                                      disabled={activeTask.scheduledAt && !editandoCita}
-                                      style={{ 
-                                        width: '100%', padding: '12px 10px 12px 30px', 
-                                        border: '1px solid #ccc', borderRadius: '10px', 
-                                        outline: 'none', background: (activeTask.scheduledAt && !editandoCita) ? '#f0f0f0' : 'white', fontSize: '0.85rem',
-                                        color: '#333', fontWeight: '600', display: 'block', cursor: (activeTask.scheduledAt && !editandoCita) ? 'default' : 'pointer'
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                                
-                                {activeTask.scheduledAt && !editandoCita ? (
-                                  <button 
-                                    className="modal-action-btn"
-                                    onClick={() => setEditandoCita(true)}
-                                    style={{ background: '#333', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', width: '100%', fontWeight: 'bold', marginTop: '10px', cursor: 'pointer' }}
-                                  >
-                                    <Calendar size={16} /> REPROGRAMAR VISITA
-                                  </button>
-                                ) : (
-                                  <button 
-                                    className="modal-action-btn"
-                                    onClick={() => handleSaveSchedule(document.getElementById('input-date-visit').value, document.getElementById('input-time-visit').value, activeTask.dbId)}
-                                    disabled={procesandoAccion}
-                                    style={{ background: '#F26522', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', width: '100%', fontWeight: 'bold', marginTop: '10px', cursor: 'pointer' }}
-                                  >
-                                    {procesandoAccion ? 'GUARDANDO...' : 'GUARDAR Y NOTIFICAR'}
-                                  </button>
-                                )}
-                              </div>
+                          <div className="svm-section">
+                            <label className="svm-section-label">
+                              <Calendar size={16} /> Programar visita <span className="svm-section-hint">(Notifica al cliente)</span>
+                            </label>
+                            <div className="svm-visit-row">
+                              <label className="svm-field">
+                                <span>Fecha</span>
+                                <input
+                                  type="date"
+                                  className="svm-input"
+                                  defaultValue={activeTask.scheduledAt ? new Date(activeTask.scheduledAt).toISOString().split('T')[0] : ''}
+                                  id="input-date-visit"
+                                  onClick={(e) => !e.target.disabled && e.target.showPicker()}
+                                  disabled={citaBloqueada}
+                                />
+                              </label>
+                              <label className="svm-field">
+                                <span>Hora</span>
+                                <input
+                                  type="time"
+                                  className="svm-input"
+                                  id="input-time-visit"
+                                  defaultValue={activeTask.scheduledAt ? new Date(activeTask.scheduledAt).toISOString().split('T')[1].substring(0,5) : ''}
+                                  onClick={(e) => !e.target.disabled && e.target.showPicker()}
+                                  disabled={citaBloqueada}
+                                />
+                              </label>
                             </div>
+
+                            {citaBloqueada ? (
+                              <button type="button" className="svm-btn glass svm-btn-full" onClick={() => setEditandoCita(true)}>
+                                <Calendar size={16} /> Reprogramar visita
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="svm-btn primary svm-btn-full"
+                                onClick={() => handleSaveSchedule(document.getElementById('input-date-visit').value, document.getElementById('input-time-visit').value, activeTask.dbId)}
+                                disabled={procesandoAccion}
+                              >
+                                {procesandoAccion ? 'Guardando...' : 'Guardar y notificar'}
+                              </button>
+                            )}
                           </div>
 
-                          <div className="checklist-container" style={{ marginTop: '20px', background: 'white', border: '1px solid #eee', borderRadius: '12px', padding: '15px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                              <label style={{ fontSize: '0.7rem', fontWeight: '800', color: '#555', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                <CheckCircle2 size={16} color="#1b8a5a"/> LISTA DE TAREAS / MATERIALES
+                          <div className="svm-section">
+                            <div className="svm-section-head">
+                              <label className="svm-section-label">
+                                <ListChecks size={16} /> Lista de tareas / materiales
                               </label>
-                              <button className="modal-action-btn variant-orange" onClick={() => setModalChecklistVisible(true)} style={{ background: '#333', padding: '5px 10px', fontSize: '0.7rem' }}>
-                                {activeTask.custom_checklist ? 'EDITAR' : 'ASIGNAR'}
+                              <button type="button" className="svm-mini-btn" onClick={() => setModalChecklistVisible(true)}>
+                                {activeTask.custom_checklist ? 'Editar' : 'Asignar'}
                               </button>
                             </div>
-                            
-                            <div className="checklist-items" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                              {activeTask.custom_checklist && activeTask.custom_checklist.length > 0 ? (
-                                activeTask.custom_checklist.map((item, idx) => (
-                                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '8px', background: item.is_completed ? '#f0fdf4' : '#fcfcfc', border: `1px solid ${item.is_completed ? '#bbf7d0' : '#eee'}`, borderRadius: '8px' }}>
-                                    <div style={{ color: item.is_completed ? '#1b8a5a' : '#ccc', marginTop: '2px' }}>
-                                      {item.is_completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                      <div style={{ fontSize: '0.85rem', fontWeight: '600', color: item.is_completed ? '#1b8a5a' : '#333', textDecoration: item.is_completed ? 'line-through' : 'none' }}>
-                                        {item.text}
-                                      </div>
-                                    </div>
+
+                            {activeTask.custom_checklist && activeTask.custom_checklist.length > 0 ? (
+                              <div className="svm-checklist">
+                                {activeTask.custom_checklist.map((item, idx) => (
+                                  <div key={idx} className={`svm-check-item ${item.is_completed ? 'is-done' : ''}`}>
+                                    {item.is_completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+                                    <span>{item.text}</span>
                                   </div>
-                                ))
-                              ) : (
-                                <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '0.8rem', fontStyle: 'italic', background: '#fafafa', borderRadius: '8px' }}>
-                                  Aún no se ha añadido ninguna lista de tareas.
-                                </div>
-                              )}
-                            </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="svm-empty">Aún no se ha añadido ninguna lista de tareas.</div>
+                            )}
                           </div>
                         </>
                       );
@@ -1305,7 +1224,7 @@ const VistaServiciosAdmin = () => {
                             gap: '8px'
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <span style={{ fontSize: '1.4rem' }}>💵</span>
+                              <Banknote size={24} />
                               <div>
                                 <div style={{ fontWeight: '800', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                                   SERVICIO SOLICITADO PARA PAGAR EN EFECTIVO
@@ -1324,7 +1243,7 @@ const VistaServiciosAdmin = () => {
                               fontSize: '0.75rem',
                               color: '#ffffff'
                             }}>
-                              {estaPagadoTotal ? '✅ LIQUIDADO' : (tieneAnticipo ? '🟢 ANTICIPO COBRADO' : '⏳ PENDIENTE DE COBRO')}
+                              {estaPagadoTotal ? 'LIQUIDADO' : (tieneAnticipo ? 'ANTICIPO COBRADO' : 'PENDIENTE DE COBRO')}
                             </span>
                           </div>
 
@@ -1385,7 +1304,7 @@ const VistaServiciosAdmin = () => {
                                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
                                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                               >
-                                <span>💵</span>
+                                <Banknote size={17} />
                                 <span>{tieneAnticipo ? `Confirmar Cobro Saldo Restante ($${restanteMonto.toFixed(2)})` : 'Confirmar Pago en Efectivo'}</span>
                               </button>
                             )}
@@ -1394,79 +1313,80 @@ const VistaServiciosAdmin = () => {
                       );
                     })()}
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px' }}>
-                      {(() => {
-                        const cotizacionAsociada = buscarCotizacionTarea(activeTask);
-                        
-                        return (
-                          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                            <button className="modal-action-btn variant-dark" onClick={() => setShowModalCotizacion(true)} style={{ background: '#1b8a5a', color: 'white', flex: 1, minWidth: '160px' }}>
-                              <FileText size={18} /> {cotizacionAsociada ? 'EDITAR COTIZACIÓN' : 'REALIZAR COTIZACIÓN'}
+                    {(() => {
+                      const cotizacionAsociada = buscarCotizacionTarea(activeTask);
+                      const borrador = cotizacionAsociada?.parent_id
+                        ? cotizacionesData.find(q => q.id === cotizacionAsociada.parent_id)
+                        : null;
+
+                      return (
+                        <div className="svm-section">
+                          <label className="svm-section-label"><FileText size={16} /> Cotización</label>
+                          <div className="svm-actions">
+                            <button type="button" className="svm-btn glass" onClick={() => setShowModalCotizacion(true)}>
+                              <FileText size={17} /> {cotizacionAsociada ? 'Editar cotización' : 'Realizar cotización'}
                             </button>
-                            
                             {cotizacionAsociada && (
-                              <button 
-                                className="modal-action-btn variant-orange" 
-                                onClick={() => navigate(`/vista-cotizaciones?quoteId=${cotizacionAsociada.id}`)}
-                                style={{ background: '#F26522', color: 'white', flex: 1, minWidth: '160px' }}
-                              >
-                                <FileText size={18} /> VER COTIZACIÓN
+                              <button type="button" className="svm-btn glass" onClick={() => navigate(`/vista-cotizaciones?quoteId=${cotizacionAsociada.id}`)}>
+                                <FileText size={17} /> Ver cotización
                               </button>
                             )}
-                            
-                            {cotizacionAsociada && cotizacionAsociada.parent_id && (
-                              <button 
-                                className="modal-action-btn variant-dark" 
+                            {borrador && (
+                              <button
+                                type="button"
+                                className="svm-btn glass"
                                 onClick={() => {
-                                  const borrador = cotizacionesData.find(q => q.id === cotizacionAsociada.parent_id);
-                                  if (borrador) {
-                                    localStorage.setItem('cotizacion_para_imprimir', JSON.stringify(borrador));
-                                    window.open('/imprimir-cotizacion', '_blank');
-                                  }
-                                }} 
-                                style={{ background: '#6c757d', color: 'white', flex: 1, minWidth: '160px' }}
+                                  localStorage.setItem('cotizacion_para_imprimir', JSON.stringify(borrador));
+                                  window.open('/imprimir-cotizacion', '_blank');
+                                }}
                               >
-                                <FileText size={18} /> VER BORRADOR TÉCNICO
+                                <FileText size={17} /> Ver borrador técnico
                               </button>
                             )}
                           </div>
-                        );
-                      })()}
-                    </div>
+                        </div>
+                      );
+                    })()}
 
-                    <div className="modal-main-action-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div className="svm-footer">
                       {activeTask.estado === 'todo' || activeTask.estado === 'unassigned' || activeTask.estado === 'sos' ? (
-                        <button className="modal-action-btn variant-black" disabled={procesandoAccion} onClick={() => cambiarEstadoTarea('En Proceso', activeTask.dbId)}>
-                          <Timer size={18} /> {procesandoAccion ? 'Actualizando...' : 'INICIAR TRABAJO'}
+                        <button type="button" className="svm-btn primary svm-btn-full" disabled={procesandoAccion} onClick={() => cambiarEstadoTarea('En Proceso', activeTask.dbId)}>
+                          <Timer size={18} /> {procesandoAccion ? 'Actualizando...' : 'Iniciar trabajo'}
                         </button>
                       ) : activeTask.estado === 'progress' ? (
-                        <button className="modal-action-btn variant-green" disabled={procesandoAccion} onClick={() => cambiarEstadoTarea('Listo', activeTask.dbId)}>
-                          <CheckCircle2 size={18} /> {procesandoAccion ? 'Finalizando...' : 'MARCAR COMO LISTO'}
+                        <>
+                        {/* Solo el botón por ahora: el flujo del reporte se conecta después */}
+                        <button type="button" className="svm-btn primary svm-btn-full" onClick={() => mostrarAviso('La captura del reporte de trabajo estará disponible pronto.')}>
+                          <ClipboardList size={18} /> Realizar reporte
                         </button>
+                        <button type="button" className="svm-btn success svm-btn-full" disabled={procesandoAccion} onClick={() => cambiarEstadoTarea('Listo', activeTask.dbId)}>
+                          <CheckCircle2 size={18} /> {procesandoAccion ? 'Finalizando...' : 'Marcar como listo'}
+                        </button>
+                        </>
                       ) : null}
 
+                      {activeTask.estado === 'done' && (
+                        <button
+                          type="button"
+                          className="svm-btn primary svm-btn-full"
+                          onClick={() => navigate(`/galeria-reportes/${activeTask.dbId}`, { state: { trabajoId: activeTask.dbId, servicio: activeTask } })}
+                        >
+                          <Camera size={18} /> Consultar reporte de trabajo
+                        </button>
+                      )}
+
                       {activeTask.estado !== 'rejected' && (
-                        <button 
-                          className="modal-action-btn" 
-                          disabled={procesandoAccion} 
+                        <button
+                          type="button"
+                          className="svm-btn danger svm-btn-full"
+                          disabled={procesandoAccion}
                           onClick={async () => {
                             if (await confirmarAccion('¿Estás seguro de que deseas cancelar este servicio? Se moverá al apartado de rechazados.')) {
                               cambiarEstadoTarea('Rechazado', activeTask.dbId);
                             }
                           }}
-                          style={{ background: '#dc2626', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: 'none', padding: '12px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
                         >
-                          <X size={18} /> {procesandoAccion ? 'Cancelando...' : 'CANCELAR SERVICIO'}
-                        </button>
-                      )}
-
-                      {activeTask.estado === 'done' && (
-                        <button 
-                          className="modal-action-btn variant-orange" 
-                          onClick={() => navigate(`/galeria-reportes/${activeTask.dbId}`, { state: { trabajoId: activeTask.dbId, servicio: activeTask } })}
-                          style={{ background: '#f26624', marginTop: '10px' }}
-                        >
-                          <Camera size={18} /> CONSULTAR REPORTE DE TRABAJO
+                          <X size={18} /> {procesandoAccion ? 'Cancelando...' : 'Cancelar servicio'}
                         </button>
                       )}
                     </div>

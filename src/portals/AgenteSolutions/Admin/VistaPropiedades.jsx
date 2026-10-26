@@ -11,6 +11,7 @@ import ModalRegistroInmueble from "../../../components/Shared/ModalRegistroInmue
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import ModalEquipoLevantamiento from "../../../components/Modals/ModalEquipoLevantamiento";
 import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
+import "../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css";
 import "../../../styles/AgenteSolutions/Cliente/DetallePropiedad.css";
 import "../../../styles/Shared/LiquidGlass.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
@@ -1244,270 +1245,115 @@ const VistaPropiedades = () => {
         />
       )}
 
-      {/* MODAL DE SOLICITAR LEVANTAMIENTO */}
+      {/* MODAL DE SOLICITAR LEVANTAMIENTO: mismo diseño que "Solicitar Trabajo" (rp-* en VistaPropiedades.css, xp-* en ExpedientePropiedad.css) */}
       {mostrarModalServicio && createPortal(
         <div
-          className="modal-overlay"
+          className="rp-overlay"
           onClick={() =>
             pasoModal === 1
               ? setMostrarModalServicio(false)
               : cerrarModalYRecargar()
           }
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999999,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "rgba(15, 23, 42, 0.78)",
-            backdropFilter: "blur(8px)",
-            padding: "20px",
-          }}
         >
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: "480px",
-              width: "100%",
-              padding: "32px",
-              borderRadius: "20px",
-              backgroundColor: "white",
-              position: "relative",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-              zIndex: 10000000
-            }}
-          >
-            {pasoModal === 1 && (
+          <div className="rp-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="rp-header">
+              <div className="rp-header-text">
+                <span className="rp-tag">NUEVO SERVICIO</span>
+                <h2 className="rp-title">Solicitar Levantamiento</h2>
+              </div>
               <button
-                className="close-modal"
-                onClick={() => setMostrarModalServicio(false)}
-                style={{
-                  position: "absolute",
-                  top: "16px",
-                  right: "16px",
-                  background: "rgba(0,0,0,0.06)",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: "34px",
-                  height: "34px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  transition: "background 0.2s"
-                }}
+                type="button"
+                className="rp-close"
+                onClick={() => (pasoModal === 1 ? setMostrarModalServicio(false) : cerrarModalYRecargar())}
+                aria-label="Cerrar"
               >
-                <X size={20} color="#333" strokeWidth={2.8} />
+                <X size={18} color="#ffffff" strokeWidth={2.6} />
               </button>
-            )}
+            </div>
 
             {pasoModal === 1 && (
-              <form
-                onSubmit={enviarLevantamiento}
-                style={{ textAlign: "center" }}
-              >
-                <div style={{ display: "inline-flex", padding: "6px 14px", borderRadius: "50px", background: "rgba(242, 101, 34, 0.12)", color: "#f26522", fontWeight: 800, fontSize: "0.8rem", marginBottom: "12px", letterSpacing: "0.5px" }}>
-                  NUEVO SERVICIO
-                </div>
-                <h2
-                  style={{
-                    fontSize: "1.35rem",
-                    color: "#1e293b",
-                    marginBottom: "16px",
-                    fontWeight: 800,
-                    lineHeight: "1.3",
-                  }}
-                >
-                  Solicitar Levantamiento / Servicio
-                </h2>
-
-                <p
-                  style={{
-                    color: "#64748b",
-                    fontSize: "0.95rem",
-                    marginBottom: "20px",
-                    background: "#f8fafc",
-                    padding: "10px 14px",
-                    borderRadius: "10px",
-                    border: "1px solid #e2e8f0"
-                  }}
-                >
-                  <strong style={{ color: "#334155" }}>Propiedad:</strong> {propiedadSeleccionada?.nombre_propiedad || propiedadSeleccionada?.direccion || "Sin especificar"}
+              <form className="rp-form" onSubmit={enviarLevantamiento}>
+                <p className="xp-rp-propiedad">
+                  <Home size={15} color="#ff8c42" />
+                  {propiedadSeleccionada?.nombre_propiedad || propiedadSeleccionada?.direccion || "Sin especificar"}
                 </p>
 
-                {/* SELECTOR DE TÉCNICOS ROL 2 LIGADOS AL ADMIN */}
-                <div style={{ textAlign: "left", marginBottom: "20px" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.88rem", color: "#334155", fontWeight: "bold", marginBottom: "8px" }}>
-                    <UserCheck size={18} color="#f26522" /> Técnico Asignado (Rol 2)
+                {/* TÉCNICOS ROL 2 LIGADOS AL ADMIN: se elige tocando su tarjeta */}
+                <div className="xp-equipo">
+                  <label className="rp-label">
+                    <UserCheck size={16} color="#ff8c42" /> Técnico asignado <span className="xp-equipo-hint">(Selecciona uno)</span>
                   </label>
                   {cargandoTecnicos ? (
-                    <div style={{ color: '#64748b', fontSize: '0.88rem', padding: '10px 14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                      Cargando técnicos vinculados... ⏳
-                    </div>
-                  ) : tecnicosRol2.length > 0 ? (
-                    <select
-                      value={tecnicoSeleccionado}
-                      onChange={(e) => setTecnicoSeleccionado(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "11px 14px",
-                        borderRadius: "10px",
-                        border: "1.5px solid #cbd5e1",
-                        fontSize: "0.92rem",
-                        backgroundColor: "#fff",
-                        color: "#1e293b",
-                        fontWeight: "600",
-                        outline: "none"
-                      }}
-                    >
-                      <option value="">-- Seleccionar Técnico Vinculado (Rol 2) --</option>
-                      {tecnicosRol2.map(t => (
-                        <option key={t.id} value={t.id}>
-                          🔧 {t.first_name || ''} {t.last_name || ''} ({t.email})
-                        </option>
-                      ))}
-                    </select>
+                    <p className="xp-equipo-vacio">Cargando técnicos vinculados...</p>
+                  ) : !tecnicosRol2.length ? (
+                    <p className="xp-equipo-vacio">No hay técnicos de rol 2 vinculados actualmente a tu cuenta.</p>
                   ) : (
-                    <div style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1' }}>
-                      No hay técnicos de rol 2 vinculados actualmente a tu cuenta.
+                    <div className="xp-equipo-grid">
+                      {tecnicosRol2.map(t => {
+                        const on = String(tecnicoSeleccionado) === String(t.id);
+                        const foto = t.profile_picture_url || t.profile_picture;
+                        return (
+                          <button
+                            key={t.id}
+                            type="button"
+                            className={`xp-equipo-card ${on ? 'on' : ''}`}
+                            onClick={() => setTecnicoSeleccionado(on ? "" : t.id)}
+                            aria-pressed={on}
+                            title={`${t.first_name || ''} ${t.last_name || ''}`.trim()}
+                          >
+                            {foto ? (
+                              <img
+                                src={foto}
+                                alt=""
+                                onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+                              />
+                            ) : null}
+                            <span className="xp-equipo-iniciales" style={{ display: foto ? 'none' : 'flex' }}>
+                              {t.first_name?.charAt(0)}{t.last_name?.charAt(0)}
+                            </span>
+                            <span className="xp-equipo-nombre">{t.first_name} {t.last_name ? `${t.last_name.charAt(0)}.` : ''}</span>
+                            <span className="xp-equipo-rol">Técnico</span>
+                            {on && <CheckCircle2 size={17} className="xp-equipo-check" />}
+                          </button>
+                        );
+                      })}
                     </div>
+                  )}
+                  {!cargandoTecnicos && tecnicosRol2.length > 0 && !tecnicoSeleccionado && (
+                    <small className="xp-equipo-nota">Sin asignar por ahora: puedes asignarlo después desde Servicios.</small>
                   )}
                 </div>
 
-                <div
-                  style={{
-                    textAlign: "left",
-                    marginBottom: "25px",
-                    backgroundColor: "#f8fafc",
-                    padding: "16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                  }}
-                >
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "0.88rem",
-                      color: "#334155",
-                      fontWeight: "bold",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    <User size={18} color="#f26522" /> Asignar Supervisor (Opcional)
-                  </label>
-                  <p
-                    style={{
-                      fontSize: "0.78rem",
-                      color: "#64748b",
-                      marginBottom: "10px",
-                      lineHeight: "1.4",
-                    }}
-                  >
-                    Si el dueño no se encontrará en la propiedad, asigne a
-                    alguien responsable de atender la visita.
-                  </p>
+                <div className="rp-group">
+                  <label className="rp-label"><User size={16} color="#ff8c42" /> Supervisor en sitio (Opcional)</label>
                   <input
                     type="text"
+                    className="xp-rp-input"
                     placeholder="Ej. Juan Pérez (Conserje)"
                     value={nombreResponsable}
                     onChange={(e) => setNombreResponsable(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: "8px",
-                      border: "1px solid #cbd5e1",
-                      outline: "none",
-                      fontSize: "0.9rem",
-                      boxSizing: "border-box"
-                    }}
                   />
+                  <small>Si el dueño no estará en la propiedad, asigna a alguien responsable de atender la visita.</small>
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "12px",
-                    justifyContent: "center",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setMostrarModalServicio(false)}
-                    style={{
-                      padding: "12px 20px",
-                      borderRadius: "10px",
-                      border: "1.5px solid #cbd5e1",
-                      backgroundColor: "white",
-                      color: "#475569",
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                      flex: 1,
-                    }}
-                  >
-                    CANCELAR
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={enviandoServicio}
-                    style={{
-                      padding: "12px 20px",
-                      borderRadius: "10px",
-                      border: "none",
-                      backgroundColor: enviandoServicio ? "#94a3b8" : "#f26522",
-                      color: "white",
-                      fontWeight: "bold",
-                      cursor: enviandoServicio ? "not-allowed" : "pointer",
-                      flex: 1,
-                      boxShadow: enviandoServicio ? "none" : "0 4px 14px rgba(242, 101, 34, 0.4)"
-                    }}
-                  >
-                    {enviandoServicio ? "SOLICITANDO..." : "SÍ, SOLICITAR"}
+                <div className="rp-footer">
+                  <button type="submit" className="xp-btn-primary" disabled={enviandoServicio}>
+                    {enviandoServicio ? "Solicitando..." : "Solicitar levantamiento"}
                   </button>
                 </div>
               </form>
             )}
 
             {pasoModal === 2 && (
-              <div style={{ textAlign: "center", padding: "20px 10px" }}>
-                <CheckCircle
-                  size={64}
-                  color="#10b981"
-                  style={{ margin: "0 auto 16px auto" }}
-                />
-                <h2 style={{ color: "#1e293b", marginBottom: "12px", fontWeight: 800 }}>
-                  ¡Levantamiento Solicitado!
-                </h2>
-                <p
-                  style={{
-                    color: "#64748b",
-                    lineHeight: "1.5",
-                    marginBottom: "26px",
-                    fontSize: "0.95rem"
-                  }}
-                >
-                  Ha solicitado un levantamiento para esta propiedad. Se le
-                  notificará la fecha y hora de visita pronto.
-                </p>
-                <button
-                  onClick={cerrarModalYRecargar}
-                  style={{
-                    padding: "12px 30px",
-                    borderRadius: "10px",
-                    border: "none",
-                    backgroundColor: "#10b981",
-                    color: "white",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    width: "100%",
-                    boxShadow: "0 4px 14px rgba(16, 185, 129, 0.4)"
-                  }}
-                >
-                  ENTENDIDO
-                </button>
+              <div className="rp-form sl-success">
+                <span className="sl-success-icon"><CheckCircle size={40} /></span>
+                <h2>¡Levantamiento solicitado!</h2>
+                <p>Ha solicitado un levantamiento para esta propiedad. Se le notificará la fecha y hora de visita pronto.</p>
+                <div className="rp-footer">
+                  <button type="button" className="xp-btn-primary" onClick={cerrarModalYRecargar}>
+                    Entendido
+                  </button>
+                </div>
               </div>
             )}
           </div>

@@ -5,7 +5,7 @@ import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindow, Polyl
 import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig";
 import {
   Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield, X,
-  Building2, Eye, MapPinOff, Loader2, SlidersHorizontal, Check,
+  Building2, Eye, MapPinOff, Loader2, SlidersHorizontal, Check, Moon, Sun,
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
@@ -219,6 +219,12 @@ const ROUTE_GAP = {
   icons: [{ icon: { path: 'M 0,-1 0,1', strokeColor: '#334155', strokeOpacity: 0.85, strokeWeight: 4, scale: 4 }, offset: '0', repeat: '18px' }]
 };
 
+// En el mapa oscuro el punteado gris oscuro desaparecía: se aclara
+const ROUTE_GAP_DARK = {
+  ...ROUTE_GAP,
+  icons: [{ ...ROUTE_GAP.icons[0], icon: { ...ROUTE_GAP.icons[0].icon, strokeColor: '#cbd5e1' } }]
+};
+
 // Mapa más limpio y ligero: se ocultan íconos de negocios y transporte de Google
 const MAP_STYLES = [
   { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
@@ -264,6 +270,34 @@ const MAP_OPTIONS = {
   styles: MAP_STYLES
 };
 
+// Versión oscura (estilo "noche" de Google) con los mismos íconos ocultos que la clara
+const MAP_STYLES_DARK = [
+  { elementType: 'geometry', stylers: [{ color: '#1f2937' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#111827' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#9ca3af' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#e5e7eb' }] },
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#9ca3af' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1d3b2f' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#374151' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#111827' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9ca3af' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#4b5563' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#1f2937' }] },
+  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#e5e7eb' }] },
+  { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#2f3948' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f172a' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#64748b' }] },
+  ...MAP_STYLES
+];
+
+const MAP_OPTIONS_DARK = { ...MAP_OPTIONS, styles: MAP_STYLES_DARK, backgroundColor: '#1f2937' };
+
+// Preferencia de mapa claro/oscuro (solo en este navegador)
+const MAPA_OSCURO_KEY = 'vme-mapa-oscuro';
+const leerMapaOscuro = () => {
+  try { return localStorage.getItem(MAPA_OSCURO_KEY) === '1'; } catch { return false; }
+};
+
 // Mapa en vivo: el equipo (ubicación en tiempo real) y las propiedades registradas en un solo mapa.
 // El equipo solo lo ve quien tiene permiso de ubicación; las propiedades, Root (0) y Admin (1).
 const VistaMapaEquipo = () => {
@@ -299,6 +333,13 @@ const VistaMapaEquipo = () => {
   const [propSelId, setPropSelId] = useState(null);
 
   const [mapReady, setMapReady] = useState(false);
+  const [mapaOscuro, setMapaOscuro] = useState(leerMapaOscuro);
+  const alternarMapaOscuro = () => {
+    setMapaOscuro(prev => {
+      try { localStorage.setItem(MAPA_OSCURO_KEY, prev ? '0' : '1'); } catch { /* sin almacenamiento: solo dura la visita */ }
+      return !prev;
+    });
+  };
   const mapRef = useRef(null);
   const fittedRef = useRef(false);
 
@@ -703,7 +744,7 @@ const VistaMapaEquipo = () => {
                       onClick={() => (p.pos ? irAPropiedad(p) : irADetalles(p))}
                       title={p.pos ? 'Ver en el mapa' : 'Sin ubicación GPS: abrir detalles'}
                     >
-                      <span className="vmp-item-img" style={{ borderColor: carpeta?.color || '#334155' }}>
+                      <span className="vmp-item-img" style={{ borderColor: carpeta?.color || '#cbd5e1' }}>
                         {carpeta?.logo_url
                           ? <img src={ligera(carpeta.logo_url, 80)} alt="" />
                           : p.foto_url ? <img src={ligera(p.foto_url, 80, 'c_fill')} alt="" className="foto" /> : <Building2 size={18} />}
@@ -747,6 +788,21 @@ const VistaMapaEquipo = () => {
             </div>
           )}
 
+          {/* Cambiar entre mapa claro y oscuro (junto al botón de pantalla completa) */}
+          {isLoaded && (
+            <button
+              type="button"
+              className={`vme-tema-btn ${mapaOscuro ? 'es-oscuro' : ''}`}
+              onClick={alternarMapaOscuro}
+              title={mapaOscuro ? 'Mapa claro' : 'Mapa oscuro'}
+              aria-label={mapaOscuro ? 'Cambiar a mapa claro' : 'Cambiar a mapa oscuro'}
+            >
+              {/* Los dos íconos siempre montados: uno sale girando y el otro entra (animación en CSS) */}
+              <Moon size={18} className="vme-tema-icono vme-tema-luna" aria-hidden="true" />
+              <Sun size={18} className="vme-tema-icono vme-tema-sol" aria-hidden="true" />
+            </button>
+          )}
+
           {isLoaded && (
             <GoogleMap
               mapContainerClassName="vme-map-canvas"
@@ -755,7 +811,7 @@ const VistaMapaEquipo = () => {
               onLoad={(map) => { mapRef.current = map; }}
               onTilesLoaded={() => { if (!mapReady) setMapReady(true); }}
               onClick={() => { setInfoOpen(false); setPropSelId(null); }}
-              options={MAP_OPTIONS}
+              options={mapaOscuro ? MAP_OPTIONS_DARK : MAP_OPTIONS}
             >
               {/* Recorrido del día: continuo (con flechas) donde hay datos seguidos;
                   punteado donde la app estuvo cerrada y no se sabe el camino exacto */}
@@ -766,7 +822,7 @@ const VistaMapaEquipo = () => {
                 <Polyline key={`c-${i}`} path={path} options={ROUTE_SOLID} />
               ))}
               {selected && capas.equipo && tramosRuta.sinDatos.map((path, i) => (
-                <Polyline key={`d-${i}`} path={path} options={ROUTE_GAP} />
+                <Polyline key={`d-${i}`} path={path} options={mapaOscuro ? ROUTE_GAP_DARK : ROUTE_GAP} />
               ))}
               {selected && capas.equipo && tramosRuta.inicio && (
                 <Marker

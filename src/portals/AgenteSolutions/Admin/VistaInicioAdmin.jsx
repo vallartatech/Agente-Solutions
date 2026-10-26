@@ -28,6 +28,8 @@ import {
   Camera,
   Layers,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Eye,
   Folder,
   ArrowLeft
@@ -97,6 +99,7 @@ const VistaInicioAdmin = () => {
   const [mostrarModalRegistro, setMostrarModalRegistro] = useState(false);
   const [mostrarModalSolicitud, setMostrarModalSolicitud] = useState(false);
   const [statsVersion, setStatsVersion] = useState(0);
+  const [isMobilePropProfileOpen, setIsMobilePropProfileOpen] = useState(false); // Pestaña colapsable en móvil
   // Carpetas (empresas) del catálogo de Propiedades: agrupan el carrusel de inmuebles
   const [carpetas, setCarpetas] = useState([]);
   const [carpetaAbiertaId, setCarpetaAbiertaId] = useState(null);
@@ -257,6 +260,199 @@ const VistaInicioAdmin = () => {
     || activeProperty?.cliente 
     || 'Agente Solutions';
 
+  // Panel de perfil: se usa en la columna derecha (escritorio) y en la pestaña desplegable (móvil)
+  const renderPropertyProfileCard = (isMobile = false) => (
+    <div className={`vcp-property-profile-inner ${isMobile ? 'is-mobile-inner' : ''}`}>
+      {/* Cabecera del Panel */}
+      <div className="vcp-panel-header">
+        <div className="vcp-panel-header-icon" style={{ background: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
+          <Building2 size={18} />
+        </div>
+        <div className="vcp-panel-header-texts">
+          <h2 className="vcp-panel-title">PERFIL DE LA PROPIEDAD</h2>
+          <span className="vcp-panel-id-badge">
+            REGISTRO: #{activeProperty?.id || '001'}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="vcp-panel-edit-text-btn"
+          onClick={() => navigate('/propiedades')}
+          title="Ver ficha completa en catálogo"
+        >
+          <span>VER TODO</span>
+          <ChevronRight size={13} />
+        </button>
+      </div>
+
+      {/* Lista de Campos Técnicos */}
+      <div className="vcp-fields-list">
+        {/* Empresa o Titular */}
+        <div className="vcp-field-item">
+          <div className="vcp-field-icon-wrap">
+            <Building2 size={16} />
+          </div>
+          <div className="vcp-field-content">
+            <span className="vcp-field-label">EMPRESA / TITULAR</span>
+            <span className="vcp-field-value" style={{ fontWeight: 800, color: '#f26522', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+              <Building2 size={14} color="#ffffff" style={{ flexShrink: 0 }} /> {clientNameDisplay}
+            </span>
+          </div>
+        </div>
+
+        {/* CURP / Código Inmueble */}
+        <div className="vcp-field-item">
+          <div className="vcp-field-icon-wrap">
+            <ClipboardList size={16} />
+          </div>
+          <div className="vcp-field-content">
+            <span className="vcp-field-label">CÓDIGO INMUEBLE</span>
+            <span className="vcp-curp-pill">
+              {activeProperty?.curp || activeProperty?.codigo || `INM-${String(activeProperty?.id || 1).padStart(4, '0')}-AG`}
+            </span>
+          </div>
+        </div>
+
+        {/* Dirección */}
+        <div className="vcp-field-item">
+          <div className="vcp-field-icon-wrap">
+            <MapPin size={16} />
+          </div>
+          <div className="vcp-field-content">
+            <span className="vcp-field-label">DIRECCIÓN</span>
+            <span className="vcp-field-value">
+              {activeProperty?.address || activeProperty?.direccion || activeProperty?.calle || 'Mérida, Yucatán'}
+            </span>
+          </div>
+        </div>
+
+        {/* Ubicación GPS con Enlace a Google Maps */}
+        <div className="vcp-field-item">
+          <div className="vcp-field-icon-wrap">
+            <Navigation size={16} />
+          </div>
+          <div className="vcp-field-content">
+            <span className="vcp-field-label">UBICACIÓN GPS</span>
+            <div className="vcp-gps-row" onClick={handleOpenMaps} title="Abrir en Google Maps">
+              <MapPin size={13} color="#ffffff" style={{ flexShrink: 0 }} />
+              <span>
+                {extractPropertyGps(activeProperty)
+                  ? extractPropertyGps(activeProperty).formatted
+                  : 'Ver en Google Maps'}
+              </span>
+              <ExternalLink size={13} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Widget del Tablero de Control de la Propiedad */}
+      <div className="vcp-tablero-card">
+        <div className="vcp-tablero-header">
+          <div className="vcp-tablero-icon-wrap">
+            <LayoutDashboard size={18} />
+          </div>
+          <h3 className="vcp-tablero-title">Tablero Operativo de la Propiedad</h3>
+        </div>
+
+        <div className="vcp-tablero-grid">
+          {/* SOS */}
+          <div 
+            className="vcp-stat-box vcp-stat-sos"
+            onClick={() => navigate('/SOSView', { state: { propiedad: activeProperty } })}
+            title="Ver o Gestionar Emergencias SOS"
+          >
+            <div className="vcp-stat-icon-wrapper">
+              <AlertCircle size={20} className="vcp-stat-icon" />
+            </div>
+            <span className="vcp-stat-count">{propertyStats.sos}</span>
+            <span className="vcp-stat-label">SOS</span>
+          </div>
+
+          {/* POR HACER */}
+          <div 
+            className="vcp-stat-box vcp-stat-todo"
+            onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
+            title="Servicios Por Hacer"
+          >
+            <div className="vcp-stat-icon-wrapper">
+              <ClipboardList size={20} className="vcp-stat-icon" />
+            </div>
+            <span className="vcp-stat-count">{propertyStats.pendientes}</span>
+            <span className="vcp-stat-label">POR HACER</span>
+          </div>
+
+          {/* PROCESO */}
+          <div 
+            className="vcp-stat-box vcp-stat-process"
+            onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
+            title="Servicios en Proceso"
+          >
+            <div className="vcp-stat-icon-wrapper">
+              <Clock size={20} className="vcp-stat-icon" />
+            </div>
+            <span className="vcp-stat-count">{propertyStats.proceso}</span>
+            <span className="vcp-stat-label">PROCESO</span>
+          </div>
+
+          {/* LISTOS */}
+          <div 
+            className="vcp-stat-box vcp-stat-done"
+            onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
+            title="Servicios Concluidos"
+          >
+            <div className="vcp-stat-icon-wrapper">
+              <CheckCircle2 size={20} className="vcp-stat-icon" />
+            </div>
+            <span className="vcp-stat-count">{propertyStats.listos}</span>
+            <span className="vcp-stat-label">LISTOS</span>
+          </div>
+        </div>
+
+        <div className="vcp-tablero-btn-wrap">
+          <button 
+            className="vcp-btn-tablero-detail"
+            onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
+            title="Ver Tablero Detallado de Órdenes de esta Propiedad"
+          >
+            VER TABLERO DETALLADO
+          </button>
+        </div>
+      </div>
+
+      {/* Botones de Acción Operativa de la Propiedad */}
+      <div className="vcp-actions-grid">
+        {/* Asignar Servicio: solicitud de trabajo o levantamiento para la propiedad activa */}
+        <button 
+          className="vcp-btn vcp-btn-service"
+          onClick={() => setMostrarModalSolicitud(true)}
+          title="Solicitar trabajo o levantamiento para esta propiedad"
+        >
+          <Wrench size={17} /> ASIGNAR SERVICIO
+        </button>
+
+        {/* Ver Levantamiento */}
+        <button 
+          className="vcp-btn vcp-btn-survey"
+          onClick={() => navigate('/levantamientos', { state: { selectedPropId: activeProperty?.id } })}
+          title="Ver Levantamientos Técnicos de esta Propiedad"
+        >
+          <ClipboardList size={17} /> LEVANTAMIENTO
+        </button>
+
+        {/* Ver Detalle de la Propiedad */}
+        <button 
+          className="vcp-btn vcp-btn-share"
+          style={{ gridColumn: '1 / -1' }}
+          onClick={() => navigate(`/detalle-propiedad/${activeProperty?.id}`)}
+          title="Ver el detalle completo de esta propiedad"
+        >
+          <Eye size={17} /> VER DETALLE DE PROPIEDAD
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="vcp-root">
       {/* Fachada arquitectónica a pantalla completa con desenfoque dinámico */}
@@ -274,9 +470,9 @@ const VistaInicioAdmin = () => {
         {/* ── COLUMNA IZQUIERDA: HERO DEL INMUEBLE Y CARRUSEL INFERIOR DE MINIATURAS ── */}
         <section className="vcp-hero-side">
           {/* Badge Superior Flotante */}
-          <div className="vcp-plan-floating-badge is-collapsed" style={{ top: '16px', left: '0' }}>
+          <div className="vcp-plan-floating-badge is-collapsed" style={{ marginTop: '16px', marginBottom: '12px' }}>
             <div className="vcp-plan-pill-toggle-btn" style={{ cursor: 'default' }}>
-              <Building2 size={15} style={{ color: '#f26522' }} />
+              <Building2 size={15} style={{ color: '#ffffff' }} />
               <span className="vcp-plan-pill-text">
                 CATÁLOGO DE INMUEBLES ({propiedades.length} ACTIVOS)
               </span>
@@ -288,7 +484,7 @@ const VistaInicioAdmin = () => {
             {/* Título de la Propiedad */}
             <div className="vcp-prop-header-block">
               <div className="vcp-prop-owner-tag">
-                {activeProperty?.tipo || 'RESIDENCIAL'} • 🏢 {clientNameDisplay} • ID #{activeProperty?.id || '01'}
+                {activeProperty?.tipo || 'RESIDENCIAL'} • <Building2 size={13} color="#ffffff" style={{ verticalAlign: '-2px' }} /> {clientNameDisplay} • ID #{activeProperty?.id || '01'}
               </div>
 
               <div className="vcp-title-edit-row">
@@ -305,6 +501,33 @@ const VistaInicioAdmin = () => {
                   <span>GESTIONAR</span>
                 </button>
               </div>
+            </div>
+
+            {/* Pestaña Desplegable del Perfil de la Propiedad (SOLO RESPONSIVO / MOBILE) */}
+            <div className="vcp-mobile-prop-drawer-wrap">
+              <div
+                className={`vcp-mobile-prop-drawer-tab ${isMobilePropProfileOpen ? 'is-open' : ''}`}
+                onClick={() => setIsMobilePropProfileOpen(!isMobilePropProfileOpen)}
+                title={isMobilePropProfileOpen ? "Ocultar detalles del perfil de la propiedad" : "Desplegar detalles del perfil de la propiedad"}
+              >
+                <div className="vcp-drawer-tab-main">
+                  <div className="vcp-drawer-tab-badge">
+                    <Building2 size={14} color="#ffffff" />
+                    <span>PERFIL DE LA PROPIEDAD</span>
+                  </div>
+                </div>
+
+                <div className="vcp-drawer-tab-btn">
+                  <span>DETALLES</span>
+                  {isMobilePropProfileOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </div>
+              </div>
+
+              {isMobilePropProfileOpen && (
+                <div className="vcp-mobile-prop-drawer-content">
+                  {renderPropertyProfileCard(true)}
+                </div>
+              )}
             </div>
 
             {/* Carrusel Horizontal de Miniaturas (Selector de Inmuebles) */}
@@ -390,194 +613,7 @@ const VistaInicioAdmin = () => {
 
         {/* ── COLUMNA DERECHA: PANEL DE PERFIL DE LA PROPIEDAD (LIQUID GLASS) ── */}
         <aside className="vcp-panel-side">
-          <div className="vcp-property-profile-inner">
-            {/* Cabecera del Panel */}
-            <div className="vcp-panel-header">
-              <div className="vcp-panel-header-icon" style={{ background: 'rgba(242, 101, 34, 0.2)', color: '#f26522', border: '1px solid rgba(242, 101, 34, 0.4)' }}>
-                <Building2 size={18} />
-              </div>
-              <div className="vcp-panel-header-texts">
-                <h2 className="vcp-panel-title">PERFIL DE LA PROPIEDAD</h2>
-                <span className="vcp-panel-id-badge">
-                  REGISTRO: #{activeProperty?.id || '001'}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="vcp-panel-edit-text-btn"
-                onClick={() => navigate('/propiedades')}
-                title="Ver ficha completa en catálogo"
-              >
-                <span>VER TODO</span>
-                <ChevronRight size={13} />
-              </button>
-            </div>
-
-            {/* Lista de Campos Técnicos */}
-            <div className="vcp-fields-list">
-              {/* Empresa o Titular */}
-              <div className="vcp-field-item">
-                <div className="vcp-field-icon-wrap">
-                  <Building2 size={16} />
-                </div>
-                <div className="vcp-field-content">
-                  <span className="vcp-field-label">EMPRESA / TITULAR</span>
-                  <span className="vcp-field-value" style={{ fontWeight: 800, color: '#f26522' }}>
-                    🏢 {clientNameDisplay}
-                  </span>
-                </div>
-              </div>
-
-              {/* CURP / Código Inmueble */}
-              <div className="vcp-field-item">
-                <div className="vcp-field-icon-wrap">
-                  <ClipboardList size={16} />
-                </div>
-                <div className="vcp-field-content">
-                  <span className="vcp-field-label">CÓDIGO INMUEBLE</span>
-                  <span className="vcp-curp-pill">
-                    {activeProperty?.curp || activeProperty?.codigo || `INM-${String(activeProperty?.id || 1).padStart(4, '0')}-AG`}
-                  </span>
-                </div>
-              </div>
-
-              {/* Dirección */}
-              <div className="vcp-field-item">
-                <div className="vcp-field-icon-wrap">
-                  <MapPin size={16} />
-                </div>
-                <div className="vcp-field-content">
-                  <span className="vcp-field-label">DIRECCIÓN</span>
-                  <span className="vcp-field-value">
-                    {activeProperty?.address || activeProperty?.direccion || activeProperty?.calle || 'Mérida, Yucatán'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Ubicación GPS con Enlace a Google Maps */}
-              <div className="vcp-field-item">
-                <div className="vcp-field-icon-wrap">
-                  <Navigation size={16} />
-                </div>
-                <div className="vcp-field-content">
-                  <span className="vcp-field-label">UBICACIÓN GPS</span>
-                  <div className="vcp-gps-row" onClick={handleOpenMaps} title="Abrir en Google Maps">
-                    <span>
-                      {extractPropertyGps(activeProperty)
-                        ? `📍 ${extractPropertyGps(activeProperty).formatted}`
-                        : '📍 Ver en Google Maps'}
-                    </span>
-                    <ExternalLink size={13} />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Widget del Tablero de Control de la Propiedad */}
-            <div className="vcp-tablero-card">
-              <div className="vcp-tablero-header">
-                <div className="vcp-tablero-icon-wrap">
-                  <LayoutDashboard size={18} />
-                </div>
-                <h3 className="vcp-tablero-title">Tablero Operativo de la Propiedad</h3>
-              </div>
-
-              <div className="vcp-tablero-grid">
-                {/* SOS */}
-                <div 
-                  className="vcp-stat-box vcp-stat-sos"
-                  onClick={() => navigate('/SOSView', { state: { propiedad: activeProperty } })}
-                  title="Ver o Gestionar Emergencias SOS"
-                >
-                  <div className="vcp-stat-icon-wrapper">
-                    <AlertCircle size={20} className="vcp-stat-icon" />
-                  </div>
-                  <span className="vcp-stat-count">{propertyStats.sos}</span>
-                  <span className="vcp-stat-label">SOS</span>
-                </div>
-
-                {/* POR HACER */}
-                <div 
-                  className="vcp-stat-box vcp-stat-todo"
-                  onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
-                  title="Servicios Por Hacer"
-                >
-                  <div className="vcp-stat-icon-wrapper">
-                    <ClipboardList size={20} className="vcp-stat-icon" />
-                  </div>
-                  <span className="vcp-stat-count">{propertyStats.pendientes}</span>
-                  <span className="vcp-stat-label">POR HACER</span>
-                </div>
-
-                {/* PROCESO */}
-                <div 
-                  className="vcp-stat-box vcp-stat-process"
-                  onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
-                  title="Servicios en Proceso"
-                >
-                  <div className="vcp-stat-icon-wrapper">
-                    <Clock size={20} className="vcp-stat-icon" />
-                  </div>
-                  <span className="vcp-stat-count">{propertyStats.proceso}</span>
-                  <span className="vcp-stat-label">PROCESO</span>
-                </div>
-
-                {/* LISTOS */}
-                <div 
-                  className="vcp-stat-box vcp-stat-done"
-                  onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
-                  title="Servicios Concluidos"
-                >
-                  <div className="vcp-stat-icon-wrapper">
-                    <CheckCircle2 size={20} className="vcp-stat-icon" />
-                  </div>
-                  <span className="vcp-stat-count">{propertyStats.listos}</span>
-                  <span className="vcp-stat-label">LISTOS</span>
-                </div>
-              </div>
-
-              <div className="vcp-tablero-btn-wrap">
-                <button 
-                  className="vcp-btn-tablero-detail"
-                  onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
-                  title="Ver Tablero Detallado de Órdenes de esta Propiedad"
-                >
-                  VER TABLERO DETALLADO
-                </button>
-              </div>
-            </div>
-
-            {/* Botones de Acción Operativa de la Propiedad */}
-            <div className="vcp-actions-grid">
-              {/* Asignar Servicio: solicitud de trabajo o levantamiento para la propiedad activa */}
-              <button 
-                className="vcp-btn vcp-btn-service"
-                onClick={() => setMostrarModalSolicitud(true)}
-                title="Solicitar trabajo o levantamiento para esta propiedad"
-              >
-                <Wrench size={17} /> ASIGNAR SERVICIO
-              </button>
-
-              {/* Ver Levantamiento */}
-              <button 
-                className="vcp-btn vcp-btn-survey"
-                onClick={() => navigate('/levantamientos', { state: { selectedPropId: activeProperty?.id } })}
-                title="Ver Levantamientos Técnicos de esta Propiedad"
-              >
-                <ClipboardList size={17} /> LEVANTAMIENTO
-              </button>
-
-              {/* Ver Detalle de la Propiedad */}
-              <button 
-                className="vcp-btn vcp-btn-share"
-                style={{ gridColumn: '1 / -1' }}
-                onClick={() => navigate(`/detalle-propiedad/${activeProperty?.id}`)}
-                title="Ver el detalle completo de esta propiedad"
-              >
-                <Eye size={17} /> VER DETALLE DE PROPIEDAD
-              </button>
-            </div>
-          </div>
+          {renderPropertyProfileCard(false)}
         </aside>
       </main>
 

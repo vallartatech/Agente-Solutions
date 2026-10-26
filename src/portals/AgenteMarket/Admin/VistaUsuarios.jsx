@@ -705,7 +705,7 @@ const VistaUsuarios = () => {
                               {u.my_review && (
                                 <div>
                                   <span className="vu-my-review-pill" title={`Calificado por ti: ⭐ ${u.my_review.rating_stars} / ⏱️ ${u.my_review.rating_time}`}>
-                                    ⭐ {u.my_review.rating_stars} ⏱️ {u.my_review.rating_time}
+                                    <Star size={11} fill="#f59e0b" color="#f59e0b" style={{ verticalAlign: '-1px' }} /> {u.my_review.rating_stars} <Clock size={11} color="#06b6d4" style={{ verticalAlign: '-1px' }} /> {u.my_review.rating_time}
                                   </span>
                                 </div>
                               )}
@@ -813,11 +813,11 @@ const VistaUsuarios = () => {
                   <div className="vu-sidebar-rating-row" style={{ marginTop: '8px' }}>
                     <div className="vu-sidebar-stars">
                       <Star size={14} fill="#f59e0b" color="#f59e0b" />
-                      <span className="vu-sidebar-rating-num">{selectedTecnico.rating_stars_avg.toFixed(1)} ⭐</span>
+                      <span className="vu-sidebar-rating-num">{selectedTecnico.rating_stars_avg.toFixed(1)}</span>
                     </div>
                     <div className="vu-sidebar-stars" style={{ marginLeft: '10px' }}>
                       <Clock size={14} color="#06b6d4" />
-                      <span className="vu-sidebar-rating-num" style={{ color: '#06b6d4' }}>{selectedTecnico.rating_time_avg.toFixed(1)} ⏱️</span>
+                      <span className="vu-sidebar-rating-num" style={{ color: '#06b6d4' }}>{selectedTecnico.rating_time_avg.toFixed(1)}</span>
                     </div>
                     <span className="vu-sidebar-rating-reviews">({selectedTecnico.total_reviews_count} opiniones)</span>
                   </div>
@@ -834,7 +834,7 @@ const VistaUsuarios = () => {
 
                       <div className="vu-client-rating-breakdown">
                         <div className="vu-rating-stat-box">
-                          <span className="vu-stat-label">⭐ Calidad de Trabajo:</span>
+                          <span className="vu-stat-label"><Star size={12} fill="#f59e0b" color="#f59e0b" style={{ verticalAlign: '-1px' }} /> Calidad de Trabajo:</span>
                           <div className="vu-stars-readonly">
                             {[1, 2, 3, 4, 5].map(st => (
                               <Star
@@ -849,7 +849,7 @@ const VistaUsuarios = () => {
                         </div>
 
                         <div className="vu-rating-stat-box">
-                          <span className="vu-stat-label">⏱️ Puntualidad de Llegada:</span>
+                          <span className="vu-stat-label"><Clock size={12} color="#06b6d4" style={{ verticalAlign: '-1px' }} /> Puntualidad de Llegada:</span>
                           <div className="vu-clocks-readonly">
                             {[1, 2, 3, 4, 5].map(ck => (
                               <Clock
