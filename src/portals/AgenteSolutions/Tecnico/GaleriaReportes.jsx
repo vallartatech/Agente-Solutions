@@ -6,7 +6,9 @@ import { ChevronLeft, FileText, Camera, CheckCircle2, Trash2, Edit3, Loader2, X,
 import Swal from 'sweetalert2';
 
 import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
+import Header from '../../../components/Shared/Header';
 import { useAuth } from "../../../context/AuthContext";
+import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 
 const STAGES = [
   {
@@ -39,7 +41,8 @@ const STAGES = [
     tag: '[EXTRA]',
     required: false,
     badgeColor: '#64748b',
-    placeholder: 'Agrega cualquier detalle, prueba o foto adicional relevante (Opcional)...'
+    placeholder: 'Agrega cualquier detalle, prueba, foto o video adicional relevante (Opcional)...',
+    permiteVideo: true
   }
 ];
 
@@ -50,7 +53,8 @@ const GaleriaReportes = () => {
   const location = useLocation();
   const trabajoId = id || location.state?.trabajoId;
   const servicio = location.state?.servicio;
-  const returnPath = location.state?.from || (trabajoId && String(trabajoId).startsWith('work_order-') ? '/mercado-trabajos' : `/trabajo-propiedad/${trabajoId}`);
+  const esAdmin = [0, 1].includes(Number(user?.role_id));
+  const returnPath = location.state?.from || (esAdmin ? '/tablero-servicios' : (trabajoId && String(trabajoId).startsWith('work_order-') ? '/mercado-trabajos' : `/trabajo-propiedad/${trabajoId}`));
 
   const [reportes, setReportes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -94,35 +98,46 @@ const GaleriaReportes = () => {
   }, [trabajoId]);
 
   // Asignar reportes cargados a sus respectivos slots (Slot por tag o por índice)
+  const tieneTag = (r, s) => {
+    const desc = (r.description || '').toUpperCase();
+    return desc.includes(s.tag) || (s.key === 'DESPUES' && desc.includes('[DESPUES]'));
+  };
+
   const getReportForSlot = (stage) => {
     if (!reportes || reportes.length === 0) return null;
 
     // 1. Buscar por tag exacto en la descripción
-    const foundByTag = reportes.find(r => {
-      const desc = (r.description || '').toUpperCase();
-      return desc.includes(stage.tag) || (stage.key === 'DESPUES' && desc.includes('[DESPUES]'));
-    });
-
+    const foundByTag = reportes.find(r => tieneTag(r, stage));
     if (foundByTag) return foundByTag;
 
-    // 2. Si no tiene tag, fallback por posición de array
-    const stageIndex = STAGES.findIndex(s => s.key === stage.key);
-    if (stageIndex !== -1 && reportes[stageIndex]) {
-      return reportes[stageIndex];
-    }
-
-    return null;
+    // 2. Las evidencias viejas sin tag ocupan, en orden de creación, los slots que quedaron libres
+    const sinTag = reportes
+      .filter(r => !STAGES.some(s => tieneTag(r, s)))
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const slotsLibres = STAGES.filter(s => !reportes.some(r => tieneTag(r, s)));
+    const posicion = slotsLibres.findIndex(s => s.key === stage.key);
+    return posicion !== -1 ? (sinTag[posicion] || null) : null;
   };
 
-  const handleFileChange = (stageKey, file) => {
+  const handleFileChange = async (stage, file) => {
     if (!file) return;
+    const esVideo = file.type.startsWith('video/');
+    if (esVideo && !stage.permiteVideo) return;
+    if (esVideo) {
+      const motivo = await validarVideoEvidencia(file);
+      if (motivo) {
+        Swal.fire({ icon: 'warning', title: 'Video no válido', text: motivo, confirmButtonColor: '#F26522' });
+        return;
+      }
+    }
     const previewUrl = URL.createObjectURL(file);
     setSlotData(prev => ({
       ...prev,
-      [stageKey]: {
-        ...prev[stageKey],
+      [stage.key]: {
+        ...prev[stage.key],
         file,
-        preview: previewUrl
+        preview: previewUrl,
+        previewEsVideo: esVideo
       }
     }));
   };
@@ -156,8 +171,10 @@ const GaleriaReportes = () => {
     if (!dataForSlot.file && !existingReport) {
       Swal.fire({
         icon: 'warning',
-        title: 'Foto Obligatoria',
-        text: `Debes tomar o seleccionar una fotografía para la evidencia: ${stage.title}.`,
+        title: stage.permiteVideo ? 'Foto o video obligatorio' : 'Foto Obligatoria',
+        text: stage.permiteVideo
+          ? `Debes subir una fotografía o un video (máximo ${VIDEO_MAX_SEGUNDOS} s) para la evidencia: ${stage.title}.`
+          : `Debes tomar o seleccionar una fotografía para la evidencia: ${stage.title}.`,
         confirmButtonColor: '#F26522'
       });
       return;
@@ -179,7 +196,8 @@ const GaleriaReportes = () => {
 
       if (existingReport && existingReport.id) {
         // Actualizar reporte existente
-        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/servicios/reportes/${existingReport.id}?_method=PUT`, formData, {
+        formData.append('_method', 'PUT');
+        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/reportes/${existingReport.id}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       } else {
@@ -209,7 +227,7 @@ const GaleriaReportes = () => {
       Swal.fire({
         icon: 'error',
         title: 'Error al Guardar',
-        text: 'Ocurrió un inconveniente al subir la evidencia. Inténtalo nuevamente.',
+        text: error.response?.data?.error || 'Ocurrió un inconveniente al subir la evidencia. Inténtalo nuevamente.',
         confirmButtonColor: '#F26522'
       });
     } finally {
@@ -265,7 +283,7 @@ const GaleriaReportes = () => {
 
   return (
     <>
-      <TecnicoHeader activeTab="tablero" />
+      {esAdmin ? <Header activeModule="servicios" titulo="SERVICIOS" /> : <TecnicoHeader activeTab="tablero" />}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', padding: '0 20px', minHeight: '90vh', background: '#f8fafc' }}>
         
         {/* ENCABEZADO E INFORMACIÓN DEL TRABAJO */}
@@ -314,7 +332,7 @@ const GaleriaReportes = () => {
             style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#F26522', color: 'white', padding: '10px 22px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(242, 101, 34, 0.25)' }}
           >
             <ChevronLeft size={20} />
-            <span>REGRESAR AL TRABAJO</span>
+            <span>{esAdmin && !location.state?.from ? 'REGRESAR A SERVICIOS' : 'REGRESAR AL TRABAJO'}</span>
           </button>
 
           <div style={{ 
@@ -367,6 +385,7 @@ const GaleriaReportes = () => {
                 const isDone = !!report && !localState.isEditing;
 
                 const displayImage = localState.preview || report?.image_url || null;
+                const displayEsVideo = localState.preview ? !!localState.previewEsVideo : esVideoUrl(report?.image_url);
                 const cleanReportDesc = (report?.description || '').replace(/\[(ANTES|DURANTE|DESPUÉS|DESPUES|EXTRA)\]/gi, '').trim();
 
                 return (
@@ -440,11 +459,22 @@ const GaleriaReportes = () => {
                       >
                         {displayImage ? (
                           <>
-                            <img 
-                              src={displayImage} 
-                              alt={stage.title} 
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                            />
+                            {displayEsVideo ? (
+                              <video
+                                src={displayImage}
+                                muted
+                                loop
+                                autoPlay
+                                playsInline
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <img
+                                src={displayImage}
+                                alt={stage.title}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            )}
                             {isDone && (
                               <div style={{
                                 position: 'absolute',
@@ -466,17 +496,19 @@ const GaleriaReportes = () => {
                           <div style={{ textAlign: 'center', padding: '15px', color: '#64748b' }}>
                             <Camera size={44} strokeWidth={1.5} color="#F26522" style={{ marginBottom: '8px' }} />
                             <p style={{ margin: 0, fontWeight: '800', fontSize: '0.85rem', color: '#1e293b' }}>
-                              TAP PARA SUBIR FOTO
+                              {stage.permiteVideo ? 'TAP PARA SUBIR FOTO O VIDEO' : 'TAP PARA SUBIR FOTO'}
                             </p>
-                            <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Cámara o Galería</span>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                              {stage.permiteVideo ? `Cámara o Galería · video de máx. ${VIDEO_MAX_SEGUNDOS} s` : 'Cámara o Galería'}
+                            </span>
                           </div>
                         )}
 
                         <input 
                           type="file"
                           ref={fileInputRefs[stage.key]}
-                          onChange={(e) => handleFileChange(stage.key, e.target.files[0])}
-                          accept="image/*"
+                          onChange={(e) => { handleFileChange(stage, e.target.files[0]); e.target.value = ''; }}
+                          accept={stage.permiteVideo ? 'image/*,video/*' : 'image/*'}
                           style={{ display: 'none' }}
                         />
                       </div>
@@ -645,12 +677,23 @@ const GaleriaReportes = () => {
               padding: '20px'
             }}
           >
-            <img 
-              src={imagenExpandida} 
-              alt="Ampliada" 
-              onClick={(e) => e.stopPropagation()}
-              style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '16px', objectFit: 'contain', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }} 
-            />
+            {esVideoUrl(imagenExpandida) ? (
+              <video
+                src={imagenExpandida}
+                controls
+                autoPlay
+                playsInline
+                onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+              />
+            ) : (
+              <img
+                src={imagenExpandida}
+                alt="Ampliada"
+                onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '16px', objectFit: 'contain', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+              />
+            )}
             <button 
               onClick={() => setImagenExpandida(null)}
               style={{ position: 'absolute', top: '20px', right: '25px', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}

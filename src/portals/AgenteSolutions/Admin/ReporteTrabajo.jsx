@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 import { useAuth } from '../../../context/AuthContext';
+import { esVideoUrl, miniaturaVideo } from '../../../utils/evidencia';
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -838,11 +839,12 @@ const ReporteTrabajo = () => {
                 {reportData.imagenes.map((img, idx) => (
                   <div key={idx} className="imagen-item">
                     <img
-                      src={img}
+                      src={esVideoUrl(img) ? miniaturaVideo(img) : img}
                       alt={`Evidencia ${idx + 1}`}
                       onClick={() => setSelectedImage(img)}
                       style={{ cursor: 'zoom-in' }}
                     />
+                    {esVideoUrl(img) && <span className="evidencia-video-marca">▶ Video</span>}
 
                     {/* Botón de eliminar en hover (no se imprime) */}
                     {!isClient && (
@@ -862,7 +864,7 @@ const ReporteTrabajo = () => {
                       <Maximize2 size={12} />
                     </div>
 
-                    <p className="no-print">Foto {idx + 1}</p>
+                    <p className="no-print">{esVideoUrl(img) ? 'Video' : 'Foto'} {idx + 1}</p>
                   </div>
                 ))}
                 {reportData.imagenes.length === 0 && <p className="empty-gallery">No hay imágenes en el reporte.</p>}
@@ -969,7 +971,9 @@ const ReporteTrabajo = () => {
             <button className="zoom-close-btn" onClick={() => setSelectedImage(null)}>
               <X size={24} />
             </button>
-            <img src={selectedImage} alt="Zoom evidencia" className="zoom-main-image" />
+            {esVideoUrl(selectedImage)
+              ? <video src={selectedImage} controls autoPlay playsInline className="zoom-main-image" />
+              : <img src={selectedImage} alt="Zoom evidencia" className="zoom-main-image" />}
           </div>
         </div>
       )}

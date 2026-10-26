@@ -477,6 +477,20 @@
 
 .table-input.center { text-align: center; }
 
+/* Evidencia en video: en el reporte va un cuadro del video con esta marca */
+.evidencia-video-marca {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(15, 23, 42, 0.8);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 800;
+    pointer-events: none;
+}
+
 .imagen-item {
     cursor: pointer;
     transition: transform 0.2s;

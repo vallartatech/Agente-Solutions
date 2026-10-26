@@ -292,7 +292,8 @@ const TrabajosTecnico = () => {
 
     serviciosFiltrados.forEach(s => {
       const status = s.status?.toLowerCase();
-      const isDone = ['completed', 'finalizado', 'listo'].includes(status);
+      // "Por Aprobar": el técnico ya terminó, solo falta que el admin lo apruebe
+      const isDone = ['completed', 'finalizado', 'listo', 'por aprobar'].includes(status);
       const fechaServicio = s.scheduled_start || s.created_at;
       const fStr = getDayStr(fechaServicio);
 
@@ -400,6 +401,9 @@ const TrabajosTecnico = () => {
           <span className="tt-folio-badge">#{item.id}</span>
           {item.priority === 'Urgente' && (
             <span className="tt-sos-tag"><AlertTriangle size={12}/> SOS</span>
+          )}
+          {item.status === 'Por Aprobar' && (
+            <span className="tt-por-aprobar-tag">Por aprobar</span>
           )}
         </div>
         

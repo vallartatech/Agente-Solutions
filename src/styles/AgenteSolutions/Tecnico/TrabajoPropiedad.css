@@ -59,6 +59,7 @@
 }
 
 .tp-status-pill[data-status="Listo"] { background: #d1fae5; color: #065f46; }
+.tp-status-pill[data-status="Por Aprobar"] { background: #e0f2fe; color: #0369a1; }
 .tp-status-pill[data-status="En Proceso"] { background: #fef3c7; color: #92400e; }
 .tp-status-pill[data-status="Por Hacer"] { background: #fee2e2; color: #991b1b; }
 

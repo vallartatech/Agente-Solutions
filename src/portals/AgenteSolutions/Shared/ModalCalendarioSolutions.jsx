@@ -323,6 +323,13 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       timingRelative = 'Trabajo Concluido';
       statusLabel = 'Trabajo Terminado';
       statusType = 'confirmed';
+    } else if (normStatus === 'por aprobar') {
+      // El técnico ya terminó; no cuenta como atrasada mientras el admin lo aprueba
+      timingCategory = 'completed';
+      timingBadge = 'Por aprobar';
+      timingRelative = 'Esperando aprobación del admin';
+      statusLabel = 'Pendiente de aprobación';
+      statusType = 'confirmed';
     } else if (!hasScheduledDate) {
       timingCategory = 'uncoordinated';
       timingBadge = 'Por Coordinar';

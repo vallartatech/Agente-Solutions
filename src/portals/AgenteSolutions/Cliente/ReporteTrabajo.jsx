@@ -3,6 +3,7 @@ import React, { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import "../../../styles/AgenteSolutions/Cliente/ReporteTrabajo.css";
 import logo from '../../../assets/fondo.png';
+import { esVideoUrl } from '../../../utils/evidencia';
 
 const ReporteTrabajo = ({ trabajo, propiedad, tecnico, cliente, imagenes }) => {
   const componentRef = useRef();
@@ -197,7 +198,9 @@ const ReporteTrabajo = ({ trabajo, propiedad, tecnico, cliente, imagenes }) => {
           <div className="galeria-imagenes">
             {imagenesTrabajo.map((img, idx) => (
               <div key={idx} className="imagen-item">
-                <img src={img} alt={`Evidencia ${idx + 1}`} />
+                {esVideoUrl(img)
+                  ? <video src={img} controls playsInline style={{ width: '100%', borderRadius: 8 }} />
+                  : <img src={img} alt={`Evidencia ${idx + 1}`} />}
                 <p>Foto {idx + 1}</p>
               </div>
             ))}

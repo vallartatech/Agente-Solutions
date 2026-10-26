@@ -9,6 +9,7 @@ import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import { useAuth } from '../../../context/AuthContext';
 import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Upload, CheckCircle2, Pencil, Calendar, ClipboardList, Image as ImageIcon } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import '../../../styles/Shared/UniversalSearch.css';
 import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteSolutions/Admin/VistaReportesGlobal.css';
@@ -40,7 +41,8 @@ const STAGES = [
     title: '4. ADICIONAL / EXTRA',
     tag: '[EXTRA]',
     required: false,
-    placeholder: 'Observaciones o evidencia adicional (opcional)...'
+    placeholder: 'Observaciones o evidencia adicional (opcional)...',
+    permiteVideo: true
   }
 ];
 
@@ -111,6 +113,7 @@ const VistaReportesGlobal = () => {
 
     setFormData({ description: cleanDesc, image: null });
     setPreviewImage(mode === 'edit' ? (report?.image_url || report?.image_path) : null);
+    setPreviewEsVideo(mode === 'edit' && esVideoUrl(report?.image_url || report?.image_path));
     setSelectedReportId(report ? report.id : null);
     setSelectedTrabajoId(trabajoId);
     setSelectedTipo(tipo);
@@ -124,12 +127,24 @@ const VistaReportesGlobal = () => {
     setSelectedStage(null);
   };
 
-  const handleImageChange = (e) => {
+  const [previewEsVideo, setPreviewEsVideo] = useState(false);
+
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setFormData({ ...formData, image: file });
-      setPreviewImage(URL.createObjectURL(file));
+    e.target.value = '';
+    if (!file) return;
+    const esVideo = file.type.startsWith('video/');
+    if (esVideo && !selectedStage?.permiteVideo) return;
+    if (esVideo) {
+      const motivo = await validarVideoEvidencia(file);
+      if (motivo) {
+        Swal.fire('Video no válido', motivo, 'warning');
+        return;
+      }
     }
+    setFormData(prev => ({ ...prev, image: file }));
+    setPreviewImage(URL.createObjectURL(file));
+    setPreviewEsVideo(esVideo);
   };
 
   const handleSubmitReport = async (e) => {
@@ -177,7 +192,7 @@ const VistaReportesGlobal = () => {
       fetchReportesYCotizaciones();
     } catch (error) {
       console.error("Error al guardar:", error);
-      Swal.fire('Error', 'Hubo un problema al guardar la evidencia.', 'error');
+      Swal.fire('Error', error.response?.data?.error || 'Hubo un problema al guardar la evidencia.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -211,22 +226,24 @@ const VistaReportesGlobal = () => {
     }
   };
 
+  const tieneTag = (r, s) => {
+    const desc = (r.description || '').toUpperCase();
+    return desc.includes(s.tag) || (s.key === 'DESPUES' && desc.includes('[DESPUES]'));
+  };
+
   const getReportForStage = (groupReports, stage) => {
     if (!groupReports || groupReports.length === 0) return null;
 
-    const foundByTag = groupReports.find(r => {
-      const desc = (r.description || '').toUpperCase();
-      return desc.includes(stage.tag) || (stage.key === 'DESPUES' && desc.includes('[DESPUES]'));
-    });
-
+    const foundByTag = groupReports.find(r => tieneTag(r, stage));
     if (foundByTag) return foundByTag;
 
-    const stageIdx = STAGES.findIndex(s => s.key === stage.key);
-    if (stageIdx !== -1 && groupReports[stageIdx]) {
-      return groupReports[stageIdx];
-    }
-
-    return null;
+    // Las evidencias viejas sin etiqueta ocupan, en orden de creación, las etapas que quedaron libres
+    const sinTag = groupReports
+      .filter(r => !STAGES.some(s => tieneTag(r, s)))
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const libres = STAGES.filter(s => !groupReports.some(r => tieneTag(r, s)));
+    const posicion = libres.findIndex(s => s.key === stage.key);
+    return posicion !== -1 ? (sinTag[posicion] || null) : null;
   };
 
   // Filtrado de reportes: si es técnico, SOLO mostrar los suyos
@@ -558,11 +575,22 @@ const VistaReportesGlobal = () => {
                     </div>
 
                     <div className="rg-stage-image">
-                      <img
-                        src={r.image_url || r.image_path}
-                        alt={stage.title}
-                        onClick={() => setZoomImage(r.image_url || r.image_path)}
-                      />
+                      {esVideoUrl(r.image_url || r.image_path) ? (
+                        <video
+                          src={r.image_url || r.image_path}
+                          muted
+                          loop
+                          autoPlay
+                          playsInline
+                          onClick={() => setZoomImage(r.image_url || r.image_path)}
+                        />
+                      ) : (
+                        <img
+                          src={r.image_url || r.image_path}
+                          alt={stage.title}
+                          onClick={() => setZoomImage(r.image_url || r.image_path)}
+                        />
+                      )}
                     </div>
 
                     <div className="rg-stage-tech">
@@ -636,22 +664,27 @@ const VistaReportesGlobal = () => {
 
               <div className="rg-field">
                 <label className="rg-label">
-                  <Upload size={15} /> Fotografía de evidencia {modalMode === 'add' && <span className="rg-required">*</span>}
+                  <Upload size={15} /> {selectedStage?.permiteVideo ? `Foto o video (máx. ${VIDEO_MAX_SEGUNDOS} s)` : 'Fotografía de evidencia'} {modalMode === 'add' && <span className="rg-required">*</span>}
                 </label>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept={selectedStage?.permiteVideo ? 'image/*,video/*' : 'image/*'}
                   onChange={handleImageChange}
                   style={{ display: 'none' }}
                   id="report-image-upload"
                 />
                 <label htmlFor="report-image-upload" className="rg-upload-btn">
                   <Upload size={18} />
-                  {formData.image ? 'Cambiar imagen seleccionada' : (modalMode === 'edit' ? 'Subir nueva foto (opcional)' : 'Seleccionar fotografía')}
+                  {formData.image
+                    ? (previewEsVideo ? 'Cambiar video seleccionado' : 'Cambiar imagen seleccionada')
+                    : (modalMode === 'edit'
+                      ? (selectedStage?.permiteVideo ? 'Subir nueva foto o video (opcional)' : 'Subir nueva foto (opcional)')
+                      : (selectedStage?.permiteVideo ? 'Seleccionar foto o video' : 'Seleccionar fotografía'))}
                 </label>
 
-                {previewImage && (
-                  <img src={previewImage} alt="Vista previa" className="rg-upload-preview" />
+                {previewImage && (previewEsVideo
+                  ? <video src={previewImage} controls playsInline className="rg-upload-preview" />
+                  : <img src={previewImage} alt="Vista previa" className="rg-upload-preview" />
                 )}
               </div>
 
@@ -672,7 +705,9 @@ const VistaReportesGlobal = () => {
       {/* MODAL ZOOM */}
       {zoomImage && createPortal(
         <div className="rg-zoom-overlay" onClick={() => setZoomImage(null)}>
-          <img src={zoomImage} alt="Ampliada" onClick={e => e.stopPropagation()} />
+          {esVideoUrl(zoomImage)
+            ? <video src={zoomImage} controls autoPlay playsInline onClick={e => e.stopPropagation()} />
+            : <img src={zoomImage} alt="Ampliada" onClick={e => e.stopPropagation()} />}
           <button type="button" className="rg-zoom-close" onClick={() => setZoomImage(null)} aria-label="Cerrar">
             <X size={30} />
           </button>

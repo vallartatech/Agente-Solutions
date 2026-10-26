@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Clock, CheckCircle2, Circle, X, UserCircle, Calendar, 
   ArrowLeft, Camera, Layout, FileText, Maximize2, AlertTriangle, Timer, Settings, Filter,
-  MapPin, Navigation, Users, Package, Zap, Banknote, ListChecks, Hash, ClipboardList
+  MapPin, Navigation, Users, Package, Zap, Banknote, ListChecks, Hash, ClipboardList, ShieldCheck
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import CasaLoader from '../../../components/Shared/CasaLoader';
@@ -48,6 +48,7 @@ const VistaServiciosAdmin = () => {
     { id: 'unassigned', titulo: 'POR ASIGNAR', color: '#8b5cf6', icon: <UserCircle size={20} /> },
     { id: 'todo', titulo: 'POR HACER', color: '#333', icon: <FileText size={20} /> },
     { id: 'progress', titulo: 'EN PROCESO', color: '#f26522', icon: <Timer size={20} /> },
+    { id: 'review', titulo: 'POR APROBAR', color: '#0ea5e9', icon: <ShieldCheck size={20} /> },
     { id: 'done', titulo: 'FINALIZADOS', color: '#1b8a5a', icon: <CheckCircle2 size={20} /> },
     { id: 'rejected', titulo: 'RECHAZADOS', color: '#dc2626', icon: <X size={20} /> }
   ];
@@ -70,6 +71,9 @@ const VistaServiciosAdmin = () => {
         estado = 'rejected';
       } else if (item.status === 'En Proceso') {
         estado = 'progress';
+      } else if (item.status === 'Por Aprobar') {
+        // El técnico lo terminó: falta que un admin lo revise y lo apruebe
+        estado = 'review';
       } else if (item.priority === 'Urgente') {
         estado = 'sos';
       } else if (!hasTechnician) {
@@ -367,7 +371,7 @@ const VistaServiciosAdmin = () => {
     if (jobId && tareasData.length > 0) {
       const tarea = tareasData.find(t => String(t.dbId) === String(jobId) || String(t.id) === String(jobId));
       if (tarea) {
-        const esActivo = ['sos', 'unassigned', 'todo', 'progress'].includes(tarea.estado);
+        const esActivo = ['sos', 'unassigned', 'todo', 'progress', 'review'].includes(tarea.estado);
         setSeccionTab(esActivo ? 'activos' : 'finalizados');
         setTabActiva(tarea.estado); // Cambiamos a la pestaña correcta (SOS, Unassigned, Todo, etc.)
         abrirModal(tarea);
@@ -528,6 +532,7 @@ const VistaServiciosAdmin = () => {
         let hasUnassigned = false;
         let hasTodo = false;
         let hasProgress = false;
+        let hasReview = false;
         let listos = 0;
 
         if (item.batchTasks.length === 1) {
@@ -538,6 +543,7 @@ const VistaServiciosAdmin = () => {
             else if (bt.estado === 'unassigned') hasUnassigned = true;
             else if (bt.estado === 'todo') hasTodo = true;
             else if (bt.estado === 'progress') hasProgress = true;
+            else if (bt.estado === 'review') hasReview = true;
             else if (bt.estado === 'done') listos++;
           });
 
@@ -546,6 +552,7 @@ const VistaServiciosAdmin = () => {
           else if (hasUnassigned) item.estado = 'unassigned';
           else if (hasTodo) item.estado = 'todo';
           else if (hasProgress) item.estado = 'progress';
+          else if (hasReview) item.estado = 'review';
           else if (listos === item.batchTasks.length) item.estado = 'done';
           else item.estado = 'todo'; // Por si acaso hay mezclados pero no en los anteriores
 
@@ -634,6 +641,7 @@ const VistaServiciosAdmin = () => {
                     tarea.estado === 'sos' ? 'is-sos' : 
                     tarea.estado === 'unassigned' ? 'is-unassigned' :
                     tarea.estado === 'progress' ? (tarea.prioridad === 'SOS' ? 'is-sos is-active' : 'is-active') : 
+                    tarea.estado === 'review' ? 'is-review' :  
                     tarea.estado === 'done' ? 'is-done' : ''
                   }`}
                   onClick={() => abrirModal(tarea)}
@@ -800,7 +808,7 @@ const VistaServiciosAdmin = () => {
                 <span className="tb-actions-icon orange"><Timer size={16} /></span>
                 <span>Servicios activos</span>
                 <span className="tb-actions-badge">
-                  {tareasFiltradas.filter(t => ['sos', 'unassigned', 'todo', 'progress'].includes(t.estado)).length}
+                  {tareasFiltradas.filter(t => ['sos', 'unassigned', 'todo', 'progress', 'review'].includes(t.estado)).length}
                 </span>
               </button>
               <button
@@ -827,7 +835,7 @@ const VistaServiciosAdmin = () => {
 
       {(() => {
         const columnasMostrar = seccionTab === 'activos'
-          ? columnasConfig.filter(col => ['sos', 'unassigned', 'todo', 'progress'].includes(col.id))
+          ? columnasConfig.filter(col => ['sos', 'unassigned', 'todo', 'progress', 'review'].includes(col.id))
           : columnasConfig.filter(col => ['done', 'rejected'].includes(col.id));
 
         return (
@@ -1361,14 +1369,31 @@ const VistaServiciosAdmin = () => {
                         <button type="button" className="svm-btn primary svm-btn-full" disabled={procesandoAccion} onClick={() => cambiarEstadoTarea('En Proceso', activeTask.dbId)}>
                           <Timer size={18} /> {procesandoAccion ? 'Actualizando...' : 'Iniciar trabajo'}
                         </button>
-                      ) : activeTask.estado === 'progress' ? (
+                      ) : activeTask.estado === 'progress' || activeTask.estado === 'review' ? (
                         <>
-                        {/* Solo el botón por ahora: el flujo del reporte se conecta después */}
-                        <button type="button" className="svm-btn primary svm-btn-full" onClick={() => mostrarAviso('La captura del reporte de trabajo estará disponible pronto.')}>
-                          <ClipboardList size={18} /> Realizar reporte
+                        {activeTask.estado === 'review' && (
+                          <p className="svm-aviso-aprobacion">
+                            <ShieldCheck size={16} /> El técnico terminó este trabajo. Revisa el reporte (puedes corregirlo) y apruébalo para finalizarlo.
+                          </p>
+                        )}
+                        {/* Misma galería de 4 evidencias que el técnico: lo que uno empieza, el otro lo puede terminar */}
+                        <button
+                          type="button"
+                          className="svm-btn primary svm-btn-full"
+                          onClick={() => navigate(`/galeria-reportes/${activeTask.dbId}`, { state: { trabajoId: activeTask.dbId, servicio: activeTask, from: '/tablero-servicios' } })}
+                        >
+                          <ClipboardList size={18} /> {activeTask.estado === 'review' ? 'Revisar / editar reporte' : 'Realizar reporte'}
                         </button>
-                        <button type="button" className="svm-btn success svm-btn-full" disabled={procesandoAccion} onClick={() => cambiarEstadoTarea('Listo', activeTask.dbId)}>
-                          <CheckCircle2 size={18} /> {procesandoAccion ? 'Finalizando...' : 'Marcar como listo'}
+                        <button
+                          type="button"
+                          className="svm-btn success svm-btn-full"
+                          disabled={procesandoAccion}
+                          onClick={async () => {
+                            if (activeTask.estado === 'review' && !await confirmarAccion('¿Aprobar el trabajo y marcarlo como finalizado? Se le avisará al técnico.')) return;
+                            cambiarEstadoTarea('Listo', activeTask.dbId);
+                          }}
+                        >
+                          <CheckCircle2 size={18} /> {procesandoAccion ? 'Finalizando...' : (activeTask.estado === 'review' ? 'Aprobar y finalizar' : 'Marcar como listo')}
                         </button>
                         </>
                       ) : null}
@@ -1377,7 +1402,7 @@ const VistaServiciosAdmin = () => {
                         <button
                           type="button"
                           className="svm-btn primary svm-btn-full"
-                          onClick={() => navigate(`/galeria-reportes/${activeTask.dbId}`, { state: { trabajoId: activeTask.dbId, servicio: activeTask } })}
+                          onClick={() => navigate(`/galeria-reportes/${activeTask.dbId}`, { state: { trabajoId: activeTask.dbId, servicio: activeTask, from: '/tablero-servicios' } })}
                         >
                           <Camera size={18} /> Consultar reporte de trabajo
                         </button>

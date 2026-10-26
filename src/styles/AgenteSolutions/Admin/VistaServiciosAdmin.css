@@ -176,6 +176,7 @@
 .sv-glass-page .col-unassigned .column-header::after { background: #8b5cf6; }
 .sv-glass-page .col-todo .column-header::after { background: #0f172a; }
 .sv-glass-page .col-progress .column-header::after { background: #f26522; }
+.sv-glass-page .col-review .column-header::after { background: #0ea5e9; }
 .sv-glass-page .col-done .column-header::after { background: #10b981; }
 .sv-glass-page .col-rejected .column-header::after { background: #dc2626; }
 
@@ -251,6 +252,7 @@
 .sv-glass-page .task-card-premium.is-sos { border-left-color: #ef4444; background: rgba(255, 245, 245, 0.88); }
 .sv-glass-page .task-card-premium.is-unassigned { border-left-color: #8b5cf6; }
 .sv-glass-page .task-card-premium.is-active { border-left-color: #f26522; }
+.sv-glass-page .task-card-premium.is-review { border-left-color: #0ea5e9; }
 .sv-glass-page .task-card-premium.is-done { border-left-color: #10b981; }
 .sv-glass-page .task-card-premium.is-overdue { border-left-color: #ef4444 !important; }
 
@@ -326,6 +328,7 @@
 .sv-modal-card .modal-top-indicator.unassigned { border-top-color: #8b5cf6; }
 .sv-modal-card .modal-top-indicator.todo { border-top: none; }
 .sv-modal-card .modal-top-indicator.progress { border-top-color: #f26522; }
+.sv-modal-card .modal-top-indicator.review { border-top-color: #0ea5e9; }
 .sv-modal-card .modal-top-indicator.done { border-top-color: #10b981; }
 .sv-modal-card .modal-top-indicator.is-bitacora { border-top-color: #f26522; }
 
@@ -599,6 +602,24 @@
 .svm-btn.danger:hover:not(:disabled) { background: rgba(254, 242, 242, 0.95); border-color: #dc2626; }
 
 .svm-btn-full { width: 100%; }
+
+/* Trabajo terminado por el técnico, en espera de aprobación del admin */
+.svm-aviso-aprobacion {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  background: rgba(240, 249, 255, 0.92);
+  color: #0369a1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.svm-aviso-aprobacion svg { flex-shrink: 0; margin-top: 1px; }
 
 .svm-mini-btn {
   padding: 5px 14px;

@@ -220,15 +220,16 @@ const TrabajoPropiedad = () => {
     try {
       const realId = getRealId(id);
       
-      // Cambiar estado a Listo
-      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/work-orders/${realId}/status`, {
+      // Pedir "Listo": si lo hace el técnico, el backend lo deja Por Aprobar hasta que un admin lo apruebe
+      const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/work-orders/${realId}/status`, {
         status: 'Listo'
       });
+      setData(prev => ({ ...prev, estado: res.data?.status || 'Listo' }));
 
       // Registrar dónde se finalizó (solo si el técnico aceptó compartir su ubicación)
       reportarUbicacion('job_update', Number(realId) || null);
 
-      // El aviso al admin (campanita + push) lo envía el backend al cambiar el estado a "Listo"
+      // El aviso al admin (campanita + push) lo envía el backend al cambiar el estado
 
       setShowModalFinalizar(true);
     } catch (error) {
@@ -515,7 +516,7 @@ const TrabajoPropiedad = () => {
             <span>REGRESAR</span>
           </button>
           <div className="tp-status-pill" data-status={data.estado}>
-            {data.estado}
+            {data.estado === 'Por Aprobar' ? 'Pendiente de aprobación' : data.estado}
           </div>
         </div>
 
@@ -777,7 +778,13 @@ const TrabajoPropiedad = () => {
                   </p>
                 )}
 
-                {data.estado !== 'Listo' && data.estado !== 'Finalizado' && (
+                {data.estado === 'Por Aprobar' && (
+                  <p className="tp-lock-msg" style={{ marginTop: '10px', textAlign: 'center', fontSize: '0.85rem', color: '#0369a1' }}>
+                    Enviado al administrador. Te avisaremos cuando lo apruebe.
+                  </p>
+                )}
+
+                {data.estado !== 'Listo' && data.estado !== 'Finalizado' && data.estado !== 'Por Aprobar' && (
                   <div style={{ display: 'flex', flexDirection: 'column', width: '100%', marginTop: '10px' }}>
                     <button 
                       className={`tp-btn-secondary ${!hasReports ? 'locked' : ''}`}
@@ -1219,8 +1226,10 @@ const TrabajoPropiedad = () => {
               <div className="tp-success-icon">
                 <CheckCircle2 size={64} color="#f26624" />
               </div>
-              <h2>¡TRABAJO FINALIZADO!</h2>
-              <p>Se ha enviado para verificación del administrador.</p>
+              <h2>{data?.estado === 'Por Aprobar' ? '¡TRABAJO ENVIADO A REVISIÓN!' : '¡TRABAJO FINALIZADO!'}</h2>
+              <p>{data?.estado === 'Por Aprobar'
+                ? 'Un administrador lo revisará y lo aprobará. Te llegará una notificación cuando quede finalizado.'
+                : 'El trabajo quedó finalizado.'}</p>
               <button onClick={() => navigate('/trabajos-tecnico')}>VOLVER AL TABLERO</button>
             </motion.div>
           </div>
