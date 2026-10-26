@@ -76,7 +76,8 @@ const VistaServiciosAdmin = () => {
         estado = 'done';
       } else if (item.status === 'Rechazado') {
         estado = 'rejected';
-      } else if (item.status === 'En Proceso') {
+      } else if (item.status === 'En Proceso' || (item.status === 'Asignado' && Number(item.work_reports_count || 0) > 0)) {
+        // "Asignado" con evidencias ya subidas: el técnico ya está trabajando
         estado = 'progress';
       } else if (item.status === 'Por Aprobar') {
         // El técnico lo terminó: falta que un admin lo revise y lo apruebe

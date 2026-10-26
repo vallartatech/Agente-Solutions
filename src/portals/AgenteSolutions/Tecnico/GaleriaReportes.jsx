@@ -58,6 +58,9 @@ const GaleriaReportes = () => {
   const returnPath = location.state?.from || (esAdmin ? '/tablero-servicios' : (trabajoId && String(trabajoId).startsWith('work_order-') ? '/mercado-trabajos' : `/trabajo-propiedad/${trabajoId}`));
 
   const [reportes, setReportes] = useState([]);
+  // Estado de la orden: viene del trabajo (técnico) o de la tarjeta del tablero (admin)
+  const [estadoOrden, setEstadoOrden] = useState(servicio?.estado || servicio?.status || '');
+  const [enviandoAprobacion, setEnviandoAprobacion] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submittingKey, setSubmittingKey] = useState(null);
   const [imagenExpandida, setImagenExpandida] = useState(null);
@@ -299,6 +302,50 @@ const GaleriaReportes = () => {
   // Contar cuántas evidencias obligatorias están listas
   const countRequiredDone = STAGES.filter(s => s.required && getReportForSlot(s)).length;
 
+  // Con las 3 evidencias obligatorias se puede cerrar desde aquí, sin regresar al trabajo.
+  // El técnico lo manda a aprobación (el backend lo deja "Por Aprobar"); el admin lo finaliza.
+  const ordenCerrada = ['Listo', 'Finalizado', 'Por Aprobar', 'done', 'review', 'rejected', 'Rechazado', 'Cancelado'].includes(estadoOrden);
+  const esOrdenDeTrabajo = !String(trabajoId || '').toLowerCase().includes('servicio');
+  const puedeEnviar = countRequiredDone === 3 && !ordenCerrada && esOrdenDeTrabajo;
+
+  const enviarAprobacion = async () => {
+    const result = await Swal.fire({
+      title: esAdmin ? '¿Finalizar el trabajo?' : '¿Enviar a aprobación?',
+      text: esAdmin
+        ? 'El trabajo quedará finalizado y se le avisará al técnico.'
+        : 'El administrador revisará tu reporte y lo aprobará. Te llegará una notificación.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#16a34a',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: esAdmin ? 'Sí, finalizar' : 'Sí, enviar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!result.isConfirmed) return;
+
+    setEnviandoAprobacion(true);
+    try {
+      const realId = String(trabajoId).match(/\d+/)?.[0];
+      const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/work-orders/${realId}/status`, { status: 'Listo' });
+      const nuevo = res.data?.status || 'Listo';
+      setEstadoOrden(nuevo);
+      Swal.fire({
+        icon: 'success',
+        title: nuevo === 'Por Aprobar' ? '¡Enviado a revisión!' : '¡Trabajo finalizado!',
+        text: nuevo === 'Por Aprobar'
+          ? 'Un administrador lo revisará. Te avisaremos cuando quede aprobado.'
+          : 'El trabajo quedó finalizado.',
+        timer: 2200,
+        showConfirmButton: false
+      });
+    } catch (error) {
+      console.error('Error al enviar a aprobación:', error);
+      Swal.fire('Error', error.response?.data?.error || 'No se pudo actualizar el trabajo. Inténtalo de nuevo.', 'error');
+    } finally {
+      setEnviandoAprobacion(false);
+    }
+  };
+
   return (
     <>
       {esAdmin ? <Header activeModule="servicios" titulo="SERVICIOS" /> : <TecnicoHeader activeTab="tablero" />}
@@ -368,6 +415,24 @@ const GaleriaReportes = () => {
             <CheckCircle2 size={18} />
             <span>Progreso Evidencias Obligatorias: {countRequiredDone} de 3 completadas</span>
           </div>
+
+          {puedeEnviar && (
+            <button
+              onClick={enviarAprobacion}
+              disabled={enviandoAprobacion}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#16a34a', color: 'white', padding: '10px 20px', borderRadius: '25px', border: 'none', cursor: enviandoAprobacion ? 'wait' : 'pointer', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(22, 163, 74, 0.3)' }}
+            >
+              {enviandoAprobacion ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
+              <span>{esAdmin ? 'FINALIZAR TRABAJO' : 'ENVIAR A APROBACIÓN'}</span>
+            </button>
+          )}
+
+          {estadoOrden === 'Por Aprobar' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#e0f2fe', border: '1.5px solid #0ea5e9', color: '#0369a1', padding: '8px 18px', borderRadius: '20px', fontWeight: '800', fontSize: '0.85rem' }}>
+              <CheckCircle2 size={18} />
+              <span>Pendiente de aprobación del administrador</span>
+            </div>
+          )}
 
           {(user?.role_id === 0 || user?.role_id === 1) && (
             <button 
