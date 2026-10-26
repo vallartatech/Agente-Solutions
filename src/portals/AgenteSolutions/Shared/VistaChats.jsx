@@ -274,6 +274,8 @@ const VistaChats = () => {
   const [visor, setVisor] = useState(null);
   const [menuMensaje, setMenuMensaje] = useState(null); // id del mensaje propio con acciones abiertas
   const [panel, setPanel] = useState(null); // 'emojis' | 'stickers' | null
+  const [pendientes, setPendientes] = useState([]); // fotos/videos listos para enviar (pegados, arrastrados o elegidos)
+  const [arrastrando, setArrastrando] = useState(false);
 
   const mensajesRef = useRef(null);
   const archivoRef = useRef(null);
@@ -281,6 +283,7 @@ const VistaChats = () => {
   const pegadoAbajo = useRef(true);
   const scrollAntes = useRef(null);
   const convIdRef = useRef(null);
+  const arrastreProfundidad = useRef(0);
 
   // Último mensaje ya guardado (los que se están enviando tienen id temporal)
   const ultimoId = useMemo(() => {
@@ -292,6 +295,14 @@ const VistaChats = () => {
     const el = mensajesRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   };
+
+  // Al cambiar de chat se descartan las fotos pendientes
+  useEffect(() => {
+    setPendientes(prev => {
+      prev.forEach(p => URL.revokeObjectURL(p.url));
+      return [];
+    });
+  }, [chatId]);
 
   // Abrir un chat
   useEffect(() => {
@@ -432,35 +443,108 @@ const VistaChats = () => {
     }
   };
 
-  const enviarTexto = async () => {
-    const contenido = texto.trim();
-    if (!contenido) return;
-    setTexto('');
-    setPanel(null);
-    const ok = await enviarMensaje({ tipo: 'text', contenido });
-    if (!ok) setTexto(contenido);
-    textoRef.current?.focus();
-  };
-
-  // Fotos y videos (varios a la vez, uno tras otro)
-  const elegirArchivos = async (e) => {
-    const archivos = Array.from(e.target.files || []);
-    e.target.value = '';
-    for (const f of archivos) {
+  // Fotos y videos a la bandeja de vista previa (como WhatsApp): se envían con Enter o el botón
+  const agregarArchivos = (lista) => {
+    const nuevos = [];
+    for (const f of Array.from(lista || [])) {
       const esVideo = f.type.startsWith('video/');
       if (!esVideo && !f.type.startsWith('image/')) continue;
       if (esVideo && f.size > MAX_ARCHIVO_MB * 1024 * 1024) {
         Swal.fire({ icon: 'warning', title: 'Video muy pesado', text: `«${f.name}» pesa ${(f.size / 1048576).toFixed(1)} MB. El máximo es ${MAX_ARCHIVO_MB} MB (aprox. 1 minuto de video).`, confirmButtonColor: '#f26522' });
         continue;
       }
-      // eslint-disable-next-line no-await-in-loop
-      const archivo = esVideo ? f : await comprimirImagen(f);
-      // eslint-disable-next-line no-await-in-loop
-      await enviarMensaje({ tipo: esVideo ? 'video' : 'image', archivo });
+      nuevos.push({ id: `p-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, file: f, esVideo, url: URL.createObjectURL(f) });
     }
+    if (!nuevos.length) return;
+    setPendientes(prev => [...prev, ...nuevos]);
+    setPanel(null);
+    textoRef.current?.focus();
+  };
+
+  const quitarPendiente = (id) => {
+    setPendientes(prev => prev.filter(p => {
+      if (p.id === id) URL.revokeObjectURL(p.url);
+      return p.id !== id;
+    }));
+  };
+
+  const descartarPendientes = () => {
+    pendientes.forEach(p => URL.revokeObjectURL(p.url));
+    setPendientes([]);
+  };
+
+  const elegirArchivos = (e) => {
+    agregarArchivos(e.target.files);
+    e.target.value = '';
+  };
+
+  // Primero las fotos/videos pendientes (uno tras otro) y luego el texto
+  const enviarTexto = async () => {
+    const contenido = texto.trim();
+    const archivos = pendientes;
+    if (!contenido && !archivos.length) return;
+    setTexto('');
+    setPendientes([]);
+    setPanel(null);
+    for (const p of archivos) {
+      // eslint-disable-next-line no-await-in-loop
+      const archivo = p.esVideo ? p.file : await comprimirImagen(p.file);
+      // eslint-disable-next-line no-await-in-loop
+      await enviarMensaje({ tipo: p.esVideo ? 'video' : 'image', archivo });
+      URL.revokeObjectURL(p.url);
+    }
+    if (contenido) {
+      const ok = await enviarMensaje({ tipo: 'text', contenido });
+      if (!ok) setTexto(contenido);
+    }
+    textoRef.current?.focus();
+  };
+
+  // Ctrl+V con una captura o imagen copiada, en cualquier parte del chat abierto
+  useEffect(() => {
+    if (!chatId || !conv?.activo) return undefined;
+    const onPaste = (e) => {
+      const archivos = Array.from(e.clipboardData?.files || []).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
+      if (!archivos.length) return;
+      e.preventDefault();
+      agregarArchivos(archivos);
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  });
+
+  // Arrastrar y soltar fotos/videos sobre la conversación
+  const conArchivos = (e) => Array.from(e.dataTransfer?.types || []).includes('Files');
+  const onDragEnter = (e) => {
+    if (!conArchivos(e) || !conv?.activo) return;
+    e.preventDefault();
+    arrastreProfundidad.current += 1;
+    setArrastrando(true);
+  };
+  const onDragOver = (e) => {
+    if (!conArchivos(e) || !conv?.activo) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+  const onDragLeave = (e) => {
+    if (!conArchivos(e)) return;
+    arrastreProfundidad.current = Math.max(0, arrastreProfundidad.current - 1);
+    if (!arrastreProfundidad.current) setArrastrando(false);
+  };
+  const onDrop = (e) => {
+    if (!conArchivos(e)) return;
+    e.preventDefault();
+    arrastreProfundidad.current = 0;
+    setArrastrando(false);
+    if (conv?.activo) agregarArchivos(e.dataTransfer.files);
   };
 
   const onKeyDownTexto = (e) => {
+    if (e.key === 'Escape' && pendientes.length) {
+      e.preventDefault();
+      descartarPendientes();
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       enviarTexto();
@@ -863,7 +947,14 @@ const VistaChats = () => {
         </aside>
 
         {/* ── CONVERSACIÓN ── */}
-        <section className="vch-conv">
+        <section className="vch-conv" onDragEnter={onDragEnter} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
+          {arrastrando && (
+            <div className="vch-soltar">
+              <ImagePlus size={40} />
+              <strong>Suelta para agregar</strong>
+              <span>Fotos y videos</span>
+            </div>
+          )}
           {!chatId ? (
             <div className="vch-conv-vacia">
               <MessageCircle size={46} />
@@ -979,6 +1070,21 @@ const VistaChats = () => {
                     </div>
                   )}
 
+                  {/* Fotos/videos pegados, arrastrados o elegidos, antes de enviarse */}
+                  {pendientes.length > 0 && (
+                    <div className="vch-pendientes">
+                      {pendientes.map(p => (
+                        <div key={p.id} className="vch-pendiente">
+                          {p.esVideo ? <video src={p.url} muted /> : <img src={p.url} alt="" />}
+                          <button type="button" onClick={() => quitarPendiente(p.id)} aria-label="Quitar" title="Quitar"><X size={14} /></button>
+                        </div>
+                      ))}
+                      <button type="button" className="vch-pendiente vch-pendiente-mas" onClick={() => archivoRef.current?.click()} aria-label="Agregar más" title="Agregar más">
+                        <Plus size={22} />
+                      </button>
+                    </div>
+                  )}
+
                   <div className="vch-escribir">
                     <button type="button" className={`vch-icon-btn ${panel ? 'on' : ''}`} onClick={() => abrirPanel(panel === 'stickers' ? 'stickers' : 'emojis')} aria-label="Emojis y stickers" title="Emojis y stickers">
                       <Smile size={21} />
@@ -991,14 +1097,14 @@ const VistaChats = () => {
                       ref={textoRef}
                       rows={1}
                       className="vch-textarea"
-                      placeholder="Escribe un mensaje"
+                      placeholder={pendientes.length ? 'Enter para enviar · Esc para cancelar' : 'Escribe un mensaje'}
                       value={texto}
                       maxLength={4000}
                       onChange={e => setTexto(e.target.value)}
                       onKeyDown={onKeyDownTexto}
                     />
-                    <button type="button" className="vch-enviar" onClick={enviarTexto} disabled={!texto.trim()} aria-label="Enviar" title="Enviar">
-                      {enviando > 0 && !texto.trim() ? <Loader2 size={18} className="vch-spin" /> : <Send size={18} />}
+                    <button type="button" className="vch-enviar" onClick={enviarTexto} disabled={!texto.trim() && !pendientes.length} aria-label="Enviar" title="Enviar">
+                      {enviando > 0 && !texto.trim() && !pendientes.length ? <Loader2 size={18} className="vch-spin" /> : <Send size={18} />}
                     </button>
                   </div>
                 </div>
