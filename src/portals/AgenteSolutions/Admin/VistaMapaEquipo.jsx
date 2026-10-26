@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindow, Polyline, Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, OverlayViewF, OverlayView, InfoWindowF, PolylineF, MarkerF } from '@react-google-maps/api';
 import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig";
 import {
   Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield, X,
-  Building2, Eye, MapPinOff, Loader2, SlidersHorizontal, Check, Moon, Sun,
+  Building2, Eye, MapPinOff, Loader2, SlidersHorizontal, Check, Moon, Sun, ChevronUp, ChevronDown,
+  Clock, Crosshair, GripHorizontal, Route,
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
@@ -184,6 +186,9 @@ const OpcionFiltro = ({ activa, onClick, children }) => (
 
 const ROLES_FILTRO = { all: 'Todos', tech: 'Técnicos', admin: 'Admins' };
 
+// Ancho máximo de los globos de Google: en celular se reduce para que quepan sin deslizar de lado
+const anchoGlobo = (max) => Math.max(180, Math.min(max, window.innerWidth - 110));
+
 // Centra el marcador sobre la coordenada
 const centerOverlay = (width, height) => ({ x: -(width / 2), y: -(height / 2) });
 
@@ -300,6 +305,127 @@ const leerMapaOscuro = () => {
 
 // Mapa en vivo: el equipo (ubicación en tiempo real) y las propiedades registradas en un solo mapa.
 // El equipo solo lo ve quien tiene permiso de ubicación; las propiedades, Root (0) y Admin (1).
+// Junta registros seguidos del mismo tipo ("En movimiento" x6 → una línea con rango de horas).
+// Recibe los puntos del más viejo al más nuevo y regresa los grupos del más nuevo al más viejo.
+const agruparRecorrido = (puntos) => {
+  const grupos = [];
+  [...puntos].reverse().forEach(p => {
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo && ultimo.source === p.source && ultimo.work_order_id === p.work_order_id) {
+      ultimo.desde = p.recorded_at;
+      ultimo.total += 1;
+    } else {
+      grupos.push({ source: p.source, work_order_id: p.work_order_id, hasta: p.recorded_at, desde: p.recorded_at, total: 1 });
+    }
+  });
+  return grupos;
+};
+
+// Tarjeta flotante con el recorrido del día. Se arrastra desde su encabezado (mouse o dedo)
+// a cualquier parte de la pantalla; va en un portal para que el mapa no la recorte.
+const TarjetaRecorrido = ({ persona, puntos, color, onClose }) => {
+  const [pos, setPos] = useState(null); // null = posición inicial de CSS
+  const [minimizada, setMinimizada] = useState(false);
+  const cardRef = useRef(null);
+  const arrastre = useRef(null);
+  const grupos = useMemo(() => agruparRecorrido(puntos).slice(0, 15), [puntos]);
+  const ultima = persona.last_location?.recorded_at || puntos[puntos.length - 1]?.recorded_at;
+
+  // Si cambia el tamaño de la ventana, la tarjeta no debe quedar fuera
+  useEffect(() => {
+    const ajustar = () => setPos(p => {
+      if (!p || !cardRef.current) return p;
+      const r = cardRef.current.getBoundingClientRect();
+      return {
+        x: Math.min(Math.max(8, p.x), window.innerWidth - r.width - 8),
+        y: Math.min(Math.max(8, p.y), window.innerHeight - r.height - 8)
+      };
+    });
+    window.addEventListener('resize', ajustar);
+    return () => window.removeEventListener('resize', ajustar);
+  }, []);
+
+  const empezar = (e) => {
+    if (e.target.closest('button')) return;
+    const r = cardRef.current.getBoundingClientRect();
+    arrastre.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const mover = (e) => {
+    if (!arrastre.current) return;
+    const r = cardRef.current.getBoundingClientRect();
+    setPos({
+      x: Math.min(Math.max(8, e.clientX - arrastre.current.dx), window.innerWidth - r.width - 8),
+      y: Math.min(Math.max(8, e.clientY - arrastre.current.dy), window.innerHeight - r.height - 8)
+    });
+  };
+
+  const soltar = () => { arrastre.current = null; };
+
+  return createPortal(
+    <div
+      ref={cardRef}
+      className={`vme-rt ${minimizada ? 'is-min' : ''}`}
+      style={pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : undefined}
+    >
+      <div
+        className="vme-rt-head"
+        onPointerDown={empezar}
+        onPointerMove={mover}
+        onPointerUp={soltar}
+        onPointerCancel={soltar}
+        title="Arrastra para mover"
+      >
+        <GripHorizontal size={16} className="vme-rt-grip" aria-hidden="true" />
+        <span className="vme-rt-avatar" style={{ borderColor: color }}>
+          {persona.profile_picture ? <img src={thumb(persona.profile_picture)} alt="" /> : initials(persona.name)}
+        </span>
+        <span className="vme-rt-titulo">
+          <strong>{persona.name}</strong>
+          <small>
+            <Clock size={11} /> {ultima ? `Última conexión ${timeAgo(ultima)} · ${horaCorta(ultima)}` : 'Sin conexiones hoy'}
+          </small>
+        </span>
+        <button type="button" className="vme-rt-btn" onClick={() => setMinimizada(m => !m)} aria-label={minimizada ? 'Expandir' : 'Minimizar'}>
+          {minimizada ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+        </button>
+        <button type="button" className="vme-rt-btn" onClick={onClose} aria-label="Cerrar recorrido">
+          <X size={16} />
+        </button>
+      </div>
+
+      {!minimizada && (
+        <div className="vme-rt-body">
+          <div className="vme-rt-label"><Route size={13} /> Recorrido de hoy</div>
+          {grupos.length === 0 ? (
+            <p className="vme-rt-vacio">Sin movimientos registrados hoy.</p>
+          ) : (
+            <ol className="vme-rt-lista">
+              {grupos.map((g, i) => (
+                <li key={`${g.hasta}-${i}`} className={i === 0 ? 'is-ultimo' : ''}>
+                  <span className="vme-rt-punto" />
+                  <span className="vme-rt-hora">
+                    {g.total > 1 && horaCorta(g.desde) !== horaCorta(g.hasta)
+                      ? `${horaCorta(g.desde)} – ${horaCorta(g.hasta)}`
+                      : horaCorta(g.hasta)}
+                  </span>
+                  <span className="vme-rt-evento">
+                    {SOURCE_LABEL[g.source] || g.source}
+                    {g.work_order_id ? ` #${g.work_order_id}` : ''}
+                    {g.total > 1 && <em>{g.total}</em>}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      )}
+    </div>,
+    document.body
+  );
+};
+
 const VistaMapaEquipo = () => {
   const { isLoaded, loadError } = useJsApiLoader(GOOGLE_MAPS_LOADER);
   const navigate = useNavigate();
@@ -331,6 +457,11 @@ const VistaMapaEquipo = () => {
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState('todas'); // 'todas' | id de carpeta | SIN_CARPETA
   const [propSelId, setPropSelId] = useState(null);
+
+  // Celular: la tarjeta flota sobre el mapa; al bajarla queda el mapa completo a la vista
+  const [listaOculta, setListaOculta] = useState(false);
+  const toqueInicioY = useRef(null);
+  const alternarLista = () => setListaOculta(prev => !prev);
 
   const [mapReady, setMapReady] = useState(false);
   const [mapaOscuro, setMapaOscuro] = useState(leerMapaOscuro);
@@ -431,6 +562,10 @@ const VistaMapaEquipo = () => {
   const onMap = verEquipo && capas.equipo ? filtered.filter(m => m.last_location) : [];
   const selected = members.find(m => m.id === selectedId) || null;
   const tramosRuta = useMemo(() => buildRouteSegments(routePoints), [routePoints]);
+
+  // Tarjeta flotante del recorrido: se abre cada vez que se elige a alguien; la ✕ solo la oculta
+  const [recorridoAbierto, setRecorridoAbierto] = useState(false);
+  useEffect(() => { setRecorridoAbierto(Boolean(selectedId)); }, [selectedId]);
   const countOnline = members.filter(m => m.online).length;
 
   // ── Propiedades: filtros por búsqueda y por empresa (carpeta) ──
@@ -558,12 +693,37 @@ const VistaMapaEquipo = () => {
     <div className="vme-root">
       <Header activeModule="mapa" />
 
-      <main className="vme-layout">
+      <main className={`vme-layout ${listaOculta ? 'lista-oculta' : ''}`}>
         <aside className="vme-sidebar">
+          {/* Solo celular: barrita para ocultar/mostrar la lista (tocar o deslizar) y ver el mapa completo */}
+          <button
+            type="button"
+            className="vme-grabber"
+            onClick={alternarLista}
+            onTouchStart={(e) => { toqueInicioY.current = e.touches[0].clientY; }}
+            onTouchEnd={(e) => {
+              const dy = e.changedTouches[0].clientY - (toqueInicioY.current ?? e.changedTouches[0].clientY);
+              toqueInicioY.current = null;
+              if (Math.abs(dy) < 30) return; // fue un toque: lo maneja onClick
+              e.preventDefault(); // evita que además se dispare el click
+              if (dy > 0 && !listaOculta) alternarLista();
+              if (dy < 0 && listaOculta) alternarLista();
+            }}
+            aria-expanded={!listaOculta}
+          >
+            <span className="vme-grabber-barra" aria-hidden="true" />
+            <span className="vme-grabber-txt">
+              {listaOculta
+                ? <><ChevronUp size={16} /> {pestana === 'propiedades' ? 'Mostrar propiedades' : 'Mostrar equipo'}</>
+                : <><ChevronDown size={16} /> Ver mapa completo</>}
+            </span>
+          </button>
           <div className="vme-sidebar-head">
             <div>
               <h2><Navigation size={18} /> Mapa en vivo</h2>
-              {pestana === 'equipo' ? (
+              {pestana === 'equipo' && forbidden ? (
+                <p><Lock size={12} /> Sin permiso para ver al equipo</p>
+              ) : pestana === 'equipo' ? (
                 <p>
                   <span className="vme-online-dot" /> {countOnline} en línea de {members.length}
                   {lastRefresh && <> · actualizado {lastRefresh.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</>}
@@ -583,11 +743,12 @@ const VistaMapaEquipo = () => {
             </button>
           </div>
 
-          {/* Equipo / Propiedades */}
-          {verEquipo && puedeVerPropiedades && (
+          {/* Equipo / Propiedades: las dos pestañas siempre visibles para Root/Admin.
+              Si el servidor niega el equipo (403), la pestaña muestra un aviso en vez de desaparecer. */}
+          {puedeVerPropiedades && (
             <div className="vme-tabs" role="tablist">
               <button type="button" role="tab" aria-selected={pestana === 'equipo'} className={pestana === 'equipo' ? 'active' : ''} onClick={() => setPestana('equipo')}>
-                <Users size={14} /> Equipo <span>{members.length}</span>
+                <Users size={14} /> Equipo {forbidden ? <Lock size={12} /> : <span>{members.length}</span>}
               </button>
               <button type="button" role="tab" aria-selected={pestana === 'propiedades'} className={pestana === 'propiedades' ? 'active' : ''} onClick={() => setPestana('propiedades')}>
                 <Building2 size={14} /> Propiedades <span>{conPosicion.length}</span>
@@ -595,7 +756,19 @@ const VistaMapaEquipo = () => {
             </div>
           )}
 
-          {pestana === 'equipo' ? (
+          {pestana === 'equipo' && forbidden ? (
+            <div className="vme-sin-permiso">
+              <span className="vme-sin-permiso-icono"><Lock size={22} /></span>
+              <strong>Tu cuenta no tiene permiso para ver al equipo</strong>
+              <p>
+                El servidor solo muestra la ubicación del equipo a los usuarios autorizados.
+                Pide que le den a tu cuenta el permiso del mapa en vivo.
+              </p>
+              <button type="button" className="vme-sin-permiso-btn" onClick={fetchTeam}>
+                <RefreshCw size={14} /> Volver a intentar
+              </button>
+            </div>
+          ) : pestana === 'equipo' ? (
             <>
               <div className="vme-buscador">
                 <div className="vme-search">
@@ -662,7 +835,7 @@ const VistaMapaEquipo = () => {
                             }
                           </span>
                           {m.place && (
-                            <span className="vme-person-place">📍 En {m.place.nombre} desde {horaCorta(m.place.desde)}</span>
+                            <span className="vme-person-place"><MapPin size={11} /> En {m.place.nombre} desde {horaCorta(m.place.desde)}</span>
                           )}
                         </span>
                       </button>
@@ -671,24 +844,6 @@ const VistaMapaEquipo = () => {
                 })}
               </ul>
 
-              {selected && (
-                <div className="vme-route">
-                  <h3>Recorrido de hoy · {selected.name.split(' ')[0]}</h3>
-                  {routePoints.length === 0 ? (
-                    <p className="vme-empty">Sin movimientos registrados hoy.</p>
-                  ) : (
-                    <ol>
-                      {[...routePoints].reverse().slice(0, 12).map((p, i) => (
-                        <li key={`${p.recorded_at}-${i}`}>
-                          <span>{new Date(p.recorded_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
-                          {SOURCE_LABEL[p.source] || p.source}
-                          {p.work_order_id ? ` #${p.work_order_id}` : ''}
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                </div>
-              )}
             </>
           ) : (
             <>
@@ -777,10 +932,17 @@ const VistaMapaEquipo = () => {
           )}
 
           {/* Capas visibles en el mapa */}
-          {verEquipo && puedeVerPropiedades && (
+          {/* Siempre visibles para Root/Admin; si no hay permiso del equipo, "Equipo" lleva al aviso */}
+          {puedeVerPropiedades && (
             <div className="vme-capas">
-              <button type="button" className={capas.equipo ? 'on' : ''} onClick={() => alternarCapa('equipo')} aria-pressed={capas.equipo}>
-                <Users size={14} /> Equipo
+              <button
+                type="button"
+                className={verEquipo && capas.equipo ? 'on' : ''}
+                onClick={() => (verEquipo ? alternarCapa('equipo') : setPestana('equipo'))}
+                aria-pressed={verEquipo && capas.equipo}
+                title={verEquipo ? undefined : 'Tu cuenta no tiene permiso para ver al equipo'}
+              >
+                <Users size={14} /> Equipo {!verEquipo && <Lock size={12} />}
               </button>
               <button type="button" className={capas.propiedades ? 'on' : ''} onClick={() => alternarCapa('propiedades')} aria-pressed={capas.propiedades}>
                 <Building2 size={14} /> Propiedades
@@ -816,16 +978,16 @@ const VistaMapaEquipo = () => {
               {/* Recorrido del día: continuo (con flechas) donde hay datos seguidos;
                   punteado donde la app estuvo cerrada y no se sabe el camino exacto */}
               {selected && capas.equipo && tramosRuta.continuos.map((path, i) => (
-                <Polyline key={`cb-${i}`} path={path} options={ROUTE_CASING} />
+                <PolylineF key={`cb-${i}`} path={path} options={ROUTE_CASING} />
               ))}
               {selected && capas.equipo && tramosRuta.continuos.map((path, i) => (
-                <Polyline key={`c-${i}`} path={path} options={ROUTE_SOLID} />
+                <PolylineF key={`c-${i}`} path={path} options={ROUTE_SOLID} />
               ))}
               {selected && capas.equipo && tramosRuta.sinDatos.map((path, i) => (
-                <Polyline key={`d-${i}`} path={path} options={mapaOscuro ? ROUTE_GAP_DARK : ROUTE_GAP} />
+                <PolylineF key={`d-${i}`} path={path} options={mapaOscuro ? ROUTE_GAP_DARK : ROUTE_GAP} />
               ))}
               {selected && capas.equipo && tramosRuta.inicio && (
-                <Marker
+                <MarkerF
                   position={tramosRuta.inicio}
                   title="Inicio del recorrido de hoy"
                   clickable={false}
@@ -869,45 +1031,68 @@ const VistaMapaEquipo = () => {
               ))}
 
               {selected?.last_location && infoOpen && capas.equipo && (
-                <InfoWindow
+                <InfoWindowF
+                  key={`persona-${selected.id}`}
                   position={{ lat: selected.last_location.lat, lng: selected.last_location.lng }}
                   onCloseClick={() => setInfoOpen(false)}
                   // Encabezado propio de Google oculto: su ✕ heredaba el color blanco de la app
                   // y no se veía. Usamos nuestra propia ✕ dentro del contenido.
-                  options={{ pixelOffset: new window.google.maps.Size(0, -22), headerDisabled: true }}
+                  options={{ pixelOffset: new window.google.maps.Size(0, -22), headerDisabled: true, maxWidth: anchoGlobo(280) }}
                 >
-                  <div className="vme-info">
+                  <div className="vme-info" style={{ '--st': STATUS[statusOf(selected)].color }}>
                     <button type="button" className="vme-info-close" onClick={() => setInfoOpen(false)} aria-label="Cerrar">
                       <X size={16} />
                     </button>
-                    <strong>{selected.name}</strong>
-                    <span>{selected.role_id === 2 ? 'Técnico' : 'Admin'} · {STATUS[statusOf(selected)].label}</span>
+
+                    <div className="vme-info-head">
+                      <span className="vme-info-avatar">
+                        {selected.profile_picture ? <img src={thumb(selected.profile_picture)} alt="" /> : initials(selected.name)}
+                      </span>
+                      <div className="vme-info-titulo">
+                        <strong>{selected.name}</strong>
+                        <div className="vme-info-pills">
+                          <span className="vme-info-pill">{selected.role_id === 2 ? 'Técnico' : 'Admin'}</span>
+                          <span className="vme-info-pill is-estado"><i /> {STATUS[statusOf(selected)].label}</span>
+                        </div>
+                      </div>
+                    </div>
+
                     {selected.place && (
-                      <span className="vme-person-place">📍 En {selected.place.nombre} desde {horaCorta(selected.place.desde)}</span>
+                      <div className="vme-info-lugar">
+                        <MapPin size={14} /> En {selected.place.nombre} desde {horaCorta(selected.place.desde)}
+                      </div>
                     )}
-                    <span>{SOURCE_LABEL[selected.last_location.source] || ''} · {timeAgo(selected.last_location.recorded_at)}</span>
-                    {selected.last_location.accuracy != null && <span>Precisión ±{Math.round(selected.last_location.accuracy)} m</span>}
+
+                    <div className="vme-info-datos">
+                      <span><Clock size={13} /> {SOURCE_LABEL[selected.last_location.source] || 'Última ubicación'} · {timeAgo(selected.last_location.recorded_at)}</span>
+                      {selected.last_location.accuracy != null && (
+                        <span><Crosshair size={13} /> Precisión ±{Math.round(selected.last_location.accuracy)} m</span>
+                      )}
+                    </div>
+
                     <div className="vme-info-actions">
                       <a
+                        className="is-primary"
                         href={`https://www.google.com/maps/dir/?api=1&destination=${selected.last_location.lat},${selected.last_location.lng}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <MapPin size={13} /> Cómo llegar
+                        <Navigation size={14} /> Cómo llegar
                       </a>
                       {selected.phone_number && (
-                        <a href={`tel:${selected.phone_number}`}><Phone size={13} /> Llamar</a>
+                        <a href={`tel:${selected.phone_number}`}><Phone size={14} /> Llamar</a>
                       )}
                     </div>
                   </div>
-                </InfoWindow>
+                </InfoWindowF>
               )}
 
               {propSeleccionada && (
-                <InfoWindow
+                <InfoWindowF
+                  key={`propiedad-${propSeleccionada.id}`}
                   position={propSeleccionada.pos}
                   onCloseClick={() => setPropSelId(null)}
-                  options={{ pixelOffset: new window.google.maps.Size(0, -26), headerDisabled: true }}
+                  options={{ pixelOffset: new window.google.maps.Size(0, -26), headerDisabled: true, maxWidth: anchoGlobo(270) }}
                 >
                   <div className="vmp-info">
                     <button type="button" className="vmp-info-cerrar" onClick={() => setPropSelId(null)} aria-label="Cerrar"><X size={16} /></button>
@@ -936,7 +1121,7 @@ const VistaMapaEquipo = () => {
                       </div>
                     </div>
                   </div>
-                </InfoWindow>
+                </InfoWindowF>
               )}
             </GoogleMap>
           )}
@@ -957,6 +1142,15 @@ const VistaMapaEquipo = () => {
           </div>
         </section>
       </main>
+
+      {selected && recorridoAbierto && verEquipo && (
+        <TarjetaRecorrido
+          persona={selected}
+          puntos={routePoints}
+          color={STATUS[statusOf(selected)].color}
+          onClose={() => setRecorridoAbierto(false)}
+        />
+      )}
     </div>
   );
 };
