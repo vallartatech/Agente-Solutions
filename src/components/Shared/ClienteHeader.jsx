@@ -21,6 +21,7 @@ import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/Modal
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
 import '../../styles/Shared/Header.css';
+import '../../styles/Shared/EncabezadoMovil.css';
 
 const MAPA_ROLES = {
   0: "ROOT_MASTER",

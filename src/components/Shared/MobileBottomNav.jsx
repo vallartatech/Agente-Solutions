@@ -18,6 +18,7 @@ import {
   X
 } from 'lucide-react';
 import '../../styles/Shared/MobileBottomNav.css';
+import '../../styles/Shared/EncabezadoMovil.css';
 
 const MobileBottomNav = ({ activeModule, onTabChange }) => {
   const navigate = useNavigate();

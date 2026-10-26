@@ -1589,27 +1589,60 @@ button.vch-persona:hover {
     padding: 2px 2px 8px;
   }
 
+  /* Mismo vidrio esmerilado claro que la pestaña "Perfil de la propiedad" del inicio:
+     casi transparente, borde blanco brillante, reflejo arriba y texto blanco con sombra */
   .vch-root:not(.con-chat) .vch-item {
-    padding: 12px;
-    border-radius: 18px;
-    border: 1.5px solid rgba(255, 255, 255, 0.18);
+    padding: 12px 14px;
+    border-radius: 20px;
+    border: 1.5px solid rgba(255, 255, 255, 0.38);
     background: linear-gradient(135deg,
-        rgba(51, 58, 72, 0.8) 0%,
-        rgba(24, 29, 39, 0.74) 50%,
-        rgba(40, 46, 58, 0.8) 100%);
-    backdrop-filter: blur(20px) saturate(170%);
-    -webkit-backdrop-filter: blur(20px) saturate(170%);
+        rgba(255, 255, 255, 0.20) 0%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.16) 100%);
+    backdrop-filter: blur(24px) saturate(190%) contrast(105%);
+    -webkit-backdrop-filter: blur(24px) saturate(190%) contrast(105%);
     box-shadow:
-      0 10px 26px rgba(0, 0, 0, 0.22),
-      inset 0 1px 1px rgba(255, 255, 255, 0.2);
-    transition: transform 0.18s ease, border-color 0.2s ease;
+      0 12px 32px rgba(0, 0, 0, 0.35),
+      inset 0 1.5px 2px rgba(255, 255, 255, 0.75),
+      inset 0 -1px 1.5px rgba(0, 0, 0, 0.12);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .vch-root:not(.con-chat) .vch-item:hover {
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.26) 0%,
+        rgba(255, 255, 255, 0.12) 50%,
+        rgba(255, 255, 255, 0.22) 100%);
+    border-color: rgba(255, 255, 255, 0.65);
+    box-shadow:
+      0 16px 36px rgba(0, 0, 0, 0.40),
+      inset 0 2px 3px rgba(255, 255, 255, 0.85);
   }
 
   .vch-root:not(.con-chat) .vch-item:active { transform: scale(0.98); }
 
   .vch-root:not(.con-chat) .vch-item.activo {
-    border-color: rgba(255, 140, 66, 0.6);
-    background: linear-gradient(135deg, rgba(120, 60, 30, 0.75) 0%, rgba(40, 30, 30, 0.75) 100%);
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.28) 0%,
+        rgba(255, 255, 255, 0.14) 50%,
+        rgba(255, 255, 255, 0.24) 100%);
+    border-color: rgba(255, 255, 255, 0.75);
+  }
+
+  /* Texto blanco con sombra (como la pestaña) para leerse sobre el fondo claro */
+  .vch-root:not(.con-chat) .vch-item-top strong {
+    color: #ffffff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  }
+
+  .vch-root:not(.con-chat) .vch-item-top small,
+  .vch-root:not(.con-chat) .vch-previa {
+    color: #f1f5f9;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+  }
+
+  .vch-root:not(.con-chat) .vch-item.sin-leer .vch-item-top small {
+    color: #ffb27a;
   }
 
   /* Aviso "Aún no tienes chats" sobre el fondo claro */

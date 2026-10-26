@@ -1935,3 +1935,36 @@
 .vu-btn-contact-action.email:hover {
   background: #0369a1;
 }
+
+/* ── Encabezado en celular: igual que en las demás vistas ──
+   Las reglas .vu-root de arriba (logo de 70px, margen de 36px, barra de 82px) ganaban
+   a las del celular de VistaClienteParticular.css y corrían el logo solo en Usuarios. */
+@media (max-width: 900px) {
+  .vu-header,
+  .vu-root .vcp-header {
+    height: 66px !important;
+    padding: 0 16px !important;
+  }
+
+  .vu-root .vcp-header-left {
+    margin-left: 0 !important;
+  }
+
+  .vu-root .vcp-brand-logo {
+    height: 42px !important;
+    max-width: 140px !important;
+    margin-right: 0 !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .vu-header,
+  .vu-root .vcp-header {
+    padding: 8px 12px !important;
+  }
+
+  .vu-root .vcp-brand-logo {
+    height: 36px !important;
+    max-width: 120px !important;
+  }
+}
