@@ -421,6 +421,45 @@
   color: #0f172a;
 }
 
+/* Globo de propiedad en pantallas chicas: más angosto, foto más baja y botones que caben
+   (antes medía 250px fijos, Google le ponía scroll y "Cómo llegar" quedaba cortado) */
+@media (max-width: 600px) {
+  .vmp-info {
+    width: min(230px, calc(100vw - 120px));
+  }
+
+  .vmp-info-foto {
+    height: 92px;
+  }
+
+  .vmp-info-cuerpo strong {
+    font-size: 0.92rem;
+    overflow-wrap: anywhere;
+  }
+
+  .vmp-info-cuerpo p {
+    font-size: 0.76rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .vmp-info-acciones {
+    flex-direction: column;
+  }
+
+  .vmp-btn-primary,
+  .vmp-btn-sec {
+    flex: none;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+}
+
 .vmp-girar {
   animation: vmpGirar 0.9s linear infinite;
 }
