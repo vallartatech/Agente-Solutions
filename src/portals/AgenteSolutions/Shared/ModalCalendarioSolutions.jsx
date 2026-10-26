@@ -527,7 +527,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
       const [resWorkOrders, resTecnicos, resTecServicios, resEvents, resBirthdays] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/all`, { headers }).catch(e => ({ data: [] })),
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`, { headers }).catch(e => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos?con_admins=1`, { headers }).catch(e => ({ data: [] })),
         (isTechnician && user?.id)
           ? axios.get(`${import.meta.env.VITE_API_BASE_URL}/tecnico/${user.id}/servicios`, { headers }).catch(e => ({ data: [] }))
           : Promise.resolve({ data: [] }),
@@ -1088,6 +1088,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       const payload = {};
       if (editTecnicoId) {
         payload.tecnico_id = Number(editTecnicoId);
+      } else if (selectedJob.tecnico_id) {
+        payload.tecnicos_ids = []; // eligió "Sin asignar": quitar al que estaba
       }
       if (editScheduledAt) {
         payload.scheduled_at = editScheduledAt;
@@ -2071,7 +2073,13 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                             <span className="cal-tec-iniciales cal-tec-ninguno"><User size={20} /></span>
                             <span className="cal-tec-nombre">Sin asignar</span>
                           </button>
-                          {tecnicosList.map(t => {
+                          {[
+                            ...tecnicosList,
+                            // El asignado actual siempre aparece, aunque no venga en la lista del equipo
+                            ...(selectedJob.tecnico_id && !tecnicosList.some(t => String(t.id) === String(selectedJob.tecnico_id))
+                              ? [{ id: selectedJob.tecnico_id, first_name: selectedJob.assigned_tech_name || 'Asignado', last_name: '' }]
+                              : [])
+                          ].map(t => {
                             const on = String(editTecnicoId) === String(t.id);
                             const foto = t.profile_picture_url || t.profile_picture || t.foto;
                             return (

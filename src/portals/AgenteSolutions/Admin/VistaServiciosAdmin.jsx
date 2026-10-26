@@ -185,7 +185,8 @@ const VistaServiciosAdmin = () => {
         fechaSolucion: ['Listo', 'Finalizado'].includes(item.status) ? new Date(item.updated_at).toLocaleDateString() : 'Pendiente',
         tecnico: nombreTecnico || 'Pendiente de asignar',
         tecnicoId: item.tecnico_id,
-        tecnicosIds: item.technicians ? item.technicians.map(t => t.id) : (item.tecnico_id ? [item.tecnico_id] : []),
+        // La pivote puede venir vacía aunque tecnico_id esté lleno (asignaciones viejas)
+        tecnicosIds: [...new Set([...(item.technicians || []).map(t => Number(t.id)), ...(item.tecnico_id ? [Number(item.tecnico_id)] : [])])],
         propertyId: item.property_id,
         fechaInicio: new Date(item.created_at).toLocaleDateString(),
         estado: estado,
@@ -214,7 +215,7 @@ const VistaServiciosAdmin = () => {
     try {
       const [resOrders, resTechs, resCotis] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/all`),
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos?con_admins=1`),
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones`)
       ]);
 
@@ -248,7 +249,7 @@ const VistaServiciosAdmin = () => {
 
   const fetchTecnicos = useCallback(async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`);
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos?con_admins=1`);
       const tList = response.data || [];
       setTecnicos(tList);
       setTareasData(prev => transformarTareas(rawOrders, cotizacionesData, tList));
@@ -412,10 +413,11 @@ const VistaServiciosAdmin = () => {
   };
 
   const toggleTecnicoEquipo = async (id, targetDbId = null) => {
-    const isSelected = tecnicosEquipo.includes(id);
+    id = Number(id);
+    const isSelected = tecnicosEquipo.map(Number).includes(id);
     const newEquipo = isSelected 
-      ? tecnicosEquipo.filter(tid => tid !== id) 
-      : [...tecnicosEquipo, id];
+      ? tecnicosEquipo.map(Number).filter(tid => tid !== id) 
+      : [...tecnicosEquipo.map(Number), id];
       
     setTecnicosEquipo(newEquipo);
     setProcesandoAccion(true);
@@ -1041,8 +1043,14 @@ const VistaServiciosAdmin = () => {
                         <Users size={16} /> Equipo de trabajo <span className="svm-section-hint">(Selecciona uno o más)</span>
                       </label>
                       <div className="svm-team-grid">
-                        {tecnicos.map(t => {
-                          const isSelected = tecnicosEquipo.includes(t.id);
+                        {[
+                          ...tecnicos,
+                          // Asignados que no vienen en la lista del equipo: se muestran igual para que se vean marcados
+                          ...tecnicosEquipo
+                            .filter(tid => !tecnicos.some(t => Number(t.id) === Number(tid)))
+                            .map(tid => ({ id: Number(tid), first_name: tareaSeleccionada?.tecnico || 'Asignado', last_name: '' }))
+                        ].map(t => {
+                          const isSelected = tecnicosEquipo.map(Number).includes(Number(t.id));
                           return (
                             <button
                               type="button"
