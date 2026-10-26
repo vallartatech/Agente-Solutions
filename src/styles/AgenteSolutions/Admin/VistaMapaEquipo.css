@@ -1994,3 +1994,54 @@
   border-radius: 0;
   border: none;
 }
+
+/* ── Recorrido: estancias en propiedades ("En Smart Fit · llegó 2:00 · se fue 5:30 · 3 h 30 min") ── */
+.vme-rt-resumen {
+  margin: 0 0 8px;
+  color: #6ee7b7;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.vme-rt-lista li.vme-rt-visita {
+  flex-wrap: wrap;
+  row-gap: 2px;
+  margin: 4px 0;
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.vme-rt-lista li.vme-rt-visita .vme-rt-punto {
+  left: -14px;
+  top: 13px;
+  background: #10b981;
+}
+
+.vme-rt-lista li.vme-rt-visita .vme-rt-evento,
+.vme-rt-lista li.vme-rt-visita.is-ultimo .vme-rt-evento {
+  color: #6ee7b7;
+  font-weight: 800;
+}
+
+.vme-rt-detalle {
+  flex-basis: 100%;
+  color: #a7f3d0;
+  font-size: 0.74rem;
+  opacity: 0.85;
+}
+
+.vme-rt-detalle b {
+  color: #34d399;
+}
+
+/* Sigue en el lugar: el punto late */
+.vme-rt-lista li.vme-rt-visita.sigue .vme-rt-punto {
+  animation: vmeRtLatido 1.6s ease-in-out infinite;
+}
+
+@keyframes vmeRtLatido {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  50% { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
+}

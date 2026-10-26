@@ -336,14 +336,43 @@ const agruparRecorrido = (puntos) => {
   return grupos;
 };
 
+// "3 h 30 min" / "27 min"
+const duracionTexto = (minutos) => {
+  const m = Math.max(1, Math.round(minutos || 0));
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  return m % 60 ? `${h} h ${m % 60} min` : `${h} h`;
+};
+
+// Línea de tiempo del día: las visitas a propiedades ("En Smart Fit 2:00–5:30 p.m.")
+// y, entre ellas, los movimientos por GPS. Los puntos registrados DENTRO de una visita
+// se integran en ella (no se repite "Abrió la app" estando en el mismo lugar).
+// Se regresa de lo más nuevo a lo más viejo.
+const construirLineaTiempo = (puntos, visitas) => {
+  const rangos = visitas.map(v => [new Date(v.desde).getTime(), v.hasta ? new Date(v.hasta).getTime() : Date.now()]);
+  const dentroDeVisita = (p) => {
+    const t = new Date(p.recorded_at).getTime();
+    return rangos.some(([a, b]) => t >= a && t <= b);
+  };
+
+  const movimientos = agruparRecorrido(puntos.filter(p => !dentroDeVisita(p)))
+    .map(g => ({ tipo: 'gps', ...g, orden: new Date(g.hasta).getTime() }));
+  const estancias = visitas.map(v => ({ tipo: 'visita', ...v, orden: v.hasta ? new Date(v.hasta).getTime() : Date.now() }));
+
+  return [...movimientos, ...estancias].sort((a, b) => b.orden - a.orden);
+};
+
 // Tarjeta flotante con el recorrido del día. Se arrastra desde su encabezado (mouse o dedo)
 // a cualquier parte de la pantalla; va en un portal para que el mapa no la recorte.
-const TarjetaRecorrido = ({ persona, puntos, color, onClose }) => {
+const TarjetaRecorrido = ({ persona, puntos, visitas = [], color, onClose }) => {
   const [pos, setPos] = useState(null); // null = posición inicial de CSS
   const [minimizada, setMinimizada] = useState(false);
   const cardRef = useRef(null);
   const arrastre = useRef(null);
-  const grupos = useMemo(() => agruparRecorrido(puntos).slice(0, 15), [puntos]);
+  const grupos = useMemo(() => construirLineaTiempo(puntos, visitas).slice(0, 30), [puntos, visitas]);
+  // Resumen: en cuántos lugares estuvo hoy y cuánto tiempo en total
+  const lugaresHoy = new Set(visitas.map(v => v.property_id)).size;
+  const tiempoEnLugares = visitas.reduce((s, v) => s + (v.minutos || 0), 0);
   const ultima = persona.last_location?.recorded_at || puntos[puntos.length - 1]?.recorded_at;
 
   // Si cambia el tamaño de la ventana, la tarjeta no debe quedar fuera
@@ -413,11 +442,32 @@ const TarjetaRecorrido = ({ persona, puntos, color, onClose }) => {
       {!minimizada && (
         <div className="vme-rt-body">
           <div className="vme-rt-label"><Route size={13} /> Recorrido de hoy</div>
+          {lugaresHoy > 0 && (
+            <p className="vme-rt-resumen">
+              Estuvo en {lugaresHoy} {lugaresHoy === 1 ? 'lugar' : 'lugares'} · {duracionTexto(tiempoEnLugares)} en total
+            </p>
+          )}
           {grupos.length === 0 ? (
             <p className="vme-rt-vacio">Sin movimientos registrados hoy.</p>
           ) : (
             <ol className="vme-rt-lista">
-              {grupos.map((g, i) => (
+              {grupos.map((g, i) => (g.tipo === 'visita' ? (
+                // Estancia en una propiedad: llegó, se fue y cuánto tiempo estuvo
+                <li key={`v-${g.id}`} className={`vme-rt-visita ${i === 0 ? 'is-ultimo' : ''} ${g.sigue_ahi ? 'sigue' : ''}`}>
+                  <span className="vme-rt-punto" />
+                  <span className="vme-rt-hora">
+                    {g.sigue_ahi ? `Desde ${horaCorta(g.desde)}` : `${horaCorta(g.desde)} – ${horaCorta(g.hasta)}`}
+                  </span>
+                  <span className="vme-rt-evento">
+                    <MapPin size={13} /> En {g.lugar}
+                  </span>
+                  <span className="vme-rt-detalle">
+                    {g.sigue_ahi
+                      ? <><b>Sigue ahí</b> · {duracionTexto(g.minutos)}</>
+                      : <>Llegó {horaCorta(g.desde)} · se fue {g.salida_aproximada ? 'aprox. ' : ''}{horaCorta(g.hasta)} · {duracionTexto(g.minutos)}</>}
+                  </span>
+                </li>
+              ) : (
                 <li key={`${g.hasta}-${i}`} className={i === 0 ? 'is-ultimo' : ''}>
                   <span className="vme-rt-punto" />
                   <span className="vme-rt-hora">
@@ -431,7 +481,7 @@ const TarjetaRecorrido = ({ persona, puntos, color, onClose }) => {
                     {g.total > 1 && <em>{g.total}</em>}
                   </span>
                 </li>
-              ))}
+              )))}
             </ol>
           )}
         </div>
@@ -463,6 +513,7 @@ const VistaMapaEquipo = () => {
   const [onlyOnline, setOnlyOnline] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [routePoints, setRoutePoints] = useState([]);
+  const [routeVisitas, setRouteVisitas] = useState([]); // propiedades donde estuvo hoy (llegada / salida)
   const [infoOpen, setInfoOpen] = useState(false);
 
   // ── Propiedades ──
@@ -566,14 +617,17 @@ const VistaMapaEquipo = () => {
 
   // Recorrido del día de la persona seleccionada
   useEffect(() => {
-    if (!selectedId) { setRoutePoints([]); return; }
+    if (!selectedId) { setRoutePoints([]); setRouteVisitas([]); return; }
     let cancelled = false;
     const load = async () => {
       try {
         const res = await axios.get(`${API}/mapa-equipo/${selectedId}/recorrido`);
-        if (!cancelled) setRoutePoints(res.data.points || []);
+        if (!cancelled) {
+          setRoutePoints(res.data.points || []);
+          setRouteVisitas(res.data.visitas || []);
+        }
       } catch (err) {
-        if (!cancelled) setRoutePoints([]);
+        if (!cancelled) { setRoutePoints([]); setRouteVisitas([]); }
         console.warn('[Mapa] Error al cargar el recorrido:', err);
       }
     };
@@ -1220,6 +1274,7 @@ const VistaMapaEquipo = () => {
         <TarjetaRecorrido
           persona={selected}
           puntos={routePoints}
+          visitas={routeVisitas}
           color={STATUS[statusOf(selected)].color}
           onClose={() => setRecorridoAbierto(false)}
         />
