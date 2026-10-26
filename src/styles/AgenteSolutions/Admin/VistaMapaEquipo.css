@@ -1230,7 +1230,6 @@
     padding: 10px 14px 14px;
     overflow: hidden;
     transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
-    will-change: transform;
   }
 
   /* La lista hace scroll dentro de la tarjeta (antes alargaba la página) */
@@ -1691,4 +1690,307 @@
   .vme-map .vme-info .vme-info-actions {
     flex-direction: column;
   }
+}
+
+/* ── Filtros de varias opciones: casilla a la derecha en vez de palomita ── */
+.vme-filtro-titulo small {
+  margin-left: 4px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 0.8;
+}
+
+.vme-filtro-check {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+.vme-filtro-opcion.es-multiple.activa .vme-filtro-check {
+  background: #f26522;
+  border-color: #f26522;
+}
+
+/* "Mostrar Equipo / Propiedades" en el filtro: solo en celular (en escritorio están las pestañas) */
+.vme-filtro-mostrar {
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 900px) {
+  .vme-filtro-mostrar { display: flex; }
+
+  /* Las pestañas se pasan al filtro: más espacio para la lista */
+  .vme-root .vme-tabs { display: none; }
+
+  /* Encabezado compacto de la tarjeta */
+  .vme-root .vme-sidebar { gap: 8px; }
+  .vme-root .vme-sidebar-head h2 { font-size: 0.98rem; gap: 6px; }
+  .vme-root .vme-sidebar-head h2 svg { width: 16px; height: 16px; }
+  .vme-root .vme-sidebar-head p { margin-top: 2px; font-size: 0.7rem; }
+  .vme-root .vme-icon-btn { width: 30px; height: 30px; border-radius: 9px; }
+
+  .vme-root .vme-search input,
+  .vme-root .vmp-buscar input { padding: 8px 0; }
+
+  .vme-root .vme-filtro-btn { width: 40px; min-height: 38px; }
+
+  .vme-grabber { gap: 3px; }
+  .vme-grabber-txt { font-size: 0.7rem; }
+
+  /* Filas de la lista un poco más compactas */
+  .vme-root .vme-person { padding: 6px 8px; }
+  .vme-root .vme-avatar { width: 34px; height: 34px; }
+  .vme-root .vmp-item { padding: 6px; }
+  .vme-root .vmp-item-img { width: 38px; height: 38px; }
+  .vme-root .vmp-item-cuerpo strong { font-size: 0.86rem; }
+}
+
+/* ── Botones de capas sobre el mapa: vidrio líquido ── */
+.vme-root .vme-capas {
+  padding: 5px;
+  gap: 5px;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.22) 50%,
+      rgba(255, 255, 255, 0.42) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(18px) saturate(190%);
+  -webkit-backdrop-filter: blur(18px) saturate(190%);
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.22),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.vme-root .vme-capas button {
+  padding: 6px 12px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: #475569;
+  text-decoration: none;
+  opacity: 0.75;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.vme-root .vme-capas button.on {
+  opacity: 1;
+  border-color: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.6) 100%);
+  color: #ea580c;
+  box-shadow: 0 3px 10px rgba(242, 101, 34, 0.18), inset 0 1px 1px #ffffff;
+}
+
+.vme-root .vme-capas button:not(.on) svg { opacity: 0.7; }
+
+/* ── Panel de filtros en celular ──
+   Dentro de la tarjeta se recortaba y no se podía bajar: aquí flota sobre la pantalla,
+   arriba de la barra de íconos, con su propio scroll. */
+@media (max-width: 900px) {
+  .vme-root .vme-filtro-panel {
+    position: fixed;
+    top: auto;
+    left: 12px;
+    right: 12px;
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    z-index: 1000;
+    width: auto;
+    max-width: none;
+    max-height: min(62dvh, 520px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    animation: vmeFiltroSubir 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .vme-root .vme-filtro-panel::-webkit-scrollbar { display: none; }
+
+  /* La lista de empresas ya no necesita su propio scroll: baja todo el panel */
+  .vme-root .vme-filtro-panel .vme-filtro-lista {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@keyframes vmeFiltroSubir {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Sin el borde negro que index.css le pone al botón enfocado */
+.vme-filtro-btn:focus { outline: none; }
+.vme-filtro-btn:focus-visible { outline: 2px solid rgba(242, 101, 34, 0.55); outline-offset: 2px; }
+
+@media (max-width: 900px) {
+  /* Con el filtro abierto: sin desenfoque (atraparía al panel flotante) y un poco más sólida */
+  body.vme-filtro-abierto .vme-root .vme-sidebar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: linear-gradient(135deg, rgba(44, 50, 63, 0.97) 0%, rgba(26, 30, 40, 0.97) 100%);
+  }
+}
+
+/* ── Botones de capas según el mapa: negros sobre el mapa claro, blancos sobre el oscuro ── */
+.vme-root .vme-map .vme-capas button,
+.vme-root .vme-map .vme-capas button.on {
+  color: #0f172a;
+}
+
+.vme-root .vme-map .vme-capas button svg { color: inherit; }
+
+.vme-root .vme-map.es-oscuro .vme-capas {
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(255, 255, 255, 0.12) 100%),
+    rgba(15, 23, 42, 0.45);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.vme-root .vme-map.es-oscuro .vme-capas button,
+.vme-root .vme-map.es-oscuro .vme-capas button.on {
+  color: #ffffff;
+}
+
+.vme-root .vme-map.es-oscuro .vme-capas button.on {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.1) 100%);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+}
+
+/* ==========================================================================
+   GLOBO DE LA PROPIEDAD EN VIDRIO LÍQUIDO, contrario al mapa:
+   mapa claro → vidrio oscuro con texto blanco · mapa oscuro → vidrio blanco.
+   .gm-style-iw-c es la caja de Google y .gm-style-iw-tc su colita; :has() limita
+   el cambio al globo de propiedad (.vmp-info) y deja igual el de la persona.
+   ========================================================================== */
+.vme-map .gm-style-iw-t:has(.vmp-info) .gm-style-iw-c {
+  background: linear-gradient(135deg,
+      rgba(51, 58, 72, 0.82) 0%,
+      rgba(20, 24, 33, 0.78) 55%,
+      rgba(40, 46, 58, 0.82) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.22);
+}
+
+.vme-map .gm-style-iw-t:has(.vmp-info) .gm-style-iw-tc::after {
+  background: rgba(28, 33, 43, 0.9);
+}
+
+.vme-map .gm-style-iw-t:has(.vmp-info) .vmp-info .vmp-info-cuerpo strong { color: #ffffff; }
+.vme-map .gm-style-iw-t:has(.vmp-info) .vmp-info .vmp-info-cuerpo p { color: #cbd5e1; }
+.vme-map .gm-style-iw-t:has(.vmp-info) .vmp-info .vmp-info-empresa { color: #ffffff; }
+
+.vme-map .gm-style-iw-t:has(.vmp-info) .vmp-info .vmp-btn-primary {
+  background: #f26522;
+  box-shadow: 0 6px 14px rgba(242, 101, 34, 0.3);
+}
+
+.vme-map .gm-style-iw-t:has(.vmp-info) .vmp-info .vmp-btn-sec {
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.vme-map .gm-style-iw-t:has(.vmp-info) .vmp-info .vmp-info-cerrar {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+/* Mapa oscuro → vidrio blanco con texto oscuro */
+.vme-map.es-oscuro .gm-style-iw-t:has(.vmp-info) .gm-style-iw-c {
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.86) 0%,
+      rgba(255, 255, 255, 0.66) 55%,
+      rgba(255, 255, 255, 0.8) 100%);
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), inset 0 1.5px 1.5px #ffffff;
+}
+
+.vme-map.es-oscuro .gm-style-iw-t:has(.vmp-info) .gm-style-iw-tc::after {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.vme-map.es-oscuro .gm-style-iw-t:has(.vmp-info) .vmp-info .vmp-info-cuerpo strong { color: #0f172a; }
+.vme-map.es-oscuro .gm-style-iw-t:has(.vmp-info) .vmp-info .vmp-info-cuerpo p { color: #475569; }
+.vme-map.es-oscuro .gm-style-iw-t:has(.vmp-info) .vmp-info .vmp-info-empresa { color: #0f172a; }
+
+.vme-map.es-oscuro .gm-style-iw-t:has(.vmp-info) .vmp-info .vmp-btn-sec {
+  border-color: rgba(203, 213, 225, 0.95);
+  background: rgba(255, 255, 255, 0.7);
+  color: #0f172a;
+}
+
+.vme-map.es-oscuro .gm-style-iw-t:has(.vmp-info) .vmp-info .vmp-info-cerrar {
+  background: rgba(15, 23, 42, 0.55);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Pantalla completa propia: mismo vidrio redondo que el sol/luna, en la esquina ── */
+.vme-pantalla-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 6;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0; /* index.css le pone padding a todo <button> */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% !important;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
+  color: #0f172a;
+  cursor: pointer;
+  transition: background-color 0.45s ease, border-color 0.45s ease, color 0.45s ease, transform 0.2s ease;
+}
+
+.vme-pantalla-btn:hover { transform: scale(1.06); }
+.vme-pantalla-btn:active { transform: scale(0.94); }
+.vme-pantalla-btn:focus { outline: none; }
+.vme-pantalla-btn:focus-visible { outline: 2px solid rgba(242, 101, 34, 0.55); outline-offset: 2px; }
+
+.vme-pantalla-btn.es-oscuro {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+/* Sin pantalla completa (Safari de iPhone) el sol/luna ocupa la esquina */
+.vme-tema-btn.sin-pantalla { right: 10px; }
+
+/* El mapa en pantalla completa ocupa todo, sin esquinas redondeadas */
+.vme-map:fullscreen {
+  border-radius: 0;
+  border: none;
+}
+
+.vme-map:-webkit-full-screen {
+  border-radius: 0;
+  border: none;
 }

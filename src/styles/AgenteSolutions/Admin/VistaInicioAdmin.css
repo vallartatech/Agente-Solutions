@@ -1134,3 +1134,55 @@
 
 .vcp-thumb-card.via-folder-back svg { color: #ffffff; }
 
+
+/* ── Pestaña "Perfil de la propiedad" (celular): sube de abajo hacia arriba ──
+   Clase propia del admin: VistaClienteParticular.css (compartido con el cliente) entra de arriba. */
+.via-perfil-flecha {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.via-perfil-drawer .vcp-mobile-prop-drawer-tab.is-open .via-perfil-flecha {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 900px) {
+  .via-perfil-drawer .vcp-mobile-prop-drawer-content {
+    transform-origin: bottom center;
+    animation: viaPerfilSubir 0.38s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  }
+
+  /* Al guardar: además de bajar y desvanecerse, el alto se cierra poco a poco
+     (fila de la cuadrícula de 1fr a 0fr) para que lo de abajo no salte al final */
+  .via-perfil-drawer .vcp-mobile-prop-drawer-content {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.34s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.34s ease;
+  }
+
+  .via-perfil-drawer-inner {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .via-perfil-drawer .vcp-mobile-prop-drawer-content.is-cerrando {
+    grid-template-rows: 0fr;
+    margin-top: 0 !important;
+    animation: viaPerfilBajar 0.34s cubic-bezier(0.4, 0, 0.2, 1) both !important;
+  }
+}
+
+@keyframes viaPerfilSubir {
+  from { opacity: 0; transform: translateY(28px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes viaPerfilBajar {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(24px) scale(0.97); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .via-perfil-flecha { transition: none; }
+  .via-perfil-drawer .vcp-mobile-prop-drawer-content,
+  .via-perfil-drawer .vcp-mobile-prop-drawer-content.is-cerrando { animation-duration: 0.01s !important; }
+}
