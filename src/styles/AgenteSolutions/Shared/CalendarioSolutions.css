@@ -3248,3 +3248,13 @@
   font-size: 0.85rem;
   font-weight: 700;
 }
+
+/* Aviso de la alarma 1 hora antes (solo avisos con hora fija) */
+.nq-alarma-nota {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: #b45309;
+}

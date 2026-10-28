@@ -483,6 +483,9 @@ const VistaChats = () => {
     const contenido = texto.trim();
     const archivos = pendientes;
     if (!contenido && !archivos.length) return;
+    // Mantener el teclado abierto: el foco se pide AHORA, dentro del toque (después de esperar
+    // al servidor el celular ya no deja abrir el teclado)
+    textoRef.current?.focus();
     setTexto('');
     setPendientes([]);
     setPanel(null);
@@ -1047,10 +1050,13 @@ const VistaChats = () => {
 
                               <span className="vch-stickers-titulo">Mis stickers</span>
                               <div className="vch-stickers">
-                                <button type="button" className="vch-sticker-nuevo" onClick={() => stickerRef.current?.click()} disabled={Boolean(subiendoSticker)}>
-                                  {subiendoSticker === 'mios' ? <Loader2 size={20} className="vch-spin" /> : <ImagePlus size={20} />}
-                                  <span>Crear</span>
-                                </button>
+                                {/* Solo el encargado sube stickers; los demás guardan los que les envían */}
+                                {stickers.puede_administrar && (
+                                  <button type="button" className="vch-sticker-nuevo" onClick={() => stickerRef.current?.click()} disabled={Boolean(subiendoSticker)}>
+                                    {subiendoSticker === 'mios' ? <Loader2 size={20} className="vch-spin" /> : <ImagePlus size={20} />}
+                                    <span>Crear</span>
+                                  </button>
+                                )}
                                 {stickers.mios.map(s => (
                                   <div key={`m-${s.id}`} className="vch-sticker-item">
                                     <button type="button" onClick={() => { setPanel(null); enviarMensaje({ tipo: 'sticker', sticker: s }); }} title="Enviar sticker">
@@ -1060,7 +1066,11 @@ const VistaChats = () => {
                                   </div>
                                 ))}
                                 {!stickers.mios.length && (
-                                  <p className="vch-panel-vacio">Toca un sticker que te envíen para guardarlo, o crea uno desde una imagen (PNG transparente o GIF animado se ven mejor).</p>
+                                  <p className="vch-panel-vacio">
+                                    {stickers.puede_administrar
+                                      ? 'Crea stickers desde una imagen (PNG transparente o GIF animado se ven mejor), o toca uno que te envíen para guardarlo.'
+                                      : 'Toca un sticker que te envíen para guardarlo aquí.'}
+                                  </p>
                                 )}
                               </div>
                             </>
@@ -1103,7 +1113,18 @@ const VistaChats = () => {
                       onChange={e => setTexto(e.target.value)}
                       onKeyDown={onKeyDownTexto}
                     />
-                    <button type="button" className="vch-enviar" onClick={enviarTexto} disabled={!texto.trim() && !pendientes.length} aria-label="Enviar" title="Enviar">
+                    <button
+                      type="button"
+                      className="vch-enviar"
+                      // Como en WhatsApp: tocar Enviar NO le quita el foco a la caja de texto,
+                      // así el teclado del celular se queda abierto para seguir escribiendo
+                      onPointerDown={e => e.preventDefault()}
+                      onMouseDown={e => e.preventDefault()}
+                      onClick={enviarTexto}
+                      disabled={!texto.trim() && !pendientes.length}
+                      aria-label="Enviar"
+                      title="Enviar"
+                    >
                       {enviando > 0 && !texto.trim() && !pendientes.length ? <Loader2 size={18} className="vch-spin" /> : <Send size={18} />}
                     </button>
                   </div>

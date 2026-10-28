@@ -2514,6 +2514,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                             />
                           </div>
                         )}
+                        {!noticeForm.allDay && noticeForm.start_time && (
+                          <span className="nq-alarma-nota">
+                            <BellRing size={13} /> Se enviará una alarma 1 hora antes a {noticeForm.audience === 'private' ? 'ti' : 'los involucrados'}
+                          </span>
+                        )}
                       </div>
                     </div>
 
