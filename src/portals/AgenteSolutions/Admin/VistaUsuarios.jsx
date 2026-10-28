@@ -29,30 +29,33 @@ import UniversalSearch from "../../../components/Shared/UniversalSearch";
 import RegisterModal from "../../../components/Auth/Register";
 import Header from "../../../components/Shared/Header";
 import "../../../styles/AgenteSolutions/Admin/VistaUsuarios.css";
+import { NOMBRES_ROLES, nombreRol } from "../../../utils/roles";
 
-const MAPA_ROLES = {
-  0: "ROOT MASTER",
-  1: "ADMINISTRADOR GLOBAL",
-  2: "TÉCNICO AGENTE",
-  3: "CLIENTE",
-  4: "AUTÓNOMO EMPRESARIAL",
-  5: "AUTÓNOMO PERSONAL",
-  6: "CONTRATISTA",
-  7: "ADMIN. PROPIEDADES",
-  8: "TÉCNICO DE LA RED"
-};
-
-// Opciones de rol asignables (ROOT no es asignable desde la interfaz por seguridad)
-const OPCIONES_ROLES = [
-  { id: 1, label: "ADMINISTRADOR (AGENTE)" },
-  { id: 2, label: "TÉCNICO AGENTE" },
-  { id: 7, label: "ADMIN. PROPIEDADES (AGENTE)" },
-  { id: 3, label: "CLIENTE" },
-  { id: 8, label: "TÉCNICO DE LA RED" },
-  { id: 6, label: "CONTRATISTA" },
-  { id: 4, label: "AUTÓNOMO EMPRESARIAL" },
-  { id: 5, label: "AUTÓNOMO PERSONAL" }
+// Roles asignables agrupados por entorno (ROOT no es asignable desde la interfaz por seguridad)
+const GRUPOS_ROLES = [
+  { label: "Agente Solutions", ids: [1, 2, 3] },
+  { label: "Agente Market", ids: [4, 5, 6, 7, 8] }
 ];
+
+// Filtros por rol del menú; UniversalSearch interpreta el valor "ROL:<ids>"
+const FILTROS_ROL_INTERNOS = [
+  { ids: [0, 1], label: "Administradores", icon: Shield, color: "dark" },
+  { ids: [2], label: "Técnicos", icon: Wrench, color: "blue" },
+  { ids: [3], label: "Clientes", icon: User, color: "green" }
+];
+const FILTROS_ROL_RED = [
+  { ids: [4], label: "Clientes particulares", icon: User, color: "violet" },
+  { ids: [5], label: "Gestores inmobiliarios", icon: Briefcase, color: "orange" },
+  { ids: [6], label: "Técnicos independientes", icon: Wrench, color: "teal" },
+  { ids: [7], label: "Contratistas / Líderes", icon: HardHat, color: "amber" },
+  { ids: [8], label: "Técnicos de cuadrilla", icon: HardHat, color: "cyan" }
+];
+// El portal del cliente solo filtra técnicos
+const FILTROS_ROL_CLIENTE = [
+  { ids: [2], label: "Mis Técnicos", icon: Wrench, color: "blue" },
+  { ids: [8], label: "Técnicos de cuadrilla", icon: HardHat, color: "cyan" }
+];
+const valorFiltroRol = (f) => `ROL:${f.ids.join(",")}`;
 
 const getRoleStyle = (roleId) => {
   switch (Number(roleId)) {
@@ -145,7 +148,7 @@ const VistaUsuarios = () => {
           rawId: String(u.id).replace(/\D/g, ''),
           nombre: cleanName,
           correo: u.email || 'Sin correo',
-          rol: MAPA_ROLES[roleId] || (isClient ? 'CLIENTE' : 'USUARIO'),
+          rol: NOMBRES_ROLES[roleId] || (isClient ? 'CLIENTE' : 'USUARIO'),
           role_id: roleId,
           approval_status: u.approval_status,
           estado: isBlocked ? "Inactivo" : "Activo",
@@ -177,7 +180,7 @@ const VistaUsuarios = () => {
 
   // Cambiar Rol de Usuario
   const cambiarRol = async (id, nuevoRolId, nombreUsuario) => {
-    const rolNombre = MAPA_ROLES[nuevoRolId] || `Rol ${nuevoRolId}`;
+    const rolNombre = NOMBRES_ROLES[nuevoRolId] || `Rol ${nuevoRolId}`;
     const confirmacion = await Swal.fire({
       title: '¿Cambiar Rol?',
       text: `¿Deseas cambiar el rol de ${nombreUsuario} a "${rolNombre}"?`,
@@ -201,7 +204,7 @@ const VistaUsuarios = () => {
         role_id: Number(nuevoRolId)
       }, { headers });
 
-      const nuevoRolStr = MAPA_ROLES[nuevoRolId] || "USUARIO";
+      const nuevoRolStr = nombreRol(nuevoRolId);
       setListaUsuarios(prev => prev.map(u =>
         u.id === id ? { ...u, rol: nuevoRolStr, role_id: Number(nuevoRolId), isCliente: Number(nuevoRolId) === 3 } : u
       ));
@@ -298,15 +301,29 @@ const VistaUsuarios = () => {
   };
 
   // Conteos por categoría adaptados para Cliente vs Admin
-  const countClientes = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 3 || String(u.id).startsWith('c_')).length, [listaUsuarios]);
-  const countTecnicosAgente = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 2).length, [listaUsuarios]);
-  const countTecnicosRed = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 8).length, [listaUsuarios]);
   const countCalificados = useMemo(() => listaUsuarios.filter(u => u.my_review !== null).length, [listaUsuarios]);
-  const countContratistas = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 6).length, [listaUsuarios]);
-  const countAutonomos = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 4 || Number(u.role_id) === 5).length, [listaUsuarios]);
-  const countAdmins = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 1 || Number(u.role_id) === 7 || Number(u.role_id) === 0).length, [listaUsuarios]);
   const activosCount = useMemo(() => listaUsuarios.filter(u => !u.bloqueado).length, [listaUsuarios]);
   const bloqueadosCount = useMemo(() => listaUsuarios.filter(u => u.bloqueado).length, [listaUsuarios]);
+
+  const botonFiltroRol = (f) => {
+    const valor = valorFiltroRol(f);
+    const Icono = f.icon;
+    return (
+      <button
+        key={valor}
+        type="button"
+        className={`vu-filter-menu-item ${filtro === valor ? "selected" : ""}`}
+        onClick={() => { setFiltro(valor); setFilterDropdownOpen(false); }}
+      >
+        <span className={`vu-menu-icon ${f.color}`}><Icono size={16} strokeWidth={2.4} /></span>
+        <span>{f.label}</span>
+        <span className="vu-menu-badge">{listaUsuarios.filter(u => f.ids.includes(Number(u.role_id))).length}</span>
+      </button>
+    );
+  };
+
+  const filtroRolActivo = [...FILTROS_ROL_INTERNOS, ...FILTROS_ROL_RED, ...FILTROS_ROL_CLIENTE].find(f => valorFiltroRol(f) === filtro);
+  const etiquetaFiltro = filtroRolActivo ? filtroRolActivo.label : filtro;
 
   return (
     <div className="vu-root">
@@ -344,7 +361,7 @@ const VistaUsuarios = () => {
                 type="button"
                 className={`vu-icon-btn vu-icon-btn-filter ${filterDropdownOpen ? "open" : filtro !== "TODOS" ? "filtered" : ""}`}
                 onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
-                title={`Filtrar usuarios (Estado actual: ${filtro})`}
+                title={`Filtrar usuarios (Estado actual: ${etiquetaFiltro})`}
               >
                 <Filter size={20} />
                 {filtro !== "TODOS" && (
@@ -364,79 +381,24 @@ const VistaUsuarios = () => {
                     <span className="vu-menu-badge">{listaUsuarios.length}</span>
                   </button>
 
-                  <button
-                    type="button"
-                    className={`vu-filter-menu-item ${filtro === "TECNICOS_AGENTE" ? "selected" : ""}`}
-                    onClick={() => { setFiltro("TECNICOS_AGENTE"); setFilterDropdownOpen(false); }}
-                  >
-                    <span className="vu-menu-icon blue"><Wrench size={16} strokeWidth={2.4} /></span>
-                    <span>{isClientPortalUser ? "Mis Técnicos Agente" : "Técnicos Agente"}</span>
-                    <span className="vu-menu-badge">{countTecnicosAgente}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className={`vu-filter-menu-item ${filtro === "TECNICOS_RED" ? "selected" : ""}`}
-                    onClick={() => { setFiltro("TECNICOS_RED"); setFilterDropdownOpen(false); }}
-                  >
-                    <span className="vu-menu-icon cyan"><Wrench size={16} strokeWidth={2.4} /></span>
-                    <span>Técnicos de la Red</span>
-                    <span className="vu-menu-badge">{countTecnicosRed}</span>
-                  </button>
-
-                  {isClientPortalUser && (
-                    <button
-                      type="button"
-                      className={`vu-filter-menu-item ${filtro === "CALIFICADOS" ? "selected" : ""}`}
-                      onClick={() => { setFiltro("CALIFICADOS"); setFilterDropdownOpen(false); }}
-                    >
-                      <span className="vu-menu-icon amber"><Star size={16} strokeWidth={2.4} fill="#ffffff" /></span>
-                      <span>Historial de Calificados</span>
-                      <span className="vu-menu-badge">{countCalificados}</span>
-                    </button>
-                  )}
-
-                  {!isClientPortalUser && (
+                  {isClientPortalUser ? (
                     <>
+                      {FILTROS_ROL_CLIENTE.map(botonFiltroRol)}
                       <button
                         type="button"
-                        className={`vu-filter-menu-item ${filtro === "CLIENTES" ? "selected" : ""}`}
-                        onClick={() => { setFiltro("CLIENTES"); setFilterDropdownOpen(false); }}
+                        className={`vu-filter-menu-item ${filtro === "CALIFICADOS" ? "selected" : ""}`}
+                        onClick={() => { setFiltro("CALIFICADOS"); setFilterDropdownOpen(false); }}
                       >
-                        <span className="vu-menu-icon green"><User size={16} strokeWidth={2.4} /></span>
-                        <span>Clientes</span>
-                        <span className="vu-menu-badge">{countClientes}</span>
+                        <span className="vu-menu-icon amber"><Star size={16} strokeWidth={2.4} fill="#ffffff" /></span>
+                        <span>Historial de Calificados</span>
+                        <span className="vu-menu-badge">{countCalificados}</span>
                       </button>
-
-                      <button
-                        type="button"
-                        className={`vu-filter-menu-item ${filtro === "CONTRATISTAS" ? "selected" : ""}`}
-                        onClick={() => { setFiltro("CONTRATISTAS"); setFilterDropdownOpen(false); }}
-                      >
-                        <span className="vu-menu-icon teal"><HardHat size={16} strokeWidth={2.4} /></span>
-                        <span>Contratistas</span>
-                        <span className="vu-menu-badge">{countContratistas}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className={`vu-filter-menu-item ${filtro === "AUTONOMOS" ? "selected" : ""}`}
-                        onClick={() => { setFiltro("AUTONOMOS"); setFilterDropdownOpen(false); }}
-                      >
-                        <span className="vu-menu-icon violet"><Briefcase size={16} strokeWidth={2.4} /></span>
-                        <span>Autónomos</span>
-                        <span className="vu-menu-badge">{countAutonomos}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className={`vu-filter-menu-item ${filtro === "ADMINS" ? "selected" : ""}`}
-                        onClick={() => { setFiltro("ADMINS"); setFilterDropdownOpen(false); }}
-                      >
-                        <span className="vu-menu-icon dark"><Shield size={16} strokeWidth={2.4} /></span>
-                        <span>Administradores</span>
-                        <span className="vu-menu-badge">{countAdmins}</span>
-                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {FILTROS_ROL_INTERNOS.map(botonFiltroRol)}
+                      <div className="vu-menu-divider" />
+                      {FILTROS_ROL_RED.map(botonFiltroRol)}
                     </>
                   )}
 
@@ -609,7 +571,7 @@ const VistaUsuarios = () => {
                             <td data-label="Rol" className="vu-role-cell" onClick={(e) => e.stopPropagation()}>
                               {Number(u.role_id) === 0 ? (
                                 <span className="vu-role-pill-root" title="Usuario con privilegios máximos protegidos">
-                                  👑 ROOT MASTER
+                                  👑 ROOT
                                 </span>
                               ) : isRoot ? (
                                 <div className="vu-role-select-box">
@@ -620,10 +582,14 @@ const VistaUsuarios = () => {
                                     title="Cambiar rol del usuario (Solo Root)"
                                     style={getRoleStyle(u.role_id)}
                                   >
-                                    {OPCIONES_ROLES.map((op) => (
-                                      <option key={op.id} value={op.id} className="vu-select-option">
-                                        {op.label}
-                                      </option>
+                                    {GRUPOS_ROLES.map((g) => (
+                                      <optgroup key={g.label} label={g.label}>
+                                        {g.ids.map((id) => (
+                                          <option key={id} value={id} className="vu-select-option">
+                                            {NOMBRES_ROLES[id]}
+                                          </option>
+                                        ))}
+                                      </optgroup>
                                     ))}
                                   </select>
                                 </div>
@@ -642,9 +608,9 @@ const VistaUsuarios = () => {
                                     textTransform: 'uppercase',
                                     userSelect: 'none'
                                   }}
-                                  title={`Rol: ${MAPA_ROLES[u.role_id] || u.rol}`}
+                                  title={`Rol: ${NOMBRES_ROLES[u.role_id] || u.rol}`}
                                 >
-                                  {MAPA_ROLES[u.role_id] || u.rol}
+                                  {NOMBRES_ROLES[u.role_id] || u.rol}
                                 </span>
                               )}
                             </td>
@@ -779,7 +745,7 @@ const VistaUsuarios = () => {
                   <h3 className="vu-sidebar-name">{selectedTecnico.nombre}</h3>
 
                   <div className="vu-sidebar-role-pill" style={getRoleStyle(selectedTecnico.role_id)}>
-                    {MAPA_ROLES[selectedTecnico.role_id] || "USUARIO"}
+                    {nombreRol(selectedTecnico.role_id)}
                   </div>
 
                   {/* Promedios Generales de Calificación */}
@@ -883,7 +849,7 @@ const VistaUsuarios = () => {
                         fontSize: '0.8rem'
                       }}>
                         <Crown size={16} color="#d97706" />
-                        <span>CUENTA PROTEGIDA (ROOT MASTER)</span>
+                        <span>CUENTA PROTEGIDA (ROOT)</span>
                       </div>
                     ) : isRoot ? (
                       <>
@@ -894,10 +860,14 @@ const VistaUsuarios = () => {
                             onChange={(e) => cambiarRol(selectedTecnico.id, parseInt(e.target.value), selectedTecnico.nombre)}
                             title="Cambiar rol del usuario (Solo Root)"
                           >
-                            {OPCIONES_ROLES.map((op) => (
-                              <option key={op.id} value={op.id}>
-                                {op.label}
-                              </option>
+                            {GRUPOS_ROLES.map((g) => (
+                              <optgroup key={g.label} label={g.label}>
+                                {g.ids.map((id) => (
+                                  <option key={id} value={id}>
+                                    {NOMBRES_ROLES[id]}
+                                  </option>
+                                ))}
+                              </optgroup>
                             ))}
                           </select>
                         </div>

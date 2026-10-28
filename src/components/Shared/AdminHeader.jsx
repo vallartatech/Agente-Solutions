@@ -10,6 +10,7 @@ import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/Modal
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
 import { obtenerEstadoUbicacion, suscribirEstadoUbicacion } from './ubicacionService';
+import { nombreRol } from '../../utils/roles';
 import '../../styles/Shared/Header.css';
 import '../../styles/Shared/EncabezadoMovil.css';
 
@@ -106,7 +107,7 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
     return 'ADMINISTRADOR';
   }, [user]);
 
-  const userRoleLabel = Number(user?.role_id) === 0 ? "ROOT MASTER" : "ADMIN GLOBAL";
+  const userRoleLabel = nombreRol(user?.role_id);
   const userAvatar = user?.profile_picture || user?.avatar_url || user?.foto || null;
   const userInitial = user?.first_name
     ? user.first_name.charAt(0).toUpperCase()

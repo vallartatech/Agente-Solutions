@@ -20,20 +20,9 @@ import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCale
 import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
+import { NOMBRES_ROLES } from '../../utils/roles';
 import '../../styles/Shared/Header.css';
 import '../../styles/Shared/EncabezadoMovil.css';
-
-const MAPA_ROLES = {
-  0: "ROOT_MASTER",
-  1: "ADMIN_GLOBAL",
-  2: "TECNICO_OFICIAL",
-  3: "MARKET_CLIENT_PERSONAL",
-  4: "AUT_EMPRESARIAL",
-  5: "AUT_PERSONAL",
-  6: "CONTRATISTA",
-  7: "GESTOR_INMUEBLES",
-  8: "TECNICO_RED"
-};
 
 const ClienteHeader = ({ activeModule }) => {
   const { user, logout, logoutGlobal } = useAuth();
@@ -107,7 +96,7 @@ const ClienteHeader = ({ activeModule }) => {
   }, [user]);
 
   const userRoleLabel = useMemo(() => {
-    return MAPA_ROLES[user?.role_id] || "CLIENTE";
+    return NOMBRES_ROLES[user?.role_id] || "CLIENTE";
   }, [user]);
 
   const userAvatar = user?.profile_picture || user?.avatar_url || user?.foto || null;

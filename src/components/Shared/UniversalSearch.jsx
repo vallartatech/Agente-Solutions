@@ -39,6 +39,9 @@ const UniversalSearch = ({ data, setFilteredData, placeholder, filtroActual, typ
           coincideFiltro = Number(item.role_id) === 4 || Number(item.role_id) === 5 || (typeof item.rol === 'string' && item.rol.toUpperCase().includes("AUTONOMO"));
         } else if (filtroActual === "ADMINS" || filtroActual === "ADMINISTRADORES") {
           coincideFiltro = Number(item.role_id) === 1 || Number(item.role_id) === 7 || Number(item.role_id) === 0 || (typeof item.rol === 'string' && item.rol.toUpperCase().includes("ADMIN"));
+        } else if (filtroActual.startsWith("ROL:")) {
+          // "ROL:0,1" → usuarios con alguno de esos role_id
+          coincideFiltro = filtroActual.slice(4).split(",").map(Number).includes(Number(item.role_id));
         } else if (filtroActual === "ROOTS") {
           coincideFiltro = Number(item.role_id) === 0 || item.rol === "ROOT";
         } else {

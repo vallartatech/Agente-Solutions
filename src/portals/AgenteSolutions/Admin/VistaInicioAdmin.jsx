@@ -81,8 +81,6 @@ const VistaInicioAdmin = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const isRoot = Number(user?.role_id) === 0;
-  const rolTexto = isRoot ? "ROOT / SUPERADMIN" : "ADMINISTRADOR";
 
   const [propiedades, setPropiedades] = useState(FALLBACK_PROPERTIES);
   const [selectedPropId, setSelectedPropId] = useState(null);
@@ -468,7 +466,7 @@ const VistaInicioAdmin = () => {
       <div className="vcp-hero-bg-overlay" />
 
       {/* ── TOP NAVBAR DEL ADMINISTRADOR (ROL 1 CON TODAS SUS RUTAS Y FUNCIONES) ── */}
-      <AdminHeader rolTexto={rolTexto} activeModule="inicio" />
+      <AdminHeader activeModule="inicio" />
 
       {/* ── CUERPO PRINCIPAL: VITRINA DE PROPIEDADES (ESTILO LA RED) ── */}
       <main className="vcp-body-layout">

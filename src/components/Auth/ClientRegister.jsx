@@ -66,7 +66,7 @@ const ROLES_PUBLICOS = [
     roleId: 2,
     category: "agente",
     categoryLabel: "Agente Solutions",
-    label: "TÉCNICO AGENTE",
+    label: "TÉCNICO",
     shortLabel: "Técnico Agente",
     badge: "Técnico Interno",
     icon: "🛠️",

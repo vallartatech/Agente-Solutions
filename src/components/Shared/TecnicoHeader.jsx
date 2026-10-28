@@ -10,6 +10,7 @@ import NotificationBell from './NotificationBell';
 import BotonChats from './BotonChats';
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
+import { NOMBRES_ROLES } from '../../utils/roles';
 import '../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import '../../styles/Shared/EncabezadoMovil.css';
 
@@ -104,7 +105,7 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
 
   const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : (authUser?.first_name ? authUser.first_name.charAt(0).toUpperCase() : 'T');
   const userFullName = authUser?.name || (authUser?.first_name ? `${authUser.first_name} ${authUser.last_name || ''}`.trim() : 'TÉCNICO OFICIAL');
-  const userRole = authUser?.role_id === 6 ? 'TÉCNICO INDEPENDIENTE' : (authUser?.role_id === 8 ? 'TÉCNICO ENLACE' : (authUser?.role_id === 2 ? 'TÉCNICO OFICIAL AGENTE' : 'TÉCNICO DE LA RED'));
+  const userRole = NOMBRES_ROLES[authUser?.role_id] || 'TÉCNICO';
   const userAvatar = authUser?.profile_picture || authUser?.avatar_url || authUser?.avatar || null;
 
   return (
