@@ -5,6 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import Swal from 'sweetalert2';
 import { suscribirPushOneSignal } from '../../../components/Shared/oneSignalPush';
+import { revisarDispositivoPush } from '../../../components/Shared/diagnosticoPush';
+
+// Botón extra en los avisos de "push no enviada": revisa y repara este dispositivo
+const BOTON_REVISAR_PUSH = { showDenyButton: true, denyButtonText: 'Revisar mi dispositivo', denyButtonColor: '#64748b' };
 import '../../../styles/AgenteSolutions/Shared/CalendarioSolutions.css';
 import {
   Calendar as CalendarIcon,
@@ -829,8 +833,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
           icon: 'warning',
           title: 'Completado, push no enviada',
           text: `El comentario quedó en la campanita del equipo, pero OneSignal no envió la notificación: ${push.error || 'ningún dispositivo del equipo está suscrito.'}`,
-          confirmButtonColor: '#f97316'
-        });
+          confirmButtonColor: '#f97316',
+          ...BOTON_REVISAR_PUSH
+        }).then(r => { if (r.isDenied) revisarDispositivoPush(user?.id); });
       } else if (!withFollowUp) {
         Swal.fire({
           icon: 'success',
@@ -934,7 +939,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
             icon: 'warning',
             title: 'Cambios guardados, push no enviada',
             text: `El cambio de fecha quedó en la campanita, pero OneSignal no envió la notificación: ${pushEdit.error || 'ningún dispositivo está suscrito.'}`,
-            confirmButtonColor: '#f97316'
+            confirmButtonColor: '#f97316',
+            ...BOTON_REVISAR_PUSH
           }
           : {
             icon: 'success',
@@ -942,7 +948,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
             text: pushEdit ? 'Se avisó del cambio de fecha a los involucrados.' : undefined,
             timer: 2000,
             showConfirmButton: false
-          });
+          }).then(r => { if (r.isDenied) revisarDispositivoPush(user?.id); });
         fetchSolutionsData(true);
         return;
       }
@@ -984,8 +990,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
             icon: 'warning',
             title: 'Aviso publicado, push no enviada',
             text: `El aviso ya está en el calendario y en la campanita del equipo, pero OneSignal no envió la notificación: ${push.error || 'ningún dispositivo del equipo está suscrito.'}`,
-            confirmButtonColor: '#f97316'
-          });
+            confirmButtonColor: '#f97316',
+            ...BOTON_REVISAR_PUSH
+          }).then(r => { if (r.isDenied) revisarDispositivoPush(user?.id); });
         } else {
           Swal.fire({
             icon: 'success',

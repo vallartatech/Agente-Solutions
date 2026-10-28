@@ -69,6 +69,22 @@ export const desvincularUsuarioOneSignal = () => {
   return loginChain;
 };
 
+// Fuerza de nuevo el login aunque ya se haya hecho: repara un dispositivo suscrito
+// que quedó como anónimo (sin external_id) y por eso no le llegan las push.
+export const revincularUsuarioOneSignal = async (userId) => {
+  if (!userId || !(await iniciarOneSignal())) return false;
+  linkedUserId = null;
+  try {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      await OneSignal.User.PushSubscription.optIn();
+    }
+  } catch (err) {
+    console.warn("[OneSignal] Error al reactivar la suscripción:", err);
+  }
+  await vincularUsuarioOneSignal(userId);
+  return estaSuscritoOneSignal();
+};
+
 export const estaSuscritoOneSignal = () => {
   try {
     return OneSignal.User?.PushSubscription?.optedIn === true;
