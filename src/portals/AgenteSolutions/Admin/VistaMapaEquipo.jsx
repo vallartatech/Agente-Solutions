@@ -7,7 +7,7 @@ import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig"
 import {
   Search, MapPin, Lock, RefreshCw, Phone, Navigation, Users, Wrench, Shield, X,
   Building2, Eye, MapPinOff, Loader2, SlidersHorizontal, Check, Moon, Sun, ChevronUp, ChevronDown,
-  Clock, Crosshair, GripHorizontal, Route, Maximize, Minimize,
+  Clock, Crosshair, GripHorizontal, Route, Maximize, Minimize, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
@@ -17,6 +17,26 @@ import '../../../styles/AgenteSolutions/Admin/VistaMapaPropiedades.css';
 const API = import.meta.env.VITE_API_BASE_URL;
 const TEAM_REFRESH_MS = 20000;
 const ROUTE_REFRESH_MS = 30000;
+const HISTORIAL_DIAS = 30; // el backend conserva hoy y los 29 días anteriores
+
+// Fecha local "2026-10-27" (con desplazamiento en días)
+const diaLocal = (offset = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const moverDia = (fecha, delta) => {
+  const [y, m, d] = fecha.split('-').map(Number);
+  const f = new Date(y, m - 1, d + delta);
+  return `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`;
+};
+// "hoy", "ayer" o "lun 20 oct"
+const nombreDia = (fecha) => {
+  if (fecha === diaLocal()) return 'hoy';
+  if (fecha === diaLocal(-1)) return 'ayer';
+  const [y, m, d] = fecha.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+};
 const RECENT_MINUTES = 60;
 const MERIDA = { lat: 20.9674, lng: -89.5926 };
 const SIN_CARPETA = 'sin-carpeta';
@@ -364,7 +384,7 @@ const construirLineaTiempo = (puntos, visitas) => {
 
 // Tarjeta flotante con el recorrido del día. Se arrastra desde su encabezado (mouse o dedo)
 // a cualquier parte de la pantalla; va en un portal para que el mapa no la recorte.
-const TarjetaRecorrido = ({ persona, puntos, visitas = [], color, onClose }) => {
+const TarjetaRecorrido = ({ persona, puntos, visitas = [], color, fecha, onFecha, onClose }) => {
   const [pos, setPos] = useState(null); // null = posición inicial de CSS
   const [minimizada, setMinimizada] = useState(false);
   const cardRef = useRef(null);
@@ -441,14 +461,46 @@ const TarjetaRecorrido = ({ persona, puntos, visitas = [], color, onClose }) => 
 
       {!minimizada && (
         <div className="vme-rt-body">
-          <div className="vme-rt-label"><Route size={13} /> Recorrido de hoy</div>
+          <div className="vme-rt-label"><Route size={13} /> Recorrido de {nombreDia(fecha)}</div>
+          {/* Historial: se puede consultar cualquier día de los últimos 30 */}
+          <div className="vme-rt-dia">
+            <button
+              type="button"
+              className="vme-rt-btn"
+              onClick={() => onFecha(moverDia(fecha, -1))}
+              disabled={fecha <= diaLocal(-(HISTORIAL_DIAS - 1))}
+              aria-label="Día anterior"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <input
+              type="date"
+              value={fecha}
+              min={diaLocal(-(HISTORIAL_DIAS - 1))}
+              max={diaLocal()}
+              onChange={(e) => e.target.value && onFecha(e.target.value)}
+              aria-label="Día del recorrido"
+            />
+            <button
+              type="button"
+              className="vme-rt-btn"
+              onClick={() => onFecha(moverDia(fecha, 1))}
+              disabled={fecha >= diaLocal()}
+              aria-label="Día siguiente"
+            >
+              <ChevronRight size={16} />
+            </button>
+            {fecha !== diaLocal() && (
+              <button type="button" className="vme-rt-hoy" onClick={() => onFecha(diaLocal())}>Hoy</button>
+            )}
+          </div>
           {lugaresHoy > 0 && (
             <p className="vme-rt-resumen">
               Estuvo en {lugaresHoy} {lugaresHoy === 1 ? 'lugar' : 'lugares'} · {duracionTexto(tiempoEnLugares)} en total
             </p>
           )}
           {grupos.length === 0 ? (
-            <p className="vme-rt-vacio">Sin movimientos registrados hoy.</p>
+            <p className="vme-rt-vacio">Sin movimientos registrados {fecha === diaLocal() ? 'hoy' : 'ese día'}.</p>
           ) : (
             <ol className="vme-rt-lista">
               {grupos.map((g, i) => (g.tipo === 'visita' ? (
@@ -513,7 +565,8 @@ const VistaMapaEquipo = () => {
   const [onlyOnline, setOnlyOnline] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [routePoints, setRoutePoints] = useState([]);
-  const [routeVisitas, setRouteVisitas] = useState([]); // propiedades donde estuvo hoy (llegada / salida)
+  const [routeVisitas, setRouteVisitas] = useState([]); // propiedades donde estuvo ese día (llegada / salida)
+  const [fechaRecorrido, setFechaRecorrido] = useState(diaLocal); // día consultado del historial (30 días)
   const [infoOpen, setInfoOpen] = useState(false);
 
   // ── Propiedades ──
@@ -621,7 +674,7 @@ const VistaMapaEquipo = () => {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await axios.get(`${API}/mapa-equipo/${selectedId}/recorrido`);
+        const res = await axios.get(`${API}/mapa-equipo/${selectedId}/recorrido`, { params: { date: fechaRecorrido } });
         if (!cancelled) {
           setRoutePoints(res.data.points || []);
           setRouteVisitas(res.data.visitas || []);
@@ -632,9 +685,11 @@ const VistaMapaEquipo = () => {
       }
     };
     load();
+    // Solo el día de hoy cambia: los días pasados se cargan una vez
+    if (fechaRecorrido !== diaLocal()) return () => { cancelled = true; };
     const id = setInterval(() => { if (!document.hidden) load(); }, ROUTE_REFRESH_MS);
     return () => { cancelled = true; clearInterval(id); };
-  }, [selectedId]);
+  }, [selectedId, fechaRecorrido]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -1275,6 +1330,8 @@ const VistaMapaEquipo = () => {
           persona={selected}
           puntos={routePoints}
           visitas={routeVisitas}
+          fecha={fechaRecorrido}
+          onFecha={setFechaRecorrido}
           color={STATUS[statusOf(selected)].color}
           onClose={() => setRecorridoAbierto(false)}
         />
