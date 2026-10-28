@@ -7,7 +7,7 @@ import axios from 'axios';
 import ModalServicioAutonomo from './ModalServicioAutonomo';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
-import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase } from 'lucide-react';
+import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { DARK_MAP_STYLES, getCategoryIcon } from '../Tecnico/MercadoTrabajos';
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
@@ -50,10 +50,61 @@ const VistaRedAutonomo = () => {
   const [activePhoto, setActivePhoto] = useState(null);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [networkJobs, setNetworkJobs] = useState([]);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  // En celular la lista empieza abierta debajo del mapa (como Mapa en vivo); la barrita la oculta
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('en_red'); // 'en_red' | 'aceptados'
+
+  // Buscador y menú de filtro de la tarjeta lateral (mismo diseño que Mapa en vivo)
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroAbierto, setFiltroAbierto] = useState(false);
+  const filtroRef = useRef(null);
+  useEffect(() => {
+    if (!filtroAbierto) return;
+    const cerrar = (e) => { if (!filtroRef.current?.contains(e.target)) setFiltroAbierto(false); };
+    const conTecla = (e) => { if (e.key === 'Escape') setFiltroAbierto(false); };
+    document.addEventListener('pointerdown', cerrar);
+    document.addEventListener('keydown', conTecla);
+    return () => {
+      document.removeEventListener('pointerdown', cerrar);
+      document.removeEventListener('keydown', conTecla);
+    };
+  }, [filtroAbierto]);
   const [mapTheme, setMapTheme] = useState(() => localStorage.getItem('agente_map_theme') || 'dark');
+
+  const alternarTemaMapa = () => {
+    const next = mapTheme === 'dark' ? 'light' : 'dark';
+    setMapTheme(next);
+    localStorage.setItem('agente_map_theme', next);
+  };
+
+  // Pantalla completa propia del mapa (botón de vidrio, igual que Mapa en vivo).
+  // Se oculta donde el navegador no la permite, p. ej. Safari de iPhone.
+  const mapaSeccionRef = useRef(null);
+  const [enPantallaCompleta, setEnPantallaCompleta] = useState(false);
+  const puedePantallaCompleta = Boolean(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  useEffect(() => {
+    const cambio = () => setEnPantallaCompleta(Boolean(document.fullscreenElement || document.webkitFullscreenElement));
+    document.addEventListener('fullscreenchange', cambio);
+    document.addEventListener('webkitfullscreenchange', cambio);
+    return () => {
+      document.removeEventListener('fullscreenchange', cambio);
+      document.removeEventListener('webkitfullscreenchange', cambio);
+    };
+  }, []);
+  const salirPantallaCompleta = () => {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+    }
+  };
+  const alternarPantallaCompleta = () => {
+    const el = mapaSeccionRef.current;
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      salirPantallaCompleta();
+    } else if (el) {
+      (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
+    }
+  };
 
   // Gesto táctil para subir y bajar el cajón inferior en móvil
   const [dragOffsetY, setDragOffsetY] = useState(0);
@@ -595,6 +646,8 @@ const VistaRedAutonomo = () => {
   const { isLoaded } = useJsApiLoader(GOOGLE_MAPS_LOADER);
 
   const openQuotesModal = (job) => {
+    // El modal vive fuera del mapa: en pantalla completa no se vería
+    salirPantallaCompleta();
     setSelectedJobForQuotes(job);
     setActivePhoto(job.fotos?.[0] || job.foto || null);
     setActiveChatQuote(null);
@@ -609,7 +662,11 @@ const VistaRedAutonomo = () => {
 
   const enRedJobs = networkJobs.filter(j => !j.is_accepted);
   const aceptadosJobs = networkJobs.filter(j => j.is_accepted);
-  const displayedJobs = activeTab === 'en_red' ? enRedJobs : aceptadosJobs;
+  const textoBusqueda = busqueda.trim().toLowerCase();
+  const displayedJobs = (activeTab === 'en_red' ? enRedJobs : aceptadosJobs).filter(j =>
+    !textoBusqueda ||
+    [j.titulo, j.zona, j.descripcion, j.assigned_tech_name].some(v => String(v || '').toLowerCase().includes(textoBusqueda))
+  );
 
   const sidebarDragTransform = isDraggingSheet
     ? mobileDrawerOpen
@@ -618,7 +675,7 @@ const VistaRedAutonomo = () => {
     : undefined;
 
   return (
-    <div className="mercado-container">
+    <div className="mercado-container red-mapa-vivo">
       <Header title="Red de Autónomos / Mis Publicaciones" />
       
       <div className="mercado-content">
@@ -643,7 +700,7 @@ const VistaRedAutonomo = () => {
         )}
 
         {/* ─── Map Section ─── */}
-        <div className="mercado-map-section">
+        <div ref={mapaSeccionRef} className={`mercado-map-section ${mapTheme === 'dark' ? 'es-oscuro' : ''}`}>
           {isLoaded ? (
             <>
               <div className="mercado-map-top-bar">
@@ -651,42 +708,43 @@ const VistaRedAutonomo = () => {
                   <span className="mercado-map-live-dot" />
                   {activeTab === 'en_red' ? `${enRedJobs.length} en red` : `${aceptadosJobs.length} asignados`}
                 </div>
+              </div>
 
+              {/* Cambiar entre mapa claro y oscuro (junto al botón de pantalla completa) */}
+              <button
+                type="button"
+                className={`red-tema-btn ${mapTheme === 'dark' ? 'es-oscuro' : ''} ${puedePantallaCompleta ? '' : 'sin-pantalla'}`}
+                onClick={alternarTemaMapa}
+                title={mapTheme === 'dark' ? 'Mapa claro' : 'Mapa oscuro'}
+                aria-label={mapTheme === 'dark' ? 'Cambiar a mapa claro' : 'Cambiar a mapa oscuro'}
+              >
+                {/* Los dos íconos siempre montados: uno sale girando y el otro entra (animación en CSS) */}
+                <Moon size={18} className="red-tema-icono red-tema-luna" aria-hidden="true" />
+                <Sun size={18} className="red-tema-icono red-tema-sol" aria-hidden="true" />
+              </button>
+
+              {puedePantallaCompleta && (
                 <button
                   type="button"
-                  className="mercado-map-theme-btn"
-                  onClick={() => {
-                    const next = mapTheme === 'dark' ? 'light' : 'dark';
-                    setMapTheme(next);
-                    localStorage.setItem('agente_map_theme', next);
-                  }}
-                  title={mapTheme === 'dark' ? 'Cambiar a Mapa Claro (Blanco)' : 'Cambiar a Mapa Oscuro (Negro)'}
+                  className={`red-pantalla-btn ${mapTheme === 'dark' ? 'es-oscuro' : ''}`}
+                  onClick={alternarPantallaCompleta}
+                  title={enPantallaCompleta ? 'Salir de pantalla completa' : 'Pantalla completa'}
+                  aria-label={enPantallaCompleta ? 'Salir de pantalla completa' : 'Ver mapa en pantalla completa'}
                 >
-                  {mapTheme === 'dark' ? (
-                    <>
-                      <Sun size={14} />
-                      <span>Mapa Claro</span>
-                    </>
-                  ) : (
-                    <>
-                      <Moon size={14} />
-                      <span>Mapa Oscuro</span>
-                    </>
-                  )}
+                  {enPantallaCompleta ? <Minimize size={18} /> : <Maximize size={18} />}
                 </button>
-              </div>
+              )}
 
               <GoogleMap
                 mapContainerStyle={mapContainerStyle}
                 center={defaultCenter}
                 zoom={13}
-                options={{ 
+                options={{
                   disableDefaultUI: false,
                   styles: mapTheme === 'dark' ? DARK_MAP_STYLES : [],
-                  mapTypeControl: true,
-                  mapTypeControlOptions: {
-                    position: window.google?.maps?.ControlPosition?.TOP_RIGHT || 3
-                  }
+                  fullscreenControl: false, // se usa un botón propio de vidrio (.red-pantalla-btn)
+                  mapTypeControl: false,
+                  streetViewControl: false
                 }}
               >
                 {displayedJobs.map(job => (
@@ -742,6 +800,13 @@ const VistaRedAutonomo = () => {
                   </InfoWindow>
                 )}
               </GoogleMap>
+
+              {/* Leyenda de colores de los marcadores */}
+              <div className="red-map-legend">
+                <span><i style={{ background: '#ff6600' }} /> Sin ofertas</span>
+                <span><i style={{ background: '#16a34a' }} /> Con ofertas / Asignado</span>
+                <span><i style={{ background: '#2563eb' }} /> Mensaje nuevo</span>
+              </div>
             </>
           ) : (
             <div className="mercado-loading-map">Cargando Mapa...</div>
@@ -780,56 +845,101 @@ const VistaRedAutonomo = () => {
             onPointerUp={handleSheetPointerUp}
             onPointerCancel={handleSheetPointerUp}
           >
-            <div 
-              className="mercado-mobile-drag-handle" 
+            <div
+              className="mercado-mobile-drag-handle"
               title={mobileDrawerOpen ? "Desliza hacia abajo o toca para plegar" : "Desliza hacia arriba o toca para abrir"}
             />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className="mercado-sidebar-subtitle" style={{ margin: 0, fontSize: '18px', fontWeight: '900' }}>Trabajos en Red</h2>
-              <button 
-                className="red-btn-publish"
-                onClick={() => setShowModal(true)}
-              >
-                <Plus size={16} /> Publicar Problema
-              </button>
+            {/* Solo celular: texto de la barrita (como "Ver mapa completo" de Mapa en vivo) */}
+            <span className="red-grabber-txt">
+              {mobileDrawerOpen
+                ? <><ChevronDown size={15} /> Ver mapa completo</>
+                : <><ChevronUp size={15} /> Mostrar lista ({displayedJobs.length})</>}
+            </span>
+            <div className="red-sidebar-head">
+              <h2><Globe size={18} /> Trabajos en Red</h2>
+              <p>
+                <span className="mercado-map-live-dot" />
+                {activeTab === 'en_red'
+                  ? `${enRedJobs.length} ${enRedJobs.length === 1 ? 'publicación' : 'publicaciones'} en red`
+                  : `${aceptadosJobs.length} ${aceptadosJobs.length === 1 ? 'trabajo asignado' : 'trabajos asignados'}`}
+              </p>
             </div>
           </div>
 
-          {/* Selector de Pestañas: En Red vs Asignados (Solo Círculos Iconos con Liquid Glass) */}
-          <div className="mercado-sidebar-tabs-container">
-            <button
-              type="button"
-              className={`mercado-sidebar-tab-circle-btn tab-solicitudes ${activeTab === 'en_red' ? 'active' : ''}`}
-              onClick={() => setActiveTab('en_red')}
-              title="Publicaciones en la red"
-            >
-              <div className="mercado-tab-circle">
-                <Globe size={19} strokeWidth={2.4} />
-                <span className="mercado-sidebar-tab-badge">{enRedJobs.length}</span>
-              </div>
-            </button>
+          {/* Buscador + filtro: el filtro elige qué ver (En red / Asignados) y trae "Publicar problema" */}
+          <div className="red-buscador">
+            <label className="red-search">
+              <Search size={15} />
+              <input
+                type="text"
+                placeholder="Buscar trabajo o colonia..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
+            </label>
 
-            <button
-              type="button"
-              className={`mercado-sidebar-tab-circle-btn tab-aceptados ${activeTab === 'aceptados' ? 'active' : ''}`}
-              onClick={() => setActiveTab('aceptados')}
-              title="Trabajos asignados"
-            >
-              <div className="mercado-tab-circle">
-                <Briefcase size={19} strokeWidth={2.4} />
-                <span className="mercado-sidebar-tab-badge">{aceptadosJobs.length}</span>
-              </div>
-            </button>
+            <div className="red-filtro" ref={filtroRef}>
+              <button
+                type="button"
+                className={`red-filtro-btn ${filtroAbierto ? 'abierto' : ''}`}
+                onClick={() => setFiltroAbierto(v => !v)}
+                aria-haspopup="true"
+                aria-expanded={filtroAbierto}
+                title="Filtros"
+                aria-label="Filtros"
+              >
+                <SlidersHorizontal size={16} />
+              </button>
+
+              {filtroAbierto && (
+                <div className="red-filtro-panel">
+                  <span className="red-filtro-titulo">Ver</span>
+                  <button
+                    type="button"
+                    className={`red-filtro-opcion ${activeTab === 'en_red' ? 'activa' : ''}`}
+                    onClick={() => { setActiveTab('en_red'); setFiltroAbierto(false); }}
+                  >
+                    <Globe size={15} />
+                    <span className="red-filtro-opcion-txt">Publicaciones en red <small>{enRedJobs.length}</small></span>
+                    {activeTab === 'en_red' && <Check size={15} />}
+                  </button>
+                  <button
+                    type="button"
+                    className={`red-filtro-opcion ${activeTab === 'aceptados' ? 'activa' : ''}`}
+                    onClick={() => { setActiveTab('aceptados'); setFiltroAbierto(false); }}
+                  >
+                    <Briefcase size={15} />
+                    <span className="red-filtro-opcion-txt">Trabajos asignados <small>{aceptadosJobs.length}</small></span>
+                    {activeTab === 'aceptados' && <Check size={15} />}
+                  </button>
+
+                  <span className="red-filtro-separador" />
+
+                  <button
+                    type="button"
+                    className="red-filtro-publicar"
+                    onClick={() => { setFiltroAbierto(false); setShowModal(true); }}
+                  >
+                    <Plus size={16} /> Publicar problema
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mercado-job-list">
             {displayedJobs.length === 0 && (
               <div style={{ color: '#64748b', textAlign: 'center', padding: '40px 20px', fontSize: '14px' }}>
-                {activeTab === 'en_red' ? (
+                {textoBusqueda ? (
+                  <>
+                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</div>
+                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#ffffff' }}>Ningún trabajo coincide con la búsqueda</p>
+                  </>
+                ) : activeTab === 'en_red' ? (
                   <>
                     <div style={{ fontSize: '32px', marginBottom: '8px' }}>🌐</div>
                     <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#ffffff' }}>No tienes publicaciones abiertas en la red</p>
-                    <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>Haz clic en "Publicar Problema" para solicitar cotizaciones de técnicos.</span>
+                    <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>Abre el filtro y elige "Publicar problema" para solicitar cotizaciones de técnicos.</span>
                   </>
                 ) : (
                   <>

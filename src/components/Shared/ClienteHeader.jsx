@@ -11,9 +11,10 @@ import {
   Users, 
   FileText, 
   Receipt, 
-  Wrench, 
-  Globe 
-} from 'lucide-react'; 
+  Wrench,
+  Globe,
+  ClipboardList
+} from 'lucide-react';
 import logo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
@@ -112,6 +113,9 @@ const ClienteHeader = ({ activeModule }) => {
   const isCotizacionesActive = activeModule === 'cotizaciones' || currentPath.includes('/cotizacion');
   const isServiciosActive = activeModule === 'servicios' || currentPath.includes('/tablero-servicios') || currentPath.includes('/servicios');
   const isMercadoActive = activeModule === 'mercado' || currentPath.includes('/red-autonomos') || currentPath.includes('/mercado');
+  const isLevantamientoActive = activeModule === 'levantamientos' || currentPath.includes('/levantamientos');
+  // Cliente Particular (rol 4): "Levantamiento" va en el menú de arriba en vez del panel de la propiedad
+  const esClienteParticular = Number(user?.role_id) === 4;
 
   return (
     <>
@@ -148,6 +152,18 @@ const ClienteHeader = ({ activeModule }) => {
             <Users size={18} className="vcp-nav-icon" />
             <span className="vcp-nav-text">USUARIOS</span>
           </button>
+
+          {esClienteParticular && (
+            <button
+              type="button"
+              className={`vcp-nav-btn ${isLevantamientoActive ? 'active' : ''}`}
+              onClick={() => navigate('/levantamientos')}
+              title="Levantamiento"
+            >
+              <ClipboardList size={18} className="vcp-nav-icon" />
+              <span className="vcp-nav-text">LEVANTAMIENTO</span>
+            </button>
+          )}
 
           <button
             type="button"
