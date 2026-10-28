@@ -34,6 +34,8 @@ import RegistroZonas from "./portals/AgenteSolutions/Tecnico/RegistroZonas";
 import CheckEmail from "./components/Auth/CheckEmail";
 import VerifyEmail from "./components/Auth/VerifyEmail";
 import ResetPassword from "./components/Auth/ResetPassword";
+import PoliticaPrivacidad from "./components/Legal/PoliticaPrivacidad";
+import EliminarCuenta from "./components/Legal/EliminarCuenta";
 
 ///Cliente
 import MainLayoutCliente from "./portals/AgenteSolutions/Cliente/MainLayoutCliente";
@@ -207,6 +209,8 @@ const AppRoutes = () => {
       <Route path="/revisa-tu-correo" element={<CheckEmail />} />
       <Route path="/email/verify/:id/:hash" element={<VerifyEmail />} />
       <Route path="/recuperar-password" element={<ResetPassword />} />
+      <Route path="/privacidad" element={<PoliticaPrivacidad />} />
+      <Route path="/eliminar-cuenta" element={<EliminarCuenta />} />
 
       {/* RUTA COMPARTIDA PROPIEDADES */}
       <Route path="/propiedades" element={

@@ -2307,6 +2307,19 @@
   flex: none;
 }
 
+/* Editar: solo lo ve quien publicó el aviso */
+.nd-btn-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.nq-light .nd-btn-edit {
+  color: #c2410c;
+  border-color: rgba(249, 115, 22, 0.45);
+}
+
 /* Historial (línea de tiempo de la cadena) */
 .nd-history {
   display: flex;

@@ -48,7 +48,8 @@ import {
   ClipboardList,
   Home,
   SlidersHorizontal,
-  Lock
+  Lock,
+  Pencil
 } from 'lucide-react';
 
 // Íconos de línea (en lugar de emojis) por tipo de evento; toman el color del texto
@@ -777,6 +778,28 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     setSelectedNotice(null);
   };
 
+  // Editar un aviso (solo quien lo publicó): el mismo formulario, relleno con lo publicado
+  const handleOpenEditNotice = (notice) => {
+    const raw = notice.rawNotice || {};
+    const participantes = (raw.participants || []).map(p => Number(p.id));
+    const hora = (t) => (t ? String(t).substring(0, 5) : '');
+    handleOpenCreateNotice(notice.dateKey);
+    setNoticeForm(prev => ({
+      ...prev,
+      editing: notice,
+      title: raw.title || notice.titulo || '',
+      label: raw.label || '',
+      description: raw.description || '',
+      important: (raw.type || notice.type) === 'importante',
+      allDay: !raw.start_time,
+      start_time: hora(raw.start_time) || prev.start_time,
+      end_time: hora(raw.end_time) || (raw.start_time ? '' : prev.end_time),
+      audience: raw.is_private ? 'private' : (participantes.length ? 'some' : 'team'),
+      participants: participantes
+    }));
+    setSelectedNotice(null);
+  };
+
   // Completar un aviso: paso de confirmación dentro del detalle con comentario opcional para el equipo
   const [completeStep, setCompleteStep] = useState(null); // null | { note }
   const [completingNotice, setCompletingNotice] = useState(false);
@@ -892,6 +915,38 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         participant_ids: noticeForm.audience === 'some' ? noticeForm.participants : []
       };
 
+      // Edición: se guarda sobre el mismo aviso
+      if (noticeForm.editing) {
+        const editado = noticeForm.editing;
+        const resEdit = await axios.put(
+          `${import.meta.env.VITE_API_BASE_URL}/calendar/events/${editado.noticeId}`,
+          payload,
+          { headers }
+        );
+        const actualizado = processNoticeToEvent(resEdit.data.event);
+        setNoticesList(prev => prev.map(n => (n.noticeId === actualizado.noticeId ? actualizado : n)));
+        setShowCreateNoticeModal(false);
+        setSelectedNotice(actualizado);
+
+        const pushEdit = resEdit.data?.push;
+        Swal.fire(pushEdit && !pushEdit.sent
+          ? {
+            icon: 'warning',
+            title: 'Cambios guardados, push no enviada',
+            text: `El cambio de fecha quedó en la campanita, pero OneSignal no envió la notificación: ${pushEdit.error || 'ningún dispositivo está suscrito.'}`,
+            confirmButtonColor: '#f97316'
+          }
+          : {
+            icon: 'success',
+            title: 'Cambios guardados',
+            text: pushEdit ? 'Se avisó del cambio de fecha a los involucrados.' : undefined,
+            timer: 2000,
+            showConfirmButton: false
+          });
+        fetchSolutionsData(true);
+        return;
+      }
+
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/calendar/events`,
         payload,
@@ -947,11 +1002,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         fetchSolutionsData(true);
       }
     } catch (err) {
-      console.error("Error al crear aviso de calendario:", err);
+      console.error("Error al guardar aviso de calendario:", err);
       Swal.fire({
         icon: 'error',
-        title: 'Error al publicar',
-        text: err.response?.data?.error || err.response?.data?.message || 'No se pudo crear el aviso.'
+        title: noticeForm.editing ? 'No se pudieron guardar los cambios' : 'Error al publicar',
+        text: err.response?.data?.error || err.response?.data?.message || (noticeForm.editing ? 'Intenta de nuevo.' : 'No se pudo crear el aviso.')
       });
     } finally {
       setSubmittingNotice(false);
@@ -2341,9 +2396,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                 <div className="nq-header">
                   <span className="nq-header-badge" aria-hidden="true"><CalendarDays size={18} /></span>
                   <div className="nq-header-text">
-                    <h3 id="nq-title">{noticeForm.parent ? 'Siguiente paso' : 'Nuevo aviso'}</h3>
+                    <h3 id="nq-title">{noticeForm.editing ? 'Editar aviso' : noticeForm.parent ? 'Siguiente paso' : 'Nuevo aviso'}</h3>
                     <p>
-                      {noticeForm.parent
+                      {noticeForm.editing
+                        ? 'Si cambias la fecha u hora, se avisará a los involucrados'
+                        : noticeForm.parent
                         ? 'Quedará ligado al aviso anterior en el historial'
                         : noticeForm.audience === 'private'
                           ? 'Solo tú lo verás en tu calendario. No se notifica a nadie'
@@ -2651,9 +2708,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                         <Send size={16} />
                         <span>
                           {submittingNotice
-                            ? 'Enviando…'
+                            ? (noticeForm.editing ? 'Guardando…' : 'Enviando…')
                             : faltanPersonas
                               ? 'Elige al menos una persona'
+                              : noticeForm.editing
+                                ? 'Guardar cambios'
                               : noticeForm.audience === 'private'
                                 ? 'Guardar solo para mí'
                                 : noticeForm.audience === 'some'
@@ -2707,6 +2766,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
           const autor = actual.creator
             ? `${actual.creator.first_name || ''} ${actual.creator.last_name || ''}`.trim()
             : '';
+          // Solo quien lo publicó puede editarlo (el backend también lo valida)
+          const esMio = Number(raw.created_by ?? actual.creator?.id) === Number(user?.id);
           const hace = (() => {
             if (!raw.created_at) return '';
             const min = Math.floor((Date.now() - new Date(raw.created_at).getTime()) / 60000);
@@ -2856,9 +2917,15 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       </button>
                     ) : <span />}
                     <div className="nd-footer-actions">
-                      <button type="button" className="nq-btn-cancel" onClick={cerrarDetalle}>
-                        Cerrar
-                      </button>
+                      {esMio ? (
+                        <button type="button" className="nq-btn-cancel nd-btn-edit" onClick={() => handleOpenEditNotice(actual)}>
+                          <Pencil size={15} /> Editar
+                        </button>
+                      ) : (
+                        <button type="button" className="nq-btn-cancel" onClick={cerrarDetalle}>
+                          Cerrar
+                        </button>
+                      )}
                       {isAdmin && !completado && (
                         <button type="button" className="nq-btn-submit nd-btn-done" onClick={() => setCompleteStep({ note: '' })}>
                           <CheckCircle2 size={16} /> Completar
