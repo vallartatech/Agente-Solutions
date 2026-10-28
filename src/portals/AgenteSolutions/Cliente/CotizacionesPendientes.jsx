@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { 
   Clock, ShoppingBag, Sparkles, CheckSquare, Square, 
   CreditCard, ShieldCheck, Eye, CheckCircle2, AlertTriangle, 
   RefreshCw, AlertCircle, CalendarX, Lock, Trash2, Banknote,
-  X, Check, ChevronRight, ArrowRight, Loader2, Home, MapPin,
-  Navigation, Phone, FileText, Camera, UserCircle, Zap,
+  X, ArrowRight, Loader2, MapPin,
+  Navigation, FileText, Zap,
   User, Wrench, ImageIcon
 } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Cliente/Cotizaciones.css';

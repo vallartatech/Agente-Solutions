@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; 
+import { useState, useEffect } from 'react'; 
 import axios from 'axios';
 import "../../../styles/AgenteSolutions/Tecnico/RegistroDetalleHabitacion.css";
 import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
@@ -95,7 +95,6 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
   const [previewImg, setPreviewImg] = useState(null);
   const [galeriaArchivos, setGaleriaArchivos] = useState([]); // Nuevas fotos extra
   const [galeriaExistente, setGaleriaExistente] = useState([]); // Fotos extra que ya vienen de BD
-  const [removeMainImage, setRemoveMainImage] = useState(false);
   const [removedGalleryIds, setRemovedGalleryIds] = useState([]);
 
   const [nuevoRegistro, setNuevoRegistro] = useState({
@@ -135,7 +134,6 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
     if (file) {
       setSelectedFile(file);
       setPreviewImg(URL.createObjectURL(file));
-      setRemoveMainImage(false);
     }
   };
 
@@ -172,7 +170,6 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
     // Asignamos ambas galerías (limpiamos las temporales seleccionadas)
     setGaleriaArchivos([]);
     setGaleriaExistente(item.galleries || []);
-    setRemoveMainImage(false);
     setRemovedGalleryIds([]);
     setIsModalOpen(true);
   };
@@ -188,7 +185,6 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
     setSelectedFile(null);
     setGaleriaArchivos([]);
     setGaleriaExistente([]);
-    setRemoveMainImage(false);
     setRemovedGalleryIds([]);
     setIsModalOpen(true);
   };
@@ -272,7 +268,7 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
           headers: { 'Authorization': `Bearer ${token}` }
         });
         fetchComponentes();
-      } catch (error) {
+      } catch {
         mostrarAviso("Error al eliminar");
       }
     }

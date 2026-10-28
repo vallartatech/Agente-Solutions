@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { AlertTriangle, Home, MapPin, Wrench, MessageSquare, ArrowLeft, Send, Phone } from 'lucide-react';
+import { AlertTriangle, Home, MessageSquare, ArrowLeft, Send, Phone } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Cliente/SOSView.css';
 import { mostrarAviso } from '../../../utils/dialogos';
 

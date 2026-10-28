@@ -1,4 +1,3 @@
-import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import PerfilTecnico from '../../portals/AgenteMarket/Tecnico/PerfilTecnico';
 import PerfilCliente from '../../portals/AgenteMarket/Cliente/PerfilCliente';

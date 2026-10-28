@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AdminHeader from '../../../components/Shared/AdminHeader';
@@ -10,7 +10,6 @@ import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
 import '../../../styles/AgenteSolutions/Admin/VistaInicioAdmin.css';
 
 import {
-  User,
   ClipboardList,
   MapPin,
   Navigation,
@@ -22,11 +21,7 @@ import {
   Plus,
   Building2,
   Edit3,
-  Calendar,
   Wrench,
-  Receipt,
-  Camera,
-  Layers,
   ChevronRight,
   ChevronUp,
   Eye,
@@ -88,9 +83,6 @@ const VistaInicioAdmin = () => {
 
   const isRoot = Number(user?.role_id) === 0;
   const rolTexto = isRoot ? "ROOT / SUPERADMIN" : "ADMINISTRADOR";
-  const userFullName = user?.first_name 
-    ? `${user.first_name} ${user?.last_name || ''}`.trim().toUpperCase() 
-    : (user?.name?.toUpperCase() || 'ADMINISTRADOR');
 
   const [propiedades, setPropiedades] = useState(FALLBACK_PROPERTIES);
   const [selectedPropId, setSelectedPropId] = useState(null);
@@ -139,7 +131,7 @@ const VistaInicioAdmin = () => {
         setPropiedades(FALLBACK_PROPERTIES);
         setSelectedPropId(FALLBACK_PROPERTIES[0].id);
       }
-    } catch (err) {
+    } catch {
       setPropiedades(FALLBACK_PROPERTIES);
       setSelectedPropId(FALLBACK_PROPERTIES[0].id);
     }

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Header from '../../../components/Shared/Header';
 import { useNavigate } from 'react-router-dom';
-import { Building2, CheckCircle, ArrowRightLeft, RefreshCw, AlertCircle, Phone, Mail, ShieldCheck } from 'lucide-react';
+import { CheckCircle, ArrowRightLeft, RefreshCw, AlertCircle, Phone, Mail } from 'lucide-react';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const VistaGestionAutonomos = () => {

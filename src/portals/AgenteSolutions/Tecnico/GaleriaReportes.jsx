@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import "../../../styles/AgenteSolutions/Tecnico/GaleriaReportes.css";
-import { ChevronLeft, FileText, Camera, CheckCircle2, Trash2, Edit3, Loader2, X, Upload, AlertTriangle, Image as ImageIcon, Video, Images } from 'lucide-react';
+import { ChevronLeft, FileText, Camera, CheckCircle2, Trash2, Edit3, Loader2, X, Upload, Video, Images } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 import TecnicoHeader from '../../../components/Shared/TecnicoHeader';

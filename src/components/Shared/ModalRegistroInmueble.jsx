@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import {
@@ -12,7 +12,6 @@ import {
   Crosshair,
   MapPinned,
   X,
-  CheckCircle2,
   Loader2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';

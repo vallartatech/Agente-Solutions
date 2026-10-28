@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom'; // IMPORTANTE
 import axios from 'axios';
-import { Plus, ArrowLeft, ImageIcon, Loader2, Edit3, Eye, X, Trash2 } from 'lucide-react';
+import { Plus, ArrowLeft, ImageIcon, Loader2, Edit3, X, Trash2 } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Admin/DetalleReporte.css';
 import '../../../styles/AgenteSolutions/Tecnico/RegistroDetalleHabitacion.css';
 import logo from "../../../assets/Logo3.png";
@@ -62,7 +62,6 @@ const DetalleReporte = () => {
     const [nuevaCategoria, setNuevaCategoria] = useState('');
     const [creandoNuevaCategoria, setCreandoNuevaCategoria] = useState(false);
 
-    const [seccionesAbiertas, setSeccionesAbiertas] = useState({}); // Estado para el acordeón de zonas (DEPRECATED)
     const [selectedImage, setSelectedImage] = useState(null); // Estado para la imagen actual en el visor
     const [viewerImages, setViewerImages] = useState([]); // Lista de imágenes para el carrusel
     const [viewerIndex, setViewerIndex] = useState(0); // Índice actual
@@ -84,13 +83,6 @@ const DetalleReporte = () => {
         
         setViewerIndex(nuevoIndex);
         setSelectedImage(viewerImages[nuevoIndex]);
-    };
-
-    const toggleSeccion = (idx) => {
-        setSeccionesAbiertas(prev => ({
-            ...prev,
-            [idx]: !prev[idx]
-        }));
     };
 
     // --- ESTADOS DEL COTIZADOR ---
@@ -1600,10 +1592,10 @@ const DetalleReporte = () => {
                                 )}
                             </div>
 
-                            {previewImg && (
+                            {selectedFile && previewImg && (
                                 <button
                                     type="button"
-                                    onClick={(e) => { e.stopPropagation(); if (selectedFile) { setSelectedFile(null); } else { setRemoveMainImage(true); } setPreviewImg(null); }}
+                                    onClick={(e) => { e.stopPropagation(); setSelectedFile(null); setPreviewImg(null); }}
                                     title="Eliminar principal"
                                     style={{
                                         position: 'absolute', top: '-8px', right: '-8px', background: '#000', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, zIndex: 10
@@ -1625,18 +1617,6 @@ const DetalleReporte = () => {
                             style={{ position: 'relative', width: '100px', height: '100px', borderRadius: '8px', border: '1px solid #ccc', overflow: 'visible' }}
                         >
                             <img src={foto.image_path} alt={`galeria-bd-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
-                            <button
-                                type="button"
-                                onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    setGaleriaExistente(prev => prev.filter((_, idx) => idx !== i)); 
-                                    setRemovedGalleryIds(prev => [...prev, foto.id || foto.gallery_id || foto.image_id || foto.image_path]); 
-                                }}
-                                title="Eliminar foto"
-                                style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#000000', color: '#ffffff', border: '2px solid #ffffff', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 'bold', zIndex: 99999, boxShadow: '0px 2px 4px rgba(0,0,0,0.3)' }}
-                            >
-                                ×
-                            </button>
                         </div>
                     ))}
 
@@ -1682,10 +1662,10 @@ const DetalleReporte = () => {
                                 )}
                             </div>
 
-                            {previewImgSecondary && (
+                            {selectedFileSecondary && previewImgSecondary && (
                                 <button
                                     type="button"
-                                    onClick={(e) => { e.stopPropagation(); if (selectedFileSecondary) { setSelectedFileSecondary(null); } else { setRemoveSecondaryImage(true); } setPreviewImgSecondary(null); }}
+                                    onClick={(e) => { e.stopPropagation(); setSelectedFileSecondary(null); setPreviewImgSecondary(null); }}
                                     title="Eliminar secundaria"
                                     style={{
                                         position: 'absolute', top: '-8px', right: '-8px', background: '#000', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, zIndex: 10

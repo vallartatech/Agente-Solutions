@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
-import { X, CheckCircle2, Loader2, ShieldCheck, CreditCard, Banknote, Sparkles } from 'lucide-react';
+import { X, CheckCircle2, Loader2, ShieldCheck, Banknote } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Cliente/Pagos.css';
 import mpLogo from '../../../assets/Mercado-Pago.png';
 import { mostrarAviso } from '../../../utils/dialogos';
@@ -29,7 +29,7 @@ const Pago = ({ cotizacion, onClose }) => {
           detalle.materiales.forEach(m => subtotalItems += (parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || 1)));
         }
       }
-    } catch(e) {}
+    } catch {}
     let base = subtotalItems > 0 ? subtotalItems : parseFloat(cot.total || cot.estimated_amount || 0);
     if (base > 0) {
       const iva = base * 0.16;
@@ -53,7 +53,7 @@ const Pago = ({ cotizacion, onClose }) => {
           detalle.materiales.forEach(m => subtotalItems += (parseFloat(m.costo_u || m.precio || 0) * parseFloat(m.cantidad || 1)));
         }
       }
-    } catch(e) {}
+    } catch {}
     let base = subtotalItems > 0 ? subtotalItems : parseFloat(cot.total || cot.estimated_amount || 0);
     if (base > 0) {
       const iva = base * 0.16;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import axios from "axios";
@@ -16,8 +16,8 @@ import "../../../styles/AgenteSolutions/Cliente/DetallePropiedad.css";
 import "../../../styles/Shared/LiquidGlass.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 import { 
-  X, CheckCircle, User, AlertTriangle, ListChecks, Clock, CheckCircle2, 
-  LayoutDashboard, ChevronLeft, PlusCircle, Plus, Globe, FileText, Home, Wrench, 
+  X, CheckCircle, User, CheckCircle2, 
+  LayoutDashboard, PlusCircle, Plus, Globe, FileText, Home, Wrench, 
   MessageSquare, Camera, UserCheck, ImageIcon, Loader2,
   MoreVertical, Eye, ClipboardCheck, ClipboardList, Pencil, Trash2, Users,
   Folder, FolderPlus, FolderInput, FolderOpen, ArrowLeft, FolderX, Check, MapPinned
@@ -25,10 +25,6 @@ import {
 import { mostrarAviso } from '../../../utils/dialogos';
 
 const COLORES_CARPETA = ["#F26522", "#2563eb", "#10b981", "#8b5cf6", "#e11d48", "#0f172a"];
-
-const TIPOS_PROPIEDAD = [
-  { label: "TODAS", icon: "🌐", title: "TODAS" },
-];
 
 const VistaPropiedades = () => {
   const navigate = useNavigate();
@@ -127,7 +123,7 @@ const VistaPropiedades = () => {
   try {
     const outletContext = useOutletContext();
     searchTerm = outletContext?.searchTerm || "";
-  } catch (e) {
+  } catch {
     // Si no está dentro de un Outlet (por ejemplo al renderizarse como children en MainLayoutCliente), ignoramos el error.
   }
   
@@ -264,7 +260,7 @@ const VistaPropiedades = () => {
           timer: 2000,
           showConfirmButton: false
         });
-      } catch (error) {
+      } catch {
         Swal.fire('Error', 'Hubo un problema al eliminar la propiedad.', 'error');
       }
     }
@@ -664,7 +660,7 @@ const VistaPropiedades = () => {
       );
       setCarpetas(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
       setNuevaCarpetaNombre("");
-    } catch (error) {
+    } catch {
       Swal.fire('Error', 'No se pudo crear la carpeta.', 'error');
     } finally {
       setGuardandoCarpeta(false);
@@ -691,7 +687,7 @@ const VistaPropiedades = () => {
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       setCarpetas(prev => prev.map(c => c.id === carpeta.id ? { ...c, name: nombre.trim() } : c));
-    } catch (error) {
+    } catch {
       Swal.fire('Error', 'No se pudo renombrar la carpeta.', 'error');
     }
   };
@@ -715,7 +711,7 @@ const VistaPropiedades = () => {
       setCarpetas(prev => prev.filter(c => c.id !== carpeta.id));
       setListaPropiedades(prev => prev.map(p => p.folder_id === carpeta.id ? { ...p, folder_id: null } : p));
       if (carpetaAbierta === carpeta.id) setCarpetaAbierta(null);
-    } catch (error) {
+    } catch {
       Swal.fire('Error', 'No se pudo eliminar la carpeta.', 'error');
     }
   };
@@ -752,7 +748,7 @@ const VistaPropiedades = () => {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         setCarpetas(prev => prev.map(c => c.id === carpeta.id ? { ...c, logo_url: null } : c));
-      } catch (error) {
+      } catch {
         Swal.fire('Error', 'No se pudo quitar el logo.', 'error');
       }
     }
@@ -790,7 +786,7 @@ const VistaPropiedades = () => {
       );
       setListaPropiedades(prev => prev.map(p => p.id === propiedadAMover.id ? { ...p, folder_id: folderId } : p));
       setPropiedadAMover(null);
-    } catch (error) {
+    } catch {
       Swal.fire('Error', 'No se pudo mover la propiedad.', 'error');
     } finally {
       setMoviendoPropiedad(false);

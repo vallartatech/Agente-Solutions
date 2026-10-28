@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Header from '../../../components/Shared/Header';
 import { useNavigate } from 'react-router-dom';
 import { UserCheck, Clock, Phone, Mail, RefreshCw, CheckCircle, AlertCircle, Eye, X, MessageSquare, Building2, Calendar, User } from 'lucide-react';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
+
+// Solo los 10 dígitos del número; el enlace de WhatsApp ya antepone 521
+const cleanPhone = (tel) => String(tel || '').replace(/\D/g, '').slice(-10);
 
 const VistaSalaEsperaTecnicos = () => {
   const [pendingTechs, setPendingTechs] = useState([]);

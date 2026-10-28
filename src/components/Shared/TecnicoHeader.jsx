@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { CalendarDays, ShieldCheck, User, Calendar, LogOut } from 'lucide-react';
@@ -21,7 +21,7 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [showModalCalendario, setShowModalCalendario] = useState(false);
-  const [appLogo, setAppLogo] = useState(defaultLogo);
+  const appLogo = defaultLogo;
   const [liveAcceptedCount, setLiveAcceptedCount] = useState(acceptedCount ?? 0);
   const [liveUsersCount, setLiveUsersCount] = useState(usersCount ?? 0);
   const dropdownRef = useRef(null);
@@ -55,7 +55,7 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
               setLiveUsersCount(uniqueClients.size || accepted.length);
             }
           }
-        } catch (e) {
+        } catch {
           // silent fallback
         }
       };

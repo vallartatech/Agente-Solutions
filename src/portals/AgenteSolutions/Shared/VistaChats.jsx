@@ -490,9 +490,7 @@ const VistaChats = () => {
     setPendientes([]);
     setPanel(null);
     for (const p of archivos) {
-      // eslint-disable-next-line no-await-in-loop
       const archivo = p.esVideo ? p.file : await comprimirImagen(p.file);
-      // eslint-disable-next-line no-await-in-loop
       await enviarMensaje({ tipo: p.esVideo ? 'video' : 'image', archivo });
       URL.revokeObjectURL(p.url);
     }
@@ -608,10 +606,8 @@ const VistaChats = () => {
       if (conservar && f.size > 4 * 1024 * 1024) { fallidos.push(`${f.name}: pesa más de 4 MB`); continue; }
       try {
         const data = new FormData();
-        // eslint-disable-next-line no-await-in-loop
         data.append('image', conservar ? f : await comprimirImagen(f));
         if (equipo) data.append('equipo', '1');
-        // eslint-disable-next-line no-await-in-loop
         const res = await axios.post(`${API}/chats/stickers`, data);
         const nuevo = { id: res.data.id, url: res.data.url };
         setStickers(prev => (equipo

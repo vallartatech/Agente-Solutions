@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../../../styles/AgenteSolutions/Cliente/DetallePr.css';
@@ -183,9 +183,6 @@ const DetallePropiedad = () => {
   const [cotizaciones, setCotizaciones] = useState([]);
   const [sosPendientes, setSosPendientes] = useState([]);
   const [colaTrabajos, setColaTrabajos] = useState([]);
-  const [stats, setStats] = useState({
-    sos: 0, pendientes: 0, proceso: 0, listos: 0
-  });
 
   const [listaTecnicos, setListaTecnicos] = useState([]);
   const [tabTablero, setTabTablero] = useState('activos'); // 'activos' | 'historial'
@@ -250,12 +247,12 @@ const DetallePropiedad = () => {
         let resDash;
         try {
           resDash = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/propiedades/${id}/dashboard`, { headers });
-        } catch (err) {
+        } catch {
           console.warn("Dashboard fail, falling back to base property data");
           resDash = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/propiedades/${id}`, { headers });
         }
 
-        const { propiedad, stats: backStats, historial, owner_info, shared_users, is_shared_with_me } = resDash.data;
+        const { propiedad, historial, owner_info, shared_users, is_shared_with_me } = resDash.data;
 
         const rawFacade = propiedad?.facade_photo_path || propiedad?.facade_photo || propiedad?.foto_fachada || null;
         let resolvedFacade = null;
@@ -282,7 +279,6 @@ const DetallePropiedad = () => {
           location: propiedad?.location || propiedad?.state || "Mérida, Yuc."
         });
 
-        setStats(backStats || { sos: 0, pendientes: 0, proceso: 0, listos: 0 });
         
         // Mapear historial inicial del dashboard
         const histMapeado = (historial || []).map(h => ({
@@ -305,7 +301,7 @@ const DetallePropiedad = () => {
         const cotsMapeadas = cots.map(c => {
           let itemsParsed = c.items || [];
           if (typeof c.concept === 'string' && c.concept.startsWith('[')) {
-            try { itemsParsed = JSON.parse(c.concept); } catch(e){}
+            try { itemsParsed = JSON.parse(c.concept); } catch{}
           }
           return {
             id: c.id,
@@ -2432,7 +2428,7 @@ const DetallePropiedad = () => {
                 </div>
               );
             }
-          } catch (e) {
+          } catch {
             console.log("No es un JSON de detalle, se muestra como texto.");
           }
 

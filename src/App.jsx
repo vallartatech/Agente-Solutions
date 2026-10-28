@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { iniciarOneSignal, vincularUsuarioOneSignal } from "./components/Shared/oneSignalPush";
-import React, { useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./context/ProtectedRoute";
 import LoginAgente from "./components/Auth/Login";
@@ -93,13 +93,10 @@ import CotizacionesPendientes from "./portals/AgenteSolutions/Cliente/Cotizacion
 
 import Pago from "./portals/AgenteSolutions/Cliente/Pago";
 import SOSView from "./portals/AgenteSolutions/Cliente/SOSView";
-import TableroScrum from "./portals/AgenteSolutions/Cliente/TableroScrum";
-import DetallePropiedad from "./portals/AgenteSolutions/Cliente/DetallePropiedad";
 import ReporteTrabajo from "./portals/AgenteSolutions/Cliente/ReporteTrabajo";
 import DetallePropiedadadmin from "./portals/AgenteSolutions/Admin/DetallePropiedad";
 import VistaDetallePropiedadCliente from "./portals/AgenteSolutions/Cliente/VistaDetallePropiedad";
 
-import RegisteRoot from "./components/Auth/Register";
 import VistaCotizacionPrint from "./portals/AgenteSolutions/Admin/VistaCotizacionPrint";
 import CasaLoader from "./components/Shared/CasaLoader";
 import { esRed } from "./utils/entorno";

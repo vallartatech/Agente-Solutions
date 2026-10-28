@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { mostrarAviso } from '../utils/dialogos';
 
 const AssignServiceForm = () => {
-  const [propertyId, setPropertyId] = useState(22); 
+  const [propertyId] = useState(22); 
   
   const [availableComponents, setAvailableComponents] = useState([]);
   const [selectedComponents, setSelectedComponents] = useState([]);

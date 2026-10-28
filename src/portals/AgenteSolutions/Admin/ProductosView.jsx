@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, MapPin, ClipboardList, ShieldCheck, ChevronLeft } from 'lucide-react';
 import ProductoDetalleView from './ProductoDetalleView';

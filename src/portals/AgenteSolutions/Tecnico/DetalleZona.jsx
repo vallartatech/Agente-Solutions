@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
 import "../../../styles/Shared/LiquidGlass.css";
@@ -31,7 +31,6 @@ const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId, ruta }) => {
   ];
 
   // Opciones de Zona (Editar/Eliminar)
-  const [mostrarOpcionesZona, setMostrarOpcionesZona] = useState(false);
   const [editandoZonaNombre, setEditandoZonaNombre] = useState(false);
   const [nuevoNombreZona, setNuevoNombreZona] = useState(zona?.name || "");
 
@@ -67,7 +66,6 @@ const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId, ruta }) => {
       });
       zona.name = nuevoNombreZona.toUpperCase(); // Actualización optimista local
       setEditandoZonaNombre(false);
-      setMostrarOpcionesZona(false);
     } catch (error) {
       console.error(error);
       mostrarAviso("Error al editar el nombre de la zona.");

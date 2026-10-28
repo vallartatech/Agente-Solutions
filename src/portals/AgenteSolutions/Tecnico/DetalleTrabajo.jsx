@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,15 +32,6 @@ const DetalleTrabajo = () => {
   }, [id]);
 
   const equipo = data?.technicians || [];
-
-  // FUNCIÓN AL DAR CLIC EN GUARDAR
-  const manejarGuardar = () => {
-    setMostrarModal(true);
-    // Se cierra solo después de 2.5 segundos
-    setTimeout(() => {
-      setMostrarModal(false);
-    }, 2500);
-  };
 
   if (loading) {
     return <div className="loading-screen">Cargando detalles...</div>;

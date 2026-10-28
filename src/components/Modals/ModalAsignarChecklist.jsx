@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { X, Save, Plus, Trash2, CheckCircle, Wrench, Package, Settings, Calendar } from 'lucide-react';
+import { X, Save, Plus, Trash2, CheckCircle, Wrench, Package, Settings } from 'lucide-react';
 import { mostrarAviso } from '../../utils/dialogos';
 
 const ModalAsignarChecklist = ({ workOrder, onClose, onAssign }) => {
-  const [tecnicos, setTecnicos] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +20,6 @@ const ModalAsignarChecklist = ({ workOrder, onClose, onAssign }) => {
   const [savingTemplate, setSavingTemplate] = useState(false);
 
   useEffect(() => {
-    fetchTecnicos();
     fetchTemplates();
     
     // Si la orden ya tiene un checklist, cargarlo
@@ -29,15 +27,6 @@ const ModalAsignarChecklist = ({ workOrder, onClose, onAssign }) => {
       setChecklist(workOrder.custom_checklist);
     }
   }, [workOrder]);
-
-  const fetchTecnicos = async () => {
-    try {
-      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`);
-      setTecnicos(response.data);
-    } catch (error) {
-      console.error("Error cargando técnicos:", error);
-    }
-  };
 
   const fetchTemplates = async () => {
     try {
@@ -61,12 +50,6 @@ const ModalAsignarChecklist = ({ workOrder, onClose, onAssign }) => {
         setChecklist(content);
       }
     }
-  };
-
-  const toggleTecnico = (id) => {
-    setTecnicosIds(prev => 
-      prev.includes(id) ? prev.filter(tid => tid !== id) : [...prev, id]
-    );
   };
 
   const handleAddItem = () => {

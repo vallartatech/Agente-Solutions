@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   User,
   Lock,
@@ -8,15 +8,11 @@ import {
   Phone,
   Building2,
   Key,
-  Globe,
-  HardHat,
   Wrench,
   CheckCircle2,
   Clock,
-  ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   X,
   ArrowRight
 } from "lucide-react";

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
-import { CreditCard, X, ShieldCheck } from "lucide-react";
+import { CreditCard, ShieldCheck } from "lucide-react";
 
 const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) => {
   const [extraQuantity, setExtraQuantity] = useState(1);

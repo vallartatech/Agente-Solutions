@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import Swal from "sweetalert2";
 import ModalCompraEspacios from "./Shared/ModalCompraEspacios";
@@ -12,7 +12,6 @@ import {
   X,
   Check,
   Building,
-  Radar,
   Image as ImageIcon,
   Type,
   Camera,

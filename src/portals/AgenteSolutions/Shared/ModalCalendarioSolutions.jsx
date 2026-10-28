@@ -14,16 +14,12 @@ import {
   Clock,
   MapPin,
   User,
-  Mail,
-  Phone,
   PlusCircle,
   MessageCircle,
-  Maximize2,
   Image as ImageIcon,
   FileText,
   X,
   Send,
-  CheckCircle,
   Search,
   AlertTriangle,
   Wrench,
@@ -234,7 +230,6 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const roleId = Number(user?.role_id ?? 0);
   const isAdmin = roleId === 0 || roleId === 1;
   const isTechnician = roleId === 2 || roleId === 6 || roleId === 8;
-  const isClient = roleId === 3;
 
   // Estados del Calendario
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -545,13 +540,13 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       const [resWorkOrders, resTecnicos, resTecServicios, resEvents, resBirthdays] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/all`, { headers }).catch(e => ({ data: [] })),
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos?con_admins=1`, { headers }).catch(e => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/all`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos?con_admins=1`, { headers }).catch(() => ({ data: [] })),
         (isTechnician && user?.id)
-          ? axios.get(`${import.meta.env.VITE_API_BASE_URL}/tecnico/${user.id}/servicios`, { headers }).catch(e => ({ data: [] }))
+          ? axios.get(`${import.meta.env.VITE_API_BASE_URL}/tecnico/${user.id}/servicios`, { headers }).catch(() => ({ data: [] }))
           : Promise.resolve({ data: [] }),
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/events`, { headers }).catch(e => ({ data: [] })),
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/birthdays`, { headers }).catch(e => ({ data: [] }))
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/events`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/birthdays`, { headers }).catch(() => ({ data: [] }))
       ]);
 
       const rawOrders = Array.isArray(resWorkOrders.data) ? resWorkOrders.data : [];

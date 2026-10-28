@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -15,7 +15,7 @@ import '../../styles/Shared/EncabezadoMovil.css';
 
 // navTabs (opcional): reemplaza el menú principal por pestañas propias de la vista,
 // ej. [{ key, label, Icon, active, onClick }]. navBack: { label, onClick } para regresar.
-const AdminHeader = ({ activeModule, titulo, rolTexto, navTabs, navBack }) => {
+const AdminHeader = ({ activeModule, navTabs, navBack }) => {
   const { user, logoutGlobal, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,7 +61,7 @@ const AdminHeader = ({ activeModule, titulo, rolTexto, navTabs, navBack }) => {
         } else if (resSettings.data?.settings?.appLogo) {
           setAppLogo(resSettings.data.settings.appLogo);
         }
-      } catch (error) {
+      } catch {
         // silent fallback
       }
     };

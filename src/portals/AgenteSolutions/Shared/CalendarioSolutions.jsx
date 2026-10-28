@@ -1,4 +1,3 @@
-import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';

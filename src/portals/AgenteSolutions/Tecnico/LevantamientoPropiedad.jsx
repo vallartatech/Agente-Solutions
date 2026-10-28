@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Search, SlidersHorizontal, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

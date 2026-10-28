@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { 
   X, Plus, Trash2, Calculator, 
-  Search, User, Home, Wrench, 
-  AlertCircle, CheckCircle, Upload,
+  Search, User, Home, 
+  AlertCircle, Upload,
   MapPin, Phone
 } from 'lucide-react';
 import mpLogo from '../../assets/Mercado-Pago.png';

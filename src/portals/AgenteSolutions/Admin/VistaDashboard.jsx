@@ -1,10 +1,9 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area 
 } from 'recharts';
-import { ChevronLeft, Users, Home, Box, AlertTriangle, FileText, ClipboardCheck, DollarSign } from 'lucide-react';
+import { ChevronLeft, Users, Home, Box, AlertTriangle, ClipboardCheck, DollarSign } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Admin/VistaDashboard.css';
 import Header from '../../../components/Shared/Header';
 

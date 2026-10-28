@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { GoogleMap, useJsApiLoader, MarkerF, Autocomplete } from '@react-google-maps/api';
 import { X, Search, LocateFixed, Loader2, Check, MapPin, AlertTriangle } from 'lucide-react';

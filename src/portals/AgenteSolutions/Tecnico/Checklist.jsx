@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import "../../../styles/AgenteSolutions/Tecnico/CheckList.css";
 import Header from "../../../components/Shared/Header";
@@ -41,24 +41,6 @@ const CheckList = () => {
       console.error("Error cargando checklist", e);
     }
     setCargando(false);
-  };
-
-  const guardarProgreso = async (nuevoItems) => {
-    try {
-      const token = localStorage.getItem('agente_token');
-      await fetch(`${import.meta.env.VITE_API_BASE_URL}/servicios/${id}/asignar-trabajo`, {
-        method: 'PUT',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        // We only update custom_checklist. The controller assignWorkOrder allows updating custom_checklist.
-        // Wait, assignWorkOrder requires tecnico_id and scheduled_start? 
-        // We might need a specific route for updating just the checklist progress, OR we can just use the generic update method.
-      });
-    } catch (e) {
-      console.error("Error guardando progreso", e);
-    }
   };
 
   // ACTUALLY, ServiceController has a generic update method: Route::put('/servicios/{id}', [ServiceController::class, 'update']);

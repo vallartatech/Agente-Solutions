@@ -6,8 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosTecnico.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosTecnicoGlass.css";
-import { 
-  Search, Package, Wrench, CheckCircle2, Lock, Settings, 
+import { Package, Wrench, CheckCircle2, Lock, Settings, 
   Calendar, Clock, MapPin, AlertTriangle, ChevronRight, X, LayoutGrid
 } from 'lucide-react';
 import Header from "../../../components/Shared/Header";
@@ -272,7 +271,7 @@ const TrabajosTecnico = () => {
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
-    } catch (e) {
+    } catch {
       return '';
     }
   };
@@ -285,7 +284,6 @@ const TrabajosTecnico = () => {
       done: []       // Finalizados
     };
 
-    const hoyStr = getDayStr(new Date());
     const dManana = new Date();
     dManana.setDate(dManana.getDate() + 1);
     const mananaStr = getDayStr(dManana);
@@ -329,11 +327,10 @@ const TrabajosTecnico = () => {
       else grupos['HOY'].push(s);
     });
 
-    return Object.entries(grupos).filter(([_, val]) => val.length > 0);
+    return Object.entries(grupos).filter(([, val]) => val.length > 0);
   };
 
   const agruparFuturos = (items) => {
-    const hoyStr = getDayStr(new Date());
     const dManana = new Date();
     dManana.setDate(dManana.getDate() + 1);
     const mananaStr = getDayStr(dManana);
@@ -350,7 +347,7 @@ const TrabajosTecnico = () => {
       else grupos['PRÓXIMOS'].push(s);
     });
 
-    return Object.entries(grupos).filter(([_, val]) => val.length > 0);
+    return Object.entries(grupos).filter(([, val]) => val.length > 0);
   };
 
   const tableroData = clasificarPorTablero();

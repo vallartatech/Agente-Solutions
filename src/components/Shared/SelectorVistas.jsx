@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Images, Building2, ClipboardList } from 'lucide-react';
 import '../../styles/Shared/SelectorVistas.css';

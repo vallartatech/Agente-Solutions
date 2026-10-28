@@ -3,10 +3,9 @@ import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Layout, CheckCircle2, ListTodo, Timer, AlertCircle, 
-  FileText, History, ChevronDown, ChevronUp, X, 
+  FileText, ChevronDown, X, 
   User, Eye, MapPin, Tag, PlusCircle, 
-  Home, Wrench, MessageSquare, Camera, ImageIcon, Image, Trash2, Plus,
-  ChevronLeft, ArrowLeft, Loader2, Clock, Briefcase
+  Home, Wrench, MessageSquare, Camera, ImageIcon, Trash2
 } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Cliente/DetallePropiedad.css';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
@@ -23,8 +22,6 @@ const VistaDetallePropiedad = () => {
   const [loading, setLoading] = useState(true);
 
   // --- ESTADOS DE UI (Modales y Toggles) ---
-  const [mostrarHistorial, setMostrarHistorial] = useState(true);
-  const [reporteSeleccionado, setReporteSeleccionado] = useState(null);
   const [mostrarPerfilPropiedad, setMostrarPerfilPropiedad] = useState(false);
   const [mostrarModalServicio, setMostrarModalServicio] = useState(false);
   
@@ -45,8 +42,6 @@ const VistaDetallePropiedad = () => {
   const [isPhotoMenuOpen, setIsPhotoMenuOpen] = useState(false);
   const cameraRef = React.useRef(null);
   const galleryRef = React.useRef(null);
-  const [reportesDetallados, setReportesDetallados] = useState([]);
-  const [cargandoReportes, setCargandoReportes] = useState(false);
   const [imagenAmpliada, setImagenAmpliada] = useState(null);
 
   // --- ESTADOS COMPARTIR PROPIEDAD ---
@@ -97,26 +92,8 @@ const VistaDetallePropiedad = () => {
       });
       mostrarAviso("Acceso revocado");
       fetchUsuariosCompartidos();
-    } catch (error) {
+    } catch {
       mostrarAviso("Error al revocar acceso");
-    }
-  };
-
-  const fetchDetalleTrabajo = async (item) => {
-    setReporteSeleccionado(item);
-    setReportesDetallados([]);
-    setCargandoReportes(true);
-
-    try {
-      const token = localStorage.getItem('agente_token');
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios/${item.id}/reportes`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      setReportesDetallados(res.data || []);
-    } catch (error) {
-      console.error("Error al cargar la bitácora del trabajo:", error);
-    } finally {
-      setCargandoReportes(false);
     }
   };
 
@@ -474,83 +451,6 @@ const VistaDetallePropiedad = () => {
           </div>
         </div>
       </div>
-
-      {/* ==========================================
-          MODAL 1: DETALLE DE TRABAJO (BITÁCORA)
-          ========================================== */}
-      {reporteSeleccionado && (
-        <div className="modal-overlay" onClick={() => setReporteSeleccionado(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '800px', maxWidth: '95vw' }}>
-            <button className="close-modal" onClick={() => setReporteSeleccionado(null)}><X /></button>
-            <div className="modal-header" style={{ borderBottom: '2px solid #f26624', paddingBottom: '15px' }}>
-              <div className="modal-tag" style={{ background: '#f26624', color: 'white' }}>BITÁCORA DE TRABAJO</div>
-              <h2 style={{ color: '#333' }}>{reporteSeleccionado.producto}</h2>
-              <p className="modal-subtitle" style={{ color: '#666' }}>
-                Finalizado el {reporteSeleccionado.fecha} | Técnico: {reporteSeleccionado.tecnico}
-              </p>
-            </div>
-            <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto', padding: '20px 0' }}>
-              
-              <h4 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#333' }}>
-                <ImageIcon size={20} /> PASOS REALIZADOS
-              </h4>
-
-              {cargandoReportes ? (
-                <div style={{ padding: '40px', textAlign: 'center' }}>
-                  <Loader2 className="animate-spin" size={40} color="#f26624" />
-                  <p style={{ marginTop: '10px', fontWeight: 'bold' }}>Cargando bitácora...</p>
-                </div>
-              ) : reportesDetallados.length > 0 ? (
-                <div className="client-timeline" style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-                  {reportesDetallados.map((rep, idx) => (
-                    <div key={rep.id} className="timeline-step" style={{ display: 'flex', gap: '15px', padding: '15px', backgroundColor: '#f9f9f9', borderRadius: '15px', borderLeft: '4px solid #f26624' }}>
-                      <div className="step-num-pill" style={{ background: '#333', color: 'white', minWidth: '30px', height: '30px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                         {idx + 1}
-                      </div>
-                      <div className="step-info" style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>{rep.title || `Avance ${idx + 1}`}</h5>
-                          <span style={{ fontSize: '11px', color: '#888' }}><Clock size={12}/> {new Date(rep.created_at).toLocaleTimeString()}</span>
-                        </div>
-                        <p style={{ color: '#555', fontSize: '13px', lineHeight: 1.4, marginBottom: '10px' }}>{rep.description}</p>
-                        
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          {rep.image_path && (
-                            <img 
-                              src={rep.image_path} 
-                              alt="evidencia" 
-                              onClick={() => setImagenAmpliada(rep.image_path)}
-                              style={{ width: '120px', height: '90px', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer' }} 
-                            />
-                          )}
-                          {rep.galleries && rep.galleries.map((gal, gIdx) => (
-                            <img 
-                              key={gIdx}
-                              src={gal.image_path} 
-                              alt="extra" 
-                              onClick={() => setImagenAmpliada(gal.image_path)}
-                              style={{ width: '120px', height: '90px', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer' }} 
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '40px', background: '#f5f5f5', borderRadius: '15px' }}>
-                  <p style={{ fontStyle: 'italic', color: '#555' }}>
-                    No hay detalles específicos registrados para este trabajo.
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button className="btn-modal-close" onClick={() => setReporteSeleccionado(null)} style={{ background: '#333' }}>Cerrar Historial</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* LIGHTBOX PARA IMAGEN AMPLIADA */}
       {imagenAmpliada && (

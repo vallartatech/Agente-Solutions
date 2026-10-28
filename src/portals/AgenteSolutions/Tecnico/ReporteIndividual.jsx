@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import "../../../styles/AgenteSolutions/Tecnico/ReporteIndividual.css";
 import { Image as ImageIcon, ChevronLeft } from 'lucide-react';

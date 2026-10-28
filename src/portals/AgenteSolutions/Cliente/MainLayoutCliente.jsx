@@ -1,7 +1,7 @@
 import React from 'react';
-import { useNavigate, Outlet, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import "../../../styles/AgenteSolutions/Cliente/LayoutCliente.css";
-import { User, ArrowLeft, Home, Bell, LayoutGrid, FileText, ChevronLeft, LayoutDashboard, Menu, X, Search, Facebook, Instagram, Twitter, Youtube, Phone, Mail, Globe, MapPin, Link as LinkIcon, ShoppingCart } from 'lucide-react';
+import { User, ArrowLeft, Menu, X, Facebook, Instagram, Twitter, Youtube, Phone, Mail, Globe, MapPin, Link as LinkIcon, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import NotificationBell from '../../../components/Shared/NotificationBell';
 import defaultLogo from "../../../assets/Logo4.png";
@@ -51,11 +51,7 @@ const MainLayoutCliente = ({ children }) => {
     }
   };
 
-  const { id: urlPropertyId } = useParams();
   
-  // Estados para mantener los IDs sincronizados
-  const [currentPropertyId, setCurrentPropertyId] = React.useState(localStorage.getItem('current_property_id'));
-  const [currentLevantamientoId, setCurrentLevantamientoId] = React.useState(localStorage.getItem('current_levantamiento_id'));
 
   const fetchDynamicSettings = async () => {
     try {
@@ -95,30 +91,6 @@ const MainLayoutCliente = ({ children }) => {
     return () => window.removeEventListener('settings-updated', fetchDynamicSettings);
   }, []);
 
-  // Sincronizar cada vez que cambia la ruta O cuando se dispara el evento personalizado
-  React.useEffect(() => {
-    const syncIds = () => {
-      const pId = localStorage.getItem('current_property_id');
-      const lId = localStorage.getItem('current_levantamiento_id');
-      
-      if (urlPropertyId && urlPropertyId !== pId) {
-        setCurrentLevantamientoId(null);
-      } else {
-        setCurrentLevantamientoId(lId);
-      }
-      setCurrentPropertyId(pId);
-    };
-
-    syncIds();
-    window.addEventListener('sync-agente-ids', syncIds);
-    return () => window.removeEventListener('sync-agente-ids', syncIds);
-  }, [location.pathname, urlPropertyId]);
-  
-  const cleanId = (id) => id ? id.toString().replace('prop_', '') : null;
-  const isReportRoute = location.pathname.includes('/detalle-reporte');
-  const effectivePropertyId = isReportRoute ? cleanId(currentPropertyId) : (cleanId(urlPropertyId) || cleanId(currentPropertyId));
-  const tableroPath = effectivePropertyId ? `/DetallePropiedad/${effectivePropertyId}` : '/propiedades';
-  
   const globalRoutes = ['/propiedades', '/levantamientos', '/vista-cotizaciones', '/registro-propiedades'];
   const isGlobalRoute = globalRoutes.includes(location.pathname);
   const isHomeView = location.pathname === '/VistaInicioCliente';

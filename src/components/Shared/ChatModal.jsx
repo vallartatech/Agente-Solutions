@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Send, X, MessageSquare, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { Send, X, ShieldCheck } from 'lucide-react';
 import '../../styles/Shared/ChatModal.css';
 import { mostrarAviso } from '../../utils/dialogos';
 
@@ -120,7 +120,7 @@ const ChatModal = ({
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return '';
       return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch (e) {
+    } catch {
       return '';
     }
   };

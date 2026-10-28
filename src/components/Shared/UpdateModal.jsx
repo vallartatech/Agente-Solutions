@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Sparkles, RefreshCw, Loader2 } from 'lucide-react';

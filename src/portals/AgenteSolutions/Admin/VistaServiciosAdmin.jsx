@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Plus, Clock, CheckCircle2, Circle, X, UserCircle, Calendar, 
+import { CheckCircle2, Circle, X, UserCircle, Calendar, 
   ArrowLeft, Camera, Layout, FileText, Maximize2, AlertTriangle, Timer, Settings, Filter,
   MapPin, Navigation, Users, Package, Zap, Banknote, ListChecks, Hash, ClipboardList, ShieldCheck,
   Search, ChevronDown
@@ -252,7 +251,7 @@ const VistaServiciosAdmin = () => {
       const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/all`);
       const list = response.data || [];
       setRawOrders(list);
-      setTareasData(prev => transformarTareas(list, cotizacionesData, tecnicos));
+      setTareasData(() => transformarTareas(list, cotizacionesData, tecnicos));
     } catch (error) {
       console.error("Error cargando todas las órdenes:", error);
     } finally {
@@ -260,23 +259,12 @@ const VistaServiciosAdmin = () => {
     }
   }, [transformarTareas, cotizacionesData, tecnicos]);
 
-  const fetchTecnicos = useCallback(async () => {
-    try {
-      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos?con_admins=1`);
-      const tList = response.data || [];
-      setTecnicos(tList);
-      setTareasData(prev => transformarTareas(rawOrders, cotizacionesData, tList));
-    } catch (error) {
-      console.error("Error cargando técnicos:", error);
-    }
-  }, [transformarTareas, rawOrders, cotizacionesData]);
-
   const fetchCotizaciones = useCallback(async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones`);
       const cList = response.data || [];
       setCotizacionesData(cList);
-      setTareasData(prev => transformarTareas(rawOrders, cList, tecnicos));
+      setTareasData(() => transformarTareas(rawOrders, cList, tecnicos));
     } catch (error) {
       console.error("Error cargando cotizaciones:", error);
     }
@@ -428,7 +416,7 @@ const VistaServiciosAdmin = () => {
       });
       await fetchOrders();
       cerrarModal();
-    } catch (error) {
+    } catch {
       mostrarAviso("No se pudo actualizar el estado del servicio.");
     } finally {
       setProcesandoAccion(false);
@@ -450,7 +438,7 @@ const VistaServiciosAdmin = () => {
         tecnicos_ids: newEquipo
       });
       await fetchOrders();
-    } catch (e) {
+    } catch {
       mostrarAviso("Error al actualizar el equipo de trabajo.");
       setTecnicosEquipo(tecnicosEquipo); // revert
     } finally {

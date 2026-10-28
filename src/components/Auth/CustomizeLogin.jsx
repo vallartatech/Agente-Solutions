@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, PlusCircle, Trash2, Layout, Image as ImageIcon, Link as LinkIcon, MoveVertical } from 'lucide-react';
+import { ChevronLeft, PlusCircle, Trash2, Layout, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
 import { useAuth } from "../../context/AuthContext";
 import Header from "../Shared/Header";
 import "../../styles/Auth/CustomizeLogin.css";

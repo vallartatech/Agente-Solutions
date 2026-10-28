@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { Star, Clock, X, CheckCircle, Award, Sparkles, MessageSquare, AlertCircle, Trash2, RotateCcw, Send } from 'lucide-react';
+import { Star, Clock, X, Award, Sparkles, MessageSquare, AlertCircle, Trash2 } from 'lucide-react';
 import '../../styles/Shared/ModalCalificarTecnico.css';
 
 const ModalCalificarTecnico = ({

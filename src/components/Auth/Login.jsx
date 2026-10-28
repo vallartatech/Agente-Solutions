@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "../../styles/Auth/LoginAgente.css";
@@ -19,8 +19,7 @@ import {
   KeyRound,
   User,
   Phone,
-  Sparkles,
-  X
+  Sparkles
 } from "lucide-react";
 import Logo4 from "../../assets/Logo4.png";
 import LoginArtwork from "../../assets/Atardecer.png";
@@ -151,7 +150,6 @@ const LoginAgente = () => {
   const [showRoleExplorer, setShowRoleExplorer] = useState(false);
   const [activeCategory, setActiveCategory] = useState("agente");
   const [selectedRoleKey, setSelectedRoleKey] = useState("market_client_personal");
-  const [slideDirection, setSlideDirection] = useState("next"); // 'next' | 'prev'
 
   // Registration Form States
   const [regFirstName, setRegFirstName] = useState("");
@@ -261,7 +259,6 @@ const LoginAgente = () => {
 
   const handleCategoryChange = (cat) => {
     setActiveCategory(cat);
-    setSlideDirection("next");
     const matches = ROLES_PUBLICOS.filter(r => r.category === cat);
     if (matches.length > 0 && !matches.some(m => m.key === selectedRoleKey)) {
       setSelectedRoleKey(matches[0].key);
@@ -269,7 +266,6 @@ const LoginAgente = () => {
   };
 
   const handleStepRole = (direction) => {
-    setSlideDirection(direction > 0 ? "next" : "prev");
     const currentIndex = rolesFiltrados.findIndex(r => r.key === selectedRoleKey);
     if (currentIndex === -1) return;
     let nextIndex = currentIndex + direction;
@@ -278,9 +274,7 @@ const LoginAgente = () => {
     setSelectedRoleKey(rolesFiltrados[nextIndex].key);
   };
 
-  const handleDotClick = (rKey, targetIndex) => {
-    const currentIndex = rolesFiltrados.findIndex(r => r.key === selectedRoleKey);
-    setSlideDirection(targetIndex >= currentIndex ? "next" : "prev");
+  const handleDotClick = (rKey) => {
     setSelectedRoleKey(rKey);
   };
 
@@ -317,7 +311,7 @@ const LoginAgente = () => {
   useEffect(() => {
     const saved = localStorage.getItem("agente_tenant_selected");
     if (saved) {
-      try { setSelectedTenant(JSON.parse(saved)); } catch (e) { }
+      try { setSelectedTenant(JSON.parse(saved)); } catch { }
     }
   }, []);
 
@@ -372,7 +366,6 @@ const LoginAgente = () => {
         phone_number,
         birth_date,
         role_id,
-        tenant_id,
         profile_picture,
         cover_picture,
         created_at
@@ -820,7 +813,7 @@ const LoginAgente = () => {
                         }}
                         onClick={() => {
                           if (!isCenter) {
-                            handleDotClick(r.key, i);
+                            handleDotClick(r.key);
                           } else {
                             handleSelectRoleFromExplorer(r);
                           }
@@ -1500,7 +1493,7 @@ const LoginAgente = () => {
                           }}
                           onClick={() => {
                             if (!isCenter) {
-                              handleDotClick(r.key, i);
+                              handleDotClick(r.key);
                             } else {
                               handleSelectRoleFromExplorer(r);
                             }
@@ -1538,7 +1531,7 @@ const LoginAgente = () => {
 
                           {/* Dots pagination */}
                           <div className="aiw-rcard-dots">
-                            {rolesFiltrados.map((item, dotIdx) => (
+                            {rolesFiltrados.map((item) => (
                               <button
                                 key={item.key}
                                 type="button"
@@ -1546,7 +1539,7 @@ const LoginAgente = () => {
                                 style={item.key === selectedRoleKey ? { background: r.color, boxShadow: `0 0 10px ${r.color}99` } : {}}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDotClick(item.key, dotIdx);
+                                  handleDotClick(item.key);
                                 }}
                                 aria-label={`Ver ${item.label}`}
                               />

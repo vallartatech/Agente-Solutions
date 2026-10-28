@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Clock, Calendar, ChevronLeft, ChevronRight, Check, X, Sparkles } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Clock, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import '../../styles/Shared/MaterialDateTimePicker.css';
 
 const MONTH_NAMES = [
@@ -35,8 +35,7 @@ const MaterialDateTimePicker = ({
   isOpen,
   value,
   onChange,
-  onClose,
-  title = "Seleccionar Horario"
+  onClose
 }) => {
   const [activeTab, setActiveTab] = useState('time'); // 'time' | 'date'
   const [timeMode, setTimeMode] = useState('hours'); // 'hours' | 'minutes'

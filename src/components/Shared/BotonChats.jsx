@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';

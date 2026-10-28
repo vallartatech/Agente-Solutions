@@ -1,11 +1,9 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
-  ArrowLeft, Printer, Download, Save, 
-  CheckCircle, Clock, Wrench, ShieldCheck,
-  CreditCard, FileText, UserCheck, Home, MapPin, Phone,
-  Lock, AlertTriangle, Sparkles, Check
+  ArrowLeft, Printer, Save, FileText,
+  Lock, AlertTriangle
 } from 'lucide-react';
 import "../../../styles/AgenteSolutions/Admin/VistaCotizacionPrint.css";
 import logo from "../../../assets/Logo3.png"; 
@@ -218,7 +216,7 @@ const VistaCotizacionPrint = () => {
             importe: parseFloat(data.total || 0) 
           });
         }
-      } catch (error) {
+      } catch {
         if (rawConcept) {
           items.push({ 
             descripcion: rawConcept, 
@@ -234,7 +232,7 @@ const VistaCotizacionPrint = () => {
     }
   }, []);
 
-  const { f1: fase1Ok, f2: fase2Ok, f3: fase3Ok } = verificarDisponibilidadFases(cotizacion);
+  const { f2: fase2Ok, f3: fase3Ok } = verificarDisponibilidadFases(cotizacion);
 
   const handleSeleccionarFase = (faseDestino) => {
     if (faseDestino === 'por_pagar') {

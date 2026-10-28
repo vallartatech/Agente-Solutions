@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import "../../../styles/AgenteSolutions/Tecnico/VentaCruzada.css";
 import { Trash2 } from 'lucide-react';
 

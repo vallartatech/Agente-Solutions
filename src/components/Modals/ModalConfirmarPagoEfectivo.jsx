@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  X, CheckCircle, AlertCircle, DollarSign, 
-  User, Calendar, Clock, CreditCard, Sparkles, Check, ArrowRight
+  X, AlertCircle, Check
 } from 'lucide-react';
 
 const formatCurrency = (val) => {
@@ -10,8 +9,13 @@ const formatCurrency = (val) => {
   return `$${num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN`;
 };
 
-const ModalConfirmarPagoEfectivo = ({ isOpen, onClose, cotizacion, onPaymentConfirmed }) => {
-  if (!isOpen || !cotizacion) return null;
+// Los hooks viven en el contenido: así no se llaman después de un return condicional
+const ModalConfirmarPagoEfectivo = (props) => {
+  if (!props.isOpen || !props.cotizacion) return null;
+  return <ContenidoPagoEfectivo {...props} />;
+};
+
+const ContenidoPagoEfectivo = ({ onClose, cotizacion, onPaymentConfirmed }) => {
 
   // Extraer información base de la cotización
   const quoteId = cotizacion.id || cotizacion.quoteId || cotizacion.network_quote_id;
@@ -43,7 +47,7 @@ const ModalConfirmarPagoEfectivo = ({ isOpen, onClose, cotizacion, onPaymentConf
         });
       }
     }
-  } catch(e) {}
+  } catch {}
 
   const subtotalBase = subtotalCalculado > 0 
     ? subtotalCalculado 

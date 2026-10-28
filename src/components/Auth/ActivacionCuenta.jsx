@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Logo4 from '../../assets/Logo4.png';
@@ -14,7 +14,6 @@ const ActivacionCuenta = () => {
   const userId    = searchParams.get('user_id');
 
   const [loading, setLoading]     = useState(false);
-  const [prefData, setPrefData]   = useState(null);
   const [error, setError]         = useState('');
   const [planOption, setPlanOption] = useState('monthly'); // 'monthly' vs 'annual'
   const [extraQuantity, setExtraQuantity] = useState(1);
@@ -40,10 +39,9 @@ const ActivacionCuenta = () => {
         { plan_option: planOption, type: typeParam, ...(userId ? { user_id: userId } : {}), quantity: extraQuantity },
         { headers: { Origin: origin } }
       );
-      setPrefData(res.data);
       const url = import.meta.env.DEV ? res.data.sandbox_init_point : res.data.init_point;
       window.location.href = url;
-    } catch (e) {
+    } catch {
       setError('No se pudo generar el enlace de pago. Intenta de nuevo o contacta soporte.');
       setLoading(false);
     }

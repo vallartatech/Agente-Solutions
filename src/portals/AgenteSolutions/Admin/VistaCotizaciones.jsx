@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -10,11 +10,10 @@ import SelectorVistas from "../../../components/Shared/SelectorVistas";
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import AssignWorkModal from "../../../components/Modals/AssignWorkModal";
 import { 
-  Plus, Search, Filter, Calendar, 
-  ArrowUpDown, FileText, Upload, 
-  MoreVertical, Eye, CheckCircle, 
-  XCircle, Clock, ChevronDown, ChevronRight,
-  User, Wrench, Truck, Layout, Home, Phone, MapPin, ShoppingCart, RefreshCw,
+  Plus, Filter, Calendar, 
+  ArrowUpDown, FileText, CheckCircle, 
+  XCircle, Clock, ChevronRight,
+  User, Wrench, Truck, Layout, Home, Phone, MapPin, RefreshCw,
   MessageCircle, Maximize2, Image as ImageIcon, Send
 } from 'lucide-react';
 import CreateQuotationModal from "../../../components/Modals/CreateQuotationModal";
@@ -117,15 +116,10 @@ const VistaCotizaciones = () => {
     navigate('/cotizaciones-pendientes');
   };
 
-  // Enviar cotización / servicio a la vista Carrito (CotizacionesPendientes)
-  const handleMandarAlCarrito = (cot, e) => {
-    handleAceptarYEnviarAlCarrito(cot, e);
-  };
   const [cotizaciones, setCotizaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
 
   const [filtro, setFiltro] = useState('Todas');
-  const [busqueda, setBusqueda] = useState('');
   const [cotizacionSeleccionada, setCotizacionSeleccionada] = useState(null);
 
   const [esCliente, setEsCliente] = useState(false);
@@ -188,7 +182,7 @@ const VistaCotizaciones = () => {
           setEsTecnico(true);
         }
       }
-    } catch(e) {}
+    } catch {}
     cargarCotizaciones();
   }, []);
 
@@ -439,7 +433,7 @@ const VistaCotizaciones = () => {
           });
         }
       }
-    } catch(e) {}
+    } catch {}
     let base = subtotalItems > 0 ? subtotalItems : parseFloat(cot.total || cot.estimated_amount || 0);
     if (base > 0) {
       const iva = base * 0.16;
@@ -464,52 +458,6 @@ const VistaCotizaciones = () => {
     return base;
   };
 
-  const filtradas = cotizaciones.filter(c => {
-    const searchParams = new URLSearchParams(location.search);
-    const filterPropId = searchParams.get('propertyId');
-    const coincidePropiedad = !filterPropId || 
-                              String(c.property_id) === String(filterPropId) || 
-                              String(c.propiedad_id) === String(filterPropId) || 
-                              String(c.propertyId) === String(filterPropId);
-
-    const coincideFiltro = 
-      filtro === 'Todas' ||
-      (filtro === 'Por Pagar' && (
-        c.status?.toLowerCase().includes('por pagar') ||
-        c.estado?.toLowerCase().includes('por pagar') ||
-        c.status?.toLowerCase().includes('aprobad') || 
-        c.status === 'Procesada por Admin' || 
-        c.status?.toLowerCase() === 'aceptado' || 
-        c.status?.toLowerCase() === 'aceptada' || 
-        c.status === 'Validado' || 
-        (c.cash_requested && !c.cash_confirmed) || 
-        c.status?.toLowerCase().includes('efectivo solicitado')
-      )) ||
-      (filtro === 'Rechazadas' && c.status?.toLowerCase().includes('rechazad')) ||
-      (filtro === 'Pagadas' && !c.status?.toLowerCase().includes('efectivo solicitado') && !(c.cash_requested && !c.cash_confirmed) && (c.status?.toLowerCase().includes('pago') || c.status?.toLowerCase().includes('pagad'))) ||
-      (filtro === 'Recotizaciones' && (
-        c.status?.toLowerCase().includes('recotiza') ||
-        c.estado?.toLowerCase().includes('recotiza') ||
-        c.recotizacionSolicitada === true
-      ));
-
-    const coincideBusqueda = (c.cliente?.toLowerCase() || "").includes(busqueda?.toLowerCase() || "") || 
-                             (c.folio?.toString() || "").includes(busqueda || "");
-
-    const correspondeAlCliente = !esCliente || c.cliente_user_id === usuarioId;
-
-    const coincideTipo = 
-      filtroTipo === 'todos' || 
-      (filtroTipo === 'manual' && c.type !== 'archivo') || 
-      (filtroTipo === 'archivo' && c.type === 'archivo');
-
-    return coincideFiltro && coincideBusqueda && correspondeAlCliente && coincideTipo && coincidePropiedad;
-  }).sort((a, b) => {
-    if (!ordenMonto) return 0;
-    const valA = calcularMontoFinalNum(a);
-    const valB = calcularMontoFinalNum(b);
-    return ordenMonto === 'asc' ? valA - valB : valB - valA;
-  });
 
 
   const verPantallaCompleta = (url) => {
@@ -749,7 +697,7 @@ const VistaCotizaciones = () => {
           </div>
         );
       }
-    } catch (e) {
+    } catch {
       console.log("No es un JSON de detalle, se muestra como texto.");
     }
 
@@ -1698,7 +1646,7 @@ const VistaCotizaciones = () => {
                         });
                       }
                     }
-                  } catch(e) {}
+                  } catch {}
                   
                   const baseMonto = subtotalItems > 0 ? subtotalItems : parseFloat(cotizacionSeleccionada.total || cotizacionSeleccionada.estimated_amount || 0);
                   const iva = baseMonto * 0.16;
@@ -2009,7 +1957,6 @@ const VistaCotizaciones = () => {
                   {/* Sección: Saldo Pendiente del 40% */}
                   {((cotizacionSeleccionada.advance_paid || String(cotizacionSeleccionada.status || '').toLowerCase().includes('anticipo pagado') || (cotizacionSeleccionada.cash_confirmed && cotizacionSeleccionada.cash_amount_type === 'advance')) && !cotizacionSeleccionada.remaining_paid && !(cotizacionSeleccionada.cash_requested && !cotizacionSeleccionada.cash_confirmed && cotizacionSeleccionada.cash_amount_type === 'remaining')) && (() => {
                     const montoRestante = parseFloat(cotizacionSeleccionada.remaining_amount) || (calcularMontoFinalNum(cotizacionSeleccionada) * 0.40);
-                    let montoRestanteEf = montoRestante;
 
                     return (
                       <div style={{ width: '100%', marginBottom: '20px', border: '2px solid #ea580c', borderRadius: '14px', overflow: 'hidden' }}>
@@ -2542,7 +2489,7 @@ const VistaCotizaciones = () => {
             try {
               const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cotizaciones/${cotizacionSeleccionada.id}`);
               if (res.data) setCotizacionSeleccionada(res.data);
-            } catch(e) {}
+            } catch {}
           }} 
         />
       )}

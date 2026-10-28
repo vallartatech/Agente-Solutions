@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosTecnico.css";
 import { mostrarAviso } from '../../../utils/dialogos';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Check, X, CalendarClock, UserRound, ImageOff, FileText, ChevronRight, Hammer, ClipboardList } from 'lucide-react';
 import {
   calcularFlujo, etiquetaEstado, etiquetaTipo, fechaHora, dinero, totalCotizacion, nombreTecnicos,

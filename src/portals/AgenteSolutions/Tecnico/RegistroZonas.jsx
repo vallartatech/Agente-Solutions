@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, X, Save, Loader2, ArrowLeft, LayoutGrid, CheckCircle, Building2, Home, ClipboardList, ChevronRight, Tag } from 'lucide-react';
@@ -33,7 +33,6 @@ const RegistroZonas = () => {
   const [nuevaZona, setNuevaZona] = useState({ nombre: '', descripcion: '' });
   const [esOtraZona, setEsOtraZona] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null); // Archivo real
-  const [previewImg, setPreviewImg] = useState(null);    // Vista previa
   const [zonasSeleccionadas, setZonasSeleccionadas] = useState([]); // Selección múltiple
 
   const OPCIONES_PREDEFINIDAS = [
@@ -93,15 +92,6 @@ const RegistroZonas = () => {
   };
 
 
-  // Manejador de selección de archivo
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewImg(URL.createObjectURL(file));
-    }
-  };
-
   const guardarZonas = async () => {
     if (zonasSeleccionadas.length === 0 && !nuevaZona.nombre) {
       return mostrarAviso("Debes seleccionar al menos una zona o escribir el nombre de una nueva.");
@@ -142,7 +132,6 @@ const RegistroZonas = () => {
       setNuevaZona({ nombre: '', descripcion: '' });
       setEsOtraZona(false);
       setSelectedFile(null);
-      setPreviewImg(null);
       fetchZonas(); 
     } catch (error) {
       console.error("Error al guardar zonas:", error);
@@ -244,7 +233,6 @@ const RegistroZonas = () => {
 
   const cerrarModal = () => {
     setModalAbierto(false);
-    setPreviewImg(null);
     setSelectedFile(null);
     setEsOtraZona(false);
     setZonasSeleccionadas([]);

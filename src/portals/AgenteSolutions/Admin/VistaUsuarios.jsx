@@ -1,13 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import {
-  ChevronLeft,
   User,
-  LogOut,
-  CalendarDays,
-  Search,
   Trash2,
   Lock,
   Unlock,
@@ -15,19 +11,15 @@ import {
   Users,
   CheckCircle2,
   Wrench,
-  ChevronDown,
   Phone,
   Filter,
   Eye,
   Star,
-  Edit3,
   Mail,
-  MapPin,
   Shield,
   Sparkles,
   MousePointerClick,
   Briefcase,
-  Building2,
   HardHat,
   Crown,
   Clock
@@ -304,25 +296,6 @@ const VistaUsuarios = () => {
       navigate('/detalle-tecnico', { state: { tecnico: u, u } });
     }
   };
-
-  const userFullName = useMemo(() => {
-    const parts = [user?.first_name, user?.last_name].filter(Boolean);
-    if (parts.length > 0) return parts.join(' ').toUpperCase();
-    if (user?.name) return user.name.toUpperCase();
-    if (user?.nombre) return user.nombre.toUpperCase();
-    return 'USUARIO';
-  }, [user]);
-
-  const userRoleLabel = useMemo(() => {
-    if (user?.role_id === 0) return "ROOT_MASTER";
-    if (user?.role_id === 1) return "ADMIN_GLOBAL";
-    if (user?.role_id === 4) return "AUT_EMPRESARIAL";
-    if (user?.role_id === 5) return "AUT_PERSONAL";
-    if (user?.role_id === 7) return "GESTOR_INMUEBLES";
-    if (user?.role_id === 2) return "TECNICO_OFICIAL";
-    if (user?.role_id === 3) return "MARKET_CLIENT_PERSONAL";
-    return MAPA_ROLES[user?.role_id] || "USUARIO";
-  }, [user]);
 
   // Conteos por categoría adaptados para Cliente vs Admin
   const countClientes = useMemo(() => listaUsuarios.filter(u => Number(u.role_id) === 3 || String(u.id).startsWith('c_')).length, [listaUsuarios]);

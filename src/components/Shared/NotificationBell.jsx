@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -7,12 +7,7 @@ import {
   X, 
   Lightbulb, 
   Zap, 
-  Clock, 
-  Wrench, 
-  AlertCircle, 
-  FileText, 
   CheckCircle2, 
-  MessageSquare, 
   BellRing,
   ArrowRight
 } from "lucide-react";
@@ -113,7 +108,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
       setPushPermission(Notification.permission);
       try {
         setPushSubscribed(estaSuscritoOneSignal());
-      } catch (e) {
+      } catch {
         setPushSubscribed(false);
       }
     }
@@ -339,7 +334,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
         await axios.put(
           `${import.meta.env.VITE_API_BASE_URL}/notifications/${notification.id}/read`,
         );
-      } catch (e) {
+      } catch {
         // Fallback local
       }
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id));

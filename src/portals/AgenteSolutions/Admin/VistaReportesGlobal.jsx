@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -227,7 +227,7 @@ const VistaReportesGlobal = () => {
         });
         Swal.fire('Eliminado', 'La evidencia ha sido eliminada.', 'success');
         fetchReportesYCotizaciones();
-      } catch (error) {
+      } catch {
         Swal.fire('Error', 'No se pudo eliminar la evidencia.', 'error');
       }
     }

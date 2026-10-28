@@ -1,16 +1,8 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { createPortal } from "react-dom";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { 
-  User, 
-  LogOut, 
   CalendarDays, 
-  Trash2, 
-  Lock, 
-  Unlock, 
-  UserPlus, 
-  Users, 
   CheckCircle2, 
   ClipboardList,
   PlusCircle,
@@ -20,13 +12,10 @@ import {
   UserCheck,
   FileText,
   X,
-  Shield,
   Plus
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 import UniversalSearch from "../../../components/Shared/UniversalSearch"; 
-import ModalCalendarioCliente from "../../AgenteMarket/Cliente/ModalCalendarioCliente";
-import NotificationBell from "../../../components/Shared/NotificationBell";
 import Header from "../../../components/Shared/Header";
 import SelectorVistas from "../../../components/Shared/SelectorVistas";
 import CasaLoader from "../../../components/Shared/CasaLoader";
@@ -37,7 +26,7 @@ import { mostrarAviso } from '../../../utils/dialogos';
 const VistaLevantamientos = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout, logoutGlobal } = useAuth();
+  const { user } = useAuth();
   const isClient = user?.role_id === 3;
   // Root y admin: Levantamientos comparte botón con Propiedades
   const esAdminPanel = [0, 1].includes(Number(user?.role_id));
@@ -184,37 +173,6 @@ const VistaLevantamientos = () => {
     return 'USUARIO';
   }, [user]);
 
-  const userRoleLabel = useMemo(() => {
-    if (user?.role_id === 0) return "ROOT_MASTER";
-    if (user?.role_id === 1) return "ADMIN_GLOBAL";
-    if (user?.role_id === 4) return "AUT_EMPRESARIAL";
-    if (user?.role_id === 5) return "AUT_PERSONAL";
-    if (user?.role_id === 7) return "GESTOR_INMUEBLES";
-    if (user?.role_id === 2) return "TECNICO_OFICIAL";
-    if (user?.role_id === 3) return "MARKET_CLIENT_PERSONAL";
-    return "USUARIO";
-  }, [user]);
-
-  const userAvatar = user?.profile_picture || user?.avatar_url || user?.foto || null;
-  const userInitial = user?.first_name 
-    ? user.first_name.charAt(0).toUpperCase() 
-    : (user?.name ? user.name.charAt(0).toUpperCase() : (user?.nombre ? user.nombre.charAt(0).toUpperCase() : 'U'));
-
-  const handleCerrarSesion = () => {
-    if (logoutGlobal) logoutGlobal();
-    else if (logout) logout();
-    navigate("/", { replace: true });
-  };
-
-  const irAlInicio = () => {
-    if (!user) return navigate('/');
-    const role = Number(user.role_id);
-    if (role === 0 || role === 1) navigate('/VistaRoot');
-    else if (role === 4 || role === 5 || role === 7 || role === 3) navigate('/VistaMarket');
-    else if (role === 2) navigate('/VistaTecnico');
-    else if (role === 6 || role === 8) navigate('/mercado-trabajos');
-    else navigate('/');
-  };
 
   // --- SOLICITAR LEVANTAMIENTO ---
   const handleEnviarSolicitudLevantamiento = async (e) => {
@@ -322,7 +280,7 @@ const VistaLevantamientos = () => {
         setModalClientePaso(0);
         cargarDatos();
       }
-    } catch (error) {
+    } catch {
       mostrarAviso("Error al confirmar la cita.");
     }
   };
@@ -346,7 +304,7 @@ const VistaLevantamientos = () => {
         setModalClientePaso(0);
         cargarDatos();
       }
-    } catch (error) {
+    } catch {
       mostrarAviso("Error al solicitar reprogramación.");
     }
   };

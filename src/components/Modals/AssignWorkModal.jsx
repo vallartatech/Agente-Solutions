@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import '../../styles/AgenteSolutions/Admin/VistaCotizaciones.css'; // Reusing styles
 
 const AssignWorkModal = ({ cotizacion, onClose, onAssign }) => {

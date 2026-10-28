@@ -1,4 +1,3 @@
-import React from 'react';
 import '../../../styles/AgenteSolutions/Admin/VistaInicioAdmin.css';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Shared/Header';
