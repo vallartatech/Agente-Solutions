@@ -692,21 +692,38 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                           <label className="msa-tecnicos-sublabel">
                             Selecciona el técnico que atenderá la solicitud:
                           </label>
-                          <select
-                            value={selectedTechId}
-                            onChange={(e) => setSelectedTechId(e.target.value)}
-                            className="msa-select msa-select-tech"
-                          >
+                          {/* Lista de técnicos en tarjetas (en vez del select nativo del navegador) */}
+                          <div className="msa-tech-list" role="radiogroup" aria-label="Técnico que atenderá la solicitud">
                             {tecnicos.map(t => {
                               const fullName = `${t.first_name || t.name || ''} ${t.last_name || ''}`.trim() || `Técnico #${t.id}`;
                               const rol = t.role_id === 2 ? 'Técnico Agente' : (t.role_id === 6 ? 'Contratista' : (t.role_id === 8 ? 'Técnico de la Red' : 'Técnico'));
+                              const iniciales = fullName.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+                              const elegido = String(selectedTechId) === String(t.id);
                               return (
-                                <option key={t.id} value={t.id}>
-                                  👷‍♂️ {fullName} ({rol})
-                                </option>
+                                <button
+                                  key={t.id}
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={elegido}
+                                  className={`msa-tech-card ${elegido ? 'is-selected' : ''}`}
+                                  onClick={() => setSelectedTechId(t.id)}
+                                >
+                                  <span className="msa-tech-avatar">
+                                    {t.profile_picture
+                                      ? <img src={t.profile_picture} alt="" loading="lazy" />
+                                      : iniciales}
+                                  </span>
+                                  <span className="msa-tech-info">
+                                    <span className="msa-tech-name">{fullName}</span>
+                                    <span className="msa-tech-role">{rol}</span>
+                                  </span>
+                                  <span className="msa-tech-check" aria-hidden="true">
+                                    {elegido && <Check size={13} strokeWidth={3} />}
+                                  </span>
+                                </button>
                               );
                             })}
-                          </select>
+                          </div>
 
                           <button
                             type="button"

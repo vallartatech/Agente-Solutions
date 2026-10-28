@@ -28,8 +28,6 @@ import {
   User,
   MapPin,
   Navigation,
-  Share2,
-  AlertTriangle,
   AlertCircle,
   ClipboardList,
   Plus,
@@ -46,8 +44,8 @@ import {
 } from 'lucide-react';
 
 import defaultPropImg from '../../../assets/propiedad_ejemplo.jpg';
+import fondoSinPropiedades from '../../../assets/geometric-poly-bg.png';
 import defaultLogo from '../../../assets/Logo4.png';
-import { mostrarAviso } from '../../../utils/dialogos';
 
 // Live Countdown Timer for Floating Subscription Card
 const SubscriptionCountdown = ({ targetDate }) => {
@@ -112,7 +110,6 @@ const VistaClienteParticular = () => {
   const [pendingCancellation, setPendingCancellation] = useState(null);
   const [showCancellationRatingModal, setShowCancellationRatingModal] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [copiedToast, setCopiedToast] = useState(false);
   const [isPlanExpanded, setIsPlanExpanded] = useState(false); // Oculto por defecto
   const [isMobilePropProfileOpen, setIsMobilePropProfileOpen] = useState(false); // Pestaña colapsable en móvil
 
@@ -333,22 +330,14 @@ const VistaClienteParticular = () => {
     });
   }, [propiedades, user, customOrder]);
 
+  // Sin propiedades registradas: la vista se muestra vacía (sin datos de ejemplo) e invita a registrar
+  const hasProperties = userPropiedades.length > 0;
+
   const activeProperty = useMemo(() => {
-    if (!userPropiedades || userPropiedades.length === 0) {
-      return {
-        id: 1,
-        nombre_propiedad: 'MI PROPIEDAD',
-        cliente_nombre: userFullName,
-        curp: 'INM-2024-MX01',
-        address: 'Residencial Las Palmas #142, Mérida, Yucatán',
-        imagen_url: defaultPropImg,
-        lat: 20.967370,
-        lng: -89.592586
-      };
-    }
+    if (!userPropiedades || userPropiedades.length === 0) return null;
     const found = userPropiedades.find(p => p.id === selectedPropId);
     return found || userPropiedades[0];
-  }, [userPropiedades, selectedPropId, userFullName]);
+  }, [userPropiedades, selectedPropId]);
 
   // Estados de Estadísticas para el Tablero de Control de la Propiedad
   const [propertyStats, setPropertyStats] = useState({
@@ -471,20 +460,7 @@ const VistaClienteParticular = () => {
   };
 
   // Imagen de fondo activa
-  const heroBgImage = getPropImage(activeProperty);
-
-  // Manejo de compartir propiedad
-  const handleShareProperty = () => {
-    const shareText = `Propiedad: ${activeProperty?.nombre_propiedad || activeProperty?.nombre || 'Propiedad'} - ID: #${activeProperty?.id || '001'} | Dirección: ${activeProperty?.address || activeProperty?.direccion || 'N/A'}`;
-    
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
-      setCopiedToast(true);
-      setTimeout(() => setCopiedToast(false), 3000);
-    } else {
-      mostrarAviso(`Información de la propiedad:\n${shareText}`);
-    }
-  };
+  const heroBgImage = hasProperties ? getPropImage(activeProperty) : fondoSinPropiedades;
 
 // Helper para extraer y normalizar coordenadas GPS de una propiedad
   const extractPropertyGps = (prop) => {
@@ -588,7 +564,16 @@ const VistaClienteParticular = () => {
 
   // Límite de propiedades
   const maxAllowed = (subInfo?.max_properties ?? 3) + (subInfo?.extra_properties_count ?? 0);
-  const currentPropsCount = subInfo?.properties_count ?? (propiedades.length || 1);
+  const currentPropsCount = subInfo?.properties_count ?? propiedades.length;
+
+  // Abre el registro de propiedad, o la compra de espacio si ya llegó al límite del plan
+  const handleAgregarPropiedad = () => {
+    if (currentPropsCount >= maxAllowed) {
+      setShowModalCompra(true);
+    } else {
+      setShowModalRegistroPropiedad(true);
+    }
+  };
 
   const irAlInicio = () => {
     if (!user) return navigate('/');
@@ -601,32 +586,30 @@ const VistaClienteParticular = () => {
   };
 
   const renderPropertyProfileCard = (isMobile = false) => (
-    <div className={`vcp-property-profile-inner ${isMobile ? 'is-mobile-inner' : ''}`}>
+    <div className={`vcp-property-profile-inner ${isMobile ? 'is-mobile-inner' : ''} ${hasProperties ? '' : 'is-empty'}`}>
       {/* ── 1. TOP: PERFIL DE LA PROPIEDAD ── */}
       <div className="vcp-panel-header">
-        <button 
-          type="button"
-          className="vcp-panel-header-icon vcp-panel-edit-btn"
-          onClick={() => setShowModalEditarPropiedad(true)}
-          title="Editar información y fachada de esta propiedad"
-        >
-          <Edit3 size={18} />
-        </button>
+        {/* Ícono fijo de edificio (igual que el panel de Agente Solutions); editar va en el botón EDITAR */}
+        <div className="vcp-panel-header-icon" style={{ background: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.3)', cursor: 'default' }}>
+          <Building2 size={18} />
+        </div>
         <div className="vcp-panel-header-texts">
           <h2 className="vcp-panel-title">PERFIL DE LA PROPIEDAD</h2>
           <span className="vcp-panel-id-badge">
-            ID REGISTRO: #{activeProperty?.id || '001'}
+            REGISTRO: {hasProperties ? `#${activeProperty.id}` : '—'}
           </span>
         </div>
-        <button
-          type="button"
-          className="vcp-panel-edit-text-btn"
-          onClick={() => setShowModalEditarPropiedad(true)}
-          title="Editar información y fachada de esta propiedad"
-        >
-          <Edit3 size={13} />
-          <span>EDITAR</span>
-        </button>
+        {hasProperties && (
+          <button
+            type="button"
+            className="vcp-panel-edit-text-btn"
+            onClick={() => setShowModalEditarPropiedad(true)}
+            title="Editar información y fachada de esta propiedad"
+          >
+            <Edit3 size={13} />
+            <span>EDITAR</span>
+          </button>
+        )}
       </div>
 
       {/* Fields List */}
@@ -638,8 +621,8 @@ const VistaClienteParticular = () => {
           </div>
           <div className="vcp-field-content">
             <span className="vcp-field-label">CLIENTE ASOCIADO</span>
-            <span className="vcp-field-value">
-              {userFullName}
+            <span className="vcp-field-value" style={hasProperties ? { fontWeight: 800, color: '#f26522', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px' } : undefined}>
+              {hasProperties ? <><User size={14} color="#ffffff" style={{ flexShrink: 0 }} /> {userFullName}</> : '—'}
             </span>
           </div>
         </div>
@@ -652,7 +635,9 @@ const VistaClienteParticular = () => {
           <div className="vcp-field-content">
             <span className="vcp-field-label">CURP INMUEBLE</span>
             <span className="vcp-curp-pill">
-              {activeProperty?.curp || activeProperty?.curp_inmueble || `INM-${activeProperty?.id ? String(activeProperty.id).padStart(4, '0') : '2024'}-MX01`}
+              {hasProperties
+                ? (activeProperty.curp || activeProperty.curp_inmueble || `INM-${String(activeProperty.id).padStart(4, '0')}-MX01`)
+                : '—'}
             </span>
           </div>
         </div>
@@ -665,7 +650,7 @@ const VistaClienteParticular = () => {
           <div className="vcp-field-content">
             <span className="vcp-field-label">DIRECCIÓN</span>
             <span className="vcp-field-value">
-              {activeProperty?.address || activeProperty?.direccion || activeProperty?.calle || 'Residencial Las Palmas #142, Mérida'}
+              {activeProperty?.address || activeProperty?.direccion || activeProperty?.calle || '—'}
             </span>
           </div>
         </div>
@@ -677,14 +662,19 @@ const VistaClienteParticular = () => {
           </div>
           <div className="vcp-field-content">
             <span className="vcp-field-label">UBICACIÓN GPS</span>
-            <div className="vcp-gps-row" onClick={handleOpenMaps} title="Ver ubicación exacta en Google Maps">
-              <span>
-                {extractPropertyGps(activeProperty)
-                  ? `📍 ${extractPropertyGps(activeProperty).formatted}`
-                  : '📍 Ver en Google Maps'}
-              </span>
-              <ExternalLink size={13} />
-            </div>
+            {hasProperties ? (
+              <div className="vcp-gps-row" onClick={handleOpenMaps} title="Ver ubicación exacta en Google Maps">
+                <MapPin size={13} color="#ffffff" style={{ flexShrink: 0 }} />
+                <span>
+                  {extractPropertyGps(activeProperty)
+                    ? extractPropertyGps(activeProperty).formatted
+                    : 'Ver en Google Maps'}
+                </span>
+                <ExternalLink size={13} />
+              </div>
+            ) : (
+              <span className="vcp-field-value">—</span>
+            )}
           </div>
         </div>
       </div>
@@ -763,50 +753,17 @@ const VistaClienteParticular = () => {
         </div>
       </div>
 
-      {/* ── 3. BOTTOM: 2x2 ACTION BUTTONS GRID ── */}
+      {/* ── 3. BOTTOM: ACTION BUTTONS ── */}
       <div className="vcp-actions-grid">
-        {/* SOS Button */}
-        <button 
-          className="vcp-btn vcp-btn-sos"
-          onClick={() => navigate('/SOSView', { state: { propiedad: activeProperty } })}
-          title="Solicitar Auxilio / SOS Inmediato"
-        >
-          <AlertTriangle size={17} /> SOS
-        </button>
-
-        {/* Solicitar Servicio Button */}
-        <button 
+        {/* Solicitar Servicio Button ("Levantamiento" ahora está en el menú de arriba, ClienteHeader) */}
+        <button
           className="vcp-btn vcp-btn-service"
+          style={{ gridColumn: '1 / -1' }}
           onClick={() => setShowModalSolicitarServicio(true)}
+          disabled={!hasProperties}
           title="Crear o Solicitar un Nuevo Servicio"
         >
           <Plus size={17} /> SOLICITAR SERVICIO
-        </button>
-
-        {/* Compartir Button */}
-        <button 
-          className="vcp-btn vcp-btn-share"
-          onClick={handleShareProperty}
-          title="Compartir Ficha de la Propiedad"
-        >
-          {copiedToast ? (
-            <>
-              <CheckCircle2 size={17} /> ¡COPIADO!
-            </>
-          ) : (
-            <>
-              <Share2 size={17} /> COMPARTIR
-            </>
-          )}
-        </button>
-
-        {/* Ver Levantamiento Button */}
-        <button 
-          className="vcp-btn vcp-btn-survey"
-          onClick={() => navigate('/levantamientos', { state: { selectedPropId: activeProperty?.id } })}
-          title="Ver Levantamientos y Planos de la Propiedad"
-        >
-          <ClipboardList size={17} /> VER LEVANTAMIENTO
         </button>
       </div>
     </div>
@@ -894,6 +851,24 @@ const VistaClienteParticular = () => {
             )}
           </div>
 
+          {/* Estado vacío: invita a registrar la primera propiedad */}
+          {!hasProperties && (
+            <div className="vcp-empty-state">
+              <div className="vcp-empty-card">
+                <div className="vcp-empty-icon">
+                  <Building2 size={30} />
+                </div>
+                <h2 className="vcp-empty-title">Agrega tu primera propiedad</h2>
+                <p className="vcp-empty-text">
+                  Registra tu casa, departamento o local para solicitar servicios, ver sus levantamientos y llevar el control de todo en un solo lugar.
+                </p>
+                <button type="button" className="vcp-empty-btn" onClick={handleAgregarPropiedad}>
+                  <Plus size={18} /> AGREGAR PROPIEDAD
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Bottom Left Property Title & Thumbnail Carousel */}
           <div className="vcp-hero-bottom">
             {/* 1. Header Block: Owner + Property Title & Edit Button */}
@@ -902,20 +877,22 @@ const VistaClienteParticular = () => {
                 {userFullName}
               </div>
 
-              <div className="vcp-title-edit-row">
-                <h1 className="vcp-prop-main-title">
-                  {activeProperty?.nombre_propiedad || activeProperty?.nombre || activeProperty?.alias || activeProperty?.titulo || 'MI PROPIEDAD'}
-                </h1>
-                <button
-                  type="button"
-                  className="vcp-title-edit-btn"
-                  onClick={() => setShowModalEditarPropiedad(true)}
-                  title="Editar nombre y fachada de esta propiedad"
-                >
-                  <Edit3 size={16} />
-                  <span>EDITAR</span>
-                </button>
-              </div>
+              {hasProperties && (
+                <div className="vcp-title-edit-row">
+                  <h1 className="vcp-prop-main-title">
+                    {activeProperty.nombre_propiedad || activeProperty.nombre || activeProperty.alias || activeProperty.titulo || 'MI PROPIEDAD'}
+                  </h1>
+                  <button
+                    type="button"
+                    className="vcp-title-edit-btn"
+                    onClick={() => setShowModalEditarPropiedad(true)}
+                    title="Editar nombre y fachada de esta propiedad"
+                  >
+                    <Edit3 size={16} />
+                    <span>EDITAR</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* 2. Pestaña Desplegable del Perfil de la Propiedad (SOLO RESPONSIVO / MOBILE) */}
@@ -954,8 +931,7 @@ const VistaClienteParticular = () => {
 
               {/* Horizontal Thumbnails Carousel con Reordenamiento Drag & Drop */}
               <div className="vcp-thumbs-track">
-                {userPropiedades && userPropiedades.length > 0 ? (
-                  userPropiedades.map((prop, idx) => {
+                {userPropiedades.map((prop, idx) => {
                     const isActive = prop.id === activeProperty?.id;
                     const isDragging = prop.id === draggedPropId;
                     const isDragOver = prop.id === dragOverPropId;
@@ -986,27 +962,13 @@ const VistaClienteParticular = () => {
                         )}
                       </div>
                     );
-                  })
-                ) : (
-                  <div 
-                    className="vcp-thumb-card active"
-                    title="Propiedad de Demostración"
-                  >
-                    <img src={defaultPropImg} alt="Propiedad" className="vcp-thumb-img" draggable={false} />
-                  </div>
-                )}
+                  })}
 
                 {/* Plus Add Property Tile */}
-                <div 
+                <div
                   className={`vcp-thumb-add-tile ${currentPropsCount >= maxAllowed ? 'is-limit-reached' : ''}`}
                   title={currentPropsCount >= maxAllowed ? "Límite de propiedades alcanzado - Comprar espacio ($79.99 c/u)" : "Registrar / Agregar Propiedad"}
-                  onClick={() => {
-                    if (currentPropsCount >= maxAllowed) {
-                      setShowModalCompra(true);
-                    } else {
-                      setShowModalRegistroPropiedad(true);
-                    }
-                  }}
+                  onClick={handleAgregarPropiedad}
                 >
                   {currentPropsCount >= maxAllowed ? (
                     <div className="vcp-thumb-lock-wrap">

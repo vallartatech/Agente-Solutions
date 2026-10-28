@@ -1210,3 +1210,428 @@
 .msa-ficha-btn-error:hover {
   background: #dc2626 !important;
 }
+
+/* ── SELECTOR DE TÉCNICO EN TARJETAS (reemplaza el <select> nativo) ── */
+.msa-tech-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  max-height: 196px !important;
+  overflow-y: auto !important;
+  padding: 2px !important;
+  scrollbar-width: thin;
+}
+
+.msa-tech-list::-webkit-scrollbar { width: 5px; }
+.msa-tech-list::-webkit-scrollbar-thumb { background: #bae6fd; border-radius: 6px; }
+
+.msa-tech-card {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 8px 10px !important;
+  border-radius: 14px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-family: inherit !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+.msa-tech-card:hover {
+  border-color: #7dd3fc !important;
+  background: #f8fcff !important;
+}
+
+.msa-tech-card.is-selected {
+  border-color: #0284c7 !important;
+  background: #f0f9ff !important;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.14) !important;
+}
+
+.msa-tech-card:focus { outline: none !important; }
+.msa-tech-card:focus-visible { outline: 2px solid rgba(2, 132, 199, 0.5) !important; outline-offset: 2px !important; }
+
+.msa-tech-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  flex-shrink: 0 !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12) !important;
+  color: #0369a1 !important;
+  font-size: 0.78rem !important;
+  font-weight: 900 !important;
+}
+
+.msa-tech-avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.msa-tech-info {
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+}
+
+.msa-tech-name {
+  font-size: 0.86rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.msa-tech-role {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  color: #64748b !important;
+}
+
+.msa-tech-check {
+  width: 22px !important;
+  height: 22px !important;
+  flex-shrink: 0 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #ffffff !important;
+  transition: background 0.18s ease, border-color 0.18s ease !important;
+}
+
+.msa-tech-card.is-selected .msa-tech-check {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+}
+
+/* ══════════════════════════════════════════
+   ACOMODO COMPACTO Y ORDENADO
+   - Espacio parejo entre todos los campos (antes el primero tenía más aire,
+     porque está fuera del <form> y sumaba el gap de la columna + su margin)
+   - Columna izquierda en su propia tarjeta, igual que las de la derecha
+   - Las dos columnas terminan a la misma altura
+   ══════════════════════════════════════════ */
+.msa-content .msa-header {
+  padding: 14px 22px !important;
+}
+
+.msa-content .msa-title {
+  font-size: 1.3rem !important;
+}
+
+.msa-content .msa-subtitle {
+  font-size: 0.78rem !important;
+}
+
+.msa-content .msa-body {
+  padding: 16px 22px 20px !important;
+}
+
+.msa-content .msa-grid-layout {
+  gap: 16px !important;
+  align-items: stretch !important;
+}
+
+/* Columna izquierda = tarjeta blanca con el mismo borde que las de la derecha */
+.msa-content .msa-col-left {
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  padding: 14px 16px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+  gap: 12px !important;
+}
+
+.msa-content .msa-col-left > form {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  margin: 0 !important;
+}
+
+.msa-content .msa-col-right {
+  gap: 12px !important;
+}
+
+.msa-content .msa-form-group {
+  gap: 5px !important;
+  margin: 0 !important;
+}
+
+.msa-content .msa-label {
+  font-size: 0.72rem !important;
+}
+
+/* Campos a la misma altura */
+.msa-content .msa-select,
+.msa-content .msa-input {
+  height: 40px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  font-size: 0.86rem !important;
+}
+
+.msa-content .msa-textarea {
+  padding: 9px 12px !important;
+  font-size: 0.86rem !important;
+  min-height: 70px !important;
+}
+
+/* "Añadir otro problema" al fondo de la tarjeta izquierda */
+.msa-content .msa-btn-add-batch {
+  margin-top: auto !important;
+  padding: 10px 14px !important;
+}
+
+/* Tarjetas de la derecha un poco más compactas */
+.msa-content .msa-card-box {
+  padding: 12px 14px !important;
+  gap: 8px !important;
+}
+
+/* El destino crece para que la columna derecha termine con la izquierda */
+.msa-content .msa-destino-box {
+  flex: 1 !important;
+}
+
+.msa-content .msa-destino-box .msa-destino-panel {
+  margin-top: auto !important;
+}
+
+@media (max-width: 820px) {
+  .msa-content .msa-body {
+    padding: 14px 14px 18px !important;
+  }
+
+  .msa-content .msa-col-left {
+    padding: 12px 14px !important;
+  }
+}
+
+/* ==========================================================================
+   PIEL LIQUID GLASS BLANCO (mismo diseño que "Solicitar Servicio" de Agente Solutions
+   y "Registrar Propiedad": src/styles/Shared/LiquidGlass.css).
+   Vidrio blanco translúcido, secciones de vidrio suave y botones de color PLANO
+   (sin degradado ni brillo). Solo cambia la piel; la lógica del formulario es la misma.
+   ========================================================================== */
+.msa-overlay {
+  background: rgba(15, 23, 42, 0.32) !important;
+  backdrop-filter: blur(5px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(5px) saturate(120%) !important;
+}
+
+/* Panel de vidrio blanco */
+.msa-overlay .msa-content {
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 55%),
+    radial-gradient(90% 50% at 100% 100%, rgba(255, 140, 66, 0.10) 0%, rgba(255, 140, 66, 0) 60%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.86) 0%, rgba(241, 245, 249, 0.78) 100%) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow:
+    0 30px 80px rgba(15, 23, 42, 0.28),
+    0 0 32px rgba(242, 101, 34, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* Encabezado: vidrio blanco más denso, sin la franja naranja de arriba */
+.msa-overlay .msa-content .msa-header {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.7) 100%) !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+
+.msa-overlay .msa-content .msa-header::before {
+  display: none !important;
+}
+
+.msa-overlay .msa-content .msa-badge-tag {
+  background: rgba(242, 101, 34, 0.1) !important;
+  border: 1px solid rgba(242, 101, 34, 0.35) !important;
+}
+
+/* Botón cerrar: círculo de vidrio claro */
+.msa-overlay .msa-content .msa-close-btn {
+  border-radius: 50% !important;
+  background: rgba(241, 245, 249, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), inset 0 1px 0 #ffffff !important;
+}
+
+.msa-overlay .msa-content .msa-close-btn:hover {
+  transform: none !important;
+}
+
+/* Cuerpo transparente: se ve el vidrio */
+.msa-overlay .msa-content .msa-body {
+  background: transparent !important;
+}
+
+/* Secciones: vidrio blanco suave en lugar de cajas blancas con borde gris */
+.msa-overlay .msa-content .msa-col-left,
+.msa-overlay .msa-content .msa-card-box,
+.msa-overlay .msa-content .msa-urgencia-box,
+.msa-overlay .msa-content .msa-destino-box {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.5) 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+  border-radius: 18px !important;
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* Campos de vidrio esmerilado claro */
+.msa-overlay .msa-content .msa-select,
+.msa-overlay .msa-content .msa-input,
+.msa-overlay .msa-content .msa-textarea {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  border: 1.5px solid rgba(203, 213, 225, 0.9) !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+.msa-overlay .msa-content .msa-select:focus,
+.msa-overlay .msa-content .msa-input:focus,
+.msa-overlay .msa-content .msa-textarea:focus {
+  background-color: #ffffff !important;
+  border-color: #f26522 !important;
+  box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.18) !important;
+}
+
+.msa-overlay .msa-content .msa-select:disabled,
+.msa-overlay .msa-content .msa-input:disabled,
+.msa-overlay .msa-content .msa-textarea:disabled {
+  background-color: rgba(241, 245, 249, 0.6) !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+  box-shadow: none !important;
+}
+
+/* Foto "Añadir" y contador */
+.msa-overlay .msa-content .msa-photo-add-btn {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 2px dashed rgba(148, 163, 184, 0.7) !important;
+}
+
+.msa-overlay .msa-content .msa-photo-add-btn:hover:not(:disabled) {
+  background: rgba(255, 247, 237, 0.9) !important;
+  border-color: #fdba74 !important;
+}
+
+.msa-overlay .msa-content .msa-counter-badge {
+  background: rgba(241, 245, 249, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Cuándo / A quién: opciones de vidrio */
+.msa-overlay .msa-content .msa-urgencia-btn,
+.msa-overlay .msa-content .msa-destino-btn {
+  background: rgba(255, 255, 255, 0.65) !important;
+  border: 1.5px solid rgba(203, 213, 225, 0.9) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  transform: none !important;
+}
+
+.msa-overlay .msa-content .msa-urgencia-btn:hover:not(.active-urgente):not(.active-programado),
+.msa-overlay .msa-content .msa-destino-btn:hover:not(.active-red):not(.active-blue) {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(148, 163, 184, 0.9) !important;
+}
+
+/* La opción elegida de "Cuándo" en color plano */
+.msa-overlay .msa-content .msa-urgencia-btn.active-urgente {
+  background: #f26522 !important;
+  border-color: #f26522 !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.25) !important;
+}
+
+.msa-overlay .msa-content .msa-urgencia-btn.active-programado {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.22) !important;
+}
+
+/* La opción elegida de "A quién" con tinte suave y borde de color */
+.msa-overlay .msa-content .msa-destino-btn.active-red {
+  background: rgba(242, 101, 34, 0.08) !important;
+  border-color: #f26522 !important;
+  color: #ea580c !important;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+.msa-overlay .msa-content .msa-destino-btn.active-blue {
+  background: rgba(2, 132, 199, 0.08) !important;
+  border-color: #0284c7 !important;
+  color: #0284c7 !important;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Botones principales: color PLANO, sin degradado ni brillo */
+.msa-overlay .msa-content .msa-btn-submit-orange {
+  background: #f26522 !important;
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.25) !important;
+}
+
+.msa-overlay .msa-content .msa-btn-submit-orange:hover:not(:disabled) {
+  background: #ea580c !important;
+  transform: none !important;
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.3) !important;
+}
+
+.msa-overlay .msa-content .msa-btn-submit-blue {
+  background: #0284c7 !important;
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.25) !important;
+}
+
+.msa-overlay .msa-content .msa-btn-submit-blue:hover:not(:disabled) {
+  background: #0369a1 !important;
+  transform: none !important;
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.3) !important;
+}
+
+/* Añadir otro problema: vidrio con borde punteado naranja */
+.msa-overlay .msa-content .msa-btn-add-batch {
+  background: rgba(255, 247, 237, 0.6) !important;
+}
+
+.msa-overlay .msa-content .msa-btn-add-batch:hover:not(:disabled) {
+  background: #f26522 !important;
+  border-color: #f26522 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Tarjetas de técnicos de vidrio */
+.msa-overlay .msa-content .msa-tech-card {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(203, 213, 225, 0.9) !important;
+}
+
+.msa-overlay .msa-content .msa-tech-card.is-selected {
+  background: rgba(2, 132, 199, 0.08) !important;
+  border-color: #0284c7 !important;
+}
+
+/* Navegadores sin backdrop-filter: blanco casi sólido para mantener legibilidad */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .msa-overlay .msa-content {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%) !important;
+  }
+}

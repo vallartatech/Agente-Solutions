@@ -34,7 +34,14 @@ import {
   AlertTriangle,
   CheckCircle2,
   ExternalLink,
-  Star
+  Star,
+  SlidersHorizontal,
+  ChevronDown,
+  Check,
+  Siren,
+  Zap,
+  Hourglass,
+  Globe
 } from 'lucide-react';
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
@@ -75,6 +82,20 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
   const [miniCalDate, setMiniCalDate] = useState(new Date());
   const [currentView, setCurrentView] = useState('month'); // 'month' | 'week' | 'agenda'
   const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'overdue' | 'today' | 'future' | 'uncoordinated' | 'confirmed' | 'proposed' | 'network'
+
+  // Menú "Filtrar" junto al buscador (mismo diseño que el calendario de Agente Solutions)
+  const [filtroAbierto, setFiltroAbierto] = useState(false);
+  const filtroRef = useRef(null);
+  useEffect(() => {
+    if (!filtroAbierto) return;
+    const cerrar = (e) => { if (!filtroRef.current?.contains(e.target)) setFiltroAbierto(false); };
+    document.addEventListener('mousedown', cerrar);
+    document.addEventListener('touchstart', cerrar, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', cerrar);
+      document.removeEventListener('touchstart', cerrar);
+    };
+  }, [filtroAbierto]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [networkJobs, setNetworkJobs] = useState([]);
@@ -734,6 +755,19 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
   const countConfirmed = networkJobs.filter(j => j.statusType === 'confirmed' || j.is_accepted).length;
   const countNetwork = networkJobs.filter(j => j.statusType === 'network').length;
 
+  // Opciones del menú "Filtrar" ("En red" solo aparece si hay publicaciones en red)
+  const filtrosCalendario = [
+    { key: 'all', label: 'Todos', Icon: CalendarIcon, count: countAll },
+    { key: 'overdue', label: 'Atrasados', Icon: Siren, dot: 'dot-overdue', count: countOverdue },
+    { key: 'today', label: 'Citas hoy', Icon: Zap, dot: 'dot-today', count: countToday },
+    { key: 'future', label: 'Próximos', Icon: CalendarDays, dot: 'dot-future', count: countFuture },
+    { key: 'uncoordinated', label: 'Por coordinar', Icon: Hourglass, dot: 'dot-uncoordinated', count: countUncoordinated },
+    ...(countNetwork > 0 || selectedFilter === 'network'
+      ? [{ key: 'network', label: 'En red', Icon: Globe, dot: 'dot-network', count: countNetwork }]
+      : [])
+  ];
+  const filtroActual = filtrosCalendario.find(f => f.key === selectedFilter) || filtrosCalendario[0];
+
   // Próxima cita destacada ("Up Next") - Prioriza atrasadas > hoy > futuras
   const upNextJob = useMemo(() => {
     if (networkJobs.length === 0) return null;
@@ -982,9 +1016,45 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
               </div>
 
               <div className="cal-controls-right">
+                {/* Filtros (atrasados, hoy, próximos...) en un menú para no llenar la pantalla */}
+                <div className="cal-filtro-wrap" ref={filtroRef}>
+                  <button
+                    type="button"
+                    className={`cal-filtro-btn ${selectedFilter !== 'all' ? 'con-filtro' : ''} ${filtroAbierto ? 'abierto' : ''}`}
+                    onClick={() => setFiltroAbierto(v => !v)}
+                    aria-haspopup="menu"
+                    aria-expanded={filtroAbierto}
+                  >
+                    <SlidersHorizontal size={15} strokeWidth={2.4} />
+                    <span>{filtroActual.key === 'all' ? 'Filtrar' : filtroActual.label}</span>
+                    <span className="cal-filtro-count">{filtroActual.count}</span>
+                    <ChevronDown size={14} strokeWidth={2.6} />
+                  </button>
+                  {filtroAbierto && (
+                    <div className="cal-filtro-menu" role="menu">
+                      {filtrosCalendario.map(({ key, label, Icon, dot, count }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={selectedFilter === key}
+                          className={`cal-filtro-item ${selectedFilter === key ? 'on' : ''} ${key === 'overdue' && countOverdue > 0 ? 'alerta' : ''}`}
+                          onClick={() => { setSelectedFilter(key); setFiltroAbierto(false); }}
+                        >
+                          {dot ? <span className={`legend-dot ${dot}`} /> : <span className="cal-filtro-dot-vacio" />}
+                          <Icon size={15} strokeWidth={2.4} />
+                          <span className="cal-filtro-label">{label}</span>
+                          <span className="cal-filtro-num">{count}</span>
+                          {selectedFilter === key && <Check size={14} strokeWidth={3} />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="cal-search-box">
                   <Search size={15} className="cal-search-icon" />
-                  <input 
+                  <input
                     type="text"
                     placeholder="Buscar servicio o cliente..."
                     value={searchQuery}
@@ -1021,63 +1091,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
                   </button>
                 </div>
               </div>
-            </div>
-
-            {/* Barra de Filtros y Leyenda */}
-            <div className="scheduler-legend-bar">
-              <span style={{ color: '#94a3b8', fontWeight: 800 }}>Filtrar:</span>
-              <button 
-                className={`legend-item ${selectedFilter === 'all' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter('all')}
-              >
-                Todos ({countAll})
-              </button>
-
-              <button 
-                className={`legend-item legend-overdue ${selectedFilter === 'overdue' ? 'active' : ''} ${countOverdue > 0 ? 'has-overdue' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'overdue' ? 'all' : 'overdue')}
-                title="Citas cuya fecha programada ya pasó y no han concluido"
-              >
-                <span className="legend-dot dot-overdue"></span>
-                <span>🚨 Atrasados {countOverdue > 0 ? `(${countOverdue})` : '(0)'}</span>
-              </button>
-
-              <button 
-                className={`legend-item legend-today ${selectedFilter === 'today' ? 'active' : ''} ${countToday > 0 ? 'has-today' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'today' ? 'all' : 'today')}
-                title="Citas programadas para el día de hoy"
-              >
-                <span className="legend-dot dot-today"></span>
-                <span>⚡ Citas Hoy {countToday > 0 ? `(${countToday})` : '(0)'}</span>
-              </button>
-
-              <button 
-                className={`legend-item legend-future ${selectedFilter === 'future' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'future' ? 'all' : 'future')}
-                title="Citas agendadas para días futuros"
-              >
-                <span className="legend-dot dot-future"></span>
-                <span>📅 Próximos / Futuros {countFuture > 0 ? `(${countFuture})` : '(0)'}</span>
-              </button>
-
-              <button 
-                className={`legend-item legend-uncoordinated ${selectedFilter === 'uncoordinated' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter(selectedFilter === 'uncoordinated' ? 'all' : 'uncoordinated')}
-                title="Trabajos asignados sin fecha definida"
-              >
-                <span className="legend-dot dot-uncoordinated"></span>
-                <span>⏳ Por Coordinar {countUncoordinated > 0 ? `(${countUncoordinated})` : '(0)'}</span>
-              </button>
-
-              {countNetwork > 0 && (
-                <button 
-                  className={`legend-item ${selectedFilter === 'network' ? 'active' : ''}`}
-                  onClick={() => setSelectedFilter(selectedFilter === 'network' ? 'all' : 'network')}
-                >
-                  <span className="legend-dot dot-network"></span>
-                  <span>🌐 En Red ({countNetwork})</span>
-                </button>
-              )}
             </div>
 
             {/* Contenedor del Calendario */}
