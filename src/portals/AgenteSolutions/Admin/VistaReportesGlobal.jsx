@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Children } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +13,7 @@ import Swal from 'sweetalert2';
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
 import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta } from '../Shared/etapasEvidencia';
+import CarruselEtapas from '../Shared/CarruselEtapas';
 import '../../../styles/Shared/UniversalSearch.css';
 import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteSolutions/Admin/VistaReportesGlobal.css';
@@ -22,81 +23,6 @@ const STAGES = ETAPAS_EVIDENCIA.map(e => ({ ...e, placeholder: e.placeholderAdmi
 
 // Avisa al menú (contador / mascota de "por validar") que algo cambió
 const avisarValidacion = () => window.dispatchEvent(new Event('validacion-actualizada'));
-
-// Etapas del trabajo: en computadora, una fila con las 5; en tablet y celular, un carrusel
-// (la del centro grande, las de los lados asomándose), con flechas, puntos y deslizar con el dedo.
-const ES_CARRUSEL = '(max-width: 900px)';
-
-const CarruselEtapas = ({ children }) => {
-  const pistaRef = useRef(null);
-  const [activa, setActiva] = useState(0);
-  const items = Children.toArray(children);
-
-  const irA = (i) => {
-    const pista = pistaRef.current;
-    const item = pista?.children[i];
-    if (!item) return;
-    pista.scrollTo({ left: item.offsetLeft - (pista.clientWidth - item.clientWidth) / 2, behavior: 'smooth' });
-  };
-
-  // La tarjeta activa es la más cercana al centro
-  const alDeslizar = () => {
-    const pista = pistaRef.current;
-    if (!pista) return;
-    const centro = pista.scrollLeft + pista.clientWidth / 2;
-    let mejor = 0;
-    let distancia = Infinity;
-    [...pista.children].forEach((item, i) => {
-      const d = Math.abs(item.offsetLeft + item.clientWidth / 2 - centro);
-      if (d < distancia) { distancia = d; mejor = i; }
-    });
-    setActiva(mejor);
-  };
-
-  return (
-    <div className="rg-carrusel">
-      <div className="rg-stages-grid" ref={pistaRef} onScroll={alDeslizar}>
-        {items.map((item, i) => (
-          <div
-            key={item.key}
-            className={`rg-car-item ${i === activa ? 'activa' : ''}`}
-            // En el carrusel, tocar una tarjeta de un lado la trae al centro (no abre nada)
-            onClickCapture={(e) => {
-              if (i !== activa && window.matchMedia(ES_CARRUSEL).matches) {
-                e.preventDefault();
-                e.stopPropagation();
-                irA(i);
-              }
-            }}
-          >
-            {item}
-          </div>
-        ))}
-      </div>
-
-      <button type="button" className="rg-car-flecha izq" onClick={() => irA(activa - 1)} disabled={activa === 0} aria-label="Etapa anterior">
-        <ChevronLeft size={22} />
-      </button>
-      <button type="button" className="rg-car-flecha der" onClick={() => irA(activa + 1)} disabled={activa === items.length - 1} aria-label="Etapa siguiente">
-        <ChevronRight size={22} />
-      </button>
-
-      <div className="rg-car-puntos" role="tablist" aria-label="Etapas">
-        {items.map((item, i) => (
-          <button
-            key={item.key}
-            type="button"
-            role="tab"
-            aria-selected={i === activa}
-            aria-label={`Etapa ${i + 1}`}
-            className={i === activa ? 'activo' : ''}
-            onClick={() => irA(i)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
 
 // Resuelve la foto de fachada de la propiedad (URL absoluta o ruta de storage)
 const resolverFotoPropiedad = (prop) => {
@@ -710,7 +636,7 @@ const VistaReportesGlobal = () => {
             )}
 
             {/* LAS 4 ETAPAS (ANTES, DURANTE, DESPUÉS, EXTRA) + TICKET DE CONFORMIDAD */}
-            <CarruselEtapas>
+            <CarruselEtapas className="rg-etapas">
               {STAGES.map(stage => {
                 const { reports, trabajoId, tipo } = grupoSeleccionado;
                 const r = getReportForStage(reports, stage);

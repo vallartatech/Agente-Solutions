@@ -941,30 +941,12 @@ button.rg-upload-btn { font-family: inherit; }
   .rg-textarea { font-size: 16px; } /* evita zoom en iOS */
 }
 
-/* ── ETAPAS: una fila de 5 en computadora; carrusel en tablet y celular ── */
-.rg-carrusel {
-  position: relative;
-}
+/* ── ETAPAS (carrusel compartido: CarruselEtapas.css) ── */
+.rg-etapas { --ce-sangria: 16px; }
 
-.rg-car-item > .rg-stage-card,
-.rg-car-item > .rg-stage-empty {
-  height: 100%;
-}
-
-/* Flechas y puntos solo se usan en el carrusel */
-.rg-car-flecha,
-.rg-car-puntos {
-  display: none;
-}
-
-@media (min-width: 901px) {
+@media (min-width: 1101px) {
   /* Más ancho para que quepan las 5 etapas (4 evidencias + ticket) en una fila */
   .rg-sheet { max-width: 1200px; }
-
-  .rg-stages-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 12px;
-  }
 
   .rg-stage-card,
   .rg-stage-empty { min-height: 280px; }
@@ -972,97 +954,9 @@ button.rg-upload-btn { font-family: inherit; }
   .rg-stage-image { height: 130px; }
 }
 
-@media (max-width: 900px) {
-  .rg-stages-grid {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
-    overscroll-behavior-x: contain;
-    /* Espacio a los lados para que la primera y la última también queden al centro */
-    padding: 10px 14% 14px;
-    margin: 0 -16px;
-    scrollbar-width: none;
-    position: relative;
-  }
-
-  .rg-stages-grid::-webkit-scrollbar { display: none; }
-
-  .rg-car-item {
-    flex: 0 0 72%;
-    max-width: 340px;
-    scroll-snap-align: center;
-    transform: scale(0.86);
-    opacity: 0.5;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-  }
-
-  .rg-car-item.activa {
-    transform: scale(1);
-    opacity: 1;
-  }
-
-  .rg-car-item:not(.activa) { cursor: pointer; }
-
-  .rg-car-item .rg-stage-card,
-  .rg-car-item .rg-stage-empty { min-height: 330px; }
-
-  /* padding/margin propios: anulan los estilos globales de button de index.css */
-  .rg-car-flecha {
-    position: absolute;
-    top: calc(50% - 18px);
-    z-index: 2;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    margin: 0;
-    padding: 0;
-    transform: translateY(-50%);
-    border: none;
-    border-radius: 50%;
-    background: #ffffff;
-    color: #ea580c;
-    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
-    cursor: pointer;
-  }
-
-  .rg-car-flecha.izq { left: -6px; }
-  .rg-car-flecha.der { right: -6px; }
-  .rg-car-flecha:disabled { opacity: 0; pointer-events: none; }
-
-  .rg-car-puntos {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 4px;
-  }
-
-  .rg-car-puntos button {
-    width: 10px;
-    height: 10px;
-    margin: 0;
-    padding: 0;
-    border-radius: 50%;
-    border: 2px solid #fb923c;
-    background: transparent;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .rg-car-puntos button.activo {
-    width: 22px;
-    border-radius: 999px;
-    background: #f97316;
-    border-color: #f97316;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rg-car-item { transition: none; }
-  .rg-stages-grid { scroll-behavior: auto; }
+@media (max-width: 1100px) {
+  .rg-etapas .rg-stage-card,
+  .rg-etapas .rg-stage-empty { min-height: 330px; }
 }
 
 /* ── VALIDACIÓN DE TRABAJOS TERMINADOS Y TICKET DE CONFORMIDAD ── */

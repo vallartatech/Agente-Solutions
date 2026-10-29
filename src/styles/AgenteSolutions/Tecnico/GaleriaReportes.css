@@ -143,3 +143,11 @@
   gap: 20px;
   justify-content: flex-start; /* Cambiar de ser necesario */
 }
+
+/* Etapas de la evidencia (carrusel compartido: CarruselEtapas.css).
+   La página tiene 20px de margen a los lados: el carrusel llega hasta el borde en celular. */
+.gr-etapas {
+  --ce-gap: 16px;
+  --ce-sangria: 20px;
+  margin-top: 10px;
+}

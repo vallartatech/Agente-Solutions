@@ -1,0 +1,122 @@
+/* ── Etapas del trabajo: fila en computadora, carrusel en tablet y celular ──
+   Cada pantalla ajusta con variables:
+   --ce-gap: separación entre tarjetas · --ce-sangria: cuánto se extiende el carrusel hacia los bordes */
+.ce-carrusel {
+  position: relative;
+}
+
+.ce-pista {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--ce-gap, 14px);
+}
+
+.ce-item {
+  min-width: 0;
+}
+
+.ce-item > * {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Flechas y puntos solo se usan en el carrusel */
+.ce-flecha,
+.ce-puntos {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .ce-pista {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    overscroll-behavior-x: contain;
+    /* Espacio a los lados para que la primera y la última también queden al centro */
+    padding: 10px 14% 14px;
+    margin: 0 calc(-1 * var(--ce-sangria, 0px));
+    scrollbar-width: none;
+    position: relative;
+  }
+
+  .ce-pista::-webkit-scrollbar { display: none; }
+
+  .ce-item {
+    flex: 0 0 72%;
+    max-width: 360px;
+    scroll-snap-align: center;
+    transform: scale(0.86);
+    opacity: 0.5;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  .ce-item.activa {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .ce-item:not(.activa) { cursor: pointer; }
+
+  /* padding/margin propios: anulan los estilos globales de button de index.css */
+  .ce-flecha {
+    position: absolute;
+    top: calc(50% - 18px);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    padding: 0;
+    transform: translateY(-50%);
+    border: none;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #ea580c;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+    cursor: pointer;
+  }
+
+  .ce-flecha.izq { left: -6px; }
+  .ce-flecha.der { right: -6px; }
+  .ce-flecha:disabled { opacity: 0; pointer-events: none; }
+
+  .ce-puntos {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .ce-puntos button {
+    width: 10px;
+    height: 10px;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid #fb923c;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .ce-puntos button.activo {
+    width: 22px;
+    border-radius: 999px;
+    background: #f97316;
+    border-color: #f97316;
+  }
+}
+
+@media (max-width: 480px) {
+  .ce-item { flex-basis: 80%; }
+  .ce-pista { padding-left: 10%; padding-right: 10%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ce-item { transition: none; }
+  .ce-pista { scroll-behavior: auto; }
+}

@@ -11,6 +11,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
 import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta } from '../Shared/etapasEvidencia';
+import CarruselEtapas from '../Shared/CarruselEtapas';
 
 // Etapas compartidas con el panel de reportes del admin (incluye el ticket de conformidad)
 const STAGES = ETAPAS_EVIDENCIA.map(e => ({ ...e, placeholder: e.placeholderTecnico }));
@@ -301,7 +302,7 @@ const GaleriaReportes = () => {
         {/* ENCABEZADO E INFORMACIÓN DEL TRABAJO */}
         <div style={{ 
           width: '100%', 
-          maxWidth: '1200px', 
+          maxWidth: '1500px', 
           display: 'flex', 
           flexWrap: 'wrap',
           gap: '10px', 
@@ -330,7 +331,7 @@ const GaleriaReportes = () => {
         {/* BARRA DE ACCIÓN Y REGRESO */}
         <div style={{ 
           width: '100%', 
-          maxWidth: '1200px', 
+          maxWidth: '1500px', 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
@@ -395,19 +396,15 @@ const GaleriaReportes = () => {
         </div>
 
         {/* GRID DE LAS 4 EVIDENCIAS + TICKET DE CONFORMIDAD */}
-        <div style={{ width: '100%', maxWidth: '1200px', marginBottom: '40px' }}>
+        <div style={{ width: '100%', maxWidth: '1500px', marginBottom: '40px' }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '60px' }}>
               <Loader2 className="animate-spin" size={42} color="#F26522" style={{ margin: 'auto' }} />
               <p style={{ marginTop: '12px', fontWeight: 'bold', color: '#475569' }}>Cargando evidencias del trabajo...</p>
             </div>
           ) : (
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-              gap: '24px',
-              marginTop: '10px'
-            }}>
+            // Una fila con las 5 en computadora; carrusel en tablet y celular
+            <CarruselEtapas className="gr-etapas">
               {STAGES.map((stage) => {
                 const report = getReportForSlot(stage);
                 const localState = slotData[stage.key];
@@ -428,7 +425,7 @@ const GaleriaReportes = () => {
                       borderRadius: '22px',
                       border: isDone ? '2px solid #10b981' : '2px dashed #cbd5e1',
                       boxShadow: '0 10px 25px rgba(0,0,0,0.04)',
-                      padding: '20px',
+                      padding: '16px',
                       display: 'flex',
                       flexDirection: 'column',
                       justify: 'space-between',
@@ -474,7 +471,7 @@ const GaleriaReportes = () => {
                         }}
                         style={{
                           width: '100%',
-                          height: '200px',
+                          height: '170px',
                           borderRadius: '16px',
                           background: displayImage ? '#0f172a' : '#f8fafc',
                           border: displayImage ? 'none' : '2px dashed #94a3b8',
@@ -709,7 +706,7 @@ const GaleriaReportes = () => {
                   </div>
                 );
               })}
-            </div>
+            </CarruselEtapas>
           )}
         </div>
 
