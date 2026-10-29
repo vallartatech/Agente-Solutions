@@ -2321,15 +2321,51 @@
   border-color: rgba(245, 158, 11, 0.55);
 }
 
-/* Con Eliminar, Editar, Recordar y Completar el pie puede no caber en celular */
+/* Pie del detalle: Eliminar es solo un ícono a la izquierda y las acciones van en una fila a la derecha */
 .nd-footer {
-  flex-wrap: wrap;
-  row-gap: 10px;
+  gap: 10px;
 }
 
 .nd-footer-actions {
-  flex-wrap: wrap;
+  min-width: 0;
   justify-content: flex-end;
+}
+
+.nd-footer-actions .nq-btn-cancel,
+.nd-footer-actions .nq-btn-submit {
+  padding: 11px 16px;
+  white-space: nowrap;
+}
+
+.nd-delete.nd-delete-icon {
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.nq-light .nd-delete.nd-delete-icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+/* Celular: Eliminar y las acciones secundarias arriba; Completar / Siguiente paso a todo lo ancho */
+@media (max-width: 560px) {
+  .nd-footer {
+    align-items: flex-start;
+  }
+
+  .nd-footer-actions {
+    flex: 1;
+    flex-wrap: wrap;
+  }
+
+  .nd-footer-actions > button {
+    flex: 1 1 auto;
+  }
+
+  .nd-footer-actions .nq-btn-submit {
+    flex-basis: 100%;
+  }
 }
 
 /* Editar: solo lo ve quien publicó el aviso */
@@ -2469,8 +2505,8 @@
     gap: 8px;
   }
 
-  .nd-footer-actions .nq-btn-cancel {
-    display: none; /* en celular basta la X del encabezado */
+  .nd-footer-actions .nd-btn-close {
+    display: none; /* en celular basta la X del encabezado (Editar y Recordar sí se quedan) */
   }
 }
 

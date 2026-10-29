@@ -2980,8 +2980,14 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                 {!completeStep && (
                   <div className="nq-footer nd-footer">
                     {isAdmin ? (
-                      <button type="button" className="nd-delete" onClick={() => handleDeleteNotice(actual.noticeId)}>
-                        <Trash2 size={15} /> Eliminar
+                      <button
+                        type="button"
+                        className="nd-delete nd-delete-icon"
+                        onClick={() => handleDeleteNotice(actual.noticeId)}
+                        title="Eliminar aviso"
+                        aria-label="Eliminar aviso"
+                      >
+                        <Trash2 size={17} />
                       </button>
                     ) : <span />}
                     <div className="nd-footer-actions">
@@ -2990,7 +2996,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                           <Pencil size={15} /> Editar
                         </button>
                       ) : (
-                        <button type="button" className="nq-btn-cancel" onClick={cerrarDetalle}>
+                        <button type="button" className="nq-btn-cancel nd-btn-close" onClick={cerrarDetalle}>
                           Cerrar
                         </button>
                       )}
