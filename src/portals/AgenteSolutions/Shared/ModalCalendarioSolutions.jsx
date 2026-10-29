@@ -2991,13 +2991,10 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       </button>
                     ) : <span />}
                     <div className="nd-footer-actions">
-                      {esMio ? (
+                      {/* Sin botón "Cerrar": para eso está la ✕ del encabezado */}
+                      {esMio && (
                         <button type="button" className="nq-btn-cancel nd-btn-edit" onClick={() => handleOpenEditNotice(actual)}>
                           <Pencil size={15} /> Editar
-                        </button>
-                      ) : (
-                        <button type="button" className="nq-btn-cancel nd-btn-close" onClick={cerrarDetalle}>
-                          Cerrar
                         </button>
                       )}
                       {/* Recordar: vuelve a notificar a los involucrados (resaltado si ya está atrasado) */}

@@ -2504,10 +2504,6 @@
   .nd-footer {
     gap: 8px;
   }
-
-  .nd-footer-actions .nd-btn-close {
-    display: none; /* en celular basta la X del encabezado (Editar y Recordar sí se quedan) */
-  }
 }
 
 /* ── ¿PARA QUIÉN?: selector de participantes del aviso ── */
