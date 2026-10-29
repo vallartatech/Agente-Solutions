@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import '../../styles/Shared/MobileBottomNav.css';
 import '../../styles/Shared/EncabezadoMovil.css';
+import { MascotaAlerta } from './AlertaValidacion';
 
 const MobileBottomNav = ({ activeModule, onTabChange }) => {
   const navigate = useNavigate();
@@ -303,12 +304,13 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         {/* Cotizaciones y Reportes en un solo botón (dentro se cambia con el selector) */}
         <button 
           type="button" 
-          className={`vcp-mobile-nav-item ${isCotizacionesActive || isReportesActive ? 'active' : ''}`} 
-          onClick={() => navigate('/vista-cotizaciones')} 
+          className={`vcp-mobile-nav-item con-alerta-validacion ${isCotizacionesActive || isReportesActive ? 'active' : ''}`}
+          onClick={() => navigate('/vista-cotizaciones')}
           title="Cotización y reporte"
           aria-label="Cotización y reporte"
         >
           <Receipt size={22} className="vcp-mobile-nav-icon" />
+          <MascotaAlerta variante="barra" />
         </button>
 
         <button 

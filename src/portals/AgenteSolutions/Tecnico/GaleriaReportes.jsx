@@ -10,42 +10,10 @@ import Header from '../../../components/Shared/Header';
 import { useAuth } from "../../../context/AuthContext";
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
+import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta } from '../Shared/etapasEvidencia';
 
-const STAGES = [
-  {
-    key: 'ANTES',
-    title: '1. ANTES DE INICIAR',
-    tag: '[ANTES]',
-    required: true,
-    badgeColor: '#e11d48',
-    placeholder: 'Describe el estado inicial de la propiedad o equipo antes de trabajar...'
-  },
-  {
-    key: 'DURANTE',
-    title: '2. DURANTE EL PROCESO',
-    tag: '[DURANTE]',
-    required: true,
-    badgeColor: '#ea580c',
-    placeholder: 'Describe el procedimiento o desarme que se realizó durante el servicio...'
-  },
-  {
-    key: 'DESPUES',
-    title: '3. DESPUÉS DE FINALIZAR',
-    tag: '[DESPUÉS]',
-    required: true,
-    badgeColor: '#16a34a',
-    placeholder: 'Describe el resultado final y las pruebas tras concluir el trabajo...'
-  },
-  {
-    key: 'EXTRA',
-    title: '4. ADICIONAL / EXTRA',
-    tag: '[EXTRA]',
-    required: false,
-    badgeColor: '#64748b',
-    placeholder: 'Agrega cualquier detalle, prueba, foto o video adicional relevante (Opcional)...',
-    permiteVideo: true
-  }
-];
+// Etapas compartidas con el panel de reportes del admin (incluye el ticket de conformidad)
+const STAGES = ETAPAS_EVIDENCIA.map(e => ({ ...e, placeholder: e.placeholderTecnico }));
 
 const GaleriaReportes = () => {
   const { user } = useAuth();
@@ -65,13 +33,10 @@ const GaleriaReportes = () => {
   const [submittingKey, setSubmittingKey] = useState(null);
   const [imagenExpandida, setImagenExpandida] = useState(null);
 
-  // Estado local para los formularios de las 4 tarjetas
-  const [slotData, setSlotData] = useState({
-    ANTES: { file: null, preview: null, description: '', isEditing: false },
-    DURANTE: { file: null, preview: null, description: '', isEditing: false },
-    DESPUES: { file: null, preview: null, description: '', isEditing: false },
-    EXTRA: { file: null, preview: null, description: '', isEditing: false }
-  });
+  // Estado local para los formularios de cada etapa (4 evidencias + ticket)
+  const [slotData, setSlotData] = useState(() => Object.fromEntries(
+    STAGES.map(s => [s.key, { file: null, preview: null, description: '', isEditing: false }])
+  ));
 
   // Un solo input de archivo: antes de abrirlo se ajusta a cámara (foto / video) o galería
   const entradaRef = useRef(null);
@@ -117,27 +82,8 @@ const GaleriaReportes = () => {
     fetchReportes();
   }, [trabajoId]);
 
-  // Asignar reportes cargados a sus respectivos slots (Slot por tag o por índice)
-  const tieneTag = (r, s) => {
-    const desc = (r.description || '').toUpperCase();
-    return desc.includes(s.tag) || (s.key === 'DESPUES' && desc.includes('[DESPUES]'));
-  };
-
-  const getReportForSlot = (stage) => {
-    if (!reportes || reportes.length === 0) return null;
-
-    // 1. Buscar por tag exacto en la descripción
-    const foundByTag = reportes.find(r => tieneTag(r, stage));
-    if (foundByTag) return foundByTag;
-
-    // 2. Las evidencias viejas sin tag ocupan, en orden de creación, los slots que quedaron libres
-    const sinTag = reportes
-      .filter(r => !STAGES.some(s => tieneTag(r, s)))
-      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    const slotsLibres = STAGES.filter(s => !reportes.some(r => tieneTag(r, s)));
-    const posicion = slotsLibres.findIndex(s => s.key === stage.key);
-    return posicion !== -1 ? (sinTag[posicion] || null) : null;
-  };
+  // Evidencia de cada etapa: por la columna `stage` o, en las viejas, por su etiqueta / orden
+  const getReportForSlot = (stage) => evidenciaDeEtapa(reportes, stage);
 
   // yaValidado: el video viene de la grabadora propia, que ya respeta el límite
   const handleFileChange = async (stage, file, yaValidado = false) => {
@@ -177,7 +123,8 @@ const GaleriaReportes = () => {
     const dataForSlot = slotData[stage.key];
     const existingReport = getReportForSlot(stage);
 
-    const descToSave = dataForSlot.description.trim();
+    // En el ticket el comentario es opcional
+    const descToSave = dataForSlot.description.trim() || (stage.esTicket ? 'Ticket de conformidad' : '');
 
     if (!descToSave) {
       Swal.fire({
@@ -206,10 +153,10 @@ const GaleriaReportes = () => {
     try {
       const formData = new FormData();
       // Incluir tag identificador en la descripción
-      const cleanDesc = descToSave.replace(/\[(ANTES|DURANTE|DESPUÉS|DESPUES|EXTRA)\]/gi, '').trim();
-      const finalDesc = `${stage.tag} ${cleanDesc}`;
-      
+      const finalDesc = `${stage.tag} ${limpiarEtiqueta(descToSave)}`;
+
       formData.append('description', finalDesc);
+      formData.append('stage', stage.stage);
 
       if (dataForSlot.file) {
         formData.append('image', dataForSlot.file);
@@ -287,7 +234,7 @@ const GaleriaReportes = () => {
   };
 
   const handleStartEditing = (stage, existingReport) => {
-    const cleanDesc = (existingReport.description || '').replace(/\[(ANTES|DURANTE|DESPUÉS|DESPUES|EXTRA)\]/gi, '').trim();
+    const cleanDesc = limpiarEtiqueta(existingReport.description);
     setSlotData(prev => ({
       ...prev,
       [stage.key]: {
@@ -437,7 +384,7 @@ const GaleriaReportes = () => {
           {(user?.role_id === 0 || user?.role_id === 1) && (
             <button 
               onClick={() => navigate(`/reporte-trabajo-admin/${trabajoId}`, { 
-                state: { trabajoId, servicio, imagenes: reportes.map(r => r.image_url) } 
+                state: { trabajoId, servicio, imagenes: reportes.filter(r => r.stage !== 'ticket').map(r => r.image_url) } 
               })}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#0f172a', color: 'white', padding: '10px 20px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}
             >
@@ -447,7 +394,7 @@ const GaleriaReportes = () => {
           )}
         </div>
 
-        {/* GRID DE LAS 4 EVIDENCIAS ESTRUCTURADAS */}
+        {/* GRID DE LAS 4 EVIDENCIAS + TICKET DE CONFORMIDAD */}
         <div style={{ width: '100%', maxWidth: '1200px', marginBottom: '40px' }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '60px' }}>
@@ -469,7 +416,9 @@ const GaleriaReportes = () => {
 
                 const displayImage = localState.preview || report?.image_url || null;
                 const displayEsVideo = localState.preview ? !!localState.previewEsVideo : esVideoUrl(report?.image_url);
-                const cleanReportDesc = (report?.description || '').replace(/\[(ANTES|DURANTE|DESPUÉS|DESPUES|EXTRA)\]/gi, '').trim();
+                const cleanReportDesc = limpiarEtiqueta(report?.description);
+                // El ticket se muestra como requerido aunque no bloquee el envío
+                const requerido = stage.required || stage.marcaRequerido;
 
                 return (
                   <div 
@@ -507,10 +456,10 @@ const GaleriaReportes = () => {
                           fontWeight: '800',
                           padding: '4px 10px',
                           borderRadius: '10px',
-                          background: isDone ? '#dcfce7' : (stage.required ? '#fee2e2' : '#f1f5f9'),
-                          color: isDone ? '#15803d' : (stage.required ? '#b91c1c' : '#475569')
+                          background: isDone ? '#dcfce7' : (requerido ? '#fee2e2' : '#f1f5f9'),
+                          color: isDone ? '#15803d' : (requerido ? '#b91c1c' : '#475569')
                         }}>
-                          {isDone ? '✅ COMPLETADO' : (stage.required ? '⚠️ REQUERIDO' : '🔵 OPCIONAL')}
+                          {isDone ? '✅ COMPLETADO' : (requerido ? '⚠️ REQUERIDO' : '🔵 OPCIONAL')}
                         </span>
                       </div>
 
@@ -580,10 +529,12 @@ const GaleriaReportes = () => {
                           <div style={{ textAlign: 'center', padding: '15px', color: '#64748b' }}>
                             <Camera size={44} strokeWidth={1.5} color="#F26522" style={{ marginBottom: '8px' }} />
                             <p style={{ margin: 0, fontWeight: '800', fontSize: '0.85rem', color: '#1e293b' }}>
-                              {stage.permiteVideo ? 'TAP PARA SUBIR FOTO O VIDEO' : 'TAP PARA SUBIR FOTO'}
+                              {stage.esTicket ? 'TAP PARA SUBIR EL TICKET' : stage.permiteVideo ? 'TAP PARA SUBIR FOTO O VIDEO' : 'TAP PARA SUBIR FOTO'}
                             </p>
                             <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                              {stage.permiteVideo ? `Cámara o Galería · video de máx. ${VIDEO_MAX_SEGUNDOS} s` : 'Cámara o Galería'}
+                              {stage.esTicket
+                                ? 'Foto del comprobante firmado o sellado por la empresa'
+                                : stage.permiteVideo ? `Cámara o Galería · video de máx. ${VIDEO_MAX_SEGUNDOS} s` : 'Cámara o Galería'}
                             </span>
                           </div>
                         )}
@@ -625,7 +576,9 @@ const GaleriaReportes = () => {
                       ) : (
                         <div style={{ marginBottom: '16px' }}>
                           <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '6px' }}>
-                            DESCRIPCIÓN OBLIGATORIA <span style={{ color: '#dc2626' }}>*</span>
+                            {stage.esTicket
+                              ? 'FOLIO O COMENTARIO (OPCIONAL)'
+                              : <>DESCRIPCIÓN OBLIGATORIA <span style={{ color: '#dc2626' }}>*</span></>}
                           </label>
                           <textarea
                             rows={3}
@@ -745,7 +698,7 @@ const GaleriaReportes = () => {
                             ) : (
                               <>
                                 <Upload size={18} />
-                                <span>Guardar {stage.key}</span>
+                                <span>Guardar {stage.esTicket ? 'ticket' : stage.key}</span>
                               </>
                             )}
                           </button>

@@ -1,0 +1,182 @@
+/* ── Alerta de trabajos por validar: mascota + contador sobre "Cotización y reporte" ── */
+.va-alerta {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none; /* el clic llega al botón del menú */
+}
+
+/* Los botones que llevan la alerta son la referencia para colocarla */
+.vcp-nav-btn.con-alerta-validacion {
+  position: relative;
+}
+
+.vcp-mobile-bottom-nav .vcp-mobile-nav-item.con-alerta-validacion {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* La barra del encabezado tiene overflow-x (para deslizar en pantallas angostas), lo que recortaría
+   a la mascota que se asoma por arriba: se le da espacio arriba sin mover el diseño */
+.vcp-header-nav.con-alerta-validacion {
+  padding-top: 30px;
+  margin-top: -30px;
+  padding-right: 16px;
+}
+
+/* Encabezado de computadora: se asoma por encima de la esquina derecha del botón */
+.va-alerta.va-menu {
+  top: -27px;
+  right: -12px;
+}
+
+/* Barra del celular: sobre el ícono, un poco más chica */
+.va-alerta.va-barra {
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.85);
+}
+
+.va-mascota {
+  display: block;
+  width: 40px;
+  height: 33px;
+  animation: va-asomarse 5s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+.va-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+/* El número va "en las patitas" */
+.va-contador {
+  margin-top: -9px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  border: 2px solid #0f172a;
+  background: #ef4444;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);
+  animation: va-latido 2.4s ease-in-out infinite;
+}
+
+.va-alerta.solo-numero.va-menu { top: -8px; right: -8px; }
+.va-alerta.solo-numero.va-barra { top: -4px; left: auto; right: 6px; transform: none; }
+.va-alerta.solo-numero .va-contador { margin-top: 0; }
+
+/* Animaciones suaves: se asoma, parpadea, mueve la cola / orejas */
+.va-cola {
+  transform-origin: 40px 30px;
+  animation: va-cola 1.6s ease-in-out infinite;
+}
+
+.va-ojos {
+  transform-origin: 24px 19px;
+  animation: va-parpadeo 4.2s infinite;
+}
+
+.va-oreja-izq { transform-origin: 12px 11px; animation: va-oreja 2.8s ease-in-out infinite; }
+.va-oreja-der { transform-origin: 36px 11px; animation: va-oreja 2.8s ease-in-out infinite reverse; }
+
+.va-flota { animation: va-flotar 2.6s ease-in-out infinite; }
+
+@keyframes va-asomarse {
+  0%, 70%, 100% { transform: translateY(0); }
+  78% { transform: translateY(-4px) rotate(-4deg); }
+  86% { transform: translateY(-4px) rotate(4deg); }
+}
+
+@keyframes va-cola {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-18deg); }
+}
+
+@keyframes va-parpadeo {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
+@keyframes va-oreja {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(8deg); }
+}
+
+@keyframes va-flotar {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes va-latido {
+  0%, 80%, 100% { transform: scale(1); }
+  88% { transform: scale(1.18); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .va-mascota,
+  .va-cola,
+  .va-ojos,
+  .va-oreja-izq,
+  .va-oreja-der,
+  .va-flota,
+  .va-contador {
+    animation: none !important;
+  }
+}
+
+/* Selector de mascota (panel de Reportes) */
+.va-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.va-selector-label {
+  padding: 0 6px 0 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* padding/margin propios: anulan los estilos globales de button de index.css */
+.va-selector button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #475569;
+  cursor: pointer;
+}
+
+.va-selector button:hover { background: rgba(249, 115, 22, 0.1); border-color: transparent; }
+.va-selector button.activa { background: #ffedd5; border-color: #fb923c; color: #c2410c; }
+.va-selector button .va-svg { width: 24px; height: 20px; filter: none; }

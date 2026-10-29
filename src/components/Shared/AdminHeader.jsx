@@ -8,6 +8,7 @@ import NotificationBell from './NotificationBell';
 import BotonChats from './BotonChats';
 import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
 import MobileBottomNav from './MobileBottomNav';
+import { MascotaAlerta } from './AlertaValidacion';
 import axios from 'axios';
 import { obtenerEstadoUbicacion, suscribirEstadoUbicacion } from './ubicacionService';
 import { nombreRol } from '../../utils/roles';
@@ -176,7 +177,7 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
           </nav>
         ) : (
         /* NAVEGACIÓN PRINCIPAL DEL ADMIN (ROL 1 / ROL 0) */
-        <nav className="vcp-header-nav">
+        <nav className="vcp-header-nav con-alerta-validacion">
           <button
             type="button"
             className={`vcp-nav-btn ${isInicioActive ? 'active' : ''}`}
@@ -203,10 +204,12 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
 
           <button
             type="button"
-            className={`vcp-nav-btn ${isReporteCotizacionActive ? 'active' : ''}`}
+            className={`vcp-nav-btn con-alerta-validacion ${isReporteCotizacionActive ? 'active' : ''}`}
             onClick={() => navigate('/vista-cotizaciones')}
           >
             COTIZACIÓN Y REPORTE
+            {/* Mascota + contador mientras haya trabajos terminados sin validar */}
+            <MascotaAlerta />
           </button>
 
           <button

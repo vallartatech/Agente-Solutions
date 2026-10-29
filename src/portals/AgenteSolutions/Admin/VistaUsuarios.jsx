@@ -22,7 +22,8 @@ import {
   Briefcase,
   HardHat,
   Crown,
-  Clock
+  Clock,
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 import UniversalSearch from "../../../components/Shared/UniversalSearch";
@@ -162,7 +163,8 @@ const VistaUsuarios = () => {
           rating_time_avg: Number(u.rating_time_avg || 5.0),
           total_reviews_count: Number(u.total_reviews_count || 0),
           my_review: u.my_review || null,
-          jobs_count: Number(u.jobs_count || 0)
+          jobs_count: Number(u.jobs_count || 0),
+          valida_trabajos: Boolean(u.valida_trabajos)
         };
       });
 
@@ -260,6 +262,43 @@ const VistaUsuarios = () => {
     } catch (error) {
       console.error("Error al procesar el cambio de estatus:", error);
       Swal.fire('Error', 'No se pudo actualizar el estatus.', 'error');
+    }
+  };
+
+  // Validador fijo: le llegan los trabajos terminados y ve la alerta en el menú. Solo hay uno por equipo.
+  const toggleValidador = async (u) => {
+    const activar = !u.valida_trabajos;
+    const actual = listaUsuarios.find(x => x.valida_trabajos && x.id !== u.id);
+    const confirmacion = await Swal.fire({
+      title: activar ? '¿Hacerlo validador de trabajos?' : '¿Quitar como validador?',
+      text: activar
+        ? `${u.nombre} recibirá los trabajos terminados para validarlos y verá la alerta en "Cotización y reporte".`
+          + (actual ? ` ${actual.nombre} dejará de ser validador.` : '')
+        : `Si no hay validador, los trabajos terminados les llegarán a todos los administradores.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#f26522',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: activar ? 'Sí, hacerlo validador' : 'Sí, quitar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!confirmacion.isConfirmed) return;
+
+    try {
+      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/usuarios/${u.rawId}/validador`, { enabled: activar });
+      setListaUsuarios(prev => prev.map(x => ({
+        ...x,
+        valida_trabajos: x.id === u.id ? activar : (activar ? false : x.valida_trabajos)
+      })));
+      window.dispatchEvent(new Event('validacion-actualizada'));
+      Swal.fire({
+        icon: 'success',
+        title: activar ? 'Validador asignado' : 'Validador quitado',
+        timer: 1800,
+        showConfirmButton: false
+      });
+    } catch (error) {
+      Swal.fire('Error', error.response?.data?.error || 'No se pudo actualizar el validador.', 'error');
     }
   };
 
@@ -518,6 +557,7 @@ const VistaUsuarios = () => {
                               <div className="vu-name-block">
                                 <span className="vu-user-name-title">{u.nombre}</span>
                                 {u.bloqueado && <span className="vu-blocked-tag">Bloqueado</span>}
+                                {u.valida_trabajos && <span className="vu-validador-tag"><ShieldCheck size={11} /> Valida trabajos</span>}
                               </div>
                             </td>
 
@@ -662,6 +702,19 @@ const VistaUsuarios = () => {
                                 >
                                   <Eye size={15} />
                                 </button>
+
+                                {/* Validador de trabajos terminados: solo administradores */}
+                                {!isClientPortalUser && [0, 1].includes(Number(u.role_id)) && (
+                                  <button
+                                    type="button"
+                                    className={`vu-mockup-btn validador ${u.valida_trabajos ? 'activo' : ''}`}
+                                    onClick={() => toggleValidador(u)}
+                                    title={u.valida_trabajos ? 'Valida los trabajos terminados (clic para quitar)' : 'Hacerlo validador de trabajos terminados'}
+                                    aria-pressed={u.valida_trabajos}
+                                  >
+                                    <ShieldCheck size={15} />
+                                  </button>
+                                )}
 
                                 {!isClientPortalUser && u.role_id !== 0 && (isRoot || u.id !== user?.id) && (
                                   <>

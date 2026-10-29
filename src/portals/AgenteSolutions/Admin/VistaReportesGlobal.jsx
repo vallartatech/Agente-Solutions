@@ -5,47 +5,23 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Shared/Header';
 import SelectorVistas from '../../../components/Shared/SelectorVistas';
 import CasaLoader from '../../../components/Shared/CasaLoader';
+import { SelectorMascota } from '../../../components/Shared/AlertaValidacion';
 import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import { useAuth } from '../../../context/AuthContext';
-import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Upload, CheckCircle2, Pencil, Calendar, ClipboardList, Image as ImageIcon, Camera, Video, Images } from 'lucide-react';
+import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Upload, CheckCircle2, Pencil, Calendar, ClipboardList, Image as ImageIcon, Camera, Video, Images, ShieldCheck } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
+import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta } from '../Shared/etapasEvidencia';
 import '../../../styles/Shared/UniversalSearch.css';
 import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteSolutions/Admin/VistaReportesGlobal.css';
 
-const STAGES = [
-  {
-    key: 'ANTES',
-    title: '1. ANTES DE INICIAR',
-    tag: '[ANTES]',
-    required: true,
-    placeholder: 'Escribe la descripción de las condiciones iniciales...'
-  },
-  {
-    key: 'DURANTE',
-    title: '2. DURANTE EL PROCESO',
-    tag: '[DURANTE]',
-    required: true,
-    placeholder: 'Escribe la descripción del avance o procedimiento en proceso...'
-  },
-  {
-    key: 'DESPUES',
-    title: '3. DESPUÉS DE FINALIZAR',
-    tag: '[DESPUÉS]',
-    required: true,
-    placeholder: 'Escribe la descripción del resultado final tras concluir...'
-  },
-  {
-    key: 'EXTRA',
-    title: '4. ADICIONAL / EXTRA',
-    tag: '[EXTRA]',
-    required: false,
-    placeholder: 'Observaciones o evidencia adicional (opcional)...',
-    permiteVideo: true
-  }
-];
+// Etapas compartidas con la galería del técnico (incluye el ticket de conformidad)
+const STAGES = ETAPAS_EVIDENCIA.map(e => ({ ...e, placeholder: e.placeholderAdmin }));
+
+// Avisa al menú (contador / mascota de "por validar") que algo cambió
+const avisarValidacion = () => window.dispatchEvent(new Event('validacion-actualizada'));
 
 // Resuelve la foto de fachada de la propiedad (URL absoluta o ruta de storage)
 const resolverFotoPropiedad = (prop) => {
@@ -109,7 +85,7 @@ const VistaReportesGlobal = () => {
     
     let cleanDesc = '';
     if (mode === 'edit' && report) {
-      cleanDesc = (report.description || '').replace(/\[(ANTES|DURANTE|DESPUÉS|DESPUES|EXTRA)\]/gi, '').trim();
+      cleanDesc = limpiarEtiqueta(report.description);
     }
 
     setFormData({ description: cleanDesc, image: null });
@@ -156,7 +132,8 @@ const VistaReportesGlobal = () => {
 
   const handleSubmitReport = async (e) => {
     e.preventDefault();
-    if (!formData.description.trim() && modalMode === 'add') {
+    // En el ticket el comentario es opcional
+    if (!formData.description.trim() && modalMode === 'add' && !selectedStage?.esTicket) {
       Swal.fire('Atención', 'Debes ingresar una descripción obligatoria.', 'warning');
       return;
     }
@@ -169,10 +146,11 @@ const VistaReportesGlobal = () => {
     const data = new FormData();
 
     const tagStr = selectedStage ? selectedStage.tag : '[REPORTE]';
-    const cleanUserDesc = formData.description.replace(/\[(ANTES|DURANTE|DESPUÉS|DESPUES|EXTRA)\]/gi, '').trim();
+    const cleanUserDesc = limpiarEtiqueta(formData.description) || (selectedStage?.esTicket ? 'Ticket de conformidad' : '');
     const finalDesc = `${tagStr} ${cleanUserDesc}`;
 
     data.append('description', finalDesc);
+    if (selectedStage?.stage) data.append('stage', selectedStage.stage);
     if (formData.image) {
       data.append('image', formData.image);
     }
@@ -197,6 +175,7 @@ const VistaReportesGlobal = () => {
       }
       closeModal();
       fetchReportesYCotizaciones();
+      if (selectedStage?.esTicket) avisarValidacion();
     } catch (error) {
       console.error("Error al guardar:", error);
       Swal.fire('Error', error.response?.data?.error || 'Hubo un problema al guardar la evidencia.', 'error');
@@ -233,24 +212,57 @@ const VistaReportesGlobal = () => {
     }
   };
 
-  const tieneTag = (r, s) => {
-    const desc = (r.description || '').toUpperCase();
-    return desc.includes(s.tag) || (s.key === 'DESPUES' && desc.includes('[DESPUES]'));
-  };
+  // Evidencia de cada etapa: por la columna `stage` o, en las viejas, por su etiqueta / orden
+  const getReportForStage = (groupReports, stage) => evidenciaDeEtapa(groupReports, stage);
+  const ETAPA_TICKET = STAGES.find(st => st.esTicket);
 
-  const getReportForStage = (groupReports, stage) => {
-    if (!groupReports || groupReports.length === 0) return null;
+  // Validar un trabajo terminado (queda "Listo"). Sin ticket se permite, pero queda a nombre de quien lo confirma.
+  const [validando, setValidando] = useState(false);
+  const validarTrabajo = async (grupo) => {
+    const tieneTicket = Boolean(getReportForStage(grupo.reports, ETAPA_TICKET));
+    const nombreYo = `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.name || 'ti';
+    const confirmacion = await Swal.fire(tieneTicket
+      ? {
+        icon: 'question',
+        title: '¿Validar y finalizar?',
+        text: 'El trabajo quedará finalizado con su ticket de conformidad y se le avisará al técnico.',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, finalizar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#16a34a',
+        reverseButtons: true
+      }
+      : {
+        icon: 'warning',
+        title: '¿Finalizar sin ticket?',
+        text: `Este trabajo no tiene ticket de conformidad. Si lo finalizas, quedará registrado que lo confirmó ${nombreYo}.`,
+        showCancelButton: true,
+        confirmButtonText: 'Finalizar sin ticket',
+        cancelButtonText: 'Subir ticket primero',
+        confirmButtonColor: '#ea580c',
+        reverseButtons: true
+      });
+    if (!confirmacion.isConfirmed) return;
 
-    const foundByTag = groupReports.find(r => tieneTag(r, stage));
-    if (foundByTag) return foundByTag;
-
-    // Las evidencias viejas sin etiqueta ocupan, en orden de creación, las etapas que quedaron libres
-    const sinTag = groupReports
-      .filter(r => !STAGES.some(s => tieneTag(r, s)))
-      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    const libres = STAGES.filter(s => !groupReports.some(r => tieneTag(r, s)));
-    const posicion = libres.findIndex(s => s.key === stage.key);
-    return posicion !== -1 ? (sinTag[posicion] || null) : null;
+    setValidando(true);
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/work-orders/${grupo.trabajoId}/status`, { status: 'Listo' }, { headers });
+      Swal.fire({
+        icon: 'success',
+        title: '¡Trabajo finalizado!',
+        text: tieneTicket ? 'Quedó validado con su ticket.' : `Quedó finalizado sin ticket, confirmado por ${nombreYo}.`,
+        timer: 2200,
+        showConfirmButton: false
+      });
+      await fetchReportesYCotizaciones();
+      avisarValidacion();
+    } catch (error) {
+      Swal.fire('Error', error.response?.data?.error || 'No se pudo finalizar el trabajo.', 'error');
+    } finally {
+      setValidando(false);
+    }
   };
 
   // Filtrado de reportes: si es técnico, SOLO mostrar los suyos
@@ -325,8 +337,18 @@ const VistaReportesGlobal = () => {
     const fechaDate = fechaRaw ? new Date(fechaRaw) : null;
     const fechaValida = fechaDate && !isNaN(fechaDate.getTime());
 
+    // Validación: solo las órdenes de trabajo pasan por "Por Aprobar" → "Listo"
+    const orden = tipo === 'work_order' ? (first.work_order || first.workOrder) : null;
+    const cerrador = orden?.closer;
+
     return {
       groupKey, nombre, curp, dueno, trabajoId, tipo, tituloTrabajo, reports, foto, etapasRegistradas,
+      porValidar: orden?.status === 'Por Aprobar',
+      ticketStatus: orden?.status === 'Listo' ? orden?.ticket_status : null,
+      cerradoPor: cerrador ? `${cerrador.first_name || ''} ${cerrador.last_name || ''}`.trim() : '',
+      cerradoEl: orden?.closed_at
+        ? new Date(orden.closed_at).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+        : '',
       propKey: `${nombre}|${curp}|${dueno}`,
       fechaTs: fechaValida ? fechaDate.getTime() : 0,
       fechaTexto: fechaValida
@@ -344,7 +366,13 @@ const VistaReportesGlobal = () => {
       acc[g.propKey].servicios.push(g);
       return acc;
     }, {})
-  ).map(p => ({ ...p, servicios: [...p.servicios].sort((a, b) => a.fechaTs - b.fechaTs) }));
+  ).map(p => ({
+    ...p,
+    servicios: [...p.servicios].sort((a, b) => a.fechaTs - b.fechaTs),
+    porValidar: p.servicios.filter(sv => sv.porValidar).length
+  }))
+    // Las propiedades con trabajos por validar van primero
+    .sort((a, b) => (b.porValidar > 0) - (a.porValidar > 0));
 
   const propiedadSeleccionada = propiedadesConReportes.find(p => p.propKey === selectedPropKey) || null;
   const grupoSeleccionado = propiedadSeleccionada?.servicios.find(g => g.groupKey === selectedGroupKey) || null;
@@ -385,9 +413,9 @@ const VistaReportesGlobal = () => {
           titulo: tituloTrabajo,
           descripcion: serviceData?.description
         },
-        // Solo las fotos que se ven en las tarjetas de etapas (una por etapa, sin repetir)
+        // Solo las fotos que se ven en las tarjetas de etapas (una por etapa, sin repetir; el ticket va aparte)
         imagenes: [...new Set(
-          STAGES.map(st => getReportForStage(reports, st))
+          STAGES.filter(st => !st.esTicket).map(st => getReportForStage(reports, st))
             .map(r => r?.image_url || r?.image_path)
             .filter(Boolean)
         )]
@@ -403,7 +431,11 @@ const VistaReportesGlobal = () => {
         {/* TÍTULO */}
         <div className="rg-action-bar">
           {esAdminPanel ? (
-            <SelectorVistas grupo="cotizaciones" activo="reportes" conteo={propiedadesConReportes.length} />
+            <>
+              <SelectorVistas grupo="cotizaciones" activo="reportes" conteo={propiedadesConReportes.length} />
+              {/* Quien recibe la alerta de "por validar" elige su mascota (o solo el número) */}
+              <SelectorMascota />
+            </>
           ) : (
             <div className="rg-page-title-badge">
               <FileText size={18} className="rg-title-icon" />
@@ -460,6 +492,11 @@ const VistaReportesGlobal = () => {
                   <span className="rg-job-progress">
                     <ClipboardList size={13} /> {propiedad.servicios.length} {propiedad.servicios.length === 1 ? 'SERVICIO' : 'SERVICIOS'}
                   </span>
+                  {propiedad.porValidar > 0 && (
+                    <span className="rg-por-validar-tag">
+                      <ShieldCheck size={13} /> {propiedad.porValidar} POR VALIDAR
+                    </span>
+                  )}
                 </div>
 
                 <div className="rg-job-body">
@@ -537,7 +574,12 @@ const VistaReportesGlobal = () => {
                     >
                       <span className="rg-service-number">{idx + 1}</span>
                       <span className="rg-service-info">
-                        <span className="rg-service-label">SERVICIO {idx + 1} · #{servicio.trabajoId}</span>
+                        <span className="rg-service-label">
+                          SERVICIO {idx + 1} · #{servicio.trabajoId}
+                          {servicio.porValidar && <span className="rg-estado-chip por-validar">Por validar</span>}
+                          {servicio.ticketStatus === 'con_ticket' && <span className="rg-estado-chip con-ticket">Finalizado · con ticket</span>}
+                          {servicio.ticketStatus === 'sin_ticket' && <span className="rg-estado-chip sin-ticket">Finalizado sin ticket</span>}
+                        </span>
                         <span className="rg-service-title">{servicio.tituloTrabajo}</span>
                         <span className="rg-service-meta">
                           <Calendar size={13} /> {servicio.fechaTexto}
@@ -567,15 +609,40 @@ const VistaReportesGlobal = () => {
               </button>
             </div>
 
-            {/* LAS 4 ETAPAS ESTRUCTURADAS (ANTES, DURANTE, DESPUÉS, EXTRA) */}
+            {/* Validación del trabajo terminado */}
+            {esAdminPanel && grupoSeleccionado.porValidar && (
+              <div className="rg-validar-banner">
+                <div>
+                  <strong><ShieldCheck size={16} /> Trabajo terminado, pendiente de validar</strong>
+                  <span>
+                    {getReportForStage(grupoSeleccionado.reports, ETAPA_TICKET)
+                      ? 'Ya tiene su ticket de conformidad.'
+                      : 'Aún no tiene ticket de conformidad: súbelo abajo o finaliza sin ticket.'}
+                  </span>
+                </div>
+                <button type="button" className="rg-btn-validar" onClick={() => validarTrabajo(grupoSeleccionado)} disabled={validando}>
+                  <CheckCircle2 size={16} /> {validando ? 'FINALIZANDO...' : 'VALIDAR Y FINALIZAR'}
+                </button>
+              </div>
+            )}
+            {grupoSeleccionado.ticketStatus && (
+              <div className={`rg-cierre-nota ${grupoSeleccionado.ticketStatus}`}>
+                <CheckCircle2 size={15} />
+                {grupoSeleccionado.ticketStatus === 'con_ticket'
+                  ? <span>Finalizado con ticket{grupoSeleccionado.cerradoPor ? ` · validó ${grupoSeleccionado.cerradoPor}` : ''}{grupoSeleccionado.cerradoEl ? ` · ${grupoSeleccionado.cerradoEl}` : ''}</span>
+                  : <span>Finalizado <b>sin ticket</b>{grupoSeleccionado.cerradoPor ? ` · confirmó ${grupoSeleccionado.cerradoPor}` : ''}{grupoSeleccionado.cerradoEl ? ` · ${grupoSeleccionado.cerradoEl}` : ''}</span>}
+              </div>
+            )}
+
+            {/* LAS 4 ETAPAS (ANTES, DURANTE, DESPUÉS, EXTRA) + TICKET DE CONFORMIDAD */}
             <div className="rg-stages-grid">
               {STAGES.map(stage => {
                 const { reports, trabajoId, tipo } = grupoSeleccionado;
                 const r = getReportForStage(reports, stage);
-                const cleanDesc = r ? (r.description || '').replace(/\[(ANTES|DURANTE|DESPUÉS|DESPUES|EXTRA)\]/gi, '').trim() : '';
+                const cleanDesc = r ? limpiarEtiqueta(r.description) : '';
 
                 return r ? (
-                  <div key={stage.key} className="rg-stage-card">
+                  <div key={stage.key} className={`rg-stage-card ${stage.esTicket ? 'es-ticket' : ''}`}>
                     <div className="rg-stage-header">
                       <span className="rg-stage-badge">{stage.title}</span>
                       <span className="rg-stage-status"><CheckCircle2 size={12} /> REGISTRADO</span>
@@ -624,12 +691,15 @@ const VistaReportesGlobal = () => {
                   <button
                     key={stage.key}
                     type="button"
-                    className="rg-stage-empty"
+                    className={`rg-stage-empty ${stage.esTicket ? 'es-ticket' : ''}`}
                     onClick={() => handleOpenModal('add', null, trabajoId, tipo, stage)}
                   >
                     <span className="rg-stage-empty-icon"><Plus size={22} /></span>
-                    <strong>AÑADIR EVIDENCIA</strong>
-                    <span>{stage.title}{!stage.required && ' (opcional)'}</span>
+                    <strong>{stage.esTicket ? 'SUBIR TICKET' : 'AÑADIR EVIDENCIA'}</strong>
+                    <span>
+                      {stage.title}
+                      {stage.marcaRequerido ? ' (requerido)' : !stage.required && ' (opcional)'}
+                    </span>
                   </button>
                 );
               })}
@@ -658,20 +728,23 @@ const VistaReportesGlobal = () => {
             <form onSubmit={handleSubmitReport} className="rg-modal-form">
               <div className="rg-field">
                 <label className="rg-label">
-                  {modalMode === 'add' ? <Plus size={15} /> : <Edit size={15} />} Descripción obligatoria <span className="rg-required">*</span>
+                  {modalMode === 'add' ? <Plus size={15} /> : <Edit size={15} />}
+                  {selectedStage?.esTicket
+                    ? ' Folio o comentario (opcional)'
+                    : <> Descripción obligatoria <span className="rg-required">*</span></>}
                 </label>
                 <textarea
                   className="rg-textarea"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder={selectedStage?.placeholder || "Escribe la descripción de lo realizado..."}
-                  required
+                  required={!selectedStage?.esTicket}
                 />
               </div>
 
               <div className="rg-field">
                 <label className="rg-label">
-                  <Upload size={15} /> {selectedStage?.permiteVideo ? `Foto o video (máx. ${VIDEO_MAX_SEGUNDOS} s)` : 'Fotografía de evidencia'} {modalMode === 'add' && <span className="rg-required">*</span>}
+                  <Upload size={15} /> {selectedStage?.esTicket ? 'Foto del ticket firmado o sellado' : selectedStage?.permiteVideo ? `Foto o video (máx. ${VIDEO_MAX_SEGUNDOS} s)` : 'Fotografía de evidencia'} {modalMode === 'add' && <span className="rg-required">*</span>}
                 </label>
                 {/* Cámara (foto o video) o galería */}
                 <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} style={{ display: 'none' }} id="report-image-camara" />

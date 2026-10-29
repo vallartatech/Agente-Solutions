@@ -877,6 +877,34 @@
   width: fit-content;
 }
 
+/* Validador de trabajos terminados */
+.vu-validador-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #c2410c;
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+.vu-mockup-btn.validador:hover {
+  background: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.6);
+  color: #ea580c;
+}
+
+.vu-mockup-btn.validador.activo {
+  background: #f97316;
+  border-color: #ea580c;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
 /* ── 3. PHOTO CELL ── */
 .vu-avatar-wrap {
   display: flex;

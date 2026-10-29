@@ -940,3 +940,131 @@ button.rg-upload-btn { font-family: inherit; }
 
   .rg-textarea { font-size: 16px; } /* evita zoom en iOS */
 }
+
+/* ── VALIDACIÓN DE TRABAJOS TERMINADOS Y TICKET DE CONFORMIDAD ── */
+.rg-por-validar-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #ea580c;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);
+}
+
+.rg-service-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.rg-estado-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.rg-estado-chip.por-validar { background: #ffedd5; color: #c2410c; }
+.rg-estado-chip.con-ticket { background: #dcfce7; color: #15803d; }
+.rg-estado-chip.sin-ticket { background: #fef3c7; color: #b45309; }
+
+.rg-validar-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #fff7ed;
+  border: 1.5px solid #fdba74;
+}
+
+.rg-validar-banner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.rg-validar-banner strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #9a3412;
+  font-size: 0.9rem;
+}
+
+.rg-validar-banner span {
+  color: #7c2d12;
+  font-size: 0.8rem;
+}
+
+/* padding/margin propios: anulan los estilos globales de button de index.css */
+.rg-btn-validar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 11px 18px;
+  border: none;
+  border-radius: 12px;
+  background: #16a34a;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3);
+}
+
+.rg-btn-validar:hover:not(:disabled) { background: #15803d; }
+.rg-btn-validar:disabled { opacity: 0.6; cursor: wait; }
+
+.rg-cierre-nota {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.rg-cierre-nota.con_ticket { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.rg-cierre-nota.sin_ticket { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+.rg-cierre-nota svg { flex-shrink: 0; }
+
+/* El ticket se distingue de las evidencias */
+.rg-stage-card.es-ticket { border-color: rgba(124, 58, 237, 0.45); }
+.rg-stage-card.es-ticket .rg-stage-badge { background: #7c3aed; color: #ffffff; }
+
+.rg-stage-empty.es-ticket {
+  border-color: rgba(124, 58, 237, 0.55);
+  background: rgba(124, 58, 237, 0.05);
+}
+
+.rg-stage-empty.es-ticket .rg-stage-empty-icon { background: #7c3aed; color: #ffffff; }
+.rg-stage-empty.es-ticket strong { color: #6d28d9; }
+
+@media (max-width: 640px) {
+  .rg-validar-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rg-btn-validar { justify-content: center; }
+}
