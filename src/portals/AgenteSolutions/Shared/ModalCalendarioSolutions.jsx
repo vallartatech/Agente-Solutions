@@ -804,6 +804,67 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     setSelectedNotice(null);
   };
 
+  // Recordatorio: vuelve a enviar el aviso a sus involucrados (p. ej. un pendiente atrasado que no se ha cerrado)
+  const [remindingNotice, setRemindingNotice] = useState(false);
+
+  const handleRemindNotice = async (notice) => {
+    if (remindingNotice) return;
+    const raw = notice.rawNotice || {};
+    const participantes = raw.participants || [];
+    const destino = participantes.length
+      ? (participantes.length === 1 ? 'a la persona involucrada' : `a las ${participantes.length} personas involucradas`)
+      : 'a todo el equipo';
+
+    const ok = await Swal.fire({
+      icon: 'question',
+      title: '¿Enviar recordatorio?',
+      text: `Se le volverá a notificar ${destino} en la campanita y en su celular o computadora.`,
+      showCancelButton: true,
+      confirmButtonText: 'Enviar recordatorio',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#f97316',
+      reverseButtons: true
+    });
+    if (!ok.isConfirmed) return;
+
+    try {
+      setRemindingNotice(true);
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/calendar/events/${notice.noticeId}/remind`, {}, { headers });
+      const push = res.data?.push;
+
+      if (push && !push.sent) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Recordatorio en la campanita, push no enviada',
+          text: `OneSignal no envió la notificación: ${push.error || 'ningún dispositivo está suscrito.'}`,
+          confirmButtonColor: '#f97316',
+          ...BOTON_REVISAR_PUSH
+        }).then(r => { if (r.isDenied) revisarDispositivoPush(user?.id); });
+      } else {
+        Swal.fire({
+          icon: 'success',
+          title: 'Recordatorio enviado',
+          text: push?.subscribed != null
+            ? `Le llegó a ${push.subscribed} de ${push.recipients} persona${push.recipients === 1 ? '' : 's'}.`
+            : undefined,
+          timer: 2200,
+          showConfirmButton: false
+        });
+      }
+    } catch (err) {
+      Swal.fire({
+        icon: err.response?.status === 429 ? 'info' : 'error',
+        title: err.response?.status === 429 ? 'Recordatorio reciente' : 'No se pudo enviar',
+        text: err.response?.data?.error || 'Intenta de nuevo.',
+        confirmButtonColor: '#f97316'
+      });
+    } finally {
+      setRemindingNotice(false);
+    }
+  };
+
   // Completar un aviso: paso de confirmación dentro del detalle con comentario opcional para el equipo
   const [completeStep, setCompleteStep] = useState(null); // null | { note }
   const [completingNotice, setCompletingNotice] = useState(false);
@@ -2931,6 +2992,18 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                       ) : (
                         <button type="button" className="nq-btn-cancel" onClick={cerrarDetalle}>
                           Cerrar
+                        </button>
+                      )}
+                      {/* Recordar: vuelve a notificar a los involucrados (resaltado si ya está atrasado) */}
+                      {isAdmin && !completado && !raw.is_private && (
+                        <button
+                          type="button"
+                          className={`nq-btn-cancel nd-btn-remind ${actual.dateKey < toLocalDateKey(new Date()) ? 'atrasado' : ''}`}
+                          onClick={() => handleRemindNotice(actual)}
+                          disabled={remindingNotice}
+                          title="Volver a notificar a los involucrados"
+                        >
+                          <BellRing size={15} /> {remindingNotice ? 'Enviando…' : 'Recordar'}
                         </button>
                       )}
                       {isAdmin && !completado && (

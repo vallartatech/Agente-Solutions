@@ -2307,6 +2307,31 @@
   flex: none;
 }
 
+/* Recordar: vuelve a notificar a los involucrados; en ámbar si el aviso ya está atrasado */
+.nd-btn-remind {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.nq-light .nd-btn-remind.atrasado {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+/* Con Eliminar, Editar, Recordar y Completar el pie puede no caber en celular */
+.nd-footer {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+
+.nd-footer-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 /* Editar: solo lo ve quien publicó el aviso */
 .nd-btn-edit {
   display: inline-flex;
