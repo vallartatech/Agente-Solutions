@@ -273,6 +273,7 @@ const VistaChats = () => {
   const [cargandoAnteriores, setCargandoAnteriores] = useState(false);
   const [visor, setVisor] = useState(null);
   const [menuMensaje, setMenuMensaje] = useState(null); // id del mensaje propio con acciones abiertas
+  const [infoMensajeId, setInfoMensajeId] = useState(null); // "Info del mensaje": quién lo leyó en un grupo
   const [panel, setPanel] = useState(null); // 'emojis' | 'stickers' | null
   const [pendientes, setPendientes] = useState([]); // fotos/videos listos para enviar (pegados, arrastrados o elegidos)
   const [arrastrando, setArrastrando] = useState(false);
@@ -793,6 +794,15 @@ const VistaChats = () => {
     }
   };
 
+  // Quién leyó un mensaje y quién falta. No cuenta a quien entró al grupo después de ese mensaje.
+  const lecturasDe = (m) => {
+    const otros = (conv?.participantes || []).filter(p => p.id !== yo && !(p.from_message_id > m.id));
+    return {
+      leyeron: otros.filter(p => p.last_read_message_id >= m.id),
+      faltan: otros.filter(p => !(p.last_read_message_id >= m.id))
+    };
+  };
+
   // "Visto": en chats de 2, si la otra persona ya leyó; en grupos, cuántos lo leyeron
   const vistoDe = (m) => {
     if (m.temporal) return { icono: <Check size={14} />, texto: 'Enviando…' };
@@ -848,7 +858,9 @@ const VistaChats = () => {
       const sinBurbuja = esSticker || grande;
       const puedeBorrar = mio && conv.activo && !m.temporal && m.tipo !== 'deleted';
       const puedeGuardar = !mio && esSticker; // stickers que me envían: "Guardar en mis stickers"
-      const accionable = puedeBorrar || puedeGuardar;
+      // En grupos, quien envió el mensaje puede ver quién ya lo leyó y quién falta
+      const puedeVerLecturas = mio && conv.chat.es_grupo && !m.temporal && m.tipo !== 'deleted';
+      const accionable = puedeBorrar || puedeGuardar || puedeVerLecturas;
       const menuAbierto = menuMensaje === m.id;
 
       return (
@@ -871,12 +883,19 @@ const VistaChats = () => {
           </div>
           {menuAbierto && (
             <div className={`vch-msg-acciones ${mio ? '' : 'otro'}`}>
+              {puedeVerLecturas && <button type="button" className="guardar" onClick={() => { setInfoMensajeId(m.id); setMenuMensaje(null); }}><CheckCheck size={14} /> Ver quién lo leyó</button>}
               {puedeGuardar && <button type="button" className="guardar" onClick={() => guardarSticker(m)}><Plus size={14} /> Guardar en mis stickers</button>}
               {puedeBorrar && <button type="button" className="peligro" onClick={() => eliminarMensaje(m)}><Trash2 size={14} /> Eliminar para todos</button>}
               <button type="button" onClick={() => setMenuMensaje(null)}>Cancelar</button>
             </div>
           )}
-          {visto && <div className={`vch-visto ${visto.visto ? 'ok' : ''}`}>{visto.icono} {visto.texto}</div>}
+          {visto && (puedeVerLecturas
+            ? (
+              <button type="button" className={`vch-visto vch-visto-btn ${visto.visto ? 'ok' : ''}`} onClick={() => setInfoMensajeId(m.id)} title="Ver quién lo leyó">
+                {visto.icono} {visto.texto}
+              </button>
+            )
+            : <div className={`vch-visto ${visto.visto ? 'ok' : ''}`}>{visto.icono} {visto.texto}</div>)}
         </React.Fragment>
       );
     });
@@ -1231,6 +1250,50 @@ const VistaChats = () => {
           onCerrar={() => setSelector(null)}
         />
       )}
+
+      {/* Info del mensaje (grupos): quién lo leyó y quién falta. Se actualiza solo mientras está abierto. */}
+      {(() => {
+        const m = infoMensajeId && conv?.mensajes.find(x => x.id === infoMensajeId);
+        if (!m) return null;
+        const { leyeron, faltan } = lecturasDe(m);
+        const vista = m.tipo === 'sticker' ? 'Sticker' : m.tipo === 'video' ? '🎬 Video' : (m.texto || (m.imagen ? '📷 Foto' : ''));
+        const Persona = ({ p }) => (
+          <li className="vch-info-persona">
+            <Avatar foto={p.foto} nombre={p.nombre} size={36} />
+            <span className="vch-info-nombre">{p.nombre}<small>{p.rol}</small></span>
+          </li>
+        );
+        return createPortal(
+          <div className="vch-info-fondo" onClick={() => setInfoMensajeId(null)}>
+            <div className="vch-info" onClick={e => e.stopPropagation()} role="dialog" aria-label="Info del mensaje">
+              <div className="vch-info-head">
+                <strong>Info del mensaje</strong>
+                <button type="button" className="vch-info-cerrar" onClick={() => setInfoMensajeId(null)} aria-label="Cerrar"><X size={18} /></button>
+              </div>
+
+              <div className="vch-info-preview">
+                <p>{vista}</p>
+                <span>{hora(m.fecha)}</span>
+              </div>
+
+              <div className="vch-info-seccion leido">
+                <span className="vch-info-titulo"><CheckCheck size={16} /> Leído por {leyeron.length}</span>
+                {leyeron.length
+                  ? <ul>{leyeron.map(p => <Persona key={p.id} p={p} />)}</ul>
+                  : <p className="vch-info-vacio">Nadie lo ha leído todavía.</p>}
+              </div>
+
+              <div className="vch-info-seccion pendiente">
+                <span className="vch-info-titulo"><Check size={16} /> Falta por leer {faltan.length}</span>
+                {faltan.length
+                  ? <ul>{faltan.map(p => <Persona key={p.id} p={p} />)}</ul>
+                  : <p className="vch-info-vacio">Todos ya lo leyeron. 🎉</p>}
+              </div>
+            </div>
+          </div>,
+          document.body
+        );
+      })()}
 
       {visor && createPortal(
         <div className="vch-visor" onClick={() => setVisor(null)}>
