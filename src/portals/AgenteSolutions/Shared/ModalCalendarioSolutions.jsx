@@ -244,7 +244,7 @@ const visitaAEvento = (visita) => {
     visitaId: visita.id,
     equipo,
     rawNotice: {},
-    titulo: `Mantto. · ${etiqueta} · ${propiedad}`,
+    titulo: `Mantenimiento de ${etiqueta} · ${propiedad}`,
     etiqueta,
     propiedad,
     type: 'mantenimiento',
