@@ -1,0 +1,448 @@
+/* ==========================================================================
+   TABLERO OPERATIVO DEL TÉCNICO: diseño de la app, con menos color.
+   Fondo de triángulos y paneles de vidrio oscuro; el naranja queda solo para la
+   acción principal y lo activo. Progreso: camino en zigzag sobre césped pixel art.
+   ========================================================================== */
+.mercado-tablero-mode .mercado-board-workspace {
+  background: #e2e8f0 url('../../../assets/geometric-poly-bg.png') center center / cover no-repeat;
+}
+
+/* Paneles de vidrio oscuro */
+.mercado-tablero-mode .mercado-board-header,
+.mercado-tablero-mode .mercado-board-col-list,
+.mercado-tablero-mode .mercado-board-card,
+.mercado-tablero-mode .mercado-board-property-card,
+.mercado-tablero-mode .mercado-board-flow-card {
+  background: linear-gradient(135deg,
+      rgba(51, 58, 72, 0.86) 0%,
+      rgba(24, 29, 39, 0.82) 50%,
+      rgba(40, 46, 58, 0.86) 100%);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.18);
+}
+
+/* Cajas internas: láminas translúcidas neutras */
+.mercado-tablero-mode .mercado-board-info-box,
+.mercado-tablero-mode .mercado-board-client-item,
+.mercado-tablero-mode .mercado-board-schedule-action-box,
+.mercado-tablero-mode .mercado-board-schedule-action-box.mandatory {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+.mercado-tablero-mode .mercado-board-card-title,
+.mercado-tablero-mode .mercado-board-schedule-label {
+  color: #ffffff;
+}
+
+.mercado-tablero-mode .mercado-board-title { display: flex; align-items: center; gap: 8px; }
+
+/* Etiquetas neutras */
+.mercado-tablero-mode .mercado-board-total-badge,
+.mercado-tablero-mode .mercado-board-job-folio,
+.mercado-tablero-mode .mercado-board-banner-tag,
+.mercado-tablero-mode .mercado-board-subnav-folio,
+.mercado-tablero-mode .mercado-board-job-status-pill,
+.mercado-tablero-mode .mercado-board-job-status-pill.in-progress,
+.mercado-tablero-mode .mercado-board-job-status-pill.scheduled,
+.mercado-tablero-mode .mercado-board-job-status-pill.done,
+.mercado-tablero-mode .mercado-board-job-status-pill.sos,
+.mercado-tablero-mode .mercado-board-schedule-status-tag,
+.mercado-tablero-mode .mercado-board-schedule-status-tag.confirmed,
+.mercado-tablero-mode .mercado-board-schedule-status-tag.pending {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #e2e8f0 !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+/* Lo urgente se distingue solo por el texto */
+.mercado-tablero-mode .mercado-board-job-status-pill.sos,
+.mercado-tablero-mode .mercado-board-schedule-status-tag.mandatory {
+  color: #fca5a5 !important;
+}
+
+/* Filtro: botón de vidrio que abre el menú */
+.mercado-tablero-mode .mercado-board-header {
+  position: relative;
+  z-index: 20; /* el menú queda encima de las columnas */
+}
+
+.mercado-board-filtro-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 100%;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.mercado-board-filtro-btn:hover,
+.mercado-board-filtro-btn.abierto { background: rgba(255, 255, 255, 0.17); }
+
+.mercado-board-filtro-total {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f26522;
+  font-size: 0.7rem;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.mercado-board-filtro-flecha { transition: transform 0.2s ease; }
+.mercado-board-filtro-btn.abierto .mercado-board-filtro-flecha { transform: rotate(180deg); }
+.mercado-board-filtro .tb-actions-menu { left: 0; right: auto; }
+
+/* Tarjetas de trabajos */
+.mercado-tablero-mode .mercado-board-job-card {
+  gap: 9px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+}
+
+.rt-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.rt-card-icono {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: #f26522;
+  color: #ffffff;
+}
+
+.rt-card-titulo {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.25;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.rt-card-precio {
+  flex-shrink: 0;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.rt-card-datos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rt-card-datos span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rt-card-datos svg { flex-shrink: 0; color: #94a3b8; }
+
+.rt-card-pie {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.rt-chip.sos { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+.rt-chip.aviso { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+.rt-chip.listo { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+
+.rt-card-folio {
+  margin-left: auto;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.mercado-tablero-mode .mercado-board-job-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.mercado-tablero-mode .mercado-board-job-card.selected {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: none;
+}
+
+/* Botones de vidrio; solo la acción principal lleva color, plano */
+.mercado-tablero-mode .mercado-kanban-btn-back,
+.mercado-tablero-mode .mercado-kanban-refresh-btn,
+.mercado-tablero-mode .mercado-board-btn-pdf,
+.mercado-tablero-mode .mercado-board-btn-gps,
+.mercado-tablero-mode .mercado-board-btn-call,
+.mercado-tablero-mode .mercado-board-btn-open-gallery {
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.mercado-tablero-mode .mercado-kanban-btn-back:hover,
+.mercado-tablero-mode .mercado-kanban-refresh-btn:hover,
+.mercado-tablero-mode .mercado-board-btn-pdf:hover,
+.mercado-tablero-mode .mercado-board-btn-gps:hover,
+.mercado-tablero-mode .mercado-board-btn-call:hover,
+.mercado-tablero-mode .mercado-board-btn-open-gallery:hover {
+  background: rgba(255, 255, 255, 0.17);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.mercado-tablero-mode .mercado-board-flow-btn.btn-start,
+.mercado-tablero-mode .mercado-board-flow-btn.btn-continue,
+.mercado-tablero-mode .mercado-board-schedule-change-btn,
+.mercado-tablero-mode .mercado-board-schedule-change-btn.mandatory {
+  background: #f26522;
+  border: none;
+  color: #ffffff;
+  box-shadow: none;
+  animation: none;
+}
+
+.mercado-tablero-mode .mercado-board-flow-btn.btn-start:hover,
+.mercado-tablero-mode .mercado-board-flow-btn.btn-continue:hover,
+.mercado-tablero-mode .mercado-board-schedule-change-btn:hover {
+  background: #ea580c;
+  box-shadow: none;
+}
+
+.mercado-tablero-mode .mercado-board-flow-btn.btn-finish {
+  background: #16a34a;
+  box-shadow: none;
+}
+
+.mercado-tablero-mode .mercado-board-flow-btn.btn-finish:hover:not(:disabled) { background: #15803d; }
+
+/* Bloqueado: sin el verde, y con texto que se lea */
+.mercado-tablero-mode .mercado-board-flow-btn.btn-finish:disabled {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #94a3b8;
+  opacity: 1;
+}
+
+.mercado-tablero-mode .mercado-board-photo-empty-circle {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.mercado-tablero-mode .mercado-board-job-cards-list::-webkit-scrollbar-thumb,
+.mercado-tablero-mode .mercado-board-col-detail::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ── PROGRESO: camino en zigzag sobre césped pixel art ── */
+.mercado-tablero-mode .mercado-board-col-progress {
+  padding: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  border-radius: 16px;
+  background: #4a8a3a url('../../../assets/cesped-pixel.png') repeat;
+  background-size: 128px 128px;
+  image-rendering: pixelated;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.25);
+}
+
+.mercado-tablero-mode .mercado-board-col-progress-header {
+  margin: 10px 10px 0;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.78);
+  flex-shrink: 0;
+}
+
+.mercado-tablero-mode .mercado-board-mobile-subnav { margin: 10px 10px 0; }
+
+.mercado-tablero-mode .mercado-board-stepper-container {
+  position: relative;
+  display: block;
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-width: none;
+}
+
+.mercado-tablero-mode .mercado-board-stepper-container::-webkit-scrollbar { display: none; }
+
+/* Lienzo del camino: líneas y círculos miden lo mismo; con poca altura se desplaza */
+.mercado-board-camino-lienzo {
+  position: relative;
+  height: 100%;
+  min-height: 540px; /* 6 filas de 90px */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Líneas entre círculos; coordenadas calculadas igual que la posición de cada nodo */
+.mercado-board-camino {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.mercado-board-camino path {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 5;
+  stroke-dasharray: 8 7;
+  vector-effect: non-scaling-stroke;
+}
+
+.mercado-board-camino path.hecho {
+  stroke: #ffffff;
+  stroke-dasharray: none;
+}
+
+.mercado-tablero-mode .mercado-board-stepper-item {
+  position: relative;
+  flex: 1 1 0;
+  display: block;
+  width: 56%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.mercado-tablero-mode .mercado-board-stepper-item.lado-der { align-self: flex-end; }
+.mercado-tablero-mode .mercado-board-stepper-item.lado-izq { align-self: flex-start; }
+
+/* El centro del círculo queda al 38% de la fila */
+.mercado-tablero-mode .mercado-board-step-node {
+  position: absolute;
+  top: calc(38% - 21px);
+  left: calc(50% - 21px);
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  border: 3px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.88);
+  color: #cbd5e1;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.28);
+  box-sizing: border-box;
+}
+
+.mercado-tablero-mode .mercado-board-stepper-item.completed .mercado-board-step-node {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #15803d;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.28);
+}
+
+.mercado-tablero-mode .mercado-board-stepper-item.current .mercado-board-step-node {
+  background: #f26522;
+  border-color: #ffffff;
+  color: #ffffff;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.28);
+  animation: caminoNodoActivo 1.6s ease-in-out infinite;
+}
+
+@keyframes caminoNodoActivo {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Letrero con los datos del paso, para leerse sobre el césped */
+.mercado-tablero-mode .mercado-board-step-info {
+  position: absolute;
+  top: calc(38% + 25px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 100%;
+  padding: 3px 8px;
+  white-space: normal;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.8);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.mercado-tablero-mode .mercado-board-step-title,
+.mercado-tablero-mode .mercado-board-step-desc {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+
+.mercado-tablero-mode .mercado-board-step-title {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.mercado-tablero-mode .mercado-board-step-desc {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.62rem;
+  line-height: 1.2;
+}
+
+.mercado-tablero-mode .mercado-board-step-badge { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mercado-tablero-mode .mercado-board-stepper-item.current .mercado-board-step-node { animation: none; }
+}

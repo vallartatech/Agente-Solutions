@@ -11,9 +11,13 @@ import {
   ChevronLeft, ChevronRight, ExternalLink, CalendarDays, Search, LogOut, Briefcase, Layers, ShieldCheck,
   RotateCw, AlertTriangle, Users, UserPlus, PhoneCall, Mail, Star, Award, History,
   Home, Car, Navigation, Wrench, Camera, Plus, Trash2, Check, ArrowRight, Play, Eye, Sparkles, Lock, Zap,
-  Sun, Moon, Globe, SlidersHorizontal
+  Sun, Moon, Globe, SlidersHorizontal, ChevronDown, ChevronUp, Maximize, Minimize,
+  Snowflake, Droplets, Paintbrush, KeyRound, Hammer, Leaf, Siren, ClipboardList, FolderOpen
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
+import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
+import '../../../styles/Shared/ToolbarAcciones.css';
+import '../../../styles/AgenteMarket/Tecnico/TableroTecnico.css';
 import { useAuth } from '../../../context/AuthContext';
 import defaultLogo from '../../../assets/Logo4.png';
 import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
@@ -106,6 +110,35 @@ export const DARK_MAP_STYLES = [
     stylers: [{ color: "#0b111a" }]
   }
 ];
+
+// Íconos de la app (lucide) por categoría en lugar de los emojis de getCategoryIcon
+export const ICONOS_CATEGORIA = {
+  'Climatización': Snowflake,
+  'Plomería': Droplets,
+  'Electricidad': Zap,
+  'Pintura': Paintbrush,
+  'Cerrajería': KeyRound,
+  'Carpintería': Hammer,
+  'Jardinería': Leaf,
+  'Emergencia SOS': Siren,
+};
+
+// En la tarjeta la urgencia y el horario ya van como etiquetas: se quitan del texto
+export const descripcionTarjeta = (desc) => {
+  if (!desc) return '';
+  return desc
+    .replace(/\s*\[URGENCIA\]:[^\n]*/gi, '')
+    .replace(/\s*\[FECHA \/ HORARIO DESEADO\]:[^\n]*/gi, '')
+    .trim();
+};
+
+// Retraso de la cita en palabras: "Atrasado 3 d" en lugar de "+5629m"
+const textoAtraso = (minutos) => {
+  const m = Math.abs(minutos);
+  if (m >= 1440) return `Atrasado ${Math.floor(m / 1440)} d`;
+  if (m >= 60) return `Atrasado ${Math.floor(m / 60)} h`;
+  return `Atrasado ${m} min`;
+};
 
 export const getCategoryIcon = (tipo = '', titulo = '', equipo = '') => {
   const text = `${tipo} ${titulo} ${equipo}`.toLowerCase();
@@ -371,12 +404,40 @@ const MercadoTrabajos = () => {
   const [quoteStep, setQuoteStep] = useState(1);
   const [activePhoto, setActivePhoto] = useState(null);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(true); // En celular la lista empieza abierta, como en la vista del cliente
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('disponibles'); // 'disponibles' | 'aceptados'
   const [acceptedJobs, setAcceptedJobs] = useState([]);
   const [activeModalTab, setActiveModalTab] = useState('detalle'); // 'detalle' | 'chat'
   const [mapTheme, setMapTheme] = useState(() => localStorage.getItem('agente_map_theme') || 'dark');
+
+  // Pantalla completa propia del mapa (botón de vidrio).
+  // Se oculta donde el navegador no la permite, p. ej. Safari de iPhone.
+  const mapaSeccionRef = useRef(null);
+  const [enPantallaCompleta, setEnPantallaCompleta] = useState(false);
+  const puedePantallaCompleta = Boolean(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  useEffect(() => {
+    const cambio = () => setEnPantallaCompleta(Boolean(document.fullscreenElement || document.webkitFullscreenElement));
+    document.addEventListener('fullscreenchange', cambio);
+    document.addEventListener('webkitfullscreenchange', cambio);
+    return () => {
+      document.removeEventListener('fullscreenchange', cambio);
+      document.removeEventListener('webkitfullscreenchange', cambio);
+    };
+  }, []);
+  const salirPantallaCompleta = () => {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+    }
+  };
+  const alternarPantallaCompleta = () => {
+    const el = mapaSeccionRef.current;
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      salirPantallaCompleta();
+    } else if (el) {
+      (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
+    }
+  };
   
   // Live GPS & Navigation State (Uber Style)
   const [technicianLocation, setTechnicianLocation] = useState({ lat: 21.0181, lng: -89.6242 });
@@ -409,6 +470,17 @@ const MercadoTrabajos = () => {
 
   // ─── FILTER STATES (FECHA, HORA, TRABAJO) ───
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const filtroRef = useRef(null);
+
+  // El panel de filtros flota sobre la lista: se cierra al tocar fuera de él
+  useEffect(() => {
+    if (!isFilterOpen) return;
+    const cerrar = (e) => {
+      if (!filtroRef.current?.contains(e.target)) setIsFilterOpen(false);
+    };
+    document.addEventListener('pointerdown', cerrar);
+    return () => document.removeEventListener('pointerdown', cerrar);
+  }, [isFilterOpen]);
   const [filterDatePreset, setFilterDatePreset] = useState('TODAS'); // 'TODAS' | 'HOY' | 'MANANA' | 'SEMANA' | 'CUSTOM'
   const [filterCustomDate, setFilterCustomDate] = useState('');
   const [filterTimeSlot, setFilterTimeSlot] = useState('TODAS'); // 'TODAS' | 'MANANA' | 'TARDE' | 'NOCHE'
@@ -440,6 +512,18 @@ const MercadoTrabajos = () => {
     }
   });
   const [boardFilter, setBoardFilter] = useState('TODOS'); // 'TODOS' | 'SOS' | 'PROCESO' | 'AGENDADOS' | 'FINALIZADOS'
+  const [boardFiltroAbierto, setBoardFiltroAbierto] = useState(false);
+  const boardFiltroRef = useRef(null);
+
+  // El menú del filtro del tablero se cierra al tocar fuera de él
+  useEffect(() => {
+    if (!boardFiltroAbierto) return;
+    const cerrar = (e) => {
+      if (!boardFiltroRef.current?.contains(e.target)) setBoardFiltroAbierto(false);
+    };
+    document.addEventListener('pointerdown', cerrar);
+    return () => document.removeEventListener('pointerdown', cerrar);
+  }, [boardFiltroAbierto]);
   const [boardSearch, setBoardSearch] = useState('');
   const [zoomedPhotoUrl, setZoomedPhotoUrl] = useState(null);
   const [showPdfReportModal, setShowPdfReportModal] = useState(false);
@@ -614,6 +698,8 @@ const MercadoTrabajos = () => {
 
   // Iniciar ruta de navegación hacia el trabajo (Modo Uber)
   const handleStartRoute = (job) => {
+    // En celular la lista se pliega para que se vea la ruta en el mapa
+    setMobileDrawerOpen(false);
     setActiveNavJob(job);
     setNavStatus('en_camino');
 
@@ -1172,6 +1258,8 @@ const MercadoTrabajos = () => {
   };
 
   const openQuoteModalForJob = (job) => {
+    // El modal vive fuera del mapa: en pantalla completa no se vería
+    salirPantallaCompleta();
     const isJobAccepted = Boolean(job.is_accepted || acceptedJobs.some(a => a.id === job.id) || job.myQuote?.status === 'accepted');
     const targetJob = isJobAccepted ? (acceptedJobs.find(a => a.id === job.id) || { ...job, is_accepted: true }) : job;
     setSelectedJob(targetJob);
@@ -2074,7 +2162,7 @@ const MercadoTrabajos = () => {
   };
 
   return (
-    <div className={`mercado-container ${mainView === 'tablero' ? 'mercado-tablero-mode' : ''}`}>
+    <div className={`mercado-container ${mainView === 'tablero' ? 'mercado-tablero-mode' : ''} ${mainView === 'mercado' ? 'red-mapa-vivo' : ''}`}>
       {/* ── TOP NAVIGATION BAR (REPLICA VISTA CLIENTE / IMAGE 1) ── */}
       <TecnicoHeader 
         activeTab={mainView} 
@@ -2099,12 +2187,58 @@ const MercadoTrabajos = () => {
                   <ChevronLeft size={16} /> Volver al Mercado
                 </button>
                 <h2 className="mercado-board-title">
-                  📋 TABLERO OPERATIVO DE SERVICIOS
+                  <ClipboardList size={19} color="#f26522" /> TABLERO OPERATIVO DE SERVICIOS
                   <span className="mercado-board-total-badge">{acceptedJobs.length} Trabajos</span>
                 </h2>
               </div>
 
               <div className="mercado-board-header-controls">
+                {/* Filtro: un botón que abre las opciones */}
+                {(() => {
+                  const opciones = [
+                    { id: 'TODOS', label: 'Todos', Icono: FolderOpen, tono: 'slate', total: acceptedJobs.length },
+                    { id: 'SOS', label: 'SOS / Urgentes', Icono: Siren, tono: 'orange', total: acceptedJobs.filter(j => (j.is_urgent || j.priority === 'Urgente' || j.tipo === 'SOS') && !isJobDone(j.status)).length },
+                    { id: 'PROCESO', label: 'En curso', Icono: Zap, tono: 'amber', total: acceptedJobs.filter(j => j.status === 'En Progreso').length },
+                    { id: 'AGENDADOS', label: 'Agendados', Icono: Calendar, tono: 'blue', total: acceptedJobs.filter(j => j.scheduled_at && j.status !== 'En Progreso' && !isJobDone(j.status)).length },
+                    { id: 'FINALIZADOS', label: 'Finalizados', Icono: CheckCircle2, tono: 'green', total: acceptedJobs.filter(j => isJobDone(j.status)).length },
+                  ];
+                  const actual = opciones.find(o => o.id === boardFilter) || opciones[0];
+                  return (
+                    <div className="tb-actions-wrapper mercado-board-filtro" ref={boardFiltroRef}>
+                      <button
+                        type="button"
+                        className={`mercado-board-filtro-btn ${boardFiltroAbierto ? 'abierto' : ''}`}
+                        onClick={() => setBoardFiltroAbierto(v => !v)}
+                        aria-haspopup="true"
+                        aria-expanded={boardFiltroAbierto}
+                        title="Filtrar trabajos"
+                      >
+                        <SlidersHorizontal size={15} />
+                        <span>{actual.label}</span>
+                        <span className="mercado-board-filtro-total">{actual.total}</span>
+                        <ChevronDown size={15} className="mercado-board-filtro-flecha" />
+                      </button>
+
+                      {boardFiltroAbierto && (
+                        <div className="tb-actions-menu">
+                          {opciones.map(({ id, label, Icono, tono, total }) => (
+                            <button
+                              key={id}
+                              type="button"
+                              className={`tb-actions-item ${boardFilter === id ? 'selected' : ''}`}
+                              onClick={() => { setBoardFilter(id); setBoardFiltroAbierto(false); }}
+                            >
+                              <span className={`tb-actions-icon ${tono}`}><Icono size={16} strokeWidth={2.4} /></span>
+                              <span>{label}</span>
+                              <span className="tb-actions-badge">{total}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* Buscador de Trabajos */}
                 <div className="mercado-board-search-box">
                   <Search size={16} color="#64748b" />
@@ -2124,45 +2258,6 @@ const MercadoTrabajos = () => {
                   <RotateCw size={15} /> Actualizar
                 </button>
               </div>
-            </div>
-
-            {/* Chips de Filtrado */}
-            <div className="mercado-board-filter-chips">
-              <button
-                type="button"
-                className={`mercado-board-chip ${boardFilter === 'TODOS' ? 'active' : ''}`}
-                onClick={() => setBoardFilter('TODOS')}
-              >
-                📁 TODOS ({acceptedJobs.length})
-              </button>
-              <button
-                type="button"
-                className={`mercado-board-chip ${boardFilter === 'SOS' ? 'active' : ''}`}
-                onClick={() => setBoardFilter('SOS')}
-              >
-                🚨 SOS / URGENTES ({acceptedJobs.filter(j => (j.is_urgent || j.priority === 'Urgente' || j.tipo === 'SOS') && !isJobDone(j.status)).length})
-              </button>
-              <button
-                type="button"
-                className={`mercado-board-chip ${boardFilter === 'PROCESO' ? 'active' : ''}`}
-                onClick={() => setBoardFilter('PROCESO')}
-              >
-                ⚡ EN CURSO ({acceptedJobs.filter(j => j.status === 'En Progreso').length})
-              </button>
-              <button
-                type="button"
-                className={`mercado-board-chip ${boardFilter === 'AGENDADOS' ? 'active' : ''}`}
-                onClick={() => setBoardFilter('AGENDADOS')}
-              >
-                📅 AGENDADOS ({acceptedJobs.filter(j => j.scheduled_at && j.status !== 'En Progreso' && !isJobDone(j.status)).length})
-              </button>
-              <button
-                type="button"
-                className={`mercado-board-chip ${boardFilter === 'FINALIZADOS' ? 'active' : ''}`}
-                onClick={() => setBoardFilter('FINALIZADOS')}
-              >
-                ✅ FINALIZADOS ({acceptedJobs.filter(j => isJobDone(j.status)).length})
-              </button>
             </div>
 
             {/* Barra de Pestañas Segmentadas para Móvil/Tablet */}
@@ -2279,6 +2374,9 @@ const MercadoTrabajos = () => {
                       const isUrgent = job.is_urgent || job.priority === 'Urgente' || job.tipo === 'SOS';
                       const isInProgress = job.status === 'En Progreso';
                       const isDone = isJobDone(job.status);
+                      const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
+                      const IconoCategoria = ICONOS_CATEGORIA[cat.label] || Wrench;
+                      const tiempo = getTimeRemainingInfo(job);
 
                       return (
                         <div
@@ -2289,48 +2387,40 @@ const MercadoTrabajos = () => {
                             setMobileBoardTab('detalle');
                           }}
                         >
-                          <div className="mercado-board-job-card-top">
-                            <span className="mercado-board-job-folio">
-                              {job.property?.property_code || `FOLIO #${job.id}`}
+                          {/* Qué hay que hacer y cuánto se cobra */}
+                          <div className="rt-card-head">
+                            <span className="rt-card-icono" title={cat.label}>
+                              <IconoCategoria size={18} strokeWidth={2.2} />
                             </span>
-                            <span className={`mercado-board-job-status-pill ${isUrgent ? 'sos' : (isDone ? 'done' : (isInProgress ? 'in-progress' : 'scheduled'))}`}>
-                              {isUrgent ? '🚨 SOS' : (isDone ? '✅ Listo' : (isInProgress ? '⚡ En Curso' : '📅 Agendado'))}
-                            </span>
-                          </div>
-
-                          <h4 className="mercado-board-job-title">
-                            {job.titulo || job.descripcion || 'Servicio Técnico'}
-                          </h4>
-
-                          <div className="mercado-board-job-meta">
-                            <div className="mercado-board-job-meta-row">
-                              <User size={13} color="#f26522" />
-                              <span>{job.client_name || job.cliente || 'Cliente'}</span>
-                            </div>
-                            <div className="mercado-board-job-meta-row">
-                              <MapPin size={13} color="#94a3b8" />
-                              <span>{job.property_name || job.lugar || job.zona || 'Mérida, Yucatán'}</span>
-                            </div>
-                          </div>
-
-                          <div className="mercado-board-job-footer">
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <Clock size={12} color={job.scheduled_at ? '#38bdf8' : '#fbbf24'} />
-                              {job.scheduled_at ? (
-                                <span style={{ color: '#38bdf8', fontWeight: '700' }}>
-                                  {getTimeRemainingInfo(job).shortText}
-                                </span>
-                              ) : (
-                                <span style={{ color: '#fbbf24', fontWeight: '700' }}>
-                                  ⚠️ Sin horario
-                                </span>
-                              )}
-                            </span>
+                            <h4 className="rt-card-titulo">{job.titulo || job.descripcion || 'Servicio Técnico'}</h4>
                             {job.agreed_price > 0 && (
-                              <span style={{ color: '#4ade80', fontWeight: '800' }}>
-                                ${Number(job.agreed_price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                              <span className="rt-card-precio">
+                                ${Number(job.agreed_price).toLocaleString('es-MX', { maximumFractionDigits: 2 })}
                               </span>
                             )}
+                          </div>
+
+                          {/* Con quién y dónde */}
+                          <div className="rt-card-datos">
+                            <span><User size={14} /> {job.client_name || job.cliente || 'Cliente'}</span>
+                            <span><MapPin size={14} /> {job.property_name || job.lugar || job.zona || 'Mérida, Yucatán'}</span>
+                          </div>
+
+                          {/* Cuándo y en qué estado */}
+                          <div className="rt-card-pie">
+                            {isUrgent && !isDone && <span className="rt-chip sos"><Siren size={12} /> SOS</span>}
+                            {isDone ? (
+                              <span className="rt-chip listo"><CheckCircle2 size={12} /> Listo</span>
+                            ) : isInProgress ? (
+                              <span className="rt-chip"><Zap size={12} /> En curso</span>
+                            ) : !job.scheduled_at ? (
+                              <span className="rt-chip aviso"><AlertTriangle size={12} /> Sin horario</span>
+                            ) : tiempo.minutesDiff < 0 ? (
+                              <span className="rt-chip aviso"><Clock size={12} /> {textoAtraso(tiempo.minutesDiff)}</span>
+                            ) : (
+                              <span className="rt-chip"><Clock size={12} /> {tiempo.shortText}</span>
+                            )}
+                            <span className="rt-card-folio">{job.property?.property_code || `#${job.id}`}</span>
                           </div>
                         </div>
                       );
@@ -2752,6 +2842,24 @@ const MercadoTrabajos = () => {
                   </div>
 
                   <div className="mercado-board-stepper-container">
+                    <div className="mercado-board-camino-lienzo">
+                    {/* Líneas del camino: cada círculo está a 28% o 72% del ancho y al 38% de su fila */}
+                    <svg className="mercado-board-camino" viewBox="0 0 100 600" preserveAspectRatio="none" aria-hidden="true">
+                      {[0, 1, 2, 3, 4].map((i) => {
+                        const x1 = i % 2 === 0 ? 28 : 72;
+                        const x2 = i % 2 === 0 ? 72 : 28;
+                        const y1 = i * 100 + 38;
+                        const y2 = y1 + 100;
+                        return (
+                          <path
+                            key={i}
+                            className={currentStage > i + 1 ? 'hecho' : ''}
+                            d={`M${x1} ${y1} Q${x1} ${y2} ${x2} ${y2}`}
+                          />
+                        );
+                      })}
+                    </svg>
+
                     {[
                       { step: 1, title: 'Cita Asignada', desc: 'Reporte aceptado', icon: <Home size={18} /> },
                       { step: 2, title: 'En Camino', desc: 'En traslado', icon: <Car size={18} /> },
@@ -2759,38 +2867,30 @@ const MercadoTrabajos = () => {
                       { step: 4, title: 'En Reparación', desc: 'Servicio en curso', icon: <Wrench size={18} /> },
                       { step: 5, title: 'Evidencias', desc: `${currentJobPhotos.length}/4 fotos`, icon: <Camera size={18} /> },
                       { step: 6, title: 'Concluido', desc: 'Trabajo entregado', icon: <CheckCircle2 size={18} /> },
-                    ].map((st, idx, arr) => {
+                    ].map((st, idx) => {
                       const isCompleted = currentStage > st.step;
                       const isCurrent = currentStage === st.step;
-                      const isPending = currentStage < st.step;
 
                       return (
                         <div
                           key={st.step}
-                          className={`mercado-board-stepper-item ${isCompleted ? 'completed' : (isCurrent ? 'current' : 'pending')}`}
+                          className={`mercado-board-stepper-item ${idx % 2 === 0 ? 'lado-izq' : 'lado-der'} ${isCompleted ? 'completed' : (isCurrent ? 'current' : 'pending')}`}
                           onClick={() => handleSetStage(st.step)}
                         >
-                          {/* Línea conectora hacia el siguiente nodo */}
-                          {idx < arr.length - 1 && (
-                            <div className={`mercado-board-stepper-line ${currentStage > st.step ? 'done' : (currentStage === st.step ? 'active' : '')}`} />
-                          )}
-
-                          {/* Nodo Circular con Icono (Imagen 3) */}
+                          {/* Nodo Circular con Icono */}
                           <div className="mercado-board-step-node">
-                            {st.icon}
+                            {isCompleted ? <Check size={20} strokeWidth={3} /> : st.icon}
                           </div>
 
                           {/* Información del Paso */}
                           <div className="mercado-board-step-info">
                             <p className="mercado-board-step-title">{st.title}</p>
                             <p className="mercado-board-step-desc">{st.desc}</p>
-                            <span className={`mercado-board-step-badge ${isCompleted ? 'done' : (isCurrent ? 'current' : 'pending')}`}>
-                              {isCompleted ? '✓' : (isCurrent ? 'Activo' : 'Pendiente')}
-                            </span>
                           </div>
                         </div>
                       );
                     })}
+                    </div>
                   </div>
                 </div>
               )}
@@ -3208,51 +3308,52 @@ const MercadoTrabajos = () => {
             </button>
 
             <div className="mercado-sidebar-header">
-              <div 
-                className="mercado-mobile-drag-handle" 
-                onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)} 
+              <div
+                className="mercado-mobile-drag-handle"
+                onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
               />
-              <div className="mercado-sidebar-brand-row">
-                <h2 className="mercado-sidebar-subtitle">Trabajos en Red</h2>
-                <span className="mercado-sidebar-live-pill">● EN VIVO</span>
+              {/* Solo celular: texto de la barrita */}
+              <span className="red-grabber-txt" onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
+                {mobileDrawerOpen
+                  ? <><ChevronDown size={15} /> Ver mapa completo</>
+                  : <><ChevronUp size={15} /> Mostrar lista ({activeTab === 'disponibles' ? filteredNetworkJobs.length : filteredAcceptedJobs.length})</>}
+              </span>
+              <div className="red-sidebar-head">
+                <h2><Globe size={18} /> Trabajos en Red</h2>
+                <p>
+                  <span className="mercado-map-live-dot" />
+                  {activeTab === 'disponibles'
+                    ? `${filteredNetworkJobs.length} ${filteredNetworkJobs.length === 1 ? 'solicitud disponible' : 'solicitudes disponibles'}`
+                    : `${filteredAcceptedJobs.length} ${filteredAcceptedJobs.length === 1 ? 'trabajo aceptado' : 'trabajos aceptados'}`}
+                </p>
               </div>
+            </div>
 
-              {/* Barra de Búsqueda y Botón de Filtro Específico */}
-              <div className="mercado-search-row">
-                <div className="mercado-search-box">
-                  <Search size={16} className="mercado-search-icon" />
-                  <input
-                    type="text"
-                    className="mercado-search-input"
-                    placeholder="Buscar por falla, colonia, cliente..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  {searchQuery && (
-                    <button className="mercado-search-clear" onClick={() => setSearchQuery('')}>×</button>
-                  )}
-                </div>
+            {/* Buscador + filtro: el filtro elige qué ver y filtra por fecha, hora y trabajo */}
+            <div className="red-buscador" ref={filtroRef}>
+              <label className="red-search">
+                <Search size={15} />
+                <input
+                  type="text"
+                  placeholder="Buscar por falla, colonia, cliente..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button type="button" className="mercado-search-clear" onClick={() => setSearchQuery('')}>×</button>
+                )}
+              </label>
 
+              <div className="red-filtro">
                 <button
                   type="button"
-                  className={`mercado-filter-btn ${isFilterOpen ? 'active' : ''} ${hasActiveFilters ? 'has-active' : ''}`}
+                  className={`red-filtro-btn ${isFilterOpen ? 'abierto' : ''}`}
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  aria-expanded={isFilterOpen}
                   title="Filtrar por fecha, hora y trabajo"
                   aria-label="Filtrar por fecha, hora y trabajo"
                 >
-                  <svg 
-                    width="19" 
-                    height="19" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="#ffffff" 
-                    strokeWidth="2.2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    style={{ display: 'block', color: '#ffffff' }}
-                  >
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                  </svg>
+                  <SlidersHorizontal size={16} />
                   {hasActiveFilters && <span className="mercado-filter-badge-dot" />}
                 </button>
               </div>
@@ -3286,6 +3387,33 @@ const MercadoTrabajos = () => {
                         Limpiar todo
                       </button>
                     )}
+                  </div>
+
+                  {/* Qué ver: solicitudes o trabajos aceptados */}
+                  <div className="mercado-filter-group">
+                    <label className="mercado-filter-group-label">
+                      <Layers size={12} /> Ver
+                    </label>
+                    <div className="mercado-filter-chips">
+                      <button
+                        type="button"
+                        className={`mercado-filter-chip ${activeTab === 'disponibles' ? 'active' : ''}`}
+                        onClick={() => {
+                          setActiveTab('disponibles');
+                          setActiveNavJob(null);
+                          setNavDirections(null);
+                        }}
+                      >
+                        Solicitudes ({filteredNetworkJobs.length})
+                      </button>
+                      <button
+                        type="button"
+                        className={`mercado-filter-chip ${activeTab === 'aceptados' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('aceptados')}
+                      >
+                        Aceptados ({filteredAcceptedJobs.length})
+                      </button>
+                    </div>
                   </div>
 
                   {/* 1. FILTRO FECHA */}
@@ -3388,37 +3516,6 @@ const MercadoTrabajos = () => {
               )}
             </div>
 
-            {/* Barra de Pestañas: Solicitudes vs Aceptados (Solo Círculos Iconos) */}
-            <div className="mercado-sidebar-tabs-container">
-              <button
-                type="button"
-                className={`mercado-sidebar-tab-circle-btn tab-solicitudes ${activeTab === 'disponibles' ? 'active' : ''}`}
-                onClick={() => {
-                  setActiveTab('disponibles');
-                  setActiveNavJob(null);
-                  setNavDirections(null);
-                }}
-                title="Solicitudes Disponibles"
-              >
-                <div className="mercado-tab-circle">
-                  <Globe size={19} strokeWidth={2.4} />
-                  <span className="mercado-sidebar-tab-badge">{filteredNetworkJobs.length}</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                className={`mercado-sidebar-tab-circle-btn tab-aceptados ${activeTab === 'aceptados' ? 'active' : ''}`}
-                onClick={() => setActiveTab('aceptados')}
-                title="Trabajos Aceptados"
-              >
-                <div className="mercado-tab-circle">
-                  <Briefcase size={19} strokeWidth={2.4} />
-                  <span className="mercado-sidebar-tab-badge">{filteredAcceptedJobs.length}</span>
-                </div>
-              </button>
-            </div>
-
             {/* Lista de Trabajos con Scroll */}
             <div className="mercado-job-list">
               {activeTab === 'disponibles' ? (
@@ -3435,60 +3532,67 @@ const MercadoTrabajos = () => {
                   )}
                   {filteredNetworkJobs.map(job => {
                     const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
+                    const IconoCategoria = ICONOS_CATEGORIA[cat.label] || Wrench;
+                    const desc = descripcionTarjeta(job.descripcion);
                     return (
                       <div
                         key={job.id}
-                        className={`mercado-job-card ${selectedJob?.id === job.id ? 'active' : ''}`}
+                        className={`mercado-job-card red-job-card ${selectedJob?.id === job.id ? 'active' : ''} ${job.is_urgent ? 'es-urgente' : ''}`}
                         onClick={() => openQuoteModalForJob(job)}
                       >
-                        <div className="mercado-card-inner-flex">
-                          {/* Circular Category Avatar */}
-                          <div 
-                            className="mercado-card-avatar-circle"
-                            style={{ background: cat.bg, borderColor: cat.color }}
-                            title={cat.label}
-                          >
-                            <span>{cat.icon}</span>
+                        {/* Encabezado: ícono de categoría, título y estado */}
+                        <div className="rj-head">
+                          <div className="rj-avatar" style={{ '--rj-cat': cat.color }} title={cat.label}>
+                            <IconoCategoria size={19} strokeWidth={2.2} />
                           </div>
 
-                          <div className="mercado-card-content-wrap">
-                            {/* 1. Colonia, Urgencia y Badge de Cotización */}
-                            <div className="mercado-job-card-top">
-                              <div className="mercado-job-colonia-tag">
-                                <MapPin size={12} color="#f26522" />
-                                <span>{job.zona}</span>
-                              </div>
-                              
+                          <div className="rj-head-text">
+                            <h4 className="rj-title">{job.titulo}</h4>
+                            <div className="rj-meta">
+                              <span className="rj-meta-item">
+                                <MapPin size={12} />
+                                {job.zona}
+                              </span>
                               {job.is_urgent && (
-                                <span className="mercado-urgency-badge urgent">⚡ SOS</span>
-                              )}
-                              
-                              {job.myQuote ? (
-                                <span className={`mercado-job-badge ${job.myQuote.status === 'rejected' ? 'badge-rejected' : (job.myQuote.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`}>
-                                  {job.myQuote.status === 'rejected' ? 'Rechazada' : (job.myQuote.price > 0 ? `$${parseFloat(job.myQuote.price).toLocaleString('es-MX')}` : 'Chat')}
-                                </span>
-                              ) : (
-                                <span className="mercado-job-badge-disponible">Disponible</span>
+                                <span className="rj-chip urgente"><Zap size={11} /> Urgente</span>
                               )}
                             </div>
+                          </div>
 
-                            {/* 2. Titulo y Descripción */}
-                            <h4 className="mercado-job-card-title">{job.titulo}</h4>
-                            <p className="mercado-job-card-desc">{job.descripcion}</p>
+                          <span className={`rj-estado ${job.myQuote?.status === 'accepted' ? 'asignado' : ''}`}>
+                            {job.myQuote
+                              ? (job.myQuote.status === 'rejected' ? 'Rechazada' : (job.myQuote.price > 0 ? `$${parseFloat(job.myQuote.price).toLocaleString('es-MX')}` : 'Chat'))
+                              : 'Disponible'}
+                          </span>
+                        </div>
 
-                            {/* 3. ALERTA DE MENSAJE DEL CLIENTE */}
-                            {job.lastClientMsg && (
-                              <div className="mercado-job-msg-alert">
-                                <span className="mercado-msg-dot-pulse" />
-                                <span>💬 <strong>Mensaje del Cliente:</strong> "{job.lastClientMsg.message}"</span>
-                              </div>
-                            )}
+                        {desc && <p className="rj-desc">{desc}</p>}
 
-                            {/* 4. Footer */}
-                            <div className="mercado-job-card-footer">
-                              <span className="mercado-ofertas-count">{job.cotizaciones} ofertas enviadas</span>
-                              <span className="mercado-fecha-tag"><Clock size={11} /> {job.fecha}</span>
+                        {/* Mensaje del cliente */}
+                        {job.lastClientMsg && (
+                          <div className="rj-mensaje">
+                            <MessageCircle size={15} className="rj-mensaje-icono" />
+                            <div className="rj-mensaje-texto">
+                              <strong>Mensaje del cliente <span className="red-msg-dot-pulse" /></strong>
+                              <span>&ldquo;{job.lastClientMsg.message}&rdquo;</span>
                             </div>
+                          </div>
+                        )}
+
+                        {/* Pie: ofertas y fecha a la izquierda, acción a la derecha */}
+                        <div className="rj-footer">
+                          <div className="rj-footer-info">
+                            <span className="rj-ofertas">
+                              <b>{job.cotizaciones}</b> {job.cotizaciones === 1 ? 'oferta' : 'ofertas'}
+                            </span>
+                            <span className="rj-fecha"><Clock size={11} /> {job.fecha}</span>
+                          </div>
+
+                          <div className="rj-footer-acciones">
+                            <span className="rj-btn-ver">
+                              {job.myQuote ? 'Ver oferta' : 'Cotizar'}
+                              <ChevronRight size={14} />
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -3509,112 +3613,83 @@ const MercadoTrabajos = () => {
                   )}
                   {filteredAcceptedJobs.map(job => {
                     const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
+                    const IconoCategoria = ICONOS_CATEGORIA[cat.label] || Wrench;
                     const scheduleInfo = getSmartScheduleStatus(job);
                     const isArrived = job.arrived_at || job.arrival_status === 'EN_SITIO';
 
                     return (
                       <div
                         key={job.id}
-                        className={`mercado-job-card ${selectedJob?.id === job.id ? 'active' : ''} ${scheduleInfo.isUrgentGlow ? 'is-urgent-glow' : ''}`}
+                        className={`mercado-job-card red-job-card accepted-job ${selectedJob?.id === job.id ? 'active' : ''} ${scheduleInfo.isUrgentGlow ? 'is-urgent-glow' : ''}`}
                         onClick={() => {
                           setSelectedJob(job);
                           handleStartRoute(job);
                         }}
                       >
-                        <div className="mercado-card-inner-flex">
-                          {/* Circular Category Avatar */}
-                          <div 
-                            className="mercado-card-avatar-circle"
-                            style={{ background: cat.bg, borderColor: cat.color }}
-                            title={cat.label}
-                          >
-                            <span>{cat.icon}</span>
+                        {/* Encabezado: ícono de categoría, título y estado */}
+                        <div className="rj-head">
+                          <div className="rj-avatar" style={{ '--rj-cat': cat.color }} title={cat.label}>
+                            <IconoCategoria size={19} strokeWidth={2.2} />
                           </div>
 
-                          <div className="mercado-card-content-wrap">
-                            {/* 1. Header con Badge de Estado y Brillo Inteligente */}
-                            <div className="mercado-job-card-top">
-                              <div className="mercado-job-colonia-tag">
-                                <MapPin size={12} color="#0284c7" />
-                                <span>{job.zona}</span>
-                              </div>
-
-                              {scheduleInfo.isUrgentGlow && (
-                                <span className="mercado-smart-time-badge">
-                                  <Zap size={11} /> {scheduleInfo.label}
-                                </span>
-                              )}
-
-                              <span className="mercado-job-badge badge-accepted" style={{ background: '#0284c7', color: '#ffffff' }}>
-                                {isArrived ? '✅ En sitio' : 'Aceptado'}
+                          <div className="rj-head-text">
+                            <h4 className="rj-title">{job.titulo}</h4>
+                            <div className="rj-meta">
+                              <span className="rj-meta-item">
+                                <MapPin size={12} />
+                                {job.zona}
                               </span>
-                            </div>
-
-                            {/* 2. Titulo y Dirección */}
-                            <h4 className="mercado-job-card-title" style={{ color: '#38bdf8' }}>{job.titulo}</h4>
-                            <p className="mercado-job-card-desc" style={{ color: '#cbd5e1' }}>
-                              📍 {job.full_address || job.calle || job.zona}
-                            </p>
-
-                            {/* 3. Cliente y Horario */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', fontSize: '11px', color: '#94a3b8' }}>
-                              <span>👤 <strong>{job.client_name || job.cliente}</strong></span>
-                              {job.scheduled_at && (
-                                <span style={{ color: '#f26522', fontWeight: '800' }}>
-                                  📅 {new Date(job.scheduled_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
-                                </span>
+                              {scheduleInfo.isUrgentGlow && (
+                                <span className="rj-chip urgente"><Zap size={11} /> {scheduleInfo.label}</span>
                               )}
                             </div>
+                          </div>
 
-                            {/* 4. Botón de Acción Directa En Camino */}
-                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                              <button
-                                type="button"
-                                style={{
-                                  flex: 1,
-                                  background: 'linear-gradient(135deg, #f26522 0%, #ea580c 100%)',
-                                  color: '#ffffff',
-                                  border: 'none',
-                                  borderRadius: '8px',
-                                  padding: '7px 10px',
-                                  fontSize: '11px',
-                                  fontWeight: '800',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '5px'
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleStartRoute(job);
-                                }}
-                              >
-                                <Navigation size={12} /> INICIAR RUTA (EN CAMINO)
-                              </button>
+                          <span className="rj-estado asignado">{isArrived ? 'En sitio' : 'Aceptado'}</span>
+                        </div>
 
-                              <button
-                                type="button"
-                                style={{
-                                  background: 'rgba(255,255,255,0.1)',
-                                  color: '#ffffff',
-                                  border: '1px solid rgba(255,255,255,0.2)',
-                                  borderRadius: '8px',
-                                  padding: '7px 10px',
-                                  fontSize: '11px',
-                                  fontWeight: '800',
-                                  cursor: 'pointer'
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openQuoteModalForJob(job);
-                                }}
-                                title="Ver detalles y chat"
-                              >
-                                <FileText size={12} />
-                              </button>
-                            </div>
+                        <p className="rj-desc">{job.full_address || job.calle || job.zona}</p>
 
+                        {/* Cliente y hora de la visita */}
+                        <div className="rj-tecnico">
+                          <User size={13} />
+                          <span className="rj-tecnico-nombre">{job.client_name || job.cliente}</span>
+                          {job.scheduled_at && (
+                            <span className="rj-tecnico-precio">
+                              {new Date(job.scheduled_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Pie: fecha a la izquierda, acciones a la derecha */}
+                        <div className="rj-footer">
+                          <div className="rj-footer-info">
+                            <span className="rj-fecha"><Clock size={11} /> {job.fecha}</span>
+                          </div>
+
+                          <div className="rj-footer-acciones">
+                            <button
+                              type="button"
+                              className="rj-btn-eliminar rj-btn-detalle"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openQuoteModalForJob(job);
+                              }}
+                              title="Ver detalles y chat"
+                              aria-label="Ver detalles y chat"
+                            >
+                              <FileText size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              className="rj-btn-ver rj-btn-ruta"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStartRoute(job);
+                              }}
+                            >
+                              <Navigation size={13} /> Iniciar ruta
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -3626,40 +3701,46 @@ const MercadoTrabajos = () => {
           </div>
 
           {/* ─── Map ─── */}
-          <div className="mercado-map-section" style={{ position: 'relative' }}>
+          <div ref={mapaSeccionRef} className={`mercado-map-section ${mapTheme === 'dark' ? 'es-oscuro' : ''}`}>
             {isLoaded ? (
               <>
                 <div className="mercado-map-top-bar">
                   <div className="mercado-map-overlay-badge">
                     <span className="mercado-map-live-dot" />
-                    {activeTab === 'disponibles' 
-                      ? `${filteredNetworkJobs.length} disponibles` 
-                      : `💼 ${filteredAcceptedJobs.length} trabajos aceptados`}
+                    {activeTab === 'disponibles'
+                      ? `${filteredNetworkJobs.length} disponibles`
+                      : `${filteredAcceptedJobs.length} aceptados`}
                   </div>
+                </div>
 
+                {/* Cambiar entre mapa claro y oscuro (junto al botón de pantalla completa) */}
+                <button
+                  type="button"
+                  className={`red-tema-btn ${mapTheme === 'dark' ? 'es-oscuro' : ''} ${puedePantallaCompleta ? '' : 'sin-pantalla'}`}
+                  onClick={() => {
+                    const next = mapTheme === 'dark' ? 'light' : 'dark';
+                    setMapTheme(next);
+                    localStorage.setItem('agente_map_theme', next);
+                  }}
+                  title={mapTheme === 'dark' ? 'Mapa claro' : 'Mapa oscuro'}
+                  aria-label={mapTheme === 'dark' ? 'Cambiar a mapa claro' : 'Cambiar a mapa oscuro'}
+                >
+                  {/* Los dos íconos siempre montados: uno sale girando y el otro entra (animación en CSS) */}
+                  <Moon size={18} className="red-tema-icono red-tema-luna" aria-hidden="true" />
+                  <Sun size={18} className="red-tema-icono red-tema-sol" aria-hidden="true" />
+                </button>
+
+                {puedePantallaCompleta && (
                   <button
                     type="button"
-                    className="mercado-map-theme-btn"
-                    onClick={() => {
-                      const next = mapTheme === 'dark' ? 'light' : 'dark';
-                      setMapTheme(next);
-                      localStorage.setItem('agente_map_theme', next);
-                    }}
-                    title={mapTheme === 'dark' ? 'Cambiar a Mapa Claro (Blanco)' : 'Cambiar a Mapa Oscuro (Negro)'}
+                    className={`red-pantalla-btn ${mapTheme === 'dark' ? 'es-oscuro' : ''}`}
+                    onClick={alternarPantallaCompleta}
+                    title={enPantallaCompleta ? 'Salir de pantalla completa' : 'Pantalla completa'}
+                    aria-label={enPantallaCompleta ? 'Salir de pantalla completa' : 'Ver mapa en pantalla completa'}
                   >
-                    {mapTheme === 'dark' ? (
-                      <>
-                        <Sun size={14} />
-                        <span>Mapa Claro</span>
-                      </>
-                    ) : (
-                      <>
-                        <Moon size={14} />
-                        <span>Mapa Oscuro</span>
-                      </>
-                    )}
+                    {enPantallaCompleta ? <Minimize size={18} /> : <Maximize size={18} />}
                   </button>
-                </div>
+                )}
 
                 <GoogleMap
                   mapContainerStyle={mapContainerStyle}
@@ -3669,10 +3750,9 @@ const MercadoTrabajos = () => {
                     disableDefaultUI: false, 
                     styles: mapTheme === 'dark' ? DARK_MAP_STYLES : [], 
                     clickableIcons: false,
-                    mapTypeControl: true,
-                    mapTypeControlOptions: {
-                      position: window.google?.maps?.ControlPosition?.TOP_RIGHT || 3
-                    }
+                    fullscreenControl: false, // se usa un botón propio de vidrio (.red-pantalla-btn)
+                    mapTypeControl: false,
+                    streetViewControl: false
                   }}
                 >
                   {/* PESTAÑA DISPONIBLES: Marcadores de Trabajos Disponibles */}
@@ -3831,6 +3911,22 @@ const MercadoTrabajos = () => {
                     </InfoWindow>
                   )}
                 </GoogleMap>
+
+                {/* Leyenda de colores de los marcadores */}
+                <div className="red-map-legend">
+                  {activeTab === 'disponibles' ? (
+                    <>
+                      <span><i style={{ background: '#ff6600' }} /> Disponible</span>
+                      <span><i style={{ background: '#ef4444' }} /> Urgente</span>
+                      <span><i style={{ background: '#2563eb' }} /> Mensaje nuevo</span>
+                    </>
+                  ) : (
+                    <>
+                      <span><i style={{ background: '#0284c7' }} /> Aceptado</span>
+                      <span><i style={{ background: '#f26522' }} /> Visita próxima</span>
+                    </>
+                  )}
+                </div>
 
                 {/* ══════════════════════════════════════════════════
                     PANEL DE RUTA Y LLEGADA FLOTANTE (ESTILO UBER)

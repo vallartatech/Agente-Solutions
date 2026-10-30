@@ -364,6 +364,7 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: none;
+  overflow: visible;
 }
 
 .chat-lateral-vidrio:has(.red-conv-lista)::before { display: none; }
@@ -385,7 +386,9 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 2px 2px 8px;
+  /* Llega hasta el borde del panel para que la sombra de las tarjetas no se corte a los lados */
+  margin: 0 -10px;
+  padding: 2px 12px 8px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -583,6 +586,21 @@
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   color: #ffffff !important;
   font-size: 16px; /* evita el zoom de iOS */
+}
+
+/* Scroll invisible: se sigue desplazando, sin mostrar la barra */
+.red-detalle-publicacion .mercado-premium-body,
+.red-detalle-publicacion .mercado-premium-details,
+.red-detalle-publicacion .mercado-premium-form,
+.red-detalle-publicacion .red-lista-cotizaciones {
+  scrollbar-width: none;
+}
+
+.red-detalle-publicacion .mercado-premium-body::-webkit-scrollbar,
+.red-detalle-publicacion .mercado-premium-details::-webkit-scrollbar,
+.red-detalle-publicacion .mercado-premium-form::-webkit-scrollbar,
+.red-detalle-publicacion .red-lista-cotizaciones::-webkit-scrollbar {
+  display: none;
 }
 
 /* Ofertas: una tarjeta independiente por técnico sobre fondo gris */
@@ -2093,6 +2111,47 @@
 }
 
 .red-job-card:hover .rj-btn-ver { background: #ea580c; }
+
+/* Acciones del técnico: botones reales con el mismo aspecto */
+.rj-btn-ruta {
+  gap: 5px;
+  padding: 0 12px;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.rj-btn-detalle:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Filtros del técnico dentro de la tarjeta lateral */
+.red-mapa-vivo .red-buscador:has(> .mercado-filter-panel) { position: relative; }
+
+/* Flota sobre las tarjetas en lugar de empujarlas */
+.red-mapa-vivo .red-buscador > .mercado-filter-panel {
+  position: absolute;
+  top: 100%;
+  left: 14px;
+  right: 14px;
+  z-index: 20;
+  max-height: min(60vh, 460px);
+  margin-top: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  box-sizing: border-box;
+}
+
+.red-mapa-vivo .red-buscador > .mercado-filter-panel::-webkit-scrollbar { display: none; }
+
+@media (max-width: 900px) {
+  .red-mapa-vivo .red-buscador > .mercado-filter-panel { max-height: 36vh; }
+}
+
+.red-mapa-vivo .red-filtro-btn { position: relative; }
+.red-mapa-vivo .red-search .mercado-search-clear { position: static; flex-shrink: 0; }
 
 .rj-btn-ver.verde {
   background: #16a34a;

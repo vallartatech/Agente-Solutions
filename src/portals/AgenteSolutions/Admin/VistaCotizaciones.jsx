@@ -147,6 +147,32 @@ const VistaCotizaciones = () => {
   });
 
   const [propiedadCotizKey, setPropiedadCotizKey] = useState(null);
+  const [hojaDragY, setHojaDragY] = useState(0);
+  const [isHojaDragging, setIsHojaDragging] = useState(false);
+  const hojaTouchStartY = useRef(0);
+
+  // Arrastrar el asa hacia abajo cierra el panel de la propiedad en móvil
+  const handleHojaTouchStart = (e) => {
+    hojaTouchStartY.current = e.touches[0].clientY;
+    setIsHojaDragging(true);
+  };
+
+  const handleHojaTouchMove = (e) => {
+    setHojaDragY(Math.max(0, e.touches[0].clientY - hojaTouchStartY.current));
+  };
+
+  const handleHojaTouchEnd = () => {
+    setIsHojaDragging(false);
+    if (hojaDragY > 80) {
+      setHojaDragY(window.innerHeight);
+      setTimeout(() => {
+        setPropiedadCotizKey(null);
+        setHojaDragY(0);
+      }, 200);
+    } else {
+      setHojaDragY(0);
+    }
+  };
 
   // MENÚ DE FILTROS JUNTO AL BUSCADOR (estado, origen, tipo y orden por monto)
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
@@ -1170,8 +1196,22 @@ const VistaCotizaciones = () => {
       {/* ── PANEL DE PROPIEDAD: FOTO + COTIZACIONES DE LA PROPIEDAD ── */}
       {propiedadCotizSeleccionada && !esCliente && createPortal(
         <div className="cotiz-sheet-overlay" onClick={() => setPropiedadCotizKey(null)}>
-          <div className="cotiz-sheet" onClick={e => e.stopPropagation()}>
-            <div className="cotiz-sheet-grabber" />
+          <div
+            className="cotiz-sheet"
+            onClick={e => e.stopPropagation()}
+            style={{
+              transform: hojaDragY > 0 ? `translateY(${hojaDragY}px)` : undefined,
+              transition: isHojaDragging ? 'none' : 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+          >
+            <div
+              className="cotiz-sheet-grabber-area"
+              onTouchStart={handleHojaTouchStart}
+              onTouchMove={handleHojaTouchMove}
+              onTouchEnd={handleHojaTouchEnd}
+            >
+              <div className="cotiz-sheet-grabber" />
+            </div>
 
             <div className="cotiz-sheet-header">
               <div className="cotiz-sheet-header-text">

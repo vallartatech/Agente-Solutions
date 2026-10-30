@@ -9,7 +9,7 @@ export const ROLES_RED = [4, 5, 6, 7, 8];
 export const esRoot = (user) => Number(user?.role_id) === 0;
 export const esRed = (user) => ROLES_RED.includes(Number(user?.role_id));
 export const esInterno = (user) => !esRed(user);
-// Clientes de la red: Reportes, Cotizaciones y Levantamientos comparten un botón del menú
 // Solo los técnicos de la red editan reportes; los demás roles de la red los consultan
 export const esTecnicoRed = (user) => [6, 8].includes(Number(user?.role_id));
+// Clientes de la red: Reportes, Cotizaciones y Levantamientos comparten un botón del menú
 export const usaSelectorRed = (user) => [4, 5, 7].includes(Number(user?.role_id));

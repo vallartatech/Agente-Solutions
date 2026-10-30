@@ -1390,6 +1390,7 @@
 }
 
 .cotiz-sheet-grabber { display: none; }
+.cotiz-sheet-grabber-area { display: none; }
 
 .cotiz-sheet-header {
     position: sticky;
@@ -1606,9 +1607,32 @@
         background: rgba(15, 23, 42, 0.2);
     }
 
+    /* El asa queda fija arriba mientras el contenido se desplaza */
+    .cotiz-sheet-grabber-area {
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        display: flex;
+        justify-content: center;
+        height: 25px;
+        margin: 0 -16px;
+        padding: 12px 0 8px;
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.92);
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    .cotiz-sheet-grabber-area:active { cursor: grabbing; }
+    .cotiz-sheet-grabber-area .cotiz-sheet-grabber { margin: 0; }
+
     .cotiz-sheet-header {
+        top: 25px;
         margin: 0 -16px 14px;
         padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.92);
     }
 
     .cotiz-sheet-header-text h2 { font-size: 1.15rem; }

@@ -8,8 +8,8 @@ import ModalServicioAutonomo from './ModalServicioAutonomo';
 import PanelChatLateral from '../../../components/Shared/PanelChatLateral';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
-import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, Check, ClipboardList, ChevronDown, ChevronUp, Snowflake, Droplets, Zap, Paintbrush, KeyRound, Hammer, Leaf, Siren, Wrench } from 'lucide-react';
-import { DARK_MAP_STYLES, getCategoryIcon } from '../Tecnico/MercadoTrabajos';
+import { Plus, MapPin, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, Check, ClipboardList, ChevronDown, ChevronUp, Zap, Wrench } from 'lucide-react';
+import { DARK_MAP_STYLES, getCategoryIcon, ICONOS_CATEGORIA, descripcionTarjeta } from '../Tecnico/MercadoTrabajos';
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
 const mapContainerStyle = {
@@ -26,27 +26,6 @@ const limpiarDescripcion = (rawDesc) => {
   clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*(otro|Otro|ninguno|Ninguno|n\/a|N\/A)\s*/gi, '');
   clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*/gi, ' - Equipo: ');
   return clean.trim() || rawDesc;
-};
-
-// Íconos de la app (lucide) por categoría en lugar de los emojis de getCategoryIcon
-const ICONOS_CATEGORIA = {
-  'Climatización': Snowflake,
-  'Plomería': Droplets,
-  'Electricidad': Zap,
-  'Pintura': Paintbrush,
-  'Cerrajería': KeyRound,
-  'Carpintería': Hammer,
-  'Jardinería': Leaf,
-  'Emergencia SOS': Siren,
-};
-
-// En la tarjeta la urgencia y el horario ya van como etiquetas: se quitan del texto
-const descripcionTarjeta = (desc) => {
-  if (!desc) return '';
-  return desc
-    .replace(/\s*\[URGENCIA\]:[^\n]*/gi, '')
-    .replace(/\s*\[FECHA \/ HORARIO DESEADO\]:[^\n]*/gi, '')
-    .trim();
 };
 
 const formatTime = (dateStr) => {

@@ -178,18 +178,8 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
               </button>
             </>
           ) : (
-            /* Menú para Técnicos Independientes de la Red (Roles 6 y 8) */
+            /* Menú para Técnicos Independientes de la Red (Roles 6 y 8): no tienen pantalla de inicio */
             <>
-              <button 
-                type="button" 
-                className={`vcp-nav-btn ${isInicioActive ? 'active' : ''}`}
-                onClick={irAlInicio}
-                title="Inicio"
-              >
-                <span className="vcp-tab-full">INICIO</span>
-                <span className="vcp-tab-short">INICIO</span>
-              </button>
-
               <button 
                 type="button" 
                 className={`vcp-nav-btn ${isMercadoActive ? 'active' : ''}`}

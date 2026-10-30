@@ -2265,7 +2265,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 4000;
+  z-index: 1000020; /* encima de los modales (1000005) */
   padding: 25px;
 }
 
