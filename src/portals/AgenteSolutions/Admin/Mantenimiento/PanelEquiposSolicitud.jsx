@@ -15,15 +15,16 @@ const PanelEquiposSolicitud = ({ propiedad, carrito, onChange }) => {
 
   useEffect(() => {
     const headers = authHeaders();
-    Promise.all([
+    // Cada lista por su lado: si una falla, la otra se sigue pudiendo elegir
+    Promise.allSettled([
       axios.get(`${API}/properties/${propiedad.id}/mantenimiento`, { headers }),
       axios.get(`${API}/properties/${propiedad.id}/elementos`, { headers }),
     ])
       .then(([resEquipos, resElementos]) => {
-        setEquipos(resEquipos.data || []);
-        setElementos(resElementos.data || []);
+        if (resEquipos.status === 'fulfilled') setEquipos(resEquipos.value.data || []);
+        if (resElementos.status === 'fulfilled') setElementos(resElementos.value.data || []);
+        setError(resEquipos.status === 'rejected' || resElementos.status === 'rejected');
       })
-      .catch(() => setError(true))
       .finally(() => setCargando(false));
   }, [propiedad.id]);
 
@@ -68,7 +69,7 @@ const PanelEquiposSolicitud = ({ propiedad, carrito, onChange }) => {
       <div className="mt-panel-equipos-lista">
         {cargando ? (
           <p className="mt-vacio">Cargando equipos...</p>
-        ) : error ? (
+        ) : error && !renglones.length ? (
           <p className="mt-vacio">No se pudieron cargar los equipos. Cierra y vuelve a abrir la solicitud.</p>
         ) : !renglones.length ? (
           <p className="mt-vacio">Esta propiedad no tiene equipos registrados. Puedes describir el trabajo en el formulario.</p>
@@ -95,6 +96,8 @@ const PanelEquiposSolicitud = ({ propiedad, carrito, onChange }) => {
           );
         })}
       </div>
+
+      {error && renglones.length > 0 && <p className="mt-aviso-parcial">Algunos equipos no se pudieron cargar. Cierra y vuelve a abrir la solicitud.</p>}
 
       <p className={`mt-carrito ${carrito.length ? 'con-items' : ''}`}>
         <ShoppingCart size={16} />
