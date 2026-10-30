@@ -396,25 +396,9 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         </button>
       )}
 
-      <button 
-        type="button" 
-        className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`} 
-        onClick={() => {
-          if (role === 6 || role === 8 || currentPath.includes('/mercado-trabajos')) {
-            navigate('/mercado-trabajos', { state: { view: 'mercado' } });
-          } else {
-            navigate('/red-autonomos');
-          }
-        }} 
-        title="Mercado / Red"
-        aria-label="Mercado / Red"
-      >
-        <Globe size={22} className="vcp-mobile-nav-icon" />
-      </button>
-
-      <button 
-        type="button" 
-        className={`vcp-mobile-nav-item ${isUsuariosActive ? 'active' : ''}`} 
+      <button
+        type="button"
+        className={`vcp-mobile-nav-item ${isUsuariosActive ? 'active' : ''}`}
         onClick={() => {
           if (role === 6 || role === 8 || currentPath.includes('/mercado-trabajos')) {
             navigate('/mercado-trabajos', { state: { view: 'usuarios' } });
@@ -462,6 +446,23 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         aria-label="Servicios"
       >
         <Wrench size={22} className="vcp-mobile-nav-icon" />
+      </button>
+
+      {/* Mercado / Red al final de la barra */}
+      <button
+        type="button"
+        className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`}
+        onClick={() => {
+          if (role === 6 || role === 8 || currentPath.includes('/mercado-trabajos')) {
+            navigate('/mercado-trabajos', { state: { view: 'mercado' } });
+          } else {
+            navigate('/red-autonomos');
+          }
+        }}
+        title="Mercado / Red"
+        aria-label="Mercado / Red"
+      >
+        <Globe size={22} className="vcp-mobile-nav-icon" />
       </button>
     </nav>
   );

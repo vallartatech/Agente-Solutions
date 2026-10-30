@@ -1248,3 +1248,361 @@
   min-height: 0 !important;
   height: auto !important;
 }
+
+/* ==========================================================================
+   TARJETA DE PUBLICACIÓN (lista "Trabajos en Red")
+   Encabezado (ícono + título + estado) · descripción · avisos · pie de acciones.
+   Clases rj-* propias para no tocar las tarjetas del Mercado de Trabajos.
+   ========================================================================== */
+.mercado-sidebar .mercado-job-card.red-job-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px !important;
+  border-radius: 20px !important;
+  background:
+    radial-gradient(120% 70% at 0% 0%, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 60%),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.09) 100%) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.30) !important;
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06) !important;
+  transform: none !important;
+}
+
+.mercado-sidebar .mercado-job-card.red-job-card:hover,
+.mercado-sidebar .mercado-job-card.red-job-card.accepted-job:hover {
+  background:
+    radial-gradient(120% 70% at 0% 0%, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0) 60%),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.17) 0%, rgba(255, 255, 255, 0.07) 50%, rgba(255, 255, 255, 0.12) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ── Encabezado ── */
+.rj-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.rj-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: var(--rj-cat, #f26522);
+  border: 1px solid rgba(255, 255, 255, 0.40);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.rj-head-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.rj-title {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rj-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rj-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #cbd5e1;
+  font-size: 0.74rem;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.rj-meta-item svg { color: #fb923c; flex-shrink: 0; }
+
+.rj-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.rj-chip.urgente {
+  color: #fdba74;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.rj-chip.programado {
+  color: #93c5fd;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.rj-estado {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+  color: #fff;
+  background: #f26522;
+  box-shadow: 0 4px 10px rgba(242, 101, 34, 0.3);
+}
+
+.rj-estado.asignado {
+  background: #16a34a;
+  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3);
+}
+
+/* ── Contenido ── */
+.rj-desc {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.rj-tecnico {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: rgba(34, 197, 94, 0.10);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: #4ade80;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.rj-tecnico-nombre {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rj-tecnico-precio {
+  margin-left: auto;
+  color: #fdba74;
+  font-weight: 800;
+}
+
+.rj-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.rj-aviso svg { flex-shrink: 0; margin-top: 1px; }
+.rj-aviso,
+.rj-tecnico,
+.rj-mensaje {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.rj-aviso.naranja { color: #fdba74; }
+.rj-aviso.verde { color: #4ade80; }
+.rj-aviso.azul { color: #93c5fd; }
+
+/* Mensaje del técnico: vidrio azul oscuro (antes una caja blanca que brillaba demasiado) */
+.rj-mensaje {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.rj-mensaje-icono {
+  color: #60a5fa;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.rj-mensaje-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rj-mensaje-texto strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #bfdbfe;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rj-mensaje-texto strong .red-msg-dot-pulse { background: #60a5fa; }
+
+.rj-mensaje-texto > span {
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* ── Pie ── */
+.rj-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.rj-footer-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.rj-ofertas {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rj-ofertas b {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.rj-ofertas.activa { color: #4ade80; }
+
+.rj-fecha {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rj-footer-acciones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.rj-btn-eliminar {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.rj-btn-eliminar:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.rj-btn-ver {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  padding: 0 10px 0 12px;
+  border-radius: 10px;
+  background: #f26522;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.3);
+  transition: background 0.2s;
+}
+
+.red-job-card:hover .rj-btn-ver { background: #ea580c; }
+
+.rj-btn-ver.verde {
+  background: #16a34a;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+
+.red-job-card:hover .rj-btn-ver.verde { background: #15803d; }
+
+/* Celular angosto: la fecha cede espacio antes que los botones */
+@media (max-width: 380px) {
+  .rj-fecha { display: none; }
+}

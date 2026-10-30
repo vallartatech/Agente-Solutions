@@ -1635,3 +1635,206 @@
     background: linear-gradient(160deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%) !important;
   }
 }
+
+/* Computadora: la altura del modal la marca la columna izquierda y la derecha tiene su
+   propio scroll. Antes, al elegir "A mis técnicos" la lista crecía, estiraba todo el modal
+   y la tarjeta izquierda quedaba con un hueco vacío. contain: size hace que la columna
+   derecha no empuje la altura de la fila; el stretch del grid le da la altura de la izquierda. */
+@media (min-width: 821px) {
+  .msa-overlay .msa-content .msa-col-right {
+    contain: size;
+    overflow-y: auto !important;
+    padding-right: 6px !important;
+    margin-right: -6px !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.6) transparent;
+  }
+
+  .msa-overlay .msa-content .msa-col-right::-webkit-scrollbar { width: 5px; }
+  .msa-overlay .msa-content .msa-col-right::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.6); border-radius: 6px; }
+  .msa-overlay .msa-content .msa-col-right::-webkit-scrollbar-track { background: transparent; }
+
+  /* La lista de técnicos ya vive dentro del scroll de la columna: sin scroll propio */
+  .msa-overlay .msa-content .msa-col-right .msa-tech-list {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+/* Sin el contorno negro del navegador al tocar "A la red" / "A mis técnicos" y "Cuándo" */
+.msa-overlay .msa-content .msa-destino-btn:focus,
+.msa-overlay .msa-content .msa-urgencia-btn:focus {
+  outline: none !important;
+}
+
+.msa-overlay .msa-content .msa-destino-btn:focus-visible,
+.msa-overlay .msa-content .msa-urgencia-btn:focus-visible {
+  outline: 2px solid rgba(242, 101, 34, 0.55) !important;
+  outline-offset: 2px !important;
+}
+
+/* Scroll de la columna derecha invisible (se sigue pudiendo desplazar con rueda o dedo) */
+@media (min-width: 821px) {
+  .msa-overlay .msa-content .msa-col-right {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none;
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .msa-overlay .msa-content .msa-col-right::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
+/* ==========================================================================
+   CELULAR (≤ 600px): hoja que sube desde abajo, igual que "Registrar Propiedad"
+   (ModalRegistroInmueble.css): ancho completo, esquinas solo arriba, barrita,
+   campos sin cajas encimadas y de 16px para que iOS no haga zoom.
+   ========================================================================== */
+@keyframes msaHojaSube {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .msa-overlay {
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+
+  .msa-overlay .msa-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 90vh !important;
+    max-height: 90dvh !important;
+    /* La base usa margin:auto (centrado); aquí la hoja va pegada abajo */
+    margin: auto 0 0 !important;
+    border-radius: 26px 26px 0 0 !important;
+    border-bottom: none !important;
+    animation: msaHojaSube 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  /* Barrita de arriba */
+  .msa-overlay .msa-content::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.7);
+    z-index: 5;
+  }
+
+  /* Encabezado compacto: etiqueta + título + X */
+  .msa-overlay .msa-content .msa-header {
+    padding: 22px 18px 12px !important;
+    align-items: flex-start !important;
+  }
+
+  .msa-overlay .msa-content .msa-badge-tag {
+    font-size: 0.62rem !important;
+    padding: 2px 9px !important;
+  }
+
+  .msa-overlay .msa-content .msa-title {
+    font-size: 1.2rem !important;
+  }
+
+  .msa-overlay .msa-content .msa-subtitle {
+    display: none !important;
+  }
+
+  .msa-overlay .msa-content .msa-close-btn {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  /* Cuerpo: una columna y sin tarjetas dentro de tarjetas */
+  .msa-overlay .msa-content .msa-body {
+    padding: 14px 18px calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .msa-overlay .msa-content .msa-grid-layout {
+    gap: 16px !important;
+  }
+
+  .msa-overlay .msa-content .msa-col-left,
+  .msa-overlay .msa-content .msa-card-box,
+  .msa-overlay .msa-content .msa-urgencia-box,
+  .msa-overlay .msa-content .msa-destino-box {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .msa-overlay .msa-content .msa-col-right {
+    gap: 16px !important;
+  }
+
+  .msa-overlay .msa-content .msa-col-left,
+  .msa-overlay .msa-content .msa-col-left > form {
+    gap: 14px !important;
+  }
+
+  /* Campos como en Registrar Propiedad */
+  .msa-overlay .msa-content .msa-select,
+  .msa-overlay .msa-content .msa-input {
+    height: 46px !important;
+    font-size: 16px !important;
+    border-radius: 14px !important;
+    background-color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  .msa-overlay .msa-content .msa-textarea {
+    font-size: 16px !important;
+    border-radius: 14px !important;
+    min-height: 90px !important;
+    background-color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  .msa-overlay .msa-content .msa-select:disabled,
+  .msa-overlay .msa-content .msa-input:disabled,
+  .msa-overlay .msa-content .msa-textarea:disabled {
+    background-color: rgba(241, 245, 249, 0.75) !important;
+  }
+
+  .msa-overlay .msa-content .msa-label {
+    font-size: 0.7rem !important;
+  }
+
+  /* "Añadir otro problema" en una línea */
+  .msa-overlay .msa-content .msa-btn-add-batch {
+    font-size: 0.7rem !important;
+    letter-spacing: 0.02em !important;
+    padding: 12px 10px !important;
+    white-space: nowrap !important;
+  }
+
+  .msa-overlay .msa-content .msa-photo-item,
+  .msa-overlay .msa-content .msa-photo-add-btn {
+    width: 72px !important;
+    height: 72px !important;
+  }
+
+  /* Botones de opción y botón principal del tamaño de Registrar Propiedad */
+  .msa-overlay .msa-content .msa-urgencia-btn {
+    min-height: 46px !important;
+    font-size: 0.86rem !important;
+  }
+
+  .msa-overlay .msa-content .msa-btn-submit-orange,
+  .msa-overlay .msa-content .msa-btn-submit-blue {
+    min-height: 50px !important;
+    border-radius: 14px !important;
+    font-size: 0.92rem !important;
+  }
+}

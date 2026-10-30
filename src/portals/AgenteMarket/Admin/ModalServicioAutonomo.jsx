@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { 
   X, FileText, Home, Wrench, MessageSquare, Camera, Trash2, PlusCircle, Globe, Users, Shield, AlertCircle, CheckCircle2, UserCheck, Clock, Calendar, Check
@@ -345,7 +346,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
 
   const totalItemsCount = carritoServicios.length + (nuevoServicio.tipo && nuevoServicio.area_id && nuevoServicio.descripcion ? 1 : 0);
 
-  return (
+  return createPortal(
     <>
       <div className="msa-overlay" onClick={onClose}>
         <div className="msa-content" onClick={e => e.stopPropagation()}>
@@ -959,7 +960,8 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
           </div>
         </div>
       )}
-    </>
+    </>,
+    document.body
   );
 };
 

@@ -224,6 +224,13 @@
 
 /* Móvil: el borde superior del bottom sheet como filo de luz */
 @media (max-width: 600px) {
+  /* Franja de la pastilla (fija arriba) del mismo vidrio que el encabezado */
+  .mri-overlay .mri-grabber-area {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(22px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
+  }
+
   .mri-overlay .mri-card,
   .rp-overlay .rp-modal {
     border-bottom: none !important;

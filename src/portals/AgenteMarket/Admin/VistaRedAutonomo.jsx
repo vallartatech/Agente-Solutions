@@ -7,7 +7,7 @@ import axios from 'axios';
 import ModalServicioAutonomo from './ModalServicioAutonomo';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
-import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, Check, ChevronDown, ChevronUp, Snowflake, Droplets, Zap, Paintbrush, KeyRound, Hammer, Leaf, Siren, Wrench } from 'lucide-react';
 import { DARK_MAP_STYLES, getCategoryIcon } from '../Tecnico/MercadoTrabajos';
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
@@ -25,6 +25,27 @@ const limpiarDescripcion = (rawDesc) => {
   clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*(otro|Otro|ninguno|Ninguno|n\/a|N\/A)\s*/gi, '');
   clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*/gi, ' - Equipo: ');
   return clean.trim() || rawDesc;
+};
+
+// Íconos de la app (lucide) por categoría en lugar de los emojis de getCategoryIcon
+const ICONOS_CATEGORIA = {
+  'Climatización': Snowflake,
+  'Plomería': Droplets,
+  'Electricidad': Zap,
+  'Pintura': Paintbrush,
+  'Cerrajería': KeyRound,
+  'Carpintería': Hammer,
+  'Jardinería': Leaf,
+  'Emergencia SOS': Siren,
+};
+
+// En la tarjeta la urgencia y el horario ya van como etiquetas: se quitan del texto
+const descripcionTarjeta = (desc) => {
+  if (!desc) return '';
+  return desc
+    .replace(/\s*\[URGENCIA\]:[^\n]*/gi, '')
+    .replace(/\s*\[FECHA \/ HORARIO DESEADO\]:[^\n]*/gi, '')
+    .trim();
 };
 
 const formatTime = (dateStr) => {
@@ -953,129 +974,126 @@ const VistaRedAutonomo = () => {
 
             {displayedJobs.map(job => {
               const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
+              const IconoCategoria = ICONOS_CATEGORIA[cat.label] || Wrench;
               const sched = job.scheduled_at ? getJobScheduleStatus(job) : null;
+              const desc = descripcionTarjeta(job.descripcion);
+              const fechaVisita = job.scheduled_at
+                ? new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })
+                : '';
               return (
                 <div
                   key={job.id}
-                  className={`mercado-job-card ${job.is_accepted ? 'accepted-job' : ''}`}
+                  className={`mercado-job-card red-job-card ${job.is_accepted ? 'accepted-job' : ''} ${job.is_urgent ? 'es-urgente' : ''}`}
                   onClick={() => openQuotesModal(job)}
                 >
-                  <div className="mercado-card-inner-flex">
-                    {/* Circular Category Avatar */}
-                    <div 
-                      className="mercado-card-avatar-circle"
-                      style={{ background: cat.bg, borderColor: cat.color }}
+                  {/* Encabezado: ícono de categoría, título y estado */}
+                  <div className="rj-head">
+                    <div
+                      className="rj-avatar"
+                      style={{ '--rj-cat': cat.color }}
                       title={cat.label}
                     >
-                      <span>{cat.icon}</span>
+                      <IconoCategoria size={19} strokeWidth={2.2} />
                     </div>
 
-                    <div className="mercado-card-content-wrap">
-                      {/* Top: Colonia, Urgencia y Badge de Estado */}
-                      <div className="mercado-job-card-top">
-                        <div className="mercado-job-colonia-tag">
-                          <MapPin size={12} color="#f26522" />
-                          <span>{job.zona}</span>
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                          {job.is_urgent ? (
-                            <span className="mercado-urgency-badge urgent" style={{ whiteSpace: 'nowrap' }}>⚡ Urgente</span>
-                          ) : (job.scheduled_at || job.priority === 'Programado') ? (
-                            <span className="mercado-urgency-badge scheduled" style={{ whiteSpace: 'nowrap' }}>📅 Programado</span>
-                          ) : null}
-                          <span className={`mercado-job-badge ${job.is_accepted ? 'badge-accepted' : 'badge-pending'}`}>
-                            {job.is_accepted ? 'Asignado a Técnico' : job.estado}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Titulo */}
-                      <h4 className="mercado-job-card-title">{job.titulo}</h4>
-
-                      {/* Descripcion (igual que en Mercado de Trabajos) */}
-                      {job.descripcion && (
-                        <p className="mercado-job-card-desc">{job.descripcion}</p>
-                      )}
-
-                      {/* Técnico asignado si aplica */}
-                      {job.is_accepted && job.assigned_tech_name && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '800', color: '#22c55e', margin: '4px 0 2px 0' }}>
-                          <User size={13} color="#22c55e" />
-                          <span>Técnico: {job.assigned_tech_name}</span>
-                          {job.agreed_price > 0 && (
-                            <span style={{ color: '#ea580c', marginLeft: 'auto' }}>
-                              ${job.agreed_price.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Horario de visita */}
-                      {sched && (
-                        sched.isRescheduleRequested ? (
-                          <div style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '8px', background: 'rgba(234, 88, 12, 0.15)', border: '1px solid rgba(234, 88, 12, 0.35)', color: '#fb923c', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span>⚠️</span>
-                            <span><strong>Re-coordinación:</strong> Solicitaste cambio de horario</span>
-                          </div>
-                        ) : sched.isScheduleConfirmed ? (
-                          <div style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '8px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.35)', color: '#4ade80', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span>✅</span>
-                            <span><strong>Visita Confirmada:</strong> {new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                          </div>
-                        ) : (
-                          <div style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.35)', color: '#60a5fa', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span>📅</span>
-                            <span><strong>Visita Propuesta:</strong> {new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })} (Por confirmar)</span>
-                          </div>
-                        )
-                      )}
-
-                      {/* Mensaje de técnico */}
-                      {job.hasNewTechMessage && (
-                        <div className="red-publication-msg-alert" style={{ marginTop: '6px' }}>
-                          <span className="red-msg-dot-pulse" />
-                          <span>💬 <strong>Mensaje de técnico:</strong> "{job.lastTechMsg?.message}"</span>
-                        </div>
-                      )}
-
-                      {/* Footer sin la línea divisoria incómoda */}
-                      <div className="mercado-job-card-footer" style={{ borderTop: 'none', paddingTop: '4px', marginTop: '6px' }}>
-                        <span className="mercado-ofertas-count" style={{ color: job.is_accepted ? '#22c55e' : '#f26522' }}>
-                          {job.is_accepted ? '✓ Asignación Activa' : `${job.cotizaciones} ${job.cotizaciones === 1 ? 'oferta recibida' : 'ofertas recibidas'}`}
+                    <div className="rj-head-text">
+                      <h4 className="rj-title">{job.titulo}</h4>
+                      <div className="rj-meta">
+                        <span className="rj-meta-item">
+                          <MapPin size={12} />
+                          {job.zona}
                         </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span className="mercado-fecha-tag"><Clock size={11} /> {job.fecha}</span>
-                          {job.is_mine && !job.is_accepted && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteJob(job.id);
-                              }}
-                              title="Eliminar mi publicación"
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#94a3b8',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: '4px',
-                                borderRadius: '6px',
-                                transition: 'color 0.2s'
-                              }}
-                              onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
-                              onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                          <span style={{ color: job.is_accepted ? '#22c55e' : '#f26522', fontWeight: '700', fontSize: '11.5px', cursor: 'pointer' }}>
-                            {job.is_accepted ? 'Ver coordinación →' : 'Ver ofertas →'}
-                          </span>
-                        </div>
+                        {job.is_urgent ? (
+                          <span className="rj-chip urgente"><Zap size={11} /> Urgente</span>
+                        ) : (job.scheduled_at || job.priority === 'Programado') ? (
+                          <span className="rj-chip programado"><Calendar size={11} /> Programado</span>
+                        ) : null}
                       </div>
+                    </div>
+
+                    <span className={`rj-estado ${job.is_accepted ? 'asignado' : ''}`}>
+                      {job.is_accepted ? 'Asignado' : job.estado}
+                    </span>
+                  </div>
+
+                  {desc && <p className="rj-desc">{desc}</p>}
+
+                  {/* Técnico asignado si aplica */}
+                  {job.is_accepted && job.assigned_tech_name && (
+                    <div className="rj-tecnico">
+                      <User size={13} />
+                      <span className="rj-tecnico-nombre">{job.assigned_tech_name}</span>
+                      {job.agreed_price > 0 && (
+                        <span className="rj-tecnico-precio">
+                          ${job.agreed_price.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Horario de visita */}
+                  {sched && (
+                    sched.isRescheduleRequested ? (
+                      <div className="rj-aviso naranja">
+                        <Clock size={13} />
+                        <span><strong>Re-coordinación:</strong> solicitaste cambio de horario</span>
+                      </div>
+                    ) : sched.isScheduleConfirmed ? (
+                      <div className="rj-aviso verde">
+                        <CheckCircle size={13} />
+                        <span><strong>Visita confirmada:</strong> {fechaVisita}</span>
+                      </div>
+                    ) : (
+                      <div className="rj-aviso azul">
+                        <Calendar size={13} />
+                        <span><strong>Visita propuesta:</strong> {fechaVisita} (por confirmar)</span>
+                      </div>
+                    )
+                  )}
+
+                  {/* Mensaje de técnico */}
+                  {job.hasNewTechMessage && (
+                    <div className="rj-mensaje">
+                      <MessageCircle size={15} className="rj-mensaje-icono" />
+                      <div className="rj-mensaje-texto">
+                        <strong>Mensaje del técnico <span className="red-msg-dot-pulse" /></strong>
+                        <span>&ldquo;{job.lastTechMsg?.message}&rdquo;</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pie: ofertas y fecha a la izquierda, acciones a la derecha */}
+                  <div className="rj-footer">
+                    <div className="rj-footer-info">
+                      {job.is_accepted ? (
+                        <span className="rj-ofertas activa"><Check size={12} /> Asignación activa</span>
+                      ) : (
+                        <span className="rj-ofertas">
+                          <b>{job.cotizaciones}</b> {job.cotizaciones === 1 ? 'oferta' : 'ofertas'}
+                        </span>
+                      )}
+                      <span className="rj-fecha"><Clock size={11} /> {job.fecha}</span>
+                    </div>
+
+                    <div className="rj-footer-acciones">
+                      {job.is_mine && !job.is_accepted && (
+                        <button
+                          type="button"
+                          className="rj-btn-eliminar"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteJob(job.id);
+                          }}
+                          title="Eliminar mi publicación"
+                          aria-label="Eliminar mi publicación"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                      <span className={`rj-btn-ver ${job.is_accepted ? 'verde' : ''}`}>
+                        {job.is_accepted ? 'Coordinar' : 'Ver ofertas'}
+                        <ChevronRight size={14} />
+                      </span>
                     </div>
                   </div>
                 </div>
