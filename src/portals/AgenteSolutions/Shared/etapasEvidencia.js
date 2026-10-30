@@ -59,6 +59,20 @@ export const ETAPAS_EVIDENCIA = [
   }
 ];
 
+// A partir de 2 elementos solo se piden ANTES y DESPUÉS por cada uno (el ticket sigue siendo uno por trabajo)
+export const MINIMO_POR_ELEMENTO = 2;
+export const esPorElemento = (elementos) => (elementos?.length || 0) >= MINIMO_POR_ELEMENTO;
+export const etapasDelTrabajo = (etapas, elementos) => (esPorElemento(elementos)
+  ? etapas.filter(e => ['antes', 'despues', 'ticket'].includes(e.stage))
+  : etapas);
+export const evidenciasDelElemento = (reportes, elementoId) =>
+  (reportes || []).filter(r => Number(r.work_order_component_id) === Number(elementoId));
+// Cuántas evidencias obligatorias (antes y después) tiene un elemento
+export const avanceDelElemento = (reportes, elementoId) => {
+  const propias = evidenciasDelElemento(reportes, elementoId);
+  return ['antes', 'despues'].filter(stage => propias.some(r => r.stage === stage)).length;
+};
+
 const ETIQUETAS = /\[(ANTES|DURANTE|DESPUÉS|DESPUES|EXTRA|TICKET)\]/gi;
 
 // Descripción sin la etiqueta de etapa

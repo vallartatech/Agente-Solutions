@@ -90,6 +90,7 @@ const detalleEvento = (job) => {
 const FILTROS_CALENDARIO = [
   { key: 'all', label: 'Todos', Icon: CalendarIcon },
   { key: 'notices', label: 'Avisos', Icon: Megaphone, dot: 'dot-notice' },
+  { key: 'mantenimiento', label: 'Mantenimientos', Icon: Wrench, dot: 'dot-mantenimiento' },
   { key: 'birthdays', label: 'Cumpleaños', Icon: Cake, dot: 'dot-birthday' },
   { key: 'overdue', label: 'Atrasados', Icon: Siren, dot: 'dot-overdue' },
   { key: 'today', label: 'Citas hoy', Icon: Zap, dot: 'dot-today' },
@@ -228,6 +229,51 @@ const limpiarDescripcion = (rawDesc) => {
   return clean.trim() || rawDesc;
 };
 
+const COLOR_MANTENIMIENTO = '#0ea5e9';
+
+// Fecha de un ciclo de mantenimiento como evento (solo la ven Root y Admin)
+const visitaAEvento = (visita) => {
+  const equipo = visita.equipment || {};
+  const dateKey = String(visita.fecha_programada).slice(0, 10);
+  const etiqueta = equipo.cantidad > 1 ? `${equipo.cantidad} × ${equipo.tipo}` : equipo.tipo;
+  const propiedad = equipo.property?.property_name || equipo.property?.address || 'Propiedad';
+  return {
+    id: `mantenimiento_${visita.id}`,
+    isNotice: true,
+    isMaintenance: true,
+    visitaId: visita.id,
+    equipo,
+    rawNotice: {},
+    titulo: `Mantto. · ${etiqueta} · ${propiedad}`,
+    etiqueta,
+    propiedad,
+    type: 'mantenimiento',
+    color: COLOR_MANTENIMIENTO,
+    descripcion: equipo.detalle || '',
+    calendarDate: new Date(`${dateKey}T09:00:00`),
+    dateKey,
+    hourIndex: 9,
+    calendarHour: 9,
+    calendarTime: 'Todo el día',
+    scheduled_at: null,
+    hasScheduledDate: false,
+    assigned_tech_name: '',
+    cliente: propiedad,
+    statusType: 'notice',
+    timingCategory: 'notice',
+    timingBadge: 'Mantenimiento',
+    timingRelative: 'Mantenimiento',
+    statusLabel: etiqueta,
+    isOverdue: false,
+    isToday: dateKey === toLocalDateKey(new Date()),
+    isFuture: false,
+    isUncoordinated: false,
+    isCompleted: false,
+  };
+};
+
+const escaparHtml = (texto) => String(texto ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -260,6 +306,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const [workOrdersList, setWorkOrdersList] = useState([]);
   const [noticesList, setNoticesList] = useState([]);
   const [birthdaysList, setBirthdaysList] = useState([]);
+  const [visitasList, setVisitasList] = useState([]);
   const [tecnicosList, setTecnicosList] = useState([]);
 
   // Estados del Modal de Detalle
@@ -526,7 +573,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
   // ── COMPUTAR allEvents REACTIVAMENTE (Evita re-fetch loops al navegar de mes o cerrar modales) ──
   const allEvents = useMemo(() => {
-    const list = [...workOrdersList, ...noticesList];
+    const list = [...workOrdersList, ...noticesList, ...visitasList];
     const currentYear = currentDate.getFullYear();
 
     // Proyectar cumpleaños en el año actual y adyacentes
@@ -535,7 +582,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     });
 
     return list;
-  }, [workOrdersList, noticesList, birthdaysList, currentDate]);
+  }, [workOrdersList, noticesList, visitasList, birthdaysList, currentDate]);
 
   // Carga de datos para Admin y Técnicos de Solutions (Sin ecosistema externo de Agente Market)
   const fetchSolutionsData = useCallback(async (isSilent = false) => {
@@ -544,14 +591,17 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const [resWorkOrders, resTecnicos, resTecServicios, resEvents, resBirthdays] = await Promise.all([
+      const [resWorkOrders, resTecnicos, resTecServicios, resEvents, resBirthdays, resVisitas] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/all`, { headers }).catch(() => ({ data: [] })),
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos?con_admins=1`, { headers }).catch(() => ({ data: [] })),
         (isTechnician && user?.id)
           ? axios.get(`${import.meta.env.VITE_API_BASE_URL}/tecnico/${user.id}/servicios`, { headers }).catch(() => ({ data: [] }))
           : Promise.resolve({ data: [] }),
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/events`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/birthdays`, { headers }).catch(() => ({ data: [] }))
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/calendar/birthdays`, { headers }).catch(() => ({ data: [] })),
+        isAdmin
+          ? axios.get(`${import.meta.env.VITE_API_BASE_URL}/mantenimiento/visitas`, { headers }).catch(() => ({ data: [] }))
+          : Promise.resolve({ data: [] })
       ]);
 
       const rawOrders = Array.isArray(resWorkOrders.data) ? resWorkOrders.data : [];
@@ -627,6 +677,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       // 4. Cumpleaños
       const rawBirthdays = Array.isArray(resBirthdays.data) ? resBirthdays.data : [];
       setBirthdaysList(rawBirthdays);
+
+      // 5. Fechas de mantenimiento
+      setVisitasList((Array.isArray(resVisitas.data) ? resVisitas.data : []).map(visitaAEvento));
 
       // Si había un trabajo seleccionado, actualizarlo funcionalmente
       setSelectedJob(prev => {
@@ -711,6 +764,49 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   // Día abierto en la hoja "todo lo del día" (dateKey) al tocar una fecha con eventos
   const [diaAbierto, setDiaAbierto] = useState(null);
 
+  // Fecha de mantenimiento: al acercarse se convierte en orden o se omite. Lo del mismo día y propiedad va en una sola orden.
+  const abrirVisitaMantenimiento = async (job) => {
+    const { equipo } = job;
+    const fotos = [equipo.foto_equipo_url, equipo.foto_datos_url].filter(Boolean)
+      .map(url => `<img src="${escaparHtml(url)}" alt="" style="width:48%;height:110px;object-fit:cover;border-radius:10px;" />`).join(' ');
+    const { isConfirmed, isDenied } = await Swal.fire({
+      title: 'Mantenimiento programado',
+      html: `
+        <div style="text-align:left;font-size:0.95rem;color:#334155;line-height:1.5;">
+          <p style="margin:0 0 4px;"><strong>${escaparHtml(job.etiqueta)}</strong></p>
+          <p style="margin:0 0 4px;">${escaparHtml(job.propiedad)}</p>
+          <p style="margin:0 0 10px;">${escaparHtml(formatNoticeDate(job.dateKey))}</p>
+          ${job.descripcion ? `<p style="margin:0 0 10px;">${escaparHtml(job.descripcion)}</p>` : ''}
+          ${fotos ? `<div style="display:flex;justify-content:space-between;">${fotos}</div>` : ''}
+        </div>`,
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: 'Convertir en orden',
+      denyButtonText: 'Omitir esta fecha',
+      cancelButtonText: 'Cerrar',
+      confirmButtonColor: '#f97316',
+      denyButtonColor: '#64748b',
+    });
+    if (!isConfirmed && !isDenied) return;
+
+    try {
+      const accion = isConfirmed ? 'convertir' : 'omitir';
+      const { data } = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/mantenimiento/visitas/${job.visitaId}/${accion}`);
+      await fetchSolutionsData(true);
+      if (isConfirmed) {
+        onClose?.();
+        navigate(`/tablero-servicios?jobId=${data.work_order_id}`);
+      }
+    } catch (err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'No se pudo completar',
+        text: err.response?.data?.error || 'Intenta de nuevo.',
+        confirmButtonColor: '#f97316'
+      });
+    }
+  };
+
   const handleEventClick = (job) => {
     if (job.isBirthday) {
       Swal.fire({
@@ -728,6 +824,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         confirmButtonText: '¡Felicidades!',
         confirmButtonColor: '#ec4899'
       });
+      return;
+    }
+
+    if (job.isMaintenance) {
+      abrirVisitaMantenimiento(job);
       return;
     }
 
@@ -1257,7 +1358,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const applyFilters = useCallback((events) => {
     let result = [...events];
 
-    if (selectedFilter === 'notices') result = result.filter(e => e.isNotice);
+    if (selectedFilter === 'notices') result = result.filter(e => e.isNotice && !e.isMaintenance);
+    else if (selectedFilter === 'mantenimiento') result = result.filter(e => e.isMaintenance);
     else if (selectedFilter === 'birthdays') result = result.filter(e => e.isBirthday);
     else if (selectedFilter === 'overdue') result = result.filter(e => e.isOverdue && !e.isNotice && !e.isBirthday);
     else if (selectedFilter === 'today') result = result.filter(e => e.isToday);
@@ -1913,7 +2015,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                                 <div>
                                   <h4 className="agenda-card-title">{job.titulo}</h4>
                                   <span className="agenda-card-subtitle">
-                                    {job.isBirthday ? 'Día de Cumpleaños' : (job.isNotice ? (job.type === 'fumigacion' ? 'Fumigación de Instalaciones' : 'Aviso al Equipo') : (job.equipment ? `Equipo: ${job.equipment}` : job.type))}
+                                    {job.isBirthday ? 'Día de Cumpleaños' : (job.isMaintenance ? 'Mantenimiento periódico' : job.isNotice ? (job.type === 'fumigacion' ? 'Fumigación de Instalaciones' : 'Aviso al Equipo') : (job.equipment ? `Equipo: ${job.equipment}` : job.type))}
                                   </span>
                                 </div>
                                 <span 
@@ -1963,7 +2065,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                                     handleEventClick(job);
                                   }}
                                 >
-                                  {job.isBirthday ? 'Ver Cumpleañero' : (job.isNotice ? 'Ver Aviso' : 'Ver Detalles')}
+                                  {job.isBirthday ? 'Ver Cumpleañero' : (job.isMaintenance ? 'Ver Mantenimiento' : job.isNotice ? 'Ver Aviso' : 'Ver Detalles')}
                                 </button>
                               </div>
                             </div>

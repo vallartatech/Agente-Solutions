@@ -10,11 +10,14 @@ import Header from '../../../components/Shared/Header';
 import { useAuth } from "../../../context/AuthContext";
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
-import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta } from '../Shared/etapasEvidencia';
+import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta, esPorElemento, etapasDelTrabajo, evidenciasDelElemento, avanceDelElemento } from '../Shared/etapasEvidencia';
+import ModalCicloMantenimiento from '../Admin/Mantenimiento/ModalCicloMantenimiento';
+import '../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 import CarruselEtapas from '../Shared/CarruselEtapas';
 
 // Etapas compartidas con el panel de reportes del admin (incluye el ticket de conformidad)
 const STAGES = ETAPAS_EVIDENCIA.map(e => ({ ...e, placeholder: e.placeholderTecnico }));
+const SLOT_VACIO = { file: null, preview: null, description: '', isEditing: false };
 
 const GaleriaReportes = () => {
   const { user } = useAuth();
@@ -33,11 +36,18 @@ const GaleriaReportes = () => {
   const [loading, setLoading] = useState(true);
   const [submittingKey, setSubmittingKey] = useState(null);
   const [imagenExpandida, setImagenExpandida] = useState(null);
+  const [cicloOrdenId, setCicloOrdenId] = useState(null);
 
-  // Estado local para los formularios de cada etapa (4 evidencias + ticket)
-  const [slotData, setSlotData] = useState(() => Object.fromEntries(
-    STAGES.map(s => [s.key, { file: null, preview: null, description: '', isEditing: false }])
-  ));
+  // Elementos del trabajo: con 2 o más, cada uno lleva su ANTES y su DESPUÉS
+  const [elementos, setElementos] = useState([]);
+  const [elementoActivo, setElementoActivo] = useState(null);
+  const [cargandoElementos, setCargandoElementos] = useState(true);
+  const porElemento = esPorElemento(elementos);
+  const etapas = etapasDelTrabajo(STAGES, elementos);
+
+  // Estado local para los formularios de cada etapa (por elemento cuando aplica)
+  const [slotData, setSlotData] = useState({});
+  const claveSlot = (stage) => (porElemento && !stage.esTicket ? `${elementoActivo}:${stage.key}` : stage.key);
 
   // Un solo input de archivo: antes de abrirlo se ajusta a cámara (foto / video) o galería
   const entradaRef = useRef(null);
@@ -83,8 +93,25 @@ const GaleriaReportes = () => {
     fetchReportes();
   }, [trabajoId]);
 
+  useEffect(() => {
+    if (!/work[_\s-]*order/i.test(String(trabajoId || ''))) {
+      setCargandoElementos(false);
+      return;
+    }
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/${String(trabajoId).match(/\d+/)?.[0]}/elementos`)
+      .then(({ data }) => {
+        setElementos(data || []);
+        setElementoActivo(data?.[0]?.id ?? null);
+      })
+      .catch((error) => console.error('Error fetching work order elements:', error))
+      .finally(() => setCargandoElementos(false));
+  }, [trabajoId]);
+
   // Evidencia de cada etapa: por la columna `stage` o, en las viejas, por su etiqueta / orden
-  const getReportForSlot = (stage) => evidenciaDeEtapa(reportes, stage);
+  const getReportForSlot = (stage) => evidenciaDeEtapa(
+    porElemento && !stage.esTicket ? evidenciasDelElemento(reportes, elementoActivo) : reportes,
+    stage
+  );
 
   // yaValidado: el video viene de la grabadora propia, que ya respeta el límite
   const handleFileChange = async (stage, file, yaValidado = false) => {
@@ -99,10 +126,11 @@ const GaleriaReportes = () => {
       }
     }
     const previewUrl = URL.createObjectURL(file);
+    const clave = claveSlot(stage);
     setSlotData(prev => ({
       ...prev,
-      [stage.key]: {
-        ...prev[stage.key],
+      [clave]: {
+        ...(prev[clave] || SLOT_VACIO),
         file,
         preview: previewUrl,
         previewEsVideo: esVideo
@@ -110,18 +138,18 @@ const GaleriaReportes = () => {
     }));
   };
 
-  const handleDescriptionChange = (stageKey, text) => {
+  const handleDescriptionChange = (clave, text) => {
     setSlotData(prev => ({
       ...prev,
-      [stageKey]: {
-        ...prev[stageKey],
+      [clave]: {
+        ...(prev[clave] || SLOT_VACIO),
         description: text
       }
     }));
   };
 
   const handleSaveSlot = async (stage) => {
-    const dataForSlot = slotData[stage.key];
+    const dataForSlot = slotData[claveSlot(stage)] || SLOT_VACIO;
     const existingReport = getReportForSlot(stage);
 
     // En el ticket el comentario es opcional
@@ -171,6 +199,7 @@ const GaleriaReportes = () => {
         });
       } else {
         // Crear nuevo reporte
+        if (porElemento && !stage.esTicket) formData.append('work_order_component_id', elementoActivo);
         await axios.post(`${import.meta.env.VITE_API_BASE_URL}/servicios/${trabajoId}/reportes`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
@@ -185,10 +214,7 @@ const GaleriaReportes = () => {
       });
 
       // Limpiar formulario local de ese slot
-      setSlotData(prev => ({
-        ...prev,
-        [stage.key]: { file: null, preview: null, description: '', isEditing: false }
-      }));
+      setSlotData(prev => ({ ...prev, [claveSlot(stage)]: SLOT_VACIO }));
 
       await fetchReportes();
     } catch (error) {
@@ -238,7 +264,7 @@ const GaleriaReportes = () => {
     const cleanDesc = limpiarEtiqueta(existingReport.description);
     setSlotData(prev => ({
       ...prev,
-      [stage.key]: {
+      [claveSlot(stage)]: {
         file: null,
         preview: null,
         description: cleanDesc,
@@ -248,13 +274,16 @@ const GaleriaReportes = () => {
   };
 
   // Contar cuántas evidencias obligatorias están listas
-  const countRequiredDone = STAGES.filter(s => s.required && getReportForSlot(s)).length;
+  const totalRequeridas = porElemento ? elementos.length * 2 : STAGES.filter(s => s.required).length;
+  const countRequiredDone = porElemento
+    ? elementos.reduce((suma, el) => suma + avanceDelElemento(reportes, el.id), 0)
+    : STAGES.filter(s => s.required && getReportForSlot(s)).length;
 
-  // Con las 3 evidencias obligatorias se puede cerrar desde aquí, sin regresar al trabajo.
+  // Con las evidencias obligatorias se puede cerrar desde aquí, sin regresar al trabajo.
   // El técnico lo manda a aprobación (el backend lo deja "Por Aprobar"); el admin lo finaliza.
   const ordenCerrada = ['Listo', 'Finalizado', 'Por Aprobar', 'done', 'review', 'rejected', 'Rechazado', 'Cancelado'].includes(estadoOrden);
   const esOrdenDeTrabajo = !String(trabajoId || '').toLowerCase().includes('servicio');
-  const puedeEnviar = countRequiredDone === 3 && !ordenCerrada && esOrdenDeTrabajo;
+  const puedeEnviar = countRequiredDone === totalRequeridas && !cargandoElementos && !ordenCerrada && esOrdenDeTrabajo;
 
   const enviarAprobacion = async () => {
     const result = await Swal.fire({
@@ -286,6 +315,8 @@ const GaleriaReportes = () => {
         timer: 2200,
         showConfirmButton: false
       });
+      // Al finalizar, el admin puede dejar programado el mantenimiento periódico
+      if (esAdmin && nuevo === 'Listo') setCicloOrdenId(realId);
     } catch (error) {
       console.error('Error al enviar a aprobación:', error);
       Swal.fire('Error', error.response?.data?.error || 'No se pudo actualizar el trabajo. Inténtalo de nuevo.', 'error');
@@ -349,9 +380,9 @@ const GaleriaReportes = () => {
           </button>
 
           <div style={{ 
-            background: countRequiredDone === 3 ? '#dcfce7' : '#fff7ed', 
-            border: `1.5px solid ${countRequiredDone === 3 ? '#16a34a' : '#ea580c'}`,
-            color: countRequiredDone === 3 ? '#15803d' : '#c2410c',
+            background: countRequiredDone === totalRequeridas ? '#dcfce7' : '#fff7ed', 
+            border: `1.5px solid ${countRequiredDone === totalRequeridas ? '#16a34a' : '#ea580c'}`,
+            color: countRequiredDone === totalRequeridas ? '#15803d' : '#c2410c',
             padding: '8px 18px',
             borderRadius: '20px',
             fontWeight: '800',
@@ -361,7 +392,7 @@ const GaleriaReportes = () => {
             gap: '8px'
           }}>
             <CheckCircle2 size={18} />
-            <span>Progreso Evidencias Obligatorias: {countRequiredDone} de 3 completadas</span>
+            <span>Progreso Evidencias Obligatorias: {countRequiredDone} de {totalRequeridas} completadas</span>
           </div>
 
           {puedeEnviar && (
@@ -397,7 +428,27 @@ const GaleriaReportes = () => {
 
         {/* GRID DE LAS 4 EVIDENCIAS + TICKET DE CONFORMIDAD */}
         <div style={{ width: '100%', maxWidth: '1500px', marginBottom: '40px' }}>
-          {loading ? (
+          {porElemento && !loading && (
+            <div className="ev-elementos" role="tablist" aria-label="Elementos del trabajo">
+              {elementos.map((el) => {
+                const avance = avanceDelElemento(reportes, el.id);
+                return (
+                  <button
+                    key={el.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={el.id === elementoActivo}
+                    className={`ev-elemento ${el.id === elementoActivo ? 'on' : ''} ${avance === 2 ? 'completo' : ''}`}
+                    onClick={() => { setElementoActivo(el.id); setMenuEtapa(null); }}
+                    title={el.label}
+                  >
+                    <span>{el.label}</span> <em>{avance}/2</em>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {loading || cargandoElementos ? (
             <div style={{ textAlign: 'center', padding: '60px' }}>
               <Loader2 className="animate-spin" size={42} color="#F26522" style={{ margin: 'auto' }} />
               <p style={{ marginTop: '12px', fontWeight: 'bold', color: '#475569' }}>Cargando evidencias del trabajo...</p>
@@ -405,9 +456,9 @@ const GaleriaReportes = () => {
           ) : (
             // Una fila con las 5 en computadora; carrusel en tablet y celular
             <CarruselEtapas className="gr-etapas">
-              {STAGES.map((stage) => {
+              {etapas.map((stage) => {
                 const report = getReportForSlot(stage);
-                const localState = slotData[stage.key];
+                const localState = slotData[claveSlot(stage)] || SLOT_VACIO;
                 const isSaving = submittingKey === stage.key;
                 const isDone = !!report && !localState.isEditing;
 
@@ -580,7 +631,7 @@ const GaleriaReportes = () => {
                           <textarea
                             rows={3}
                             value={localState.description}
-                            onChange={(e) => handleDescriptionChange(stage.key, e.target.value)}
+                            onChange={(e) => handleDescriptionChange(claveSlot(stage), e.target.value)}
                             placeholder={stage.placeholder}
                             style={{
                               width: '100%',
@@ -647,10 +698,7 @@ const GaleriaReportes = () => {
                           {localState.isEditing && (
                             <button
                               onClick={() => {
-                                setSlotData(prev => ({
-                                  ...prev,
-                                  [stage.key]: { file: null, preview: null, description: '', isEditing: false }
-                                }));
+                                setSlotData(prev => ({ ...prev, [claveSlot(stage)]: SLOT_VACIO }));
                               }}
                               style={{
                                 background: '#e2e8f0',
@@ -709,6 +757,8 @@ const GaleriaReportes = () => {
             </CarruselEtapas>
           )}
         </div>
+
+        {cicloOrdenId && <ModalCicloMantenimiento workOrderId={cicloOrdenId} onClose={() => setCicloOrdenId(null)} />}
 
         {grabadorEtapa && (
           <GrabadorVideo

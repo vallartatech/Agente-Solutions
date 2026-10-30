@@ -12,11 +12,13 @@ import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2
 import Swal from 'sweetalert2';
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
-import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta } from '../Shared/etapasEvidencia';
+import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta, esPorElemento, etapasDelTrabajo, evidenciasDelElemento, avanceDelElemento } from '../Shared/etapasEvidencia';
+import ModalCicloMantenimiento from './Mantenimiento/ModalCicloMantenimiento';
 import CarruselEtapas from '../Shared/CarruselEtapas';
 import '../../../styles/Shared/UniversalSearch.css';
 import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteSolutions/Admin/VistaReportesGlobal.css';
+import '../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 
 // Etapas compartidas con la galería del técnico (incluye el ticket de conformidad)
 const STAGES = ETAPAS_EVIDENCIA.map(e => ({ ...e, placeholder: e.placeholderAdmin }));
@@ -57,6 +59,8 @@ const VistaReportesGlobal = () => {
   const [zoomImage, setZoomImage] = useState(null);
   const [selectedPropKey, setSelectedPropKey] = useState(null);
   const [selectedGroupKey, setSelectedGroupKey] = useState(null);
+  const [elementoPanelId, setElementoPanelId] = useState(null);
+  const [cicloOrdenId, setCicloOrdenId] = useState(null);
 
   useEffect(() => {
     fetchReportesYCotizaciones();
@@ -106,6 +110,7 @@ const VistaReportesGlobal = () => {
   };
 
   const [previewEsVideo, setPreviewEsVideo] = useState(false);
+  const [elementoEvidenciaId, setElementoEvidenciaId] = useState(null);
   const [grabando, setGrabando] = useState(false);
 
   const handleImageChange = (e) => {
@@ -152,6 +157,7 @@ const VistaReportesGlobal = () => {
 
     data.append('description', finalDesc);
     if (selectedStage?.stage) data.append('stage', selectedStage.stage);
+    if (modalMode === 'add' && elementoEvidenciaId && !selectedStage?.esTicket) data.append('work_order_component_id', elementoEvidenciaId);
     if (formData.image) {
       data.append('image', formData.image);
     }
@@ -259,6 +265,8 @@ const VistaReportesGlobal = () => {
       });
       await fetchReportesYCotizaciones();
       avisarValidacion();
+      // Al finalizar se puede dejar programado el mantenimiento periódico
+      setCicloOrdenId(grupo.trabajoId);
     } catch (error) {
       Swal.fire('Error', error.response?.data?.error || 'No se pudo finalizar el trabajo.', 'error');
     } finally {
@@ -327,7 +335,14 @@ const VistaReportesGlobal = () => {
     const [nombre, curp, dueno, trabajoId, tipo, tituloTrabajo] = groupKey.split('|');
     const first = reports[0];
     const prop = first.service?.property || first.work_order?.property || first.workOrder?.property;
-    const etapasRegistradas = STAGES.filter(st => getReportForStage(reports, st)).length;
+    const elementos = first.work_order?.elementos || first.workOrder?.elementos || [];
+    const etapasGrupo = etapasDelTrabajo(STAGES, elementos);
+    const porElemento = esPorElemento(elementos);
+    // Con varios elementos cuentan el antes y después de cada uno, más el ticket
+    const etapasRegistradas = porElemento
+      ? elementos.reduce((suma, el) => suma + avanceDelElemento(reports, el.id), 0) + (getReportForStage(reports, ETAPA_TICKET) ? 1 : 0)
+      : STAGES.filter(st => getReportForStage(reports, st)).length;
+    const etapasTotal = porElemento ? elementos.length * 2 + 1 : STAGES.length;
     const foto = resolverFotoPropiedad(prop) || first.image_url || first.image_path || null;
 
     // Fecha de ejecución: la del servicio/orden si existe; si no, la evidencia más reciente
@@ -343,7 +358,8 @@ const VistaReportesGlobal = () => {
     const cerrador = orden?.closer;
 
     return {
-      groupKey, nombre, curp, dueno, trabajoId, tipo, tituloTrabajo, reports, foto, etapasRegistradas,
+      groupKey, nombre, curp, dueno, trabajoId, tipo, tituloTrabajo, reports, foto, etapasRegistradas, etapasTotal,
+      elementos, etapasGrupo, porElemento,
       porValidar: orden?.status === 'Por Aprobar',
       ticketStatus: orden?.status === 'Listo' ? orden?.ticket_status : null,
       cerradoPor: cerrador ? `${cerrador.first_name || ''} ${cerrador.last_name || ''}`.trim() : '',
@@ -394,7 +410,8 @@ const VistaReportesGlobal = () => {
     navigate('/imprimir-cotizacion');
   };
 
-  const abrirReporteOficial = ({ reports, tipo, trabajoId, dueno, nombre, curp, tituloTrabajo }) => {
+  const abrirReporteOficial = (grupo) => {
+    const { reports, tipo, trabajoId, dueno, nombre, curp, tituloTrabajo } = grupo;
     const firstReport = reports[0];
     const isService = tipo === 'servicio';
     const serviceData = isService ? firstReport.service : (firstReport.work_order || firstReport.workOrder || firstReport.service);
@@ -416,7 +433,9 @@ const VistaReportesGlobal = () => {
         },
         // Solo las fotos que se ven en las tarjetas de etapas (una por etapa, sin repetir; el ticket va aparte)
         imagenes: [...new Set(
-          STAGES.filter(st => !st.esTicket).map(st => getReportForStage(reports, st))
+          (grupo.porElemento
+            ? grupo.elementos.flatMap(el => grupo.etapasGrupo.filter(st => !st.esTicket).map(st => getReportForStage(evidenciasDelElemento(reports, el.id), st)))
+            : STAGES.filter(st => !st.esTicket).map(st => getReportForStage(reports, st)))
             .map(r => r?.image_url || r?.image_path)
             .filter(Boolean)
         )]
@@ -585,7 +604,7 @@ const VistaReportesGlobal = () => {
                         <span className="rg-service-meta">
                           <Calendar size={13} /> {servicio.fechaTexto}
                           <span className="rg-service-dot">•</span>
-                          <CheckCircle2 size={13} /> {servicio.etapasRegistradas}/{STAGES.length} etapas
+                          <CheckCircle2 size={13} /> {servicio.etapasRegistradas}/{servicio.etapasTotal} etapas
                         </span>
                       </span>
                       <ChevronRight size={18} className="rg-service-chevron" />
@@ -635,11 +654,36 @@ const VistaReportesGlobal = () => {
               </div>
             )}
 
-            {/* LAS 4 ETAPAS (ANTES, DURANTE, DESPUÉS, EXTRA) + TICKET DE CONFORMIDAD */}
+            {grupoSeleccionado.porElemento && (
+              <div className="ev-elementos" role="tablist" aria-label="Elementos del trabajo">
+                {grupoSeleccionado.elementos.map((el) => {
+                  const avance = avanceDelElemento(grupoSeleccionado.reports, el.id);
+                  const activo = el.id === (elementoPanelId ?? grupoSeleccionado.elementos[0].id);
+                  return (
+                    <button
+                      key={el.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={activo}
+                      className={`ev-elemento ${activo ? 'on' : ''} ${avance === 2 ? 'completo' : ''}`}
+                      onClick={() => setElementoPanelId(el.id)}
+                      title={el.label}
+                    >
+                      <span>{el.label}</span> <em>{avance}/2</em>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* LAS ETAPAS DEL TRABAJO + TICKET DE CONFORMIDAD */}
             <CarruselEtapas className="rg-etapas">
-              {STAGES.map(stage => {
-                const { reports, trabajoId, tipo } = grupoSeleccionado;
-                const r = getReportForStage(reports, stage);
+              {grupoSeleccionado.etapasGrupo.map(stage => {
+                const { reports, trabajoId, tipo, porElemento, elementos } = grupoSeleccionado;
+                const elementoId = porElemento && !stage.esTicket
+                  ? (elementos.find(el => el.id === elementoPanelId)?.id ?? elementos[0].id)
+                  : null;
+                const r = getReportForStage(elementoId ? evidenciasDelElemento(reports, elementoId) : reports, stage);
                 const cleanDesc = r ? limpiarEtiqueta(r.description) : '';
 
                 return r ? (
@@ -693,7 +737,7 @@ const VistaReportesGlobal = () => {
                     key={stage.key}
                     type="button"
                     className={`rg-stage-empty ${stage.esTicket ? 'es-ticket' : ''}`}
-                    onClick={() => handleOpenModal('add', null, trabajoId, tipo, stage)}
+                    onClick={() => { setElementoEvidenciaId(elementoId); handleOpenModal('add', null, trabajoId, tipo, stage); }}
                   >
                     <span className="rg-stage-empty-icon"><Plus size={22} /></span>
                     <strong>{stage.esTicket ? 'SUBIR TICKET' : 'AÑADIR EVIDENCIA'}</strong>
@@ -711,6 +755,8 @@ const VistaReportesGlobal = () => {
         </div>,
         document.body
       )}
+
+      {cicloOrdenId && <ModalCicloMantenimiento workOrderId={cicloOrdenId} onClose={() => setCicloOrdenId(null)} />}
 
       {/* MODAL PARA AGREGAR O EDITAR EVIDENCIA */}
       {isModalOpen && createPortal(

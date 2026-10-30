@@ -225,7 +225,7 @@ const TrabajoPropiedad = () => {
       setShowModalFinalizar(true);
     } catch (error) {
       console.error("Error finalizing job:", error);
-      mostrarAviso("Hubo un error al finalizar el trabajo. Por favor intenta de nuevo.");
+      mostrarAviso(error.response?.data?.error || "Hubo un error al finalizar el trabajo. Por favor intenta de nuevo.");
     }
   };
 

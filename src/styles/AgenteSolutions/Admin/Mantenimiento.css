@@ -1,0 +1,130 @@
+/* Trabajos con varios elementos y ciclos de mantenimiento: viven dentro de los modales oscuros rp-* */
+.mt-modal { max-width: 560px; }
+.mt-cargando { padding: 32px 0; text-align: center; color: rgba(255, 255, 255, 0.75); }
+
+.mt-seccion { display: flex; flex-direction: column; gap: 10px; }
+.mt-seccion h3 {
+  display: flex; align-items: center; gap: 8px; margin: 6px 0 0;
+  font-size: 0.92rem; font-weight: 800; color: #ffffff;
+}
+.mt-seccion h3 svg { color: #ff8c42; }
+.mt-zona {
+  margin: 8px 0 6px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.5px;
+  text-transform: uppercase; color: rgba(255, 255, 255, 0.6);
+}
+
+.mt-campo { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.mt-campo > span {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; font-weight: 700; color: rgba(255, 255, 255, 0.82);
+}
+.mt-campo input {
+  width: 100%; min-height: 42px; padding: 9px 12px; box-sizing: border-box;
+  border: 1.5px solid rgba(255, 255, 255, 0.2); border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95); color: #0f172a; font-size: 0.92rem; font-family: inherit;
+}
+.mt-campo input:focus { outline: none; border-color: #f26522; }
+
+.mt-elemento {
+  margin-bottom: 8px; border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.mt-elemento.on { border-color: #f26522; background: rgba(242, 101, 34, 0.14); }
+.mt-elemento-check {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 10px 12px;
+  border: 0; background: transparent; color: #ffffff; text-align: left; cursor: pointer; font-family: inherit;
+}
+.mt-casilla {
+  display: flex; align-items: center; justify-content: center; flex: 0 0 22px; height: 22px;
+  border: 1.5px solid rgba(255, 255, 255, 0.5); border-radius: 7px; color: #ff8c42;
+}
+.mt-elemento.on .mt-casilla { border-color: #ff8c42; }
+.mt-elemento-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mt-elemento-texto strong { font-size: 0.9rem; font-weight: 700; overflow-wrap: anywhere; }
+.mt-elemento-texto small { font-size: 0.75rem; color: rgba(255, 255, 255, 0.68); }
+.mt-elemento-ciclo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 0 12px 12px 44px; }
+.mt-fechas { font-size: 0.78rem; font-weight: 700; color: #ffd2b5; }
+
+.mt-veces { display: inline-flex; gap: 6px; }
+.mt-veces button {
+  width: 38px; height: 38px; border: 1.5px solid rgba(255, 255, 255, 0.25); border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08); color: #ffffff; font-weight: 800; cursor: pointer;
+}
+.mt-veces button.on { border-color: #f26522; background: #f26522; }
+
+.mt-grupos { display: flex; flex-direction: column; gap: 10px; }
+.mt-grupo {
+  display: flex; flex-direction: column; gap: 10px; padding: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 14px; background: rgba(255, 255, 255, 0.06);
+}
+.mt-grupo-fila { display: flex; align-items: flex-end; gap: 8px; }
+.mt-campo-cantidad { flex: 0 0 76px; }
+.mt-campo-tipo { flex: 1; }
+.mt-fotos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mt-foto {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  min-height: 96px; padding: 8px; overflow: hidden; text-align: center; cursor: pointer;
+  border: 1.5px dashed rgba(255, 255, 255, 0.35); border-radius: 12px; color: #ffffff;
+}
+.mt-foto span { font-size: 0.74rem; font-weight: 700; }
+.mt-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mt-foto.con-foto span {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 4px; background: rgba(0, 0, 0, 0.62);
+}
+.mt-quitar {
+  display: flex; align-items: center; justify-content: center; flex: 0 0 42px; height: 42px;
+  border: 0; border-radius: 12px; background: rgba(220, 38, 38, 0.16); color: #ef4444; cursor: pointer;
+}
+.mt-agregar {
+  display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 12px;
+  border: 1.5px dashed rgba(255, 140, 66, 0.7); border-radius: 12px;
+  background: transparent; color: #ff8c42; font-weight: 800; font-size: 0.85rem; cursor: pointer; font-family: inherit;
+}
+
+.mt-pie { display: flex; gap: 8px; }
+.mt-pie .xp-btn-primary { flex: 1; }
+.mt-btn-secundario {
+  min-height: 46px; padding: 0 18px; border: 1.5px solid rgba(255, 255, 255, 0.28); border-radius: 14px;
+  background: transparent; color: #ffffff; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+
+/* Elegir elementos en "Nueva solicitud" */
+.mt-resumen { margin: 4px 0 0; font-size: 0.8rem; color: rgba(255, 255, 255, 0.78); }
+.mt-resumen strong { color: #ffd2b5; }
+.mt-lista-elegir { max-height: 260px; overflow-y: auto; }
+
+/* Panel de la propiedad (fondo claro) */
+.mt-panel-cabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.mt-panel-cabecera .xp-panel-titulo { margin: 0; }
+.mt-panel-vacio { margin: 0; padding: 22px 0; text-align: center; color: #64748b; }
+.mt-lista { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.mt-lista-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff;
+}
+.mt-lista-item img { flex: 0 0 48px; width: 48px; height: 48px; object-fit: cover; border-radius: 10px; }
+.mt-lista-texto { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+.mt-lista-texto strong { color: #0f172a; font-size: 0.92rem; overflow-wrap: anywhere; }
+.mt-lista-texto span { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; color: #475569; font-size: 0.8rem; }
+.mt-lista-texto small { color: #64748b; font-size: 0.76rem; }
+.mt-lista-texto .mt-sin-ciclo { color: #c2410c; font-weight: 700; }
+
+/* Pestañas de elementos en las evidencias (galería del técnico y reportes del admin) */
+.ev-elementos { display: flex; gap: 8px; margin-bottom: 14px; padding-bottom: 4px; overflow-x: auto; }
+.ev-elemento {
+  display: flex; flex: 0 0 auto; align-items: center; gap: 7px; max-width: 260px; min-height: 42px; padding: 8px 14px;
+  border: 1.5px solid #cbd5e1; border-radius: 22px; background: #ffffff; color: #334155;
+  font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.ev-elemento span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev-elemento em { flex: 0 0 auto; font-style: normal; font-size: 0.72rem; color: #64748b; }
+.ev-elemento.completo { border-color: #16a34a; }
+.ev-elemento.completo em { color: #15803d; }
+.ev-elemento.on { border-color: #f26522; background: #f26522; color: #ffffff; }
+.ev-elemento.on em { color: #ffffff; }
+
+/* Reporte oficial de un trabajo con varios elementos */
+.rt-elemento { margin-bottom: 14px; break-inside: avoid; page-break-inside: avoid; }
+.rt-elemento-titulo { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0 6px; font-size: 0.9rem; font-weight: 700; color: #0f172a; }
+.rt-total-general { margin: 8px 0 0; text-align: right; font-size: 0.95rem; color: #0f172a; }
+.rt-etapa-foto { margin: 4px 0 0; text-align: center; font-size: 0.75rem; font-weight: 700; color: #334155; }

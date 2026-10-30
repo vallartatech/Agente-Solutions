@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import "../../../styles/AgenteSolutions/Admin/ReporteTrabajo.css";
+import "../../../styles/AgenteSolutions/Admin/Mantenimiento.css";
 import logo from '../../../assets/Logo3.png';
 import {
   Printer, ChevronLeft, Save, Trash2, X, Maximize2, Plus, History, Calendar, Clock,
@@ -12,6 +13,7 @@ import {
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 import { useAuth } from '../../../context/AuthContext';
 import { esVideoUrl, miniaturaVideo } from '../../../utils/evidencia';
+import { esPorElemento } from '../Shared/etapasEvidencia';
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -43,6 +45,12 @@ const de24h = (hhmm) => {
   const [h, m] = hhmm.split(':').map(Number);
   return `${String(h % 12 || 12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
 };
+
+const materialVacio = (elementoId = null) => ({
+  nombre: "", cantidad: 1, unidad: "pza", precio: 0, ...(elementoId ? { elemento_id: elementoId } : {}),
+});
+const subtotalDe = (materiales) => materiales.reduce((suma, m) => suma + (m.cantidad * m.precio), 0);
+const ETIQUETA_ETAPA = { antes: 'Antes', despues: 'Después', durante: 'Durante', extra: 'Extra' };
 
 const formatoFechaVersion = (fecha) =>
   new Date(fecha).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -378,6 +386,8 @@ const ReporteTrabajo = () => {
   const [selectedImage, setSelectedImage] = useState(null); // Para el modal de zoom
   const [modalLogo, setModalLogo] = useState(false);
   const [modalPie, setModalPie] = useState(false);
+  // De qué elemento y etapa es cada foto (url → evidencia), para separarlas por elemento
+  const [evidenciaPorUrl, setEvidenciaPorUrl] = useState({});
 
   // Historial de versiones
   const [versiones, setVersiones] = useState([]);
@@ -434,20 +444,35 @@ const ReporteTrabajo = () => {
         return;
       }
       try {
-        const [resFinal, resService, resVersiones] = await Promise.all([
+        const esOrden = /work[_\s-]*order/i.test(String(rawTrabajoId));
+        const [resFinal, resService, resVersiones, resElementos, resEvidencias] = await Promise.all([
           axios.get(`${API}/servicios/${idApi}/final-report`),
           axios.get(`${API}/servicios/${idApi}`),
           axios.get(`${API}/servicios/${idApi}/final-report/versions`).catch(() => ({ data: [] })),
+          esOrden ? axios.get(`${API}/work-orders/${trabajoId}/elementos`).catch(() => ({ data: [] })) : { data: [] },
+          esOrden ? axios.get(`${API}/servicios/${idApi}/reportes`).catch(() => ({ data: [] })) : { data: [] },
         ]);
+        const elementosOrden = resElementos.data || [];
+        const evidencias = (resEvidencias.data || []).filter(r => r.stage !== 'ticket');
+        setEvidenciaPorUrl(Object.fromEntries(evidencias.map(r => [r.image_url, r])));
         const s = resService.data;
         servicioRef.current = s;
         setVersiones(resVersiones.data || []);
 
         if (resFinal.data) {
-          setReportData(desdeVersionGuardada(resFinal.data, reportInicial, s));
+          setReportData({ elementos: elementosOrden, ...desdeVersionGuardada(resFinal.data, reportInicial, s) });
           setVersionVista(resFinal.data.version || 1);
         } else {
-          setReportData(prev => conDatosDelServicio(prev, s));
+          setReportData(prev => {
+            const base = { ...conDatosDelServicio(prev, s), elementos: elementosOrden };
+            if (!esPorElemento(elementosOrden)) return base;
+            // Con varios elementos: una tabla de materiales por elemento y todas sus evidencias
+            return {
+              ...base,
+              materiales: elementosOrden.map(el => materialVacio(el.id)),
+              imagenes: base.imagenes.length ? base.imagenes : evidencias.filter(r => r.work_order_component_id).map(r => r.image_url),
+            };
+          });
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -489,7 +514,7 @@ const ReporteTrabajo = () => {
     try {
       const { data } = await axios.get(`${API}/servicios/${idApi}/final-report`, { params: { version } });
       if (!data) throw new Error('Versión no encontrada');
-      setReportData(desdeVersionGuardada(data, reportInicial, servicioRef.current));
+      setReportData(prev => ({ elementos: prev.elementos, ...desdeVersionGuardada(data, reportInicial, servicioRef.current) }));
       setVersionVista(data.version);
       setSinGuardar(false);
       if (!window.matchMedia('(min-width: 1280px)').matches) setPanelAbierto(false);
@@ -548,10 +573,10 @@ const ReporteTrabajo = () => {
     }));
   };
 
-  const addMaterial = () => {
+  const addMaterial = (elementoId = null) => {
     editar(prev => ({
       ...prev,
-      materiales: [...prev.materiales, { nombre: "", cantidad: 1, unidad: "pza", precio: 0 }]
+      materiales: [...prev.materiales, materialVacio(elementoId)]
     }));
   };
 
@@ -584,9 +609,89 @@ const ReporteTrabajo = () => {
     setModalLogo(false);
   };
 
-  const totalMateriales = reportData.materiales.reduce(
-    (sum, m) => sum + (m.cantidad * m.precio),
-    0
+  const totalMateriales = subtotalDe(reportData.materiales);
+
+  // Con 2 o más elementos el reporte se separa por elemento
+  const elementosReporte = reportData.elementos || [];
+  const porElemento = esPorElemento(elementosReporte);
+  const idsElementos = new Set(elementosReporte.map(el => Number(el.id)));
+  const materialesConIndice = reportData.materiales.map((material, idx) => ({ material, idx }));
+  const materialesDe = (elementoId) => materialesConIndice.filter(({ material }) => Number(material.elemento_id) === Number(elementoId));
+  const materialesGenerales = materialesConIndice.filter(({ material }) => !idsElementos.has(Number(material.elemento_id)));
+  const imagenesConIndice = reportData.imagenes.map((img, idx) => ({ img, idx }));
+  const imagenesDe = (elementoId) => imagenesConIndice.filter(({ img }) => Number(evidenciaPorUrl[img]?.work_order_component_id) === Number(elementoId));
+  const imagenesGenerales = imagenesConIndice.filter(({ img }) => !idsElementos.has(Number(evidenciaPorUrl[img]?.work_order_component_id)));
+
+  const filasMateriales = (filas) => filas.map(({ material, idx }) => (
+    <tr key={idx}>
+      <td><input className="table-input" value={material.nombre} onChange={(e) => handleMaterialChange(idx, 'nombre', e.target.value)} disabled={isClient} /></td>
+      <td><input className="table-input center" type="number" value={material.cantidad} onChange={(e) => handleMaterialChange(idx, 'cantidad', e.target.value)} disabled={isClient} /></td>
+      <td><input className="table-input center" value={material.unidad} onChange={(e) => handleMaterialChange(idx, 'unidad', e.target.value)} disabled={isClient} /></td>
+      <td><input className="table-input" type="number" value={material.precio} onChange={(e) => handleMaterialChange(idx, 'precio', e.target.value)} disabled={isClient} /></td>
+      <td>${(material.cantidad * material.precio).toFixed(2)}</td>
+      {!isClient && (
+        <td className="no-print">
+          <button className="btn-row-delete" onClick={() => removeMaterial(idx)}><Trash2 size={12} /></button>
+        </td>
+      )}
+    </tr>
+  ));
+
+  const tablaMateriales = (filas, etiquetaTotal) => (
+    <table className="materiales-table">
+      <thead>
+        <tr>
+          <th>Descripción</th>
+          <th style={{ width: '60px' }}>Cant.</th>
+          <th style={{ width: '80px' }}>Unidad</th>
+          <th style={{ width: '100px' }}>P. Unitario</th>
+          <th style={{ width: '100px' }}>Subtotal</th>
+          {!isClient && <th className="no-print" style={{ width: '40px' }}></th>}
+        </tr>
+      </thead>
+      <tbody>
+        {filasMateriales(filas)}
+        <tr className="total-row">
+          <td colSpan="4" className="total-label">{etiquetaTotal}</td>
+          <td className="total-amount">${subtotalDe(filas.map(f => f.material)).toFixed(2)}</td>
+          {!isClient && <td className="no-print"></td>}
+        </tr>
+      </tbody>
+    </table>
+  );
+
+  const fotoEvidencia = ({ img, idx }) => (
+    <div key={idx} className="imagen-item">
+      <img
+        src={esVideoUrl(img) ? miniaturaVideo(img) : img}
+        alt={`Evidencia ${idx + 1}`}
+        onClick={() => setSelectedImage(img)}
+        style={{ cursor: 'zoom-in' }}
+      />
+      {esVideoUrl(img) && <span className="evidencia-video-marca">▶ Video</span>}
+
+      {/* Botón de eliminar en hover (no se imprime) */}
+      {!isClient && (
+        <button
+          className="btn-delete-photo no-print"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleImage(img);
+          }}
+          title="Eliminar de este reporte"
+        >
+          <X size={18} />
+        </button>
+      )}
+
+      <div className="photo-zoom-hint no-print" onClick={() => setSelectedImage(img)}>
+        <Maximize2 size={12} />
+      </div>
+
+      {porElemento && ETIQUETA_ETAPA[evidenciaPorUrl[img]?.stage]
+        ? <p className="rt-etapa-foto">{ETIQUETA_ETAPA[evidenciaPorUrl[img].stage]}</p>
+        : <p className="no-print">{esVideoUrl(img) ? 'Video' : 'Foto'} {idx + 1}</p>}
+    </div>
   );
 
   // Validar si el usuario es cliente para restringir edición
@@ -795,80 +900,57 @@ const ReporteTrabajo = () => {
             {/* Materiales */}
             <div className="info-section">
               <h3>MATERIALES UTILIZADOS
-                {!isClient && <button className="btn-add-item no-print" onClick={addMaterial}><Plus size={14} /> AGREGAR</button>}
+                {!isClient && !porElemento && <button className="btn-add-item no-print" onClick={() => addMaterial()}><Plus size={14} /> AGREGAR</button>}
               </h3>
-              <table className="materiales-table">
-                <thead>
-                  <tr>
-                    <th>Descripción</th>
-                    <th style={{ width: '60px' }}>Cant.</th>
-                    <th style={{ width: '80px' }}>Unidad</th>
-                    <th style={{ width: '100px' }}>P. Unitario</th>
-                    <th style={{ width: '100px' }}>Subtotal</th>
-                    {!isClient && <th className="no-print" style={{ width: '40px' }}></th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {reportData.materiales.map((material, idx) => (
-                    <tr key={idx}>
-                      <td><input className="table-input" value={material.nombre} onChange={(e) => handleMaterialChange(idx, 'nombre', e.target.value)} disabled={isClient} /></td>
-                      <td><input className="table-input center" type="number" value={material.cantidad} onChange={(e) => handleMaterialChange(idx, 'cantidad', e.target.value)} disabled={isClient} /></td>
-                      <td><input className="table-input center" value={material.unidad} onChange={(e) => handleMaterialChange(idx, 'unidad', e.target.value)} disabled={isClient} /></td>
-                      <td><input className="table-input" type="number" value={material.precio} onChange={(e) => handleMaterialChange(idx, 'precio', e.target.value)} disabled={isClient} /></td>
-                      <td>${(material.cantidad * material.precio).toFixed(2)}</td>
-                      {!isClient && (
-                        <td className="no-print">
-                          <button className="btn-row-delete" onClick={() => removeMaterial(idx)}><Trash2 size={12} /></button>
-                        </td>
-                      )}
-                    </tr>
+              {porElemento ? (
+                <>
+                  {elementosReporte.map((el) => (
+                    <div key={el.id} className="rt-elemento">
+                      <h4 className="rt-elemento-titulo">
+                        {el.label}
+                        {!isClient && <button className="btn-add-item no-print" onClick={() => addMaterial(el.id)}><Plus size={14} /> AGREGAR</button>}
+                      </h4>
+                      {tablaMateriales(materialesDe(el.id), 'SUBTOTAL:')}
+                    </div>
                   ))}
-                  <tr className="total-row">
-                    <td colSpan="4" className="total-label">TOTAL MATERIALES:</td>
-                    <td className="total-amount">${totalMateriales.toFixed(2)}</td>
-                    {!isClient && <td className="no-print"></td>}
-                  </tr>
-                </tbody>
-              </table>
+                  {materialesGenerales.length > 0 && (
+                    <div className="rt-elemento">
+                      <h4 className="rt-elemento-titulo">Materiales generales</h4>
+                      {tablaMateriales(materialesGenerales, 'SUBTOTAL:')}
+                    </div>
+                  )}
+                  <p className="rt-total-general">TOTAL MATERIALES: <strong>${totalMateriales.toFixed(2)}</strong></p>
+                </>
+              ) : tablaMateriales(materialesConIndice, 'TOTAL MATERIALES:')}
             </div>
 
             {/* Galería */}
             <div className="info-section">
               <h3>EVIDENCIA FOTOGRÁFICA</h3>
-              <div className="galeria-imagenes">
-                {reportData.imagenes.map((img, idx) => (
-                  <div key={idx} className="imagen-item">
-                    <img
-                      src={esVideoUrl(img) ? miniaturaVideo(img) : img}
-                      alt={`Evidencia ${idx + 1}`}
-                      onClick={() => setSelectedImage(img)}
-                      style={{ cursor: 'zoom-in' }}
-                    />
-                    {esVideoUrl(img) && <span className="evidencia-video-marca">▶ Video</span>}
-
-                    {/* Botón de eliminar en hover (no se imprime) */}
-                    {!isClient && (
-                      <button
-                        className="btn-delete-photo no-print"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleImage(img);
-                        }}
-                        title="Eliminar de este reporte"
-                      >
-                        <X size={18} />
-                      </button>
-                    )}
-
-                    <div className="photo-zoom-hint no-print" onClick={() => setSelectedImage(img)}>
-                      <Maximize2 size={12} />
+              {porElemento && reportData.imagenes.length > 0 ? (
+                <>
+                  {elementosReporte.map((el) => (
+                    <div key={el.id} className="rt-elemento">
+                      <h4 className="rt-elemento-titulo">{el.label}</h4>
+                      <div className="galeria-imagenes">
+                        {imagenesDe(el.id).map(fotoEvidencia)}
+                        {imagenesDe(el.id).length === 0 && <p className="empty-gallery">Sin imágenes de este elemento.</p>}
+                      </div>
                     </div>
-
-                    <p className="no-print">{esVideoUrl(img) ? 'Video' : 'Foto'} {idx + 1}</p>
-                  </div>
-                ))}
-                {reportData.imagenes.length === 0 && <p className="empty-gallery">No hay imágenes en el reporte.</p>}
-              </div>
+                  ))}
+                  {imagenesGenerales.length > 0 && (
+                    <div className="rt-elemento">
+                      <h4 className="rt-elemento-titulo">Evidencia general</h4>
+                      <div className="galeria-imagenes">{imagenesGenerales.map(fotoEvidencia)}</div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="galeria-imagenes">
+                  {imagenesConIndice.map(fotoEvidencia)}
+                  {reportData.imagenes.length === 0 && <p className="empty-gallery">No hay imágenes en el reporte.</p>}
+                </div>
+              )}
             </div>
 
             {/* Observaciones */}

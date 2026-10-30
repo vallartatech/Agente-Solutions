@@ -181,6 +181,10 @@
   border-color: #ec4899;
   color: #ffffff;
 }
+.legend-dot.dot-mantenimiento {
+    background: #0ea5e9;
+}
+
 .legend-dot.dot-birthday {
   background: #ec4899;
   box-shadow: 0 0 8px rgba(236, 72, 153, 0.8);
