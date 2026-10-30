@@ -8,9 +8,11 @@ import {
   Users, User, ClipboardList, Hammer, ChevronRight, CheckCircle2, CalendarClock
 } from 'lucide-react';
 import { API, authHeaders } from './flujoTrabajo';
+import PanelEquiposSolicitud from '../Mantenimiento/PanelEquiposSolicitud';
 import '../../../../styles/AgenteSolutions/Admin/VistaPropiedades.css';
 import '../../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
 import '../../../../styles/Shared/LiquidGlass.css';
+import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 
 // Solicitud de trabajo o de levantamiento para una propiedad, asignada a técnicos (rol 2) y/o admins (rol 1).
 // Si se eligen varias personas, forman una cuadrilla: la primera elegida es la responsable.
@@ -48,10 +50,13 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
   const [cargandoEquipos, setCargandoEquipos] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [menuFoto, setMenuFoto] = useState(false);
+  const [carrito, setCarrito] = useState([]); // equipos elegidos para un mantenimiento
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const navigate = useNavigate();
   const esAdmin = esAdministrador();
+  const mostrarEquipos = esAdmin && modo === 'trabajo' && form.tipo === 'Mantenimiento';
+  const conCarrito = mostrarEquipos && carrito.length > 0;
 
   useEffect(() => {
     const headers = authHeaders();
@@ -147,8 +152,8 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
   const enviar = async (e) => {
     e.preventDefault();
     if (enviando) return;
-    if (modo === 'trabajo' && (!form.tipo || !form.area_id || !form.descripcion.trim())) {
-      Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Completa el tipo, la zona y la descripción.', confirmButtonColor: '#f26522' });
+    if (modo === 'trabajo' && (!form.tipo || (!conCarrito && !form.area_id) || !form.descripcion.trim())) {
+      Swal.fire({ icon: 'warning', title: 'Faltan datos', text: conCarrito ? 'Completa la descripción.' : 'Completa el tipo, la zona y la descripción.', confirmButtonColor: '#f26522' });
       return;
     }
     // La visita se refleja en el calendario: el administrador siempre la programa
@@ -168,11 +173,19 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
         const fd = new FormData();
         fd.append('property_id', propiedad.id);
         fd.append('type', form.tipo);
-        fd.append('zone', form.zona);
-        fd.append('equipment', form.equipo || '');
-        fd.append('description', form.equipo
-          ? `${form.descripcion}\n\n[EQUIPO AFECTADO]: ${form.equipo}`
-          : form.descripcion);
+        if (conCarrito) {
+          const etiquetas = carrito.map((r) => r.label).join(', ');
+          fd.append('zone', carrito.length === 1 && carrito[0].area ? carrito[0].area : 'Varias zonas');
+          fd.append('equipment', etiquetas.length > 150 ? `${etiquetas.slice(0, 149)}…` : etiquetas);
+          fd.append('description', `${form.descripcion}\n\n[EQUIPO AFECTADO]: ${etiquetas}`);
+          carrito.forEach((r) => fd.append(r.tipo === 'equipo' ? 'equipo_ids[]' : 'component_ids[]', r.id));
+        } else {
+          fd.append('zone', form.zona);
+          fd.append('equipment', form.equipo || '');
+          fd.append('description', form.equipo
+            ? `${form.descripcion}\n\n[EQUIPO AFECTADO]: ${form.equipo}`
+            : form.descripcion);
+        }
         if (idTec) fd.append('tecnico_id', idTec);
         form.fotos.forEach((foto, i) => fd.append(`evidence_${i + 1}`, foto));
         const res = await axios.post(`${API}/work-orders/cliente`, fd, {
@@ -247,6 +260,7 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
   return createPortal(
     <>
       <div className="rp-overlay" onClick={onClose}>
+        <div className={`mt-solicitud ${mostrarEquipos ? 'con-equipos' : ''}`}>
         <div className="rp-modal" onClick={(e) => e.stopPropagation()}>
           <div className="rp-header">
             <div className="rp-header-text">
@@ -383,6 +397,12 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
                   </select>
                 </div>
 
+                {conCarrito ? (
+                  <p className="mt-solicitud-nota">
+                    <CheckCircle2 size={15} /> {carrito.length} {carrito.length === 1 ? 'equipo elegido' : 'equipos elegidos'}: {carrito.map((r) => r.label).join(', ')}
+                  </p>
+                ) : (
+                <>
                 <div className="rp-group">
                   <label className="rp-label"><Home size={16} color="#ff8c42" /> Zona de la propiedad *</label>
                   <select required value={form.area_id} onChange={(e) => cambiarZona(e.target.value)} disabled={cargandoZonas}>
@@ -424,6 +444,8 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
                     <option value="otro">Otro (No está en la lista)</option>
                   </select>
                 </div>
+                </>
+                )}
               </>
             ) : (
               <div className="rp-group">
@@ -485,6 +507,9 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
               </button>
             </div>
           </form>
+        </div>
+
+        {mostrarEquipos && <PanelEquiposSolicitud propiedad={propiedad} carrito={carrito} onChange={setCarrito} />}
         </div>
       </div>
 

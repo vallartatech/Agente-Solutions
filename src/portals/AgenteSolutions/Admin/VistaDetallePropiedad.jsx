@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   LayoutGrid, FileText, History, Search, SlidersHorizontal, Plus, MapPin, Tag,
-  Building2, Check, LayoutDashboard, Inbox, ClipboardList
+  Building2, Check, LayoutDashboard, Inbox, ClipboardList, Hammer
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import CasaLoader from '../../../components/Shared/CasaLoader';
@@ -48,6 +48,7 @@ const VistaDetallePropiedad = () => {
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [filtroAbierto, setFiltroAbierto] = useState(false);
   const [modalSolicitud, setModalSolicitud] = useState(false);
+  const [versionEquipos, setVersionEquipos] = useState(0);
   const filtroRef = useRef(null);
 
   useEffect(() => {
@@ -214,25 +215,33 @@ const VistaDetallePropiedad = () => {
               </button>
             </div>
 
-            <MantenimientosDePropiedad propiedadId={id} />
-
-            {trabajosFiltrados.length ? (
-              <div className="xp-grid">
-                {trabajosFiltrados.map((t) => (
-                  <TrabajoCard key={t.uid} trabajo={t} onClick={() => abrirTrabajo(t.uid)} />
-                ))}
-              </div>
-            ) : (
-              <div className="xp-card xp-vacio-card">
+            {/* Dos columnas, cada una con su propio scroll: muchos equipos no empujan los trabajos hacia abajo */}
+            <div className="mt-columnas">
+              <section className="xp-card xp-panel mt-columna">
+                <h3 className="xp-panel-titulo"><Hammer size={18} /> Trabajos ({trabajosFiltrados.length})</h3>
+                <div className="mt-columna-scroll">
+                  {trabajosFiltrados.length ? (
+                    <div className="mt-lista-trabajos">
+                      {trabajosFiltrados.map((t) => (
+                        <TrabajoCard key={t.uid} trabajo={t} onClick={() => abrirTrabajo(t.uid)} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="xp-vacio-card">
                 <Inbox size={34} />
-                <p>{trabajos.length ? 'Ningún trabajo coincide con la búsqueda.' : 'Esta propiedad aún no tiene solicitudes.'}</p>
-                {!trabajos.length && (
-                  <button type="button" className="xp-btn-primary" onClick={() => setModalSolicitud(true)}>
-                    <Plus size={18} /> Crear la primera solicitud
-                  </button>
-                )}
-              </div>
-            )}
+                      <p>{trabajos.length ? 'Ningún trabajo coincide con la búsqueda.' : 'Esta propiedad aún no tiene solicitudes.'}</p>
+                      {!trabajos.length && (
+                        <button type="button" className="xp-btn-primary" onClick={() => setModalSolicitud(true)}>
+                          <Plus size={18} /> Crear la primera solicitud
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <MantenimientosDePropiedad key={versionEquipos} propiedadId={id} />
+            </div>
           </>
         )}
 
@@ -263,7 +272,7 @@ const VistaDetallePropiedad = () => {
         <ModalNuevaSolicitud
           propiedad={{ ...propiedad, encargado }}
           onClose={() => setModalSolicitud(false)}
-          onCreada={() => recargar(true)}
+          onCreada={() => { recargar(true); setVersionEquipos((v) => v + 1); }}
         />
       )}
     </div>

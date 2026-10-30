@@ -1,35 +1,58 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { CalendarClock, Pencil, Wrench } from 'lucide-react';
+import { CalendarClock, Pencil, Search, Wrench } from 'lucide-react';
 import { API, authHeaders } from '../Expediente/flujoTrabajo';
 import { nombreEquipo, porFecha, proximaFecha, textoFecha, hoyISO } from './CamposMantenimiento';
 import ModalEditarMantenimiento from './ModalEditarMantenimiento';
 import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 
-// Mantenimientos programados de una propiedad, por fecha. Sin equipos no ocupa lugar en la pantalla.
+const normalizar = (texto) => String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+// Mantenimientos programados de una propiedad, por fecha, con buscador y scroll propio.
 const MantenimientosDePropiedad = ({ propiedadId }) => {
   const [equipos, setEquipos] = useState([]);
   const [error, setError] = useState(false);
   const [editando, setEditando] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     axios.get(`${API}/properties/${propiedadId}/mantenimiento`, { headers: authHeaders() })
       .then(({ data }) => setEquipos(data || []))
-      .catch(() => setError(true));
+      .catch(() => setError(true))
+      .finally(() => setCargando(false));
   }, [propiedadId]);
 
-  if (error) {
-    return <section className="xp-card xp-panel mt-seccion-propiedad"><p className="mt-vacio">No se pudieron cargar los mantenimientos programados. Recarga la página para intentarlo de nuevo.</p></section>;
-  }
-  if (!equipos.length) return null;
+  const lista = useMemo(() => {
+    const texto = normalizar(busqueda);
+    return equipos
+      .filter((e) => !texto || normalizar(`${e.tipo} ${e.detalle}`).includes(texto))
+      .sort(porFecha);
+  }, [equipos, busqueda]);
 
   const hoy = hoyISO();
 
   return (
-    <section className="xp-card xp-panel mt-seccion-propiedad">
-      <h3 className="xp-panel-titulo"><Wrench size={18} /> Mantenimientos programados ({equipos.length})</h3>
+    <section className="xp-card xp-panel mt-columna">
+      <h3 className="xp-panel-titulo"><Wrench size={18} /> Equipos en mantenimiento ({equipos.length})</h3>
+      {equipos.length > 0 && (
+        <label className="mt-buscador mt-buscador-columna">
+          <Search size={16} />
+          <input type="search" placeholder="Buscar equipo..." aria-label="Buscar equipo" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+        </label>
+      )}
+      <div className="mt-columna-scroll">
+      {cargando ? (
+        <p className="mt-vacio">Cargando equipos...</p>
+      ) : error ? (
+        <p className="mt-vacio">No se pudieron cargar los equipos. Recarga la página para intentarlo de nuevo.</p>
+      ) : !equipos.length ? (
+        <p className="mt-vacio">Esta propiedad no tiene equipos en mantenimiento.</p>
+      ) : !lista.length ? (
+        <p className="mt-vacio">Ningún equipo coincide con la búsqueda.</p>
+      ) : (
       <ul className="mt-lista">
-        {[...equipos].sort(porFecha).map((e) => {
+        {lista.map((e) => {
           const proxima = proximaFecha(e);
           const vencida = proxima && proxima < hoy;
           return (
@@ -50,6 +73,8 @@ const MantenimientosDePropiedad = ({ propiedadId }) => {
           );
         })}
       </ul>
+      )}
+      </div>
 
       {editando && (
         <ModalEditarMantenimiento

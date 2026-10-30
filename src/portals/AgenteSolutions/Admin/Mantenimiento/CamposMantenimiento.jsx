@@ -21,6 +21,27 @@ export const textoFecha = (iso) => {
   return y ? `${d} ${MESES[m - 1]} ${y}` : '';
 };
 
+// "Faltan 2 semanas", "Vencido hace 3 días"... y el tono según qué tan cerca está
+export const tiempoRestante = (iso) => {
+  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
+  const hoy = new Date();
+  const dias = Math.round((new Date(y, m - 1, d) - new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())) / 86400000);
+  if (dias === 0) return { texto: 'Es hoy', tono: 'urgente' };
+
+  const n = Math.abs(dias);
+  let cantidad = n;
+  let unidad = n === 1 ? 'día' : 'días';
+  if (n >= 60) {
+    cantidad = Math.round(n / 30);
+    unidad = 'meses';
+  } else if (n >= 14) {
+    cantidad = Math.round(n / 7);
+    unidad = 'semanas';
+  }
+  if (dias < 0) return { texto: `Vencido hace ${cantidad} ${unidad}`, tono: 'vencido' };
+  return { texto: `${cantidad === 1 ? 'Falta' : 'Faltan'} ${cantidad} ${unidad}`, tono: dias <= 14 ? 'urgente' : 'a-tiempo' };
+};
+
 export const nombreEquipo = (e) => (e.cantidad > 1 ? `${e.cantidad} × ${e.tipo}` : e.tipo);
 export const proximaFecha = (e) => e.visits?.[0]?.fecha_programada?.slice(0, 10) || null;
 // Primero lo más próximo; los que no tienen fecha pendiente, al final

@@ -138,3 +138,79 @@ span.mt-item-fecha { cursor: default; }
 .rt-elemento-titulo { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0 6px; font-size: 0.9rem; font-weight: 700; color: #0f172a; }
 .rt-total-general { margin: 8px 0 0; text-align: right; font-size: 0.95rem; color: #0f172a; }
 .rt-etapa-foto { margin: 4px 0 0; text-align: center; font-size: 0.75rem; font-weight: 700; color: #334155; }
+
+/* Expediente de la propiedad: trabajos y equipos en dos columnas con scroll propio e invisible */
+.mt-columnas { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 18px; align-items: stretch; }
+.mt-columna { display: flex; flex-direction: column; gap: 12px; height: 640px; max-height: 80vh; min-height: 0; }
+.mt-columna .xp-panel-titulo { flex-shrink: 0; margin: 0; }
+.mt-buscador-columna { flex: 0 0 auto; }
+.mt-columna-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
+.mt-columna-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.mt-lista-trabajos { display: flex; flex-direction: column; gap: 10px; }
+/* Dentro de la lista, filas compactas; sin subir al pasar el cursor para que el scroll no las recorte */
+.mt-lista-trabajos .xp-trabajo-card { flex-shrink: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.mt-lista-trabajos .xp-trabajo-card:hover { transform: none; border-color: #f26522; box-shadow: none; }
+.mt-lista-trabajos .xp-trabajo-foto { width: 88px; min-height: 96px; border-radius: 12px; }
+.mt-columna .mt-item { flex-wrap: wrap; }
+@media (max-width: 900px) {
+  .mt-columnas { grid-template-columns: minmax(0, 1fr); }
+  .mt-columna { height: 70vh; max-height: none; }
+}
+
+/* Solicitud de mantenimiento: formulario y panel de equipos, centrados juntos */
+.mt-solicitud { display: flex; align-items: stretch; justify-content: center; gap: 14px; width: 100%; max-height: 88vh; pointer-events: none; }
+.mt-solicitud > * { pointer-events: auto; }
+.mt-solicitud > .rp-modal { flex: 0 1 460px; min-width: 0; }
+.mt-panel-equipos {
+  display: flex; flex-direction: column; gap: 10px; padding: 18px !important; box-sizing: border-box; overflow: hidden !important;
+  animation: mt-panel-entra 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+/* Sale de la izquierda hacia la derecha y, al ganar ancho, recorre el formulario para que ambos queden al centro */
+@keyframes mt-panel-entra {
+  from { max-width: 0; flex-basis: 0; padding-left: 0 !important; padding-right: 0 !important; opacity: 0; transform: translateX(-48px); }
+  to { max-width: 460px; flex-basis: 460px; opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) { .mt-panel-equipos { animation: none; } }
+.mt-panel-equipos-cabecera h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 1.05rem; font-weight: 800; color: #0f172a; }
+.mt-panel-equipos-cabecera h3 svg { color: #f26522; }
+.mt-panel-equipos-cabecera p { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: 0.8rem; font-weight: 600; color: #475569; overflow-wrap: anywhere; }
+.mt-panel-equipos-cabecera p svg { flex-shrink: 0; margin-top: 2px; color: #f26522; }
+.mt-panel-equipos-lista { display: flex; flex: 1; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+.mt-panel-equipos-lista::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.mt-renglon {
+  display: flex; flex-shrink: 0; align-items: flex-start; gap: 10px; width: 100%; padding: 10px 12px; text-align: left; cursor: pointer;
+  border: 1.5px solid #e2e8f0; border-radius: 14px; background: #ffffff; color: #0f172a; font-family: inherit;
+}
+.mt-renglon.on { border-color: #f26522; background: #fff7f1; }
+.mt-renglon > img { flex: 0 0 44px; width: 44px; height: 44px; object-fit: cover; border-radius: 10px; }
+.mt-renglon .mt-casilla {
+  display: flex; align-items: center; justify-content: center; flex: 0 0 22px; height: 22px;
+  border: 1.5px solid #94a3b8; border-radius: 7px; color: #f26522;
+}
+.mt-renglon.on .mt-casilla { border-color: #f26522; }
+.mt-renglon-texto { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+.mt-renglon-texto strong { font-size: 0.9rem; font-weight: 700; overflow-wrap: anywhere; }
+.mt-renglon-texto small { color: #64748b !important; font-size: 0.76rem; overflow-wrap: anywhere; }
+.mt-restante {
+  display: inline-flex; flex-wrap: wrap; align-items: center; align-self: flex-start; gap: 5px; margin-top: 3px; padding: 4px 9px;
+  border-radius: 9px; font-size: 0.84rem; font-weight: 800;
+}
+.mt-restante em { font-size: 0.72rem; font-style: normal; font-weight: 600; opacity: 0.85; }
+.mt-restante.a-tiempo { background: #dcfce7; color: #15803d; }
+.mt-restante.urgente { background: #ffedd5; color: #c2410c; }
+.mt-restante.vencido { background: #fee2e2; color: #b91c1c; }
+.mt-restante.sin-fecha { padding: 0; font-size: 0.74rem; font-weight: 600; color: #64748b; }
+.mt-carrito { display: flex; align-items: center; gap: 8px; margin: 0; padding: 9px 12px; border-radius: 12px; background: #f1f5f9; color: #475569; font-size: 0.8rem; font-weight: 700; }
+.mt-carrito.con-items { background: #f26522; color: #ffffff; }
+.mt-solicitud-nota { display: flex; align-items: flex-start; gap: 7px; margin: 0; padding: 10px 12px; border-radius: 12px; background: #fff7f1; color: #c2410c; font-size: 0.85rem; font-weight: 700; overflow-wrap: anywhere; }
+.mt-solicitud-nota svg { flex-shrink: 0; margin-top: 1px; }
+@media (max-width: 900px) {
+  .mt-solicitud.con-equipos { flex-direction: column; justify-content: flex-start; overflow-y: auto; }
+  .mt-solicitud.con-equipos > .rp-modal { flex: 0 0 auto; width: 100%; max-width: none; max-height: none; }
+  .mt-panel-equipos { animation-name: mt-panel-entra-movil; overflow: visible !important; }
+  .mt-panel-equipos-lista { overflow: visible; }
+}
+@keyframes mt-panel-entra-movil {
+  from { opacity: 0; transform: translateX(-32px); }
+  to { opacity: 1; transform: translateX(0); }
+}
