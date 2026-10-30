@@ -1771,6 +1771,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                     type="button"
                     className={`cal-filtro-btn ${selectedFilter !== 'all' ? 'con-filtro' : ''} ${filtroAbierto ? 'abierto' : ''}`}
                     onClick={() => setFiltroAbierto(v => !v)}
+                    aria-label={`Filtrar: ${filtroActual.label}`}
                     aria-haspopup="menu"
                     aria-expanded={filtroAbierto}
                   >

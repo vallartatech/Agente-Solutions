@@ -3347,3 +3347,22 @@
   font-size: 0.78rem;
   color: #b45309;
 }
+
+/* Responsivo: filtro compacto, buscador y foto del usuario en una sola fila */
+@media (max-width: 900px) {
+  .cal-solutions .cal-controls-right {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    gap: 8px !important;
+  }
+  .cal-solutions .cal-filtro-wrap { flex: 0 0 auto; }
+  .cal-solutions .cal-filtro-btn { min-height: 44px; padding-left: 10px; padding-right: 10px; }
+  .cal-solutions .cal-filtro-btn > span:not(.cal-filtro-count) { display: none; }
+  .cal-solutions .cal-filtro-menu { left: 0; right: auto; }
+  /* Lo que deja libre el filtro y la foto; el selector de vista baja a su propia fila */
+  .cal-solutions .cal-search-box { flex: 1 1 calc(100% - 132px); width: auto !important; min-width: 0; }
+  .cal-solutions .cal-search-box input { min-height: 44px; font-size: 16px; text-overflow: ellipsis; }
+  .cal-solutions .cal-mios-btn { order: 3; margin-right: 6px; }
+  .cal-solutions .cal-view-selector { flex: 0 0 100%; order: 4; }
+}
