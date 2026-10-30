@@ -3427,18 +3427,6 @@
   flex-direction: column !important;
 }
 
-.mercado-container.mercado-tablero-mode .vcp-header {
-  height: 54px !important;
-  min-height: 54px !important;
-  max-height: 54px !important;
-  padding: 0 16px !important;
-  flex-shrink: 0 !important;
-}
-
-.mercado-container.mercado-tablero-mode .vcp-brand-logo {
-  height: 42px !important;
-}
-
 .mercado-board-workspace {
   width: 100%;
   flex: 1;

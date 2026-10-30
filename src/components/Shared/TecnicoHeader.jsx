@@ -99,9 +99,10 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
   const isLevantamientosActive = !isPerfilActive && !isInicioActive && (activeTab === 'levantamientos' || currentPath.includes('/trabajos-asignados') || currentPath.includes('/registrozonas') || currentPath.includes('/detallehabitacion'));
   const isCotizacionesActive = !isPerfilActive && !isInicioActive && (activeTab === 'cotizaciones' || currentPath.includes('/vista-cotizaciones') || currentPath.includes('/cotizacion'));
 
-  const isMercadoActive = !isPerfilActive && !isInicioActive && (activeTab === 'mercado' || currentView === 'mercado' || (currentPath.includes('/mercado-trabajos') && currentView !== 'tablero' && currentView !== 'usuarios'));
-  const isTableroActive = !isPerfilActive && !isInicioActive && (activeTab === 'tablero' || currentView === 'tablero' || currentPath.includes('/tablero-servicios'));
-  const isUsuariosActive = !isPerfilActive && !isInicioActive && (activeTab === 'usuarios' || currentView === 'usuarios' || currentPath.includes('/usuarios'));
+  // Dentro del Mercado la vista real la indica la pantalla (onTabChange); la ruta siempre es la misma
+  const isMercadoActive = !isPerfilActive && !isInicioActive && (onTabChange ? activeTab === 'mercado' : (activeTab === 'mercado' || currentView === 'mercado' || (currentPath.includes('/mercado-trabajos') && currentView !== 'tablero' && currentView !== 'usuarios')));
+  const isTableroActive = !isPerfilActive && !isInicioActive && (onTabChange ? activeTab === 'tablero' : (activeTab === 'tablero' || currentView === 'tablero' || currentPath.includes('/tablero-servicios')));
+  const isUsuariosActive = !isPerfilActive && !isInicioActive && (onTabChange ? activeTab === 'usuarios' : (activeTab === 'usuarios' || currentView === 'usuarios' || currentPath.includes('/usuarios')));
 
   const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : (authUser?.first_name ? authUser.first_name.charAt(0).toUpperCase() : 'T');
   const userFullName = authUser?.name || (authUser?.first_name ? `${authUser.first_name} ${authUser.last_name || ''}`.trim() : 'TÉCNICO OFICIAL');
@@ -196,8 +197,8 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
                 onClick={() => handleSelectTab('tablero')}
                 title="Trabajos aceptados"
               >
-                <span className="vcp-tab-full">TRABAJOS ACEPTADOS{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
-                <span className="vcp-tab-short">ACEPTADOS{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
+                <span className="vcp-tab-full">TABLERO DE TRABAJOS{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
+                <span className="vcp-tab-short">TABLERO{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
               </button>
 
               <button 
