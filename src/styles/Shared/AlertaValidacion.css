@@ -183,7 +183,8 @@
 
 /* Fantasma flotante "Verifica tus reportes" */
 .va-flotante {
-  position: fixed; right: 24px; bottom: 24px; z-index: 9000; display: flex; align-items: center; gap: 4px;
+  /* De inicio, debajo de "Catálogo de inmuebles" en la pantalla de Inicio */
+  position: fixed; left: 34px; top: 200px; z-index: 9000; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; display: flex; align-items: center; gap: 4px;
   max-width: calc(100vw - 32px); padding: 6px 8px 6px 6px; box-sizing: border-box;
   border: 1.5px solid #fed7aa; border-radius: 22px; background: #ffffff;
   box-shadow: 0 14px 36px rgba(15, 23, 42, 0.28); animation: va-flotante-entra 0.35s ease both;
@@ -191,8 +192,9 @@
 }
 .va-flotante-abrir {
   display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 48px; padding: 2px 6px;
-  border: 0; border-radius: 16px; background: transparent; color: #0f172a; text-align: left; font-family: inherit; cursor: pointer;
+  border: 0; border-radius: 16px; background: transparent; color: #0f172a; text-align: left; font-family: inherit; cursor: inherit; touch-action: none;
 }
+.va-flotante.arrastrando { cursor: grabbing; animation: none; box-shadow: 0 22px 48px rgba(15, 23, 42, 0.4); }
 .va-flotante-abrir:hover strong { color: #c2410c; }
 .va-flotante-fantasma { flex: 0 0 48px; width: 48px; height: 40px; animation: va-flotar 2.6s ease-in-out infinite; }
 .va-flotante-fantasma .va-svg { position: static; width: 100%; height: 100%; }
@@ -209,7 +211,7 @@
 }
 /* En celular queda arriba de la barra inferior */
 @media (max-width: 900px) {
-  .va-flotante { right: 16px; bottom: 88px; }
+  .va-flotante { left: 16px; top: auto; bottom: 88px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .va-flotante, .va-flotante-fantasma { animation: none; }

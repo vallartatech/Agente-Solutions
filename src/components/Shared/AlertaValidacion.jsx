@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -176,6 +176,28 @@ const leerCerrada = () => {
   }
 };
 
+const CLAVE_POSICION = 'va_reportes_posicion_v2';
+const MARGEN_PANTALLA = 8;
+const UMBRAL_ARRASTRE = 5; // px: menos que esto es un toque, no un arrastre
+
+const leerPosicion = () => {
+  try {
+    const guardada = JSON.parse(localStorage.getItem(CLAVE_POSICION));
+    return Number.isFinite(guardada?.x) && Number.isFinite(guardada?.y) ? guardada : null;
+  } catch {
+    return null;
+  }
+};
+
+// Dentro de la pantalla, aunque cambie de tamaño
+const dentroDePantalla = (x, y, el) => {
+  const { width, height } = el.getBoundingClientRect();
+  return {
+    x: Math.min(Math.max(MARGEN_PANTALLA, x), Math.max(MARGEN_PANTALLA, window.innerWidth - width - MARGEN_PANTALLA)),
+    y: Math.min(Math.max(MARGEN_PANTALLA, y), Math.max(MARGEN_PANTALLA, window.innerHeight - height - MARGEN_PANTALLA)),
+  };
+};
+
 // Fantasma flotante "Verifica tus reportes": solo para las cuentas que indica el backend y mientras haya
 // reportes de técnicos sin cerrar. Si se cierra, vuelve en la siguiente sesión o cuando llegue uno más.
 export const AlertaReportesFlotante = () => {
@@ -183,6 +205,53 @@ export const AlertaReportesFlotante = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [cerradaEn, setCerradaEn] = useState(leerCerrada);
+  const [posicion, setPosicion] = useState(leerPosicion);
+  const [arrastrando, setArrastrando] = useState(false);
+  const tarjetaRef = useRef(null);
+  const seArrastro = useRef(false);
+
+  useEffect(() => {
+    const ajustar = () => {
+      if (tarjetaRef.current) setPosicion((p) => (p ? dentroDePantalla(p.x, p.y, tarjetaRef.current) : p));
+    };
+    ajustar();
+    window.addEventListener('resize', ajustar);
+    return () => window.removeEventListener('resize', ajustar);
+  }, [total]);
+
+  const iniciarArrastre = (e) => {
+    if (e.button !== 0 || e.target.closest('.va-flotante-cerrar')) return;
+    const el = tarjetaRef.current;
+    const { left, top } = el.getBoundingClientRect();
+    const inicio = { x: e.clientX, y: e.clientY };
+    let ultima = null;
+    seArrastro.current = false;
+
+    const mover = (ev) => {
+      if (!seArrastro.current && Math.hypot(ev.clientX - inicio.x, ev.clientY - inicio.y) < UMBRAL_ARRASTRE) return;
+      if (!seArrastro.current) {
+        seArrastro.current = true;
+        setArrastrando(true);
+      }
+      ultima = dentroDePantalla(left + ev.clientX - inicio.x, top + ev.clientY - inicio.y, el);
+      setPosicion(ultima);
+    };
+    const soltar = () => {
+      window.removeEventListener('pointermove', mover);
+      window.removeEventListener('pointerup', soltar);
+      window.removeEventListener('pointercancel', soltar);
+      setArrastrando(false);
+      if (!ultima) return;
+      try {
+        localStorage.setItem(CLAVE_POSICION, JSON.stringify(ultima));
+      } catch {
+        // Sin almacenamiento: vuelve a su lugar al recargar
+      }
+    };
+    window.addEventListener('pointermove', mover);
+    window.addEventListener('pointerup', soltar);
+    window.addEventListener('pointercancel', soltar);
+  };
 
   if (!total || total <= cerradaEn || pathname.toLowerCase().includes('/reportes-globales')) return null;
 
@@ -196,8 +265,19 @@ export const AlertaReportesFlotante = () => {
   };
 
   return createPortal(
-    <div className="va-flotante" role="status">
-      <button type="button" className="va-flotante-abrir" onClick={() => navigate('/reportes-globales')}>
+    <div
+      ref={tarjetaRef}
+      className={`va-flotante ${arrastrando ? 'arrastrando' : ''}`}
+      role="status"
+      style={posicion ? { left: posicion.x, top: posicion.y, right: 'auto', bottom: 'auto' } : undefined}
+      onPointerDown={iniciarArrastre}
+    >
+      <button
+        type="button"
+        className="va-flotante-abrir"
+        title="Toca para abrir tus reportes o arrastra para moverlo"
+        onClick={() => { if (!seArrastro.current) navigate('/reportes-globales'); }}
+      >
         <span className="va-flotante-fantasma"><Fantasma /></span>
         <span className="va-flotante-texto">
           <strong>Verifica tus reportes</strong>
