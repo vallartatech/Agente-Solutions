@@ -9,6 +9,17 @@ const CENTRO_MERIDA = { lat: 20.9673, lng: -89.6236 };
 // Más de esto (en metros) se considera una lectura imprecisa (WiFi / red celular)
 const PRECISION_ACEPTABLE = 60;
 
+// Códigos de GeolocationPositionError
+const PERMISSION_DENIED = 1;
+const POSITION_UNAVAILABLE = 2;
+const TIMEOUT = 3;
+const MOTIVOS_ERROR = {
+  sinSoporte: 'Este navegador no puede detectar la ubicación. Busca la dirección o toca el mapa para marcarla.',
+  [PERMISSION_DENIED]: 'El navegador tiene bloqueada la ubicación. Actívala en el candado junto a la dirección de la página y vuelve a tocar el botón de ubicación, o marca el punto en el mapa.',
+  [POSITION_UNAVAILABLE]: 'Tu dispositivo no dio una ubicación. Revisa que la ubicación esté activada en su configuración, o busca la dirección o toca el mapa.',
+  [TIMEOUT]: 'La ubicación tardó demasiado. Vuelve a tocar el botón de ubicación, o busca la dirección o toca el mapa.'
+};
+
 const MAP_OPTIONS = {
   disableDefaultUI: true,
   zoomControl: true,
@@ -36,31 +47,53 @@ const SelectorUbicacionMapa = ({ isOpen, onClose, onConfirm, coordenadasIniciale
   const [estado, setEstado] = useState('manual');
   const [precision, setPrecision] = useState(null);
 
+  const [motivoError, setMotivoError] = useState('');
+
   const autocompleteRef = useRef(null);
   const tocoManualmente = useRef(false);
+  const intentoActual = useRef(0);
 
   const detectarUbicacion = () => {
     if (!navigator.geolocation) {
+      setMotivoError(MOTIVOS_ERROR.sinSoporte);
       setEstado('error');
       return;
     }
+    const intento = ++intentoActual.current;
+    // Si el usuario ya marcó a mano o pidió otra lectura mientras esperábamos, se ignora esta
+    const vigente = () => intento === intentoActual.current && !tocoManualmente.current;
     setEstado('detectando');
+
+    const exito = (pos) => {
+      if (!vigente()) return;
+      const punto = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setPosicion(punto);
+      setCentro(punto);
+      setZoom(18);
+      setPrecision(Math.round(pos.coords.accuracy));
+      setEstado(pos.coords.accuracy <= PRECISION_ACEPTABLE ? 'ok' : 'aproximada');
+    };
+    const fallo = (err) => {
+      console.warn('No se pudo obtener la ubicación:', err);
+      if (!vigente()) return;
+      setMotivoError(MOTIVOS_ERROR[err.code] || MOTIVOS_ERROR[POSITION_UNAVAILABLE]);
+      setEstado('error');
+    };
+
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        // Si el usuario ya marcó a mano mientras esperábamos, respetamos su pin
-        if (tocoManualmente.current) return;
-        const punto = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setPosicion(punto);
-        setCentro(punto);
-        setZoom(18);
-        setPrecision(Math.round(pos.coords.accuracy));
-        setEstado(pos.coords.accuracy <= PRECISION_ACEPTABLE ? 'ok' : 'aproximada');
-      },
+      exito,
       (err) => {
-        console.warn('No se pudo obtener la ubicación:', err);
-        if (!tocoManualmente.current) setEstado('error');
+        // Sin permiso no hay más que intentar
+        if (err.code === PERMISSION_DENIED) {
+          fallo(err);
+          return;
+        }
+        // Computadoras sin GPS: la lectura precisa falla, pero por WiFi o red suele responder
+        if (vigente()) {
+          navigator.geolocation.getCurrentPosition(exito, fallo, { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 });
+        }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
   };
 
@@ -119,7 +152,7 @@ const SelectorUbicacionMapa = ({ isOpen, onClose, onConfirm, coordenadasIniciale
     detectando: { icon: <Loader2 size={15} className="sum-spin" />, texto: 'Detectando tu ubicación...' },
     ok: { icon: <Check size={15} />, texto: `Ubicación detectada (±${precision} m). Ajusta el pin si hace falta.` },
     aproximada: { icon: <AlertTriangle size={15} />, texto: `Ubicación aproximada (±${precision} m). Busca la dirección o toca el mapa para marcarla exacta.` },
-    error: { icon: <AlertTriangle size={15} />, texto: 'No pudimos detectar tu ubicación. Busca la dirección o toca el mapa para marcarla.' },
+    error: { icon: <AlertTriangle size={15} />, texto: motivoError },
     manual: { icon: <MapPin size={15} />, texto: 'Toca el mapa o arrastra el pin para ajustar la ubicación.' }
   };
   const aviso = avisos[estado];

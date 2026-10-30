@@ -73,8 +73,9 @@
 .mt-item-editar input { min-height: 40px; width: 165px; }
 .mt-icono {
   display: flex; align-items: center; justify-content: center; flex: 0 0 40px; width: 40px; height: 40px;
-  border: 0; border-radius: 12px; background: #f1f5f9; color: #475569; cursor: pointer;
+  padding: 0; border: 0; border-radius: 12px; background: #f1f5f9; color: #475569; cursor: pointer;
 }
+.mt-icono svg { flex-shrink: 0; }
 .mt-icono.guardar { background: #dcfce7; color: #15803d; }
 .mt-icono.peligro { background: #fee2e2; color: #dc2626; }
 @media (max-width: 600px) { .mt-guardar { align-self: stretch; } }
