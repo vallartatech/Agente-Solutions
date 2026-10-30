@@ -127,6 +127,7 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
   const isReporteCotizacionActive = activeModule === 'reportes' || activeModule === 'cotizaciones'
     || currentPath.includes('/reporte') || currentPath.includes('/cotizacion');
   const isServiciosActive = activeModule === 'servicios' || currentPath.includes('/tablero-servicios') || currentPath.includes('/servicios');
+  const isMantenimientoActive = activeModule === 'mantenimiento' || currentPath.includes('/mantenimiento');
   const isMercadoActive = activeModule === 'mercado' || currentPath.includes('/red-autonomos');
   const isMapaActive = activeModule === 'mapa' || currentPath.includes('/mapa-equipo');
 
@@ -218,6 +219,14 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
             onClick={() => navigate('/tablero-servicios')}
           >
             SERVICIOS
+          </button>
+
+          <button
+            type="button"
+            className={`vcp-nav-btn ${isMantenimientoActive ? 'active' : ''}`}
+            onClick={() => navigate('/mantenimiento')}
+          >
+            MANTENIMIENTO
           </button>
 
           {/* Apartados secundarios agrupados para que el menú no se amontone.

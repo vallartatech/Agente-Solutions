@@ -5,15 +5,12 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import {
   X, FileText, Home, Wrench, MessageSquare, Camera, ImageIcon, PlusCircle,
-  Users, User, ClipboardList, Hammer, ChevronRight, CheckCircle2, CalendarClock, Boxes
+  Users, User, ClipboardList, Hammer, ChevronRight, CheckCircle2, CalendarClock
 } from 'lucide-react';
 import { API, authHeaders } from './flujoTrabajo';
-import GruposEquipos from '../Mantenimiento/GruposEquipos';
-import { grupoCompleto } from '../Mantenimiento/cicloMantenimiento';
 import '../../../../styles/AgenteSolutions/Admin/VistaPropiedades.css';
 import '../../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
 import '../../../../styles/Shared/LiquidGlass.css';
-import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 
 // Solicitud de trabajo o de levantamiento para una propiedad, asignada a técnicos (rol 2) y/o admins (rol 1).
 // Si se eligen varias personas, forman una cuadrilla: la primera elegida es la responsable.
@@ -51,11 +48,6 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
   const [cargandoEquipos, setCargandoEquipos] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [menuFoto, setMenuFoto] = useState(false);
-  // Un trabajo con varios elementos: del levantamiento y/o grupos sin levantamiento
-  const [alcance, setAlcance] = useState('uno');
-  const [elementos, setElementos] = useState([]);
-  const [elementoIds, setElementoIds] = useState([]);
-  const [grupos, setGrupos] = useState([]);
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const navigate = useNavigate();
@@ -79,12 +71,6 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
       .then((res) => setZonas(res.data || []))
       .catch(() => setZonas([]))
       .finally(() => setCargandoZonas(false));
-
-    if (esAdmin) {
-      axios.get(`${API}/properties/${propiedad.id}/elementos`, { headers })
-        .then((res) => setElementos(res.data || []))
-        .catch(() => setElementos([]));
-    }
   }, [propiedad.id]);
 
   const cambiarZona = async (areaId) => {
@@ -134,17 +120,6 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
     navigate(`/RegistroZonas/${encodeURIComponent(curp)}`, { state: { id: propiedad.id, curp, nombre: propiedad.property_name || propiedad.nombre_propiedad || '' } });
   };
 
-  const toggleElemento = (id) =>
-    setElementoIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
-
-  const elementosElegidos = () => elementos.filter((el) => elementoIds.includes(el.id));
-  const cuantosElementos = elementoIds.length + grupos.length;
-
-  const elementosPorZona = elementos.reduce((acc, el) => {
-    (acc[el.area] = acc[el.area] || []).push(el);
-    return acc;
-  }, {});
-
   const toggleTecnico = (id) =>
     setTecnicoIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
 
@@ -172,17 +147,8 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
   const enviar = async (e) => {
     e.preventDefault();
     if (enviando) return;
-    const varios = modo === 'trabajo' && alcance === 'varios';
-    if (modo === 'trabajo' && (!form.tipo || (!varios && !form.area_id) || !form.descripcion.trim())) {
-      Swal.fire({ icon: 'warning', title: 'Faltan datos', text: varios ? 'Completa el tipo y la descripción.' : 'Completa el tipo, la zona y la descripción.', confirmButtonColor: '#f26522' });
-      return;
-    }
-    if (varios && !cuantosElementos) {
-      Swal.fire({ icon: 'warning', title: 'Sin elementos', text: 'Elige al menos un elemento o agrega equipos sin levantamiento.', confirmButtonColor: '#f26522' });
-      return;
-    }
-    if (varios && grupos.some((g) => !grupoCompleto(g))) {
-      Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Cada grupo necesita tipo, cantidad, foto del equipo y tarjeta de datos.', confirmButtonColor: '#f26522' });
+    if (modo === 'trabajo' && (!form.tipo || !form.area_id || !form.descripcion.trim())) {
+      Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Completa el tipo, la zona y la descripción.', confirmButtonColor: '#f26522' });
       return;
     }
     // La visita se refleja en el calendario: el administrador siempre la programa
@@ -202,31 +168,11 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
         const fd = new FormData();
         fd.append('property_id', propiedad.id);
         fd.append('type', form.tipo);
-        if (varios) {
-          const elegidos = elementosElegidos();
-          const etiquetas = [
-            ...elegidos.map((el) => el.label),
-            ...grupos.map((g) => (Number(g.cantidad) > 1 ? `${g.cantidad} × ${g.tipo.trim()}` : g.tipo.trim())),
-          ].join(', ');
-          // Una sola zona solo si es un elemento del levantamiento
-          fd.append('zone', cuantosElementos === 1 && elegidos.length === 1 ? elegidos[0].area : 'Varias zonas');
-          fd.append('equipment', etiquetas.length > 150 ? `${etiquetas.slice(0, 149)}…` : etiquetas);
-          fd.append('description', `${form.descripcion}\n\n[EQUIPO AFECTADO]: ${etiquetas}`);
-          elegidos.forEach((el) => fd.append('component_ids[]', el.id));
-          grupos.forEach((g, i) => {
-            fd.append(`grupos[${i}][tipo]`, g.tipo.trim());
-            fd.append(`grupos[${i}][cantidad]`, g.cantidad);
-            if (g.detalle.trim()) fd.append(`grupos[${i}][detalle]`, g.detalle.trim());
-            fd.append(`grupos[${i}][foto_equipo]`, g.foto_equipo);
-            fd.append(`grupos[${i}][foto_datos]`, g.foto_datos);
-          });
-        } else {
-          fd.append('zone', form.zona);
-          fd.append('equipment', form.equipo || '');
-          fd.append('description', form.equipo
-            ? `${form.descripcion}\n\n[EQUIPO AFECTADO]: ${form.equipo}`
-            : form.descripcion);
-        }
+        fd.append('zone', form.zona);
+        fd.append('equipment', form.equipo || '');
+        fd.append('description', form.equipo
+          ? `${form.descripcion}\n\n[EQUIPO AFECTADO]: ${form.equipo}`
+          : form.descripcion);
         if (idTec) fd.append('tecnico_id', idTec);
         form.fotos.forEach((foto, i) => fd.append(`evidence_${i + 1}`, foto));
         const res = await axios.post(`${API}/work-orders/cliente`, fd, {
@@ -437,51 +383,6 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
                   </select>
                 </div>
 
-                {esAdmin && (
-                  <div className="xp-seg" role="tablist" aria-label="Alcance del trabajo">
-                    <button type="button" className={alcance === 'uno' ? 'on' : ''} onClick={() => setAlcance('uno')}>
-                      <Wrench size={15} /> Un equipo
-                    </button>
-                    <button type="button" className={alcance === 'varios' ? 'on' : ''} onClick={() => setAlcance('varios')}>
-                      <Boxes size={15} /> Varios elementos
-                    </button>
-                  </div>
-                )}
-
-                {alcance === 'varios' ? (
-                  <div className="rp-group mt-seccion">
-                    {elementos.length > 0 ? (
-                      <div className="mt-lista-elegir">
-                        {Object.entries(elementosPorZona).map(([zona, lista]) => (
-                          <div key={zona}>
-                            <p className="mt-zona">{zona}</p>
-                            {lista.map((el) => {
-                              const on = elementoIds.includes(el.id);
-                              return (
-                                <div key={el.id} className={`mt-elemento ${on ? 'on' : ''}`}>
-                                  <button type="button" className="mt-elemento-check" onClick={() => toggleElemento(el.id)} aria-pressed={on}>
-                                    <span className="mt-casilla">{on && <CheckCircle2 size={18} />}</span>
-                                    <span className="mt-elemento-texto"><strong>{el.label}</strong></span>
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="mt-resumen">Esta propiedad no tiene elementos en su levantamiento.</p>
-                    )}
-                    <GruposEquipos grupos={grupos} onChange={setGrupos} />
-                    {cuantosElementos > 0 && (
-                      <p className="mt-resumen">
-                        <strong>{cuantosElementos} {cuantosElementos === 1 ? 'elemento' : 'elementos'}:</strong>{' '}
-                        {cuantosElementos === 1 ? 'se piden las 4 evidencias normales.' : 'se pide antes y después de cada uno.'}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                <>
                 <div className="rp-group">
                   <label className="rp-label"><Home size={16} color="#ff8c42" /> Zona de la propiedad *</label>
                   <select required value={form.area_id} onChange={(e) => cambiarZona(e.target.value)} disabled={cargandoZonas}>
@@ -523,8 +424,6 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
                     <option value="otro">Otro (No está en la lista)</option>
                   </select>
                 </div>
-                </>
-                )}
               </>
             ) : (
               <div className="rp-group">

@@ -19,7 +19,6 @@ import '../../../styles/AgenteSolutions/Cliente/TableroScrum.css'; // Reutilizam
 import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteSolutions/Admin/VistaServiciosAdmin.css';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
-import ModalCicloMantenimiento from './Mantenimiento/ModalCicloMantenimiento';
 
 const VistaServiciosAdmin = () => {
   const navigate = useNavigate();
@@ -61,7 +60,6 @@ const VistaServiciosAdmin = () => {
   ];
   
   // --- ESTADOS PARA INVENTARIO ---
-  const [cicloOrdenId, setCicloOrdenId] = useState(null);
   const [modalSurveyVisible, setModalSurveyVisible] = useState(false);
   const [surveyData, setSurveyData] = useState([]);
   const [cargandoSurvey, setCargandoSurvey] = useState(false);
@@ -418,8 +416,6 @@ const VistaServiciosAdmin = () => {
       });
       await fetchOrders();
       cerrarModal();
-      // Al finalizar se puede dejar programado el mantenimiento periódico
-      if (nuevoEstadoLaravel === 'Listo' && /^\d+$/.test(String(dbId))) setCicloOrdenId(dbId);
     } catch (error) {
       mostrarAviso(error.response?.data?.error || "No se pudo actualizar el estado del servicio.");
     } finally {
@@ -2371,8 +2367,6 @@ const VistaServiciosAdmin = () => {
           }}
         />
       )}
-
-      {cicloOrdenId && <ModalCicloMantenimiento workOrderId={cicloOrdenId} onClose={() => setCicloOrdenId(null)} />}
     </div>
   );
 };

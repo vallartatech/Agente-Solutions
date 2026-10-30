@@ -2,13 +2,12 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   LayoutGrid, FileText, History, Search, SlidersHorizontal, Plus, MapPin, Tag,
-  Building2, Check, LayoutDashboard, Inbox, ClipboardList, Wrench
+  Building2, Check, LayoutDashboard, Inbox, ClipboardList
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import CasaLoader from '../../../components/Shared/CasaLoader';
 import useExpediente from './Expediente/useExpediente';
 import ModalNuevaSolicitud from './Expediente/ModalNuevaSolicitud';
-import PanelMantenimiento from './Mantenimiento/PanelMantenimiento';
 import { TrabajoCard, ListaCotizaciones, LineaTiempo } from './Expediente/ExpedienteUI';
 import { esActivo, esFinalizado, esCancelado, etiquetaTipo, nombreTecnicos } from './Expediente/flujoTrabajo';
 import '../../../styles/Shared/UniversalSearch.css';
@@ -32,7 +31,6 @@ const FILTROS_TIPO = [
 const TABS = [
   { key: 'datos', label: 'Datos', Icon: LayoutGrid },
   { key: 'cotizaciones', label: 'Cotizaciones', Icon: FileText },
-  { key: 'mantenimiento', label: 'Mantenimiento', Icon: Wrench },
   { key: 'historial', label: 'Historial', Icon: History },
 ];
 
@@ -245,8 +243,6 @@ const VistaDetallePropiedad = () => {
             />
           </section>
         )}
-
-        {tab === 'mantenimiento' && <PanelMantenimiento propiedadId={id} />}
 
         {tab === 'historial' && (
           <section className="xp-card xp-panel">

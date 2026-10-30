@@ -14,6 +14,7 @@ import {
   Globe,
   Navigation,
   ReceiptText,
+  CalendarClock,
   LayoutGrid,
   X
 } from 'lucide-react';
@@ -263,6 +264,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
   if (isAdminRole1 || isRoot) {
     // Mismas opciones que "MÁS ▾" del encabezado en computadora
     const masItemsAdmin = [
+      { key: 'mantenimiento', label: 'Mantenimiento', Icon: CalendarClock, path: '/mantenimiento', active: currentPath.includes('/mantenimiento') },
       { key: 'mapa', label: 'Mapa en vivo', Icon: Navigation, path: '/mapa-equipo', active: isMapaActive },
       ...(isRoot ? [{ key: 'mercado', label: 'Mercado / Red', Icon: Globe, path: '/red-autonomos', active: isMercadoActive }] : []),
     ];

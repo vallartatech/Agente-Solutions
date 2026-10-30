@@ -11,7 +11,6 @@ import { useAuth } from "../../../context/AuthContext";
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
 import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta, esPorElemento, etapasDelTrabajo, evidenciasDelElemento, avanceDelElemento } from '../Shared/etapasEvidencia';
-import ModalCicloMantenimiento from '../Admin/Mantenimiento/ModalCicloMantenimiento';
 import '../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 import CarruselEtapas from '../Shared/CarruselEtapas';
 
@@ -36,7 +35,6 @@ const GaleriaReportes = () => {
   const [loading, setLoading] = useState(true);
   const [submittingKey, setSubmittingKey] = useState(null);
   const [imagenExpandida, setImagenExpandida] = useState(null);
-  const [cicloOrdenId, setCicloOrdenId] = useState(null);
 
   // Elementos del trabajo: con 2 o más, cada uno lleva su ANTES y su DESPUÉS
   const [elementos, setElementos] = useState([]);
@@ -315,8 +313,6 @@ const GaleriaReportes = () => {
         timer: 2200,
         showConfirmButton: false
       });
-      // Al finalizar, el admin puede dejar programado el mantenimiento periódico
-      if (esAdmin && nuevo === 'Listo') setCicloOrdenId(realId);
     } catch (error) {
       console.error('Error al enviar a aprobación:', error);
       Swal.fire('Error', error.response?.data?.error || 'No se pudo actualizar el trabajo. Inténtalo de nuevo.', 'error');
@@ -757,8 +753,6 @@ const GaleriaReportes = () => {
             </CarruselEtapas>
           )}
         </div>
-
-        {cicloOrdenId && <ModalCicloMantenimiento workOrderId={cicloOrdenId} onClose={() => setCicloOrdenId(null)} />}
 
         {grabadorEtapa && (
           <GrabadorVideo

@@ -13,7 +13,6 @@ import Swal from 'sweetalert2';
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
 import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta, esPorElemento, etapasDelTrabajo, evidenciasDelElemento, avanceDelElemento } from '../Shared/etapasEvidencia';
-import ModalCicloMantenimiento from './Mantenimiento/ModalCicloMantenimiento';
 import CarruselEtapas from '../Shared/CarruselEtapas';
 import '../../../styles/Shared/UniversalSearch.css';
 import '../../../styles/Shared/ToolbarAcciones.css';
@@ -60,7 +59,6 @@ const VistaReportesGlobal = () => {
   const [selectedPropKey, setSelectedPropKey] = useState(null);
   const [selectedGroupKey, setSelectedGroupKey] = useState(null);
   const [elementoPanelId, setElementoPanelId] = useState(null);
-  const [cicloOrdenId, setCicloOrdenId] = useState(null);
 
   useEffect(() => {
     fetchReportesYCotizaciones();
@@ -265,8 +263,6 @@ const VistaReportesGlobal = () => {
       });
       await fetchReportesYCotizaciones();
       avisarValidacion();
-      // Al finalizar se puede dejar programado el mantenimiento periódico
-      setCicloOrdenId(grupo.trabajoId);
     } catch (error) {
       Swal.fire('Error', error.response?.data?.error || 'No se pudo finalizar el trabajo.', 'error');
     } finally {
@@ -755,8 +751,6 @@ const VistaReportesGlobal = () => {
         </div>,
         document.body
       )}
-
-      {cicloOrdenId && <ModalCicloMantenimiento workOrderId={cicloOrdenId} onClose={() => setCicloOrdenId(null)} />}
 
       {/* MODAL PARA AGREGAR O EDITAR EVIDENCIA */}
       {isModalOpen && createPortal(

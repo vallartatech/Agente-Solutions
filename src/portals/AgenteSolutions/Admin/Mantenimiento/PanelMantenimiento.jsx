@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { CalendarClock, Plus, Trash2, Wrench } from 'lucide-react';
+import { CalendarClock, Trash2, Wrench } from 'lucide-react';
 import { API, authHeaders } from '../Expediente/flujoTrabajo';
-import ModalCicloMantenimiento from './ModalCicloMantenimiento';
 import { textoFecha } from './cicloMantenimiento';
 import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 
@@ -12,7 +11,6 @@ const PanelMantenimiento = ({ propiedadId }) => {
   const [equipos, setEquipos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(false);
-  const [modal, setModal] = useState(false);
 
   const cargar = useCallback(() => {
     setError(false);
@@ -46,12 +44,7 @@ const PanelMantenimiento = ({ propiedadId }) => {
 
   return (
     <section className="xp-card xp-panel">
-      <div className="mt-panel-cabecera">
-        <h3 className="xp-panel-titulo"><Wrench size={18} /> Mantenimiento periódico</h3>
-        <button type="button" className="xp-btn-primary" onClick={() => setModal(true)}>
-          <Plus size={16} /> Programar
-        </button>
-      </div>
+      <h3 className="xp-panel-titulo"><Wrench size={18} /> Equipos programados y próximas fechas</h3>
 
       {cargando ? (
         <p className="mt-panel-vacio">Cargando equipos...</p>
@@ -74,7 +67,7 @@ const PanelMantenimiento = ({ propiedadId }) => {
                       {proxima && ` · próxima: ${textoFecha(proxima)}`}
                     </span>
                   ) : (
-                    <span className="mt-sin-ciclo">Sin ciclo: usa Programar para definirlo</span>
+                    <span className="mt-sin-ciclo">Sin ciclo: márcalo arriba para programarlo</span>
                   )}
                   {e.detalle && <small>{e.detalle}</small>}
                 </div>
@@ -86,8 +79,6 @@ const PanelMantenimiento = ({ propiedadId }) => {
           })}
         </ul>
       )}
-
-      {modal && <ModalCicloMantenimiento propiedadId={propiedadId} onClose={() => setModal(false)} onGuardado={cargar} />}
     </section>
   );
 };

@@ -28,6 +28,7 @@ const esTemporadaHalloween = () => {
   return (mes === 9 && dia >= 15) || (mes === 10 && dia <= 2);
 };
 import VistaMapaEquipo from "./portals/AgenteSolutions/Admin/VistaMapaEquipo";
+import VistaMantenimiento from "./portals/AgenteSolutions/Admin/Mantenimiento/VistaMantenimiento";
 import VistaComprobantes from "./portals/AgenteSolutions/Shared/VistaComprobantes";
 import VistaChats from "./portals/AgenteSolutions/Shared/VistaChats";
 import RegistroZonas from "./portals/AgenteSolutions/Tecnico/RegistroZonas";
@@ -157,6 +158,14 @@ const TrabajoPropiedadWrapper = () => {
   const { user } = useAuth();
   const roleId = Number(user?.role_id);
   if (roleId === 0 || roleId === 1) return <VistaTrabajoPropiedad />;
+  return <Navigate to="/propiedades" replace />;
+};
+
+// Mantenimiento de Agente Solutions: solo Root (0) y Admin (1)
+const MantenimientoWrapper = () => {
+  const { user } = useAuth();
+  const roleId = Number(user?.role_id);
+  if (roleId === 0 || roleId === 1) return <VistaMantenimiento />;
   return <Navigate to="/propiedades" replace />;
 };
 
@@ -297,6 +306,7 @@ const AppRoutes = () => {
 
       <Route path="/notificaciones" element={<VistaNotificaciones />} />
       <Route path="/mapa-equipo" element={<VistaMapaEquipo />} />
+      <Route path="/mantenimiento" element={<MantenimientoWrapper />} />
       {/* El mapa de propiedades se unió al Mapa en vivo */}
       <Route path="/mapa-propiedades" element={<Navigate to="/mapa-equipo?capa=propiedades" replace />} />
       <Route path="/comprobantes" element={<ProtectedRoute><VistaComprobantes /></ProtectedRoute>} />
