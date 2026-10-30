@@ -9,7 +9,9 @@ import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const ATAJOS_MESES = [3, 6, 12];
-const FORM_VACIO = { property_id: '', tipo: '', cantidad: 1, detalle: '', fecha: '', foto_equipo: null, foto_datos: null };
+// Valor de la lista para escribir un nombre a mano; no crea una propiedad real
+const NOMBRE_NUEVO = 'nuevo';
+const FORM_VACIO = { property_id: '', propiedad_nombre: '', tipo: '', cantidad: 1, detalle: '', fecha: '', foto_equipo: null, foto_datos: null };
 
 const aISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const hoyISO = () => aISO(new Date());
@@ -31,6 +33,7 @@ const textoFecha = (iso) => {
 const normalizar = (texto) => String(texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const nombreEquipo = (e) => (e.cantidad > 1 ? `${e.cantidad} × ${e.tipo}` : e.tipo);
 const nombrePropiedad = (p) => p?.property_name || p?.address || 'Propiedad';
+const propiedadDelEquipo = (e) => (e.property ? nombrePropiedad(e.property) : e.propiedad_nombre || 'Sin propiedad');
 const proximaFecha = (e) => e.visits?.[0]?.fecha_programada?.slice(0, 10) || null;
 
 const avisoError = (title, error) => Swal.fire({
@@ -87,20 +90,26 @@ const VistaMantenimiento = () => {
   const lista = useMemo(() => {
     const texto = normalizar(busqueda);
     return equipos
-      .filter((e) => !texto || normalizar(`${e.tipo} ${e.detalle} ${e.property?.property_name} ${e.property?.address}`).includes(texto))
+      .filter((e) => !texto || normalizar(`${e.tipo} ${e.detalle} ${e.property?.property_name} ${e.property?.address} ${e.propiedad_nombre}`).includes(texto))
       .sort((a, b) => (proximaFecha(a) || '9999').localeCompare(proximaFecha(b) || '9999'));
   }, [equipos, busqueda]);
 
   const agregar = async (e) => {
     e.preventDefault();
     if (guardando) return;
-    if (!form.property_id || !form.tipo.trim() || !form.fecha) {
-      Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Indica la propiedad, el equipo y la fecha del próximo mantenimiento.', confirmButtonColor: '#f26522' });
+    const conNombreNuevo = form.property_id === NOMBRE_NUEVO;
+    if (!form.tipo.trim() || !form.fecha) {
+      Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Indica el equipo y la fecha del próximo mantenimiento.', confirmButtonColor: '#f26522' });
+      return;
+    }
+    if (conNombreNuevo && !form.propiedad_nombre.trim()) {
+      Swal.fire({ icon: 'warning', title: 'Falta el nombre', text: 'Escribe el nombre de la propiedad o elige "Sin propiedad".', confirmButtonColor: '#f26522' });
       return;
     }
 
     const fd = new FormData();
-    fd.append('property_id', form.property_id);
+    if (conNombreNuevo) fd.append('propiedad_nombre', form.propiedad_nombre.trim());
+    else if (form.property_id) fd.append('property_id', form.property_id);
     fd.append('tipo', form.tipo.trim());
     fd.append('cantidad', form.cantidad || 1);
     fd.append('fecha', form.fecha);
@@ -114,7 +123,7 @@ const VistaMantenimiento = () => {
       const property = propiedades.find((p) => String(p.id) === String(form.property_id));
       setEquipos((prev) => [{ ...data.equipo, property }, ...prev]);
       // La propiedad se conserva para seguir agregando equipos del mismo lugar
-      setForm({ ...FORM_VACIO, property_id: form.property_id });
+      setForm({ ...FORM_VACIO, property_id: form.property_id, propiedad_nombre: form.propiedad_nombre });
       Swal.fire({ icon: 'success', title: '¡Agregado!', text: `Mantenimiento de ${form.tipo.trim()} en la agenda para el ${textoFecha(form.fecha)}.`, timer: 2400, showConfirmButton: false });
     } catch (error) {
       avisoError('No se pudo agregar', error);
@@ -166,12 +175,27 @@ const VistaMantenimiento = () => {
           <h3 className="xp-panel-titulo"><Plus size={18} /> Agregar equipo</h3>
 
           <label className="mt-campo">
-            <span>Propiedad *</span>
+            <span>Propiedad</span>
             <select value={form.property_id} onChange={(e) => setForm({ ...form, property_id: e.target.value })} disabled={cargando}>
-              <option value="">{cargando ? 'Cargando propiedades...' : 'Selecciona la propiedad...'}</option>
+              <option value="">Sin propiedad</option>
+              <option value={NOMBRE_NUEVO}>Agregar nuevo nombre de propiedad</option>
               {propiedades.map((p) => <option key={p.id} value={p.id}>{nombrePropiedad(p)}</option>)}
             </select>
           </label>
+
+          {form.property_id === NOMBRE_NUEVO && (
+            <label className="mt-campo">
+              <span>Nombre de la propiedad *</span>
+              <input
+                type="text"
+                maxLength={191}
+                autoFocus
+                placeholder="Ej. Bodega Norte"
+                value={form.propiedad_nombre}
+                onChange={(e) => setForm({ ...form, propiedad_nombre: e.target.value })}
+              />
+            </label>
+          )}
 
           <div className="mt-fila">
             <label className="mt-campo mt-campo-equipo">
@@ -256,7 +280,7 @@ const VistaMantenimiento = () => {
                     {e.foto_equipo_url && <img src={e.foto_equipo_url} alt="" />}
                     <div className="mt-item-texto">
                       <strong>{nombreEquipo(e)}</strong>
-                      <span>{nombrePropiedad(e.property)}</span>
+                      <span>{propiedadDelEquipo(e)}</span>
                       {e.detalle && <small>{e.detalle}</small>}
                     </div>
 

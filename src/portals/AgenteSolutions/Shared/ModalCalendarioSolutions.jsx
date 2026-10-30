@@ -236,7 +236,7 @@ const visitaAEvento = (visita) => {
   const equipo = visita.equipment || {};
   const dateKey = String(visita.fecha_programada).slice(0, 10);
   const etiqueta = equipo.cantidad > 1 ? `${equipo.cantidad} × ${equipo.tipo}` : equipo.tipo;
-  const propiedad = equipo.property?.property_name || equipo.property?.address || 'Propiedad';
+  const propiedad = equipo.property?.property_name || equipo.property?.address || equipo.propiedad_nombre || 'Sin propiedad';
   return {
     id: `mantenimiento_${visita.id}`,
     isNotice: true,
@@ -781,6 +781,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
         </div>`,
       showCancelButton: true,
       showDenyButton: true,
+      // Una orden necesita una propiedad registrada
+      showConfirmButton: Boolean(equipo.property_id),
       confirmButtonText: 'Convertir en orden',
       denyButtonText: 'Omitir esta fecha',
       cancelButtonText: 'Cerrar',
