@@ -541,6 +541,7 @@ const VistaServiciosAdmin = () => {
         let hasProgress = false;
         let hasReview = false;
         let listos = 0;
+        let rechazados = 0;
 
         if (item.batchTasks.length === 1) {
           item.isBatch = false;
@@ -552,6 +553,7 @@ const VistaServiciosAdmin = () => {
             else if (bt.estado === 'progress') hasProgress = true;
             else if (bt.estado === 'review') hasReview = true;
             else if (bt.estado === 'done') listos++;
+            else if (bt.estado === 'rejected') rechazados++;
           });
 
           // La peor prioridad dicta la columna del Kanban
@@ -560,12 +562,18 @@ const VistaServiciosAdmin = () => {
           else if (hasTodo) item.estado = 'todo';
           else if (hasProgress) item.estado = 'progress';
           else if (hasReview) item.estado = 'review';
-          else if (listos === item.batchTasks.length) item.estado = 'done';
+          // Ya no queda nada activo: todo cancelado es rechazado; si algo se terminó, el lote está finalizado
+          else if (rechazados === item.batchTasks.length) item.estado = 'rejected';
+          else if (listos + rechazados === item.batchTasks.length) item.estado = 'done';
           else item.estado = 'todo'; // Por si acaso hay mezclados pero no en los anteriores
 
-          item.batchProgressText = `Trabajos listos: ${listos}/${item.batchTasks.length}`;
+          // Los cancelados no cuentan como trabajos por terminar
+          const vigentes = item.batchTasks.length - rechazados;
+          item.batchProgressText = vigentes
+            ? `Trabajos listos: ${listos}/${vigentes}${rechazados ? ` · ${rechazados} cancelado${rechazados > 1 ? 's' : ''}` : ''}`
+            : `Todos cancelados (${rechazados})`;
           item.listosCount = listos;
-          item.totalCount = item.batchTasks.length;
+          item.totalCount = vigentes;
         }
       }
     });
