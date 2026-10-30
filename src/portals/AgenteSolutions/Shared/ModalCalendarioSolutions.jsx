@@ -241,6 +241,10 @@ const limpiarDescripcion = (rawDesc) => {
   return clean.trim() || rawDesc;
 };
 
+// Lo cancelado o rechazado ya no es una cita: no aparece en la agenda
+const ESTADOS_CANCELADOS = ['rechazado', 'cancelado', 'cancelado_tecnico'];
+const estaCancelada = (orden) => ESTADOS_CANCELADOS.includes(String(orden.status || '').trim().toLowerCase());
+
 const COLOR_MANTENIMIENTO = '#0ea5e9';
 
 // Fecha de un ciclo de mantenimiento como evento (solo la ven Root y Admin)
@@ -628,6 +632,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
       // 1. Procesar todas las Work Orders internas de Solutions (excluyendo el otro ecosistema de Agente Market)
       rawOrders.forEach(wo => {
+        if (estaCancelada(wo)) return;
+
         const isMarketBroadcast = Boolean(
           wo.publish_network == 1 ||
           wo.publish_network === true ||
@@ -674,6 +680,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
       // 2. Si hay servicios del técnico de la ruta /tecnico/{id}/servicios
       if (resTecServicios && Array.isArray(resTecServicios.data)) {
         resTecServicios.data.forEach(srv => {
+          if (estaCancelada(srv)) return;
           const key = `wo_${srv.id}`;
           if (!eventMap.has(key)) {
             const ev = processOrderToEvent(srv, true);
