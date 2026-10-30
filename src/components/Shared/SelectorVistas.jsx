@@ -13,13 +13,18 @@ const GRUPOS = {
     { key: 'propiedades', label: 'Propiedades', Icon: Building2, path: '/propiedades' },
     { key: 'levantamientos', label: 'Levantamientos', Icon: ClipboardList, path: '/levantamientos' },
   ],
+  red: [
+    { key: 'reportes', label: 'Reportes', Icon: Images, path: '/reportes-globales' },
+    { key: 'cotizaciones', label: 'Cotizaciones', Icon: FileText, path: '/vista-cotizaciones' },
+    { key: 'levantamientos', label: 'Levantamientos', Icon: ClipboardList, path: '/levantamientos' },
+  ],
 };
 
 const SelectorVistas = ({ grupo, activo, conteo }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="src-selector" role="tablist">
+    <div className={`src-selector src-${grupo}`} role="tablist">
       {GRUPOS[grupo].map(({ key, label, Icon, path }) => {
         const on = key === activo;
         return (

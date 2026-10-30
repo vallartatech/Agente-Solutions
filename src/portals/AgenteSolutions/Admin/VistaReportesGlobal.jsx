@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -59,6 +59,9 @@ const VistaReportesGlobal = () => {
   const [selectedPropKey, setSelectedPropKey] = useState(null);
   const [selectedGroupKey, setSelectedGroupKey] = useState(null);
   const [elementoPanelId, setElementoPanelId] = useState(null);
+  const [sheetDragY, setSheetDragY] = useState(0);
+  const [isSheetDragging, setIsSheetDragging] = useState(false);
+  const sheetTouchStartY = useRef(0);
 
   useEffect(() => {
     fetchReportesYCotizaciones();
@@ -396,6 +399,29 @@ const VistaReportesGlobal = () => {
     setSelectedGroupKey(null);
   };
 
+  // Arrastrar el asa hacia abajo cierra el panel en móvil
+  const handleSheetTouchStart = (e) => {
+    sheetTouchStartY.current = e.touches[0].clientY;
+    setIsSheetDragging(true);
+  };
+
+  const handleSheetTouchMove = (e) => {
+    setSheetDragY(Math.max(0, e.touches[0].clientY - sheetTouchStartY.current));
+  };
+
+  const handleSheetTouchEnd = () => {
+    setIsSheetDragging(false);
+    if (sheetDragY > 80) {
+      setSheetDragY(window.innerHeight);
+      setTimeout(() => {
+        cerrarPanel();
+        setSheetDragY(0);
+      }, 200);
+    } else {
+      setSheetDragY(0);
+    }
+  };
+
   const getCotizacionAsociada = (grupo) => cotizaciones.find(c =>
     (grupo.tipo === 'work_order' && c.work_order_id === parseInt(grupo.trabajoId)) ||
     (grupo.tipo === 'servicio' && c.service_id === parseInt(grupo.trabajoId))
@@ -537,8 +563,22 @@ const VistaReportesGlobal = () => {
       {/* PANEL DE DETALLE: PROPIEDAD → LISTA DE SERVICIOS → REPORTE DEL SERVICIO */}
       {propiedadSeleccionada && createPortal(
         <div className="rg-sheet-overlay" onClick={cerrarPanel}>
-          <div className="rg-sheet" onClick={e => e.stopPropagation()}>
-            <div className="rg-sheet-grabber" />
+          <div
+            className="rg-sheet"
+            onClick={e => e.stopPropagation()}
+            style={{
+              transform: sheetDragY > 0 ? `translateY(${sheetDragY}px)` : undefined,
+              transition: isSheetDragging ? 'none' : 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+          >
+            <div
+              className="rg-sheet-grabber-area"
+              onTouchStart={handleSheetTouchStart}
+              onTouchMove={handleSheetTouchMove}
+              onTouchEnd={handleSheetTouchEnd}
+            >
+              <div className="rg-sheet-grabber" />
+            </div>
 
             <div className="rg-sheet-header">
               <div className="rg-sheet-header-text">

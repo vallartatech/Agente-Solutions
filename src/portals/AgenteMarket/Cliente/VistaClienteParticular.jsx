@@ -112,6 +112,21 @@ const VistaClienteParticular = () => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [isPlanExpanded, setIsPlanExpanded] = useState(false); // Oculto por defecto
   const [isMobilePropProfileOpen, setIsMobilePropProfileOpen] = useState(false); // Pestaña colapsable en móvil
+  const [cerrandoPerfil, setCerrandoPerfil] = useState(false);
+
+  // Al guardar se deja terminar la animación antes de desmontar el panel
+  const alternarPerfilMovil = () => {
+    if (cerrandoPerfil) return;
+    if (!isMobilePropProfileOpen) {
+      setIsMobilePropProfileOpen(true);
+      return;
+    }
+    setCerrandoPerfil(true);
+    setTimeout(() => {
+      setIsMobilePropProfileOpen(false);
+      setCerrandoPerfil(false);
+    }, 340);
+  };
 
   const dropdownRef = useRef(null);
 
@@ -897,9 +912,9 @@ const VistaClienteParticular = () => {
 
             {/* 2. Pestaña Desplegable del Perfil de la Propiedad (SOLO RESPONSIVO / MOBILE) */}
             <div className="vcp-mobile-prop-drawer-wrap">
-              <div 
-                className={`vcp-mobile-prop-drawer-tab ${isMobilePropProfileOpen ? 'is-open' : ''}`}
-                onClick={() => setIsMobilePropProfileOpen(!isMobilePropProfileOpen)}
+              <div
+                className={`vcp-mobile-prop-drawer-tab ${isMobilePropProfileOpen && !cerrandoPerfil ? 'is-open' : ''}`}
+                onClick={alternarPerfilMovil}
                 title={isMobilePropProfileOpen ? "Ocultar detalles del perfil de la propiedad" : "Desplegar detalles del perfil de la propiedad"}
               >
                 <div className="vcp-drawer-tab-main">
@@ -911,14 +926,18 @@ const VistaClienteParticular = () => {
 
                 <div className="vcp-drawer-tab-btn">
                   <span>DETALLES</span>
-                  {isMobilePropProfileOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  {/* Cerrado: flecha arriba (el panel sube). Abierto: gira hacia abajo para guardarlo */}
+                  <ChevronUp size={16} className="vcp-perfil-flecha" />
                 </div>
               </div>
 
               {/* Contenido desplegable en móvil */}
               {isMobilePropProfileOpen && (
-                <div className="vcp-mobile-prop-drawer-content">
-                  {renderPropertyProfileCard(true)}
+                <div className={`vcp-mobile-prop-drawer-content ${cerrandoPerfil ? 'is-cerrando' : ''}`}>
+                  {/* Envoltura para que el alto se cierre poco a poco al guardar (ver CSS) */}
+                  <div className="vcp-perfil-drawer-inner">
+                    {renderPropertyProfileCard(true)}
+                  </div>
                 </div>
               )}
             </div>

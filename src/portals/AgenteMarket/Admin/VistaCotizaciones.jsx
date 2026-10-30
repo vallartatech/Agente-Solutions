@@ -6,6 +6,10 @@ import "../../../styles/AgenteMarket/Admin/VistaCotizaciones.css";
 import "../../../styles/AgenteMarket/Tecnico/MercadoTrabajosBase.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 import Header from "../../../components/Shared/Header";
+import SelectorVistas from "../../../components/Shared/SelectorVistas";
+import PanelChatLateral from "../../../components/Shared/PanelChatLateral";
+import { useAuth } from "../../../context/AuthContext";
+import { usaSelectorRed } from "../../../utils/entorno";
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import AssignWorkModal from "../../../components/Modals/AssignWorkModal";
 import { 
@@ -138,6 +142,7 @@ const VistaCotizaciones = () => {
   const [busqueda, setBusqueda] = useState('');
   const [cotizacionSeleccionada, setCotizacionSeleccionada] = useState(null);
 
+  const { user } = useAuth();
   const [esCliente, setEsCliente] = useState(false);
   const [usuarioId, setUsuarioId] = useState(null);
   const [rechazando, setRechazando] = useState(false);
@@ -176,6 +181,8 @@ const VistaCotizaciones = () => {
   }, [filtrosAbiertos]);
 
   const [mensajeChat, setMensajeChat] = useState('');
+  const [chatAbierto, setChatAbierto] = useState(false);
+  const chatMensajesRef = useRef(null);
   const [enviandoMensaje, setEnviandoMensaje] = useState(false);
 
   useEffect(() => {
@@ -556,6 +563,18 @@ const VistaCotizaciones = () => {
       setProcesando(false);
     }
   };
+
+  // El chat de cada cotización empieza oculto
+  useEffect(() => {
+    setChatAbierto(false);
+  }, [cotizacionSeleccionada?.id]);
+
+  // Al abrir el chat o llegar un mensaje, mostrar el más reciente
+  useEffect(() => {
+    if (chatAbierto && chatMensajesRef.current) {
+      chatMensajesRef.current.scrollTop = chatMensajesRef.current.scrollHeight;
+    }
+  }, [chatAbierto, cotizacionSeleccionada?.chat_history]);
 
   const enviarMensajeChat = async () => {
     if (!mensajeChat.trim()) return;
@@ -969,11 +988,15 @@ const VistaCotizaciones = () => {
         
         {/* ── BARRA DE TÍTULO ── */}
         <div className="cotiz-action-bar">
-          <div className="cotiz-page-title-badge">
-            <FileText size={18} className="cotiz-title-icon" />
-            <span>COTIZACIONES</span>
-            <span className="cotiz-count-pill">{cotizaciones.length}</span>
-          </div>
+          {usaSelectorRed(user) ? (
+            <SelectorVistas grupo="red" activo="cotizaciones" conteo={cotizaciones.length} />
+          ) : (
+            <div className="cotiz-page-title-badge">
+              <FileText size={18} className="cotiz-title-icon" />
+              <span>COTIZACIONES</span>
+              <span className="cotiz-count-pill">{cotizaciones.length}</span>
+            </div>
+          )}
         </div>
 
         {/* ── BARRA UNIFICADA: BUSCADOR + FILTROS + NUEVA COTIZACIÓN ── */}
@@ -1367,7 +1390,7 @@ const VistaCotizaciones = () => {
                       </div>
                     </div>
 
-                    {/* Columna derecha: monto, estado y conversación */}
+                    {/* Columna derecha: monto y estado */}
                     <div className="rq-col rq-col-lado">
                       <div className="rq-monto">
                         <small>Propuesta económica</small>
@@ -1398,15 +1421,27 @@ const VistaCotizaciones = () => {
                           )}
                         </div>
                       )}
+                    </div>
+                  </div>
 
-                      {/* Conversación en vivo */}
+                  {/* Pie */}
+                  <div className="rq-footer">
+                    <button type="button" className="rq-btn-sec" onClick={() => setCotizacionSeleccionada(null)}>Cerrar</button>
+                    <button type="button" className="rq-btn-pdf" onClick={handleImprimirPDF}>
+                      <FileText size={15} /> Ver PDF
+                    </button>
+                  </div>
+
+                  {/* Conversación: panel lateral izquierdo que se muestra y oculta con su pestaña */}
+                  {!imagenModal && (
+                  <PanelChatLateral abierto={chatAbierto} onToggle={() => setChatAbierto(v => !v)} contador={c.chat_history?.length || 0}>
                       <div className="rq-chat">
                         <div className="rq-chat-head">
                           <MessageCircle size={16} />
                           <span>Conversación</span>
                         </div>
 
-                        <div className="rq-chat-mensajes">
+                        <div className="rq-chat-mensajes" ref={chatMensajesRef}>
                           {c.chat_history && c.chat_history.length > 0 ? (
                             c.chat_history.map((msg, index) => {
                               const esMio = msg.sender_id === usuarioId;
@@ -1451,16 +1486,8 @@ const VistaCotizaciones = () => {
                           </button>
                         </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Pie */}
-                  <div className="rq-footer">
-                    <button type="button" className="rq-btn-sec" onClick={() => setCotizacionSeleccionada(null)}>Cerrar</button>
-                    <button type="button" className="rq-btn-pdf" onClick={handleImprimirPDF}>
-                      <FileText size={15} /> Ver PDF
-                    </button>
-                  </div>
+                  </PanelChatLateral>
+                  )}
                 </div>
               );
             })()

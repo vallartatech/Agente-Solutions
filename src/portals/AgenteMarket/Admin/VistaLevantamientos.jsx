@@ -28,6 +28,8 @@ import UniversalSearch from "../../../components/Shared/UniversalSearch";
 import ModalCalendarioCliente from "../../AgenteMarket/Cliente/ModalCalendarioCliente";
 import NotificationBell from "../../../components/Shared/NotificationBell";
 import Header from "../../../components/Shared/Header";
+import SelectorVistas from "../../../components/Shared/SelectorVistas";
+import { usaSelectorRed } from "../../../utils/entorno";
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import "../../../styles/AgenteMarket/Admin/VistaLevantamientos.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
@@ -357,11 +359,15 @@ const VistaLevantamientos = () => {
         
         {/* Top Action Bar */}
         <div className="lev-action-bar">
-          <div className="lev-page-title-badge">
-            <ClipboardList size={18} className="lev-title-icon" />
-            <span>DIRECTORIO DE LEVANTAMIENTOS</span>
-            <span className="lev-count-pill">{servicios.length}</span>
-          </div>
+          {usaSelectorRed(user) ? (
+            <SelectorVistas grupo="red" activo="levantamientos" conteo={servicios.length} />
+          ) : (
+            <div className="lev-page-title-badge">
+              <ClipboardList size={18} className="lev-title-icon" />
+              <span>DIRECTORIO DE LEVANTAMIENTOS</span>
+              <span className="lev-count-pill">{servicios.length}</span>
+            </div>
+          )}
         </div>
 
         {/* ── BARRA UNIFICADA: BUSCADOR + BOTÓN ÚNICO (FILTROS Y SOLICITUD) ── */}
@@ -671,12 +677,12 @@ const VistaLevantamientos = () => {
       </main>
 
       {/* ── MODAL: SOLICITAR LEVANTAMIENTO ── */}
-      {mostrarModalSolicitar && (
+      {mostrarModalSolicitar && createPortal(
         <div className="lev-modal-overlay" onClick={() => setMostrarModalSolicitar(false)}>
           <div className="lev-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="lev-modal-header">
               <div className="lev-modal-title">
-                <PlusCircle size={22} color="#F26522" />
+                <span className="lev-modal-icon"><PlusCircle size={18} strokeWidth={2.4} /></span>
                 <span>SOLICITAR LEVANTAMIENTO TÉCNICO</span>
               </div>
               <button 
@@ -751,16 +757,17 @@ const VistaLevantamientos = () => {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── MODAL: AGENDAR VISITA TÉCNICA (ADMIN) ── */}
-      {mostrarAsignar && !isClient && (
+      {mostrarAsignar && !isClient && createPortal(
         <div className="lev-modal-overlay" onClick={() => setMostrarAsignar(false)}>
           <div className="lev-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="lev-modal-header">
               <div className="lev-modal-title">
-                <CalendarDays size={22} color="#F26522" />
+                <span className="lev-modal-icon"><CalendarDays size={18} strokeWidth={2.4} /></span>
                 <span>AGENDAR VISITA TÉCNICA</span>
               </div>
               <button 
@@ -822,16 +829,17 @@ const VistaLevantamientos = () => {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── MODAL: CONFIRMAR / REAGENDAR VISITA (CLIENTE) ── */}
-      {modalClientePaso > 0 && servicioSeleccionado && (
+      {modalClientePaso > 0 && servicioSeleccionado && createPortal(
         <div className="lev-modal-overlay" onClick={() => setModalClientePaso(0)}>
           <div className="lev-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="lev-modal-header">
               <div className="lev-modal-title">
-                <CalendarDays size={22} color="#F26522" />
+                <span className="lev-modal-icon"><CalendarDays size={18} strokeWidth={2.4} /></span>
                 <span>{modalClientePaso === 1 ? "DETALLES DE VISITA TÉCNICA" : "SOLICITAR REPROGRAMACIÓN"}</span>
               </div>
               <button 
@@ -924,16 +932,17 @@ const VistaLevantamientos = () => {
               </form>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── MODAL: DETALLES DE PROPIEDAD ── */}
-      {modalDetalleVisible && detallePropiedad && (
+      {modalDetalleVisible && detallePropiedad && createPortal(
         <div className="lev-modal-overlay" onClick={() => setModalDetalleVisible(false)}>
           <div className="lev-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="lev-modal-header">
               <div className="lev-modal-title">
-                <Building size={22} color="#F26522" />
+                <span className="lev-modal-icon"><Building size={18} strokeWidth={2.4} /></span>
                 <span>DETALLES DE LA PROPIEDAD</span>
               </div>
               <button 
@@ -999,7 +1008,8 @@ const VistaLevantamientos = () => {
               CERRAR
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

@@ -2211,14 +2211,9 @@
 /* Conversación */
 .rq-chat {
   flex: 1;
-  min-height: 280px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  border-radius: 18px;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.5) 100%);
-  border: 1.5px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06), inset 0 1px 0 #ffffff;
-  overflow: hidden;
 }
 
 .rq-chat-head {
@@ -2237,7 +2232,6 @@
 .rq-chat-mensajes {
   flex: 1;
   min-height: 0;
-  max-height: 300px;
   overflow-y: auto;
   padding: 12px 14px;
   display: flex;
@@ -2348,6 +2342,40 @@
 .rq-chat-enviar:hover:not(:disabled) { background: #ea580c; }
 .rq-chat-enviar:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* Chat sobre el vidrio oscuro del panel lateral */
+.chat-lateral .rq-chat-head {
+  padding: 16px;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.chat-lateral .rq-chat-head svg { color: #f26522; }
+.chat-lateral .rq-msg-autor { color: #94a3b8; }
+
+.chat-lateral .rq-msg:not(.es-mio) .rq-msg-burbuja {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f1f5f9;
+  box-shadow: none;
+}
+
+.chat-lateral .rq-chat-escribir { border-top-color: rgba(255, 255, 255, 0.1); }
+
+.chat-lateral .rq-chat-escribir input {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.chat-lateral .rq-chat-escribir input::placeholder { color: #94a3b8; }
+
+.chat-lateral .rq-chat-escribir input:focus {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: none;
+}
+
 /* ── Pie ── */
 .rq-footer {
   display: flex;
@@ -2404,8 +2432,10 @@
   .rq-header-text h2 { font-size: 1.1rem; }
   .rq-estado { display: none; }
 
+  /* En rejilla las columnas se comprimían y su contenido se encimaba */
   .rq-body {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
     padding: 14px 16px;
     scrollbar-width: none;
@@ -2413,7 +2443,7 @@
 
   .rq-body::-webkit-scrollbar { display: none; }
 
-  .rq-col { overflow: visible; }
+  .rq-col { flex-shrink: 0; min-height: auto; overflow: visible; }
   .rq-foto { height: 180px; }
   .rq-datos { grid-template-columns: 1fr; }
   .rq-monto-valor { font-size: 1.6rem; }

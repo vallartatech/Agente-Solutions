@@ -324,7 +324,7 @@
   to { transform: translateY(0); }
 }
 
-.rg-sheet-grabber { display: none; }
+.rg-sheet-grabber-area { display: none; }
 
 .rg-sheet-header,
 .rg-modal-header {
@@ -910,13 +910,36 @@ button.rg-upload-btn { font-family: inherit; }
     animation: rgSheetUp 0.32s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
+  /* El asa queda fija arriba mientras el contenido se desplaza */
+  .rg-sheet-grabber-area {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    display: flex;
+    justify-content: center;
+    height: 25px;
+    margin: 0 -16px;
+    padding: 12px 0 8px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.92);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .rg-sheet-grabber-area:active { cursor: grabbing; }
+
   .rg-sheet-grabber {
-    display: block;
     width: 48px;
     height: 5px;
-    margin: 10px auto 0;
     border-radius: 999px;
     background: rgba(15, 23, 42, 0.2);
+  }
+
+  .rg-sheet-header {
+    top: 25px;
+    background: rgba(255, 255, 255, 0.92);
   }
 
   .rg-sheet-header,

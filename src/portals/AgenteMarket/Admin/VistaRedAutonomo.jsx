@@ -5,9 +5,10 @@ import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
 import ModalServicioAutonomo from './ModalServicioAutonomo';
+import PanelChatLateral from '../../../components/Shared/PanelChatLateral';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
-import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, Check, ChevronDown, ChevronUp, Snowflake, Droplets, Zap, Paintbrush, KeyRound, Hammer, Leaf, Siren, Wrench } from 'lucide-react';
+import { Plus, MapPin, DollarSign, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, Check, ClipboardList, ChevronDown, ChevronUp, Snowflake, Droplets, Zap, Paintbrush, KeyRound, Hammer, Leaf, Siren, Wrench } from 'lucide-react';
 import { DARK_MAP_STYLES, getCategoryIcon } from '../Tecnico/MercadoTrabajos';
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
@@ -68,6 +69,7 @@ const VistaRedAutonomo = () => {
   const [selectedTechnicianProfile, setSelectedTechnicianProfile] = useState(null);
   const [showTechModal, setShowTechModal] = useState(false);
   const [activeChatQuote, setActiveChatQuote] = useState(null);
+  const [chatAbierto, setChatAbierto] = useState(false);
   const [activePhoto, setActivePhoto] = useState(null);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [networkJobs, setNetworkJobs] = useState([]);
@@ -516,10 +518,10 @@ const VistaRedAutonomo = () => {
   }, [showQuotesModal, activeChatQuote?.id]);
 
   useEffect(() => {
-    if (activeChatQuote) {
+    if (activeChatQuote && chatAbierto) {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [activeChatQuote?.chat_history]);
+  }, [activeChatQuote?.chat_history, chatAbierto]);
 
   const handleSendClientChat = async (e) => {
     if (e) e.preventDefault();
@@ -672,6 +674,7 @@ const VistaRedAutonomo = () => {
     setSelectedJobForQuotes(job);
     setActivePhoto(job.fotos?.[0] || job.foto || null);
     setActiveChatQuote(null);
+    setChatAbierto(false);
     setShowQuotesModal(true);
   };
 
@@ -679,6 +682,7 @@ const VistaRedAutonomo = () => {
     setShowQuotesModal(false);
     setSelectedJobForQuotes(null);
     setActiveChatQuote(null);
+    setChatAbierto(false);
   };
 
   const enRedJobs = networkJobs.filter(j => !j.is_accepted);
@@ -1117,9 +1121,9 @@ const VistaRedAutonomo = () => {
       {/* ─── MODAL DE DETALLE DE PUBLICACIÓN Y COTIZACIONES (DISEÑO PREMIUM UNIFICADO) ─── */}
       {showQuotesModal && selectedJobForQuotes && (
         <div className="mercado-modal-overlay" onClick={(e) => e.target === e.currentTarget && closeQuotesModal()}>
-          <div className="mercado-premium-modal" style={{ maxWidth: '1080px' }}>
+          <div className="mercado-premium-modal red-detalle-publicacion" style={{ maxWidth: '1080px' }}>
             <div className="mercado-premium-header">
-              <h2>📋 Detalle de Publicación y Cotizaciones</h2>
+              <h2><ClipboardList size={20} color="#f26522" /> Detalle de Publicación y Cotizaciones</h2>
               <span className="mercado-modal-close" onClick={closeQuotesModal}>×</span>
             </div>
 
@@ -1163,27 +1167,34 @@ const VistaRedAutonomo = () => {
                 <div className="mercado-premium-text">
                   <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '10px 0' }}>{selectedJobForQuotes.titulo}</h3>
                   <div className="mercado-premium-info-grid">
-                    <div className="mercado-info-item full-width" style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px 14px' }}>
-                      <MapPin size={18} color="#ea580c" style={{ marginTop: '2px', flexShrink: 0 }} />
+                    <div className="red-dato red-dato-ancho">
+                      <span className="red-dato-icono"><MapPin size={15} /></span>
                       <div>
-                        <strong style={{ color: '#ea580c' }}>Zona / Área de Cobertura</strong>
-                        <span style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>{selectedJobForQuotes.zona}</span>
-                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>
-                          📍 Dirección: {selectedJobForQuotes.calle}
-                        </div>
+                        <small>Zona / Área de cobertura</small>
+                        <strong>{selectedJobForQuotes.zona}</strong>
+                        {selectedJobForQuotes.calle && <span>{selectedJobForQuotes.calle}</span>}
                       </div>
                     </div>
-                    <div className="mercado-info-item">
-                      <User size={14} className="mercado-icon-blue" />
-                      <div><strong>Publicado por</strong><span>{selectedJobForQuotes.cliente}</span></div>
+                    <div className="red-dato">
+                      <span className="red-dato-icono"><User size={15} /></span>
+                      <div>
+                        <small>Publicado por</small>
+                        <strong>{selectedJobForQuotes.cliente}</strong>
+                      </div>
                     </div>
-                    <div className="mercado-info-item">
-                      <Clock size={14} className="mercado-icon-blue" />
-                      <div><strong>Fecha</strong><span>{selectedJobForQuotes.fecha}</span></div>
+                    <div className="red-dato">
+                      <span className="red-dato-icono"><Clock size={15} /></span>
+                      <div>
+                        <small>Fecha</small>
+                        <strong>{selectedJobForQuotes.fecha}</strong>
+                      </div>
                     </div>
-                    <div className="mercado-info-item full-width">
-                      <FileText size={14} className="mercado-icon-blue" />
-                      <div><strong>Problema</strong><span>{selectedJobForQuotes.descripcion || 'Sin descripción adicional'}</span></div>
+                    <div className="red-dato red-dato-ancho">
+                      <span className="red-dato-icono"><FileText size={15} /></span>
+                      <div>
+                        <small>Problema</small>
+                        <strong className="red-dato-normal">{selectedJobForQuotes.descripcion || 'Sin descripción adicional'}</strong>
+                      </div>
                     </div>
 
                     {selectedJobForQuotes.scheduled_at && (() => {
@@ -1269,12 +1280,11 @@ const VistaRedAutonomo = () => {
               {/* Right panel: Quotes list OR Embedded Live Chat */}
               <div className="mercado-premium-form" style={{ background: '#ffffff', overflowY: 'auto', padding: 0, display: 'flex', flexDirection: 'column' }}>
                 
-                {/* ─── VISTA 1: LISTA DE COTIZACIONES DE TÉCNICOS ─── */}
-                {!activeChatQuote && (
-                  <div style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
+                {/* ─── LISTA DE COTIZACIONES DE TÉCNICOS ─── */}
+                  <div className="red-lista-cotizaciones" style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
                     <div style={{ marginBottom: '16px' }}>
                       <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        📋 Cotizaciones de Técnicos
+                        <ClipboardList size={17} color="#f26522" /> Cotizaciones de Técnicos
                         <span style={{ fontSize: '12px', background: '#ff6600', color: '#ffffff', padding: '2px 8px', borderRadius: '12px' }}>
                           {selectedJobForQuotes.cotizaciones_list?.length || 0}
                         </span>
@@ -1283,84 +1293,6 @@ const VistaRedAutonomo = () => {
                         Revisa las propuestas de los técnicos. Puedes chatear con ellos o coordinar los detalles del servicio.
                       </p>
                     </div>
-
-                    {/* Banner de Horario Propuesto si ya hay fecha fijada */}
-                    {selectedJobForQuotes.scheduled_at && (() => {
-                      const sched = getJobScheduleStatus(selectedJobForQuotes);
-                      if (sched.isRescheduleRequested) {
-                        return (
-                          <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#fff7ed', borderRadius: '12px', border: '1.5px solid #fed7aa', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '18px' }}>⚠️</span>
-                            <div>
-                              <strong style={{ fontSize: '12px', color: '#c2410c', display: 'block' }}>Solicitud de Re-coordinación Enviada:</strong>
-                              <span style={{ fontSize: '12.5px', color: '#7c2d12' }}>
-                                Esperando que el técnico proponga un nuevo horario.
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      }
-                      if (sched.isScheduleConfirmed) {
-                        return (
-                          <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#f0fdf4', borderRadius: '12px', border: '1.5px solid #86efac', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '18px' }}>✅</span>
-                            <div>
-                              <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Confirmado:</strong>
-                              <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
-                                {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      }
-                      return (
-                        <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#eff6ff', borderRadius: '12px', border: '1.5px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '18px' }}>📅</span>
-                            <div>
-                              <strong style={{ fontSize: '12px', color: '#1e40af', display: 'block' }}>Horario de Visita Propuesto:</strong>
-                              <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
-                                {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
-                              </span>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleResponderVisita('confirm')}
-                              style={{
-                                padding: '6px 12px',
-                                background: '#16a34a',
-                                color: '#ffffff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                fontWeight: '800',
-                                fontSize: '11.5px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              ✓ Confirmar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleResponderVisita('reschedule')}
-                              style={{
-                                padding: '6px 10px',
-                                background: '#ffffff',
-                                color: '#ea580c',
-                                border: '1px solid #fed7aa',
-                                borderRadius: '6px',
-                                fontWeight: '700',
-                                fontSize: '11.5px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Re-coordinar
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })()}
 
                     {(!selectedJobForQuotes.cotizaciones_list || selectedJobForQuotes.cotizaciones_list.length === 0) ? (
                       <div style={{ textAlign: 'center', color: '#64748b', padding: '40px 20px', background: '#fffaf5', borderRadius: '16px', border: '2px dashed #fed7aa', margin: '20px 0' }}>
@@ -1419,82 +1351,49 @@ const VistaRedAutonomo = () => {
                               </div>
 
                               {quote.message && (
-                                <div className="red-quote-message">
-                                  "{quote.message}"
+                                <div className="red-quote-bloque">
+                                  <small>Propuesta del técnico</small>
+                                  <p>{quote.message}</p>
                                 </div>
                               )}
 
-                              {/* ALERTA DE MENSAJE DEL TÉCNICO EN LA TARJETA */}
-                              {quote.hasNewTechMessage && (
-                                <div className="red-quote-msg-alert">
-                                  <span className="red-msg-dot-pulse" />
-                                  <div>
-                                    <strong>Mensaje de {quote.technicianName}:</strong>
-                                    <div>"{quote.displayAlertMsg}"</div>
-                                  </div>
+                              {/* Último mensaje del técnico, si no es la misma propuesta */}
+                              {quote.hasNewTechMessage && quote.chat_history?.length > 0 && quote.displayAlertMsg !== quote.message && (
+                                <div className="red-quote-bloque red-quote-bloque-mensaje">
+                                  <small><span className="red-msg-dot-pulse" /> Último mensaje</small>
+                                  <p>{quote.displayAlertMsg}</p>
                                 </div>
                               )}
 
-                              <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '12px' }}>
-                                📅 Última interacción: {new Date(quote.created_at).toLocaleString('es-MX')}
-                              </div>
+                              {/* Estado y acciones de esta oferta */}
+                              <div className="red-quote-pie">
+                                <span className="red-quote-fecha">
+                                  <Clock size={12} /> {new Date(quote.created_at).toLocaleString('es-MX')}
+                                </span>
 
-                              <div className="red-quote-actions">
-                                {isAcceptedQuote ? (
-                                  <div style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    padding: '6px 12px',
-                                    background: '#dcfce7',
-                                    border: '1.5px solid #86efac',
-                                    borderRadius: '8px',
-                                    color: '#15803d',
-                                    fontWeight: '800',
-                                    fontSize: '12px'
-                                  }}>
-                                    <CheckCircle size={14} /> Oferta Aceptada
-                                  </div>
-                                ) : quote.status === 'rejected' ? (
-                                  <div style={{ color: '#dc2626', fontWeight: '800', fontSize: '13px', padding: '6px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    ❌ Oferta Rechazada
-                                  </div>
-                                ) : !selectedJobForQuotes.is_accepted ? (
-                                  <button 
-                                    className="red-btn-reject" 
-                                    onClick={() => handleRejectQuote(quote.id)}
-                                  >
-                                    Rechazar
-                                  </button>
-                                ) : null}
+                                {isAcceptedQuote && (
+                                  <div className="red-quote-estado aceptada"><CheckCircle size={14} /> Oferta aceptada</div>
+                                )}
+                                {!isAcceptedQuote && quote.status === 'rejected' && (
+                                  <div className="red-quote-estado rechazada"><X size={14} /> Oferta rechazada</div>
+                                )}
 
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                  <button 
-                                    type="button"
-                                    className="red-btn-contact" 
-                                    style={{ 
-                                      display: 'flex', 
-                                      alignItems: 'center', 
-                                      gap: '6px',
-                                      background: quote.hasNewTechMessage ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : (isAcceptedQuote ? 'linear-gradient(135deg, #16a34a, #15803d)' : 'linear-gradient(135deg, #0284c7, #0369a1)'),
-                                      color: '#ffffff',
-                                      border: 'none',
-                                      fontWeight: '800',
-                                      boxShadow: isAcceptedQuote ? '0 3px 8px rgba(22, 163, 74, 0.25)' : '0 3px 8px rgba(2, 132, 199, 0.25)'
-                                    }}
-                                    onClick={() => setActiveChatQuote(quote)}
-                                  >
-                                    <MessageCircle size={15} /> 
-                                    <span>Chat ({quote.chat_history?.length || 0})</span>
-                                  </button>
-
+                                <div className="red-quote-acciones">
                                   {!isAcceptedQuote && !selectedJobForQuotes.is_accepted && quote.status !== 'rejected' && quote.price > 0 && (
-                                    <button 
-                                      type="button"
-                                      className="red-btn-accept" 
-                                      onClick={() => handleAcceptQuote(quote)}
-                                    >
-                                      ✓ Aceptar Oferta
+                                    <button type="button" className="red-btn-accept" onClick={() => handleAcceptQuote(quote)}>
+                                      <Check size={15} /> Aceptar oferta
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className="red-btn-contact"
+                                    onClick={() => { setActiveChatQuote(quote); setChatAbierto(true); }}
+                                  >
+                                    <MessageCircle size={15} /> Chat ({quote.chat_history?.length || 0})
+                                  </button>
+                                  {!isAcceptedQuote && quote.status !== 'rejected' && !selectedJobForQuotes.is_accepted && (
+                                    <button type="button" className="red-btn-reject" onClick={() => handleRejectQuote(quote.id)}>
+                                      Rechazar
                                     </button>
                                   )}
                                 </div>
@@ -1505,193 +1404,6 @@ const VistaRedAutonomo = () => {
                       </div>
                     )}
                   </div>
-                )}
-
-                {/* ─── VISTA 2: CHAT DIRECTO EMBEBIDO CON EL TÉCNICO SELECCIONADO ─── */}
-                {activeChatQuote && (
-                  <div className="red-embedded-chat-wrap">
-                    {/* Header del Chat */}
-                    <div className="red-chat-top-header">
-                      <button className="back-btn" onClick={() => setActiveChatQuote(null)}>
-                        <ChevronLeft size={16} /> Ver todas las ofertas
-                      </button>
-                      <div style={{ textAlign: 'right' }}>
-                        <strong style={{ fontSize: '13px', color: '#0f172a', display: 'block' }}>
-                          {activeChatQuote.technicianName}
-                        </strong>
-                        <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '800' }}>
-                          {activeChatQuote.price > 0 ? `Oferta: $${parseFloat(activeChatQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Activo'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Alerta si el técnico envió un mensaje */}
-                    {activeChatQuote.hasNewTechMessage && (
-                      <div className="mercado-chat-alert-banner">
-                        <div className="mercado-chat-alert-icon">🔔</div>
-                        <div className="mercado-chat-alert-text">
-                          <strong>El Técnico te envió un mensaje:</strong>
-                          <span>"{activeChatQuote.displayAlertMsg || activeChatQuote.lastMsg?.message || activeChatQuote.message}"</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Banner de Horario Propuesto con Botones de Confirmación */}
-                    {selectedJobForQuotes.scheduled_at && (() => {
-                      const sched = getJobScheduleStatus(selectedJobForQuotes, activeChatQuote);
-                      if (sched.isRescheduleRequested) {
-                        return (
-                          <div style={{ padding: '10px 16px', background: '#fff7ed', borderBottom: '1px solid #fed7aa', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '15px' }}>⚠️</span>
-                            <div>
-                              <strong style={{ fontSize: '12px', color: '#c2410c', display: 'block' }}>Solicitud de Re-coordinación Enviada</strong>
-                              <span style={{ fontSize: '12px', color: '#7c2d12' }}>Esperando que el técnico proponga un nuevo horario.</span>
-                            </div>
-                          </div>
-                        );
-                      }
-                      if (sched.isScheduleConfirmed) {
-                        return (
-                          <div style={{ padding: '10px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '15px' }}>✅</span>
-                              <div>
-                                <strong style={{ fontSize: '12px', color: '#166534', display: 'block' }}>Horario de Visita Confirmado</strong>
-                                <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>{new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      }
-                      return (
-                        <div style={{ padding: '10px 16px', background: '#eff6ff', borderBottom: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '15px' }}>📅</span>
-                            <div>
-                              <strong style={{ fontSize: '12px', color: '#1e40af', display: 'block' }}>Horario de Visita Propuesto:</strong>
-                              <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>
-                                {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
-                              </span>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleResponderVisita('confirm')}
-                              style={{
-                                padding: '6px 12px',
-                                background: '#16a34a',
-                                color: '#ffffff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                fontWeight: '800',
-                                fontSize: '11.5px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              ✓ Confirmar Horario
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleResponderVisita('reschedule')}
-                              style={{
-                                padding: '6px 10px',
-                                background: '#ffffff',
-                                color: '#ea580c',
-                                border: '1px solid #fed7aa',
-                                borderRadius: '6px',
-                                fontWeight: '700',
-                                fontSize: '11.5px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Re-coordinar
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Stream de Mensajes */}
-                    <div className="mercado-chat-messages-container">
-                      {(!activeChatQuote.chat_history || activeChatQuote.chat_history.length === 0) ? (
-                        <div className="mercado-chat-empty-state">
-                          <div className="icon-wrap">
-                            <MessageCircle size={26} />
-                          </div>
-                          <p>Inicia la conversación</p>
-                          <span>Escribe a {activeChatQuote.technicianName} para acordar precio, horarios o dudas sobre el servicio.</span>
-                        </div>
-                      ) : (
-                        activeChatQuote.chat_history.map((msg, idx) => {
-                          const isClient = Number(msg.sender_id) === Number(user?.id) || msg.sender_role === 'Cliente' || msg.sender_role === 'Usuario';
-                          return (
-                            <div
-                              key={idx}
-                              className={`mercado-chat-bubble-row ${isClient ? 'sent' : 'received'}`}
-                            >
-                              <span className="mercado-chat-bubble-sender">
-                                {isClient ? 'Tú (Cliente)' : (msg.sender_name || 'Técnico')}
-                              </span>
-                              <div className="mercado-chat-bubble">
-                                {msg.message}
-                              </div>
-                              <span className="mercado-chat-bubble-time">
-                                {formatTime(msg.created_at)}
-                              </span>
-                            </div>
-                          );
-                        })
-                      )}
-                      <div ref={chatEndRef} />
-                    </div>
-
-                    {/* Quick Action Banner inside Chat */}
-                    {(activeChatQuote.status === 'accepted' || activeChatQuote.is_assigned || selectedJobForQuotes.is_accepted) ? (
-                      <div style={{ padding: '8px 16px', background: '#f0fdf4', borderTop: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '12px', color: '#166534', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <CheckCircle size={14} color="#16a34a" /> Cotización Aceptada: ${parseFloat(activeChatQuote.price || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                        </span>
-                        <span style={{ fontSize: '11px', color: '#15803d', fontWeight: '800', background: '#dcfce7', padding: '3px 8px', borderRadius: '6px' }}>
-                          Técnico Asignado
-                        </span>
-                      </div>
-                    ) : (activeChatQuote.price > 0 && activeChatQuote.status !== 'rejected' && (
-                      <div style={{ padding: '8px 16px', background: '#f0fdf4', borderTop: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '12px', color: '#166534', fontWeight: '700' }}>
-                          Propuesta de {activeChatQuote.technicianName}: ${parseFloat(activeChatQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                        </span>
-                        <button
-                          type="button"
-                          className="red-btn-accept"
-                          style={{ padding: '6px 14px', fontSize: '12px' }}
-                          onClick={() => handleAcceptQuote(activeChatQuote)}
-                        >
-                          ✓ Aceptar Esta Oferta
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* Input Bar integrado */}
-                    <form onSubmit={handleSendClientChat} className="mercado-chat-input-bar">
-                      <input
-                        type="text"
-                        placeholder={`Escribe un mensaje a ${activeChatQuote.technicianName}...`}
-                        value={clientChatInput}
-                        onChange={(e) => setClientChatInput(e.target.value)}
-                        disabled={sendingClientChat}
-                      />
-                      <button
-                        type="submit"
-                        className="mercado-chat-send-btn"
-                        disabled={sendingClientChat || !clientChatInput.trim()}
-                      >
-                        <Send size={15} />
-                        <span>{sendingClientChat ? 'Enviando...' : 'Enviar'}</span>
-                      </button>
-                    </form>
-                  </div>
-                )}
 
               </div>
             </div>
@@ -1734,6 +1446,141 @@ const VistaRedAutonomo = () => {
 
               <button className="mercado-btn-cancel" onClick={closeQuotesModal}>Cerrar</button>
             </div>
+
+            {/* Conversaciones: panel lateral izquierdo que se muestra y oculta con su pestaña */}
+            {!showTechModal && !isPhotoZoomed && (
+            <PanelChatLateral
+              abierto={chatAbierto}
+              onToggle={() => setChatAbierto(v => !v)}
+              contador={(selectedJobForQuotes.cotizaciones_list || []).filter(q => q.hasNewTechMessage).length}
+            >
+              {activeChatQuote ? (
+                  <div className="red-embedded-chat-wrap">
+                    {/* Header del Chat */}
+                    <div className="red-chat-top-header">
+                      <button className="back-btn" onClick={() => setActiveChatQuote(null)}>
+                        <ChevronLeft size={16} /> Conversaciones
+                      </button>
+                      <div style={{ textAlign: 'right' }}>
+                        <strong style={{ fontSize: '13px', color: '#0f172a', display: 'block' }}>
+                          {activeChatQuote.technicianName}
+                        </strong>
+                        <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '800' }}>
+                          {activeChatQuote.price > 0 ? `Oferta: $${parseFloat(activeChatQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Activo'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Alerta si el técnico envió un mensaje */}
+                    {activeChatQuote.hasNewTechMessage && (
+                      <div className="mercado-chat-alert-banner">
+                        <div className="mercado-chat-alert-icon">🔔</div>
+                        <div className="mercado-chat-alert-text">
+                          <strong>El Técnico te envió un mensaje:</strong>
+                          <span>"{activeChatQuote.displayAlertMsg || activeChatQuote.lastMsg?.message || activeChatQuote.message}"</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Stream de Mensajes */}
+                    <div className="mercado-chat-messages-container">
+                      {(!activeChatQuote.chat_history || activeChatQuote.chat_history.length === 0) ? (
+                        <div className="mercado-chat-empty-state">
+                          <div className="icon-wrap">
+                            <MessageCircle size={26} />
+                          </div>
+                          <p>Inicia la conversación</p>
+                          <span>Escribe a {activeChatQuote.technicianName} para acordar precio, horarios o dudas sobre el servicio.</span>
+                        </div>
+                      ) : (
+                        activeChatQuote.chat_history.map((msg, idx) => {
+                          const isClient = Number(msg.sender_id) === Number(user?.id) || msg.sender_role === 'Cliente' || msg.sender_role === 'Usuario';
+                          return (
+                            <div
+                              key={idx}
+                              className={`mercado-chat-bubble-row ${isClient ? 'sent' : 'received'}`}
+                            >
+                              <span className="mercado-chat-bubble-sender">
+                                {isClient ? 'Tú (Cliente)' : (msg.sender_name || 'Técnico')}
+                              </span>
+                              <div className="mercado-chat-bubble">
+                                {msg.message}
+                              </div>
+                              <span className="mercado-chat-bubble-time">
+                                {formatTime(msg.created_at)}
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
+                      <div ref={chatEndRef} />
+                    </div>
+
+                    {/* Quick Action Banner inside Chat */}
+                    {(activeChatQuote.status === 'accepted' || activeChatQuote.is_assigned || selectedJobForQuotes.is_accepted) ? (
+                      <div className="red-chat-oferta">
+                        <span className="red-chat-oferta-texto">
+                          <CheckCircle size={14} /> Cotización aceptada: ${parseFloat(activeChatQuote.price || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="red-chat-oferta-chip">Técnico asignado</span>
+                      </div>
+                    ) : (activeChatQuote.price > 0 && activeChatQuote.status !== 'rejected' && (
+                      <div className="red-chat-oferta">
+                        <span className="red-chat-oferta-texto">
+                          Propuesta de {activeChatQuote.technicianName}: ${parseFloat(activeChatQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </span>
+                        <button type="button" className="red-chat-oferta-aceptar" onClick={() => handleAcceptQuote(activeChatQuote)}>
+                          <Check size={14} /> Aceptar oferta
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Input Bar integrado */}
+                    <form onSubmit={handleSendClientChat} className="mercado-chat-input-bar">
+                      <input
+                        type="text"
+                        placeholder={`Escribe un mensaje a ${activeChatQuote.technicianName}...`}
+                        value={clientChatInput}
+                        onChange={(e) => setClientChatInput(e.target.value)}
+                        disabled={sendingClientChat}
+                      />
+                      <button
+                        type="submit"
+                        className="mercado-chat-send-btn"
+                        disabled={sendingClientChat || !clientChatInput.trim()}
+                      >
+                        <Send size={15} />
+                        <span>{sendingClientChat ? 'Enviando...' : 'Enviar'}</span>
+                      </button>
+                    </form>
+                  </div>
+              ) : (
+                <>
+                  <div className="red-conv-head"><MessageCircle size={16} /> Conversaciones</div>
+                  <div className="red-conv-lista">
+                    {(selectedJobForQuotes.cotizaciones_list || []).length === 0 ? (
+                      <p className="red-conv-vacio">Aún no hay técnicos con quienes conversar en esta publicación.</p>
+                    ) : (
+                      selectedJobForQuotes.cotizaciones_list.map((quote) => {
+                        const ultimo = quote.chat_history?.[quote.chat_history.length - 1];
+                        return (
+                          <button key={quote.id} type="button" className="red-conv-item" onClick={() => setActiveChatQuote(quote)}>
+                            <span className="red-conv-avatar">{quote.technician?.first_name?.charAt(0) || 'T'}</span>
+                            <span className="red-conv-texto">
+                              <strong>{quote.technicianName}</strong>
+                              <small>{ultimo?.message || 'Sin mensajes todavía'}</small>
+                            </span>
+                            {quote.hasNewTechMessage && <span className="red-msg-dot-pulse" />}
+                            <ChevronRight size={16} className="red-conv-flecha" />
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+            </PanelChatLateral>
+            )}
           </div>
         </div>
       )}

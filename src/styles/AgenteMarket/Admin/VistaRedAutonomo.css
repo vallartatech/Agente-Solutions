@@ -281,6 +281,505 @@
 }
 
 /* ========================================
+   DETALLE DE PUBLICACIÓN: datos y chat lateral
+   ======================================== */
+.red-detalle-publicacion .mercado-premium-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.red-detalle-publicacion .mercado-premium-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.red-dato {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1.5px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  box-sizing: border-box;
+}
+
+.red-dato-ancho { grid-column: 1 / -1; }
+
+.red-dato-icono {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f26522;
+  color: #ffffff;
+}
+
+.red-dato > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.red-dato small {
+  color: #94a3b8;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.red-dato strong {
+  color: #0f172a;
+  font-size: 0.86rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.red-dato span:not(.red-dato-icono) {
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.red-dato-normal {
+  font-weight: 600 !important;
+  white-space: pre-wrap;
+}
+
+.chat-lateral-vidrio:has(.red-conv-lista) {
+  /* La lista no es tarjeta: los contactos van directo sobre los triángulos, como en el chat interno */
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+.chat-lateral-vidrio:has(.red-conv-lista)::before { display: none; }
+
+.red-conv-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px 12px;
+  color: #0f172a;
+  font-size: 1.3rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.red-conv-head svg { color: #f26522; }
+
+.red-conv-lista {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 2px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: none;
+}
+
+.red-conv-lista::-webkit-scrollbar { display: none; }
+
+.red-conv-vacio {
+  margin: auto 0;
+  padding: 0 16px;
+  text-align: center;
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Contacto: mismo vidrio líquido de las conversaciones del chat interno */
+.red-conv-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.38);
+  border-radius: 20px;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.20) 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.16) 100%);
+  backdrop-filter: blur(24px) saturate(190%) contrast(105%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%) contrast(105%);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.75),
+    inset 0 -1px 1.5px rgba(0, 0, 0, 0.12);
+  color: #ffffff;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.red-conv-item:hover {
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.26) 0%,
+      rgba(255, 255, 255, 0.12) 50%,
+      rgba(255, 255, 255, 0.22) 100%);
+  border-color: rgba(255, 255, 255, 0.65);
+}
+
+.red-conv-item:active { transform: scale(0.98); }
+
+.red-conv-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f26522;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.red-conv-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.red-conv-texto strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.red-conv-texto small {
+  overflow: hidden;
+  color: #f1f5f9;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+
+.red-conv-flecha { flex-shrink: 0; color: #ffffff; }
+
+/* Chat dentro del panel lateral: vidrio oscuro, de borde a borde */
+.chat-lateral .red-embedded-chat-wrap {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.chat-lateral .red-chat-top-header {
+  background: rgba(15, 23, 42, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-lateral .red-chat-top-header strong { color: #ffffff !important; }
+.chat-lateral .red-chat-top-header button.back-btn:hover { background: rgba(255, 255, 255, 0.1); }
+
+.chat-lateral .mercado-chat-messages-container {
+  min-height: 0;
+  background: transparent !important;
+}
+
+.chat-lateral .mercado-chat-bubble-row.received .mercado-chat-bubble {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #f1f5f9 !important;
+}
+
+.chat-lateral .mercado-chat-bubble-row.sent .mercado-chat-bubble {
+  background: #f26522 !important;
+  box-shadow: none !important;
+}
+
+.chat-lateral .mercado-chat-bubble-sender,
+.chat-lateral .mercado-chat-bubble-time,
+.chat-lateral .mercado-chat-empty-state span {
+  color: #94a3b8 !important;
+}
+
+.chat-lateral .mercado-chat-empty-state p { color: #ffffff !important; }
+
+.red-chat-oferta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(15, 23, 42, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.red-chat-oferta-texto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.red-chat-oferta-texto svg { flex-shrink: 0; color: #4ade80; }
+
+.red-chat-oferta-chip {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(74, 222, 128, 0.16);
+  color: #4ade80;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.red-chat-oferta-aceptar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 12px;
+  background: #16a34a;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.red-chat-oferta-aceptar:hover { background: #15803d; }
+
+.chat-lateral .mercado-chat-input-bar {
+  background: rgba(15, 23, 42, 0.6) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.chat-lateral .mercado-chat-input-bar input {
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+  font-size: 16px; /* evita el zoom de iOS */
+}
+
+/* Ofertas: una tarjeta independiente por técnico sobre fondo gris */
+.red-detalle-publicacion .mercado-premium-form { background: #f1f5f9 !important; }
+
+.red-detalle-publicacion .red-quote-card {
+  padding: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+  overflow: hidden;
+}
+
+.red-detalle-publicacion .red-quote-card:hover {
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+}
+
+.red-detalle-publicacion .red-quote-header {
+  margin: 0;
+  padding: 14px 16px;
+  gap: 10px;
+}
+
+.red-detalle-publicacion .red-quote-tech { min-width: 0; }
+.red-detalle-publicacion .red-quote-price { flex-shrink: 0; }
+
+.red-quote-bloque {
+  margin: 0 16px 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.red-quote-bloque small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+  color: #64748b;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.red-quote-bloque p {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.red-quote-bloque-mensaje { background: #eff6ff; }
+.red-quote-bloque-mensaje small { color: #1d4ed8; }
+
+.red-quote-pie {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 12px 16px 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.red-quote-fecha {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.red-quote-estado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.red-quote-estado.aceptada { background: #dcfce7; color: #15803d; }
+.red-quote-estado.rechazada { background: #fef2f2; color: #dc2626; }
+
+.red-quote-acciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.red-quote-acciones button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  box-shadow: none;
+  font-size: 0.82rem;
+  font-weight: 800;
+  transform: none;
+}
+
+/* Aceptar es la acción principal: ocupa toda la fila */
+.red-quote-acciones .red-btn-accept {
+  grid-column: 1 / -1;
+  background: #16a34a;
+}
+
+.red-quote-acciones .red-btn-accept:hover { background: #15803d; box-shadow: none; transform: none; }
+
+.red-quote-acciones .red-btn-contact {
+  background: #f1f5f9;
+  border: 1.5px solid #e2e8f0;
+  color: #0f172a;
+}
+
+.red-quote-acciones .red-btn-contact:only-child { grid-column: 1 / -1; }
+.red-quote-acciones .red-btn-contact:hover { background: #e2e8f0; border-color: #e2e8f0; }
+.red-quote-acciones .red-btn-contact svg { color: #f26522; }
+
+.red-quote-acciones .red-btn-reject {
+  background: #ffffff;
+  border: 1.5px solid #fecaca;
+}
+
+/* El botón Cerrar del tema oscuro quedaba blanco sobre blanco */
+.red-detalle-publicacion .mercado-btn-cancel {
+  background: #f1f5f9 !important;
+  border: 1.5px solid #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+/* Celular: un solo scroll; en dos zonas con scroll propio los datos quedaban ocultos */
+@media (max-width: 900px) {
+  .red-detalle-publicacion {
+    height: auto !important;
+    max-height: 92dvh !important;
+  }
+
+  .red-detalle-publicacion .mercado-premium-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none !important;
+    flex-direction: column !important;
+    overflow-y: auto;
+  }
+
+  .red-detalle-publicacion .mercado-premium-details,
+  .red-detalle-publicacion .mercado-premium-form,
+  .red-detalle-publicacion .red-lista-cotizaciones {
+    flex: none !important;
+    overflow: visible !important;
+  }
+
+  .red-detalle-publicacion .red-lista-cotizaciones { padding: 14px !important; }
+
+  /* Eliminar ocupa el espacio libre y Cerrar solo lo que necesita */
+  .red-detalle-publicacion .mercado-premium-footer {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .red-detalle-publicacion .mercado-btn-delete-publication {
+    width: 100% !important;
+    min-width: 0;
+    justify-content: center;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+    font-size: 0.76rem !important;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .red-detalle-publicacion .mercado-btn-delete-publication svg { flex-shrink: 0; }
+
+  .red-detalle-publicacion .mercado-btn-cancel {
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 10px 18px !important;
+    border-radius: 12px !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+/* ========================================
    COUNTDOWN TIMER - VISITA PROGRAMADA
    ======================================== */
 .countdown-visita-card {

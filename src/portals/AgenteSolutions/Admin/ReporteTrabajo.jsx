@@ -14,6 +14,7 @@ import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 import { useAuth } from '../../../context/AuthContext';
 import { esVideoUrl, miniaturaVideo } from '../../../utils/evidencia';
 import { esPorElemento } from '../Shared/etapasEvidencia';
+import CasaLoader from "../../../components/Shared/CasaLoader";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -698,7 +699,7 @@ const ReporteTrabajo = () => {
   const isClient = Number(user?.role_id) === 3;
   const esAdmin = [0, 1].includes(Number(user?.role_id));
 
-  if (loading) return <div className="loading-report">Cargando editor de reporte...</div>;
+  if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', background: '#0b1329' }}><CasaLoader texto="Cargando reporte..." fondoOscuro /></div>;
 
   const estadoVersion = sinGuardar
     ? 'Cambios sin guardar'

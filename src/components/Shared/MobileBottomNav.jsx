@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { usaSelectorRed } from '../../utils/entorno';
 import { useAuth } from '../../context/AuthContext';
 import {
   Home,
@@ -26,6 +27,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const unificarVistas = usaSelectorRed(user);
 
   const currentPath = (location.pathname || '').toLowerCase();
   const currentView = location.state?.view;
@@ -416,23 +418,25 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
 
       <button 
         type="button" 
-        className={`vcp-mobile-nav-item ${isReportesActive ? 'active' : ''}`} 
-        onClick={() => navigate('/reportes-globales')} 
-        title="Reportes"
-        aria-label="Reportes"
+        className={`vcp-mobile-nav-item ${isReportesActive || (unificarVistas && (isCotizacionesActive || isLevantamientosActive)) ? 'active' : ''}`}
+        onClick={() => navigate('/reportes-globales')}
+        title={unificarVistas ? 'Reportes, cotización y levantamiento' : 'Reportes'}
+        aria-label={unificarVistas ? 'Reportes, cotización y levantamiento' : 'Reportes'}
       >
         <FileText size={22} className="vcp-mobile-nav-icon" />
       </button>
 
-      <button 
-        type="button" 
-        className={`vcp-mobile-nav-item ${isCotizacionesActive ? 'active' : ''}`} 
-        onClick={() => navigate('/vista-cotizaciones')} 
-        title="Cotizaciones"
-        aria-label="Cotizaciones"
-      >
-        <Receipt size={22} className="vcp-mobile-nav-icon" />
-      </button>
+      {!unificarVistas && (
+        <button
+          type="button"
+          className={`vcp-mobile-nav-item ${isCotizacionesActive ? 'active' : ''}`}
+          onClick={() => navigate('/vista-cotizaciones')}
+          title="Cotizaciones"
+          aria-label="Cotizaciones"
+        >
+          <Receipt size={22} className="vcp-mobile-nav-icon" />
+        </button>
+      )}
 
       <button 
         type="button" 

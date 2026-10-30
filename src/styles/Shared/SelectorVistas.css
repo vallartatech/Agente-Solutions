@@ -61,4 +61,30 @@
 @media (max-width: 600px) {
   .src-selector { display: flex; width: 100%; }
   .src-tab { flex: 1; justify-content: center; padding: 8px 10px; font-size: 0.74rem; }
+
+  /* Tres pestañas no caben en una fila: ícono y contador arriba, nombre abajo */
+  .src-selector.src-red { border-radius: 22px; }
+
+  .src-red .src-tab {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    min-width: 0;
+    gap: 3px 5px;
+    padding: 7px 4px;
+    border-radius: 17px;
+    font-size: 0.62rem;
+    letter-spacing: 0;
+  }
+
+  .src-red .src-tab > span:not(.src-count) {
+    order: 2;
+    flex-basis: 100%;
+    text-align: center;
+  }
+
+  .src-red .src-count {
+    min-width: 18px;
+    padding: 0 5px;
+    font-size: 0.66rem;
+  }
 }

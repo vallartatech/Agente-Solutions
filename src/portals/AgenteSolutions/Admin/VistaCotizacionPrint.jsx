@@ -3,18 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   ArrowLeft, Printer, Save, FileText,
-  Lock, AlertTriangle
+  AlertTriangle
 } from 'lucide-react';
 import "../../../styles/AgenteSolutions/Admin/VistaCotizacionPrint.css";
 import logo from "../../../assets/Logo3.png"; 
 import mpLogo from "../../../assets/Mercado-Pago.png";
 import html2pdf from 'html2pdf.js';
+import CasaLoader from "../../../components/Shared/CasaLoader";
 
 const IVA_RATE = 0.16;
+
+// Ancho de la hoja carta (21.59cm a 96dpi)
+const ANCHO_HOJA_PX = 816;
 
 const VistaCotizacionPrint = () => {
   const navigate = useNavigate();
   const textareaRef = useRef(null);
+  const hojaContenedorRef = useRef(null);
+  const [hojaEscala, setHojaEscala] = useState({ escala: 1, alto: null });
   const [cotizacion, setCotizacion] = useState(null);
   const [elementosTabla, setElementosTabla] = useState([]);
   const [guardando, setGuardando] = useState(false);
@@ -138,6 +144,35 @@ const VistaCotizacionPrint = () => {
     return texto;
   };
 
+  const hayCotizacion = Boolean(cotizacion);
+
+  // La hoja mide siempre lo mismo (carta) y se escala al ancho disponible, igual que un PDF
+  useEffect(() => {
+    const contenedor = hojaContenedorRef.current;
+    const hoja = document.getElementById('cotizacion-pdf');
+    if (!contenedor || !hoja) return;
+
+    const ajustar = () => {
+      const escala = Math.min(1, contenedor.clientWidth / ANCHO_HOJA_PX);
+      setHojaEscala({ escala, alto: hoja.offsetHeight * escala });
+    };
+    ajustar();
+
+    const observador = new ResizeObserver(ajustar);
+    observador.observe(contenedor);
+    observador.observe(hoja);
+    return () => observador.disconnect();
+  }, [hayCotizacion]);
+
+  // El resto de la app bloquea el zoom; aquí se permite para acercar el documento con los dedos
+  useEffect(() => {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) return;
+    const original = viewport.getAttribute('content');
+    viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content');
+    return () => viewport.setAttribute('content', original);
+  }, []);
+
   // Auto-ajustar altura del textarea: llena TODO el espacio restante de la hoja
   useEffect(() => {
     if (textareaRef.current) {
@@ -232,29 +267,6 @@ const VistaCotizacionPrint = () => {
     }
   }, []);
 
-  const { f2: fase2Ok, f3: fase3Ok } = verificarDisponibilidadFases(cotizacion);
-
-  const handleSeleccionarFase = (faseDestino) => {
-    if (faseDestino === 'por_pagar') {
-      setFaseActual('por_pagar');
-      setNotas(generarTextoEspecificaciones(cotizacion, 'por_pagar'));
-    } else if (faseDestino === 'pagado') {
-      if (!fase2Ok) {
-        mostrarToast("🔒 Fase 2 Bloqueada: Se habilitará automáticamente en cuanto el cliente realice el pago por Mercado Pago o se valide en efectivo.");
-        return;
-      }
-      setFaseActual('pagado');
-      setNotas(generarTextoEspecificaciones(cotizacion, 'pagado'));
-    } else if (faseDestino === 'finalizado') {
-      if (!fase3Ok) {
-        mostrarToast("🔒 Fase 3 Bloqueada: Se habilitará cuando el Técnico o el Root marquen el trabajo como 'Finalizado' en el sistema.");
-        return;
-      }
-      setFaseActual('finalizado');
-      setNotas(generarTextoEspecificaciones(cotizacion, 'finalizado'));
-    }
-  };
-
   const handleGenerarPDF = async () => {
     setGuardando(true);
     
@@ -298,7 +310,7 @@ const VistaCotizacionPrint = () => {
   };
 
   if (!cotizacion) {
-    return <div style={{ padding: '50px', textAlign: 'center', color: '#fff' }}>Cargando información de cotización...</div>;
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', background: '#0b1329' }}><CasaLoader texto="Cargando cotización..." fondoOscuro /></div>;
   }
 
   // Cálculos de montos
@@ -346,265 +358,35 @@ const VistaCotizacionPrint = () => {
       )}
 
       {/* ─── PANEL DE CONTROL SUPERIOR (NO PRINT) ─── */}
-      <div className="no-print" style={{ marginBottom: '22px', width: '100%', maxWidth: '21.59cm', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        
+      <div className="no-print cp-panel">
+
         {/* Barra superior de acciones */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', background: '#131e3a', padding: '14px 20px', borderRadius: '14px', border: '1px solid #22325a' }}>
-          <button 
-            onClick={() => navigate('/vista-cotizaciones')}
-            style={{ 
-              padding: '10px 18px', 
-              backgroundColor: '#1e293b', 
-              color: '#cbd5e1', 
-              border: '1px solid #334155', 
-              borderRadius: '8px', 
-              cursor: 'pointer', 
-              fontWeight: '700', 
-              fontSize: '0.85rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.2s ease'
-            }}
-          >
+        <div className="cp-toolbar">
+          <button type="button" className="cp-btn cp-btn-back" onClick={() => navigate('/vista-cotizaciones')}>
             <ArrowLeft size={16} /> REGRESAR
           </button>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div className="cp-toolbar-actions">
             {!pdfGenerado ? (
-              <button 
-                onClick={handleGenerarPDF} 
-                disabled={guardando}
-                style={{ 
-                  padding: '10px 18px', 
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
-                  color: 'white', 
-                  border: 'none', 
-                  borderRadius: '8px', 
-                  cursor: 'pointer', 
-                  fontWeight: '800', 
-                  fontSize: '0.85rem',
-                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
+              <button type="button" className="cp-btn cp-btn-green" onClick={handleGenerarPDF} disabled={guardando}>
                 <Save size={16} /> {guardando ? 'GUARDANDO...' : 'SUBIR ESPECIFICACIONES'}
               </button>
             ) : (
-              <a 
-                href={pdfUrl} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                style={{ 
-                  padding: '10px 18px', 
-                  background: '#0284c7', 
-                  color: 'white', 
-                  textDecoration: 'none', 
-                  borderRadius: '8px', 
-                  fontWeight: '800', 
-                  fontSize: '0.85rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
+              <a className="cp-btn cp-btn-blue" href={pdfUrl} target="_blank" rel="noopener noreferrer">
                 <FileText size={16} /> VER PDF GUARDADO
               </a>
             )}
-            
-            <button 
-              onClick={handleImprimir}
-              style={{ 
-                padding: '10px 18px', 
-                background: 'linear-gradient(135deg, #f26624 0%, #ea580c 100%)', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '8px', 
-                cursor: 'pointer', 
-                fontWeight: '800', 
-                fontSize: '0.85rem',
-                boxShadow: '0 4px 12px rgba(234, 88, 12, 0.3)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
+
+            <button type="button" className="cp-btn cp-btn-primary" onClick={handleImprimir}>
               <Printer size={16} /> IMPRIMIR / DESCARGAR
             </button>
-          </div>
-        </div>
-
-        {/* ─── STEPPER BAR / HISTORIAL DE FASES DINÁMICAS CON CANDADOS ─── */}
-        <div style={{ background: '#131e3a', padding: '16px 20px', borderRadius: '14px', border: '1px solid #22325a' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              📜 HISTORIAL DE FASES DEL DOCUMENTO:
-            </span>
-            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600' }}>
-              * Solo se habilitan las fases alcanzadas en el ciclo del trabajo
-            </span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '10px' }}>
-            
-            {/* Paso 1: Por Pagar */}
-            <div
-              onClick={() => handleSeleccionarFase('por_pagar')}
-              style={{
-                padding: '12px 14px',
-                borderRadius: '10px',
-                border: '2px solid',
-                borderColor: faseActual === 'por_pagar' ? '#f59e0b' : '#334155',
-                background: faseActual === 'por_pagar' ? 'rgba(245, 158, 11, 0.12)' : '#0f172a',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  background: faseActual === 'por_pagar' ? '#f59e0b' : '#1e293b',
-                  color: faseActual === 'por_pagar' ? '#000' : '#cbd5e1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: '900',
-                  fontSize: '0.85rem'
-                }}>
-                  1
-                </div>
-                <div>
-                  <div style={{ fontWeight: '800', fontSize: '0.82rem', color: faseActual === 'por_pagar' ? '#fbbf24' : '#e2e8f0' }}>
-                    POR PAGAR
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                    Cotización Comercial
-                  </div>
-                </div>
-              </div>
-              <span style={{ fontSize: '0.68rem', fontWeight: '800', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', padding: '2px 8px', borderRadius: '12px' }}>
-                {faseActual === 'por_pagar' ? 'ACTUAL' : 'LISTO'}
-              </span>
-            </div>
-
-            {/* Paso 2: Pagado (Técnico sin asignar) */}
-            <div
-              onClick={() => handleSeleccionarFase('pagado')}
-              style={{
-                padding: '12px 14px',
-                borderRadius: '10px',
-                border: '2px solid',
-                borderColor: faseActual === 'pagado' ? '#10b981' : (fase2Ok ? '#334155' : '#1e293b'),
-                background: faseActual === 'pagado' ? 'rgba(16, 185, 129, 0.12)' : (fase2Ok ? '#0f172a' : '#090f1d'),
-                cursor: fase2Ok ? 'pointer' : 'not-allowed',
-                opacity: fase2Ok ? 1 : 0.55,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  background: faseActual === 'pagado' ? '#10b981' : (fase2Ok ? '#1e293b' : '#111827'),
-                  color: faseActual === 'pagado' ? '#fff' : '#cbd5e1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: '900',
-                  fontSize: '0.85rem'
-                }}>
-                  2
-                </div>
-                <div>
-                  <div style={{ fontWeight: '800', fontSize: '0.82rem', color: faseActual === 'pagado' ? '#34d399' : (fase2Ok ? '#e2e8f0' : '#64748b') }}>
-                    PAGADO
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                    Técnico en Asignación
-                  </div>
-                </div>
-              </div>
-              {fase2Ok ? (
-                <span style={{ fontSize: '0.68rem', fontWeight: '800', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '2px 8px', borderRadius: '12px' }}>
-                  {faseActual === 'pagado' ? 'ACTUAL' : 'HABILITADO'}
-                </span>
-              ) : (
-                <span style={{ fontSize: '0.68rem', fontWeight: '800', background: 'rgba(100, 116, 139, 0.2)', color: '#94a3b8', padding: '2px 8px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <Lock size={10} /> BLOQUEADO
-                </span>
-              )}
-            </div>
-
-            {/* Paso 3: Finalizado (Acta de Entrega / Garantía) */}
-            <div
-              onClick={() => handleSeleccionarFase('finalizado')}
-              style={{
-                padding: '12px 14px',
-                borderRadius: '10px',
-                border: '2px solid',
-                borderColor: faseActual === 'finalizado' ? '#3b82f6' : (fase3Ok ? '#334155' : '#1e293b'),
-                background: faseActual === 'finalizado' ? 'rgba(59, 130, 246, 0.12)' : (fase3Ok ? '#0f172a' : '#090f1d'),
-                cursor: fase3Ok ? 'pointer' : 'not-allowed',
-                opacity: fase3Ok ? 1 : 0.55,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  background: faseActual === 'finalizado' ? '#3b82f6' : (fase3Ok ? '#1e293b' : '#111827'),
-                  color: faseActual === 'finalizado' ? '#fff' : '#cbd5e1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: '900',
-                  fontSize: '0.85rem'
-                }}>
-                  3
-                </div>
-                <div>
-                  <div style={{ fontWeight: '800', fontSize: '0.82rem', color: faseActual === 'finalizado' ? '#60a5fa' : (fase3Ok ? '#e2e8f0' : '#64748b') }}>
-                    FINALIZADO
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                    Acta y Garantía
-                  </div>
-                </div>
-              </div>
-              {fase3Ok ? (
-                <span style={{ fontSize: '0.68rem', fontWeight: '800', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '2px 8px', borderRadius: '12px' }}>
-                  {faseActual === 'finalizado' ? 'ACTUAL' : 'HABILITADO'}
-                </span>
-              ) : (
-                <span style={{ fontSize: '0.68rem', fontWeight: '800', background: 'rgba(100, 116, 139, 0.2)', color: '#94a3b8', padding: '2px 8px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <Lock size={10} /> BLOQUEADO
-                </span>
-              )}
-            </div>
-
           </div>
         </div>
       </div>
 
       {/* ─── HOJA IMPRIMIBLE DEL PDF (TAMAÑO CARTA: 21.59cm x 27.94cm) ─── */}
-      <div className="print-outer-wrapper" style={{ width: '100%', display: 'flex', justifyContent: 'center', paddingBottom: '30px' }}>
-        <div className="print-scale-wrapper" style={{ width: '100%', maxWidth: '21.59cm', display: 'flex', justifyContent: 'center' }}>
+      <div ref={hojaContenedorRef} className="print-outer-wrapper" style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '30px', height: hojaEscala.alto ?? undefined }}>
+        <div className="print-scale-wrapper" style={{ width: `${ANCHO_HOJA_PX}px`, flexShrink: 0, display: 'flex', justifyContent: 'center', transform: `scale(${hojaEscala.escala})`, transformOrigin: 'top center' }}>
           <div id="cotizacion-pdf" className="cotizacion-container printable-page-container" style={{ margin: '0 auto', background: '#ffffff', color: '#0f172a', position: 'relative' }}>
 
             {/* Cabecera Principal Reestructurada */}

@@ -20,6 +20,7 @@ import NotificationBell from './NotificationBell';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
 import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
 import MobileBottomNav from './MobileBottomNav';
+import { usaSelectorRed } from '../../utils/entorno';
 import axios from 'axios';
 import { NOMBRES_ROLES } from '../../utils/roles';
 import '../../styles/Shared/Header.css';
@@ -114,8 +115,8 @@ const ClienteHeader = ({ activeModule }) => {
   const isServiciosActive = activeModule === 'servicios' || currentPath.includes('/tablero-servicios') || currentPath.includes('/servicios');
   const isMercadoActive = activeModule === 'mercado' || currentPath.includes('/red-autonomos') || currentPath.includes('/mercado');
   const isLevantamientoActive = activeModule === 'levantamientos' || currentPath.includes('/levantamientos');
-  // Cliente Particular (rol 4): "Levantamiento" va en el menú de arriba en vez del panel de la propiedad
-  const esClienteParticular = Number(user?.role_id) === 4;
+  // Reportes, Cotizaciones y Levantamientos comparten un botón; dentro se cambia con el selector de la vista
+  const unificarVistas = usaSelectorRed(user);
 
   return (
     <>
@@ -153,37 +154,39 @@ const ClienteHeader = ({ activeModule }) => {
             <span className="vcp-nav-text">USUARIOS</span>
           </button>
 
-          {esClienteParticular && (
+          {unificarVistas ? (
             <button
               type="button"
-              className={`vcp-nav-btn ${isLevantamientoActive ? 'active' : ''}`}
-              onClick={() => navigate('/levantamientos')}
-              title="Levantamiento"
+              className={`vcp-nav-btn ${isReportesActive || isCotizacionesActive || isLevantamientoActive ? 'active' : ''}`}
+              onClick={() => navigate('/reportes-globales')}
+              title="Reportes, cotización y levantamiento"
             >
               <ClipboardList size={18} className="vcp-nav-icon" />
-              <span className="vcp-nav-text">LEVANTAMIENTO</span>
+              <span className="vcp-nav-text">REPORTES, COTIZACIÓN Y LEVANTAMIENTO</span>
             </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                className={`vcp-nav-btn ${isReportesActive ? 'active' : ''}`}
+                onClick={() => navigate('/reportes-globales')}
+                title="Reportes"
+              >
+                <FileText size={18} className="vcp-nav-icon" />
+                <span className="vcp-nav-text">REPORTES</span>
+              </button>
+
+              <button
+                type="button"
+                className={`vcp-nav-btn ${isCotizacionesActive ? 'active' : ''}`}
+                onClick={() => navigate('/vista-cotizaciones')}
+                title="Cotización"
+              >
+                <Receipt size={18} className="vcp-nav-icon" />
+                <span className="vcp-nav-text">COTIZACIÓN</span>
+              </button>
+            </>
           )}
-
-          <button
-            type="button"
-            className={`vcp-nav-btn ${isReportesActive ? 'active' : ''}`}
-            onClick={() => navigate('/reportes-globales')}
-            title="Reportes"
-          >
-            <FileText size={18} className="vcp-nav-icon" />
-            <span className="vcp-nav-text">REPORTES</span>
-          </button>
-
-          <button
-            type="button"
-            className={`vcp-nav-btn ${isCotizacionesActive ? 'active' : ''}`}
-            onClick={() => navigate('/vista-cotizaciones')}
-            title="Cotización"
-          >
-            <Receipt size={18} className="vcp-nav-icon" />
-            <span className="vcp-nav-text">COTIZACIÓN</span>
-          </button>
 
           <button
             type="button"

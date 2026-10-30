@@ -2,25 +2,114 @@
 
 /* Estilos base para pantalla */
 .reporte-container {
-    padding: 10px;
-    background: #f5f5f5;
+    padding: 20px 10px;
+    background: #0b1329;
     min-height: 100vh;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
 }
 
-.print-actions {
-    text-align: center;
-    margin-bottom: 10px;
+/* Botones sobre el fondo de la página, de color plano */
+.print-actions.no-print {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 816px;
+    margin: 0 auto 14px;
 }
 
-.btn-print {
-    background: #ff8800;
-    color: white;
+.reporte-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.btn-back, .btn-save, .btn-print {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 18px;
     border: none;
-    padding: 8px 20px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: bold;
+    border-radius: 999px;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.2;
     cursor: pointer;
+    transition: background-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+.btn-back svg, .btn-save svg, .btn-print svg { flex-shrink: 0; }
+
+.btn-back {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.btn-back:hover { background: rgba(255, 255, 255, 0.2); }
+.btn-save { background: #059669; }
+.btn-save:hover:not(:disabled) { background: #047857; }
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-print { background: #f26522; }
+.btn-print:hover { background: #ea580c; }
+
+/* La hoja conserva su diseño carta y se escala al ancho disponible */
+.reporte-hoja-contenedor {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.reporte-hoja-escala {
+    flex-shrink: 0;
+    transform-origin: top center;
+}
+
+.reporte-texto-lectura {
+    margin: 0;
+    padding: 5px;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    color: #000;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.materiales-vacio {
+    padding: 10px 5px !important;
+    text-align: center;
+    color: #64748b !important;
+}
+
+@media screen and (max-width: 768px) {
+    .print-actions.no-print { gap: 10px; }
+
+    .btn-back { padding: 8px 14px; }
+
+    .print-actions.no-print:not(.lectura) .reporte-acciones {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        width: 100%;
+    }
+
+    .print-actions.no-print:not(.lectura) .reporte-acciones button {
+        min-height: 46px;
+        padding: 8px 10px;
+        border-radius: 16px;
+        font-size: 0.72rem;
+        text-align: center;
+    }
+
+    .print-actions.lectura .btn-print { padding: 8px 14px; font-size: 0.74rem; }
 }
 
 /* Contenido del reporte */
@@ -106,6 +195,16 @@
     color: #555;
     font-size: 0.7rem;
 }
+
+.fecha-trabajo span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.fecha-trabajo svg { color: #f26522; flex-shrink: 0; }
+
+.fecha-trabajo .inline-input { width: 90px; }
 
 /* Secciones de Información Compactas */
 .info-section {
@@ -234,21 +333,33 @@
     }
 
     /* Ocultar absolutamente todo en la app excepto el reporte */
-    #root,
     .mercado-container,
     .vcp-header,
     .vcp-mobile-bottom-nav,
     .mobile-bottom-nav,
     .no-print,
     .print-actions,
-    .image-zoom-modal,
-    body > *:not(.reporte-modal-backdrop) {
+    .image-zoom-modal {
         display: none !important;
         visibility: hidden !important;
         height: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
         overflow: hidden !important;
+    }
+
+    .reporte-container,
+    .reporte-hoja-contenedor,
+    .reporte-hoja-escala {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        transform: none !important;
+        overflow: visible !important;
     }
 
     .reporte-modal-backdrop {
@@ -389,22 +500,6 @@
     gap: 5px;
 }
 
-.btn-back, .btn-save {
-    padding: 8px 15px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: bold;
-    cursor: pointer;
-    border: none;
-    margin-right: 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-back { background: #f26522; color: white; } /* Cambiado a naranja */
-.btn-save { background: #28a745; color: white; }
-
 .editable-span, .table-input, .editable-folio, .inline-input {
     border: 1px solid transparent;
     background: transparent;
@@ -427,6 +522,15 @@
     background: #fff;
     outline: none;
     box-shadow: 0 0 5px rgba(255,136,0,0.2);
+}
+
+/* Modo consulta: se lee como texto, sin aspecto de campo editable */
+.editable-span:disabled, .table-input:disabled, .inline-input:disabled, .editable-folio:disabled {
+    opacity: 1;
+    cursor: default;
+    border-color: transparent;
+    background: transparent;
+    -webkit-text-fill-color: currentColor;
 }
 
 .editable-folio {
@@ -511,6 +615,11 @@
 
 .imagen-item:hover .btn-delete-photo {
     opacity: 1;
+}
+
+/* En pantallas táctiles no hay hover: el técnico debe ver el botón */
+@media (hover: none) {
+    .btn-delete-photo { opacity: 1; }
 }
 
 .btn-delete-photo svg {
@@ -631,11 +740,4 @@
 
 .zoom-close-btn:hover {
     transform: scale(1.2);
-}
-
-.loading-report {
-    text-align: center;
-    padding: 50px;
-    font-weight: bold;
-    color: #ff8800;
 }
