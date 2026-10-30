@@ -101,7 +101,6 @@ const esAsignadoA = (evento, userId) => {
 // Opciones del menú "Filtrar"
 const FILTROS_CALENDARIO = [
   { key: 'all', label: 'Todos', Icon: CalendarIcon },
-  { key: 'mios', label: 'Asignados a mí', Icon: User },
   { key: 'notices', label: 'Avisos', Icon: Megaphone, dot: 'dot-notice' },
   { key: 'mantenimiento', label: 'Mantenimientos', Icon: Wrench, dot: 'dot-mantenimiento' },
   { key: 'birthdays', label: 'Cumpleaños', Icon: Cake, dot: 'dot-birthday' },
@@ -299,8 +298,11 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [miniCalDate, setMiniCalDate] = useState(new Date());
   const [currentView, setCurrentView] = useState('month'); // 'month' | 'week' | 'agenda'
-  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'mios' | 'overdue' | 'today' | 'future' | 'uncoordinated' | 'completed'
+  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'overdue' | 'today' | 'future' | 'uncoordinated' | 'completed'
   const [filtroAbierto, setFiltroAbierto] = useState(false);
+  // Botón con la foto del usuario: se combina con el filtro del menú y con la búsqueda
+  const [soloMios, setSoloMios] = useState(false);
+  const [fotoFallida, setFotoFallida] = useState(false);
   const filtroRef = useRef(null);
 
   useEffect(() => {
@@ -1373,8 +1375,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const applyFilters = useCallback((events) => {
     let result = [...events];
 
-    if (selectedFilter === 'mios') result = result.filter(e => esAsignadoA(e, user?.id));
-    else if (selectedFilter === 'notices') result = result.filter(e => e.isNotice && !e.isMaintenance);
+    if (soloMios) result = result.filter(e => esAsignadoA(e, user?.id));
+
+    if (selectedFilter === 'notices') result = result.filter(e => e.isNotice && !e.isMaintenance);
     else if (selectedFilter === 'mantenimiento') result = result.filter(e => e.isMaintenance);
     else if (selectedFilter === 'birthdays') result = result.filter(e => e.isBirthday);
     else if (selectedFilter === 'overdue') result = result.filter(e => e.isOverdue && !e.isNotice && !e.isBirthday);
@@ -1396,7 +1399,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     }
 
     return result;
-  }, [selectedFilter, searchQuery, user?.id]);
+  }, [selectedFilter, searchQuery, soloMios, user?.id]);
 
   const filteredEvents = useMemo(() => applyFilters(allEvents), [allEvents, applyFilters]);
 
@@ -1411,9 +1414,10 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const countFuture = allEvents.filter(e => e.isFuture).length;
   const countUncoordinated = allEvents.filter(e => e.isUncoordinated).length;
   const conteoFiltro = {
-    all: countAll, mios: countMios, notices: countNotices, mantenimiento: countMantenimiento, birthdays: countBirthdays, overdue: countOverdue,
+    all: countAll, notices: countNotices, mantenimiento: countMantenimiento, birthdays: countBirthdays, overdue: countOverdue,
     today: countToday, future: countFuture, uncoordinated: countUncoordinated,
   };
+  const fotoUsuario = user?.profile_picture || user?.avatar_url || user?.foto || null;
   const filtroActual = FILTROS_CALENDARIO.find(f => f.key === selectedFilter) || FILTROS_CALENDARIO[0];
 
   // Próximo servicio destacado (Up Next)
@@ -1796,6 +1800,21 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                     </div>
                   )}
                 </div>
+
+                {/* Solo lo asignado a mí */}
+                <button
+                  type="button"
+                  className={`cal-mios-btn ${soloMios ? 'on' : ''}`}
+                  onClick={() => setSoloMios(v => !v)}
+                  aria-pressed={soloMios}
+                  aria-label={`Ver solo lo asignado a mí (${countMios})`}
+                  title={soloMios ? 'Ver todo' : 'Ver solo lo asignado a mí'}
+                >
+                  {fotoUsuario && !fotoFallida
+                    ? <img src={fotoUsuario} alt="" onError={() => setFotoFallida(true)} />
+                    : <span>{memberInitials(user)}</span>}
+                  <em className="cal-mios-cuenta">{countMios}</em>
+                </button>
 
                 {/* Búsqueda rápida */}
                 <div className="cal-search-box">
