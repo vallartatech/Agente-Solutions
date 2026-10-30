@@ -8,6 +8,7 @@ import Header from '../../../components/Shared/Header';
 import CasaLoader from '../../../components/Shared/CasaLoader';
 import useExpediente from './Expediente/useExpediente';
 import ModalNuevaSolicitud from './Expediente/ModalNuevaSolicitud';
+import MantenimientosDePropiedad from './Mantenimiento/MantenimientosDePropiedad';
 import { TrabajoCard, ListaCotizaciones, LineaTiempo } from './Expediente/ExpedienteUI';
 import { esActivo, esFinalizado, esCancelado, etiquetaTipo, nombreTecnicos } from './Expediente/flujoTrabajo';
 import '../../../styles/Shared/UniversalSearch.css';
@@ -212,6 +213,8 @@ const VistaDetallePropiedad = () => {
                 <Plus size={18} strokeWidth={2.8} /> <span>Nueva solicitud</span>
               </button>
             </div>
+
+            <MantenimientosDePropiedad propiedadId={id} />
 
             {trabajosFiltrados.length ? (
               <div className="xp-grid">

@@ -1,40 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { CalendarClock, Camera, Check, Plus, Search, Trash2, Wrench, X } from 'lucide-react';
+import { CalendarClock, ChevronRight, Pencil, Plus, Search, Trash2, Wrench } from 'lucide-react';
 import Header from '../../../../components/Shared/Header';
 import ModalRegistroInmueble from '../../../../components/Shared/ModalRegistroInmueble';
 import { API, authHeaders } from '../Expediente/flujoTrabajo';
+import { CampoFecha, CampoFoto, dentroDeMeses, hoyISO, nombreEquipo, porFecha, proximaFecha, textoFecha } from './CamposMantenimiento';
+import ModalEditarMantenimiento from './ModalEditarMantenimiento';
 import '../../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
 import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 
-const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const ATAJOS_MESES = [3, 6, 12];
 // Opción de la lista que abre el registro completo de la propiedad
 const REGISTRAR_PROPIEDAD = 'registrar';
 const FORM_VACIO = { property_id: '', tipo: '', cantidad: 1, detalle: '', fecha: '', foto_equipo: null, foto_datos: null };
 
-const aISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const hoyISO = () => aISO(new Date());
-
-// Hoy + n meses; un fin de mes no se pasa al mes siguiente
-const dentroDeMeses = (n) => {
-  const hoy = new Date();
-  const destino = new Date(hoy.getFullYear(), hoy.getMonth() + n, 1);
-  const ultimoDia = new Date(destino.getFullYear(), destino.getMonth() + 1, 0).getDate();
-  destino.setDate(Math.min(hoy.getDate(), ultimoDia));
-  return aISO(destino);
-};
-
-const textoFecha = (iso) => {
-  const [y, m, d] = String(iso || '').slice(0, 10).split('-').map(Number);
-  return y ? `${d} ${MESES[m - 1]} ${y}` : '';
-};
-
 const normalizar = (texto) => String(texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-const nombreEquipo = (e) => (e.cantidad > 1 ? `${e.cantidad} × ${e.tipo}` : e.tipo);
 const nombrePropiedad = (p) => p?.property_name || p?.address || 'Propiedad';
-const proximaFecha = (e) => e.visits?.[0]?.fecha_programada?.slice(0, 10) || null;
 
 const avisoError = (title, error) => Swal.fire({
   icon: 'error',
@@ -43,54 +26,9 @@ const avisoError = (title, error) => Swal.fire({
   confirmButtonColor: '#f26522',
 });
 
-// Se elige siempre en el calendario: así no se puede escribir una fecha que no existe
-const CampoFecha = ({ value, onChange, min, ariaLabel }) => {
-  const abrirCalendario = (e) => {
-    try {
-      e.currentTarget.showPicker();
-    } catch {
-      // Navegador sin showPicker: abre con su propio icono
-    }
-  };
-
-  return (
-    <input
-      type="date"
-      className="mt-input-fecha"
-      min={min}
-      aria-label={ariaLabel}
-      value={value}
-      onChange={onChange}
-      onClick={abrirCalendario}
-      onKeyDown={(e) => {
-        if (e.key === 'Tab') return;
-        e.preventDefault();
-        if (e.key === 'Enter' || e.key === ' ') abrirCalendario(e);
-      }}
-    />
-  );
-};
-
-const CampoFoto = ({ etiqueta, archivo, onChange }) => {
-  const vista = useMemo(() => (archivo ? URL.createObjectURL(archivo) : null), [archivo]);
-  useEffect(() => () => { if (vista) URL.revokeObjectURL(vista); }, [vista]);
-
-  return (
-    <label className={`mt-foto ${vista ? 'con-foto' : ''}`}>
-      <input
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={(e) => { if (e.target.files?.[0]) onChange(e.target.files[0]); e.target.value = ''; }}
-      />
-      {vista ? <img src={vista} alt={etiqueta} /> : <Camera size={20} />}
-      <span>{etiqueta}</span>
-    </label>
-  );
-};
-
 // Sin levantamiento: se agrega el equipo y la fecha de su próximo mantenimiento, y queda en la agenda.
 const VistaMantenimiento = () => {
+  const navigate = useNavigate();
   const [propiedades, setPropiedades] = useState([]);
   const [equipos, setEquipos] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -98,7 +36,7 @@ const VistaMantenimiento = () => {
   const [form, setForm] = useState(FORM_VACIO);
   const [guardando, setGuardando] = useState(false);
   const [busqueda, setBusqueda] = useState('');
-  const [editando, setEditando] = useState(null); // { id, fecha }
+  const [editando, setEditando] = useState(null);
   const [registrandoPropiedad, setRegistrandoPropiedad] = useState(false);
 
   useEffect(() => {
@@ -115,12 +53,11 @@ const VistaMantenimiento = () => {
       .finally(() => setCargando(false));
   }, []);
 
-  // Primero lo más próximo; los que no tienen fecha pendiente, al final
   const lista = useMemo(() => {
     const texto = normalizar(busqueda);
     return equipos
       .filter((e) => !texto || normalizar(`${e.tipo} ${e.detalle} ${e.property?.property_name} ${e.property?.address}`).includes(texto))
-      .sort((a, b) => (proximaFecha(a) || '9999').localeCompare(proximaFecha(b) || '9999'));
+      .sort(porFecha);
   }, [equipos, busqueda]);
 
   const elegirPropiedad = (valor) => {
@@ -168,17 +105,6 @@ const VistaMantenimiento = () => {
       avisoError('No se pudo agregar', error);
     } finally {
       setGuardando(false);
-    }
-  };
-
-  const guardarFecha = async () => {
-    if (!editando?.fecha) return;
-    try {
-      const { data } = await axios.put(`${API}/mantenimiento/equipos/${editando.id}/fecha`, { fecha: editando.fecha }, { headers: authHeaders() });
-      setEquipos((prev) => prev.map((e) => (e.id === editando.id ? { ...e, visits: data.equipo.visits } : e)));
-      setEditando(null);
-    } catch (error) {
-      avisoError('No se pudo cambiar la fecha', error);
     }
   };
 
@@ -299,34 +225,26 @@ const VistaMantenimiento = () => {
               {lista.map((e) => {
                 const proxima = proximaFecha(e);
                 const vencida = proxima && proxima < hoy;
-                const enEdicion = editando?.id === e.id;
                 return (
                   <li key={e.id} className="mt-item">
-                    {e.foto_equipo_url && <img src={e.foto_equipo_url} alt="" />}
-                    <div className="mt-item-texto">
-                      <strong>{nombreEquipo(e)}</strong>
-                      <span>{nombrePropiedad(e.property)}</span>
-                      {e.detalle && <small>{e.detalle}</small>}
-                    </div>
+                    <button type="button" className="mt-item-abrir" onClick={() => navigate(`/detalle-propiedad/${e.property_id}`)} title="Abrir la propiedad">
+                      {e.foto_equipo_url && <img src={e.foto_equipo_url} alt="" />}
+                      <span className="mt-item-texto">
+                        <strong>{nombreEquipo(e)}</strong>
+                        <span>{nombrePropiedad(e.property)}</span>
+                        {e.detalle && <small>{e.detalle}</small>}
+                      </span>
+                      <ChevronRight size={18} className="mt-item-flecha" />
+                    </button>
 
-                    {enEdicion ? (
-                      <div className="mt-item-editar">
-                        <CampoFecha min={hoy} ariaLabel="Nueva fecha" value={editando.fecha} onChange={(ev) => setEditando({ ...editando, fecha: ev.target.value })} />
-                        <button type="button" className="mt-icono guardar" onClick={guardarFecha} aria-label="Guardar fecha"><Check size={16} /></button>
-                        <button type="button" className="mt-icono" onClick={() => setEditando(null)} aria-label="Cancelar"><X size={16} /></button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className={`mt-item-fecha ${vencida ? 'vencida' : ''} ${proxima ? '' : 'sin-fecha'}`}
-                        onClick={() => setEditando({ id: e.id, fecha: proxima && !vencida ? proxima : '' })}
-                        title="Cambiar fecha"
-                      >
-                        <CalendarClock size={15} />
-                        {proxima ? `${vencida ? 'Vencido: ' : ''}${textoFecha(proxima)}` : 'Poner siguiente fecha'}
-                      </button>
-                    )}
+                    <span className={`mt-item-fecha ${vencida ? 'vencida' : ''} ${proxima ? '' : 'sin-fecha'}`}>
+                      <CalendarClock size={15} />
+                      {proxima ? `${vencida ? 'Vencido: ' : ''}${textoFecha(proxima)}` : 'Sin fecha'}
+                    </span>
 
+                    <button type="button" className="mt-btn-editar" onClick={() => setEditando(e)}>
+                      <Pencil size={15} /> Editar
+                    </button>
                     <button type="button" className="mt-icono peligro" onClick={() => quitar(e)} aria-label={`Quitar ${nombreEquipo(e)}`}>
                       <Trash2 size={16} />
                     </button>
@@ -337,6 +255,14 @@ const VistaMantenimiento = () => {
           )}
         </section>
       </main>
+
+      {editando && (
+        <ModalEditarMantenimiento
+          equipo={editando}
+          onCerrar={() => setEditando(null)}
+          onGuardado={(actualizado) => setEquipos((prev) => prev.map((e) => (e.id === actualizado.id ? { ...e, ...actualizado } : e)))}
+        />
+      )}
 
       <ModalRegistroInmueble
         isOpen={registrandoPropiedad}

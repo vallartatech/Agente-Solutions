@@ -7,16 +7,14 @@
 .mt-campo > span { font-size: 0.8rem; font-weight: 700; color: #334155; }
 .mt-campo input,
 .mt-campo select,
-.mt-fecha input,
-.mt-item-editar input {
+.mt-fecha input {
   width: 100%; min-height: 44px; padding: 9px 12px; box-sizing: border-box;
   border: 1.5px solid #cbd5e1; border-radius: 12px; background: #ffffff; color: #0f172a;
   font-size: 16px; font-family: inherit;
 }
 .mt-campo input:focus,
 .mt-campo select:focus,
-.mt-fecha input:focus,
-.mt-item-editar input:focus { outline: none; border-color: #f26522; }
+.mt-fecha input:focus { outline: none; border-color: #f26522; }
 
 .mt-fila { display: flex; gap: 10px; }
 .mt-campo-equipo { flex: 1; }
@@ -69,8 +67,6 @@
 }
 .mt-item-fecha.vencida { border-color: #fecaca; background: #fef2f2; color: #b91c1c; }
 .mt-item-fecha.sin-fecha { border-color: #cbd5e1; background: #f8fafc; color: #475569; }
-.mt-item-editar { display: flex; align-items: center; gap: 6px; }
-.mt-item-editar input { min-height: 40px; width: 165px; }
 .mt-icono {
   display: flex; align-items: center; justify-content: center; flex: 0 0 40px; width: 40px; height: 40px;
   padding: 0; border: 0; border-radius: 12px; background: #f1f5f9; color: #475569; cursor: pointer;
@@ -79,6 +75,49 @@
 .mt-icono.guardar { background: #dcfce7; color: #15803d; }
 .mt-icono.peligro { background: #fee2e2; color: #dc2626; }
 @media (max-width: 600px) { .mt-guardar { align-self: stretch; } }
+
+/* Recuadro que abre la propiedad */
+.mt-item-abrir {
+  display: flex; flex: 1 1 240px; align-items: center; gap: 12px; min-width: 0; min-height: 48px; padding: 2px;
+  border: 0; border-radius: 10px; background: transparent; color: inherit; text-align: left; font-family: inherit; cursor: pointer;
+}
+.mt-item-abrir > img { flex: 0 0 48px; width: 48px; height: 48px; object-fit: cover; border-radius: 10px; }
+.mt-item-abrir .mt-item-texto { flex: 1; }
+.mt-item-flecha { flex: 0 0 auto; color: #94a3b8; }
+.mt-item-abrir:hover strong { color: #c2410c; }
+.mt-item-abrir:hover .mt-item-flecha { color: #f26522; }
+span.mt-item-fecha { cursor: default; }
+.mt-btn-editar {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 14px;
+  border: 1.5px solid #cbd5e1; border-radius: 12px; background: #ffffff; color: #334155;
+  font-size: 0.85rem; font-weight: 700; font-family: inherit; cursor: pointer;
+}
+.mt-btn-editar:hover { border-color: #f26522; color: #c2410c; }
+.mt-seccion-propiedad { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+.mt-seccion-propiedad .xp-panel-titulo { margin: 0; }
+
+/* Ventana de edición */
+.mt-overlay {
+  position: fixed; inset: 0; z-index: 9999999; display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(8, 10, 14, 0.62); backdrop-filter: blur(6px);
+}
+.mt-modal {
+  display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto;
+  padding: 20px; box-sizing: border-box; border-radius: 22px; background: #ffffff; color: #0f172a;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.mt-modal-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mt-modal-cabecera h2 { margin: 0; font-size: 1.25rem; font-weight: 800; color: #0f172a; }
+.mt-nota-vencida { font-size: 0.78rem; font-weight: 700; color: #b91c1c; }
+.mt-error { margin: 0; padding: 10px 12px; border-radius: 12px; background: #fef2f2; color: #b91c1c; font-size: 0.88rem; font-weight: 600; }
+.mt-modal-pie { display: flex; justify-content: flex-end; gap: 8px; }
+.mt-btn-cancelar {
+  min-height: 44px; padding: 8px 18px; border: 1.5px solid #cbd5e1; border-radius: 12px;
+  background: #ffffff; color: #334155; font-weight: 700; font-family: inherit; cursor: pointer;
+}
+@media (max-width: 600px) {
+  .mt-modal-pie > * { flex: 1; justify-content: center; }
+}
 
 /* Pestañas de elementos en las evidencias (galería del técnico y reportes del admin) */
 .ev-elementos { display: flex; gap: 8px; margin-bottom: 14px; padding-bottom: 4px; overflow-x: auto; }
