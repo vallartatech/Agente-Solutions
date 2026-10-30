@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/Shared/AlertaValidacion.css';
 
 // Trabajos terminados que esperan validación. Lo consultan el encabezado y la barra del celular:
 // una sola consulta compartida (cada minuto, al volver a la pestaña o cuando algo cambia).
 const REFRESCO_MS = 60000;
-let estado = { mostrar: false, pendientes: 0, mascota: 'gato', es_validador: false };
+let estado = { mostrar: false, pendientes: 0, mascota: 'gato', es_validador: false, reportes_por_revisar: null };
 const suscriptores = new Set();
 let intervalo = null;
 let enCurso = null;
@@ -56,7 +59,7 @@ export const usePendientesValidacion = () => {
     };
   }, [esAdmin, user?.id]);
 
-  return esAdmin ? info : { ...estado, mostrar: false, pendientes: 0 };
+  return esAdmin ? info : { ...estado, mostrar: false, pendientes: 0, reportes_por_revisar: null };
 };
 
 export const MASCOTAS = [
@@ -161,6 +164,51 @@ export const SelectorMascota = () => {
         );
       })}
     </div>
+  );
+};
+
+const CLAVE_CERRADA = 'va_reportes_cerrada';
+const leerCerrada = () => {
+  try {
+    return Number(sessionStorage.getItem(CLAVE_CERRADA)) || 0;
+  } catch {
+    return 0;
+  }
+};
+
+// Fantasma flotante "Verifica tus reportes": solo para las cuentas que indica el backend y mientras haya
+// reportes de técnicos sin cerrar. Si se cierra, vuelve en la siguiente sesión o cuando llegue uno más.
+export const AlertaReportesFlotante = () => {
+  const { reportes_por_revisar: total } = usePendientesValidacion();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [cerradaEn, setCerradaEn] = useState(leerCerrada);
+
+  if (!total || total <= cerradaEn || pathname.toLowerCase().includes('/reportes-globales')) return null;
+
+  const cerrar = () => {
+    setCerradaEn(total);
+    try {
+      sessionStorage.setItem(CLAVE_CERRADA, String(total));
+    } catch {
+      // Sin almacenamiento: se oculta hasta recargar
+    }
+  };
+
+  return createPortal(
+    <div className="va-flotante" role="status">
+      <button type="button" className="va-flotante-abrir" onClick={() => navigate('/reportes-globales')}>
+        <span className="va-flotante-fantasma"><Fantasma /></span>
+        <span className="va-flotante-texto">
+          <strong>Verifica tus reportes</strong>
+          <small>{total} {total === 1 ? 'trabajo tiene' : 'trabajos tienen'} reportes de técnicos</small>
+        </span>
+      </button>
+      <button type="button" className="va-flotante-cerrar" onClick={cerrar} aria-label="Cerrar alerta">
+        <X size={15} />
+      </button>
+    </div>,
+    document.body
   );
 };
 

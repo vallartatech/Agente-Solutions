@@ -8,7 +8,7 @@ import NotificationBell from './NotificationBell';
 import BotonChats from './BotonChats';
 import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
 import MobileBottomNav from './MobileBottomNav';
-import { MascotaAlerta } from './AlertaValidacion';
+import { AlertaReportesFlotante, MascotaAlerta } from './AlertaValidacion';
 import axios from 'axios';
 import { obtenerEstadoUbicacion, suscribirEstadoUbicacion } from './ubicacionService';
 import { nombreRol } from '../../utils/roles';
@@ -385,6 +385,7 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
 
       {/* BARRA DE NAVEGACIÓN INFERIOR RESPONSIVA */}
       <MobileBottomNav activeModule={activeModule} />
+      <AlertaReportesFlotante />
     </>
   );
 };
