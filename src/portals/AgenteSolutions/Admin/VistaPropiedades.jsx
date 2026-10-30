@@ -8,6 +8,7 @@ import Header from "../../../components/Shared/Header";
 import SelectorVistas from "../../../components/Shared/SelectorVistas";
 import ModalCompraEspacios from "../../../components/Shared/ModalCompraEspacios";
 import ModalRegistroInmueble from "../../../components/Shared/ModalRegistroInmueble";
+import ModalNuevaSolicitud from "./Expediente/ModalNuevaSolicitud";
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import ModalEquipoLevantamiento from "../../../components/Modals/ModalEquipoLevantamiento";
 import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
@@ -50,6 +51,7 @@ const VistaPropiedades = () => {
 
   // MODAL REPORTAR PROBLEMA (BOTÓN SUPERIOR "SOLICITAR SERVICIO")
   const [mostrarModalReportarProblema, setMostrarModalReportarProblema] = useState(false);
+  const [mostrarModalSolicitud, setMostrarModalSolicitud] = useState(false);
   const [propiedadReporteId, setPropiedadReporteId] = useState("");
   const [zonasDisponibles, setZonasDisponibles] = useState([]);
   const [loadingZonas, setLoadingZonas] = useState(false);
@@ -962,7 +964,7 @@ const VistaPropiedades = () => {
                       <button
                         type="button"
                         className="tb-actions-item"
-                        onClick={() => { setAccionesAbiertas(false); handleAbrirReportarProblema(); }}
+                        onClick={() => { setAccionesAbiertas(false); setMostrarModalSolicitud(true); }}
                       >
                         <span className="tb-actions-icon orange"><PlusCircle size={16} strokeWidth={2.6} /></span>
                         <span>Solicitar servicio</span>
@@ -1717,6 +1719,14 @@ const VistaPropiedades = () => {
         document.body
       )}
       {/* MODAL DE EDICIÓN DE PROPIEDAD: el mismo formulario de registro, con sus datos */}
+      {mostrarModalSolicitud && (
+        <ModalNuevaSolicitud
+          propiedades={listaPropiedades}
+          onClose={() => setMostrarModalSolicitud(false)}
+          onCreada={() => obtenerPropiedades()}
+        />
+      )}
+
       <ModalRegistroInmueble
         isOpen={mostrarModalEditar}
         property={propiedadAEditar}

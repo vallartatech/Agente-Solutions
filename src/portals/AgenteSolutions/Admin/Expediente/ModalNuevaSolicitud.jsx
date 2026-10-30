@@ -38,7 +38,11 @@ const hoyISO = () => {
 // Id del registro recién creado, si la API lo devuelve
 const idCreado = (d = {}) => d.id || d.work_order_id || d.workOrderId || d.service_id || d.servicio_id || d.insertId || d.data?.id;
 
-const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
+const nombrePropiedad = (p) => p?.property_name || p?.nombre_propiedad || p?.address || p?.direccion || `Propiedad ${p?.id}`;
+
+// Con `propiedades` (sin `propiedad` fija) el formulario empieza eligiendo la propiedad
+const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = null, onClose, onCreada }) => {
+  const [propiedad, setPropiedad] = useState(propiedadFija);
   const [modo, setModo] = useState('trabajo');
   const [form, setForm] = useState(FORM_VACIO);
   const [tecnicoIds, setTecnicoIds] = useState([]);
@@ -61,7 +65,7 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
   const galleryRef = useRef(null);
   const navigate = useNavigate();
   const esAdmin = esAdministrador();
-  const mostrarEquipos = esAdmin && modo === 'trabajo' && form.tipo === 'Mantenimiento';
+  const mostrarEquipos = esAdmin && Boolean(propiedad) && modo === 'trabajo' && form.tipo === 'Mantenimiento';
   const conCarrito = mostrarEquipos && carrito.length > 0;
 
   useEffect(() => {
@@ -78,11 +82,26 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
       .catch(() => setTecnicos([]))
       .finally(() => setCargandoTecnicos(false));
 
+    if (!propiedad) {
+      setZonas([]);
+      setCargandoZonas(false);
+      return;
+    }
+    setCargandoZonas(true);
     axios.get(`${API}/properties/${propiedad.id}/areas`, { headers })
       .then((res) => setZonas(res.data || []))
       .catch(() => setZonas([]))
       .finally(() => setCargandoZonas(false));
-  }, [propiedad.id]);
+  }, [propiedad?.id]);
+
+  // Al cambiar de propiedad, sus zonas y equipos ya no aplican
+  const elegirPropiedad = (id) => {
+    setPropiedad((propiedades || []).find((p) => String(p.id) === String(id)) || null);
+    setForm((f) => ({ ...f, area_id: '', zona: '', equipo: '' }));
+    setEquipos({});
+    setCarrito([]);
+    setPanelEquiposAbierto(false);
+  };
 
   const cambiarZona = async (areaId) => {
     if (areaId === 'otro') {
@@ -126,6 +145,10 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
 
   // El administrador registra él mismo las zonas de la propiedad
   const realizarLevantamientoPropio = () => {
+    if (!propiedad) {
+      Swal.fire({ icon: 'warning', title: 'Elige la propiedad', text: 'Selecciona primero la propiedad.', confirmButtonColor: '#f26522' });
+      return;
+    }
     const curp = propiedad.custom_curp || propiedad.curp || '';
     localStorage.setItem('current_property_id', propiedad.id);
     window.dispatchEvent(new Event('sync-agente-ids'));
@@ -161,6 +184,7 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
   const hayTrabajoEnCurso = Boolean(form.tipo || form.area_id || form.descripcion.trim() || form.fotos.length || carrito.length);
 
   const faltaEnTrabajo = () => {
+    if (!propiedad) return { title: 'Elige la propiedad', text: 'Selecciona la propiedad donde se hará el trabajo.' };
     if (modo === 'trabajo' && (!form.tipo || (!conCarrito && !form.area_id) || !form.descripcion.trim())) {
       return { title: 'Faltan datos', text: conCarrito ? 'Completa la descripción.' : 'Completa el tipo, la zona y la descripción.' };
     }
@@ -482,10 +506,21 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
               </p>
             )}
 
-            <p className="xp-rp-propiedad">
-              <Home size={15} color="#ff8c42" />
-              {propiedad.property_name || propiedad.nombre_propiedad || propiedad.address}
-            </p>
+            {propiedades ? (
+              <div className="rp-group">
+                <label className="rp-label"><Home size={16} color="#ff8c42" /> Propiedad *</label>
+                <select required value={propiedad?.id ?? ''} onChange={(e) => elegirPropiedad(e.target.value)} disabled={lote.length > 0}>
+                  <option value="">Selecciona la propiedad...</option>
+                  {propiedades.map((p) => <option key={p.id} value={p.id}>{nombrePropiedad(p)}</option>)}
+                </select>
+                {lote.length > 0 && <small className="xp-equipo-nota">Un lote es de una sola propiedad.</small>}
+              </div>
+            ) : (
+              <p className="xp-rp-propiedad">
+                <Home size={15} color="#ff8c42" />
+                {nombrePropiedad(propiedad)}
+              </p>
+            )}
 
             {modo === 'levantamiento' && (
               <>
