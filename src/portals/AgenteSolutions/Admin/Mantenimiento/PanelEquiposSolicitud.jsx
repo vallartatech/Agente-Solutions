@@ -8,7 +8,7 @@ import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 // Equipos de la propiedad para una solicitud de mantenimiento: lo agendado (con su cuenta regresiva)
 // y lo del levantamiento. Se eligen como en un carrito; `carrito` son los renglones elegidos.
 // En responsivo es un panel lateral que se abre con la flecha (`abierto`, `onCerrar`).
-const PanelEquiposSolicitud = ({ propiedad, carrito, onChange, abierto = false, onCerrar }) => {
+const PanelEquiposSolicitud = ({ propiedad, carrito, onChange, abierto = false, onCerrar, ocultos = [] }) => {
   const [equipos, setEquipos] = useState([]);
   const [elementos, setElementos] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -52,6 +52,9 @@ const PanelEquiposSolicitud = ({ propiedad, carrito, onChange, abierto = false, 
     })),
   ].sort((a, b) => (a.fecha || '9999').localeCompare(b.fecha || '9999')), [equipos, elementos]);
 
+  // Los que ya van en otro trabajo del lote no se ofrecen de nuevo
+  const disponibles = renglones.filter((r) => !ocultos.includes(r.clave));
+
   const alternar = (renglon) => onChange(
     carrito.some((r) => r.clave === renglon.clave)
       ? carrito.filter((r) => r.clave !== renglon.clave)
@@ -75,11 +78,11 @@ const PanelEquiposSolicitud = ({ propiedad, carrito, onChange, abierto = false, 
       <div className="mt-panel-equipos-lista">
         {cargando ? (
           <p className="mt-vacio">Cargando equipos...</p>
-        ) : error && !renglones.length ? (
+        ) : error && !disponibles.length ? (
           <p className="mt-vacio">No se pudieron cargar los equipos. Cierra y vuelve a abrir la solicitud.</p>
-        ) : !renglones.length ? (
-          <p className="mt-vacio">Esta propiedad no tiene equipos registrados. Puedes describir el trabajo en el formulario.</p>
-        ) : renglones.map((r) => {
+        ) : !disponibles.length ? (
+          <p className="mt-vacio">{renglones.length ? 'Todos los equipos ya van en otro trabajo de este lote.' : 'Esta propiedad no tiene equipos registrados. Puedes describir el trabajo en el formulario.'}</p>
+        ) : disponibles.map((r) => {
           const on = carrito.some((c) => c.clave === r.clave);
           const restante = r.fecha ? tiempoRestante(r.fecha) : null;
           return (
@@ -103,7 +106,7 @@ const PanelEquiposSolicitud = ({ propiedad, carrito, onChange, abierto = false, 
         })}
       </div>
 
-      {error && renglones.length > 0 && <p className="mt-aviso-parcial">Algunos equipos no se pudieron cargar. Cierra y vuelve a abrir la solicitud.</p>}
+      {error && disponibles.length > 0 && <p className="mt-aviso-parcial">Algunos equipos no se pudieron cargar. Cierra y vuelve a abrir la solicitud.</p>}
 
       <p className={`mt-carrito ${carrito.length ? 'con-items' : ''}`}>
         <ShoppingCart size={16} />

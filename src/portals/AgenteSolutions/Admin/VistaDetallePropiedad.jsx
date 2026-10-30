@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   LayoutGrid, FileText, History, Search, SlidersHorizontal, Plus, MapPin, Tag,
-  Building2, Check, LayoutDashboard, Inbox, ClipboardList, Hammer
+  Building2, Check, LayoutDashboard, Inbox, ClipboardList, Hammer, Layers
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import CasaLoader from '../../../components/Shared/CasaLoader';
@@ -72,6 +72,22 @@ const VistaDetallePropiedad = () => {
         .some((v) => String(v || '').toLowerCase().includes(q));
     });
   }, [trabajos, busqueda, filtroEstado, filtroTipo]);
+
+  // Los trabajos de un mismo lote van juntos, donde aparece el primero
+  const trabajosAgrupados = useMemo(() => {
+    const lotes = new Map();
+    const grupos = [];
+    trabajosFiltrados.forEach((t) => {
+      if (t.batch_id && lotes.has(t.batch_id)) {
+        lotes.get(t.batch_id).trabajos.push(t);
+        return;
+      }
+      const grupo = { lote: t.batch_id || null, trabajos: [t] };
+      if (t.batch_id) lotes.set(t.batch_id, grupo);
+      grupos.push(grupo);
+    });
+    return grupos;
+  }, [trabajosFiltrados]);
 
   const cotizaciones = useMemo(
     () => trabajos.flatMap((t) => (t.cotizaciones || []).map((c) => ({ ...c, _trabajo: t })))
@@ -222,9 +238,16 @@ const VistaDetallePropiedad = () => {
                 <div className="mt-columna-scroll">
                   {trabajosFiltrados.length ? (
                     <div className="mt-lista-trabajos">
-                      {trabajosFiltrados.map((t) => (
-                        <TrabajoCard key={t.uid} trabajo={t} onClick={() => abrirTrabajo(t.uid)} />
-                      ))}
+                      {trabajosAgrupados.map((g) => (g.lote ? (
+                        <div key={g.lote} className="mt-lote-grupo">
+                          <p className="mt-lote-titulo"><Layers size={15} /> Lote de {g.trabajos.length} trabajos <span>{g.lote}</span></p>
+                          {g.trabajos.map((t) => (
+                            <TrabajoCard key={t.uid} trabajo={t} onClick={() => abrirTrabajo(t.uid)} />
+                          ))}
+                        </div>
+                      ) : (
+                        <TrabajoCard key={g.trabajos[0].uid} trabajo={g.trabajos[0]} onClick={() => abrirTrabajo(g.trabajos[0].uid)} />
+                      )))}
                     </div>
                   ) : (
                     <div className="xp-vacio-card">

@@ -5,7 +5,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import {
   X, FileText, Home, Wrench, MessageSquare, Camera, ImageIcon, PlusCircle,
-  Users, User, ClipboardList, Hammer, ChevronRight, CheckCircle2, CalendarClock
+  Users, User, ClipboardList, Hammer, ChevronRight, CheckCircle2, CalendarClock, Layers
 } from 'lucide-react';
 import { API, authHeaders } from './flujoTrabajo';
 import PanelEquiposSolicitud from '../Mantenimiento/PanelEquiposSolicitud';
@@ -52,6 +52,10 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
   const [menuFoto, setMenuFoto] = useState(false);
   const [carrito, setCarrito] = useState([]); // equipos elegidos para un mantenimiento
   const [panelEquiposAbierto, setPanelEquiposAbierto] = useState(false); // solo aplica en responsivo
+  // Trabajos ya guardados que se enviarán juntos como un lote
+  const [lote, setLote] = useState([]);
+  const loteIdRef = useRef(null);
+  const modalRef = useRef(null);
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const navigate = useNavigate();
@@ -150,102 +154,218 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
     }
   };
 
-  const enviar = async (e) => {
-    e.preventDefault();
-    if (enviando) return;
+  // ¿Ya se empezó a llenar el trabajo que está en pantalla?
+  const hayTrabajoEnCurso = Boolean(form.tipo || form.area_id || form.descripcion.trim() || form.fotos.length || carrito.length);
+
+  const faltaEnTrabajo = () => {
     if (modo === 'trabajo' && (!form.tipo || (!conCarrito && !form.area_id) || !form.descripcion.trim())) {
-      Swal.fire({ icon: 'warning', title: 'Faltan datos', text: conCarrito ? 'Completa la descripción.' : 'Completa el tipo, la zona y la descripción.', confirmButtonColor: '#f26522' });
-      return;
+      return { title: 'Faltan datos', text: conCarrito ? 'Completa la descripción.' : 'Completa el tipo, la zona y la descripción.' };
     }
     // La visita se refleja en el calendario: el administrador siempre la programa
     if (esAdmin && (!form.fecha || !form.hora)) {
-      Swal.fire({ icon: 'warning', title: 'Falta la fecha u hora', text: 'Indica la fecha y la hora de la visita para que aparezca en el calendario.', confirmButtonColor: '#f26522' });
+      return { title: 'Falta la fecha u hora', text: 'Indica la fecha y la hora de la visita para que aparezca en el calendario.' };
+    }
+    return null;
+  };
+
+  const avisarFalta = (falta) => Swal.fire({ icon: 'warning', ...falta, confirmButtonColor: '#f26522' });
+
+  // Lo que hay en pantalla como un trabajo listo para enviar
+  const trabajoActual = () => ({
+    id: Date.now(),
+    form,
+    tecnicoIds,
+    carrito: conCarrito ? carrito : [],
+    equipo: nombresEquipo(),
+  });
+
+  const guardarYAgregarOtro = () => {
+    const falta = faltaEnTrabajo();
+    if (falta) {
+      avisarFalta(falta);
+      return;
+    }
+    setLote((actuales) => [...actuales, trabajoActual()]);
+    // Suele ser la misma visita: la fecha y la hora se conservan
+    setForm({ ...FORM_VACIO, fecha: form.fecha, hora: form.hora });
+    setTecnicoIds([]);
+    setCarrito([]);
+    setEquipos({});
+    setPanelEquiposAbierto(false);
+    modalRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Crea la orden de un trabajo. Devuelve true si la agenda o la cuadrilla quedaron pendientes.
+  const crearOrden = async (trabajo, batchId) => {
+    const { form: datos, carrito: elegidos, tecnicoIds: integrantes } = trabajo;
+    const ids = integrantes.map(Number);
+    const headers = authHeaders();
+    const visita = esAdmin && datos.fecha && datos.hora ? `${datos.fecha} ${datos.hora}` : null;
+
+    const fd = new FormData();
+    fd.append('property_id', propiedad.id);
+    fd.append('type', datos.tipo);
+    if (batchId) fd.append('batch_id', batchId);
+    if (elegidos.length) {
+      const etiquetas = elegidos.map((r) => r.label).join(', ');
+      fd.append('zone', elegidos.length === 1 && elegidos[0].area ? elegidos[0].area : 'Varias zonas');
+      fd.append('equipment', etiquetas.length > 150 ? `${etiquetas.slice(0, 149)}…` : etiquetas);
+      fd.append('description', `${datos.descripcion}\n\n[EQUIPO AFECTADO]: ${etiquetas}`);
+      elegidos.forEach((r) => fd.append(r.tipo === 'equipo' ? 'equipo_ids[]' : 'component_ids[]', r.id));
+    } else {
+      fd.append('zone', datos.zona);
+      fd.append('equipment', datos.equipo || '');
+      fd.append('description', datos.equipo
+        ? `${datos.descripcion}\n\n[EQUIPO AFECTADO]: ${datos.equipo}`
+        : datos.descripcion);
+    }
+    if (ids[0]) fd.append('tecnico_id', ids[0]);
+    datos.fotos.forEach((foto, i) => fd.append(`evidence_${i + 1}`, foto));
+    const res = await axios.post(`${API}/work-orders/cliente`, fd, {
+      headers: { ...headers, 'Content-Type': 'multipart/form-data' },
+    });
+
+    // Cuadrilla y visita en una sola llamada (mismo endpoint que el tablero de servicios):
+    // notifica a cada integrante como asignado. En dos llamadas, la de la fecha
+    // se tomaba como reprogramación y llegaba un segundo aviso.
+    if (ids.length > 1 || visita) {
+      const ordenId = idCreado(res.data) || await buscarCreado('trabajo');
+      if (!ordenId) return true;
+      await axios.put(`${API}/work-orders/${ordenId}/assign`, {
+        ...(ids.length && { tecnicos_ids: ids }),
+        ...(visita && { scheduled_at: visita }),
+      }, { headers });
+    }
+    return false;
+  };
+
+  // Uno por uno: si alguno falla se queda en la lista para reintentarlo, y al reintentar entra al mismo lote
+  const enviarTrabajos = async () => {
+    const pendientes = [...lote, ...(hayTrabajoEnCurso ? [trabajoActual()] : [])];
+    if (pendientes.length > 1 && !loteIdRef.current) {
+      loteIdRef.current = `LOTE-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    }
+
+    const fallidos = [];
+    let creados = 0;
+    let sinProgramar = false;
+    let ultimoError = null;
+    for (const trabajo of pendientes) {
+      try {
+        if (await crearOrden(trabajo, loteIdRef.current)) sinProgramar = true;
+        creados += 1;
+      } catch (error) {
+        fallidos.push(trabajo);
+        ultimoError = error;
+      }
+    }
+
+    if (creados) onCreada?.();
+
+    if (fallidos.length) {
+      setLote(fallidos);
+      if (hayTrabajoEnCurso) {
+        setForm({ ...FORM_VACIO, fecha: form.fecha, hora: form.hora });
+        setTecnicoIds([]);
+        setCarrito([]);
+        setEquipos({});
+      }
+      Swal.fire({
+        icon: creados ? 'warning' : 'error',
+        title: creados ? `Se crearon ${creados} de ${pendientes.length} trabajos` : 'No se pudo enviar',
+        text: `${fallidos.length === 1 ? 'El que falló sigue' : 'Los que fallaron siguen'} en la lista para reintentar. ${ultimoError.response?.data?.message || ultimoError.response?.data?.error || ''}`.trim(),
+        confirmButtonColor: '#f26522',
+      });
+      return;
+    }
+
+    if (pendientes.length > 1) {
+      Swal.fire({
+        icon: 'success',
+        title: `¡${pendientes.length} trabajos solicitados!`,
+        text: [
+          `Quedaron agrupados en el lote ${loteIdRef.current}. Cada uno conserva su técnico y su visita.`,
+          sinProgramar && 'Alguna asignación o agenda quedó pendiente; revísala desde Servicios.',
+        ].filter(Boolean).join(' '),
+        confirmButtonColor: '#f26522',
+      });
+    } else {
+      const [unico] = pendientes;
+      Swal.fire({
+        icon: 'success',
+        title: '¡Trabajo solicitado!',
+        text: [
+          unico.tecnicoIds.length ? `Se asignó a ${unico.equipo}.` : 'Puedes asignar un técnico después desde Servicios.',
+          unico.form.fecha && unico.form.hora && !sinProgramar && `Visita programada: ${new Date(`${unico.form.fecha}T${unico.form.hora}`).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}.`,
+          sinProgramar && 'No se pudo completar la asignación o la agenda; revísala desde Servicios.',
+        ].filter(Boolean).join(' '),
+        confirmButtonColor: '#f26522',
+      });
+    }
+    onClose();
+  };
+
+  const enviarLevantamiento = async () => {
+    const ids = tecnicoIds.map(Number);
+    const idTec = ids[0] || null;
+    const headers = authHeaders();
+    const visita = esAdmin && form.fecha && form.hora ? `${form.fecha} ${form.hora}` : null;
+    let sinProgramar = false;
+
+    const tec = nombresEquipo();
+    const res = await axios.post(`${API}/servicios`, {
+      property_id: propiedad.id,
+      title: 'Levantamiento Inicial',
+      description: form.descripcion.trim() ||
+        `Solicitud de visita técnica para registro inicial de la propiedad.${tec ? ` Técnico asignado: ${tec}` : ''}`,
+      priority: 'Media',
+      supervisor_name: form.supervisor.trim() || tec || 'El propietario',
+      technician_id: idTec,
+      tecnico_id: idTec,
+      ...(visita && { scheduled_start: `${visita}:00` }),
+    }, { headers });
+    // Misma agenda que la vista de Levantamientos
+    if (visita) {
+      const servicioId = idCreado(res.data) || await buscarCreado('levantamiento');
+      if (servicioId) {
+        await axios.put(`${API}/servicios/${servicioId}/asignar`, { tecnico_id: idTec, scheduled_start: `${visita}:00` }, { headers });
+      } else {
+        sinProgramar = true;
+      }
+    }
+    // Los demás técnicos se suman al equipo del levantamiento
+    for (const extra of ids.slice(1)) {
+      await axios.post(`${API}/propiedades/${propiedad.id}/equipo-levantamiento`, { technician_id: extra }, { headers });
+    }
+
+    Swal.fire({
+      icon: 'success',
+      title: '¡Levantamiento solicitado!',
+      text: [
+        idTec ? `Se asignó a ${nombresEquipo()}.` : 'Puedes asignar un técnico después desde Servicios.',
+        visita && !sinProgramar && `Visita programada: ${new Date(`${form.fecha}T${form.hora}`).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}.`,
+        sinProgramar && 'No se pudo completar la asignación o la agenda; revísala desde Servicios.',
+      ].filter(Boolean).join(' '),
+      confirmButtonColor: '#f26522',
+    });
+    onCreada?.();
+    onClose();
+  };
+
+  const enviar = async (e) => {
+    e.preventDefault();
+    if (enviando) return;
+    // Con trabajos guardados, lo que está en pantalla puede quedar vacío
+    const falta = lote.length && !hayTrabajoEnCurso ? null : faltaEnTrabajo();
+    if (falta) {
+      avisarFalta(falta);
       return;
     }
 
     setEnviando(true);
     try {
-      const ids = tecnicoIds.map(Number);
-      const idTec = ids[0] || null;
-      const headers = authHeaders();
-      const visita = esAdmin && form.fecha && form.hora ? `${form.fecha} ${form.hora}` : null;
-      let sinProgramar = false;
-      if (modo === 'trabajo') {
-        const fd = new FormData();
-        fd.append('property_id', propiedad.id);
-        fd.append('type', form.tipo);
-        if (conCarrito) {
-          const etiquetas = carrito.map((r) => r.label).join(', ');
-          fd.append('zone', carrito.length === 1 && carrito[0].area ? carrito[0].area : 'Varias zonas');
-          fd.append('equipment', etiquetas.length > 150 ? `${etiquetas.slice(0, 149)}…` : etiquetas);
-          fd.append('description', `${form.descripcion}\n\n[EQUIPO AFECTADO]: ${etiquetas}`);
-          carrito.forEach((r) => fd.append(r.tipo === 'equipo' ? 'equipo_ids[]' : 'component_ids[]', r.id));
-        } else {
-          fd.append('zone', form.zona);
-          fd.append('equipment', form.equipo || '');
-          fd.append('description', form.equipo
-            ? `${form.descripcion}\n\n[EQUIPO AFECTADO]: ${form.equipo}`
-            : form.descripcion);
-        }
-        if (idTec) fd.append('tecnico_id', idTec);
-        form.fotos.forEach((foto, i) => fd.append(`evidence_${i + 1}`, foto));
-        const res = await axios.post(`${API}/work-orders/cliente`, fd, {
-          headers: { ...headers, 'Content-Type': 'multipart/form-data' },
-        });
-        // Cuadrilla y visita en una sola llamada (mismo endpoint que el tablero de servicios):
-        // notifica a cada integrante como asignado. En dos llamadas, la de la fecha
-        // se tomaba como reprogramación y llegaba un segundo aviso.
-        if (ids.length > 1 || visita) {
-          const ordenId = idCreado(res.data) || await buscarCreado('trabajo');
-          if (ordenId) {
-            await axios.put(`${API}/work-orders/${ordenId}/assign`, {
-              ...(ids.length && { tecnicos_ids: ids }),
-              ...(visita && { scheduled_at: visita }),
-            }, { headers });
-          } else {
-            sinProgramar = true;
-          }
-        }
-      } else {
-        const tec = nombresEquipo();
-        const res = await axios.post(`${API}/servicios`, {
-          property_id: propiedad.id,
-          title: 'Levantamiento Inicial',
-          description: form.descripcion.trim() ||
-            `Solicitud de visita técnica para registro inicial de la propiedad.${tec ? ` Técnico asignado: ${tec}` : ''}`,
-          priority: 'Media',
-          supervisor_name: form.supervisor.trim() || tec || 'El propietario',
-          technician_id: idTec,
-          tecnico_id: idTec,
-          ...(visita && { scheduled_start: `${visita}:00` }),
-        }, { headers });
-        // Misma agenda que la vista de Levantamientos
-        if (visita) {
-          const servicioId = idCreado(res.data) || await buscarCreado('levantamiento');
-          if (servicioId) {
-            await axios.put(`${API}/servicios/${servicioId}/asignar`, { tecnico_id: idTec, scheduled_start: `${visita}:00` }, { headers });
-          } else {
-            sinProgramar = true;
-          }
-        }
-        // Los demás técnicos se suman al equipo del levantamiento
-        for (const extra of ids.slice(1)) {
-          await axios.post(`${API}/propiedades/${propiedad.id}/equipo-levantamiento`, { technician_id: extra }, { headers });
-        }
-      }
-
-      Swal.fire({
-        icon: 'success',
-        title: modo === 'trabajo' ? '¡Trabajo solicitado!' : '¡Levantamiento solicitado!',
-        text: [
-          idTec ? `Se asignó a ${nombresEquipo()}.` : 'Puedes asignar un técnico después desde Servicios.',
-          visita && !sinProgramar && `Visita programada: ${new Date(`${form.fecha}T${form.hora}`).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}.`,
-          sinProgramar && 'No se pudo completar la asignación o la agenda; revísala desde Servicios.',
-        ].filter(Boolean).join(' '),
-        confirmButtonColor: '#f26522',
-      });
-      onCreada?.();
-      onClose();
+      if (modo === 'trabajo') await enviarTrabajos();
+      else await enviarLevantamiento();
     } catch (error) {
       Swal.fire({
         icon: 'error',
@@ -258,11 +378,13 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
     }
   };
 
+  const totalTrabajos = lote.length + (hayTrabajoEnCurso || !lote.length ? 1 : 0);
+
   return createPortal(
     <>
       <div className="rp-overlay" onClick={onClose}>
         <div className={`mt-solicitud ${mostrarEquipos ? 'con-equipos' : ''}`}>
-        <div className="rp-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="rp-modal" ref={modalRef} onClick={(e) => e.stopPropagation()}>
           <div className="rp-header">
             <div className="rp-header-text">
               <span className="rp-tag">NUEVA SOLICITUD</span>
@@ -273,15 +395,32 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
             </button>
           </div>
 
-          <form className="rp-form" onSubmit={enviar}>
+          <form className="rp-form" onSubmit={enviar} noValidate={lote.length > 0}>
             <div className="xp-seg" role="tablist">
               <button type="button" className={modo === 'trabajo' ? 'on' : ''} onClick={() => setModo('trabajo')}>
                 <Hammer size={15} /> Trabajo
               </button>
-              <button type="button" className={modo === 'levantamiento' ? 'on' : ''} onClick={() => setModo('levantamiento')}>
+              <button type="button" className={modo === 'levantamiento' ? 'on' : ''} onClick={() => setModo('levantamiento')} disabled={lote.length > 0} title={lote.length > 0 ? 'Un lote solo lleva trabajos' : undefined}>
                 <ClipboardList size={15} /> Levantamiento
               </button>
             </div>
+
+            {lote.length > 0 && (
+              <div className="mt-lote">
+                <p className="mt-lote-titulo"><Layers size={15} /> Trabajos en este lote ({lote.length})</p>
+                {lote.map((t) => (
+                  <div key={t.id} className="mt-lote-item">
+                    <span className="mt-lote-texto">
+                      <strong>{t.form.tipo} · {t.carrito.length ? t.carrito.map((r) => r.label).join(', ') : (t.form.equipo || t.form.zona)}</strong>
+                      <small>{t.equipo || 'Sin técnico asignado'}{t.form.fecha && t.form.hora ? ` · ${t.form.fecha} ${t.form.hora}` : ''}</small>
+                    </span>
+                    <button type="button" className="mt-lote-quitar" onClick={() => setLote((actuales) => actuales.filter((x) => x.id !== t.id))} aria-label="Quitar este trabajo del lote">
+                      <X size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <p className="xp-rp-propiedad">
               <Home size={15} color="#ff8c42" />
@@ -503,8 +642,17 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
             )}
 
             <div className="rp-footer">
+              {modo === 'trabajo' && (
+                <button type="button" className="mt-agregar-otro" onClick={guardarYAgregarOtro} disabled={enviando}>
+                  <PlusCircle size={17} /> Guardar y solicitar otro trabajo
+                </button>
+              )}
               <button type="submit" className="xp-btn-primary" disabled={enviando}>
-                {enviando ? 'Enviando...' : modo === 'trabajo' ? 'Solicitar trabajo' : 'Solicitar levantamiento'}
+                {enviando
+                  ? 'Enviando...'
+                  : modo !== 'trabajo'
+                    ? 'Solicitar levantamiento'
+                    : totalTrabajos > 1 ? `Solicitar ${totalTrabajos} trabajos` : 'Solicitar trabajo'}
               </button>
             </div>
           </form>
@@ -525,6 +673,7 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
             <PanelEquiposSolicitud
               propiedad={propiedad}
               carrito={carrito}
+              ocultos={lote.flatMap((t) => t.carrito.map((r) => r.clave))}
               onChange={setCarrito}
               abierto={panelEquiposAbierto}
               onCerrar={() => setPanelEquiposAbierto(false)}

@@ -242,3 +242,22 @@ span.mt-item-fecha { cursor: default; }
   .mt-solicitud > .mt-panel-equipos.rp-modal { transition: none; }
 }
 .mt-aviso-parcial { margin: 0; font-size: 0.78rem; font-weight: 600; color: #b91c1c; }
+
+/* Varios trabajos en una sola solicitud (lote) */
+.mt-lote { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 14px; background: #fff7f1; border: 1.5px solid #fed7aa; }
+.mt-lote-titulo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; color: #c2410c; font-size: 0.82rem; font-weight: 800; }
+.mt-lote-titulo span { font-size: 0.72rem; font-weight: 700; color: #64748b; }
+.mt-lote-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: #ffffff; }
+.mt-lote-texto { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+.mt-lote-texto strong { color: #0f172a; font-size: 0.82rem; font-weight: 700; overflow-wrap: anywhere; }
+.mt-lote-texto small { color: #64748b !important; font-size: 0.74rem; overflow-wrap: anywhere; }
+.mt-lote-quitar {
+  display: flex; align-items: center; justify-content: center; flex: 0 0 36px; width: 36px; height: 36px; padding: 0;
+  border: 0; border-radius: 10px; background: #fee2e2; color: #dc2626; cursor: pointer;
+}
+.mt-agregar-otro {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; margin-bottom: 8px; padding: 8px 14px;
+  border: 1.5px dashed #f26522; border-radius: 14px; background: rgba(255, 255, 255, 0.9); color: #c2410c;
+  font-size: 0.9rem; font-weight: 800; font-family: inherit; cursor: pointer;
+}
+.mt-lote-grupo { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1.5px solid #fed7aa; border-radius: 16px; background: rgba(255, 247, 241, 0.75); }
