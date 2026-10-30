@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { CalendarClock, CheckCircle2, MapPin, ShoppingCart, Wrench } from 'lucide-react';
+import { CalendarClock, CheckCircle2, ChevronLeft, MapPin, ShoppingCart, Wrench } from 'lucide-react';
 import { API, authHeaders } from '../Expediente/flujoTrabajo';
 import { nombreEquipo, proximaFecha, textoFecha, tiempoRestante } from './CamposMantenimiento';
 import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 
 // Equipos de la propiedad para una solicitud de mantenimiento: lo agendado (con su cuenta regresiva)
 // y lo del levantamiento. Se eligen como en un carrito; `carrito` son los renglones elegidos.
-const PanelEquiposSolicitud = ({ propiedad, carrito, onChange }) => {
+// En responsivo es un panel lateral que se abre con la flecha (`abierto`, `onCerrar`).
+const PanelEquiposSolicitud = ({ propiedad, carrito, onChange, abierto = false, onCerrar }) => {
   const [equipos, setEquipos] = useState([]);
   const [elementos, setElementos] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -60,9 +61,14 @@ const PanelEquiposSolicitud = ({ propiedad, carrito, onChange }) => {
   const direccion = propiedad.address || propiedad.direccion || 'Sin dirección registrada';
 
   return (
-    <aside className="rp-modal mt-panel-equipos" onClick={(e) => e.stopPropagation()} aria-label="Equipos de la propiedad">
+    <aside className={`rp-modal mt-panel-equipos ${abierto ? 'abierto' : ''}`} onClick={(e) => e.stopPropagation()} aria-label="Equipos de la propiedad">
       <div className="mt-panel-equipos-cabecera">
-        <h3><Wrench size={17} /> Equipos de la propiedad</h3>
+        <h3>
+          <Wrench size={17} /> Equipos de la propiedad
+          <button type="button" className="mt-panel-cerrar" onClick={onCerrar} aria-label="Cerrar lista de equipos">
+            <ChevronLeft size={20} />
+          </button>
+        </h3>
         <p><MapPin size={14} /> {direccion}</p>
       </div>
 

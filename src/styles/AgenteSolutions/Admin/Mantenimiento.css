@@ -204,14 +204,41 @@ span.mt-item-fecha { cursor: default; }
 .mt-carrito.con-items { background: #f26522; color: #ffffff; }
 .mt-solicitud-nota { display: flex; align-items: flex-start; gap: 7px; margin: 0; padding: 10px 12px; border-radius: 12px; background: #fff7f1; color: #c2410c; font-size: 0.85rem; font-weight: 700; overflow-wrap: anywhere; }
 .mt-solicitud-nota svg { flex-shrink: 0; margin-top: 1px; }
+/* La flecha y el panel lateral solo existen en responsivo */
+.mt-flecha-equipos, .mt-panel-cerrar, .mt-panel-fondo { display: none; }
 @media (max-width: 900px) {
-  .mt-solicitud.con-equipos { flex-direction: column; justify-content: flex-start; overflow-y: auto; }
-  .mt-solicitud.con-equipos > .rp-modal { flex: 0 0 auto; width: 100%; max-width: none; max-height: none; }
-  .mt-panel-equipos { animation-name: mt-panel-entra-movil; overflow: visible !important; }
-  .mt-panel-equipos-lista { overflow: visible; }
+  .mt-flecha-equipos {
+    position: fixed; left: 0; top: 50%; z-index: 3; display: flex; align-items: center; justify-content: center;
+    width: 46px; height: 68px; padding: 0; transform: translateY(-50%);
+    border: 2px solid #ffffff; border-left: 0; border-radius: 0 18px 18px 0;
+    background: #1e2430; color: #ffffff; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    animation: mt-flecha-entra 0.3s ease both;
+  }
+  .mt-flecha-cuenta {
+    position: absolute; top: -8px; right: -8px; display: flex; align-items: center; justify-content: center;
+    min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; border-radius: 11px;
+    background: #f26522; color: #ffffff; font-size: 0.75rem; font-weight: 800;
+  }
+  .mt-panel-fondo { position: fixed; inset: 0; z-index: 4; display: block; background: rgba(8, 10, 14, 0.45); }
+  .mt-solicitud > .mt-panel-equipos.rp-modal {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 5; flex: none; width: min(88vw, 420px) !important; max-width: none !important;
+    max-height: none !important; height: 100dvh; padding: 18px !important; border-radius: 0 22px 22px 0 !important;
+    visibility: hidden; transform: translateX(-105%); animation: none;
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.32s;
+  }
+  .mt-solicitud > .mt-panel-equipos.rp-modal.abierto { visibility: visible; transform: translateX(0); }
+  .mt-panel-equipos-cabecera h3 { justify-content: flex-start; }
+  .mt-panel-cerrar {
+    display: flex; align-items: center; justify-content: center; flex: 0 0 40px; width: 40px; height: 40px; margin-left: auto; padding: 0;
+    border: 0; border-radius: 12px; background: #f1f5f9; color: #334155; cursor: pointer;
+  }
 }
-@keyframes mt-panel-entra-movil {
-  from { opacity: 0; transform: translateX(-32px); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes mt-flecha-entra {
+  from { opacity: 0; transform: translate(-100%, -50%); }
+  to { opacity: 1; transform: translate(0, -50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mt-flecha-equipos { animation: none; }
+  .mt-solicitud > .mt-panel-equipos.rp-modal { transition: none; }
 }
 .mt-aviso-parcial { margin: 0; font-size: 0.78rem; font-weight: 600; color: #b91c1c; }

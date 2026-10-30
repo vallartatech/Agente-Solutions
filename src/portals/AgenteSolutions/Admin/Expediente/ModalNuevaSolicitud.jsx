@@ -51,6 +51,7 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
   const [enviando, setEnviando] = useState(false);
   const [menuFoto, setMenuFoto] = useState(false);
   const [carrito, setCarrito] = useState([]); // equipos elegidos para un mantenimiento
+  const [panelEquiposAbierto, setPanelEquiposAbierto] = useState(false); // solo aplica en responsivo
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
   const navigate = useNavigate();
@@ -509,7 +510,27 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
           </form>
         </div>
 
-        {mostrarEquipos && <PanelEquiposSolicitud propiedad={propiedad} carrito={carrito} onChange={setCarrito} />}
+        {mostrarEquipos && (
+          <>
+            <button
+              type="button"
+              className="mt-flecha-equipos"
+              onClick={(e) => { e.stopPropagation(); setPanelEquiposAbierto(true); }}
+              aria-label={`Elegir equipos${carrito.length ? `, ${carrito.length} elegidos` : ''}`}
+            >
+              <ChevronRight size={24} strokeWidth={2.6} />
+              {carrito.length > 0 && <span className="mt-flecha-cuenta">{carrito.length}</span>}
+            </button>
+            {panelEquiposAbierto && <div className="mt-panel-fondo" onClick={(e) => { e.stopPropagation(); setPanelEquiposAbierto(false); }} />}
+            <PanelEquiposSolicitud
+              propiedad={propiedad}
+              carrito={carrito}
+              onChange={setCarrito}
+              abierto={panelEquiposAbierto}
+              onCerrar={() => setPanelEquiposAbierto(false)}
+            />
+          </>
+        )}
         </div>
       </div>
 

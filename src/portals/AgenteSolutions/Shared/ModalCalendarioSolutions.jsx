@@ -86,9 +86,22 @@ const detalleEvento = (job) => {
   return [job.cliente, job.assigned_tech_name && `Técnico: ${job.assigned_tech_name}`, job.timingBadge].filter(Boolean).join(' · ');
 };
 
+// ¿Le corresponde a esta persona? Trabajos: está asignada. Avisos: la nombraron como participante o es su aviso privado.
+// Los avisos para todo el equipo, los cumpleaños y los mantenimientos sin asignar no cuentan.
+const esAsignadoA = (evento, userId) => {
+  const yo = Number(userId);
+  if (!yo || evento.isBirthday || evento.isMaintenance) return false;
+  if (evento.isNotice) {
+    const raw = evento.rawNotice || {};
+    return (raw.participants || []).some(p => Number(p.id) === yo) || (Boolean(raw.is_private) && Number(raw.created_by) === yo);
+  }
+  return Number(evento.tecnico_id) === yo || (evento.asignados || []).some(a => Number(a.id) === yo);
+};
+
 // Opciones del menú "Filtrar"
 const FILTROS_CALENDARIO = [
   { key: 'all', label: 'Todos', Icon: CalendarIcon },
+  { key: 'mios', label: 'Asignados a mí', Icon: User },
   { key: 'notices', label: 'Avisos', Icon: Megaphone, dot: 'dot-notice' },
   { key: 'mantenimiento', label: 'Mantenimientos', Icon: Wrench, dot: 'dot-mantenimiento' },
   { key: 'birthdays', label: 'Cumpleaños', Icon: Cake, dot: 'dot-birthday' },
@@ -286,7 +299,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [miniCalDate, setMiniCalDate] = useState(new Date());
   const [currentView, setCurrentView] = useState('month'); // 'month' | 'week' | 'agenda'
-  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'overdue' | 'today' | 'future' | 'uncoordinated' | 'completed'
+  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'mios' | 'overdue' | 'today' | 'future' | 'uncoordinated' | 'completed'
   const [filtroAbierto, setFiltroAbierto] = useState(false);
   const filtroRef = useRef(null);
 
@@ -1360,7 +1373,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   const applyFilters = useCallback((events) => {
     let result = [...events];
 
-    if (selectedFilter === 'notices') result = result.filter(e => e.isNotice && !e.isMaintenance);
+    if (selectedFilter === 'mios') result = result.filter(e => esAsignadoA(e, user?.id));
+    else if (selectedFilter === 'notices') result = result.filter(e => e.isNotice && !e.isMaintenance);
     else if (selectedFilter === 'mantenimiento') result = result.filter(e => e.isMaintenance);
     else if (selectedFilter === 'birthdays') result = result.filter(e => e.isBirthday);
     else if (selectedFilter === 'overdue') result = result.filter(e => e.isOverdue && !e.isNotice && !e.isBirthday);
@@ -1382,20 +1396,22 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     }
 
     return result;
-  }, [selectedFilter, searchQuery]);
+  }, [selectedFilter, searchQuery, user?.id]);
 
   const filteredEvents = useMemo(() => applyFilters(allEvents), [allEvents, applyFilters]);
 
   // Contadores
   const countAll = allEvents.length;
-  const countNotices = allEvents.filter(e => e.isNotice).length;
+  const countNotices = allEvents.filter(e => e.isNotice && !e.isMaintenance).length;
+  const countMantenimiento = allEvents.filter(e => e.isMaintenance).length;
+  const countMios = allEvents.filter(e => esAsignadoA(e, user?.id)).length;
   const countBirthdays = allEvents.filter(e => e.isBirthday && e.calendarDate.getFullYear() === currentDate.getFullYear()).length;
   const countOverdue = allEvents.filter(e => e.isOverdue).length;
   const countToday = allEvents.filter(e => e.isToday).length;
   const countFuture = allEvents.filter(e => e.isFuture).length;
   const countUncoordinated = allEvents.filter(e => e.isUncoordinated).length;
   const conteoFiltro = {
-    all: countAll, notices: countNotices, birthdays: countBirthdays, overdue: countOverdue,
+    all: countAll, mios: countMios, notices: countNotices, mantenimiento: countMantenimiento, birthdays: countBirthdays, overdue: countOverdue,
     today: countToday, future: countFuture, uncoordinated: countUncoordinated,
   };
   const filtroActual = FILTROS_CALENDARIO.find(f => f.key === selectedFilter) || FILTROS_CALENDARIO[0];
