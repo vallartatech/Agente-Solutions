@@ -5,7 +5,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import {
   X, FileText, Home, Wrench, MessageSquare, Camera, ImageIcon, PlusCircle,
-  Users, User, ClipboardList, Hammer, ChevronRight, CheckCircle2, CalendarClock, Layers
+  Users, User, ClipboardList, Hammer, ChevronRight, CheckCircle2, CalendarClock, Layers, Pencil
 } from 'lucide-react';
 import { API, authHeaders } from './flujoTrabajo';
 import PanelEquiposSolicitud from '../Mantenimiento/PanelEquiposSolicitud';
@@ -55,6 +55,7 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
   // Trabajos ya guardados que se enviarán juntos como un lote
   const [lote, setLote] = useState([]);
   const loteIdRef = useRef(null);
+  const [posicionEditada, setPosicionEditada] = useState(null); // lugar en la lista del trabajo que se está editando
   const modalRef = useRef(null);
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
@@ -98,8 +99,10 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
     }
     setForm((f) => ({ ...f, area_id: areaId, zona: area ? area.name : '', equipo: '' }));
     setEquipos({});
-    if (!areaId) return;
+    if (areaId) await cargarEquipos(areaId);
+  };
 
+  const cargarEquipos = async (areaId) => {
     setCargandoEquipos(true);
     try {
       const res = await axios.get(`${API}/areas/${areaId}/components`, { headers: authHeaders() });
@@ -185,13 +188,59 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
       avisarFalta(falta);
       return;
     }
-    setLote((actuales) => [...actuales, trabajoActual()]);
+    guardarEnLista();
     // Suele ser la misma visita: la fecha y la hora se conservan
     setForm({ ...FORM_VACIO, fecha: form.fecha, hora: form.hora });
     setTecnicoIds([]);
     setCarrito([]);
     setEquipos({});
     setPanelEquiposAbierto(false);
+    modalRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Un trabajo editado regresa a su mismo lugar en la lista
+  const guardarEnLista = () => {
+    const trabajo = trabajoActual();
+    setLote((actuales) => {
+      const copia = [...actuales];
+      copia.splice(posicionEditada ?? copia.length, 0, trabajo);
+      return copia;
+    });
+    setPosicionEditada(null);
+  };
+
+  const quitarDelLote = (trabajo, posicion) => {
+    setLote((actuales) => actuales.filter((t) => t.id !== trabajo.id));
+    if (posicionEditada !== null && posicion < posicionEditada) setPosicionEditada(posicionEditada - 1);
+  };
+
+  // Regresa un trabajo de la lista al formulario, con todos sus datos
+  const editarTrabajo = async (trabajo, posicion) => {
+    if (hayTrabajoEnCurso) {
+      if (!faltaEnTrabajo()) {
+        guardarEnLista();
+      } else {
+        const { isConfirmed } = await Swal.fire({
+          icon: 'warning',
+          title: '¿Descartar lo que estás llenando?',
+          text: 'El trabajo que tienes en pantalla está incompleto y se perderá si editas otro.',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, descartar',
+          cancelButtonText: 'Seguir llenando',
+          confirmButtonColor: '#dc2626',
+          reverseButtons: true,
+        });
+        if (!isConfirmed) return;
+      }
+    }
+    setLote((actuales) => actuales.filter((t) => t.id !== trabajo.id));
+    setPosicionEditada(hayTrabajoEnCurso && !faltaEnTrabajo() && (posicionEditada ?? lote.length) <= posicion ? posicion + 1 : posicion);
+    setForm(trabajo.form);
+    setTecnicoIds(trabajo.tecnicoIds);
+    setCarrito(trabajo.carrito);
+    setEquipos({});
+    setPanelEquiposAbierto(false);
+    if (trabajo.form.area_id && trabajo.form.area_id !== 'otro') cargarEquipos(trabajo.form.area_id);
     modalRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -261,6 +310,8 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
     }
 
     if (creados) onCreada?.();
+
+    setPosicionEditada(null);
 
     if (fallidos.length) {
       setLote(fallidos);
@@ -408,18 +459,27 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
             {lote.length > 0 && (
               <div className="mt-lote">
                 <p className="mt-lote-titulo"><Layers size={15} /> Trabajos en este lote ({lote.length})</p>
-                {lote.map((t) => (
+                {lote.map((t, i) => (
                   <div key={t.id} className="mt-lote-item">
                     <span className="mt-lote-texto">
                       <strong>{t.form.tipo} · {t.carrito.length ? t.carrito.map((r) => r.label).join(', ') : (t.form.equipo || t.form.zona)}</strong>
                       <small>{t.equipo || 'Sin técnico asignado'}{t.form.fecha && t.form.hora ? ` · ${t.form.fecha} ${t.form.hora}` : ''}</small>
                     </span>
-                    <button type="button" className="mt-lote-quitar" onClick={() => setLote((actuales) => actuales.filter((x) => x.id !== t.id))} aria-label="Quitar este trabajo del lote">
+                    <button type="button" className="mt-lote-editar" onClick={() => editarTrabajo(t, i)} aria-label="Editar este trabajo">
+                      <Pencil size={15} />
+                    </button>
+                    <button type="button" className="mt-lote-quitar" onClick={() => quitarDelLote(t, i)} aria-label="Quitar este trabajo del lote">
                       <X size={15} />
                     </button>
                   </div>
                 ))}
               </div>
+            )}
+
+            {posicionEditada !== null && (
+              <p className="mt-solicitud-nota">
+                <Pencil size={15} /> Estás editando el trabajo {posicionEditada + 1} del lote. Al terminar, toca Guardar cambios.
+              </p>
             )}
 
             <p className="xp-rp-propiedad">
@@ -644,7 +704,7 @@ const ModalNuevaSolicitud = ({ propiedad, onClose, onCreada }) => {
             <div className="rp-footer">
               {modo === 'trabajo' && (
                 <button type="button" className="mt-agregar-otro" onClick={guardarYAgregarOtro} disabled={enviando}>
-                  <PlusCircle size={17} /> Guardar y solicitar otro trabajo
+                  <PlusCircle size={17} /> {posicionEditada !== null ? 'Guardar cambios' : 'Guardar y solicitar otro trabajo'}
                 </button>
               )}
               <button type="submit" className="xp-btn-primary" disabled={enviando}>
