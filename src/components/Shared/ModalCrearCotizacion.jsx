@@ -5,6 +5,7 @@ import { X, Plus, Trash2, Camera, FileText, Upload, Pencil } from 'lucide-react'
 import '../../styles/AgenteSolutions/Tecnico/TrabajoPropiedad.css';
 import '../../styles/Shared/ModalCrearCotizacion.css';
 import { mostrarAviso } from '../../utils/dialogos';
+import SelectorOrigenFoto from './SelectorOrigenFoto';
 
 const ModalCrearCotizacion = ({ 
   workOrderId, 
@@ -462,27 +463,13 @@ const ModalCrearCotizacion = ({
           </div>
         </motion.div>
 
-        {isPhotoMenuOpen && (
-          <div className="tp-modal-overlay" onClick={() => setIsPhotoMenuOpen(false)} style={{ zIndex: 10000, background: 'rgba(0,0,0,0.8)' }}>
-            <div className="tp-modal-content" style={{ maxWidth: '400px', width: '90%', padding: '0', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
-              <h3 style={{ color: '#F26522', borderBottom: '1px solid #333', margin: 0, padding: '20px', textAlign: 'center', fontSize: '1.2rem' }}>Seleccionar Foto</h3>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <button 
-                  onClick={() => { document.getElementById('q-evidence-camera').click(); setIsPhotoMenuOpen(false); }}
-                  style={{ padding: '20px', border: 'none', background: 'transparent', color: 'white', fontSize: '1.1rem', cursor: 'pointer', borderBottom: '1px solid #333' }}
-                >
-                  📷 Tomar Foto
-                </button>
-                <button 
-                  onClick={() => { document.getElementById('q-evidence-gallery').click(); setIsPhotoMenuOpen(false); }}
-                  style={{ padding: '20px', border: 'none', background: 'transparent', color: 'white', fontSize: '1.1rem', cursor: 'pointer' }}
-                >
-                  🖼️ Elegir de la Galería
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <SelectorOrigenFoto
+          abierto={isPhotoMenuOpen}
+          titulo="Foto de la cotización"
+          onCamara={() => document.getElementById('q-evidence-camera')?.click()}
+          onGaleria={() => document.getElementById('q-evidence-gallery')?.click()}
+          onCerrar={() => setIsPhotoMenuOpen(false)}
+        />
       </div>
     </AnimatePresence>
   );
