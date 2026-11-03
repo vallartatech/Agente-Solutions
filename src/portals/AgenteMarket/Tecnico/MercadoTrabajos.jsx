@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindowF, DirectionsRenderer } from '@react-google-maps/api';
 import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig";
 import MaterialDateTimePicker, { formatDateTimeHuman } from '../../../components/Shared/MaterialDateTimePicker';
 import Swal from 'sweetalert2';
@@ -12,7 +13,7 @@ import {
   RotateCw, AlertTriangle, Users, UserPlus, PhoneCall, Mail, Star, Award, History,
   Home, Car, Navigation, Wrench, Camera, Plus, Trash2, Check, ArrowRight, Play, Eye, Sparkles, Lock, Zap,
   Sun, Moon, Globe, SlidersHorizontal, ChevronDown, ChevronUp, Maximize, Minimize,
-  Snowflake, Droplets, Paintbrush, KeyRound, Hammer, Leaf, Siren, ClipboardList, FolderOpen, BarChart3
+  Snowflake, Droplets, Paintbrush, KeyRound, Hammer, Leaf, Siren, ClipboardList, FolderOpen, BarChart3, Bell
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
@@ -417,6 +418,15 @@ const MercadoTrabajos = () => {
   // Pantalla completa propia del mapa (botón de vidrio).
   // Se oculta donde el navegador no la permite, p. ej. Safari de iPhone.
   const mapaSeccionRef = useRef(null);
+
+  // En PC el detalle del trabajo se abre dentro del mapa; en tablet y celular, a pantalla completa
+  const [esEscritorio, setEsEscritorio] = useState(() => window.matchMedia('(min-width: 1025px)').matches);
+  useEffect(() => {
+    const consulta = window.matchMedia('(min-width: 1025px)');
+    const alCambiar = (e) => setEsEscritorio(e.matches);
+    consulta.addEventListener('change', alCambiar);
+    return () => consulta.removeEventListener('change', alCambiar);
+  }, []);
   const [enPantallaCompleta, setEnPantallaCompleta] = useState(false);
   const puedePantallaCompleta = Boolean(document.fullscreenEnabled || document.webkitFullscreenEnabled);
   useEffect(() => {
@@ -516,6 +526,7 @@ const MercadoTrabajos = () => {
   });
   const [boardFilter, setBoardFilter] = useState('TODOS'); // 'TODOS' | 'SOS' | 'PROCESO' | 'AGENDADOS' | 'FINALIZADOS'
   const [boardFiltroAbierto, setBoardFiltroAbierto] = useState(false);
+  const [boardListaOculta, setBoardListaOculta] = useState(false); // Escritorio: ocultar la columna "Mis Trabajos"
   const boardFiltroRef = useRef(null);
 
   // El menú del filtro del tablero se cierra al tocar fuera de él
@@ -664,14 +675,17 @@ const MercadoTrabajos = () => {
         shortText = `Hora acordada`;
         badgeClass = 'imminent';
         isUrgent = true;
-      } else if (diffMinutes >= -180) {
-        text = `Retraso (+${Math.abs(diffMinutes)} min)`;
-        shortText = `Retraso (+${Math.abs(diffMinutes)}m)`;
-        badgeClass = 'delay';
-        isUrgent = true;
       } else {
-        text = `Retraso (+${Math.abs(diffMinutes)} min)`;
-        shortText = `Retraso (+${Math.abs(diffMinutes)}m)`;
+        // El retraso se expresa en la unidad que se entiende: min, h o días
+        const atraso = Math.abs(diffMinutes);
+        const dias = Math.floor(atraso / 1440);
+        const horas = Math.floor((atraso % 1440) / 60);
+        const mins = atraso % 60;
+        const legible = dias > 0
+          ? `${dias} d${horas > 0 ? ` ${horas} h` : ''}`
+          : (horas > 0 ? `${horas} h${mins > 0 ? ` ${mins} min` : ''}` : `${mins} min`);
+        text = `Retraso de ${legible}`;
+        shortText = `Retraso ${legible}`;
         badgeClass = 'delay';
         isUrgent = true;
       }
@@ -1113,8 +1127,8 @@ const MercadoTrabajos = () => {
 
   const handleEnviarCotizacion = async () => {
     if (!selectedJob) return;
-    if (!quotePrice) {
-      mostrarAviso("Por favor ingresa una propuesta económica.");
+    if (!(Number(quotePrice) > 0)) {
+      mostrarAviso("Por favor ingresa un precio mayor a cero.");
       return;
     }
     try {
@@ -2235,11 +2249,26 @@ const MercadoTrabajos = () => {
               </button>
             </div>
           ) : (
-            <div className="mercado-board-3col-layout">
+            <div className={`mercado-board-3col-layout ${boardListaOculta ? 'lista-oculta' : ''}`}>
               {/* ════════════════════════════════════════════════════
                   COLUMNA 1 (IZQUIERDA): LISTA DE TRABAJOS ACEPTADOS
               ════════════════════════════════════════════════════ */}
-              <div className={`mercado-board-col-list ${mobileBoardTab === 'trabajos' ? 'is-mobile-active' : 'is-mobile-hidden'}`}>
+              <div className={`mercado-board-col-list ${mobileBoardTab === 'trabajos' ? 'is-mobile-active' : 'is-mobile-hidden'} ${boardListaOculta ? 'lista-oculta' : ''}`}>
+                {/* Columna oculta (solo escritorio): una tira con el botón para volver a mostrarla */}
+                <div className="rt-lista-riel">
+                  <button
+                    type="button"
+                    className="rt-lista-toggle"
+                    onClick={() => setBoardListaOculta(false)}
+                    title="Mostrar mis trabajos"
+                    aria-label="Mostrar mis trabajos"
+                  >
+                    <ChevronRight size={18} strokeWidth={2.6} />
+                  </button>
+                  <span className="rt-lista-riel-icono"><Briefcase size={17} /></span>
+                  <span className="rt-lista-riel-total">{filteredBoardJobs.length}</span>
+                </div>
+
                 {/* ── BARRA DE PROGRESO INTEGRADA SOBRE MIS TRABAJOS (SOLO MÓVIL) ── */}
                 {selectedBoardJob && (
                   <div className="mercado-board-mobile-progress-card">
@@ -2343,6 +2372,16 @@ const MercadoTrabajos = () => {
                     </div>
                   );
                 })()}
+
+                  <button
+                    type="button"
+                    className="rt-lista-toggle"
+                    onClick={() => { setBoardListaOculta(true); setBoardFiltroAbierto(false); }}
+                    title="Ocultar mis trabajos"
+                    aria-label="Ocultar mis trabajos"
+                  >
+                    <ChevronLeft size={18} strokeWidth={2.6} />
+                  </button>
                 </div>
 
                 {/* Buscador de Trabajos */}
@@ -2969,9 +3008,9 @@ const MercadoTrabajos = () => {
                         </h4>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           {client.esFavorito ? (
-                            <span className="mercado-user-role-badge"><Star size={12} color="#ffffff" /> Cliente favorito / frecuente</span>
+                            <span className="mercado-user-role-badge"><Star size={12} /> Cliente favorito / frecuente</span>
                           ) : (
-                            <span className="mercado-user-role-badge"><Briefcase size={12} color="#ffffff" /> Cliente atendido</span>
+                            <span className="mercado-user-role-badge"><Briefcase size={12} /> Cliente atendido</span>
                           )}
                         </div>
                       </div>
@@ -2979,48 +3018,46 @@ const MercadoTrabajos = () => {
 
                     <div className="mercado-user-info-rows">
                       <div className="mercado-user-info-row">
-                        <MapPin size={14} color="#ffffff" style={{ flexShrink: 0 }} />
+                        <MapPin size={14} style={{ flexShrink: 0 }} />
                         <span>{client.direccion}</span>
                       </div>
                       <div className="mercado-user-info-row">
-                        <Phone size={14} color="#ffffff" style={{ flexShrink: 0 }} />
+                        <Phone size={14} style={{ flexShrink: 0 }} />
                         <span>{client.telefono || 'Sin teléfono registrado'}</span>
                       </div>
-                      <div className="mercado-user-info-row" style={{ marginTop: '2px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
-                        <span className="mercado-user-etiqueta"><Wrench size={14} color="#ffffff" /> Último servicio:</span>
-                        <span style={{ color: '#ffffff', fontWeight: '700' }}>{client.ultimoTrabajo.titulo}</span>
+                      <div className="mercado-user-info-row mercado-user-servicio-row" style={{ marginTop: '2px', paddingTop: '6px' }}>
+                        <span className="mercado-user-etiqueta"><Wrench size={14} /> Último servicio:</span>
+                        <span className="mercado-user-valor">{client.ultimoTrabajo.titulo}</span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8' }}>
-                        <span className="mercado-user-etiqueta"><Calendar size={13} color="#ffffff" /> {client.ultimoTrabajo.fecha}</span>
-                        <span style={{ color: '#ffffff', fontWeight: '800' }}>
+                      <div className="mercado-user-fecha-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                        <span className="mercado-user-etiqueta"><Calendar size={13} /> {client.ultimoTrabajo.fecha}</span>
+                        <span className="mercado-user-valor fuerte">
                           Total: ${client.totalFacturado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
 
                       {/* Calificaciones Registradas Inmutables */}
-                      <div style={{
+                      <div className="mercado-user-calificaciones" style={{
                         marginTop: '8px',
-                        background: 'rgba(255, 255, 255, 0.04)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '10px',
+                        borderRadius: '12px',
                         padding: '8px 10px',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '4px'
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Star size={13} color="#ffffff" /> Calidad: <strong style={{ color: '#ffffff' }}>{client.avgStars ? `${client.avgStars.toFixed(1)} / 5.0` : '5.0 / 5.0'}</strong>
+                          <span style={{ fontSize: '11px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Star size={13} /> Calidad: <strong className="mercado-user-valor fuerte">{client.avgStars ? `${client.avgStars.toFixed(1)} / 5.0` : '5.0 / 5.0'}</strong>
                           </span>
-                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Clock size={13} color="#ffffff" /> Puntualidad: <strong style={{ color: '#ffffff' }}>{client.avgTime ? `${client.avgTime.toFixed(1)} / 5.0` : '5.0 / 5.0'}</strong>
+                          <span style={{ fontSize: '11px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Clock size={13} /> Puntualidad: <strong className="mercado-user-valor fuerte">{client.avgTime ? `${client.avgTime.toFixed(1)} / 5.0` : '5.0 / 5.0'}</strong>
                           </span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '4px', fontSize: '9.5px', color: '#94a3b8' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', fontSize: '9.5px' }} className="mercado-user-calif-pie">
                           <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            <Lock size={12} color="#ffffff" /> <span style={{ color: '#b4c3cf', fontWeight: '700' }}>Calificación inmutable</span>
+                            <Lock size={12} /> <span className="mercado-user-tenue">Calificación inmutable</span>
                           </span>
-                          <span style={{ color: '#b4c3cf', fontWeight: '700' }}>
+                          <span className="mercado-user-tenue">
                             {client.reviewsCount > 0 ? `${client.reviewsCount} evaluaci${client.reviewsCount > 1 ? 'ones' : 'ón'}` : 'Historial definitivo'}
                           </span>
                         </div>
@@ -3036,13 +3073,13 @@ const MercadoTrabajos = () => {
                             rel="noopener noreferrer" 
                             className="mercado-user-btn-action whatsapp"
                           >
-                            <MessageCircle size={15} color="#ffffff" /> WhatsApp
+                            <MessageCircle size={15} /> WhatsApp
                           </a>
                           <a 
                             href={`tel:${cleanPhone}`} 
                             className="mercado-user-btn-action"
                           >
-                            <Phone size={15} color="#ffffff" /> Llamar
+                            <Phone size={15} /> Llamar
                           </a>
                         </div>
                       ) : (
@@ -3066,123 +3103,132 @@ const MercadoTrabajos = () => {
       )}
 
       {/* ─── MODAL DE HISTORIAL DE SERVICIOS POR CLIENTE ─── */}
-      {selectedClientForHistory && (
-        <div className="mercado-client-jobs-overlay" onClick={() => setSelectedClientForHistory(null)}>
-          <div className="mercado-client-jobs-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="mercado-client-jobs-header">
-              <div>
-                <h3 style={{ margin: 0, color: '#ffffff', fontSize: '1.2rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <User size={19} color="#ffffff" /> {selectedClientForHistory.nombre}
-                </h3>
-                <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-                  <MapPin size={13} color="#ffffff" style={{ verticalAlign: 'middle' }} /> {selectedClientForHistory.direccion} {selectedClientForHistory.telefono && <>· <Phone size={13} color="#ffffff" style={{ verticalAlign: 'middle' }} /> {selectedClientForHistory.telefono}</>}
-                </span>
-              </div>
-              <span className="mercado-modal-close" onClick={() => setSelectedClientForHistory(null)}>×</span>
-            </div>
+      {/* Historial del cliente: va en el body para quedar encima del encabezado */}
+      {selectedClientForHistory && createPortal(
+        (() => {
+          const cli = selectedClientForHistory;
+          const promedio = cli.avgStars ? Number(cli.avgStars).toFixed(1) : '5.0';
+          const dinero = (n) => `$${Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+          // La descripción trae "[URGENCIA]: ⚡ Atención Urgente…": se muestra como etiqueta, no como texto
+          const separarUrgencia = (texto = '') => {
+            const i = texto.indexOf('[URGENCIA]');
+            return i === -1
+              ? { desc: texto.trim(), urgente: false }
+              : { desc: texto.slice(0, i).replace(/[\s\-–:]+$/, '').trim(), urgente: true };
+          };
 
-            <div className="mercado-client-jobs-body">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.05)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: '#cbd5e1' }}>
-                  Total de Servicios Realizados: <strong>{selectedClientForHistory.trabajosCount}</strong>
-                </span>
-                <span style={{ fontSize: '14px', fontWeight: '900', color: '#ffffff' }}>
-                  Total Acumulado: ${selectedClientForHistory.totalFacturado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-
-              <h4 style={{ margin: '8px 0 2px 0', color: '#ffffff', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: '800' }}>
-                Desglose de Trabajos y Evaluaciones:
-              </h4>
-
-              {selectedClientForHistory.trabajos.map((job, idx) => (
-                <div key={`cli-job-${job.id}-${idx}`} className="mercado-client-job-item">
-                  <div className="mercado-client-job-item-header">
-                    <span className="mercado-client-job-title">{job.titulo}</span>
-                    <span className="mercado-client-job-price">
-                      ${parseFloat(job.agreed_price || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                    </span>
+          return (
+            <div className="hc-overlay" onClick={() => setSelectedClientForHistory(null)}>
+              <div className="hc-modal" role="dialog" aria-label={`Historial de ${cli.nombre}`} onClick={(e) => e.stopPropagation()}>
+                {/* Encabezado: quién es el cliente */}
+                <div className="hc-header">
+                  <div className="hc-avatar">
+                    {cli.avatar ? <img src={cli.avatar} alt="" /> : cli.nombre.charAt(0).toUpperCase()}
                   </div>
-
-                  <p className="mercado-client-job-desc">{job.descripcion}</p>
-
-                  {/* Detalle de Calificación Inmutable por Trabajo */}
-                  <div style={{
-                    margin: '8px 0',
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '10px',
-                    padding: '10px 12px'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <BarChart3 size={14} color="#ffffff" /> Calificación del servicio:
-                      </span>
-                      <span style={{
-                        fontSize: '9.5px',
-                        fontWeight: '800',
-                        background: 'rgba(148, 163, 184, 0.15)',
-                        color: '#cbd5e1',
-                        border: '1px solid rgba(148, 163, 184, 0.3)',
-                        borderRadius: '20px',
-                        padding: '2px 8px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        <Lock size={11} color="#ffffff" /> Inmutable (solo lectura)
-                      </span>
+                  <div className="hc-header-info">
+                    <span className="hc-kicker">Historial del cliente</span>
+                    <h3 className="hc-nombre">{cli.nombre}</h3>
+                    <div className="hc-contacto">
+                      <span className="hc-chip"><MapPin size={13} /> <span className="hc-chip-txt">{cli.direccion}</span></span>
+                      {cli.telefono && <span className="hc-chip"><Phone size={13} /> {cli.telefono}</span>}
                     </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="hc-cerrar"
+                    onClick={() => setSelectedClientForHistory(null)}
+                    title="Cerrar"
+                    aria-label="Cerrar historial"
+                  >
+                    <X size={18} strokeWidth={2.6} />
+                  </button>
+                </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '6px' }}>
-                      <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '8px', padding: '6px 8px' }}>
-                        <div style={{ fontSize: '10px', color: '#dbe4ec', fontWeight: '700', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}><Star size={12} color="#ffffff" /> Calidad del trabajo</div>
-                        <div style={{ fontSize: '12.5px', fontWeight: '900', color: '#ffffff' }}>
-                          {job.review ? `${Number(job.review.rating_stars).toFixed(1)} / 5.0` : '5.0 / 5.0'}
-                        </div>
-                      </div>
-
-                      <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '8px', padding: '6px 8px' }}>
-                        <div style={{ fontSize: '10px', color: '#dbe4ec', fontWeight: '700', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} color="#ffffff" /> Puntualidad</div>
-                        <div style={{ fontSize: '12.5px', fontWeight: '900', color: '#ffffff' }}>
-                          {job.review ? `${Number(job.review.rating_time).toFixed(1)} / 5.0` : '5.0 / 5.0'}
-                        </div>
+                <div className="hc-body">
+                  {/* Resumen en tres datos */}
+                  <div className="hc-stats">
+                    <div className="hc-stat">
+                      <span className="tb-actions-icon blue"><ClipboardList size={16} strokeWidth={2.4} /></span>
+                      <div>
+                        <strong>{cli.trabajosCount}</strong>
+                        <span>{cli.trabajosCount === 1 ? 'Servicio' : 'Servicios'}</span>
                       </div>
                     </div>
-
-                    {job.review?.comment && (
-                      <div style={{ fontSize: '11px', color: '#e2e8f0', background: 'rgba(0,0,0,0.3)', padding: '6px 8px', borderRadius: '6px', fontStyle: 'italic', marginBottom: '4px' }}>
-                        "{job.review.comment}"
+                    <div className="hc-stat">
+                      <span className="tb-actions-icon green"><DollarSign size={16} strokeWidth={2.4} /></span>
+                      <div>
+                        <strong>{dinero(cli.totalFacturado)}</strong>
+                        <span>Total acumulado</span>
                       </div>
-                    )}
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9.5px', color: '#94a3b8', marginTop: '4px' }}>
-                      <span className="mercado-user-etiqueta"><Calendar size={12} color="#ffffff" /> Registrado: {job.review?.created_at || job.fecha}</span>
-                      <span className="mercado-user-etiqueta"><Lock size={12} color="#ffffff" /> Calificación cerrada y grabada</span>
+                    </div>
+                    <div className="hc-stat">
+                      <span className="tb-actions-icon amber"><Star size={16} strokeWidth={2.4} /></span>
+                      <div>
+                        <strong>{promedio}<small> / 5</small></strong>
+                        <span>Calificación</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="mercado-client-job-footer">
-                    <span className="mercado-user-etiqueta"><Calendar size={13} color="#ffffff" /> Solicitado: {job.fecha}</span>
-                    <span style={{ color: '#ffffff', fontWeight: '700' }}>
-                      {job.scheduled_at ? `Cita: ${new Date(job.scheduled_at).toLocaleDateString('es-MX')}` : 'Sin cita agendada'}
-                    </span>
-                    <button
-                      type="button"
-                      style={{ background: 'none', border: 'none', color: '#f26522', fontWeight: '800', cursor: 'pointer', fontSize: '11.5px' }}
-                      onClick={() => {
-                        setSelectedClientForHistory(null);
-                        openQuoteModalForJob(job);
-                      }}
-                    >
-                      Abrir detalle / chat <ArrowRight size={13} style={{ verticalAlign: 'middle' }} />
-                    </button>
+                  <div className="hc-seccion">
+                    <h4>Trabajos realizados</h4>
+                    <span className="hc-seccion-nota"><Lock size={12} /> Calificaciones cerradas</span>
+                  </div>
+
+                  <div className="hc-lista">
+                    {cli.trabajos.map((job, idx) => {
+                      const { desc, urgente } = separarUrgencia(job.descripcion);
+                      const calidad = job.review ? Number(job.review.rating_stars).toFixed(1) : '5.0';
+                      const puntualidad = job.review ? Number(job.review.rating_time).toFixed(1) : '5.0';
+                      return (
+                        <article key={`cli-job-${job.id}-${idx}`} className="hc-job">
+                          <div className="hc-job-head">
+                            <div className="hc-job-titulo-wrap">
+                              <h5 className="hc-job-titulo">{job.titulo}</h5>
+                              {urgente && <span className="hc-badge-urgente"><Zap size={11} strokeWidth={2.6} /> Urgente</span>}
+                            </div>
+                            <span className="hc-job-precio">{dinero(job.agreed_price)}</span>
+                          </div>
+
+                          {desc && <p className="hc-job-desc">{desc}</p>}
+
+                          <div className="hc-job-meta">
+                            <span className="hc-meta"><Calendar size={13} /> Solicitado {job.fecha}</span>
+                            <span className="hc-meta">
+                              <CalendarDays size={13} />
+                              {job.scheduled_at ? `Cita ${new Date(job.scheduled_at).toLocaleDateString('es-MX')}` : 'Sin cita'}
+                            </span>
+                            <span className="hc-meta hc-meta-nota"><Star size={13} /> Calidad <b>{calidad}</b></span>
+                            <span className="hc-meta hc-meta-nota"><Clock size={13} /> Puntualidad <b>{puntualidad}</b></span>
+                          </div>
+
+                          {job.review?.comment && (
+                            <blockquote className="hc-comentario">“{job.review.comment}”</blockquote>
+                          )}
+
+                          <div className="hc-job-pie">
+                            <span className="hc-registrado">Calificado el {job.review?.created_at || job.fecha}</span>
+                            <button
+                              type="button"
+                              className="hc-job-link"
+                              onClick={() => {
+                                setSelectedClientForHistory(null);
+                                openQuoteModalForJob(job);
+                              }}
+                            >
+                              Ver detalle y chat <ArrowRight size={14} />
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })(),
+        document.body
       )}
 
       {/* ════════════════════════════════════════════════════════════
@@ -3798,18 +3844,43 @@ const MercadoTrabajos = () => {
                   )}
 
                   {/* InfoWindow si se selecciona un trabajo sin navegar */}
+                  {/* InfoWindowF: la versión sin "F" deja un globo vacío duplicado con StrictMode */}
                   {selectedJob && !showQuoteModal && !activeNavJob && (
-                    <InfoWindow
+                    <InfoWindowF
                       position={{ lat: selectedJob.lat, lng: selectedJob.lng }}
                       onCloseClick={() => setSelectedJob(null)}
+                      options={{ headerDisabled: true, pixelOffset: new window.google.maps.Size(0, -8), maxWidth: 290 }}
                     >
-                      <div className="mercado-info-window">
-                        <h4>{selectedJob.titulo}</h4>
-                        <p style={{ color: '#ea580c', fontWeight: '700', margin: '4px 0' }}>
-                          <MapPin size={12} /> Zona: {selectedJob.zona}
-                        </p>
+                      <div className="mi-globo">
                         <button
-                          className="mercado-btn-details"
+                          type="button"
+                          className="mi-globo-cerrar"
+                          onClick={() => setSelectedJob(null)}
+                          aria-label="Cerrar"
+                        >
+                          <X size={15} strokeWidth={2.6} />
+                        </button>
+
+                        <div className="mi-globo-head">
+                          <span className="tb-actions-icon orange">
+                            <Wrench size={15} strokeWidth={2.4} />
+                          </span>
+                          <div className="mi-globo-txt">
+                            <strong className="mi-globo-titulo">{selectedJob.titulo}</strong>
+                            <span className="mi-globo-zona"><MapPin size={12} /> {selectedJob.zona}</span>
+                          </div>
+                        </div>
+
+                        {(selectedJob.is_urgent || selectedJob.myQuote) && (
+                          <div className="mi-globo-etiquetas">
+                            {selectedJob.is_urgent && <span className="mi-globo-urgente"><Zap size={11} strokeWidth={2.6} /> Urgente</span>}
+                            {selectedJob.myQuote && <span className="mi-globo-cotizado"><CheckCircle2 size={11} strokeWidth={2.6} /> Ya cotizaste</span>}
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          className="mi-globo-btn"
                           onClick={() => {
                             if (selectedJob.is_accepted) {
                               handleStartRoute(selectedJob);
@@ -3818,10 +3889,14 @@ const MercadoTrabajos = () => {
                             }
                           }}
                         >
-                          {selectedJob.is_accepted ? '🚗 Iniciar Ruta (En Camino)' : (selectedJob.myQuote ? '📋 Ver Detalle y Chat' : '💼 Cotizar este trabajo')}
+                          {selectedJob.is_accepted
+                            ? <><Navigation size={15} strokeWidth={2.4} /> Iniciar ruta</>
+                            : (selectedJob.myQuote
+                              ? <><FileText size={15} strokeWidth={2.4} /> Ver detalle y chat</>
+                              : <><DollarSign size={15} strokeWidth={2.4} /> Cotizar este trabajo</>)}
                         </button>
                       </div>
-                    </InfoWindow>
+                    </InfoWindowF>
                   )}
                 </GoogleMap>
 
@@ -3848,118 +3923,104 @@ const MercadoTrabajos = () => {
                   const navSched = getTimeRemainingInfo(activeNavJob);
 
                   return (
-                    <div className="mercado-uber-nav-panel">
-                      <div className="mercado-uber-header">
-                        <div className="mercado-uber-title-group">
-                          <span className="mercado-uber-pulse-dot" />
-                          <strong style={{ fontSize: '12.5px', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                            {navStatus === 'en_sitio' ? '✅ En el lugar del trabajo' : '🚀 En camino al servicio'}
-                          </strong>
-                        </div>
+                    <div className="nv-panel">
+                      {/* Estado y cerrar */}
+                      <div className="nv-top">
+                        <span className={`nv-estado ${navStatus === 'en_sitio' ? 'en-sitio' : ''}`}>
+                          <span className="nv-pulso" />
+                          {navStatus === 'en_sitio'
+                            ? <><CheckCircle2 size={14} strokeWidth={2.6} /> En el lugar del trabajo</>
+                            : <><Navigation size={14} strokeWidth={2.6} /> En camino al servicio</>}
+                        </span>
                         <button
                           type="button"
+                          className="nv-cerrar"
                           onClick={() => {
                             setActiveNavJob(null);
                             setNavDirections(null);
                             setNavStatus('idle');
                           }}
-                          style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}
                           title="Cerrar navegación"
+                          aria-label="Cerrar navegación"
                         >
-                          ×
+                          <X size={16} strokeWidth={2.6} />
                         </button>
                       </div>
 
-                      <div className="mercado-uber-body-grid">
-                        <div className="mercado-uber-dest-info">
-                          <h4 className="mercado-uber-prop-name">
-                            {activeNavJob.titulo}
-                          </h4>
-                          <p className="mercado-uber-address">
-                            <MapPin size={13} color="#f26522" />
-                            <span>{activeNavJob.full_address || activeNavJob.calle || activeNavJob.zona}</span>
-                          </p>
-                          <span style={{ fontSize: '11.5px', color: '#cbd5e1' }}>
-                            👤 Cliente: <strong>{activeNavJob.client_name || activeNavJob.cliente}</strong>
-                          </span>
+                      {/* Destino y tiempo de llegada */}
+                      <div className="nv-destino">
+                        <span className="tb-actions-icon orange"><Wrench size={17} strokeWidth={2.4} /></span>
+                        <div className="nv-destino-txt">
+                          <h4 className="nv-titulo">{activeNavJob.titulo}</h4>
+                          <span className="nv-linea"><MapPin size={13} /> <span>{activeNavJob.full_address || activeNavJob.calle || activeNavJob.zona}</span></span>
+                          <span className="nv-linea"><User size={13} /> <span>{activeNavJob.client_name || activeNavJob.cliente}</span></span>
                         </div>
-
-                        <div className="mercado-uber-stats">
-                          {navDuration && <span className="mercado-uber-eta">{navDuration}</span>}
+                        <div className="nv-eta">
+                          {navDuration && <strong>{navDuration}</strong>}
                           {navDistance ? (
-                            <span className="mercado-uber-dist">{navDistance}</span>
+                            <span>{navDistance}</span>
                           ) : (
                             technicianLocation && activeNavJob.lat && (
-                              <span className="mercado-uber-dist">
-                                Aprox. {calculateDistanceKm(technicianLocation.lat, technicianLocation.lng, activeNavJob.lat, activeNavJob.lng)} km
-                              </span>
+                              <span>Aprox. {calculateDistanceKm(technicianLocation.lat, technicianLocation.lng, activeNavJob.lat, activeNavJob.lng)} km</span>
                             )
                           )}
                         </div>
                       </div>
 
-                      {/* Banner dinámico de hora de llegada y cuenta regresiva */}
-                      <div className={`mercado-uber-schedule-banner ${navSched.hasSchedule ? 'has-date' : 'missing'}`}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                          <Clock size={14} color={navSched.hasSchedule ? '#38bdf8' : '#fbbf24'} style={{ flexShrink: 0 }} />
+                      {/* Hora de la cita */}
+                      <div className={`nv-cita ${navSched.hasSchedule ? '' : 'sin-hora'}`}>
+                        <span className="nv-cita-icono"><Clock size={15} strokeWidth={2.4} /></span>
+                        <div className="nv-cita-txt">
                           {navSched.hasSchedule ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                              <span style={{ fontWeight: '800', color: '#ffffff' }}>
-                                Cita: {navSched.formattedTime}
-                              </span>
-                              <span style={{ color: '#64748b' }}>•</span>
-                              <span style={{ color: navSched.isUrgent ? '#fb923c' : '#38bdf8', fontWeight: '800' }}>
-                                {navSched.text}
-                              </span>
-                            </div>
+                            <>
+                              <strong>Cita {navSched.formattedTime}</strong>
+                              <span className={navSched.isUrgent ? 'nv-cita-alerta' : ''}>{navSched.text}</span>
+                            </>
                           ) : (
-                            <span style={{ color: '#fbbf24', fontWeight: '700' }}>
-                              ⚠️ Sin horario de llegada programado
-                            </span>
+                            <>
+                              <strong>Sin hora de llegada</strong>
+                              <span className="nv-cita-alerta">Agenda la visita con el cliente</span>
+                            </>
                           )}
                         </div>
-
                         <button
                           type="button"
-                          className="mercado-uber-quick-schedule-btn"
+                          className="nv-btn-blanco"
                           onClick={() => handleOpenBoardScheduler(activeNavJob)}
                           title="Definir o cambiar hora de llegada"
                         >
-                          <Calendar size={12} /> {navSched.hasSchedule ? 'Modificar' : 'Agendar'}
+                          <Calendar size={14} strokeWidth={2.4} /> {navSched.hasSchedule ? 'Modificar' : 'Agendar'}
                         </button>
                       </div>
 
-                      <div className="mercado-uber-actions-row">
-                        <button
-                          type="button"
-                          className="mercado-uber-btn-arrived"
-                          onClick={() => handleConfirmArrival(activeNavJob)}
-                        >
-                          <CheckCircle2 size={16} />
-                          <span>📍 ME ENCUENTRO EN EL LUGAR</span>
-                        </button>
+                      {/* Acciones */}
+                      <button
+                        type="button"
+                        className="nv-btn-principal"
+                        onClick={() => handleConfirmArrival(activeNavJob)}
+                      >
+                        <MapPin size={17} strokeWidth={2.4} /> Llegué al lugar
+                      </button>
 
-                        <button
-                          type="button"
-                          className="mercado-uber-btn-cancel-service"
-                          onClick={() => handleCancelServiceByTech(activeNavJob)}
-                          title="Cancelar asistencia a este servicio"
-                        >
-                          <X size={15} />
-                          <span>Cancelar</span>
-                        </button>
-
+                      <div className="nv-secundarias">
                         {activeNavJob.client_phone && (
                           <button
                             type="button"
-                            className="mercado-uber-btn-call"
+                            className="nv-btn-blanco"
                             onClick={() => window.open(`tel:${activeNavJob.client_phone}`)}
                             title="Llamar al cliente"
                           >
-                            <Phone size={14} color="#38bdf8" />
-                            <span>Llamar</span>
+                            <Phone size={15} strokeWidth={2.4} /> Llamar
                           </button>
                         )}
+                        <button
+                          type="button"
+                          className="nv-btn-blanco nv-btn-cancelar"
+                          onClick={() => handleCancelServiceByTech(activeNavJob)}
+                          title="Cancelar asistencia a este servicio"
+                        >
+                          <X size={15} strokeWidth={2.4} /> Cancelar servicio
+                        </button>
                       </div>
                     </div>
                   );
@@ -3973,9 +4034,17 @@ const MercadoTrabajos = () => {
       )}
 
       {/* ─── MODAL PREMIUM 2 COLUMNAS (DETALLES + CHAT INTEGRADO) ─── */}
-      {showQuoteModal && selectedJob && (
-        <div className="mercado-modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowQuoteModal(false)}>
-          <div className="mercado-premium-modal" style={{ maxWidth: '1080px' }}>
+      {/* En PC y en el Mercado, el modal vive dentro de la sección del mapa (no tapa encabezado ni lista) */}
+      {showQuoteModal && selectedJob && ((contenido) => (
+        esEscritorio && mainView === 'mercado' && mapaSeccionRef.current
+          ? createPortal(contenido, mapaSeccionRef.current)
+          : contenido
+      ))(
+        <div
+          className={esEscritorio && mainView === 'mercado' && mapaSeccionRef.current ? 'jm-en-mapa' : 'mercado-modal-overlay'}
+          onClick={(e) => e.target === e.currentTarget && setShowQuoteModal(false)}
+        >
+          <div className="mercado-premium-modal jm-modal" style={{ maxWidth: '1080px' }}>
             
             {/* ══════════════════════════════════════════════════
                 PASO 1: DETALLES DEL TRABAJO / COORDINACIÓN / CHAT
@@ -3984,8 +4053,11 @@ const MercadoTrabajos = () => {
               <>
                 <div className="mercado-premium-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <span className={`tb-actions-icon ${selectedJob.is_accepted ? 'green' : 'orange'}`}>
+                      {selectedJob.is_accepted ? <CheckCircle2 size={17} strokeWidth={2.4} /> : <Briefcase size={17} strokeWidth={2.4} />}
+                    </span>
                     <h2 style={{ margin: 0 }}>
-                      {selectedJob.is_accepted ? '✅ Trabajo Aceptado' : '💼 Detalle del Trabajo'}
+                      {selectedJob.is_accepted ? 'Trabajo aceptado' : 'Detalle del trabajo'}
                     </h2>
                   </div>
 
@@ -4009,7 +4081,9 @@ const MercadoTrabajos = () => {
                     </button>
                   </div>
 
-                  <span className="mercado-modal-close" onClick={() => setShowQuoteModal(false)}>×</span>
+                  <button type="button" className="jm-cerrar" onClick={() => setShowQuoteModal(false)} title="Cerrar" aria-label="Cerrar">
+                    <X size={18} strokeWidth={2.6} />
+                  </button>
                 </div>
 
                 <div className="mercado-premium-body">
@@ -4482,358 +4556,275 @@ const MercadoTrabajos = () => {
                   {/* ─────────────────────────────────────────────────────────────
                       CASO C: TRABAJO DISPONIBLE - VISTA DE DETALLE & COTIZACIÓN
                   ───────────────────────────────────────────────────────────── */}
-                  {!selectedJob.is_accepted && activeModalTab === 'detalle' && (
-                    <>
-                      {/* Columna Izquierda: Galería de Fotos y Problema Solicitado (Sin fotos de fachada) */}
-                      <div className="mercado-premium-details" style={{ flex: '0.95', gap: '14px' }}>
-                        {selectedJob.problem_photos && selectedJob.problem_photos.length > 0 && activePhoto ? (
-                          <div className="mercado-photo-gallery">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                              <span className="mercado-gallery-type-badge problem">
-                                📸 Evidencia de Falla {selectedJob.problem_photos.length > 1 ? `(${selectedJob.problem_photos.indexOf(activePhoto) + 1} de ${selectedJob.problem_photos.length})` : ''}
-                              </span>
-                            </div>
+                  {!selectedJob.is_accepted && activeModalTab === 'detalle' && (() => {
+                    // La descripción trae "[URGENCIA]: ⚡ Atención Urgente…": se muestra como etiqueta
+                    const textoDesc = selectedJob.descripcion || '';
+                    const corte = textoDesc.indexOf('[URGENCIA]');
+                    const descLimpia = (corte === -1 ? textoDesc : textoDesc.slice(0, corte)).replace(/[\s\-–:]+$/, '').trim();
+                    const esUrgente = selectedJob.is_urgent || corte !== -1;
+                    const fotos = selectedJob.problem_photos || [];
+                    const cotizacion = selectedJob.myQuote;
+                    const tienePrecio = cotizacion && cotizacion.price > 0;
+                    const estadoCotizacion = cotizacion?.status === 'rejected' ? 'rechazada' : (cotizacion?.status === 'accepted' ? 'aceptada' : '');
 
-                            <div
-                              className="mercado-premium-image-wrapper"
-                              onClick={() => setIsPhotoZoomed(true)}
-                              title="Clic para ampliar imagen"
-                              style={{ height: '200px' }}
-                            >
-                              <img src={activePhoto} alt="Fotografía del problema" className="mercado-premium-image" />
-                              <div className="mercado-image-zoom-badge">
-                                <Maximize2 size={12} /> Clic para ampliar foto
+                    return (
+                      <div className="jm-grid">
+                        {/* ── Columna izquierda: el trabajo ── */}
+                        <div className="jm-col">
+                          <section className="jm-card">
+                            <div className="jm-card-head">
+                              <span className="tb-actions-icon orange"><Wrench size={16} strokeWidth={2.4} /></span>
+                              <div className="jm-card-head-txt">
+                                <span className="jm-kicker">Trabajo solicitado</span>
+                                <h3 className="jm-titulo">{selectedJob.titulo}</h3>
                               </div>
+                              {esUrgente && <span className="jm-badge-urgente"><Zap size={12} strokeWidth={2.6} /> Urgente</span>}
                             </div>
 
-                            {selectedJob.problem_photos.length > 1 && (
-                              <div className="mercado-thumbnails-row">
-                                {selectedJob.problem_photos.map((f, idx) => (
-                                  <div key={idx} className="mercado-thumb-wrapper">
-                                    <div
-                                      className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
+                            {descLimpia && <p className="jm-desc">{descLimpia}</p>}
+
+                            <div className="jm-pills">
+                              <span className="jm-pill"><Clock size={13} /> Publicado {selectedJob.fecha}</span>
+                              <span className="jm-pill"><Users size={13} /> {selectedJob.cotizaciones} {Number(selectedJob.cotizaciones) === 1 ? 'oferta enviada' : 'ofertas enviadas'}</span>
+                            </div>
+                          </section>
+
+                          {/* Fotos de la falla */}
+                          {fotos.length > 0 && activePhoto ? (
+                            <section className="jm-card jm-fotos">
+                              <div className="jm-seccion-titulo">
+                                <span>Fotos de la falla</span>
+                                {fotos.length > 1 && <span className="jm-contador">{fotos.indexOf(activePhoto) + 1} de {fotos.length}</span>}
+                              </div>
+                              <button
+                                type="button"
+                                className="jm-foto-principal"
+                                onClick={() => setIsPhotoZoomed(true)}
+                                title="Ampliar foto"
+                              >
+                                <img src={activePhoto} alt="Fotografía de la falla" />
+                                <span className="jm-foto-zoom"><Maximize2 size={13} /> Ampliar</span>
+                              </button>
+                              {fotos.length > 1 && (
+                                <div className="jm-miniaturas">
+                                  {fotos.map((f, idx) => (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      className={`jm-miniatura ${activePhoto === f ? 'activa' : ''}`}
                                       onClick={() => setActivePhoto(f)}
-                                      title={`Ver Evidencia ${idx + 1}`}
+                                      title={`Ver foto ${idx + 1}`}
                                     >
-                                      <img src={f} alt={`Evidencia ${idx + 1}`} />
-                                    </div>
-                                    <span className={`mercado-thumb-badge ${activePhoto === f ? 'active' : ''}`}>
-                                      📸 Falla {idx + 1}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="mercado-no-photo-placeholder" style={{ height: '170px' }}>
-                            <ImageIcon size={32} color="#94a3b8" />
-                            <span style={{ fontWeight: '700', color: '#64748b' }}>Sin fotografías de falla adjuntas</span>
-                            <span style={{ fontSize: '11.5px', color: '#9a3412', marginTop: '4px', textAlign: 'center', maxWidth: '280px', lineHeight: '1.35' }}>
-                              🔒 La foto de fachada y dirección exacta se revelan al ser aceptada tu cotización.
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Detalle del Problema Solicitado */}
-                        <div className="mercado-problem-detail-box">
-                          <div className="mercado-problem-detail-header">
-                            <FileText size={17} color="#ea580c" />
-                            <span>{selectedJob.titulo}</span>
-                          </div>
-                          <div className="mercado-problem-detail-desc">
-                            {selectedJob.descripcion}
-                          </div>
-                          <div className="mercado-problem-detail-footer">
-                            <span><Clock size={11} style={{ verticalAlign: 'middle', marginRight: '3px' }} /> Publicado: {selectedJob.fecha}</span>
-                            <span style={{ fontWeight: '600', color: '#ea580c' }}>{selectedJob.cotizaciones} ofertas enviadas</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Columna Derecha: Colonia, Mi Cotización y Botón para Abrir Chat */}
-                      <div className="mercado-premium-form" style={{ flex: '1.25', padding: '20px 24px', gap: '14px', display: 'flex', flexDirection: 'column' }}>
-                        {/* 1. Zona / Colonia aproximada */}
-                        <div style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '16px', padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                          <MapPin size={22} color="#ea580c" style={{ marginTop: '2px', flexShrink: 0 }} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <strong style={{ color: '#ea580c', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                Colonia Cercana
-                              </strong>
-                              {selectedJob.is_urgent && (
-                                <span className="mercado-urgency-badge urgent">⚡ Urgente</span>
-                              )}
-                            </div>
-                            <span style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', display: 'block', marginTop: '2px' }}>
-                              {selectedJob.zona}
-                            </span>
-                            <div style={{ fontSize: '11.5px', color: '#9a3412', marginTop: '4px' }}>
-                              🔒 La dirección exacta y datos de contacto se te revelarán una vez que el cliente acepte tu cotización.
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 2. Mi Propuesta Económica */}
-                        <div style={{ background: selectedJob.myQuote?.status === 'rejected' ? '#fff1f2' : (selectedJob.myQuote?.status === 'accepted' ? '#f0fdf4' : '#ffffff'), border: `1.5px solid ${selectedJob.myQuote?.status === 'rejected' ? '#fecdd3' : (selectedJob.myQuote?.status === 'accepted' ? '#bbf7d0' : '#e2e8f0')}`, borderRadius: '16px', padding: '16px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '11.5px', fontWeight: '800', textTransform: 'uppercase', color: selectedJob.myQuote?.status === 'rejected' ? '#e11d48' : '#ea580c', letterSpacing: '0.5px' }}>
-                              📋 Mi Propuesta Económica
-                            </span>
-                            {selectedJob.myQuote && (
-                              <span className={`mercado-job-badge ${selectedJob.myQuote.status === 'rejected' ? 'badge-rejected' : (selectedJob.myQuote.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`}>
-                                {getStatusLabel(selectedJob.myQuote.status)}
-                              </span>
-                            )}
-                          </div>
-
-                          {selectedJob.myQuote && selectedJob.myQuote.price > 0 ? (
-                            <div>
-                              <div style={{ fontSize: '24px', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.5px' }}>
-                                ${parseFloat(selectedJob.myQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })} <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748b' }}>MXN</span>
-                              </div>
-                              {selectedJob.myQuote.message && (
-                                <div style={{ fontSize: '12.5px', color: '#475569', fontStyle: 'italic', marginTop: '6px', background: '#f8fafc', padding: '8px 10px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
-                                  "{selectedJob.myQuote.message}"
+                                      <img src={f} alt={`Foto ${idx + 1}`} />
+                                    </button>
+                                  ))}
                                 </div>
                               )}
-                            </div>
+                            </section>
                           ) : (
-                            <div style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 8px' }}>
-                              Aún no has enviado una cotización económica a este trabajo.
-                            </div>
+                            <section className="jm-card jm-sin-fotos">
+                              <span className="jm-sin-fotos-icono"><ImageIcon size={22} /></span>
+                              <div>
+                                <strong>Sin fotos de la falla</strong>
+                                <span>El cliente no adjuntó fotografías.</span>
+                              </div>
+                            </section>
                           )}
-
-                          <button
-                            type="button"
-                            onClick={() => setQuoteStep(2)}
-                            style={{
-                              width: '100%',
-                              marginTop: '12px',
-                              padding: '12px 16px',
-                              background: 'linear-gradient(135deg, #ff6600 0%, #ea580c 100%)',
-                              color: '#ffffff',
-                              border: 'none',
-                              borderRadius: '12px',
-                              fontWeight: '800',
-                              fontSize: '13.5px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '8px',
-                              cursor: 'pointer',
-                              boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            <DollarSign size={16} />
-                            <span>{selectedJob.myQuote && selectedJob.myQuote.price > 0 ? '✏️ Modificar Cotización' : '💼 Enviar Cotización'}</span>
-                          </button>
                         </div>
 
-                        {/* 3. Botón de acceso al Chat con el Cliente */}
-                        <div>
+                        {/* ── Columna derecha: dónde es y tu cotización ── */}
+                        <div className="jm-col">
+                          <section className="jm-card jm-zona">
+                            <span className="tb-actions-icon blue"><MapPin size={16} strokeWidth={2.4} /></span>
+                            <div className="jm-zona-txt">
+                              <span className="jm-kicker">Zona aproximada</span>
+                              <strong className="jm-zona-nombre">{selectedJob.zona}</strong>
+                              <span className="jm-nota"><Lock size={12} /> Verás la dirección exacta, la fachada y el contacto cuando el cliente acepte tu cotización.</span>
+                            </div>
+                          </section>
+
+                          <section className={`jm-card jm-cotizacion ${estadoCotizacion}`}>
+                            <div className="jm-seccion-titulo">
+                              <span>Tu cotización</span>
+                              {cotizacion && (
+                                <span className={`mercado-job-badge ${cotizacion.status === 'rejected' ? 'badge-rejected' : (cotizacion.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`}>
+                                  {getStatusLabel(cotizacion.status)}
+                                </span>
+                              )}
+                            </div>
+
+                            {tienePrecio ? (
+                              <>
+                                <div className="jm-precio">
+                                  ${parseFloat(cotizacion.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                  <small>MXN</small>
+                                </div>
+                                {cotizacion.message && <p className="jm-mensaje">“{cotizacion.message}”</p>}
+                              </>
+                            ) : (
+                              <div className="jm-vacio">
+                                <span className="jm-vacio-icono"><DollarSign size={20} /></span>
+                                <p>Todavía no envías una cotización. Propón tu precio para que el cliente pueda elegirte.</p>
+                              </div>
+                            )}
+
+                            <button type="button" className="jm-btn-principal" onClick={() => setQuoteStep(2)}>
+                              <DollarSign size={17} strokeWidth={2.4} />
+                              {tienePrecio ? 'Modificar cotización' : 'Enviar cotización'}
+                            </button>
+                          </section>
+
                           {lastClientMsg && (
-                            <div className="mercado-chat-alert-banner" style={{ marginBottom: '8px' }}>
-                              <div className="mercado-chat-alert-icon">🔔</div>
-                              <div className="mercado-chat-alert-text">
-                                <strong>El Cliente te envió un mensaje:</strong>
-                                <span>"{lastClientMsg.message}"</span>
+                            <div className="jm-aviso-mensaje">
+                              <span className="tb-actions-icon green"><MessageCircle size={15} strokeWidth={2.4} /></span>
+                              <div>
+                                <strong>El cliente te escribió</strong>
+                                <span>“{lastClientMsg.message}”</span>
                               </div>
                             </div>
                           )}
 
-                          <button
-                            type="button"
-                            className="mercado-open-chat-card-btn"
-                            onClick={() => setActiveModalTab('chat')}
-                          >
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <MessageCircle size={18} />
-                              <span>Consultar / Chat con el Cliente ({chatMessages.length})</span>
+                          <button type="button" className="jm-card jm-chat-btn" onClick={() => setActiveModalTab('chat')}>
+                            <span className="tb-actions-icon orange"><MessageCircle size={16} strokeWidth={2.4} /></span>
+                            <span className="jm-chat-txt">
+                              <strong>Chat con el cliente</strong>
+                              <span>Resuelve dudas antes de cotizar</span>
                             </span>
-                            <span style={{ fontSize: '16px', fontWeight: '900' }}>→</span>
+                            {chatMessages.length > 0 && <span className="jm-chat-total">{chatMessages.length}</span>}
+                            <ChevronRight size={18} className="jm-chat-flecha" />
                           </button>
                         </div>
                       </div>
-                    </>
-                  )}
+                    );
+                  })()}
 
                   {/* ─────────────────────────────────────────────────────────────
                       CASO D: TRABAJO DISPONIBLE - VISTA DE CHAT DIRECTO
                   ───────────────────────────────────────────────────────────── */}
-                  {!selectedJob.is_accepted && activeModalTab === 'chat' && (
-                    <>
-                      {/* Columna Izquierda: Botón de volver y Resumen Rápido */}
-                      <div className="mercado-premium-details" style={{ flex: '0.85', gap: '14px' }}>
-                        <button
-                          type="button"
-                          onClick={() => setActiveModalTab('detalle')}
-                          style={{
-                            padding: '10px 14px',
-                            background: '#ffffff',
-                            color: '#ea580c',
-                            border: '1.5px solid #fed7aa',
-                            borderRadius: '12px',
-                            fontWeight: '800',
-                            fontSize: '13px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            boxShadow: '0 2px 6px rgba(234, 88, 12, 0.1)'
-                          }}
-                        >
-                          <ChevronLeft size={16} /> Volver a Detalle y Cotización
-                        </button>
+                  {!selectedJob.is_accepted && activeModalTab === 'chat' && (() => {
+                    const cotizacion = selectedJob.myQuote;
+                    const tienePrecio = cotizacion && cotizacion.price > 0;
+                    const esUrgente = selectedJob.is_urgent || (selectedJob.descripcion || '').includes('[URGENCIA]');
 
-                        {/* Resumen del Trabajo */}
-                        <div className="mercado-accepted-address-box">
-                          <span className="mercado-address-label" style={{ color: '#ea580c' }}>
-                            📋 {selectedJob.titulo}
-                          </span>
-                          <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>
-                            📍 Zona: <strong>{selectedJob.zona}</strong>
-                          </div>
-                          {selectedJob.is_urgent && (
-                            <span className="mercado-urgency-badge urgent" style={{ marginTop: '4px', alignSelf: 'flex-start' }}>
-                              ⚡ Urgente
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Mini resumen de la cotización con botón de cotizar */}
-                        <div className="mercado-accepted-price-box" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px', padding: '12px 14px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: '700' }}>Mi Cotización:</span>
-                            {selectedJob.myQuote && (
-                              <span className={`mercado-job-badge ${selectedJob.myQuote.status === 'rejected' ? 'badge-rejected' : (selectedJob.myQuote.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`} style={{ fontSize: '10px' }}>
-                                {getStatusLabel(selectedJob.myQuote.status)}
-                              </span>
-                            )}
-                          </div>
-
-                          {selectedJob.myQuote && selectedJob.myQuote.price > 0 ? (
-                            <div style={{ fontSize: '18px', fontWeight: '900', color: '#0f172a' }}>
-                              ${parseFloat(selectedJob.myQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
-                            </div>
-                          ) : (
-                            <div style={{ fontSize: '12px', color: '#64748b' }}>
-                              Sin cotización enviada
-                            </div>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => setQuoteStep(2)}
-                            style={{
-                              padding: '8px 12px',
-                              background: '#fff7ed',
-                              color: '#ea580c',
-                              border: '1px solid #fed7aa',
-                              borderRadius: '8px',
-                              fontWeight: '800',
-                              fontSize: '12px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '4px',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            <DollarSign size={14} />
-                            <span>{selectedJob.myQuote && selectedJob.myQuote.price > 0 ? 'Modificar Cotización' : 'Cotizar Trabajo'}</span>
+                    return (
+                      <div className="jm-grid jm-grid-chat">
+                        {/* ── Columna izquierda: de qué trabajo se habla ── */}
+                        <div className="jm-col">
+                          <button type="button" className="jm-volver" onClick={() => setActiveModalTab('detalle')}>
+                            <ChevronLeft size={16} strokeWidth={2.6} /> Volver al detalle
                           </button>
-                        </div>
-                      </div>
 
-                      {/* Columna Derecha: CHAT INTEGRADO AMPLIO */}
-                      <div className="mercado-embedded-chat-panel" style={{ flex: '1.25' }}>
-                        <div className="mercado-chat-header">
-                          <div className="mercado-chat-header-title">
-                            <h3><MessageCircle size={18} color="#ea580c" /> Consultar con el Cliente</h3>
-                          </div>
-                          <div className="mercado-chat-online-badge">
-                            <span className="mercado-chat-online-dot" /> En línea
-                          </div>
-                        </div>
-
-                        {lastClientMsg && (
-                          <div className="mercado-chat-alert-banner">
-                            <div className="mercado-chat-alert-icon">🔔</div>
-                            <div className="mercado-chat-alert-text">
-                              <strong>El Cliente te envió un mensaje:</strong>
-                              <span>"{lastClientMsg.message}"</span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Stream de Mensajes */}
-                        <div className="mercado-chat-messages-container">
-                          {chatMessages.length === 0 ? (
-                            <div className="mercado-chat-empty-state">
-                              <div className="icon-wrap">
-                                <MessageCircle size={26} />
+                          <section className="jm-card">
+                            <div className="jm-card-head">
+                              <span className="tb-actions-icon orange"><Wrench size={16} strokeWidth={2.4} /></span>
+                              <div className="jm-card-head-txt">
+                                <span className="jm-kicker">Trabajo</span>
+                                <h3 className="jm-titulo jm-titulo-sm">{selectedJob.titulo}</h3>
                               </div>
-                              <p>Inicia el chat con el cliente</p>
-                              <span>Escribe aquí para aclarar detalles sobre el trabajo o coordinar tu cotización.</span>
                             </div>
-                          ) : (
-                            chatMessages.map((msg, idx) => {
-                              const isMe = Number(msg.sender_id) === Number(authUser?.id) || msg.sender_role === 'Técnico de la Red' || msg.sender_role === 'Técnico';
-                              return (
-                                <div
-                                  key={idx}
-                                  className={`mercado-chat-bubble-row ${isMe ? 'sent' : 'received'}`}
-                                >
-                                  <span className="mercado-chat-bubble-sender">
-                                    {isMe ? 'Tú (Técnico)' : (msg.sender_name || 'Cliente')}
-                                  </span>
-                                  <div className="mercado-chat-bubble">
-                                    {msg.message}
-                                  </div>
-                                  <span className="mercado-chat-bubble-time">
-                                    {formatTime(msg.created_at)}
-                                  </span>
-                                </div>
-                              );
-                            })
-                          )}
-                          <div ref={chatEndRef} />
+                            <div className="jm-pills">
+                              <span className="jm-pill"><MapPin size={13} /> {selectedJob.zona}</span>
+                              {esUrgente && <span className="jm-badge-urgente"><Zap size={12} strokeWidth={2.6} /> Urgente</span>}
+                            </div>
+                          </section>
+
+                          <section className="jm-card">
+                            <div className="jm-seccion-titulo">
+                              <span>Tu cotización</span>
+                              {cotizacion && (
+                                <span className={`mercado-job-badge ${cotizacion.status === 'rejected' ? 'badge-rejected' : (cotizacion.status === 'accepted' ? 'badge-accepted' : 'badge-pending')}`}>
+                                  {getStatusLabel(cotizacion.status)}
+                                </span>
+                              )}
+                            </div>
+                            {tienePrecio ? (
+                              <div className="jm-precio jm-precio-sm">
+                                ${parseFloat(cotizacion.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                <small>MXN</small>
+                              </div>
+                            ) : (
+                              <p className="jm-texto-suave">Aún no envías tu precio.</p>
+                            )}
+                            <button type="button" className="jm-btn-principal" onClick={() => setQuoteStep(2)}>
+                              <DollarSign size={16} strokeWidth={2.4} />
+                              {tienePrecio ? 'Modificar cotización' : 'Enviar cotización'}
+                            </button>
+                          </section>
                         </div>
 
-                        {/* Input Bar integrado */}
-                        <form onSubmit={handleSendEmbeddedChat} className="mercado-chat-input-bar">
-                          <input
-                            type="text"
-                            placeholder="Escribe un mensaje al cliente..."
-                            value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
-                            disabled={sendingChat}
-                          />
-                          <button
-                            type="submit"
-                            className="mercado-chat-send-btn"
-                            disabled={sendingChat || !chatInput.trim()}
-                          >
-                            <Send size={15} />
-                            <span>{sendingChat ? 'Enviando...' : 'Enviar'}</span>
-                          </button>
-                        </form>
+                        {/* ── Columna derecha: el chat ── */}
+                        <section className="jm-card jm-chat">
+                          <div className="jm-chat-head">
+                            <span className="tb-actions-icon orange"><MessageCircle size={16} strokeWidth={2.4} /></span>
+                            <div className="jm-chat-head-txt">
+                              <strong>Chat con el cliente</strong>
+                              <span>Aclara dudas antes de enviar tu precio</span>
+                            </div>
+                            <span className="jm-chat-linea"><span /> En línea</span>
+                          </div>
+
+                          {lastClientMsg && (
+                            <div className="jm-aviso-mensaje jm-aviso-chat">
+                              <span className="tb-actions-icon green"><Bell size={15} strokeWidth={2.4} /></span>
+                              <div>
+                                <strong>Mensaje nuevo del cliente</strong>
+                                <span>“{lastClientMsg.message}”</span>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="jm-chat-mensajes">
+                            {chatMessages.length === 0 ? (
+                              <div className="jm-chat-vacio">
+                                <span className="jm-chat-vacio-icono"><MessageCircle size={24} /></span>
+                                <strong>Inicia la conversación</strong>
+                                <span>Pregunta lo que necesites sobre la falla o coordina tu cotización.</span>
+                              </div>
+                            ) : (
+                              chatMessages.map((msg, idx) => {
+                                const isMe = Number(msg.sender_id) === Number(authUser?.id) || msg.sender_role === 'Técnico de la Red' || msg.sender_role === 'Técnico';
+                                return (
+                                  <div key={idx} className={`jm-msg ${isMe ? 'mio' : 'suyo'}`}>
+                                    <div className="jm-msg-burbuja">{msg.message}</div>
+                                    <span className="jm-msg-meta">
+                                      {isMe ? 'Tú' : (msg.sender_name || 'Cliente')} · {formatTime(msg.created_at)}
+                                    </span>
+                                  </div>
+                                );
+                              })
+                            )}
+                            <div ref={chatEndRef} />
+                          </div>
+
+                          <form onSubmit={handleSendEmbeddedChat} className="jm-chat-input">
+                            <input
+                              type="text"
+                              placeholder="Escribe un mensaje al cliente…"
+                              value={chatInput}
+                              onChange={(e) => setChatInput(e.target.value)}
+                              disabled={sendingChat}
+                            />
+                            <button
+                              type="submit"
+                              className="jm-chat-enviar"
+                              disabled={sendingChat || !chatInput.trim()}
+                              title="Enviar mensaje"
+                              aria-label="Enviar mensaje"
+                            >
+                              <Send size={17} strokeWidth={2.4} />
+                            </button>
+                          </form>
+                        </section>
                       </div>
-                    </>
-                  )}
+                    );
+                  })()}
                 </div>
 
                 <div className="mercado-premium-footer" style={{ justifyContent: 'space-between' }}>
                   <button className="mercado-btn-cancel" onClick={() => setShowQuoteModal(false)}>Cerrar Ventana</button>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    {selectedJob.is_accepted 
-                      ? '✅ Coordina la hora de visita y confirma con el cliente por WhatsApp o chat.'
-                      : '💬 Usa las pestañas para revisar los detalles o consultar en el chat.'}
-                  </div>
+                  {selectedJob.is_accepted && (
+                    <div className="jm-pie-nota">Coordina la hora de visita y confírmala con el cliente por WhatsApp o chat.</div>
+                  )}
                 </div>
               </>
             )}
@@ -4841,147 +4832,150 @@ const MercadoTrabajos = () => {
             {/* ══════════════════════════════════════════════════
                 PASO 2: FORMULARIO DE COTIZACIÓN (CON FOTOS Y DETALLE)
             ══════════════════════════════════════════════════ */}
-            {quoteStep === 2 && (
-              <>
-                <div className="mercado-premium-header">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <h2 style={{ margin: 0 }}>
-                      💰 {selectedJob.myQuote && selectedJob.myQuote.price > 0 ? 'Modificar Cotización' : 'Enviar Cotización de Trabajo'}
-                    </h2>
+            {quoteStep === 2 && (() => {
+              const yaCotizado = selectedJob.myQuote && selectedJob.myQuote.price > 0;
+              const fotos = (selectedJob.problem_photos && selectedJob.problem_photos.length > 0)
+                ? selectedJob.problem_photos
+                : (selectedJob.fotos || []);
+              const textoDesc = selectedJob.descripcion || '';
+              const corte = textoDesc.indexOf('[URGENCIA]');
+              const descLimpia = (corte === -1 ? textoDesc : textoDesc.slice(0, corte)).replace(/[\s\-–:]+$/, '').trim();
+              const esUrgente = selectedJob.is_urgent || corte !== -1;
+              // Solo números y un punto decimal (máx. 2 decimales): sin negativos ni cambios con la rueda del mouse
+              const limpiarPrecio = (valor) => {
+                const soloNumeros = valor.replace(/[^\d.]/g, '');
+                const [entero, ...resto] = soloNumeros.split('.');
+                return resto.length ? `${entero}.${resto.join('').slice(0, 2)}` : entero;
+              };
+
+              return (
+                <>
+                  <div className="mercado-premium-header">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span className="tb-actions-icon orange"><DollarSign size={17} strokeWidth={2.4} /></span>
+                      <h2 style={{ margin: 0 }}>{yaCotizado ? 'Modificar cotización' : 'Enviar cotización'}</h2>
+                    </div>
+                    <button type="button" className="jm-cerrar" onClick={() => setShowQuoteModal(false)} title="Cerrar" aria-label="Cerrar">
+                      <X size={18} strokeWidth={2.6} />
+                    </button>
                   </div>
-                  <span className="mercado-modal-close" onClick={() => setShowQuoteModal(false)}>×</span>
-                </div>
 
-                <div className="mercado-premium-body">
-                  {/* Columna Izquierda: Fotos de Evidencia y Detalle Completo del Problema */}
-                  <div className="mercado-premium-details" style={{ flex: '1', gap: '14px' }}>
-                    {activePhoto ? (
-                      <div className="mercado-photo-gallery">
-                        <div
-                          className="mercado-premium-image-wrapper"
-                          onClick={() => setIsPhotoZoomed(true)}
-                          title="Clic para ampliar imagen"
-                          style={{ height: '220px' }}
-                        >
-                          <img src={activePhoto} alt="Evidencia del problema" className="mercado-premium-image" />
-                          <div className="mercado-image-zoom-badge">
-                            <Maximize2 size={12} /> Clic para ampliar foto
-                          </div>
-                        </div>
-
-                        {selectedJob.fotos && selectedJob.fotos.length > 1 && (
-                          <div className="mercado-thumbnails-row">
-                            {selectedJob.fotos.map((f, idx) => (
-                              <div
-                                key={idx}
-                                className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
-                                onClick={() => setActivePhoto(f)}
-                              >
-                                <img src={f} alt={`Evidencia ${idx + 1}`} />
+                  <div className="mercado-premium-body">
+                    <div className="jm-grid jm-grid-cotizar">
+                      {/* ── Izquierda: el problema ── */}
+                      <div className="jm-col">
+                        {fotos.length > 0 && activePhoto ? (
+                          <section className="jm-card jm-fotos">
+                            <div className="jm-seccion-titulo">
+                              <span>Fotos de la falla</span>
+                              {fotos.length > 1 && <span className="jm-contador">{Math.max(fotos.indexOf(activePhoto), 0) + 1} de {fotos.length}</span>}
+                            </div>
+                            <button type="button" className="jm-foto-principal" onClick={() => setIsPhotoZoomed(true)} title="Ampliar foto">
+                              <img src={activePhoto} alt="Fotografía de la falla" />
+                              <span className="jm-foto-zoom"><Maximize2 size={13} /> Ampliar</span>
+                            </button>
+                            {fotos.length > 1 && (
+                              <div className="jm-miniaturas">
+                                {fotos.map((f, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    className={`jm-miniatura ${activePhoto === f ? 'activa' : ''}`}
+                                    onClick={() => setActivePhoto(f)}
+                                    title={`Ver foto ${idx + 1}`}
+                                  >
+                                    <img src={f} alt={`Foto ${idx + 1}`} />
+                                  </button>
+                                ))}
                               </div>
-                            ))}
+                            )}
+                          </section>
+                        ) : (
+                          <section className="jm-card jm-sin-fotos">
+                            <span className="jm-sin-fotos-icono"><ImageIcon size={22} /></span>
+                            <div>
+                              <strong>Sin fotos de la falla</strong>
+                              <span>El cliente no adjuntó fotografías.</span>
+                            </div>
+                          </section>
+                        )}
+
+                        <section className="jm-card">
+                          <div className="jm-card-head">
+                            <span className="tb-actions-icon orange"><Wrench size={16} strokeWidth={2.4} /></span>
+                            <div className="jm-card-head-txt">
+                              <span className="jm-kicker">Trabajo solicitado</span>
+                              <h3 className="jm-titulo jm-titulo-sm">{selectedJob.titulo}</h3>
+                            </div>
+                            {esUrgente && <span className="jm-badge-urgente"><Zap size={12} strokeWidth={2.6} /> Urgente</span>}
+                          </div>
+                          {descLimpia && <p className="jm-desc">{descLimpia}</p>}
+                          <div className="jm-pills">
+                            <span className="jm-pill"><MapPin size={13} /> {selectedJob.zona}</span>
+                            <span className="jm-pill"><Clock size={13} /> {selectedJob.fecha}</span>
+                          </div>
+                        </section>
+                      </div>
+
+                      {/* ── Derecha: la propuesta ── */}
+                      <section className="jm-card jm-form">
+                        <span className="jm-kicker">Tu propuesta</span>
+                        <h3 className="jm-titulo">¿Cuánto cobrarás por este trabajo?</h3>
+                        <p className="jm-texto-suave">El cliente verá tu precio y tu mensaje para decidir con quién trabajar.</p>
+
+                        {selectedJob.myQuote && selectedJob.myQuote.status === 'rejected' && (
+                          <div className="jm-rechazo">
+                            <span className="jm-rechazo-icono"><AlertTriangle size={16} strokeWidth={2.4} /></span>
+                            <div>
+                              <strong>Tu oferta anterior de ${selectedJob.myQuote.price} fue rechazada</strong>
+                              <span>Puedes ajustar el precio o explicarle al cliente qué incluye.</span>
+                            </div>
                           </div>
                         )}
-                      </div>
-                    ) : (
-                      <div className="mercado-no-photo-placeholder" style={{ height: '150px' }}>
-                        <ImageIcon size={34} color="#94a3b8" />
-                        <span>Sin fotografías de evidencia adjuntas</span>
-                      </div>
-                    )}
 
-                    {/* Detalle del Problema Solicitado */}
-                    <div className="mercado-problem-detail-box">
-                      <div className="mercado-problem-detail-header">
-                        <FileText size={17} color="#ea580c" />
-                        <span>{selectedJob.titulo}</span>
-                      </div>
-                      <div className="mercado-problem-detail-desc">
-                        {selectedJob.descripcion}
-                      </div>
-                      <div className="mercado-problem-detail-footer">
-                        <span><MapPin size={12} style={{ verticalAlign: 'middle', marginRight: '3px', color: '#ea580c' }} /> Zona: {selectedJob.zona}</span>
-                        <span><Clock size={12} style={{ verticalAlign: 'middle', marginRight: '3px' }} /> {selectedJob.fecha}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Columna Derecha: Formulario de Cotización */}
-                  <div className="mercado-premium-form" style={{ flex: '1.1', padding: '24px', display: 'flex', flexDirection: 'column' }}>
-                    
-                    <div style={{ marginBottom: '14px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: '800', color: '#f26522', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          Propuesta de Servicio
-                        </span>
-                        {selectedJob.is_urgent && (
-                          <span className="mercado-urgency-badge urgent">⚡ Urgente (Hoy Mismo)</span>
-                        )}
-                      </div>
-                      <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#ffffff' }}>
-                        Ingresa tu Oferta Económica
-                      </h3>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#94a3b8' }}>
-                        Define el costo que cobrarás por solucionar este problema. El cliente revisará tu propuesta.
-                      </p>
-                    </div>
-
-                    {/* Alerta si fue rechazada */}
-                    {selectedJob.myQuote && selectedJob.myQuote.status === 'rejected' && (
-                      <div className="mq-rejection-warning">
-                        <span className="mq-rejection-icon">⚠️</span>
-                        <div className="mq-rejection-text">
-                          <strong>Tu última oferta (${selectedJob.myQuote.price}) fue rechazada</strong>
-                          <p>Puedes mejorar tu precio o enviar un mensaje para llegar a un acuerdo con el cliente.</p>
+                        <label className="jm-label" htmlFor="jm-precio-input">Precio del servicio</label>
+                        <div className="jm-precio-campo">
+                          <span className="jm-precio-signo">$</span>
+                          <input
+                            id="jm-precio-input"
+                            type="text"
+                            inputMode="decimal"
+                            autoComplete="off"
+                            placeholder="0.00"
+                            value={quotePrice}
+                            onChange={(e) => setQuotePrice(limpiarPrecio(e.target.value))}
+                            autoFocus
+                          />
+                          <span className="jm-precio-moneda">MXN</span>
                         </div>
-                      </div>
-                    )}
 
-                    <div className="mercado-form-group" style={{ marginTop: '10px' }}>
-                      <label style={{ fontSize: '13.5px', fontWeight: '800', color: '#cbd5e1', marginBottom: '8px', display: 'block' }}>
-                        Propuesta Económica ($ MXN) *
-                      </label>
-                      <div className="mercado-input-wrapper">
-                        <DollarSign size={18} className="mercado-input-icon" />
-                        <input
-                          type="number"
-                          placeholder="Ej. 350"
-                          className="mercado-premium-input"
-                          value={quotePrice}
-                          onChange={(e) => setQuotePrice(e.target.value)}
-                          autoFocus
-                          style={{ fontSize: '16px', fontWeight: '700' }}
+                        <label className="jm-label" htmlFor="jm-mensaje-input">
+                          Mensaje para el cliente <span>(opcional)</span>
+                        </label>
+                        <textarea
+                          id="jm-mensaje-input"
+                          className="jm-textarea"
+                          placeholder="Ej. Hola, cuento con las herramientas y refacciones necesarias. Puedo ir hoy mismo a revisarlo."
+                          value={quoteMessage}
+                          onChange={(e) => setQuoteMessage(e.target.value)}
+                          rows={4}
                         />
-                      </div>
-                    </div>
-
-                    <div className="mercado-form-group" style={{ marginTop: '14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <label style={{ fontSize: '13.5px', fontWeight: '800', color: '#cbd5e1', marginBottom: '8px', display: 'block' }}>
-                        Mensaje para el cliente
-                      </label>
-                      <textarea
-                        placeholder="Ej. Hola, cuento con las herramientas y refacciones necesarias. Puedo ir hoy mismo a revisarlo..."
-                        className="mercado-premium-textarea"
-                        value={quoteMessage}
-                        onChange={(e) => setQuoteMessage(e.target.value)}
-                        rows={4}
-                        style={{ flex: 1, minHeight: '100px' }}
-                      />
+                      </section>
                     </div>
                   </div>
-                </div>
 
-                <div className="mercado-premium-footer">
-                  <button className="mercado-btn-cancel" onClick={() => setQuoteStep(1)}>
-                    ← Volver al Chat y Detalle
-                  </button>
-                  <button className="mercado-premium-submit" onClick={handleEnviarCotizacion}>
-                    <Send size={16} />
-                    {selectedJob.myQuote && selectedJob.myQuote.price > 0 ? 'Actualizar Oferta' : 'Enviar Cotización'}
-                  </button>
-                </div>
-              </>
-            )}
+                  <div className="mercado-premium-footer">
+                    <button type="button" className="jm-volver" onClick={() => setQuoteStep(1)}>
+                      <ChevronLeft size={16} strokeWidth={2.6} /> Volver al detalle
+                    </button>
+                    <button type="button" className="jm-btn-principal jm-btn-enviar" onClick={handleEnviarCotizacion}>
+                      <Send size={16} strokeWidth={2.4} />
+                      {yaCotizado ? 'Actualizar oferta' : 'Enviar cotización'}
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
 
           </div>
         </div>
@@ -5171,22 +5165,23 @@ const MercadoTrabajos = () => {
       )}
 
       {/* ─── MODAL ZOOM FOTO DE EVIDENCIA ─── */}
-      {zoomedPhotoUrl && (
-        <div className="mercado-second-visit-overlay" onClick={() => setZoomedPhotoUrl(null)}>
-          <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
-            <img
-              src={zoomedPhotoUrl}
-              alt="Evidencia ampliada"
-              style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: '14px', border: '2px solid rgba(255,255,255,0.2)', boxShadow: '0 20px 50px rgba(0,0,0,0.8)', objectFit: 'contain' }}
-            />
+      {/* Foto ampliada: va en el body para quedar encima del encabezado (z-index 999999) */}
+      {zoomedPhotoUrl && createPortal(
+        <div className="rt-foto-zoom" onClick={() => setZoomedPhotoUrl(null)}>
+          <div className="rt-foto-zoom-marco" onClick={(e) => e.stopPropagation()}>
+            <img src={zoomedPhotoUrl} alt="Evidencia ampliada" className="rt-foto-zoom-img" />
             <button
+              type="button"
+              className="rt-foto-zoom-cerrar"
               onClick={() => setZoomedPhotoUrl(null)}
-              style={{ position: 'absolute', top: '-15px', right: '-15px', width: '36px', height: '36px', borderRadius: '50%', background: '#f26522', color: '#ffffff', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+              title="Cerrar imagen"
+              aria-label="Cerrar imagen"
             >
-              ×
+              <X size={20} strokeWidth={2.6} />
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {/* ─── MODAL VISUALIZADOR DE REPORTE DETALLADO PDF (ESTILO AGENTE) ─── */}
       {showPdfReportModal && selectedBoardJob && (
