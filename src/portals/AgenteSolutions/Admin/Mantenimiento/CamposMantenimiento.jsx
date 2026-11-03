@@ -7,13 +7,23 @@ const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'O
 const aISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 export const hoyISO = () => aISO(new Date());
 
-// Hoy + n meses; un fin de mes no se pasa al mes siguiente
-export const dentroDeMeses = (n) => {
-  const hoy = new Date();
-  const destino = new Date(hoy.getFullYear(), hoy.getMonth() + n, 1);
+// Fecha + n meses; un fin de mes no se pasa al mes siguiente (igual que el backend)
+export const sumarMeses = (iso, n) => {
+  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
+  const destino = new Date(y, m - 1 + n, 1);
   const ultimoDia = new Date(destino.getFullYear(), destino.getMonth() + 1, 0).getDate();
-  destino.setDate(Math.min(hoy.getDate(), ultimoDia));
+  destino.setDate(Math.min(d, ultimoDia));
   return aISO(destino);
+};
+
+export const dentroDeMeses = (n) => sumarMeses(hoyISO(), n);
+
+// Mantenimiento por periodo: cada cuántos meses
+export const FRECUENCIAS = [1, 2, 3, 4, 6, 12];
+export const textoFrecuencia = (n) => {
+  if (Number(n) === 1) return 'Cada mes';
+  if (Number(n) === 12) return 'Cada año';
+  return `Cada ${n} meses`;
 };
 
 export const textoFecha = (iso) => {
@@ -48,7 +58,7 @@ export const proximaFecha = (e) => e.visits?.[0]?.fecha_programada?.slice(0, 10)
 export const porFecha = (a, b) => (proximaFecha(a) || '9999').localeCompare(proximaFecha(b) || '9999');
 
 // Se elige siempre en el calendario: así no se puede escribir una fecha que no existe
-export const CampoFecha = ({ value, onChange, min, ariaLabel }) => {
+export const CampoFecha = ({ value, onChange, min, max, ariaLabel }) => {
   const abrirCalendario = (e) => {
     try {
       e.currentTarget.showPicker();
@@ -62,6 +72,7 @@ export const CampoFecha = ({ value, onChange, min, ariaLabel }) => {
       type="date"
       className="mt-input-fecha"
       min={min}
+      max={max}
       aria-label={ariaLabel}
       value={value}
       onChange={onChange}

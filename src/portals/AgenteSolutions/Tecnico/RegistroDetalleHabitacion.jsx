@@ -4,10 +4,19 @@ import "../../../styles/AgenteSolutions/Tecnico/RegistroDetalleHabitacion.css";
 import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
 import "../../../styles/Shared/LiquidGlass.css";
 import "../../../styles/AgenteSolutions/Tecnico/LevantamientoZonas.css";
-import { ArrowLeft, Plus, Trash2, X, Loader2, ImageIcon, Edit3, Eye, SlidersHorizontal, Wrench, Camera, Tag, Hash, Ruler, Palette, Package, Box, Layers, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, X, Loader2, ImageIcon, Edit3, Eye, SlidersHorizontal, Wrench, Camera, Tag, Hash, Ruler, Palette, Package, Box, Layers, MessageSquare, CalendarClock } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import RutaLevantamiento from './RutaLevantamiento';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
+import { useAuth } from '../../../context/AuthContext';
+import PeriodoMantenimiento from '../Admin/Mantenimiento/PeriodoMantenimiento';
+import { proximaFecha, textoFecha, textoFrecuencia, hoyISO } from '../Admin/Mantenimiento/CamposMantenimiento';
+
+// Mantenimiento preventivo del elemento: apagado, o cada N meses desde el último mantenimiento
+const MANT_VACIO = { activo: false, frecuencia: null, ultimo: '' };
+const mantDeEquipo = (equipo) => (equipo
+  ? { activo: true, frecuencia: equipo.frecuencia_meses || null, ultimo: equipo.ultimo_mantenimiento?.slice(0, 10) || '' }
+  : MANT_VACIO);
 
 // Ficha técnica opcional de aire acondicionado ("modo avanzado" del formulario).
 // Todos los campos son opcionales; se guardan en property_components.specs (JSON).
@@ -106,9 +115,78 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
   const esAire = esCategoriaAire(categoriaActiva?.name);
   const camposFichaLlenos = Object.values(ficha).filter(v => String(v || '').trim() !== '').length;
 
+  // Mantenimiento preventivo por elemento (no aplica a pintura)
+  const { user } = useAuth();
+  const esAdmin = [0, 1].includes(Number(user?.role_id));
+  const usaMantenimiento = categoriaActiva?.name !== 'PINTURA';
+  const [mantenimientos, setMantenimientos] = useState({}); // property_component_id -> equipo agendado
+  const [mant, setMant] = useState(MANT_VACIO);
+
   useEffect(() => {
     if (habitacion?.id) fetchComponentes();
   }, [habitacion]);
+
+  const fetchMantenimientos = async () => {
+    if (!usaMantenimiento || !habitacion?.property_id) return;
+    try {
+      const token = localStorage.getItem('agente_token');
+      const { data } = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/properties/${habitacion.property_id}/mantenimiento`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const mapa = {};
+      (Array.isArray(data) ? data : []).forEach((e) => { if (e.property_component_id) mapa[e.property_component_id] = e; });
+      setMantenimientos(mapa);
+    } catch {
+      // Sin permiso o sin mantenimiento: el levantamiento sigue igual
+    }
+  };
+
+  useEffect(() => {
+    fetchMantenimientos();
+  }, [habitacion?.property_id, usaMantenimiento]);
+
+  const cambioMantenimiento = (componenteId) => {
+    const original = mantDeEquipo(componenteId ? mantenimientos[componenteId] : null);
+    return mant.activo !== original.activo || Number(mant.frecuencia) !== Number(original.frecuencia) || (mant.ultimo || '') !== original.ultimo;
+  };
+
+  // Agenda, ajusta o quita el mantenimiento del elemento recién guardado. Devuelve un error o null.
+  const sincronizarMantenimiento = async (componenteId, subCat) => {
+    const existente = mantenimientos[componenteId];
+    if (!usaMantenimiento || !componenteId || !cambioMantenimiento(componenteId)) return null;
+
+    const token = localStorage.getItem('agente_token');
+    const headers = { 'Authorization': `Bearer ${token}` };
+    const api = import.meta.env.VITE_API_BASE_URL;
+    const periodo = { frecuencia_meses: mant.frecuencia, ultimo_mantenimiento: mant.ultimo || null };
+
+    try {
+      if (mant.activo && !existente) {
+        const marca = nuevoRegistro.brand.trim();
+        await axios.post(`${api}/mantenimiento/equipos`, {
+          property_id: habitacion.property_id,
+          property_component_id: componenteId,
+          tipo: `${subCat}${marca ? ` (${marca})` : ''} - ${habitacion.name || 'Área'}`.slice(0, 150),
+          cantidad: Math.max(1, Math.round(Number(nuevoRegistro.quantity) || 1)),
+          ...periodo,
+        }, { headers });
+      } else if (mant.activo) {
+        await axios.put(`${api}/mantenimiento/equipos/${existente.id}`, {
+          tipo: existente.tipo,
+          cantidad: existente.cantidad,
+          detalle: existente.detalle,
+          ...periodo,
+        }, { headers });
+      } else {
+        await axios.delete(`${api}/mantenimiento/equipos/${existente.id}`, { headers });
+      }
+      return null;
+    } catch (error) {
+      return error.response?.data?.error || error.response?.data?.message || 'Intenta de nuevo desde Mantenimiento.';
+    } finally {
+      fetchMantenimientos();
+    }
+  };
 
   const fetchComponentes = async () => {
     try {
@@ -171,6 +249,7 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
     setGaleriaArchivos([]);
     setGaleriaExistente(item.galleries || []);
     setRemovedGalleryIds([]);
+    setMant(mantDeEquipo(mantenimientos[item.id]));
     setIsModalOpen(true);
   };
 
@@ -186,6 +265,7 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
     setGaleriaArchivos([]);
     setGaleriaExistente([]);
     setRemovedGalleryIds([]);
+    setMant(MANT_VACIO);
     setIsModalOpen(true);
   };
 
@@ -196,6 +276,13 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
       if (!nuevoRegistro.model_or_color) return mostrarAviso("El campo TONO es obligatorio.");
     } else {
       if (!subCat) return mostrarAviso("El campo TIPO es obligatorio.");
+    }
+    if (usaMantenimiento && mant.activo && !mant.frecuencia && cambioMantenimiento(modoEdicion ? idEditando : null)) {
+      return mostrarAviso("Elige cada cuánto se da el mantenimiento preventivo, o desactívalo.");
+    }
+    if (usaMantenimiento && modoEdicion && mantenimientos[idEditando] && !mant.activo
+      && !(await confirmarAccion("Se quitará el mantenimiento preventivo de este elemento y sus fechas pendientes saldrán de la agenda. ¿Continuar?"))) {
+      return;
     }
 
     setGuardando(true);
@@ -242,15 +329,19 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
     try {
       // ✅ INYECTAR TOKEN JUNTO CON EL FORMDATA
       const token = localStorage.getItem('agente_token');
-      await axios.post(url, formData, {
-        headers: { 
+      const res = await axios.post(url, formData, {
+        headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`
         }
       });
-      
+
+      // El elemento ya quedó guardado; si falla el mantenimiento solo se avisa
+      const errorMant = await sincronizarMantenimiento(modoEdicion ? idEditando : res.data?.id, subCat);
+
       setIsModalOpen(false);
-      fetchComponentes(); 
+      fetchComponentes();
+      if (errorMant) mostrarAviso(`El elemento se guardó, pero no se pudo agendar su mantenimiento: ${errorMant}`);
     } catch (error) {
       console.error("Error al guardar:", error);
       mostrarAviso("Hubo un error al guardar el elemento.");
@@ -354,7 +445,21 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
                       <span data-label="Marca" style={{ fontWeight: 800, color: '#0f172a' }}>{reg.brand || 'N/A'}</span>
                       <span data-label="Modelo">{reg.model_or_color || 'N/A'}</span>
                       <span data-label="Cantidad">{reg.quantity}</span>
-                      <span data-label="Tipo">{reg.sub_category}</span>
+                      <span data-label="Tipo">
+                        {reg.sub_category}
+                        {(() => {
+                          const equipo = mantenimientos[reg.id];
+                          if (!equipo) return null;
+                          const proxima = proximaFecha(equipo);
+                          const vencido = proxima && proxima < hoyISO();
+                          return (
+                            <small className={`rdh-mant-chip ${vencido ? 'vencido' : ''}`} title="Mantenimiento preventivo">
+                              <CalendarClock size={12} />
+                              {[equipo.frecuencia_meses && textoFrecuencia(equipo.frecuencia_meses), proxima && `${vencido ? 'vencido ' : ''}${textoFecha(proxima)}`].filter(Boolean).join(' · ') || 'Sin fecha'}
+                            </small>
+                          );
+                        })()}
+                      </span>
                     </>
                   )}
 
@@ -655,6 +760,48 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
                   onChange={(e) => setNuevoRegistro({...nuevoRegistro, observations: e.target.value})}
                 />
               </div>
+
+              {/* MANTENIMIENTO PREVENTIVO: cada N meses desde el último; queda en la agenda */}
+              {usaMantenimiento && (() => {
+                const existente = modoEdicion ? mantenimientos[idEditando] : null;
+                // Quitarlo de la agenda lo hace un administrador
+                const bloqueado = Boolean(existente) && !esAdmin;
+                return (
+                  <div className={`rdh-mant ${mant.activo ? 'on' : ''}`}>
+                    <label className="rdh-mant-cabecera">
+                      <span className="rdh-mant-titulo">
+                        <CalendarClock size={16} color="#ff8c42" /> Mantenimiento preventivo
+                        <small>{mant.activo ? 'Queda en la agenda y se repite solo' : 'Agéndalo si se le da mantenimiento cada cierto tiempo'}</small>
+                      </span>
+                      <input
+                        type="checkbox"
+                        role="switch"
+                        className="rdh-mant-switch"
+                        checked={mant.activo}
+                        disabled={bloqueado && mant.activo}
+                        onChange={(e) => setMant(e.target.checked ? { ...mant, activo: true } : { ...mant, activo: false })}
+                        aria-label="Mantenimiento preventivo"
+                      />
+                    </label>
+                    {mant.activo && (
+                      <>
+                        {existente && !existente.frecuencia_meses && proximaFecha(existente) && (
+                          <small className="rdh-mant-nota">
+                            Agendado para el {textoFecha(proximaFecha(existente))} sin repetirse. Elige cada cuánto para que se repita.
+                          </small>
+                        )}
+                        <PeriodoMantenimiento
+                          idBase="rdh-mant"
+                          frecuencia={mant.frecuencia}
+                          ultimo={mant.ultimo}
+                          onChange={({ frecuencia, ultimo }) => setMant({ ...mant, frecuencia, ultimo })}
+                        />
+                        {bloqueado && <small className="rdh-mant-nota">Para quitarlo de la agenda, pídeselo a un administrador.</small>}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div className="rp-footer lz-modal-pie">
                 <button type="button" className="lz-btn lz-btn-glass" onClick={() => setIsModalOpen(false)}>Cancelar</button>

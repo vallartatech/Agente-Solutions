@@ -19,6 +19,7 @@ import '../../../styles/AgenteSolutions/Cliente/TableroScrum.css'; // Reutilizam
 import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteSolutions/Admin/VistaServiciosAdmin.css';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
+import MantenimientosProximos from './Mantenimiento/MantenimientosProximos';
 
 const VistaServiciosAdmin = () => {
   const navigate = useNavigate();
@@ -847,6 +848,16 @@ const VistaServiciosAdmin = () => {
         {seccionTab === 'activos' ? <Timer size={14} /> : <CheckCircle2 size={14} />}
         <span>{seccionTab === 'activos' ? 'SERVICIOS ACTIVOS' : 'FINALIZADOS Y RECHAZADOS'}</span>
       </div>
+
+      {/* Mantenimiento por periodo: lo que toca en 30 días o ya venció. Al crear la orden se abre aquí mismo. */}
+      {seccionTab === 'activos' && (
+        <MantenimientosProximos
+          onOrdenCreada={(id) => {
+            window.history.replaceState({}, '', `${window.location.pathname}?jobId=${id}`);
+            cargarTodo(true);
+          }}
+        />
+      )}
 
       {(() => {
         const columnasMostrar = seccionTab === 'activos'

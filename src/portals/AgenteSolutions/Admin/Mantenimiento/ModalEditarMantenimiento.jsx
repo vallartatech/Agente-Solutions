@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
-import { Check, X } from 'lucide-react';
+import { CalendarClock, Check, Repeat, X } from 'lucide-react';
 import { API, authHeaders } from '../Expediente/flujoTrabajo';
 import { CampoFecha, CampoFoto, dentroDeMeses, hoyISO, proximaFecha } from './CamposMantenimiento';
+import PeriodoMantenimiento from './PeriodoMantenimiento';
 import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 
 const ATAJOS_MESES = [3, 6, 12];
 
-// Ajustar la fecha y los datos de un equipo. onGuardado recibe el equipo actualizado.
+// Ajustar la fecha o el periodo y los datos de un equipo. onGuardado recibe el equipo actualizado.
+// Con periodo, la próxima fecha se calcula (último + N meses); sin periodo, se escribe a mano.
 const ModalEditarMantenimiento = ({ equipo, onCerrar, onGuardado }) => {
   const fechaActual = proximaFecha(equipo) || '';
   const [form, setForm] = useState({
@@ -16,6 +18,9 @@ const ModalEditarMantenimiento = ({ equipo, onCerrar, onGuardado }) => {
     cantidad: equipo.cantidad || 1,
     detalle: equipo.detalle || '',
     fecha: fechaActual,
+    modo: equipo.frecuencia_meses ? 'periodo' : 'fecha',
+    frecuencia: equipo.frecuencia_meses || null,
+    ultimo: equipo.ultimo_mantenimiento?.slice(0, 10) || '',
     foto_equipo: null,
     foto_datos: null,
   });
@@ -27,8 +32,16 @@ const ModalEditarMantenimiento = ({ equipo, onCerrar, onGuardado }) => {
   const guardar = async (e) => {
     e.preventDefault();
     if (guardando) return;
-    if (!form.tipo.trim() || !form.fecha) {
-      setError('Indica el equipo y la fecha del próximo mantenimiento.');
+    if (!form.tipo.trim()) {
+      setError('Indica el equipo.');
+      return;
+    }
+    if (form.modo === 'periodo' && !form.frecuencia) {
+      setError('Elige cada cuánto se da el mantenimiento.');
+      return;
+    }
+    if (form.modo === 'fecha' && !form.fecha) {
+      setError('Indica la fecha del próximo mantenimiento.');
       return;
     }
 
@@ -36,7 +49,14 @@ const ModalEditarMantenimiento = ({ equipo, onCerrar, onGuardado }) => {
     fd.append('_method', 'PUT');
     fd.append('tipo', form.tipo.trim());
     fd.append('cantidad', form.cantidad || 1);
-    fd.append('fecha', form.fecha);
+    if (form.modo === 'periodo') {
+      fd.append('frecuencia_meses', form.frecuencia);
+      fd.append('ultimo_mantenimiento', form.ultimo || '');
+    } else {
+      // Sin periodo: queda solo la fecha escrita
+      fd.append('frecuencia_meses', '');
+      fd.append('fecha', form.fecha);
+    }
     fd.append('detalle', form.detalle.trim());
     if (form.foto_equipo) fd.append('foto_equipo', form.foto_equipo);
     if (form.foto_datos) fd.append('foto_datos', form.foto_datos);
@@ -63,26 +83,44 @@ const ModalEditarMantenimiento = ({ equipo, onCerrar, onGuardado }) => {
           <button type="button" className="mt-icono" onClick={onCerrar} aria-label="Cerrar"><X size={18} /></button>
         </div>
 
-        <div className="mt-campo">
-          <span>Fecha del próximo mantenimiento *</span>
-          <div className="mt-fecha">
-            {ATAJOS_MESES.map((n) => {
-              const valor = dentroDeMeses(n);
-              return (
-                <button key={n} type="button" className={form.fecha === valor ? 'on' : ''} onClick={() => setForm({ ...form, fecha: valor })} aria-pressed={form.fecha === valor}>
-                  En {n} meses
-                </button>
-              );
-            })}
-            <CampoFecha
-              min={vencida && form.fecha === fechaActual ? undefined : hoy}
-              ariaLabel="Fecha del próximo mantenimiento"
-              value={form.fecha}
-              onChange={(e) => setForm({ ...form, fecha: e.target.value })}
-            />
-          </div>
-          {vencida && <small className="mt-nota-vencida">Esta fecha ya pasó: elige una nueva si se reprograma.</small>}
+        <div className="mt-modo" role="tablist" aria-label="Cómo se agenda">
+          <button type="button" role="tab" aria-selected={form.modo === 'periodo'} className={form.modo === 'periodo' ? 'on' : ''} onClick={() => setForm({ ...form, modo: 'periodo' })}>
+            <Repeat size={15} /> Cada cierto tiempo
+          </button>
+          <button type="button" role="tab" aria-selected={form.modo === 'fecha'} className={form.modo === 'fecha' ? 'on' : ''} onClick={() => setForm({ ...form, modo: 'fecha' })}>
+            <CalendarClock size={15} /> Una sola fecha
+          </button>
         </div>
+
+        {form.modo === 'periodo' ? (
+          <PeriodoMantenimiento
+            idBase={`mt-editar-${equipo.id}`}
+            frecuencia={form.frecuencia}
+            ultimo={form.ultimo}
+            onChange={({ frecuencia, ultimo }) => setForm({ ...form, frecuencia, ultimo })}
+          />
+        ) : (
+          <div className="mt-campo">
+            <span>Fecha del próximo mantenimiento *</span>
+            <div className="mt-fecha">
+              {ATAJOS_MESES.map((n) => {
+                const valor = dentroDeMeses(n);
+                return (
+                  <button key={n} type="button" className={form.fecha === valor ? 'on' : ''} onClick={() => setForm({ ...form, fecha: valor })} aria-pressed={form.fecha === valor}>
+                    En {n} meses
+                  </button>
+                );
+              })}
+              <CampoFecha
+                min={vencida && form.fecha === fechaActual ? undefined : hoy}
+                ariaLabel="Fecha del próximo mantenimiento"
+                value={form.fecha}
+                onChange={(e) => setForm({ ...form, fecha: e.target.value })}
+              />
+            </div>
+            {vencida && <small className="mt-nota-vencida">Esta fecha ya pasó: elige una nueva si se reprograma, o usa “Ya se hizo”.</small>}
+          </div>
+        )}
 
         <div className="mt-fila">
           <label className="mt-campo mt-campo-equipo">
