@@ -546,6 +546,18 @@ const MercadoTrabajos = () => {
   // Technician Clients & Favorites Directory States
   const [userFilter, setUserFilter] = useState('TODOS'); // 'TODOS' | 'HISTORIAL' | 'FAVORITOS'
   const [userSearch, setUserSearch] = useState('');
+  const [userFiltroAbierto, setUserFiltroAbierto] = useState(false);
+  const userFiltroRef = useRef(null);
+
+  // El menú del filtro de Mis Clientes se cierra al tocar fuera de él
+  useEffect(() => {
+    if (!userFiltroAbierto) return;
+    const cerrar = (e) => {
+      if (!userFiltroRef.current?.contains(e.target)) setUserFiltroAbierto(false);
+    };
+    document.addEventListener('pointerdown', cerrar);
+    return () => document.removeEventListener('pointerdown', cerrar);
+  }, [userFiltroAbierto]);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedClientForHistory, setSelectedClientForHistory] = useState(null);
 
@@ -2877,25 +2889,49 @@ const MercadoTrabajos = () => {
                 )}
               </div>
 
-              {/* Categorías / Filtros Rápidos */}
-              <div className="mercado-users-filter-chips">
-                {[
-                  { key: 'TODOS', label: 'Todos Mis Contactos', Icono: Users, count: myClientsDirectory.length },
-                  { key: 'HISTORIAL', label: 'Clientes Atendidos', Icono: Briefcase, count: totalClientesAtendidos },
-                  { key: 'FAVORITOS', label: 'Me Tienen en Favoritos', Icono: Star, count: totalFavoritos },
-                ].map(cat => (
-                  <button
-                    key={cat.key}
-                    type="button"
-                    className={`mercado-user-chip-btn ${userFilter === cat.key ? 'active' : ''}`}
-                    onClick={() => setUserFilter(cat.key)}
-                  >
-                    <cat.Icono size={15} color="#ffffff" />
-                    <span>{cat.label}</span>
-                    <span className="mercado-user-chip-badge">{cat.count}</span>
-                  </button>
-                ))}
-              </div>
+              {/* Filtro: un botón que abre las opciones (mismo patrón que el Tablero) */}
+              {(() => {
+                const opciones = [
+                  { id: 'TODOS', label: 'Todos mis contactos', Icono: Users, tono: 'slate', total: myClientsDirectory.length },
+                  { id: 'HISTORIAL', label: 'Clientes atendidos', Icono: Briefcase, tono: 'blue', total: totalClientesAtendidos },
+                  { id: 'FAVORITOS', label: 'Me tienen en favoritos', Icono: Star, tono: 'amber', total: totalFavoritos },
+                ];
+                const actual = opciones.find(o => o.id === userFilter) || opciones[0];
+                return (
+                  <div className="tb-actions-wrapper mercado-board-filtro mercado-users-filtro" ref={userFiltroRef}>
+                    <button
+                      type="button"
+                      className={`mercado-board-filtro-btn ${userFiltroAbierto ? 'abierto' : ''}`}
+                      onClick={() => setUserFiltroAbierto(v => !v)}
+                      aria-haspopup="true"
+                      aria-expanded={userFiltroAbierto}
+                      title="Filtrar contactos"
+                    >
+                      <SlidersHorizontal size={16} />
+                      <span>{actual.label}</span>
+                      <span className="mercado-board-filtro-total">{actual.total}</span>
+                      <ChevronDown size={16} className="mercado-board-filtro-flecha" />
+                    </button>
+
+                    {userFiltroAbierto && (
+                      <div className="tb-actions-menu">
+                        {opciones.map(({ id, label, Icono, tono, total }) => (
+                          <button
+                            key={id}
+                            type="button"
+                            className={`tb-actions-item ${userFilter === id ? 'selected' : ''}`}
+                            onClick={() => { setUserFilter(id); setUserFiltroAbierto(false); }}
+                          >
+                            <span className={`tb-actions-icon ${tono}`}><Icono size={16} strokeWidth={2.4} /></span>
+                            <span>{label}</span>
+                            <span className="tb-actions-badge">{total}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 

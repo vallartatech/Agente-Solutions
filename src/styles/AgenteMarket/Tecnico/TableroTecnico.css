@@ -11,7 +11,6 @@
 .mercado-tablero-mode .mercado-board-workspace {
   background: transparent;
 }
-
 /* Paneles azul noche con un toque de vidrio */
 .mercado-tablero-mode .mercado-board-header,
 .mercado-tablero-mode .mercado-board-col-list,
@@ -216,6 +215,17 @@
 .mercado-board-filtro-flecha { transition: transform 0.2s ease; }
 .mercado-board-filtro-btn.abierto .mercado-board-filtro-flecha { transform: rotate(180deg); }
 .mercado-board-filtro .tb-actions-menu { left: auto; right: 0; }
+
+/* Mis Clientes: el mismo botón, a la altura del buscador */
+.mercado-users-filtro { position: relative; z-index: 20; }
+.mercado-users-filtro .mercado-board-filtro-btn {
+  height: 48px;
+  padding: 0 16px;
+  gap: 8px;
+  border-radius: 14px;
+  font-size: 0.88rem;
+}
+.mercado-users-filtro .tb-actions-menu { min-width: 260px; }
 
 /* Tarjetas de trabajos */
 .mercado-tablero-mode .mercado-board-job-card {
@@ -1032,6 +1042,22 @@
 }
 
 .mercado-usuarios-mode .mercado-users-view { background: transparent; }
+
+/* Mis clientes: se sigue desplazando, pero sin barra visible */
+html:has(.mercado-usuarios-mode),
+body:has(.mercado-usuarios-mode),
+.mercado-container.mercado-usuarios-mode,
+.mercado-usuarios-mode .mercado-users-view {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html:has(.mercado-usuarios-mode)::-webkit-scrollbar,
+body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
+.mercado-container.mercado-usuarios-mode::-webkit-scrollbar,
+.mercado-usuarios-mode .mercado-users-view::-webkit-scrollbar {
+  display: none;
+}
 
 .mercado-usuarios-mode .mercado-users-header-card,
 .mercado-usuarios-mode .mercado-user-card,
