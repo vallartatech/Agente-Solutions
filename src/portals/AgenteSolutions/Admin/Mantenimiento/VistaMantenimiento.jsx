@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { CalendarClock, ChevronRight, Pencil, Plus, Search, Trash2, Wrench } from 'lucide-react';
+import { CalendarClock, Check, ChevronRight, ClipboardList, Pencil, Plus, Search, Trash2, Wrench } from 'lucide-react';
 import Header from '../../../../components/Shared/Header';
 import ModalRegistroInmueble from '../../../../components/Shared/ModalRegistroInmueble';
 import { API, authHeaders } from '../Expediente/flujoTrabajo';
@@ -14,7 +14,7 @@ import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 const ATAJOS_MESES = [3, 6, 12];
 // Opción de la lista que abre el registro completo de la propiedad
 const REGISTRAR_PROPIEDAD = 'registrar';
-const FORM_VACIO = { property_id: '', tipo: '', cantidad: 1, detalle: '', fecha: '', foto_equipo: null, foto_datos: null };
+const FORM_VACIO = { property_id: '', property_component_id: null, tipo: '', cantidad: 1, detalle: '', fecha: '', foto_equipo: null, foto_datos: null };
 
 const normalizar = (texto) => String(texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const nombrePropiedad = (p) => p?.property_name || p?.address || 'Propiedad';
@@ -26,7 +26,8 @@ const avisoError = (title, error) => Swal.fire({
   confirmButtonColor: '#f26522',
 });
 
-// Sin levantamiento: se agrega el equipo y la fecha de su próximo mantenimiento, y queda en la agenda.
+// Al elegir la propiedad se muestran los equipos de su levantamiento para agendarles el próximo mantenimiento;
+// si no está en el levantamiento (o no hay), el equipo se escribe a mano.
 const VistaMantenimiento = () => {
   const navigate = useNavigate();
   const [propiedades, setPropiedades] = useState([]);
@@ -38,6 +39,10 @@ const VistaMantenimiento = () => {
   const [busqueda, setBusqueda] = useState('');
   const [editando, setEditando] = useState(null);
   const [registrandoPropiedad, setRegistrandoPropiedad] = useState(false);
+  const [elementos, setElementos] = useState([]);
+  const [cargandoElementos, setCargandoElementos] = useState(false);
+  // Evita que la respuesta de una propiedad anterior pise la de la elegida ahora
+  const propiedadPedida = useRef('');
 
   useEffect(() => {
     const headers = authHeaders();
@@ -60,14 +65,55 @@ const VistaMantenimiento = () => {
       .sort(porFecha);
   }, [equipos, busqueda]);
 
+  // Equipo de la lista ya ligado a cada elemento del levantamiento
+  const agendadoPorElemento = useMemo(() => {
+    const mapa = {};
+    equipos.forEach((e) => { if (e.property_component_id) mapa[e.property_component_id] = e; });
+    return mapa;
+  }, [equipos]);
+
+  const cargarElementos = async (propertyId) => {
+    propiedadPedida.current = propertyId;
+    setElementos([]);
+    if (!propertyId) return;
+    setCargandoElementos(true);
+    try {
+      const { data } = await axios.get(`${API}/properties/${propertyId}/elementos`, { headers: authHeaders() });
+      if (propiedadPedida.current === propertyId) setElementos(data || []);
+    } catch {
+      // Sin levantamiento disponible: el equipo se sigue pudiendo escribir a mano
+    } finally {
+      if (propiedadPedida.current === propertyId) setCargandoElementos(false);
+    }
+  };
+
   const elegirPropiedad = (valor) => {
-    if (valor === REGISTRAR_PROPIEDAD) setRegistrandoPropiedad(true);
-    else setForm((f) => ({ ...f, property_id: valor }));
+    if (valor === REGISTRAR_PROPIEDAD) {
+      setRegistrandoPropiedad(true);
+      return;
+    }
+    // Lo elegido del levantamiento anterior no aplica a la nueva propiedad
+    setForm((f) => ({ ...f, property_id: valor, property_component_id: null, tipo: f.property_component_id ? '' : f.tipo }));
+    cargarElementos(valor);
+  };
+
+  const elegirElemento = (elemento) => {
+    const agendado = agendadoPorElemento[elemento.id];
+    if (agendado) {
+      setEditando(agendado);
+      return;
+    }
+    setForm((f) => (f.property_component_id === elemento.id
+      ? { ...f, property_component_id: null, tipo: '' }
+      : { ...f, property_component_id: elemento.id, tipo: elemento.label.slice(0, 150), cantidad: 1 }));
   };
 
   // Al registrar una propiedad nueva queda elegida en el formulario
   const propiedadRegistrada = async (creada) => {
-    if (creada?.id) setForm((f) => ({ ...f, property_id: String(creada.id) }));
+    if (creada?.id) {
+      setForm((f) => ({ ...f, property_id: String(creada.id), property_component_id: null }));
+      cargarElementos(String(creada.id));
+    }
     try {
       const { data } = await axios.get(`${API}/mantenimiento/propiedades`, { headers: authHeaders() });
       setPropiedades(data || []);
@@ -89,6 +135,7 @@ const VistaMantenimiento = () => {
     fd.append('tipo', form.tipo.trim());
     fd.append('cantidad', form.cantidad || 1);
     fd.append('fecha', form.fecha);
+    if (form.property_component_id) fd.append('property_component_id', form.property_component_id);
     if (form.detalle.trim()) fd.append('detalle', form.detalle.trim());
     if (form.foto_equipo) fd.append('foto_equipo', form.foto_equipo);
     if (form.foto_datos) fd.append('foto_datos', form.foto_datos);
@@ -148,6 +195,50 @@ const VistaMantenimiento = () => {
             </select>
           </label>
 
+          {form.property_id && (
+            <div className="mt-campo">
+              <span><ClipboardList size={14} /> Equipos del levantamiento {elementos.length > 0 && `(${elementos.length})`}</span>
+              {cargandoElementos ? (
+                <p className="mt-nota">Buscando los equipos de la propiedad...</p>
+              ) : !elementos.length ? (
+                <p className="mt-nota">Esta propiedad no tiene equipos en su levantamiento. Escribe el equipo abajo.</p>
+              ) : (
+                <>
+                  <div className="mt-levantamiento">
+                    {elementos.map((el) => {
+                      const agendado = agendadoPorElemento[el.id];
+                      const proxima = agendado && proximaFecha(agendado);
+                      const elegido = form.property_component_id === el.id;
+                      const datos = [el.category, el.model_or_color].filter(Boolean).join(' · ');
+                      return (
+                        <button
+                          key={el.id}
+                          type="button"
+                          className={`mt-renglon ${elegido ? 'on' : ''} ${agendado ? 'agendado' : ''}`}
+                          onClick={() => elegirElemento(el)}
+                          aria-pressed={elegido}
+                          title={agendado ? 'Ya está en la agenda: toca para editarlo' : 'Agendar su próximo mantenimiento'}
+                        >
+                          <span className="mt-casilla">{(elegido || agendado) && <Check size={15} />}</span>
+                          <span className="mt-renglon-texto">
+                            <strong>{el.label}</strong>
+                            {datos && <small>{datos}</small>}
+                            {agendado && (
+                              <span className={`mt-restante ${proxima ? 'a-tiempo' : 'sin-fecha'}`}>
+                                {proxima ? `Agendado: ${textoFecha(proxima)}` : 'En la lista, sin fecha'}
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-nota">Toca un equipo para agendarlo. Si no aparece, escríbelo abajo.</p>
+                </>
+              )}
+            </div>
+          )}
+
           <div className="mt-fila">
             <label className="mt-campo mt-campo-equipo">
               <span>Equipo *</span>
@@ -156,7 +247,7 @@ const VistaMantenimiento = () => {
                 maxLength={150}
                 placeholder="Ej. Aire acondicionado de la sala"
                 value={form.tipo}
-                onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+                onChange={(e) => setForm({ ...form, tipo: e.target.value, ...(e.target.value.trim() ? {} : { property_component_id: null }) })}
               />
             </label>
             <label className="mt-campo mt-campo-cantidad">

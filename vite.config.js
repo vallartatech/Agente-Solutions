@@ -11,7 +11,7 @@ export default defineConfig({
       includeAssets: ['apple-touch-icon.png'],
 
       workbox: {
-        maximumFileSizeToCacheInBytes: 4000000,
+        maximumFileSizeToCacheInBytes: 5000000,
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         // El service worker de OneSignal vive en su propio scope; la PWA no debe interceptarlo
