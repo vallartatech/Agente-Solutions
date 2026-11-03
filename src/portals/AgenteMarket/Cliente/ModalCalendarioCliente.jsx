@@ -890,7 +890,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
       const d = new Date(year, month + 1, i);
       const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       cells.push({
-        dayNum,
+        dayNum: i,
         dateKey,
         isCurrentMonth: false,
         isToday: dateKey === todayStr,
