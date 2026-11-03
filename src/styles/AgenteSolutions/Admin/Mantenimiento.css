@@ -293,7 +293,7 @@ span.mt-item-fecha { cursor: default; }
 
 /* Tablero: mantenimientos que tocan en 30 días o ya vencieron */
 .mt-proximos {
-  margin: 0 auto 16px; width: calc(100% - 32px); max-width: 1400px; box-sizing: border-box;
+  margin: 0 auto 16px; width: 96%; max-width: 1760px; box-sizing: border-box;
   border: 1.5px solid #fed7aa; border-radius: 18px; background: rgba(255, 255, 255, 0.92);
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden;
 }

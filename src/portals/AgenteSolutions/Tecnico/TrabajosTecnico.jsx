@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosTecnico.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosTecnicoGlass.css";
+import "../../../styles/Shared/TarjetaTrabajo.css";
 import { Package, Wrench, CheckCircle2, Lock, Settings, 
   Calendar, Clock, MapPin, AlertTriangle, ChevronRight, X, LayoutGrid
 } from 'lucide-react';
