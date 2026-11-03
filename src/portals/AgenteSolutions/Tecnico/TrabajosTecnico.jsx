@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosTecnico.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosTecnicoGlass.css";
+import "../../../styles/Shared/TarjetaTrabajo.css";
 import { Package, Wrench, CheckCircle2, Lock, Settings, 
   Calendar, Clock, MapPin, AlertTriangle, ChevronRight, X, LayoutGrid
 } from 'lucide-react';
@@ -355,106 +356,117 @@ const TrabajosTecnico = () => {
   const futurosAgrupados = agruparFuturos(tableroData.futuros);
   const finalizadosFiltrados = tableroData.done;
 
-  const formatFriendlyDate = (dateInput) => {
-    if (!dateInput) return "Sin fecha";
-    const date = new Date(dateInput);
-    const hoy = new Date();
-    const manana = new Date();
-    manana.setDate(manana.getDate() + 1);
-
-    const fStr = getDayStr(date);
-    const hStr = getDayStr(hoy);
-    const mStr = getDayStr(manana);
-
-    const options = { weekday: 'long', day: 'numeric' };
-    const datePart = date.toLocaleDateString('es-ES', options);
-
-    if (fStr === hStr) return `Hoy ${datePart}`;
-    if (fStr === mStr) return `Mañana ${datePart}`;
-    if (fStr < hStr) return `La fecha de visita fue: ${date.toLocaleDateString('es-ES')}`;
-    
-    return `Visita: ${date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}`;
+  // Estado del trabajo como etiqueta de color
+  const estadoTarjeta = (status) => {
+    const s = String(status || '').toLowerCase();
+    if (['listo', 'finalizado', 'completed'].includes(s)) return { texto: 'Finalizado', tono: 'verde' };
+    if (s === 'por aprobar') return { texto: 'Por aprobar', tono: 'azul' };
+    if (s.includes('proceso') || s === 'in_progress') return { texto: 'En proceso', tono: 'ambar' };
+    if (s.includes('segunda visita')) return { texto: '2da visita', tono: 'morado' };
+    return { texto: 'Asignado', tono: 'naranja' };
   };
 
-  const renderCard = (item, index) => (
-    <motion.div
-      key={item.id || index}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="tt-card-wrapper"
-    >
-      <button 
-        type="button"
-        className={`tt-task-card ${item.priority === 'Urgente' ? 'is-sos' : ''}`}
-        onClick={() => {
-          if (isTecnicoRed || materialRecibido) {
-            navigate(`/trabajo-propiedad/${item.composite_id || item.id}`);
-          }
-        }}
-        disabled={!isTecnicoRed && !materialRecibido}
+  // "Hoy", "Mañana", "mié 5 nov" o "Atrasado · 2 nov"
+  const diaTarjeta = (dateInput) => {
+    if (!dateInput) return { texto: 'Sin fecha', tono: '' };
+    const fecha = new Date(dateInput);
+    const fStr = getDayStr(fecha);
+    const hoyStr = getDayStr(new Date());
+    const manana = new Date();
+    manana.setDate(manana.getDate() + 1);
+    if (fStr === hoyStr) return { texto: 'Hoy', tono: 'hoy' };
+    if (fStr === getDayStr(manana)) return { texto: 'Mañana', tono: '' };
+    const corto = fecha.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+    return fStr < hoyStr ? { texto: `Atrasado · ${corto}`, tono: 'atrasado' } : { texto: corto, tono: '' };
+  };
+
+  const renderCard = (item, index) => {
+    const bloqueada = !isTecnicoRed && !materialRecibido;
+    const abrir = () => { if (!bloqueada) navigate(`/trabajo-propiedad/${item.composite_id || item.id}`); };
+    const fechaVisita = item.scheduled_start || item.created_at;
+    const hora = fechaVisita ? new Date(fechaVisita).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }) : '--:--';
+    const [horaNum, ...sufijo] = hora.split(' ');
+    const dia = diaTarjeta(fechaVisita);
+    const estado = estadoTarjeta(item.status);
+    const tipo = item.type || item.title;
+    const nombre = item.property_name || 'Sin nombre';
+    const enSitio = item.arrival_status === 'EN_SITIO';
+    const cerrado = estado.tono === 'verde';
+
+    return (
+      <motion.div
+        key={item.id || index}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+        className="tt-card-wrapper"
       >
-        <div className="tt-col tt-col-folio">
-          <span className="tt-folio-badge">#{item.id}</span>
-          {item.priority === 'Urgente' && (
-            <span className="tt-sos-tag"><AlertTriangle size={12}/> SOS</span>
-          )}
-          {item.status === 'Por Aprobar' && (
-            <span className="tt-por-aprobar-tag">Por aprobar</span>
-          )}
-        </div>
-        
-        <div className="tt-col tt-col-main">
-          <h4 className="tt-property-title">{item.property_name || "Sin Nombre"}</h4>
-          {item.es_levantamiento && (
-            <span className={`tt-survey-tag ${item.tiene_levantamiento ? 'is-started' : 'is-pending'}`}>
-              <LayoutGrid size={12} />
-              {item.tiene_levantamiento
-                ? `Levantamiento${item.zonas_registradas ? ` · ${item.zonas_registradas} ${item.zonas_registradas === 1 ? 'zona' : 'zonas'}` : ''}`
-                : 'Levantamiento por realizar'}
-            </span>
-          )}
-        </div>
-
-        <div className="tt-col tt-col-info">
-          <div className="tt-info-row">
-            <MapPin size={12} />
-            <span>Zona: {item.zone || 'General'}</span>
-          </div>
-          <div className="tt-info-row">
-            <Clock size={12} />
-            <span>Hora de visita: {new Date(item.scheduled_start || item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        <div
+          role="button"
+          tabIndex={bloqueada ? -1 : 0}
+          aria-disabled={bloqueada}
+          className={`ttc-card ${item.priority === 'Urgente' ? 'is-sos' : ''} ${cerrado ? 'is-done' : ''} ${bloqueada ? 'is-locked' : ''}`}
+          onClick={abrir}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); } }}
+        >
+          {/* Hora de la visita y día */}
+          <div className={`ttc-hora ${dia.tono}`}>
+            <strong>{horaNum}</strong>
+            {sufijo.length > 0 && <small>{sufijo.join(' ')}</small>}
+            <span>{dia.texto}</span>
           </div>
 
-          <div className="ttg-arrival-row" onClick={(e) => e.stopPropagation()}>
-            {item.arrival_status === 'EN_SITIO' ? (
-              <span className="ttg-arrival is-here">
-                <MapPin size={12} /> En el lugar {item.arrived_at ? `(${new Date(item.arrived_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` : ''}
-              </span>
-            ) : (
-              <button
-                type="button"
-                className="ttg-arrival"
-                onClick={(e) => handleConfirmArrival(e, item)}
-              >
-                <MapPin size={12} /> ¡Ya llegué al lugar!
-              </button>
+          <div className="ttc-cuerpo">
+            <div className="ttc-cabecera">
+              <div className="ttc-foto">
+                {item.facade_photo ? <img src={item.facade_photo} alt="" /> : <span>{nombre.charAt(0)}</span>}
+              </div>
+              <div className="ttc-titulo">
+                <h4>{nombre}</h4>
+                {item.address && <p><MapPin size={12} /> {item.address}</p>}
+              </div>
+              <span className="ttc-folio">#{item.id}</span>
+            </div>
+
+            <div className="ttc-chips">
+              {item.priority === 'Urgente' && <span className="ttc-chip rojo"><AlertTriangle size={12} /> SOS</span>}
+              <span className={`ttc-chip ${estado.tono}`}>{estado.texto}</span>
+              {tipo && <span className="ttc-chip neutro"><Wrench size={12} /> {tipo}</span>}
+              {item.es_levantamiento && (
+                <span className={`ttc-chip ${item.tiene_levantamiento ? 'verde' : 'ambar'}`}>
+                  <LayoutGrid size={12} />
+                  {item.tiene_levantamiento
+                    ? `Levantamiento${item.zonas_registradas ? ` · ${item.zonas_registradas} ${item.zonas_registradas === 1 ? 'zona' : 'zonas'}` : ''}`
+                    : 'Levantamiento por realizar'}
+                </span>
+              )}
+            </div>
+
+            {item.zone && (
+              <p className="ttc-zona"><LayoutGrid size={13} /> <span>{item.zone}</span></p>
             )}
+
+            <div className="ttc-pie">
+              {!cerrado && (
+                enSitio ? (
+                  <span className="ttg-arrival is-here">
+                    <MapPin size={12} /> En el lugar {item.arrived_at ? `· ${new Date(item.arrived_at).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` : ''}
+                  </span>
+                ) : (
+                  <button type="button" className="ttg-arrival" onClick={(e) => handleConfirmArrival(e, item)}>
+                    <MapPin size={12} /> ¡Ya llegué al lugar!
+                  </button>
+                )
+              )}
+              <span className="ttc-abrir">
+                {bloqueada ? <><Lock size={14} /> Confirma tu material</> : <>Ver trabajo <ChevronRight size={16} /></>}
+              </span>
+            </div>
           </div>
         </div>
-
-        <div className="tt-col tt-col-date">
-           <span className="tt-date-text">
-             {formatFriendlyDate(item.scheduled_start || item.created_at)}
-           </span>
-        </div>
-
-        <div className="tt-col tt-col-arrow">
-           <ChevronRight size={18} className="tt-arrow-icon" />
-        </div>
-      </button>
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
 
   const toggleItem = (tipo, index) => {
     const nuevosItems = { ...itemsCheck };

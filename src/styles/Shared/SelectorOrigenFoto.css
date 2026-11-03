@@ -1,0 +1,119 @@
+/* Selector "Tomar foto / Elegir de la galería" — white liquid glass de la app */
+.sof-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000020; /* encima de la cotización (1000010) y del encabezado */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(8, 10, 14, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: sof-aparece 0.18s ease both;
+}
+
+.sof-hoja {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 400px;
+  padding: 18px;
+  box-sizing: border-box;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 252, 0.88) 100%);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3), inset 0 2px 2px rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  animation: sof-sube 0.22s ease both;
+}
+
+.sof-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sof-cabecera h3 { margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a; }
+.sof-cerrar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(241, 245, 249, 0.95);
+  color: #475569;
+  cursor: pointer;
+}
+.sof-cerrar:hover { background: #e2e8f0; color: #0f172a; }
+
+.sof-opciones { display: flex; flex-direction: column; gap: 10px; }
+.sof-opcion {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 68px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #0f172a;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.sof-opcion:hover {
+  border-color: #f26522;
+  background: #fff7ed;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(242, 101, 34, 0.14);
+}
+.sof-opcion:focus-visible { outline: 3px solid rgba(242, 101, 34, 0.5); outline-offset: 2px; }
+
+.sof-icono {
+  display: flex;
+  flex: 0 0 46px;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+}
+.sof-icono.naranja { background: linear-gradient(135deg, #f26522, #ea580c); color: #ffffff; box-shadow: 0 8px 18px rgba(242, 101, 34, 0.35); }
+.sof-icono.azul { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; box-shadow: 0 8px 18px rgba(37, 99, 235, 0.3); }
+
+.sof-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sof-texto strong { font-size: 0.98rem; font-weight: 800; }
+.sof-texto small { color: #64748b; font-size: 0.8rem; font-weight: 600; }
+
+.sof-cancelar {
+  min-height: 46px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: #64748b;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sof-cancelar:hover { background: rgba(241, 245, 249, 0.9); color: #0f172a; }
+
+/* En celular sale desde abajo, como hoja */
+@media (max-width: 600px) {
+  .sof-overlay { align-items: flex-end; padding: 0; }
+  .sof-hoja { max-width: none; border-radius: 24px 24px 0 0; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+}
+
+@keyframes sof-aparece { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sof-sube { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sof-overlay, .sof-hoja { animation: none; }
+}

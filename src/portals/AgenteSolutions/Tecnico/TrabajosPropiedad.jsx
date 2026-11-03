@@ -8,6 +8,7 @@ import ModalCrearCotizacion from "../../../components/Shared/ModalCrearCotizacio
 import ChatModal from "../../../components/Shared/ChatModal";
 import "../../../styles/AgenteSolutions/Tecnico/TrabajoPropiedad.css";
 import "../../../styles/AgenteSolutions/Tecnico/MercadoTrabajos.css";
+import "../../../styles/AgenteSolutions/Tecnico/TrabajoPropiedadGlass.css";
 import { 
   MapPin, Phone, User, Wrench, Clock, 
   ChevronLeft, Navigation, CheckCircle2, AlertCircle,
@@ -309,19 +310,17 @@ const TrabajoPropiedad = () => {
   }
 
   return (
-    <div className="tp-page-wrapper">
+    <div className="tp-page-wrapper tp-glass">
       <Header />
-      
+
       <div className="tp-content-body">
         <div className="tp-navigation-bar">
-          <button 
-            onClick={() => navigate('/trabajos-tecnico')} 
-            style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#F26522', color: 'white', padding: '8px 25px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
-          >
-            <ChevronLeft size={20} />
-            <span>REGRESAR</span>
+          <button type="button" className="tp-regresar" onClick={() => navigate('/trabajos-tecnico')}>
+            <ChevronLeft size={18} />
+            <span>Mis trabajos</span>
           </button>
           <div className="tp-status-pill" data-status={data.estado}>
+            <span className="tp-status-dot" />
             {data.estado === 'Por Aprobar' ? 'Pendiente de aprobación' : data.estado}
           </div>
         </div>
@@ -459,10 +458,24 @@ const TrabajoPropiedad = () => {
                 <User size={20} />
                 <h3>DATOS DEL CLIENTE</h3>
               </div>
-              <div className="tp-client-info">
-                <p><strong>Nombre:</strong> {data.propietario}</p>
-                <p><strong>Teléfono:</strong> {data.telefono_cliente || 'No registrado'}</p>
-                <p><strong>Tipo:</strong> {data.tipoPropiedad}</p>
+              <div className="tp-client-info tp-datos">
+                <div className="tp-dato">
+                  <span className="tp-dato-icono"><User size={16} /></span>
+                  <div><small>Nombre</small><strong>{data.propietario || 'Sin nombre'}</strong></div>
+                </div>
+                <div className="tp-dato">
+                  <span className="tp-dato-icono"><Phone size={16} /></span>
+                  <div>
+                    <small>Teléfono</small>
+                    {data.telefono_cliente
+                      ? <a href={`tel:${data.telefono_cliente}`}>{data.telefono_cliente}</a>
+                      : <strong>No registrado</strong>}
+                  </div>
+                </div>
+                <div className="tp-dato">
+                  <span className="tp-dato-icono"><Layout size={16} /></span>
+                  <div><small>Tipo de propiedad</small><strong>{data.tipoPropiedad || 'Sin tipo'}</strong></div>
+                </div>
               </div>
             </motion.div>
 
@@ -476,24 +489,20 @@ const TrabajoPropiedad = () => {
               <div className="tp-card-header">
                 <Camera size={20} />
                 <h3>EVIDENCIAS REGISTRADAS</h3>
+                {data.evidencias?.length > 0 && <span className="tp-card-count">{data.evidencias.length}</span>}
               </div>
-              <div className="tp-evidence-content" style={{ marginTop: '12px' }}>
+              <div className="tp-evidence-content">
                 {data.evidencias && data.evidencias.length > 0 ? (
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <div className="tp-evid-grid">
                     {data.evidencias.map((img, i) => (
-                      <img 
-                        key={i} 
-                        src={img} 
-                        alt={`Evidencia ${i + 1}`} 
-                        onClick={() => setImagenExpandida(img)}
-                        style={{ width: '135px', height: '100px', objectFit: 'cover', borderRadius: '12px', cursor: 'pointer', border: '2px solid #e2e8f0', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', transition: 'transform 0.2s' }} 
-                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-                      />
+                      <button key={i} type="button" className="tp-evid-item" onClick={() => setImagenExpandida(img)} aria-label={`Ver evidencia ${i + 1}`}>
+                        <img src={img} alt={`Evidencia ${i + 1}`} />
+                        <span><Maximize2 size={16} /></span>
+                      </button>
                     ))}
                   </div>
                 ) : (
-                  <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem', fontStyle: 'italic' }}>No hay evidencias fotográficas enviadas para este reporte.</p>
+                  <div className="tp-vacio"><Camera size={22} /><p>Aún no hay evidencias para este trabajo.</p></div>
                 )}
               </div>
             </motion.div>
@@ -508,19 +517,19 @@ const TrabajoPropiedad = () => {
                 <User size={20} />
                 <h3>EQUIPO DE TRABAJO</h3>
               </div>
-              <div className="tp-team-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+              <div className="tp-team-list">
                 {(data?.technicians || []).map((tech, index) => (
-                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#e2e2e2', padding: '10px', borderRadius: '10px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#d1d1d1', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {tech.picture ? <img src={tech.picture} alt={tech.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} /> : <User size={24} color="#000" />}
+                  <div key={index} className={`tp-team-item ${Number(tech.id) === Number(user?.id) ? 'es-yo' : ''}`}>
+                    <div className="tp-team-avatar">
+                      {tech.picture ? <img src={tech.picture} alt={tech.name} /> : <span>{(tech.name || '?').charAt(0)}</span>}
                     </div>
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 'bold', color: '#333' }}>{tech.name}</p>
-                      <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>ID: {tech.id} | ÁREA: {tech.role || 'TÉCNICO'}</p>
+                    <div className="tp-team-texto">
+                      <strong>{tech.name}{Number(tech.id) === Number(user?.id) ? ' (tú)' : ''}</strong>
+                      <small>{tech.role || 'Técnico'} · ID {tech.id}</small>
                     </div>
                   </div>
                 ))}
-                {(data?.technicians || []).length === 0 && <p style={{color: '#000'}}>No hay equipo asignado.</p>}
+                {(data?.technicians || []).length === 0 && <div className="tp-vacio"><User size={22} /><p>No hay equipo asignado.</p></div>}
               </div>
             </motion.div>
           </div>
@@ -531,8 +540,13 @@ const TrabajoPropiedad = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
             >
-              <h3>ACCIONES DE FLUJO</h3>
-              <p className="tp-flow-instruction">¿Listo para comenzar o terminar?</p>
+              <div className="tp-flow-cabecera">
+                <span className="tp-flow-icono"><Wrench size={20} /></span>
+                <div>
+                  <h3>Acciones del trabajo</h3>
+                  <p className="tp-flow-instruction">¿Listo para comenzar o terminar?</p>
+                </div>
+              </div>
               
               <div className="tp-flow-buttons">
 
@@ -597,9 +611,9 @@ const TrabajoPropiedad = () => {
                       onClick={handleFinalizar}
                       disabled={!hasReports}
                       style={{ 
-                        background: hasReports ? '#22c55e' : '#374151', 
-                        borderColor: hasReports ? '#22c55e' : '#374151',
-                        color: hasReports ? '#ffffff' : '#9ca3af',
+                        background: hasReports ? '#16a34a' : '#e2e8f0',
+                        borderColor: hasReports ? '#16a34a' : '#e2e8f0',
+                        color: hasReports ? '#ffffff' : '#64748b',
                         cursor: hasReports ? 'pointer' : 'not-allowed',
                         width: '100%'
                       }}
@@ -732,10 +746,6 @@ const TrabajoPropiedad = () => {
                   })()}
                 </div>
               </div>
-              
-              {!materialesConfirmados && (
-                <p className="tp-lock-msg">Debe confirmar materiales para iniciar</p>
-              )}
             </motion.div>
           </div>
         </div>

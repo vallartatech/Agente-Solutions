@@ -583,3 +583,7 @@ button.ttg-arrival:hover {
 
   .ttg-root .tt-checklist-gate { padding: 14px; }
 }
+
+
+/* Separación entre tarjetas del tablero del técnico (la tarjeta está en Shared/TarjetaTrabajo.css) */
+.ttg-root .tt-card-wrapper { margin-bottom: 12px; }

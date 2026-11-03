@@ -21,7 +21,7 @@
 .sv-glass-page > .scrum-tabs-mobile,
 .sv-glass-page > .scrum-board-layout {
   width: 96% !important;
-  max-width: 1480px;
+  max-width: 1760px; /* 5 columnas a lo ancho */
   margin-left: auto !important;
   margin-right: auto !important;
   box-sizing: border-box;
@@ -128,7 +128,7 @@
   align-items: center;
   gap: 6px;
   width: 96%;
-  max-width: 1480px;
+  max-width: 1760px;
   margin: 0 auto 14px;
   box-sizing: border-box;
   font-family: 'Outfit', sans-serif;
