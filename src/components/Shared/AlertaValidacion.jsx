@@ -9,7 +9,7 @@ import '../../styles/Shared/AlertaValidacion.css';
 // Trabajos terminados que esperan validación. Lo consultan el encabezado y la barra del celular:
 // una sola consulta compartida (cada minuto, al volver a la pestaña o cuando algo cambia).
 const REFRESCO_MS = 60000;
-let estado = { mostrar: false, pendientes: 0, mascota: 'gato', es_validador: false, reportes_por_revisar: null };
+let estado = { mostrar: false, pendientes: 0, mascota: 'gato', es_validador: false, reportes_por_revisar: null, ultimo_reporte: null };
 const suscriptores = new Set();
 let intervalo = null;
 let enCurso = null;
@@ -59,7 +59,7 @@ export const usePendientesValidacion = () => {
     };
   }, [esAdmin, user?.id]);
 
-  return esAdmin ? info : { ...estado, mostrar: false, pendientes: 0, reportes_por_revisar: null };
+  return esAdmin ? info : { ...estado, mostrar: false, pendientes: 0, reportes_por_revisar: null, ultimo_reporte: null };
 };
 
 export const MASCOTAS = [
@@ -167,7 +167,9 @@ export const SelectorMascota = () => {
   );
 };
 
-const CLAVE_CERRADA = 'va_reportes_cerrada';
+// Al cerrar se guarda el id del último reporte de técnico: la alerta vuelve en cuanto llega uno más nuevo
+// (aunque el número de trabajos no cambie) o en la siguiente sesión.
+const CLAVE_CERRADA = 'va_reportes_cerrada_v2';
 const leerCerrada = () => {
   try {
     return Number(sessionStorage.getItem(CLAVE_CERRADA)) || 0;
@@ -198,10 +200,13 @@ const dentroDePantalla = (x, y, el) => {
   };
 };
 
-// Fantasma flotante "Verifica tus reportes": solo para las cuentas que indica el backend y mientras haya
-// reportes de técnicos sin cerrar. Si se cierra, vuelve en la siguiente sesión o cuando llegue uno más.
+// Alerta flotante "Verifica tus reportes" con la mascota elegida en "Tu alerta": solo para las cuentas que
+// indica el backend y mientras haya reportes de técnicos sin cerrar. Si se cierra, vuelve en la siguiente
+// sesión o cuando un técnico suba un reporte nuevo.
 export const AlertaReportesFlotante = () => {
-  const { reportes_por_revisar: total } = usePendientesValidacion();
+  const { reportes_por_revisar: total, ultimo_reporte: ultimo, mascota } = usePendientesValidacion();
+  // Sin id del último reporte (backend anterior) se compara por cantidad, como antes
+  const marca = ultimo ?? total;
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [cerradaEn, setCerradaEn] = useState(leerCerrada);
@@ -253,12 +258,14 @@ export const AlertaReportesFlotante = () => {
     window.addEventListener('pointercancel', soltar);
   };
 
-  if (!total || total <= cerradaEn || pathname.toLowerCase().includes('/reportes-globales')) return null;
+  if (!total || marca <= cerradaEn || pathname.toLowerCase().includes('/reportes-globales')) return null;
+
+  const Dibujo = DIBUJOS[mascota];
 
   const cerrar = () => {
-    setCerradaEn(total);
+    setCerradaEn(marca);
     try {
-      sessionStorage.setItem(CLAVE_CERRADA, String(total));
+      sessionStorage.setItem(CLAVE_CERRADA, String(marca));
     } catch {
       // Sin almacenamiento: se oculta hasta recargar
     }
@@ -266,6 +273,8 @@ export const AlertaReportesFlotante = () => {
 
   return createPortal(
     <div
+      // Con cada reporte nuevo la tarjeta vuelve a entrar con su animación
+      key={marca}
       ref={tarjetaRef}
       className={`va-flotante ${arrastrando ? 'arrastrando' : ''}`}
       role="status"
@@ -278,7 +287,9 @@ export const AlertaReportesFlotante = () => {
         title="Toca para abrir tus reportes o arrastra para moverlo"
         onClick={() => { if (!seArrastro.current) navigate('/reportes-globales'); }}
       >
-        <span className="va-flotante-fantasma"><Fantasma /></span>
+        <span className={`va-flotante-fantasma ${Dibujo ? '' : 'solo-numero'}`}>
+          {Dibujo ? <Dibujo /> : <span className="va-flotante-numero">{total > 99 ? '99+' : total}</span>}
+        </span>
         <span className="va-flotante-texto">
           <strong>Verifica tus reportes</strong>
           <small>{total} {total === 1 ? 'trabajo tiene' : 'trabajos tienen'} reportes de técnicos</small>

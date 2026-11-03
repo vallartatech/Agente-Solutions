@@ -216,3 +216,10 @@
 @media (prefers-reduced-motion: reduce) {
   .va-flotante, .va-flotante-fantasma { animation: none; }
 }
+
+/* Alerta flotante con "Solo número" elegido en "Tu alerta" */
+.va-flotante-fantasma.solo-numero { display: flex; align-items: center; justify-content: center; animation: none; }
+.va-flotante-numero {
+  display: flex; align-items: center; justify-content: center; min-width: 36px; height: 36px; padding: 0 6px; box-sizing: border-box;
+  border-radius: 999px; background: #f26522; color: #ffffff; font-size: 0.95rem; font-weight: 800;
+}
