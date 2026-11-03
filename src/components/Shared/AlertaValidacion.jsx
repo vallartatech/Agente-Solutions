@@ -124,11 +124,12 @@ const Fantasma = () => (
 
 const DIBUJOS = { gato: Gato, perro: Perro, fantasma: Fantasma };
 
-// Cada quien elige cómo quiere su alerta (lo ve solo quien recibe la alerta)
+// Elegir cómo se ve la alerta: solo para las cuentas de la alerta flotante "Verifica tus reportes"
+// (el backend manda reportes_por_revisar en null a las demás)
 export const SelectorMascota = () => {
-  const { mostrar, mascota } = usePendientesValidacion();
+  const { reportes_por_revisar: porRevisar, mascota } = usePendientesValidacion();
   const [guardando, setGuardando] = useState(false);
-  if (!mostrar) return null;
+  if (porRevisar === null || porRevisar === undefined) return null;
 
   const elegir = async (id) => {
     if (id === mascota || guardando) return;
