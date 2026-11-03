@@ -12,7 +12,7 @@ import {
   RotateCw, AlertTriangle, Users, UserPlus, PhoneCall, Mail, Star, Award, History,
   Home, Car, Navigation, Wrench, Camera, Plus, Trash2, Check, ArrowRight, Play, Eye, Sparkles, Lock, Zap,
   Sun, Moon, Globe, SlidersHorizontal, ChevronDown, ChevronUp, Maximize, Minimize,
-  Snowflake, Droplets, Paintbrush, KeyRound, Hammer, Leaf, Siren, ClipboardList, FolderOpen
+  Snowflake, Droplets, Paintbrush, KeyRound, Hammer, Leaf, Siren, ClipboardList, FolderOpen, BarChart3
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
@@ -131,6 +131,9 @@ export const descripcionTarjeta = (desc) => {
     .replace(/\s*\[FECHA \/ HORARIO DESEADO\]:[^\n]*/gi, '')
     .trim();
 };
+
+// Quita emojis de textos guardados (ej. "[URGENCIA]: ⚡ Atención Urgente")
+const sinEmojis = (texto) => String(texto || '').replace(/[\p{Extended_Pictographic}️]\s*/gu, '');
 
 // Retraso de la cita en palabras: "Atrasado 3 d" en lugar de "+5629m"
 const textoAtraso = (minutos) => {
@@ -596,7 +599,7 @@ const MercadoTrabajos = () => {
     if (!rawDate) {
       return {
         hasSchedule: false,
-        text: '⚠️ Asignación obligatoria',
+        text: 'Asignación obligatoria',
         shortText: 'Sin horario',
         badgeClass: 'mandatory',
         minutesDiff: null,
@@ -609,7 +612,7 @@ const MercadoTrabajos = () => {
       if (isNaN(schedTime)) {
         return {
           hasSchedule: false,
-          text: '⚠️ Asignación obligatoria',
+          text: 'Asignación obligatoria',
           shortText: 'Sin horario',
           badgeClass: 'mandatory',
           minutesDiff: null,
@@ -630,32 +633,32 @@ const MercadoTrabajos = () => {
 
       if (diffMinutes > 1440) {
         const days = Math.round(diffMinutes / 1440);
-        text = `📅 Cita en ${days} día${days > 1 ? 's' : ''} (${formattedTime})`;
+        text = `Cita en ${days} día${days > 1 ? 's' : ''} (${formattedTime})`;
         shortText = formattedDate;
         badgeClass = 'future';
       } else if (diffMinutes > 60) {
         const hours = Math.floor(diffMinutes / 60);
         const mins = diffMinutes % 60;
-        text = `⏳ Faltan ${hours}h ${mins > 0 ? `${mins}m` : ''} para la cita`;
+        text = `Faltan ${hours}h ${mins > 0 ? `${mins}m` : ''} para la cita`;
         shortText = `En ${hours}h ${mins > 0 ? `${mins}m` : ''}`;
         badgeClass = 'upcoming';
       } else if (diffMinutes > 0) {
-        text = `⚡ Faltan ${diffMinutes} min para la cita`;
+        text = `Faltan ${diffMinutes} min para la cita`;
         shortText = `En ${diffMinutes} min`;
         badgeClass = 'imminent';
         isUrgent = true;
       } else if (diffMinutes === 0) {
-        text = `📍 ¡Es la hora acordada de la cita!`;
+        text = `¡Es la hora acordada de la cita!`;
         shortText = `Hora acordada`;
         badgeClass = 'imminent';
         isUrgent = true;
       } else if (diffMinutes >= -180) {
-        text = `⚠️ Retraso (+${Math.abs(diffMinutes)} min)`;
+        text = `Retraso (+${Math.abs(diffMinutes)} min)`;
         shortText = `Retraso (+${Math.abs(diffMinutes)}m)`;
         badgeClass = 'delay';
         isUrgent = true;
       } else {
-        text = `⚠️ Retraso (+${Math.abs(diffMinutes)} min)`;
+        text = `Retraso (+${Math.abs(diffMinutes)} min)`;
         shortText = `Retraso (+${Math.abs(diffMinutes)}m)`;
         badgeClass = 'delay';
         isUrgent = true;
@@ -674,7 +677,7 @@ const MercadoTrabajos = () => {
     } catch {
       return {
         hasSchedule: false,
-        text: '⚠️ Asignación obligatoria',
+        text: 'Asignación obligatoria',
         shortText: 'Sin horario',
         badgeClass: 'mandatory',
         minutesDiff: null,
@@ -2162,7 +2165,7 @@ const MercadoTrabajos = () => {
   };
 
   return (
-    <div className={`mercado-container ${mainView === 'tablero' ? 'mercado-tablero-mode' : ''} ${mainView === 'mercado' ? 'red-mapa-vivo' : ''}`}>
+    <div className={`mercado-container ${mainView === 'tablero' ? 'mercado-tablero-mode' : ''} ${mainView === 'mercado' ? 'red-mapa-vivo' : ''} ${mainView === 'usuarios' ? 'mercado-usuarios-mode' : ''}`}>
       {/* ── TOP NAVIGATION BAR (REPLICA VISTA CLIENTE / IMAGE 1) ── */}
       <TecnicoHeader 
         activeTab={mainView} 
@@ -2181,85 +2184,6 @@ const MercadoTrabajos = () => {
         <div className="mercado-board-workspace">
           {/* Header Superior del Tablero */}
           <div className="mercado-board-header">
-            <div className="mercado-board-header-top">
-              <div className="mercado-board-header-left">
-                <button className="mercado-kanban-btn-back" onClick={() => setMainView('mercado')}>
-                  <ChevronLeft size={16} /> Volver al Mercado
-                </button>
-                <h2 className="mercado-board-title">
-                  <ClipboardList size={19} color="#f26522" /> TABLERO OPERATIVO DE SERVICIOS
-                  <span className="mercado-board-total-badge">{acceptedJobs.length} Trabajos</span>
-                </h2>
-              </div>
-
-              <div className="mercado-board-header-controls">
-                {/* Filtro: un botón que abre las opciones */}
-                {(() => {
-                  const opciones = [
-                    { id: 'TODOS', label: 'Todos', Icono: FolderOpen, tono: 'slate', total: acceptedJobs.length },
-                    { id: 'SOS', label: 'SOS / Urgentes', Icono: Siren, tono: 'orange', total: acceptedJobs.filter(j => (j.is_urgent || j.priority === 'Urgente' || j.tipo === 'SOS') && !isJobDone(j.status)).length },
-                    { id: 'PROCESO', label: 'En curso', Icono: Zap, tono: 'amber', total: acceptedJobs.filter(j => j.status === 'En Progreso').length },
-                    { id: 'AGENDADOS', label: 'Agendados', Icono: Calendar, tono: 'blue', total: acceptedJobs.filter(j => j.scheduled_at && j.status !== 'En Progreso' && !isJobDone(j.status)).length },
-                    { id: 'FINALIZADOS', label: 'Finalizados', Icono: CheckCircle2, tono: 'green', total: acceptedJobs.filter(j => isJobDone(j.status)).length },
-                  ];
-                  const actual = opciones.find(o => o.id === boardFilter) || opciones[0];
-                  return (
-                    <div className="tb-actions-wrapper mercado-board-filtro" ref={boardFiltroRef}>
-                      <button
-                        type="button"
-                        className={`mercado-board-filtro-btn ${boardFiltroAbierto ? 'abierto' : ''}`}
-                        onClick={() => setBoardFiltroAbierto(v => !v)}
-                        aria-haspopup="true"
-                        aria-expanded={boardFiltroAbierto}
-                        title="Filtrar trabajos"
-                      >
-                        <SlidersHorizontal size={15} />
-                        <span>{actual.label}</span>
-                        <span className="mercado-board-filtro-total">{actual.total}</span>
-                        <ChevronDown size={15} className="mercado-board-filtro-flecha" />
-                      </button>
-
-                      {boardFiltroAbierto && (
-                        <div className="tb-actions-menu">
-                          {opciones.map(({ id, label, Icono, tono, total }) => (
-                            <button
-                              key={id}
-                              type="button"
-                              className={`tb-actions-item ${boardFilter === id ? 'selected' : ''}`}
-                              onClick={() => { setBoardFilter(id); setBoardFiltroAbierto(false); }}
-                            >
-                              <span className={`tb-actions-icon ${tono}`}><Icono size={16} strokeWidth={2.4} /></span>
-                              <span>{label}</span>
-                              <span className="tb-actions-badge">{total}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                {/* Buscador de Trabajos */}
-                <div className="mercado-board-search-box">
-                  <Search size={16} color="#64748b" />
-                  <input
-                    type="text"
-                    className="mercado-board-search-input"
-                    placeholder="Buscar por folio, cliente, propiedad..."
-                    value={boardSearch}
-                    onChange={(e) => setBoardSearch(e.target.value)}
-                  />
-                  {boardSearch && (
-                    <button className="mercado-kanban-search-clear" onClick={() => setBoardSearch('')}>×</button>
-                  )}
-                </div>
-
-                <button className="mercado-kanban-refresh-btn" onClick={fetchJobs} title="Recargar lista">
-                  <RotateCw size={15} /> Actualizar
-                </button>
-              </div>
-            </div>
-
             {/* Barra de Pestañas Segmentadas para Móvil/Tablet */}
             <div className="mercado-board-mobile-tab-bar">
               <button
@@ -2361,6 +2285,67 @@ const MercadoTrabajos = () => {
                     <Briefcase size={15} color="#f26522" />
                     Mis Trabajos ({filteredBoardJobs.length})
                   </span>
+
+                {/* Filtro: un botón que abre las opciones */}
+                {(() => {
+                  const opciones = [
+                    { id: 'TODOS', label: 'Todos', Icono: FolderOpen, tono: 'slate', total: acceptedJobs.length },
+                    { id: 'SOS', label: 'SOS / Urgentes', Icono: Siren, tono: 'orange', total: acceptedJobs.filter(j => (j.is_urgent || j.priority === 'Urgente' || j.tipo === 'SOS') && !isJobDone(j.status)).length },
+                    { id: 'PROCESO', label: 'En curso', Icono: Zap, tono: 'amber', total: acceptedJobs.filter(j => j.status === 'En Progreso').length },
+                    { id: 'AGENDADOS', label: 'Agendados', Icono: Calendar, tono: 'blue', total: acceptedJobs.filter(j => j.scheduled_at && j.status !== 'En Progreso' && !isJobDone(j.status)).length },
+                    { id: 'FINALIZADOS', label: 'Finalizados', Icono: CheckCircle2, tono: 'green', total: acceptedJobs.filter(j => isJobDone(j.status)).length },
+                  ];
+                  const actual = opciones.find(o => o.id === boardFilter) || opciones[0];
+                  return (
+                    <div className="tb-actions-wrapper mercado-board-filtro" ref={boardFiltroRef}>
+                      <button
+                        type="button"
+                        className={`mercado-board-filtro-btn ${boardFiltroAbierto ? 'abierto' : ''}`}
+                        onClick={() => setBoardFiltroAbierto(v => !v)}
+                        aria-haspopup="true"
+                        aria-expanded={boardFiltroAbierto}
+                        title="Filtrar trabajos"
+                      >
+                        <SlidersHorizontal size={15} />
+                        <span>{actual.label}</span>
+                        <span className="mercado-board-filtro-total">{actual.total}</span>
+                        <ChevronDown size={15} className="mercado-board-filtro-flecha" />
+                      </button>
+
+                      {boardFiltroAbierto && (
+                        <div className="tb-actions-menu">
+                          {opciones.map(({ id, label, Icono, tono, total }) => (
+                            <button
+                              key={id}
+                              type="button"
+                              className={`tb-actions-item ${boardFilter === id ? 'selected' : ''}`}
+                              onClick={() => { setBoardFilter(id); setBoardFiltroAbierto(false); }}
+                            >
+                              <span className={`tb-actions-icon ${tono}`}><Icono size={16} strokeWidth={2.4} /></span>
+                              <span>{label}</span>
+                              <span className="tb-actions-badge">{total}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                </div>
+
+                {/* Buscador de Trabajos */}
+                <div className="mercado-board-search-box">
+                  <Search size={16} color="#64748b" />
+                  <input
+                    type="text"
+                    className="mercado-board-search-input"
+                    placeholder="Buscar por folio, cliente, propiedad..."
+                    value={boardSearch}
+                    onChange={(e) => setBoardSearch(e.target.value)}
+                  />
+                  {boardSearch && (
+                    <button className="mercado-kanban-search-clear" onClick={() => setBoardSearch('')}>×</button>
+                  )}
                 </div>
 
                 <div className="mercado-board-job-cards-list">
@@ -2466,7 +2451,7 @@ const MercadoTrabajos = () => {
                           {selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}
                         </span>
                         <span className="mercado-board-subnav-stage-badge">
-                          ⚡ Paso {currentStage}/6
+                          <Zap size={12} color="#ffffff" /> Paso {currentStage}/6
                         </span>
                       </div>
                     </div>
@@ -2521,297 +2506,207 @@ const MercadoTrabajos = () => {
                       </div>
                     </div>
 
-                    {/* Fila Superior: Datos del Cliente + Consiste en (Izquierda) vs Propiedad / Fachada (Derecha) */}
-                    <div className="mercado-board-mid-grid">
-                      {/* Columna Izquierda: Datos del Cliente (arriba) + Consiste en (abajo) */}
-                      <div className="mercado-board-left-info-stack">
-                        {/* Tarjeta 1: Datos del Cliente (Sobre consiste en) */}
-                        <div className="mercado-board-card compact">
-                          <h3 className="mercado-board-card-title">
-                            <User size={13} /> DATOS DEL CLIENTE
-                          </h3>
-
-                          <div className="mercado-board-client-details-grid">
-                            <div className="mercado-board-client-item">
-                              <span className="mercado-board-client-label">Nombre:</span>
-                              <span className="mercado-board-client-val" title={selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente'}>
-                                {selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente'}
-                              </span>
-                            </div>
-                            <div className="mercado-board-client-item">
-                              <span className="mercado-board-client-label">Teléfono:</span>
-                              <span className="mercado-board-client-val">
-                                {selectedBoardJob.client_phone || 'No registrado'}
-                              </span>
-                            </div>
-                          </div>
+                      {/* Foto principal: fachada a todo el ancho con folio y tipo encima */}
+                      <div
+                        className="rd-hero"
+                        onClick={() => facadeImg && setZoomedPhotoUrl(facadeImg)}
+                        title={facadeImg ? 'Clic para ampliar foto de fachada' : 'Fachada de la casa'}
+                      >
+                        {facadeImg ? (
+                          <img src={facadeImg} alt="Fachada de la propiedad" />
+                        ) : (
+                          <div className="rd-hero-vacio"><Home size={34} /></div>
+                        )}
+                        <div className="rd-hero-etiquetas">
+                          <span>{selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}</span>
+                          <span><Home size={12} /> {selectedBoardJob.property?.type || 'CASA'}</span>
+                          {(selectedBoardJob.is_urgent || selectedBoardJob.priority === 'Urgente' || selectedBoardJob.tipo === 'SOS') && (
+                            <span className="sos"><Siren size={12} /> SOS</span>
+                          )}
                         </div>
+                        {facadeImg && <span className="rd-hero-lupa"><Search size={17} /></span>}
+                      </div>
 
-                        {/* Tarjeta 2: Consiste en */}
-                        <div className="mercado-board-card compact">
-                          <h3 className="mercado-board-card-title">
-                            <FileText size={13} /> CONSISTE EN:
-                          </h3>
-
-                          <div className="mercado-board-boxes-grid">
-                            <div className="mercado-board-info-box">
-                              <span className="mercado-board-info-box-label">
-                                TIPO DE FALLA / PROBLEMA
+                      <div className="rd-grid">
+                        <div className="rd-columna">
+                          {/* Resumen: precio y dirección, con datos rápidos a la derecha */}
+                          <div className="rd-panel rd-resumen">
+                            <div className="rd-resumen-texto">
+                              {selectedBoardJob.agreed_price > 0 && (
+                                <strong className="rd-precio">
+                                  ${Number(selectedBoardJob.agreed_price).toLocaleString('es-MX', { maximumFractionDigits: 2 })}
+                                </strong>
+                              )}
+                              <span className="rd-direccion" title={selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.property_name}>
+                                {selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.property_name || 'Dirección de la propiedad'}
                               </span>
-                              <p className="mercado-board-info-box-val">
-                                [{selectedBoardJob.property?.property_code || 'LOTE-XVDC'}] (1/1) {selectedBoardJob.descripcion || selectedBoardJob.titulo}
-                              </p>
                             </div>
-
-                            <div className="mercado-board-info-box">
-                              <span className="mercado-board-info-box-label">
-                                EQUIPO O COMPONENTE AFECTADO
-                              </span>
-                              <p className="mercado-board-info-box-val">
-                                {selectedBoardJob.equipo || '25 (MV) / Instalaciones Generales'}
-                              </p>
+                            <div className="rd-datos-rapidos">
+                              <span><Sparkles size={17} /><b>{currentStage}/6</b> Paso</span>
+                              <span><Camera size={17} /><b>{completedReportsCount}/4</b> Fotos</span>
+                              <span><Eye size={17} /><b>{clientPhotos.length}</b> Del cliente</span>
                             </div>
                           </div>
 
-                          {/* Horario de Visita / Cita Programada Interactivo */}
-                          <div className={`mercado-board-schedule-action-box ${!selectedBoardJob.scheduled_at && !isJobCompleted ? 'mandatory' : ''}`}>
-                            <div className="mercado-board-schedule-info">
-                              <div className="mercado-board-schedule-header-row">
-                                <span className="mercado-board-schedule-label">
-                                  <Clock size={12} color="#f26522" /> Horario de Visita
-                                </span>
-                                {isJobCompleted ? (
-                                  <>
-                                    <span className="mercado-board-schedule-status-tag confirmed" style={{ background: '#16a34a', color: '#ffffff' }}>
-                                      ✅ Concluido
-                                    </span>
-                                    <span className="mercado-board-schedule-countdown done" style={{ color: '#4ade80', fontWeight: '800' }}>
-                                      Servicio Finalizado
-                                    </span>
-                                  </>
-                                ) : selectedBoardJob.scheduled_at ? (
-                                  <>
-                                    <span className="mercado-board-schedule-status-tag confirmed">
-                                      Agendado
-                                    </span>
-                                    <span className={`mercado-board-schedule-countdown ${boardSched.badgeClass}`}>
-                                      {boardSched.text}
-                                    </span>
-                                  </>
-                                ) : (
-                                  <span className="mercado-board-schedule-status-tag mandatory">
-                                    ⚠️ Asignación Obligatoria
-                                  </span>
-                                )}
-                              </div>
-                              <div className="mercado-board-schedule-time-text">
-                                {selectedBoardJob.scheduled_at ? (
-                                  <strong>
-                                    📅 {new Date(selectedBoardJob.scheduled_at).toLocaleString('es-MX', {
-                                      weekday: 'short',
-                                      day: 'numeric',
-                                      month: 'short',
-                                      year: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </strong>
-                                ) : (
-                                  <span className="mercado-board-schedule-not-set">
-                                    {isJobCompleted ? 'Servicio concluido.' : '⚠️ Debes ingresar tu hora estimada de llegada para este servicio y sincronizar al cliente.'}
-                                  </span>
-                                )}
-                              </div>
+                          {/* Qué hay que hacer + horario y herramientas */}
+                          <div className="rd-panel rd-trabajo">
+                            <div className="rd-trabajo-texto">
+                              <h3 className="rd-titulo">Consiste en</h3>
+                              <p className="rd-descripcion">{sinEmojis(selectedBoardJob.descripcion || selectedBoardJob.titulo)}</p>
                             </div>
 
-                            {!isJobCompleted && (
+                            <div className="rd-trabajo-lado">
+                              <div className={`rd-estado ${!selectedBoardJob.scheduled_at && !isJobCompleted ? 'obligatorio' : ''}`}>
+                                <span className="rd-estado-nombre">
+                                  <i className={isJobCompleted ? 'verde' : ''} />
+                                  {isJobCompleted ? 'Concluido' : (selectedBoardJob.scheduled_at ? 'Agendado' : 'Asignación obligatoria')}
+                                </span>
+                                {selectedBoardJob.scheduled_at ? (
+                                  <span className="rd-estado-fecha">
+                                    {new Date(selectedBoardJob.scheduled_at).toLocaleString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                ) : !isJobCompleted && (
+                                  <span className="rd-estado-fecha">Ingresa tu hora estimada de llegada para avisar al cliente.</span>
+                                )}
+                                {!isJobCompleted && selectedBoardJob.scheduled_at && (
+                                  <span className={`rd-estado-tiempo ${boardSched.minutesDiff !== null && boardSched.minutesDiff < 0 ? 'atraso' : ''}`}>
+                                    {boardSched.minutesDiff !== null && boardSched.minutesDiff < 0
+                                      ? textoAtraso(boardSched.minutesDiff)
+                                      : boardSched.text}
+                                  </span>
+                                )}
+                              </div>
+
+                              {!isJobCompleted && (
+                                <button type="button" className="rd-herramienta" onClick={() => handleOpenBoardScheduler(selectedBoardJob)} title="Programar o cambiar fecha y hora de la visita">
+                                  <span><Calendar size={16} /></span>
+                                  {selectedBoardJob.scheduled_at ? 'Cambiar horario' : 'Agendar llegada'}
+                                </button>
+                              )}
+                              <button type="button" className="rd-herramienta" onClick={() => setShowPdfReportModal(true)} title="Visualizar reporte detallado oficial en PDF">
+                                <span><FileText size={16} /></span> Ver PDF
+                              </button>
                               <button
                                 type="button"
-                                className={`mercado-board-schedule-change-btn ${!selectedBoardJob.scheduled_at ? 'mandatory' : ''}`}
-                                onClick={() => handleOpenBoardScheduler(selectedBoardJob)}
-                                title="Programar o cambiar fecha y hora de la visita"
+                                className="rd-herramienta"
+                                onClick={() => {
+                                  const query = selectedBoardJob.lat && selectedBoardJob.lng
+                                    ? `${selectedBoardJob.lat},${selectedBoardJob.lng}`
+                                    : encodeURIComponent(selectedBoardJob.full_address || selectedBoardJob.calle || 'Mérida');
+                                  window.open(`https://www.google.com/maps/dir/?api=1&destination=${query}`, '_blank');
+                                }}
+                                title="Abrir en Google Maps (GPS)"
                               >
-                                <Calendar size={13} />
-                                {selectedBoardJob.scheduled_at ? 'Cambiar Horario' : '⏰ Agendar Hora de Llegada'}
+                                <span><Navigation size={16} /></span> Abrir GPS
                               </button>
+                            </div>
+                          </div>
+
+                          {/* Evidencias del cliente */}
+                          <div className="rd-panel rd-evidencias">
+                            <h3 className="rd-titulo">Evidencias del cliente</h3>
+                            {clientPhotos.length > 0 ? (
+                              <div className="rd-fotos">
+                                {clientPhotos.map((photoUrl, pIdx) => (
+                                  <button
+                                    key={pIdx}
+                                    type="button"
+                                    className="rd-foto"
+                                    onClick={() => setZoomedPhotoUrl(photoUrl)}
+                                    title={`Clic para ampliar foto ${pIdx + 1} del cliente`}
+                                  >
+                                    <img src={photoUrl} alt={`Foto del cliente ${pIdx + 1}`} />
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="rd-nota">El cliente no adjuntó fotografías al levantar este reporte.</p>
                             )}
                           </div>
                         </div>
-                      </div>
 
-                      {/* Tarjeta Derecha: Propiedad / Fachada / Folio (Donde estaba Datos del Cliente) */}
-                      <div className="mercado-board-card compact mercado-board-property-card">
-                        <div className="mercado-board-property-header">
-                          <div className="mercado-board-property-title-group">
-                            <span className="mercado-board-banner-tag">
-                              {selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}
-                            </span>
-                            <span className="mercado-board-property-type-pill">
-                              <Home size={11} color="#f26522" />
-                              {selectedBoardJob.property?.type || 'CASA'}
-                            </span>
-                          </div>
-
-                          <div className="mercado-board-property-actions">
-                            <button
-                              type="button"
-                              className="mercado-board-btn-pdf"
-                              onClick={() => setShowPdfReportModal(true)}
-                              title="Visualizar Reporte Detallado Oficial en PDF"
-                            >
-                              <FileText size={12} /> PDF
-                            </button>
-
-                            <button
-                              type="button"
-                              className="mercado-board-btn-gps"
-                              onClick={() => {
-                                const query = selectedBoardJob.lat && selectedBoardJob.lng
-                                  ? `${selectedBoardJob.lat},${selectedBoardJob.lng}`
-                                  : encodeURIComponent(selectedBoardJob.full_address || selectedBoardJob.calle || 'Mérida');
-                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${query}`, '_blank');
-                              }}
-                              title="Abrir en Google Maps (GPS)"
-                            >
-                              <Navigation size={12} /> GPS
-                            </button>
+                        <div className="rd-columna">
+                          {/* Cliente y datos del servicio */}
+                          <div className="rd-panel rd-cliente">
+                            <div className="rd-cliente-persona">
+                              <span className="rd-avatar">{(selectedBoardJob.client_name || selectedBoardJob.cliente || 'C').charAt(0).toUpperCase()}</span>
+                              <div>
+                                <small>Cliente</small>
+                                <strong title={selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente'}>{selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente'}</strong>
+                                <span>{selectedBoardJob.client_phone || 'Teléfono no registrado'}</span>
+                              </div>
+                            </div>
 
                             {selectedBoardJob.client_phone && (
-                              <button
-                                type="button"
-                                className="mercado-board-btn-call"
-                                onClick={() => window.open(`tel:${selectedBoardJob.client_phone}`)}
-                                title="Llamar al cliente"
-                              >
-                                <Phone size={12} /> Llamar
+                              <button type="button" className="rd-btn-oscuro" onClick={() => window.open(`tel:${selectedBoardJob.client_phone}`)} title="Llamar al cliente">
+                                <Phone size={15} /> Llamar al cliente
                               </button>
                             )}
-                          </div>
-                        </div>
 
-                        <div className="mercado-board-property-content">
-                          {/* Foto de la Fachada de la Casa */}
-                          <div 
-                            className="mercado-board-property-facade-box" 
-                            onClick={() => facadeImg && setZoomedPhotoUrl(facadeImg)} 
-                            title={facadeImg ? "Clic para ampliar foto de fachada" : "Fachada de la Casa"}
-                          >
-                            {facadeImg ? (
-                              <img 
-                                src={facadeImg} 
-                                alt="Fachada de la propiedad" 
-                                className="mercado-board-banner-facade-img" 
-                              />
+                            <ul className="rd-lista">
+                              <li><span><Wrench size={15} /></span> {selectedBoardJob.equipo || '25 (MV) / Instalaciones Generales'}</li>
+                              <li><span><MapPin size={15} /></span> {selectedBoardJob.zona || selectedBoardJob.colonia || 'Mérida, Yucatán'}</li>
+                              <li><span><Home size={15} /></span> {selectedBoardJob.property?.type || 'Casa'}</li>
+                            </ul>
+                          </div>
+
+                        {/* Tarjeta 4: Botones Principales de Flujo */}
+                        <div className="rd-panel mercado-board-flow-card">
+                          <div className="mercado-board-flow-buttons-grid">
+                            {/* Botón 1: Iniciar Reporte (0 fotos) / Ver Reporte (1+ fotos o Finalizado) */}
+                            {completedReportsCount === 0 && !isJobCompleted ? (
+                              <button
+                                type="button"
+                                className="mercado-board-flow-btn btn-start"
+                                onClick={handleStartBoardJob}
+                                title="Iniciar trabajo y registrar la primera foto de evidencia"
+                              >
+                                <Play size={15} /> INICIAR REPORTE
+                              </button>
                             ) : (
-                              <div className="mercado-board-banner-facade-fallback">
-                                <Home size={22} color="#f26522" />
-                                <span style={{ fontSize: '8px', fontWeight: 900, color: '#f26522', letterSpacing: '0.4px' }}>FACHADA</span>
-                              </div>
+                              <button
+                                type="button"
+                                className="mercado-board-flow-btn btn-continue"
+                                onClick={() => handleOpenReportFlow()}
+                                title="Consultar evidencias y reporte técnico"
+                              >
+                                <Eye size={15} /> VER REPORTE
+                              </button>
                             )}
-                            <span className="mercado-board-facade-zoom-badge">🔍 FACHADA</span>
-                          </div>
-
-                          {/* Dirección completa y Zona */}
-                          <div className="mercado-board-property-address-box">
-                            <h4 className="mercado-board-property-name" title={selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.property_name}>
-                              {selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.property_name || 'Dirección de la Propiedad'}
-                            </h4>
-                            <p className="mercado-board-property-zone">
-                              <MapPin size={12} color="#f26522" style={{ flexShrink: 0 }} />
-                              <span>{selectedBoardJob.zona || selectedBoardJob.colonia || 'Mérida, Yucatán'}</span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Tarjeta 3: Evidencias del Cliente (Fotos adjuntas en el reporte inicial) */}
-                    <div className="mercado-board-card compact mercado-board-client-evidence-card">
-                      <div className="mercado-board-client-evidence-header">
-                        <h3 className="mercado-board-card-title">
-                          <Eye size={14} /> EVIDENCIAS DEL CLIENTE ({clientPhotos.length})
-                        </h3>
-                        <span className="mercado-board-evidence-counter info">
-                          {clientPhotos.length > 0 ? `${clientPhotos.length} foto${clientPhotos.length > 1 ? 's' : ''} adjunta${clientPhotos.length > 1 ? 's' : ''}` : 'Sin fotos adjuntas'}
-                        </span>
-                      </div>
-
-                      {clientPhotos.length > 0 ? (
-                        <div className="mercado-board-client-photo-grid">
-                          {clientPhotos.map((photoUrl, pIdx) => (
-                            <div
-                              key={pIdx}
-                              className="mercado-board-client-photo-thumb"
-                              onClick={() => setZoomedPhotoUrl(photoUrl)}
-                              title={`Clic para ampliar foto ${pIdx + 1} del cliente`}
+    
+                            {/* Botón 2: Finalizar Trabajo (Habilitado solo si >= 3 evidencias) */}
+                            <button
+                              type="button"
+                              className="mercado-board-flow-btn btn-finish"
+                              disabled={completedReportsCount < 3 || selectedBoardJob.status === 'Finalizado' || selectedBoardJob.status === 'Listo'}
+                              onClick={handleFinishBoardJob}
+                              title={completedReportsCount < 3 ? 'Requiere al menos 3 fotos de evidencia con descripción (Antes, Durante y Después)' : 'Finalizar servicio'}
                             >
-                              <img src={photoUrl} alt={`Foto cliente ${pIdx + 1}`} className="mercado-board-client-photo-img" />
-                              <span className="mercado-board-client-photo-badge">FOTO {pIdx + 1}</span>
-                            </div>
-                          ))}
+                              {completedReportsCount < 3 ? (
+                                <>
+                                  <Lock size={14} /> FINALIZAR (MÍN. 3 FOTOS)
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 size={15} /> FINALIZAR TRABAJO
+                                </>
+                              )}
+                            </button>
+    
+                            {/* Botón 3: Programar Segunda Visita */}
+                            <button
+                              type="button"
+                              className={`mercado-board-flow-btn btn-second-visit ${selectedBoardJob.has_second_visit ? 'has-visit' : ''}`}
+                              onClick={handleOpenSecondVisitModal}
+                              title="Programar una segunda visita técnica"
+                            >
+                              <Calendar size={15} />
+                              {selectedBoardJob.has_second_visit ? '2DA VISITA AGENDADA' : '2DA VISITA'}
+                            </button>
+                          </div>
                         </div>
-                      ) : (
-                        <div className="mercado-board-client-empty-note">
-                          <span>ℹ️ El cliente no adjuntó fotografías al levantar este reporte.</span>
                         </div>
-                      )}
-                    </div>
-
-                    {/* Tarjeta 4: Botones Principales de Flujo */}
-                    <div className="mercado-board-flow-card">
-                      <div className="mercado-board-flow-buttons-grid">
-                        {/* Botón 1: Iniciar Reporte (0 fotos) / Ver Reporte (1+ fotos o Finalizado) */}
-                        {completedReportsCount === 0 && !isJobCompleted ? (
-                          <button
-                            type="button"
-                            className="mercado-board-flow-btn btn-start"
-                            onClick={handleStartBoardJob}
-                            title="Iniciar trabajo y registrar la primera foto de evidencia"
-                          >
-                            <Play size={15} /> INICIAR REPORTE
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="mercado-board-flow-btn btn-continue"
-                            onClick={() => handleOpenReportFlow()}
-                            title="Consultar evidencias y reporte técnico"
-                          >
-                            <Eye size={15} /> VER REPORTE
-                          </button>
-                        )}
-
-                        {/* Botón 2: Finalizar Trabajo (Habilitado solo si >= 3 evidencias) */}
-                        <button
-                          type="button"
-                          className="mercado-board-flow-btn btn-finish"
-                          disabled={completedReportsCount < 3 || selectedBoardJob.status === 'Finalizado' || selectedBoardJob.status === 'Listo'}
-                          onClick={handleFinishBoardJob}
-                          title={completedReportsCount < 3 ? 'Requiere al menos 3 fotos de evidencia con descripción (Antes, Durante y Después)' : 'Finalizar servicio'}
-                        >
-                          {completedReportsCount < 3 ? (
-                            <>
-                              <Lock size={14} /> FINALIZAR (MÍN. 3 FOTOS)
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 size={15} /> FINALIZAR TRABAJO
-                            </>
-                          )}
-                        </button>
-
-                        {/* Botón 3: Programar Segunda Visita */}
-                        <button
-                          type="button"
-                          className={`mercado-board-flow-btn btn-second-visit ${selectedBoardJob.has_second_visit ? 'has-visit' : ''}`}
-                          onClick={handleOpenSecondVisitModal}
-                          title="Programar una segunda visita técnica"
-                        >
-                          <Calendar size={15} />
-                          {selectedBoardJob.has_second_visit ? '2DA VISITA AGENDADA' : '2DA VISITA'}
-                        </button>
                       </div>
-                    </div>
                   </div>
                 );
               })()}
@@ -2912,7 +2807,7 @@ const MercadoTrabajos = () => {
                 </button>
                 <div>
                   <h2 className="mercado-users-main-title">
-                    👥 MIS CLIENTES Y CONTACTOS DE LA RED
+                    <Users size={22} color="#ffffff" /> MIS CLIENTES Y CONTACTOS DE LA RED
                   </h2>
                   <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#94a3b8' }}>
                     Historial de clientes a los que has trabajado y usuarios que te tienen en sus favoritos
@@ -2934,9 +2829,7 @@ const MercadoTrabajos = () => {
             {/* KPI Metrics Cards */}
             <div className="mercado-users-kpi-grid">
               <div className="mercado-users-kpi-card">
-                <div className="mercado-users-kpi-icon" style={{ background: 'rgba(242, 101, 34, 0.15)', color: '#f26522' }}>
-                  👥
-                </div>
+                <div className="mercado-users-kpi-icon"><Users size={22} color="#ffffff" /></div>
                 <div className="mercado-users-kpi-info">
                   <span className="mercado-users-kpi-val">{totalClientesAtendidos}</span>
                   <span className="mercado-users-kpi-label">Clientes Atendidos</span>
@@ -2944,9 +2837,7 @@ const MercadoTrabajos = () => {
               </div>
 
               <div className="mercado-users-kpi-card">
-                <div className="mercado-users-kpi-icon" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }}>
-                  ⭐
-                </div>
+                <div className="mercado-users-kpi-icon"><Star size={22} color="#ffffff" /></div>
                 <div className="mercado-users-kpi-info">
                   <span className="mercado-users-kpi-val">{totalFavoritos}</span>
                   <span className="mercado-users-kpi-label">Te Tienen en Favoritos</span>
@@ -2954,9 +2845,7 @@ const MercadoTrabajos = () => {
               </div>
 
               <div className="mercado-users-kpi-card">
-                <div className="mercado-users-kpi-icon" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
-                  🛠️
-                </div>
+                <div className="mercado-users-kpi-icon"><Wrench size={22} color="#ffffff" /></div>
                 <div className="mercado-users-kpi-info">
                   <span className="mercado-users-kpi-val">{totalServiciosRealizados}</span>
                   <span className="mercado-users-kpi-label">Trabajos Realizados</span>
@@ -2964,9 +2853,7 @@ const MercadoTrabajos = () => {
               </div>
 
               <div className="mercado-users-kpi-card">
-                <div className="mercado-users-kpi-icon" style={{ background: 'rgba(74, 222, 128, 0.15)', color: '#4ade80' }}>
-                  💵
-                </div>
+                <div className="mercado-users-kpi-icon"><DollarSign size={22} color="#ffffff" /></div>
                 <div className="mercado-users-kpi-info">
                   <span className="mercado-users-kpi-val">${totalFacturadoHistorico.toLocaleString('es-MX', { minimumFractionDigits: 0 })}</span>
                   <span className="mercado-users-kpi-label">Total Generado</span>
@@ -2993,9 +2880,9 @@ const MercadoTrabajos = () => {
               {/* Categorías / Filtros Rápidos */}
               <div className="mercado-users-filter-chips">
                 {[
-                  { key: 'TODOS', label: 'Todos Mis Contactos', icon: '👥', count: myClientsDirectory.length },
-                  { key: 'HISTORIAL', label: 'Clientes Atendidos', icon: '💼', count: totalClientesAtendidos },
-                  { key: 'FAVORITOS', label: 'Me Tienen en Favoritos', icon: '⭐', count: totalFavoritos },
+                  { key: 'TODOS', label: 'Todos Mis Contactos', Icono: Users, count: myClientsDirectory.length },
+                  { key: 'HISTORIAL', label: 'Clientes Atendidos', Icono: Briefcase, count: totalClientesAtendidos },
+                  { key: 'FAVORITOS', label: 'Me Tienen en Favoritos', Icono: Star, count: totalFavoritos },
                 ].map(cat => (
                   <button
                     key={cat.key}
@@ -3003,7 +2890,7 @@ const MercadoTrabajos = () => {
                     className={`mercado-user-chip-btn ${userFilter === cat.key ? 'active' : ''}`}
                     onClick={() => setUserFilter(cat.key)}
                   >
-                    <span>{cat.icon}</span>
+                    <cat.Icono size={15} color="#ffffff" />
                     <span>{cat.label}</span>
                     <span className="mercado-user-chip-badge">{cat.count}</span>
                   </button>
@@ -3016,7 +2903,7 @@ const MercadoTrabajos = () => {
           <div className="mercado-users-grid">
             {filteredMyClients.length === 0 ? (
               <div style={{ color: '#94a3b8', textAlign: 'center', padding: '60px 0', gridColumn: '1 / -1', background: '#141722', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div style={{ fontSize: '36px', marginBottom: '10px' }}>🔍</div>
+                <Search size={34} color="#ffffff" style={{ marginBottom: '10px' }} />
                 <h4 style={{ color: '#ffffff', margin: '0 0 6px 0', fontSize: '1.1rem' }}>No se encontraron clientes</h4>
                 <p style={{ margin: 0, fontSize: '13px' }}>
                   {userSearch ? 'Intenta con otro término de búsqueda.' : 'En cuanto ganes y aceptes solicitudes del mercado, tus clientes aparecerán aquí automáticamente.'}
@@ -3046,19 +2933,9 @@ const MercadoTrabajos = () => {
                         </h4>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           {client.esFavorito ? (
-                            <span 
-                              className="mercado-user-role-badge" 
-                              style={{ background: 'rgba(234, 179, 8, 0.18)', color: '#facc15', border: '1px solid rgba(234, 179, 8, 0.4)' }}
-                            >
-                              ⭐ Cliente Favorito / Frecuente
-                            </span>
+                            <span className="mercado-user-role-badge"><Star size={12} color="#ffffff" /> Cliente favorito / frecuente</span>
                           ) : (
-                            <span 
-                              className="mercado-user-role-badge" 
-                              style={{ background: 'rgba(34, 197, 94, 0.18)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.4)' }}
-                            >
-                              💼 Cliente Atendido
-                            </span>
+                            <span className="mercado-user-role-badge"><Briefcase size={12} color="#ffffff" /> Cliente atendido</span>
                           )}
                         </div>
                       </div>
@@ -3066,20 +2943,20 @@ const MercadoTrabajos = () => {
 
                     <div className="mercado-user-info-rows">
                       <div className="mercado-user-info-row">
-                        <MapPin size={13} color="#f26522" style={{ flexShrink: 0 }} />
+                        <MapPin size={14} color="#ffffff" style={{ flexShrink: 0 }} />
                         <span>{client.direccion}</span>
                       </div>
                       <div className="mercado-user-info-row">
-                        <Phone size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
+                        <Phone size={14} color="#ffffff" style={{ flexShrink: 0 }} />
                         <span>{client.telefono || 'Sin teléfono registrado'}</span>
                       </div>
                       <div className="mercado-user-info-row" style={{ marginTop: '2px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
-                        <span style={{ color: '#f26522', fontWeight: '800' }}>🛠️ Último servicio:</span>
+                        <span className="mercado-user-etiqueta"><Wrench size={14} color="#ffffff" /> Último servicio:</span>
                         <span style={{ color: '#ffffff', fontWeight: '700' }}>{client.ultimoTrabajo.titulo}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8' }}>
-                        <span>📅 {client.ultimoTrabajo.fecha}</span>
-                        <span style={{ color: '#4ade80', fontWeight: '800' }}>
+                        <span className="mercado-user-etiqueta"><Calendar size={13} color="#ffffff" /> {client.ultimoTrabajo.fecha}</span>
+                        <span style={{ color: '#ffffff', fontWeight: '800' }}>
                           Total: ${client.totalFacturado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
@@ -3087,7 +2964,7 @@ const MercadoTrabajos = () => {
                       {/* Calificaciones Registradas Inmutables */}
                       <div style={{
                         marginTop: '8px',
-                        background: 'rgba(15, 23, 42, 0.75)',
+                        background: 'rgba(255, 255, 255, 0.04)',
                         border: '1px solid rgba(255, 255, 255, 0.08)',
                         borderRadius: '10px',
                         padding: '8px 10px',
@@ -3097,17 +2974,17 @@ const MercadoTrabajos = () => {
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: '11px', fontWeight: '800', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            ⭐ Calidad: <strong style={{ color: '#facc15' }}>{client.avgStars ? `${client.avgStars.toFixed(1)} / 5.0` : '5.0 / 5.0'}</strong>
+                            <Star size={13} color="#ffffff" /> Calidad: <strong style={{ color: '#ffffff' }}>{client.avgStars ? `${client.avgStars.toFixed(1)} / 5.0` : '5.0 / 5.0'}</strong>
                           </span>
                           <span style={{ fontSize: '11px', fontWeight: '800', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            ⏱️ Puntualidad: <strong style={{ color: '#38bdf8' }}>{client.avgTime ? `${client.avgTime.toFixed(1)} / 5.0` : '5.0 / 5.0'}</strong>
+                            <Clock size={13} color="#ffffff" /> Puntualidad: <strong style={{ color: '#ffffff' }}>{client.avgTime ? `${client.avgTime.toFixed(1)} / 5.0` : '5.0 / 5.0'}</strong>
                           </span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '4px', fontSize: '9.5px', color: '#94a3b8' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            🔒 <span style={{ color: '#94a3b8', fontWeight: '700' }}>Calificación Inmutable</span>
+                            <Lock size={12} color="#ffffff" /> <span style={{ color: '#b4c3cf', fontWeight: '700' }}>Calificación inmutable</span>
                           </span>
-                          <span style={{ color: client.reviewsCount > 0 ? '#4ade80' : '#a1a1aa', fontWeight: '700' }}>
+                          <span style={{ color: '#b4c3cf', fontWeight: '700' }}>
                             {client.reviewsCount > 0 ? `${client.reviewsCount} evaluaci${client.reviewsCount > 1 ? 'ones' : 'ón'}` : 'Historial definitivo'}
                           </span>
                         </div>
@@ -3123,13 +3000,13 @@ const MercadoTrabajos = () => {
                             rel="noopener noreferrer" 
                             className="mercado-user-btn-action whatsapp"
                           >
-                            💬 WhatsApp
+                            <MessageCircle size={15} color="#ffffff" /> WhatsApp
                           </a>
                           <a 
                             href={`tel:${cleanPhone}`} 
                             className="mercado-user-btn-action"
                           >
-                            📞 Llamar
+                            <Phone size={15} color="#ffffff" /> Llamar
                           </a>
                         </div>
                       ) : (
@@ -3141,7 +3018,7 @@ const MercadoTrabajos = () => {
                         className="mercado-user-btn-action primary"
                         onClick={() => setSelectedClientForHistory(client)}
                       >
-                        📋 Historial ({client.trabajosCount}) →
+                        <ClipboardList size={15} color="#ffffff" /> Historial ({client.trabajosCount}) <ArrowRight size={14} color="#ffffff" />
                       </button>
                     </div>
                   </div>
@@ -3159,26 +3036,26 @@ const MercadoTrabajos = () => {
             <div className="mercado-client-jobs-header">
               <div>
                 <h3 style={{ margin: 0, color: '#ffffff', fontSize: '1.2rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  👤 {selectedClientForHistory.nombre}
+                  <User size={19} color="#ffffff" /> {selectedClientForHistory.nombre}
                 </h3>
                 <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-                  📍 {selectedClientForHistory.direccion} {selectedClientForHistory.telefono && `• 📞 ${selectedClientForHistory.telefono}`}
+                  <MapPin size={13} color="#ffffff" style={{ verticalAlign: 'middle' }} /> {selectedClientForHistory.direccion} {selectedClientForHistory.telefono && <>· <Phone size={13} color="#ffffff" style={{ verticalAlign: 'middle' }} /> {selectedClientForHistory.telefono}</>}
                 </span>
               </div>
               <span className="mercado-modal-close" onClick={() => setSelectedClientForHistory(null)}>×</span>
             </div>
 
             <div className="mercado-client-jobs-body">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0f121a', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.05)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ fontSize: '13px', fontWeight: '700', color: '#cbd5e1' }}>
                   Total de Servicios Realizados: <strong>{selectedClientForHistory.trabajosCount}</strong>
                 </span>
-                <span style={{ fontSize: '14px', fontWeight: '900', color: '#4ade80' }}>
+                <span style={{ fontSize: '14px', fontWeight: '900', color: '#ffffff' }}>
                   Total Acumulado: ${selectedClientForHistory.totalFacturado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </span>
               </div>
 
-              <h4 style={{ margin: '8px 0 2px 0', color: '#f26522', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: '800' }}>
+              <h4 style={{ margin: '8px 0 2px 0', color: '#ffffff', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: '800' }}>
                 Desglose de Trabajos y Evaluaciones:
               </h4>
 
@@ -3196,14 +3073,14 @@ const MercadoTrabajos = () => {
                   {/* Detalle de Calificación Inmutable por Trabajo */}
                   <div style={{
                     margin: '8px 0',
-                    background: 'rgba(24, 28, 42, 0.95)',
+                    background: 'rgba(255, 255, 255, 0.04)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '10px',
                     padding: '10px 12px'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                       <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        📊 Calificación del Servicio:
+                        <BarChart3 size={14} color="#ffffff" /> Calificación del servicio:
                       </span>
                       <span style={{
                         fontSize: '9.5px',
@@ -3217,22 +3094,22 @@ const MercadoTrabajos = () => {
                         alignItems: 'center',
                         gap: '4px'
                       }}>
-                        🔒 Inmutable (Solo Lectura)
+                        <Lock size={11} color="#ffffff" /> Inmutable (solo lectura)
                       </span>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '6px' }}>
-                      <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.25)', borderRadius: '8px', padding: '6px 8px' }}>
-                        <div style={{ fontSize: '10px', color: '#facc15', fontWeight: '700', marginBottom: '2px' }}>⭐ Calidad del Trabajo</div>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '8px', padding: '6px 8px' }}>
+                        <div style={{ fontSize: '10px', color: '#dbe4ec', fontWeight: '700', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}><Star size={12} color="#ffffff" /> Calidad del trabajo</div>
                         <div style={{ fontSize: '12.5px', fontWeight: '900', color: '#ffffff' }}>
-                          {job.review ? `${Number(job.review.rating_stars).toFixed(1)} / 5.0 ⭐` : '5.0 / 5.0 ⭐'}
+                          {job.review ? `${Number(job.review.rating_stars).toFixed(1)} / 5.0` : '5.0 / 5.0'}
                         </div>
                       </div>
 
-                      <div style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '8px', padding: '6px 8px' }}>
-                        <div style={{ fontSize: '10px', color: '#38bdf8', fontWeight: '700', marginBottom: '2px' }}>⏱️ Puntualidad (Relojes)</div>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '8px', padding: '6px 8px' }}>
+                        <div style={{ fontSize: '10px', color: '#dbe4ec', fontWeight: '700', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} color="#ffffff" /> Puntualidad</div>
                         <div style={{ fontSize: '12.5px', fontWeight: '900', color: '#ffffff' }}>
-                          {job.review ? `${Number(job.review.rating_time).toFixed(1)} / 5.0 ⏱️` : '5.0 / 5.0 ⏱️'}
+                          {job.review ? `${Number(job.review.rating_time).toFixed(1)} / 5.0` : '5.0 / 5.0'}
                         </div>
                       </div>
                     </div>
@@ -3244,14 +3121,14 @@ const MercadoTrabajos = () => {
                     )}
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9.5px', color: '#94a3b8', marginTop: '4px' }}>
-                      <span>📅 Registrado: {job.review?.created_at || job.fecha}</span>
-                      <span style={{ color: '#f26522', fontWeight: '700' }}>🔒 Calificación cerrada y grabada</span>
+                      <span className="mercado-user-etiqueta"><Calendar size={12} color="#ffffff" /> Registrado: {job.review?.created_at || job.fecha}</span>
+                      <span className="mercado-user-etiqueta"><Lock size={12} color="#ffffff" /> Calificación cerrada y grabada</span>
                     </div>
                   </div>
 
                   <div className="mercado-client-job-footer">
-                    <span>📅 Solicitado: {job.fecha}</span>
-                    <span style={{ color: '#38bdf8', fontWeight: '700' }}>
+                    <span className="mercado-user-etiqueta"><Calendar size={13} color="#ffffff" /> Solicitado: {job.fecha}</span>
+                    <span style={{ color: '#ffffff', fontWeight: '700' }}>
                       {job.scheduled_at ? `Cita: ${new Date(job.scheduled_at).toLocaleDateString('es-MX')}` : 'Sin cita agendada'}
                     </span>
                     <button
@@ -3262,7 +3139,7 @@ const MercadoTrabajos = () => {
                         openQuoteModalForJob(job);
                       }}
                     >
-                      Abrir Detalle / Chat →
+                      Abrir detalle / chat <ArrowRight size={13} style={{ verticalAlign: 'middle' }} />
                     </button>
                   </div>
                 </div>

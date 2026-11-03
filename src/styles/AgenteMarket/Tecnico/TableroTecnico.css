@@ -3,25 +3,25 @@
    Fondo de triángulos y paneles de vidrio oscuro; el naranja queda solo para la
    acción principal y lo activo. Progreso: camino en zigzag sobre césped pixel art.
    ========================================================================== */
-.mercado-tablero-mode .mercado-board-workspace {
-  background: #e2e8f0 url('../../../assets/geometric-poly-bg.png') center center / cover no-repeat;
+/* El fondo va en todo el contenedor: el encabezado translúcido se ve igual que en el Mercado */
+.mercado-container.mercado-tablero-mode {
+  background: #e2e8f0 url('../../../assets/geometric-poly-bg.png') center center / cover no-repeat fixed !important;
 }
 
-/* Paneles de vidrio oscuro */
+.mercado-tablero-mode .mercado-board-workspace {
+  background: transparent;
+}
+
+/* Paneles azul noche con un toque de vidrio */
 .mercado-tablero-mode .mercado-board-header,
 .mercado-tablero-mode .mercado-board-col-list,
-.mercado-tablero-mode .mercado-board-card,
-.mercado-tablero-mode .mercado-board-property-card,
-.mercado-tablero-mode .mercado-board-flow-card {
-  background: linear-gradient(135deg,
-      rgba(51, 58, 72, 0.86) 0%,
-      rgba(24, 29, 39, 0.82) 50%,
-      rgba(40, 46, 58, 0.86) 100%);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
+.mercado-tablero-mode .rd-panel {
+  background: rgba(11, 22, 32, 0.94);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 /* Cajas internas: láminas translúcidas neutras */
@@ -30,9 +30,13 @@
 .mercado-tablero-mode .mercado-board-schedule-action-box,
 .mercado-tablero-mode .mercado-board-schedule-action-box.mandatory {
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
 }
+
+.mercado-tablero-mode .mercado-board-info-box-label,
+.mercado-tablero-mode .mercado-board-client-label { color: #e2e8f0; }
 
 .mercado-tablero-mode .mercado-board-card-title,
 .mercado-tablero-mode .mercado-board-schedule-label {
@@ -40,6 +44,17 @@
 }
 
 .mercado-tablero-mode .mercado-board-title { display: flex; align-items: center; gap: 8px; }
+
+/* Iconos blancos junto al texto */
+.mercado-tablero-mode .mercado-board-schedule-countdown,
+.mercado-tablero-mode .mercado-board-schedule-status-tag,
+.mercado-tablero-mode .mercado-board-facade-zoom-badge,
+.mercado-tablero-mode .mercado-board-subnav-stage-badge,
+.mercado-tablero-mode .mercado-board-schedule-time-text strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
 
 /* Etiquetas neutras */
 .mercado-tablero-mode .mercado-board-total-badge,
@@ -54,9 +69,9 @@
 .mercado-tablero-mode .mercado-board-schedule-status-tag,
 .mercado-tablero-mode .mercado-board-schedule-status-tag.confirmed,
 .mercado-tablero-mode .mercado-board-schedule-status-tag.pending {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  color: #e2e8f0 !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
   box-shadow: none !important;
   animation: none !important;
 }
@@ -64,36 +79,129 @@
 /* Lo urgente se distingue solo por el texto */
 .mercado-tablero-mode .mercado-board-job-status-pill.sos,
 .mercado-tablero-mode .mercado-board-schedule-status-tag.mandatory {
-  color: #fca5a5 !important;
+  color: #fecaca !important;
 }
 
-/* Filtro: botón de vidrio que abre el menú */
-.mercado-tablero-mode .mercado-board-header {
+/* Proporciones en escritorio: columnas amplias y el detalle llena todo el alto */
+@media (min-width: 1025px) {
+  /* En escritorio la barra superior queda vacía: solo guarda las pestañas de móvil */
+  .mercado-tablero-mode .mercado-board-header { display: none; }
+
+  /* Todo cabe en la pantalla: el alto lo reparte el contenedor, no el contenido */
+  .mercado-tablero-mode .mercado-board-workspace {
+    flex: 1 1 0;
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .mercado-tablero-mode .mercado-board-3col-layout {
+    flex: 1 1 0;
+    height: auto;
+    min-height: 0;
+    grid-template-columns: 330px minmax(0, 1fr) 290px;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .mercado-tablero-mode .mercado-board-col-list,
+  .mercado-tablero-mode .mercado-board-col-detail,
+  .mercado-tablero-mode .mercado-board-col-progress {
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+  }
+
+  .mercado-tablero-mode .mercado-board-job-cards-list {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .mercado-tablero-mode .mercado-board-col-detail {
+    gap: 12px;
+    padding-right: 0;
+    scrollbar-width: none;
+  }
+
+  .mercado-tablero-mode .mercado-board-col-detail::-webkit-scrollbar { display: none; }
+}
+
+/* El menú del filtro sale de la columna: no debe recortarse y queda encima del detalle */
+.mercado-tablero-mode .mercado-board-col-list {
   position: relative;
-  z-index: 20; /* el menú queda encima de las columnas */
+  z-index: 20;
+  overflow: visible;
+}
+
+.mercado-tablero-mode .mercado-board-col-list-header {
+  gap: 8px;
+  padding: 2px 4px 6px;
+  border-bottom: none;
+}
+
+.mercado-tablero-mode .mercado-board-col-list-title {
+  min-width: 0;
+  color: #ffffff;
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+/* Buscador de vidrio a todo el ancho de la columna */
+.mercado-tablero-mode .mercado-board-col-list .mercado-board-search-box {
+  flex-shrink: 0;
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  box-sizing: border-box;
+}
+
+.mercado-tablero-mode .mercado-board-col-list .mercado-board-search-box:focus-within {
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: none;
+}
+
+.mercado-tablero-mode .mercado-board-col-list .mercado-board-search-input {
+  min-width: 0;
+  font-size: 0.82rem;
+}
+
+.mercado-board-filtro {
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .mercado-board-filtro-btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  height: 100%;
-  min-height: 36px;
-  padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.09);
+  gap: 6px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 800;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .mercado-board-filtro-btn:hover,
-.mercado-board-filtro-btn.abierto { background: rgba(255, 255, 255, 0.17); }
+.mercado-board-filtro-btn.abierto {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
+/* Sin el contorno negro del navegador al hacer clic */
+.mercado-board-filtro-btn:focus { outline: none; }
+.mercado-board-filtro-btn:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.6); outline-offset: 2px; }
 
 .mercado-board-filtro-total {
   min-width: 20px;
@@ -107,15 +215,16 @@
 
 .mercado-board-filtro-flecha { transition: transform 0.2s ease; }
 .mercado-board-filtro-btn.abierto .mercado-board-filtro-flecha { transform: rotate(180deg); }
-.mercado-board-filtro .tb-actions-menu { left: 0; right: auto; }
+.mercado-board-filtro .tb-actions-menu { left: auto; right: 0; }
 
 /* Tarjetas de trabajos */
 .mercado-tablero-mode .mercado-board-job-card {
   gap: 9px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.05) 60%, rgba(255, 255, 255, 0.1) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.28);
 }
 
 .rt-card-head {
@@ -168,7 +277,7 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-  color: #cbd5e1;
+  color: #f1f5f9;
   font-size: 0.8rem;
   font-weight: 600;
   white-space: nowrap;
@@ -176,7 +285,7 @@
   text-overflow: ellipsis;
 }
 
-.rt-card-datos svg { flex-shrink: 0; color: #94a3b8; }
+.rt-card-datos svg { flex-shrink: 0; color: #e2e8f0; }
 
 .rt-card-pie {
   display: flex;
@@ -192,31 +301,31 @@
   padding: 3px 8px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);
-  color: #e2e8f0;
+  color: #ffffff;
   font-size: 0.72rem;
   font-weight: 800;
 }
 
-.rt-chip.sos { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
-.rt-chip.aviso { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
-.rt-chip.listo { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+.rt-chip.sos { color: #fecaca; }
+.rt-chip.aviso { color: #fde68a; }
+.rt-chip.listo { color: #bbf7d0; }
 
 .rt-card-folio {
   margin-left: auto;
-  color: #94a3b8;
+  color: #e2e8f0;
   font-size: 0.7rem;
   font-weight: 700;
 }
 
 .mercado-tablero-mode .mercado-board-job-card:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.09) 60%, rgba(255, 255, 255, 0.15) 100%);
+  border-color: rgba(255, 255, 255, 0.42);
 }
 
 .mercado-tablero-mode .mercado-board-job-card.selected {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.55);
-  box-shadow: none;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.14) 60%, rgba(255, 255, 255, 0.24) 100%);
+  border-color: rgba(255, 255, 255, 0.75);
+  box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.5);
 }
 
 /* Botones de vidrio; solo la acción principal lleva color, plano */
@@ -290,12 +399,12 @@
 /* ── PROGRESO: camino en zigzag sobre césped pixel art ── */
 .mercado-tablero-mode .mercado-board-col-progress {
   padding: 0;
-  border: 1.5px solid rgba(255, 255, 255, 0.28);
-  border-radius: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
   background: #4a8a3a url('../../../assets/cesped-pixel.png') repeat;
   background-size: 128px 128px;
   image-rendering: pixelated;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3), inset 0 1.5px 2px rgba(255, 255, 255, 0.5);
 }
 
 .mercado-tablero-mode .mercado-board-col-progress-header {
@@ -446,3 +555,604 @@
 @media (prefers-reduced-motion: reduce) {
   .mercado-tablero-mode .mercado-board-stepper-item.current .mercado-board-step-node { animation: none; }
 }
+
+/* ── Tamaños de texto: una sola escala, sin letras diminutas ── */
+.mercado-tablero-mode .mercado-board-card-title {
+  font-size: 0.9rem;
+}
+
+.mercado-tablero-mode .mercado-board-col-list-title {
+  font-size: 0.82rem;
+}
+
+/* Etiquetas pequeñas (NOMBRE, TIPO DE FALLA...) */
+.mercado-tablero-mode .mercado-board-info-box-label,
+.mercado-tablero-mode .mercado-board-client-label {
+  font-size: 0.72rem;
+}
+
+/* Valores */
+.mercado-tablero-mode .mercado-board-info-box-val,
+.mercado-tablero-mode .mercado-board-client-val,
+.mercado-tablero-mode .mercado-board-schedule-time-text,
+.mercado-tablero-mode .mercado-board-schedule-time-text strong,
+.mercado-tablero-mode .mercado-board-schedule-not-set {
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.mercado-tablero-mode .mercado-board-schedule-label {
+  font-size: 0.86rem;
+}
+
+.mercado-tablero-mode .mercado-board-schedule-countdown {
+  font-size: 0.84rem;
+}
+
+.mercado-tablero-mode .mercado-board-property-name {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.mercado-tablero-mode .mercado-board-property-zone {
+  font-size: 0.84rem;
+}
+
+/* Etiquetas y botones secundarios */
+.mercado-tablero-mode .mercado-board-banner-tag,
+.mercado-tablero-mode .mercado-board-property-type-pill,
+.mercado-tablero-mode .mercado-board-schedule-status-tag,
+.mercado-tablero-mode .mercado-board-evidence-counter,
+.mercado-tablero-mode .mercado-board-job-status-pill {
+  padding: 3px 9px;
+  border-radius: 8px;
+  font-size: 0.76rem;
+}
+
+.mercado-tablero-mode .mercado-board-btn-pdf,
+.mercado-tablero-mode .mercado-board-btn-gps,
+.mercado-tablero-mode .mercado-board-btn-call {
+  padding: 6px 11px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+}
+
+.mercado-tablero-mode .mercado-board-facade-zoom-badge,
+.mercado-tablero-mode .mercado-board-client-photo-badge {
+  font-size: 0.7rem;
+}
+
+.mercado-tablero-mode .mercado-board-schedule-change-btn,
+.mercado-tablero-mode .mercado-board-flow-btn {
+  font-size: 0.86rem;
+}
+
+.mercado-tablero-mode .rt-chip { font-size: 0.76rem; }
+.mercado-tablero-mode .rt-card-folio { font-size: 0.76rem; }
+.mercado-tablero-mode .rt-card-datos span { font-size: 0.84rem; }
+.mercado-tablero-mode .mercado-board-step-title { font-size: 0.8rem; }
+.mercado-tablero-mode .mercado-board-step-desc { font-size: 0.72rem; }
+
+/* ── DETALLE DEL TRABAJO: foto principal arriba y bloques debajo ── */
+.mercado-tablero-mode .mercado-board-col-detail {
+  gap: 12px;
+  color: #dbe4ec;
+  scrollbar-width: none;
+}
+
+.rd-hero {
+  position: relative;
+  flex-shrink: 0;
+  height: 34%;
+  min-height: 200px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0b1620;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  cursor: zoom-in;
+}
+
+.rd-hero img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rd-hero-vacio {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5d7486;
+}
+
+.rd-hero-etiquetas {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rd-hero-etiquetas span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(6, 14, 21, 0.82);
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.rd-hero-etiquetas span.sos { color: #fecaca; }
+
+.rd-hero-lupa {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(6, 14, 21, 0.72);
+  color: #ffffff;
+}
+
+.rd-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  gap: 12px;
+  flex: 1 0 auto;
+}
+
+.rd-columna {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rd-panel { padding: 14px 16px; box-sizing: border-box; }
+
+.rd-titulo {
+  margin: 0 0 8px;
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+/* Resumen */
+.rd-resumen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.rd-resumen-texto {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rd-precio {
+  color: #ffffff;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.rd-direccion {
+  color: #8fa3b3;
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
+.rd-datos-rapidos {
+  display: flex;
+  flex-shrink: 0;
+  gap: 18px;
+}
+
+.rd-datos-rapidos span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: #8fa3b3;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.rd-datos-rapidos svg { color: #cfdae3; }
+.rd-datos-rapidos b { color: #ffffff; font-size: 0.82rem; }
+
+/* Trabajo y herramientas */
+.rd-trabajo {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(170px, 1fr);
+  gap: 16px;
+}
+
+.rd-descripcion {
+  margin: 0;
+  color: #b4c3cf;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.rd-trabajo-lado {
+  display: flex;
+  flex-direction: column;
+  padding-left: 16px;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.rd-estado {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: 10px;
+}
+
+.rd-estado-nombre {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.rd-estado-nombre i {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #f5b942;
+}
+
+.rd-estado-nombre i.verde { background: #4ade80; }
+.rd-estado.obligatorio .rd-estado-nombre { color: #fecaca; }
+.rd-estado-fecha { color: #dbe4ec; font-size: 0.8rem; line-height: 1.35; }
+.rd-estado-tiempo { color: #8fa3b3; font-size: 0.76rem; font-weight: 700; }
+.rd-estado-tiempo.atraso { color: #fde68a; }
+
+.rd-herramienta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 0;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: transparent;
+  color: #dbe4ec;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.rd-herramienta:hover { color: #ffffff; }
+.rd-herramienta:focus { outline: none; }
+.rd-herramienta:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.6); }
+
+.rd-herramienta > span,
+.rd-lista li > span {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(6, 14, 21, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cfdae3;
+}
+
+/* Evidencias */
+.rd-fotos {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.rd-fotos::-webkit-scrollbar { display: none; }
+
+.rd-foto {
+  width: 84px;
+  height: 60px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.rd-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rd-nota { margin: 0; color: #8fa3b3; font-size: 0.82rem; }
+
+/* Cliente */
+.rd-cliente {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rd-cliente-persona {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.rd-avatar {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f26522;
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.rd-cliente-persona > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rd-cliente-persona small { color: #8fa3b3; font-size: 0.72rem; }
+
+.rd-cliente-persona strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rd-cliente-persona > div > span { color: #b4c3cf; font-size: 0.8rem; }
+
+.rd-btn-oscuro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: #060e15;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.rd-btn-oscuro:hover { background: #13222e; }
+
+.rd-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rd-lista li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  color: #dbe4ec;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+/* Botones de flujo: uno debajo de otro en su bloque */
+.mercado-tablero-mode .rd-panel.mercado-board-flow-card { flex-shrink: 0; }
+
+.mercado-tablero-mode .mercado-board-flow-buttons-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mercado-tablero-mode .mercado-board-flow-btn {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 10px;
+}
+
+.mercado-tablero-mode .mercado-board-flow-btn.btn-second-visit {
+  background: #060e15;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+/* Lista de trabajos con la misma paleta */
+.mercado-tablero-mode .mercado-board-job-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+.mercado-tablero-mode .mercado-board-job-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.mercado-tablero-mode .mercado-board-job-card.selected {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: none;
+}
+
+/* Tablet y celular: una sola columna */
+@media (max-width: 1024px) {
+  .rd-grid,
+  .rd-trabajo { grid-template-columns: minmax(0, 1fr); }
+  .rd-hero { height: 200px; }
+  .rd-trabajo-lado { padding: 12px 0 0; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.07); }
+}
+
+@media (max-width: 520px) {
+  .rd-resumen { flex-direction: column; align-items: flex-start; }
+}
+
+/* ==========================================================================
+   MIS CLIENTES: misma paleta azul noche del tablero, con iconos blancos
+   ========================================================================== */
+.mercado-container.mercado-usuarios-mode {
+  background: #e2e8f0 url('../../../assets/geometric-poly-bg.png') center center / cover no-repeat fixed !important;
+}
+
+.mercado-usuarios-mode .mercado-users-view { background: transparent; }
+
+.mercado-usuarios-mode .mercado-users-header-card,
+.mercado-usuarios-mode .mercado-user-card,
+.mercado-usuarios-mode .mercado-client-jobs-modal {
+  background: rgba(11, 22, 32, 0.94);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.mercado-usuarios-mode .mercado-users-main-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+}
+
+.mercado-usuarios-mode .mercado-users-kpi-card,
+.mercado-usuarios-mode .mercado-user-info-rows,
+.mercado-usuarios-mode .mercado-client-job-item,
+.mercado-usuarios-mode .mercado-users-search-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+.mercado-usuarios-mode .mercado-users-kpi-icon {
+  background: #060e15;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: #ffffff;
+}
+
+.mercado-usuarios-mode .mercado-users-kpi-label { color: #8fa3b3; }
+
+.mercado-usuarios-mode .mercado-users-search-box:focus-within {
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: none;
+}
+
+.mercado-usuarios-mode .mercado-user-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #dbe4ec;
+  box-shadow: none;
+}
+
+.mercado-usuarios-mode .mercado-user-chip-btn.active {
+  background: #f26522;
+  border-color: #f26522;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.mercado-usuarios-mode .mercado-user-chip-btn.active .mercado-user-chip-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.mercado-usuarios-mode .mercado-user-chip-badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.mercado-usuarios-mode .mercado-user-avatar {
+  background: #f26522;
+  border: none;
+  color: #ffffff;
+}
+
+.mercado-usuarios-mode .mercado-user-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.mercado-user-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #b4c3cf;
+  font-weight: 700;
+}
+
+.mercado-usuarios-mode .mercado-user-btn-action,
+.mercado-usuarios-mode .mercado-user-btn-action.whatsapp,
+.mercado-usuarios-mode .mercado-users-btn-refresh,
+.mercado-usuarios-mode .mercado-kanban-btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #060e15;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.mercado-usuarios-mode .mercado-user-btn-action:hover,
+.mercado-usuarios-mode .mercado-users-btn-refresh:hover,
+.mercado-usuarios-mode .mercado-kanban-btn-back:hover {
+  background: #13222e;
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.mercado-usuarios-mode .mercado-user-btn-action.primary {
+  background: #f26522;
+  border-color: #f26522;
+}
+
+.mercado-usuarios-mode .mercado-user-btn-action.primary:hover {
+  background: #ea580c;
+  border-color: #ea580c;
+}
+
+.mercado-usuarios-mode .mercado-client-job-price { color: #ffffff; }
