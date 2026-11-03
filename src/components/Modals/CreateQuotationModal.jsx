@@ -5,7 +5,7 @@ import {
   X, Plus, Trash2, Calculator, 
   Search, User, Home, 
   AlertCircle, Upload,
-  MapPin, Phone
+  MapPin, Phone, Wrench
 } from 'lucide-react';
 import mpLogo from '../../assets/Mercado-Pago.png';
 import '../../styles/Shared/CreateQuotationModal.css';
@@ -35,6 +35,11 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
   const [observaciones, setObservaciones] = useState('');
   const [observacionesInternas, setObservacionesInternas] = useState('');
   const [archivo, setArchivo] = useState(null);
+
+  // Recotización de empresa a partir de la propuesta de un técnico:
+  // se precargan sus partidas, el admin ajusta precios y se guarda una cotización nueva
+  // ligada (parent_id) conservando la del técnico y sus precios como evidencia.
+  const esRecotTecnico = Boolean(prefillData && (prefillData.isRecotizacionTecnico || prefillData.created_by_role === 'Técnico') && !prefillData.isRecotizacionV2);
 
   useEffect(() => {
     if (prefillData) {
@@ -73,8 +78,8 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
           setLoteServicios(conceptObj.seccionesLote.map((s, idx) => ({
             id: s.servicioId || idx + 1,
             titulo: s.titulo || `Servicio #${idx + 1}`,
-            filasConceptos: s.conceptos?.map((f, i) => ({ id: Date.now() + i, desc: f.descripcion || f.desc, cant: f.cantidad || f.cant || 1, precio: f.precio || f.precio_u || '' })) || [],
-            filasMateriales: s.materiales?.map((f, i) => ({ id: Date.now() + 100 + i, desc: f.descripcion || f.nombre || f.desc, cant: f.cantidad || f.cant || 1, precio: f.precio || f.costo_u || '' })) || []
+            filasConceptos: s.conceptos?.map((f, i) => ({ id: Date.now() + i, desc: f.descripcion || f.desc, cant: f.cantidad || f.cant || 1, precio: f.precio || f.precio_u || '', ...(esRecotTecnico ? { precioTecnico: f.precio_tecnico ?? (f.precio || f.precio_u || 0) } : {}) })) || [],
+            filasMateriales: s.materiales?.map((f, i) => ({ id: Date.now() + 100 + i, desc: f.descripcion || f.nombre || f.desc, cant: f.cantidad || f.cant || 1, precio: f.precio || f.costo_u || '', ...(esRecotTecnico ? { precioTecnico: f.precio_tecnico ?? (f.precio || f.costo_u || 0) } : {}) })) || []
           })));
         } else {
           if (conceptObj.servicios || conceptObj.conceptos) {
@@ -83,7 +88,8 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
               id: Date.now() + i,
               desc: f.descripcion || f.desc || f.titulo || 'Servicio',
               cant: f.cantidad || f.cant || 1,
-              precio: f.precio || f.precio_u || ''
+              precio: f.precio || f.precio_u || '',
+              ...(esRecotTecnico ? { precioTecnico: f.precio_tecnico ?? (f.precio || f.precio_u || 0) } : {})
             })));
           }
           if (conceptObj.materiales) {
@@ -91,7 +97,8 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
               id: Date.now() + 100 + i,
               desc: f.descripcion || f.nombre || f.desc || 'Material',
               cant: f.cantidad || f.cant || 1,
-              precio: f.precio || f.costo_u || ''
+              precio: f.precio || f.costo_u || '',
+              ...(esRecotTecnico ? { precioTecnico: f.precio_tecnico ?? (f.precio || f.costo_u || 0) } : {})
             })));
           }
         }
@@ -104,10 +111,16 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
         }]);
       }
       
-      setObservacionesInternas(prefillData.isDerived ? `--- RECOTIZACIÓN DERIVADA DE #${prefillData.folio || prefillData.id} ---\nOriginal conservada en la BD.` : `--- COTIZACIÓN ANTERIOR ---\n${prefillData.observations || ''}`);
+      setObservacionesInternas(
+        esRecotTecnico
+          ? `--- RECOTIZACIÓN BASADA EN PROPUESTA TÉCNICA ${prefillData.folio || '#' + prefillData.id}${prefillData.tecnico ? ` (Técnico: ${prefillData.tecnico})` : ''} ---\nLa propuesta original del técnico se conserva como evidencia.${prefillData.observations ? `\n\nNotas del técnico: ${prefillData.observations}` : ''}`
+          : prefillData.isDerived
+            ? `--- RECOTIZACIÓN DERIVADA DE #${prefillData.folio || prefillData.id} ---\nOriginal conservada en la BD.`
+            : `--- COTIZACIÓN ANTERIOR ---\n${prefillData.observations || ''}`
+      );
       setStep(2);
     }
-  }, [prefillData]);
+  }, [prefillData, esRecotTecnico]);
 
   // Cargar todos los servicios al abrir para poder filtrar localmente por todos los campos
   useEffect(() => {
@@ -193,6 +206,14 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
     return { subtotal, iva, comisionMP, total };
   };
 
+  // Subtotal (sin IVA) de la propuesta original del técnico, con sus precios
+  const calcularSubtotalTecnico = () => {
+    const filas = isUnifiedBatch && loteServicios.length > 0
+      ? loteServicios.flatMap(s => [...s.filasConceptos, ...s.filasMateriales])
+      : [...filasConceptos, ...filasMateriales];
+    return filas.reduce((acc, f) => acc + (f.precioTecnico !== undefined ? Number(f.cant) * Number(f.precioTecnico || 0) : 0), 0);
+  };
+
   const handleGuardar = async () => {
     if (!servicioSeleccionado) return mostrarAviso("Por favor seleccione un servicio.");
     
@@ -216,19 +237,28 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
             seccionesLote: loteServicios.map(s => ({
               titulo: s.titulo,
               servicioId: s.id,
-              conceptos: s.filasConceptos.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio })),
-              materiales: s.filasMateriales.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio }))
+              conceptos: s.filasConceptos.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio, ...(f.precioTecnico !== undefined ? { precio_tecnico: f.precioTecnico } : {}) })),
+              materiales: s.filasMateriales.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio, ...(f.precioTecnico !== undefined ? { precio_tecnico: f.precioTecnico } : {}) }))
             })),
-            servicios: loteServicios.flatMap(s => s.filasConceptos.map(f => ({ descripcion: `[${s.titulo}] ${f.desc}`, cantidad: f.cant, precio: f.precio }))),
-            materiales: loteServicios.flatMap(s => s.filasMateriales.map(f => ({ descripcion: `[${s.titulo}] ${f.desc}`, cantidad: f.cant, precio: f.precio })))
+            servicios: loteServicios.flatMap(s => s.filasConceptos.map(f => ({ descripcion: `[${s.titulo}] ${f.desc}`, cantidad: f.cant, precio: f.precio, ...(f.precioTecnico !== undefined ? { precio_tecnico: f.precioTecnico } : {}) }))),
+            materiales: loteServicios.flatMap(s => s.filasMateriales.map(f => ({ descripcion: `[${s.titulo}] ${f.desc}`, cantidad: f.cant, precio: f.precio, ...(f.precioTecnico !== undefined ? { precio_tecnico: f.precioTecnico } : {}) })))
           };
           formData.append('is_unified_batch', 'true');
           formData.append('related_service_ids', JSON.stringify(loteServicios.map(s => s.id)));
         } else {
           conceptData = {
-            servicios: filasConceptos.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio })),
-            materiales: filasMateriales.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio }))
+            servicios: filasConceptos.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio, ...(f.precioTecnico !== undefined ? { precio_tecnico: f.precioTecnico } : {}) })),
+            materiales: filasMateriales.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio, ...(f.precioTecnico !== undefined ? { precio_tecnico: f.precioTecnico } : {}) }))
           };
+        }
+        if (esRecotTecnico) {
+          conceptData.recotizacion_tecnico = {
+            cotizacion_tecnico_id: prefillData.id,
+            folio_tecnico: prefillData.folio || null,
+            tecnico: prefillData.tecnico || null,
+            subtotal_tecnico: calcularSubtotalTecnico()
+          };
+          formData.append('is_recotizacion_tecnico', 'true');
         }
         formData.append('concept', JSON.stringify(conceptData));
         const { total } = calcularTotales();
@@ -254,7 +284,9 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
       }
 
       let endpoint = `${import.meta.env.VITE_API_BASE_URL}/cotizaciones`;
-      let successMsg = prefillData?.isRecotizacionV2 || prefillData?.id
+      let successMsg = esRecotTecnico
+        ? `¡Recotización de ${prefillData.folio || '#' + prefillData.id} creada y enviada al cliente! La propuesta del técnico queda guardada como evidencia.`
+        : prefillData?.isRecotizacionV2 || prefillData?.id
         ? `¡Versión 2 (V${(prefillData.version || 1) + 1}) creada y enviada! El estado ha cambiado a POR PAGAR.`
         : "¡Cotización creada y enviada al cliente exitosamente en estado POR PAGAR!";
 
@@ -278,16 +310,16 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
             seccionesLote: loteServicios.map(s => ({
               titulo: s.titulo,
               servicioId: s.id,
-              conceptos: s.filasConceptos.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio })),
-              materiales: s.filasMateriales.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio }))
+              conceptos: s.filasConceptos.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio, ...(f.precioTecnico !== undefined ? { precio_tecnico: f.precioTecnico } : {}) })),
+              materiales: s.filasMateriales.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio, ...(f.precioTecnico !== undefined ? { precio_tecnico: f.precioTecnico } : {}) }))
             })),
-            servicios: loteServicios.flatMap(s => s.filasConceptos.map(f => ({ descripcion: `[${s.titulo}] ${f.desc}`, cantidad: f.cant, precio: f.precio }))),
-            materiales: loteServicios.flatMap(s => s.filasMateriales.map(f => ({ descripcion: `[${s.titulo}] ${f.desc}`, cantidad: f.cant, precio: f.precio })))
+            servicios: loteServicios.flatMap(s => s.filasConceptos.map(f => ({ descripcion: `[${s.titulo}] ${f.desc}`, cantidad: f.cant, precio: f.precio, ...(f.precioTecnico !== undefined ? { precio_tecnico: f.precioTecnico } : {}) }))),
+            materiales: loteServicios.flatMap(s => s.filasMateriales.map(f => ({ descripcion: `[${s.titulo}] ${f.desc}`, cantidad: f.cant, precio: f.precio, ...(f.precioTecnico !== undefined ? { precio_tecnico: f.precioTecnico } : {}) })))
           };
         } else {
           conceptDataObj = {
-            servicios: filasConceptos.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio })),
-            materiales: filasMateriales.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio }))
+            servicios: filasConceptos.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio, ...(f.precioTecnico !== undefined ? { precio_tecnico: f.precioTecnico } : {}) })),
+            materiales: filasMateriales.map(f => ({ descripcion: f.desc, cantidad: f.cant, precio: f.precio, ...(f.precioTecnico !== undefined ? { precio_tecnico: f.precioTecnico } : {}) }))
           };
         }
 
@@ -420,7 +452,9 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
 <span className="cqm-header-icon"><Calculator size={20} strokeWidth={2.4} /></span>
             <h2 className="cotiz-modal-title" style={{ margin: 0, fontSize: '1.2rem' }}>
-              {prefillData?.isRecotizacionV2 || prefillData?.isDerived || prefillData?.id
+              {esRecotTecnico
+                ? `RECOTIZACIÓN DE ${prefillData.folio || '#' + prefillData.id}`
+                : prefillData?.isRecotizacionV2 || prefillData?.isDerived || prefillData?.id
                 ? `NUEVA VERSIÓN (V${(prefillData.version || 1) + 1}) DE ${prefillData.folio || '#' + prefillData.id}` 
                 : 'NUEVA COTIZACIÓN - ADMIN'}
             </h2>
@@ -559,6 +593,28 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
 
               {tab === 'manual' ? (
                 <div className="manual-form">
+                  {esRecotTecnico && (() => {
+                    const fmtR = (n) => `$${n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    const subTec = calcularSubtotalTecnico();
+                    const subEmp = calcularTotales().subtotal;
+                    const dif = subEmp - subTec;
+                    return (
+                      <div className="cqm-recot-box">
+                        <div className="cqm-recot-head">
+                          <span className="cqm-recot-icon"><Wrench size={18} /></span>
+                          <div>
+                            <strong>Basada en la propuesta del técnico{prefillData.tecnico ? ` ${prefillData.tecnico}` : ''}</strong>
+                            <span>Ajusta los precios de la empresa. La cotización del técnico se conserva sin cambios como evidencia.</span>
+                          </div>
+                        </div>
+                        <div className="cqm-recot-stats">
+                          <div><small>Técnico (sin IVA)</small><p>{fmtR(subTec)}</p></div>
+                          <div><small>Empresa (sin IVA)</small><p>{fmtR(subEmp)}</p></div>
+                          <div className={dif >= 0 ? 'pos' : 'neg'}><small>Diferencia</small><p>{dif >= 0 ? '+' : '−'}{fmtR(Math.abs(dif))}</p></div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {isUnifiedBatch && loteServicios.length > 0 && (
 <div className="cqm-lote-box">
 <div className="cqm-lote-title">
@@ -617,6 +673,9 @@ className="cqm-input right"
                                       value={f.precio}
                                       onChange={(e) => updateFilaLote(activeTabLote, 'filasConceptos', f.id, 'precio', e.target.value)}
                                     />
+                                    {f.precioTecnico !== undefined && (
+                                      <span className="cqm-ref-tecnico" title="Precio unitario propuesto por el técnico">Técnico: ${Number(f.precioTecnico || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                                    )}
                                  </div>
                                  <button type="button" onClick={() => removeFilaLote(activeTabLote, 'filasConceptos', f.id)}className="cqm-trash-btn" aria-label="Eliminar fila"><Trash2 size={18} /></button>
                               </div>
@@ -656,6 +715,9 @@ className="cqm-input right"
                                       value={f.precio}
                                       onChange={(e) => updateFilaLote(activeTabLote, 'filasMateriales', f.id, 'precio', e.target.value)}
                                     />
+                                    {f.precioTecnico !== undefined && (
+                                      <span className="cqm-ref-tecnico" title="Precio unitario propuesto por el técnico">Técnico: ${Number(f.precioTecnico || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                                    )}
                                  </div>
                                  <button type="button" onClick={() => removeFilaLote(activeTabLote, 'filasMateriales', f.id)}className="cqm-trash-btn" aria-label="Eliminar fila"><Trash2 size={18} /></button>
                               </div>
@@ -699,6 +761,9 @@ className="cqm-input right"
                                   value={f.precio}
                                   onChange={(e) => updateFila(setFilasConceptos, f.id, 'precio', e.target.value)}
                                 />
+                                    {f.precioTecnico !== undefined && (
+                                      <span className="cqm-ref-tecnico" title="Precio unitario propuesto por el técnico">Técnico: ${Number(f.precioTecnico || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                                    )}
                              </div>
                              <button type="button" onClick={() => removeFila(setFilasConceptos, f.id)}className="cqm-trash-btn" aria-label="Eliminar fila"><Trash2 size={18} /></button>
                           </div>
@@ -738,6 +803,9 @@ className="cqm-input right"
                                   value={f.precio}
                                   onChange={(e) => updateFila(setFilasMateriales, f.id, 'precio', e.target.value)}
                                 />
+                                    {f.precioTecnico !== undefined && (
+                                      <span className="cqm-ref-tecnico" title="Precio unitario propuesto por el técnico">Técnico: ${Number(f.precioTecnico || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                                    )}
                              </div>
                              <button type="button" onClick={() => removeFila(setFilasMateriales, f.id)}className="cqm-trash-btn" aria-label="Eliminar fila"><Trash2 size={18} /></button>
                           </div>
@@ -826,7 +894,7 @@ className="cqm-input cqm-textarea internal"
                     className="cqm-btn primary"
                     disabled={loading}
                   >
-                    {loading ? 'ENVIANDO...' : 'GUARDAR Y ENVIAR'}
+                    {loading ? 'ENVIANDO...' : (esRecotTecnico ? 'GUARDAR RECOTIZACIÓN' : 'GUARDAR Y ENVIAR')}
                   </button>
                 </div>
               </div>

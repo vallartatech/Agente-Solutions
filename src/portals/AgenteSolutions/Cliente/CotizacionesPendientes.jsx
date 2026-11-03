@@ -583,17 +583,17 @@ const CotizacionesPendientes = () => {
                                 Caducada (&gt; 15 días)
                               </span>
                             ) : isSelected ? (
-                              <span className="quote-status-label" style={{ backgroundColor: '#dcfce7', color: '#16a34a', border: '1px solid #bbf7d0', fontWeight: '800' }}>
-                                ✅ Marcado para pagar hoy
+                              <span className="quote-status-label status-marked">
+                                <CheckCircle2 size={13} /> Marcado para pagar hoy
                               </span>
                             ) : (
-                              <span className="quote-status-label" style={{ backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', fontWeight: '800' }}>
-                                📌 Por pagar / Por autorizar
+                              <span className="quote-status-label status-unmarked">
+                                <Clock size={13} /> Por pagar / Por autorizar
                               </span>
                             )}
                             
                             {!cot.vencida && !esPendienteRecotizacion && (
-                              <span className="quote-status-label status-valid" style={{ fontSize: '0.72rem' }}>
+                              <span className="quote-status-label status-valid">
                                 Vigente ({cot.diasRestantes} días restantes)
                               </span>
                             )}
@@ -717,17 +717,9 @@ const CotizacionesPendientes = () => {
 
             {/* Aviso de servicios que quedan como Por Pagar */}
             {cotizacionesNoSeleccionadas.length > 0 && (
-              <div style={{
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '10px 12px',
-                fontSize: '0.78rem',
-                color: '#64748b',
-                marginTop: '10px',
-                lineHeight: '1.4'
-              }}>
-                📌 <strong>{cotizacionesNoSeleccionadas.length} servicio(s)</strong> no seleccionados permanecerán guardados como <em>"Por pagar"</em>.
+              <div className="cart-unselected-note">
+                <Clock size={15} />
+                <span><strong>{cotizacionesNoSeleccionadas.length} servicio(s)</strong> no seleccionados permanecerán guardados como <em>"Por pagar"</em>.</span>
               </div>
             )}
 
@@ -767,286 +759,135 @@ const CotizacionesPendientes = () => {
           MODAL DE PAGO INTEGRADO (MERCADO PAGO / EFECTIVO / TRANSFERENCIA)
       ══════════════════════════════════════════════════════════════════════ */}
       {showPagoModal && (
-        <div className="modal-overlay" onClick={() => !procesandoPago && setShowPagoModal(false)}>
-          <div 
-            className="modal-content-wrapper" 
-            onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '560px', width: '95%', background: '#ffffff', borderRadius: '24px', padding: '0', overflow: 'hidden' }}
-          >
-            {/* Header del Modal de Pago */}
-            <div style={{
-              background: 'linear-gradient(135deg, #1e2229 0%, #0f172a 100%)',
-              padding: '24px 24px 20px 24px',
-              color: '#ffffff',
-              position: 'relative'
-            }}>
-              <button 
+        <div className="modal-overlay pay-overlay" onClick={() => !procesandoPago && setShowPagoModal(false)}>
+          <div className="pay-modal" onClick={(e) => e.stopPropagation()}>
+            {/* Encabezado */}
+            <div className="pay-header">
+              <div className="pay-header-text">
+                <span className="pay-tag">Pasarela de pago y autorización</span>
+                <h3>Pagar servicios seleccionados ({cotizacionesSeleccionadas.length})</h3>
+                <p>Autoriza y agenda tus trabajos con Agente Solutions</p>
+              </div>
+              <button
+                type="button"
+                className="pay-close"
+                aria-label="Cerrar"
                 onClick={() => setShowPagoModal(false)}
                 disabled={procesandoPago}
-                style={{
-                  position: 'absolute',
-                  top: '18px',
-                  right: '18px',
-                  background: 'rgba(255,255,255,0.15)',
-                  border: 'none',
-                  color: '#fff',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
               >
                 <X size={18} />
               </button>
-
-              <span style={{ 
-                background: 'rgba(242, 102, 36, 0.2)', 
-                color: '#f26624', 
-                border: '1px solid rgba(242, 102, 36, 0.4)',
-                padding: '4px 10px', 
-                borderRadius: '20px', 
-                fontSize: '0.75rem', 
-                fontWeight: '900', 
-                letterSpacing: '0.5px' 
-              }}>
-                PASARELA DE PAGO Y AUTORIZACIÓN
-              </span>
-              <h3 style={{ margin: '10px 0 4px 0', fontSize: '1.4rem', fontWeight: '900' }}>
-                Pagar Servicios Seleccionados ({cotizacionesSeleccionadas.length})
-              </h3>
-              <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.82rem' }}>
-                Autoriza y agenda tus trabajos con Agente Solutions
-              </p>
             </div>
 
-            {/* Cuerpo del Modal de Pago */}
-            <div style={{ padding: '20px 24px', maxHeight: '75vh', overflowY: 'auto' }}>
-              {/* Lista de Servicios a Pagar */}
-              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '12px 16px', marginBottom: '18px' }}>
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: '#1e293b', fontWeight: '800' }}>
-                  Servicios que se autorizan y pagan:
-                </h4>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {/* Cuerpo */}
+            <div className="pay-body">
+              <div className="pay-card">
+                <h4 className="pay-card-title">Servicios que se autorizan y pagan</h4>
+                <ul className="pay-items">
                   {cotizacionesSeleccionadas.map(c => (
-                    <li key={c.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#334155' }}>
-                      <span style={{ fontWeight: '600' }}>• {c.titulo}</span>
-                      <strong style={{ color: '#0f172a' }}>{formatCurrency(c.total)}</strong>
+                    <li key={c.id}>
+                      <span><CheckCircle2 size={15} /> {c.titulo}</span>
+                      <strong>{formatCurrency(c.total)}</strong>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              {/* Selector de Método de Pago */}
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: '#0f172a', fontWeight: '800' }}>
-                1. Selecciona Método de Pago:
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '18px' }}>
-                {/* Opción Mercado Pago */}
-                <div 
+              <h4 className="pay-step"><span>1</span> Selecciona el método de pago</h4>
+              <div className="pay-options">
+                <button
+                  type="button"
+                  className={`pay-option ${metodoPago === 'mercadopago' ? 'active mp' : ''}`}
                   onClick={() => setMetodoPago('mercadopago')}
-                  style={{
-                    border: `2px solid ${metodoPago === 'mercadopago' ? '#009ee3' : '#e2e8f0'}`,
-                    background: metodoPago === 'mercadopago' ? '#f0f9ff' : '#ffffff',
-                    borderRadius: '14px',
-                    padding: '14px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    textAlign: 'center'
-                  }}
                 >
-                  <img src={mpLogo} alt="Mercado Pago" style={{ height: '24px', objectFit: 'contain', marginBottom: '6px' }} />
-                  <div style={{ fontWeight: '800', fontSize: '0.85rem', color: '#0f172a' }}>Tarjeta / Mercado Pago</div>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>Crédito, Débito o SPEI</div>
-                </div>
-
-                {/* Opción Efectivo */}
-                <div 
+                  <img src={mpLogo} alt="Mercado Pago" className="pay-option-logo" />
+                  <strong>Tarjeta / Mercado Pago</strong>
+                  <small>Crédito, débito o SPEI</small>
+                </button>
+                <button
+                  type="button"
+                  className={`pay-option ${metodoPago === 'efectivo' ? 'active cash' : ''}`}
                   onClick={() => setMetodoPago('efectivo')}
-                  style={{
-                    border: `2px solid ${metodoPago === 'efectivo' ? '#16a34a' : '#e2e8f0'}`,
-                    background: metodoPago === 'efectivo' ? '#f0fdf4' : '#ffffff',
-                    borderRadius: '14px',
-                    padding: '14px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    textAlign: 'center'
-                  }}
                 >
-                  <Banknote size={26} color="#16a34a" style={{ margin: '0 auto 4px auto', display: 'block' }} />
-                  <div style={{ fontWeight: '800', fontSize: '0.85rem', color: '#0f172a' }}>Efectivo / En Sitio</div>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>Pago contra entrega</div>
-                </div>
+                  <span className="pay-option-icon cash"><Banknote size={20} /></span>
+                  <strong>Efectivo / En sitio</strong>
+                  <small>Pago contra entrega</small>
+                </button>
               </div>
 
-              {/* Desglose de Comisión e Impuestos */}
-              <div style={{
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '10px 14px',
-                marginBottom: '16px',
-                fontSize: '0.8rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
-                  <span>Subtotal:</span>
-                  <span style={{ fontWeight: '700' }}>{formatCurrency(totalSubtotal)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
-                  <span>IVA (16%):</span>
-                  <span style={{ fontWeight: '700' }}>{formatCurrency(ivaCalculado)}</span>
-                </div>
+              <div className="pay-card pay-breakdown">
+                <div><span>Subtotal</span><strong>{formatCurrency(totalSubtotal)}</strong></div>
+                <div><span>IVA (16%)</span><strong>{formatCurrency(ivaCalculado)}</strong></div>
                 {metodoPago === 'mercadopago' ? (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#009ee3', fontWeight: '700' }}>
-                    <span>💳 Comisión Pasarela (T. Oficial):</span>
-                    <span>+{formatCurrency(comisionMP)}</span>
-                  </div>
+                  <div className="mp"><span><CreditCard size={14} /> Comisión pasarela (tarifa oficial)</span><strong>+{formatCurrency(comisionMP)}</strong></div>
                 ) : (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a', fontWeight: '700' }}>
-                    <span>💵 Pago en Efectivo:</span>
-                    <span>Exento de comisión MP ($0.00)</span>
-                  </div>
+                  <div className="cash"><span><Banknote size={14} /> Pago en efectivo</span><strong>Sin comisión ($0.00)</strong></div>
                 )}
-                <div style={{ height: '1px', background: '#e2e8f0', margin: '2px 0' }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0f172a', fontWeight: '900', fontSize: '0.88rem' }}>
-                  <span>Total {metodoPago === 'efectivo' ? 'en Efectivo' : 'Mercado Pago'}:</span>
-                  <span>{formatCurrency(totalFinalPagar)}</span>
+                <div className="pay-breakdown-total">
+                  <span>Total {metodoPago === 'efectivo' ? 'en efectivo' : 'Mercado Pago'}</span>
+                  <strong>{formatCurrency(totalFinalPagar)}</strong>
                 </div>
               </div>
 
-              {/* Selector de Esquema: Anticipo 60% vs Pago Total 100% */}
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: '#0f172a', fontWeight: '800' }}>
-                2. Esquema de Pago:
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '18px' }}>
-                <div 
+              <h4 className="pay-step"><span>2</span> Esquema de pago</h4>
+              <div className="pay-options">
+                <button
+                  type="button"
+                  className={`pay-option left ${tipoMonto === 'advance' ? 'active' : ''}`}
                   onClick={() => setTipoMonto('advance')}
-                  style={{
-                    border: `2px solid ${tipoMonto === 'advance' ? '#f26624' : '#e2e8f0'}`,
-                    background: tipoMonto === 'advance' ? '#fff7ed' : '#ffffff',
-                    borderRadius: '14px',
-                    padding: '12px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
                 >
-                  <div style={{ fontWeight: '800', fontSize: '0.85rem', color: '#f26624' }}>Anticipo del 60%</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#0f172a', margin: '4px 0' }}>
-                    {formatCurrency(anticipoPagar)}
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: '#64748b' }}>40% restante al finalizar</div>
-                </div>
-
-                <div 
+                  <small className="pay-option-label">Anticipo del 60%</small>
+                  <span className="pay-option-amount">{formatCurrency(anticipoPagar)}</span>
+                  <small>40% restante al finalizar</small>
+                </button>
+                <button
+                  type="button"
+                  className={`pay-option left ${tipoMonto === 'full' ? 'active' : ''}`}
                   onClick={() => setTipoMonto('full')}
-                  style={{
-                    border: `2px solid ${tipoMonto === 'full' ? '#f26624' : '#e2e8f0'}`,
-                    background: tipoMonto === 'full' ? '#fff7ed' : '#ffffff',
-                    borderRadius: '14px',
-                    padding: '12px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
                 >
-                  <div style={{ fontWeight: '800', fontSize: '0.85rem', color: '#f26624' }}>Pago Total (100%)</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#0f172a', margin: '4px 0' }}>
-                    {formatCurrency(totalFinalPagar)}
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Liquidación completa</div>
-                </div>
+                  <small className="pay-option-label">Pago total (100%)</small>
+                  <span className="pay-option-amount">{formatCurrency(totalFinalPagar)}</span>
+                  <small>Liquidación completa</small>
+                </button>
               </div>
 
-              {/* Si es efectivo, selector de timing */}
               {metodoPago === 'efectivo' && (
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px', marginBottom: '18px' }}>
-                  <label style={{ fontSize: '0.82rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '6px' }}>
-                    Momento de entrega del efectivo:
-                  </label>
-                  <select 
-                    value={timingEfectivo} 
+                <div className="pay-card">
+                  <label className="pay-card-title" htmlFor="pay-timing">Momento de entrega del efectivo</label>
+                  <select
+                    id="pay-timing"
+                    className="pay-select"
+                    value={timingEfectivo}
                     onChange={(e) => setTimingEfectivo(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: '1.5px solid #cbd5e1',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      outline: 'none'
-                    }}
                   >
                     <option value="immediate">Entregar al inicio / visita del técnico</option>
                     <option value="on_completion">Entregar al finalizar y validar el trabajo</option>
                   </select>
                 </div>
               )}
+            </div>
 
-              {/* Resumen Total a Pagar Ahora */}
-              <div style={{
-                background: '#0f172a',
-                color: '#ffffff',
-                borderRadius: '16px',
-                padding: '16px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '18px'
-              }}>
+            {/* Pie fijo con total y confirmación */}
+            <div className="pay-footer">
+              <div className="pay-now">
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '800' }}>
-                    Monto a pagar ahora ({tipoMonto === 'advance' ? '60% Anticipo' : 'Total'}):
-                  </span>
-                  <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#f26624' }}>
-                    {formatCurrency(montoAPagarAhora)}
-                  </div>
+                  <small>Monto a pagar ahora ({tipoMonto === 'advance' ? '60% anticipo' : 'total'})</small>
+                  <strong>{formatCurrency(montoAPagarAhora)}</strong>
                 </div>
-                <div style={{ textAlign: 'right', fontSize: '0.75rem', color: '#94a3b8' }}>
-                  {cotizacionesSeleccionadas.length} servicio(s)
-                </div>
+                <span>{cotizacionesSeleccionadas.length} servicio(s)</span>
               </div>
-
-              {/* Botón de Confirmación */}
-              <button 
+              <button
+                type="button"
+                className={`pay-confirm ${metodoPago === 'efectivo' ? 'cash' : ''}`}
                 onClick={handleConfirmarPago}
                 disabled={procesandoPago}
-                style={{
-                  width: '100%',
-                  background: '#f26624',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '16px',
-                  padding: '16px',
-                  fontWeight: '900',
-                  fontSize: '1rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  boxShadow: '0 8px 20px rgba(242, 102, 36, 0.35)',
-                  transition: 'all 0.2s'
-                }}
               >
                 {procesandoPago ? (
-                  <>
-                    <Loader2 size={20} className="spin-slow" />
-                    <span>Procesando solicitud...</span>
-                  </>
+                  <><Loader2 size={20} className="spin-slow" /> Procesando solicitud...</>
                 ) : metodoPago === 'mercadopago' ? (
-                  <>
-                    <span>PAGAR CON MERCADO PAGO</span>
-                    <ArrowRight size={18} />
-                  </>
+                  <>Pagar con Mercado Pago <ArrowRight size={18} /></>
                 ) : (
-                  <>
-                    <CheckCircle2 size={18} />
-                    <span>CONFIRMAR PAGO EN EFECTIVO</span>
-                  </>
+                  <><CheckCircle2 size={18} /> Confirmar pago en efectivo</>
                 )}
               </button>
             </div>

@@ -1840,6 +1840,495 @@
     border-radius: 14px !important;
 }
 
+/* --- Rediseño detalle: encabezado --- */
+.cotiz-detail-sheet .cotiz-detail-header h2 {
+    margin: 4px 0 0;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.55rem;
+    font-weight: 900;
+    letter-spacing: 0.3px;
+    color: #0f172a;
+}
+
+.cotiz-detail-sheet .cotiz-sheet-close {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+/* --- Banner informativo (propuesta técnica / recotización) --- */
+.cd-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+}
+
+.cd-banner-icon {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f26522;
+    color: #ffffff;
+}
+
+.cd-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.cd-banner-text strong {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.cd-banner-text span {
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+/* --- Datos de la cotización en cuadrícula --- */
+.cd-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.cd-info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+.cd-info-wide { grid-column: 1 / -1; }
+
+.cd-info-icon {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(242, 101, 34, 0.12);
+    color: #ea580c;
+}
+
+.cd-info-item > div { min-width: 0; }
+
+.cd-info-item small {
+    display: block;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.cd-info-item p {
+    margin: 1px 0 0;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #0f172a;
+    overflow-wrap: anywhere;
+}
+
+/* --- Tarjetas de estado (aprobada / rechazada) --- */
+.cd-status-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.cd-status-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    color: #0f172a;
+}
+
+.cd-status-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+}
+
+.cd-status-icon.success { background: #16a34a; }
+.cd-status-icon.danger { background: #dc2626; }
+
+/* --- Recotización --- */
+.cd-recot {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.cd-recot-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.cd-recot-head .cd-banner-icon { width: 32px; height: 32px; border-radius: 10px; }
+
+/* --- Motivo de rechazo --- */
+.cd-reject-box {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.cd-reject-box label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #dc2626;
+}
+
+.cd-reject-box textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 14px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(15, 23, 42, 0.12);
+    background: rgba(255, 255, 255, 0.85);
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 0.88rem;
+    resize: vertical;
+    outline: none;
+}
+
+.cd-reject-box textarea:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.14);
+}
+
+/* --- Botones del detalle: color sólido, sin brillo ni degradado --- */
+.cd-btn-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    width: 100%;
+}
+
+.cotiz-detail-sheet .cotiz-detail-footer .cd-btn,
+.cotiz-detail-sheet .cd-btn {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 16px;
+    border-radius: 14px !important;
+    border: 1.5px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    line-height: 1.2;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background-color 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.cotiz-detail-sheet .cd-btn svg { flex-shrink: 0; }
+.cotiz-detail-sheet .cd-btn:active { transform: scale(0.98); }
+
+.cotiz-detail-sheet .cd-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.cotiz-detail-sheet .cd-btn--primary { background: #f26522; color: #ffffff; }
+.cotiz-detail-sheet .cd-btn--primary:hover:not(:disabled) { background: #ea580c; }
+
+.cotiz-detail-sheet .cd-btn--success { background: #16a34a; color: #ffffff; }
+.cotiz-detail-sheet .cd-btn--success:hover:not(:disabled) { background: #15803d; }
+
+.cotiz-detail-sheet .cd-btn--danger { background: #dc2626; color: #ffffff; }
+.cotiz-detail-sheet .cd-btn--danger:hover:not(:disabled) { background: #b91c1c; }
+
+.cotiz-detail-sheet .cd-btn--danger-soft {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.22);
+    color: #dc2626;
+}
+.cotiz-detail-sheet .cd-btn--danger-soft:hover:not(:disabled) {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+
+.cotiz-detail-sheet .cd-btn--info { background: #2563eb; color: #ffffff; }
+.cotiz-detail-sheet .cd-btn--info:hover:not(:disabled) { background: #1d4ed8; }
+
+.cotiz-detail-sheet .cd-btn--mp { background: #009ee3; color: #ffffff; min-height: 50px; font-size: 0.95rem; }
+.cotiz-detail-sheet .cd-btn--mp:hover:not(:disabled) { background: #0284c7; }
+
+.cotiz-detail-sheet .cd-btn--ghost {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: rgba(15, 23, 42, 0.1);
+    color: #0f172a;
+}
+.cotiz-detail-sheet .cd-btn--ghost:hover:not(:disabled) {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.2);
+}
+
+.cotiz-detail-sheet .cd-btn--pdf svg { color: #ea580c; }
+
+.cd-btn-row--secondary .cd-btn { min-height: 42px; }
+
+/* --- Seguimiento: comprobante de pago + asignación --- */
+.cd-follow {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.cd-follow-title {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.cd-follow-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+}
+
+.cd-follow-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cd-follow-head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.cd-follow-head-text strong {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.cd-follow-head-text span { font-size: 0.8rem; color: #64748b; line-height: 1.4; }
+.cd-follow-head-text b { color: #0f172a; }
+
+.cd-follow-chip {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.cd-follow-chip.ok { background: #16a34a; }
+.cd-follow-chip.warn { background: #d97706; }
+
+.cd-follow-photo {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: none;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.04);
+    cursor: zoom-in;
+}
+
+.cd-follow-photo img {
+    display: block;
+    width: 100%;
+    max-height: 260px;
+    object-fit: contain;
+}
+
+.cd-follow-photo span {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #0f172a;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.cd-follow-upload {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+}
+
+.cd-follow-upload .cd-btn { width: auto; }
+
+.cd-file {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 46px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    border: 1.5px dashed rgba(15, 23, 42, 0.18);
+    background: rgba(255, 255, 255, 0.85);
+    color: #334155;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cd-file:hover { border-color: #f26522; color: #ea580c; }
+.cd-file svg { flex-shrink: 0; color: #f26522; }
+.cd-file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.cd-file input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.cd-assign-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.cd-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.cd-field-wide { grid-column: 1 / -1; }
+
+.cd-field small {
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.cd-field select,
+.cd-field input {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(15, 23, 42, 0.12);
+    background: rgba(255, 255, 255, 0.9);
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    outline: none;
+}
+
+.cd-field select:focus,
+.cd-field input:focus {
+    border-color: #f26522;
+    box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.16);
+}
+
+@media (max-width: 640px) {
+    .cd-follow-upload { grid-template-columns: 1fr; }
+    .cd-follow-upload .cd-btn { width: 100%; }
+    .cd-field select, .cd-field input { font-size: 16px; }
+}
+
+/* Separación visual entre acciones principales y secundarias */
+.cotiz-detail-sheet .cotiz-detail-footer .cd-btn-row--secondary {
+    padding-top: 8px;
+    border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.cotiz-detail-sheet .cotiz-detail-footer .cd-btn-row--secondary:first-child {
+    padding-top: 0;
+    border-top: none;
+}
+
 @media (max-width: 640px) {
     .modal-box-card.cotiz-detail-sheet {
         max-width: 100%;
@@ -1861,4 +2350,12 @@
     }
 
     .cotiz-detail-chat-input input { font-size: 16px; } /* evita zoom en iOS */
+
+    .cd-info-grid { grid-template-columns: 1fr; }
+
+    .cotiz-detail-sheet .cotiz-detail-header h2 { font-size: 1.3rem; }
+
+    .cd-btn-row { grid-template-columns: 1fr 1fr; }
+    .cd-btn-row > .cd-btn:only-child { grid-column: 1 / -1; }
+    .cotiz-detail-sheet .cd-btn { font-size: 0.82rem; padding: 10px 12px; }
 }

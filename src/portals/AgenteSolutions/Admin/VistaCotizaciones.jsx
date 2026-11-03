@@ -14,7 +14,9 @@ import {
   ArrowUpDown, FileText, CheckCircle, 
   XCircle, Clock, ChevronRight,
   User, Wrench, Truck, Layout, Home, Phone, MapPin, RefreshCw,
-  MessageCircle, Maximize2, Image as ImageIcon, Send
+  MessageCircle, Maximize2, Image as ImageIcon, Send,
+  X, Eye, Pencil, Forward, Globe, FilePlus,
+  Receipt, CalendarClock, Upload, Loader2
 } from 'lucide-react';
 import CreateQuotationModal from "../../../components/Modals/CreateQuotationModal";
 import ModalCrearCotizacion from "../../../components/Shared/ModalCrearCotizacion";
@@ -195,6 +197,119 @@ const VistaCotizaciones = () => {
 
   const [mensajeChat, setMensajeChat] = useState('');
   const [enviandoMensaje, setEnviandoMensaje] = useState(false);
+
+  // --- Seguimiento de la recotización: comprobante de pago + asignación de técnico ---
+  const [archivoComprobante, setArchivoComprobante] = useState(null);
+  const [subiendoComprobante, setSubiendoComprobante] = useState(false);
+  const [tecnicosLista, setTecnicosLista] = useState([]);
+  const [asignTecnicoId, setAsignTecnicoId] = useState('');
+  const [asignFecha, setAsignFecha] = useState('');
+  const [asignHora, setAsignHora] = useState('');
+  const [asignando, setAsignando] = useState(false);
+
+  // Precarga técnico/fecha actuales al abrir una cotización
+  useEffect(() => {
+    setArchivoComprobante(null);
+    if (!cotizacionSeleccionada) return;
+    setAsignTecnicoId(cotizacionSeleccionada.tecnico_id ? String(cotizacionSeleccionada.tecnico_id) : '');
+    const prog = cotizacionSeleccionada.programado_en;
+    if (prog) {
+      const [f, h] = String(prog).replace('T', ' ').split(' ');
+      setAsignFecha(f || '');
+      setAsignHora((h || '').slice(0, 5));
+    } else {
+      setAsignFecha('');
+      setAsignHora('');
+    }
+  }, [cotizacionSeleccionada?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Lista de técnicos (solo admin), se carga una vez
+  useEffect(() => {
+    if (esCliente || esTecnico || tecnicosLista.length > 0 || !cotizacionSeleccionada) return;
+    const token = localStorage.getItem('agente_token');
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/usuarios/tecnicos`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+      .then(res => {
+        const data = res.data?.data || res.data || [];
+        setTecnicosLista(Array.isArray(data) ? data : []);
+      })
+      .catch(err => console.error('Error cargando técnicos:', err));
+  }, [cotizacionSeleccionada, esCliente, esTecnico, tecnicosLista.length]);
+
+  const handleSubirComprobante = async () => {
+    if (!archivoComprobante || !cotizacionSeleccionada) return;
+    setSubiendoComprobante(true);
+    try {
+      const token = localStorage.getItem('agente_token');
+      const formData = new FormData();
+      formData.append('receipt_file', archivoComprobante);
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/cotizaciones/${cotizacionSeleccionada.id}/pago`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data', ...(token ? { Authorization: `Bearer ${token}` } : {}) } }
+      );
+      const q = res.data?.quote || {};
+      setCotizacionSeleccionada(prev => ({
+        ...prev,
+        payment_receipt_path: q.payment_receipt_path || prev.payment_receipt_path,
+        payment_status: q.payment_status || 'Pago en Revisión',
+        status: q.status || 'Pago en Revisión'
+      }));
+      setArchivoComprobante(null);
+      cargarCotizaciones();
+      mostrarAviso('Comprobante de pago guardado. Ya puedes validar el pago.');
+    } catch (error) {
+      console.error('Error subiendo comprobante:', error);
+      mostrarAviso(error.response?.data?.error || 'No se pudo subir el comprobante. Usa una imagen JPG/PNG o un PDF de máximo 10 MB.');
+    } finally {
+      setSubiendoComprobante(false);
+    }
+  };
+
+  const handleAsignarTecnico = async () => {
+    if (!cotizacionSeleccionada) return;
+    if (!asignTecnicoId || !asignFecha || !asignHora) {
+      mostrarAviso('Selecciona el técnico, la fecha y la hora del trabajo.');
+      return;
+    }
+    const fechaHora = `${asignFecha} ${asignHora}:00`;
+    const token = localStorage.getItem('agente_token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    setAsignando(true);
+    try {
+      if (cotizacionSeleccionada.service_id) {
+        await axios.put(
+          `${import.meta.env.VITE_API_BASE_URL}/servicios/${cotizacionSeleccionada.service_id}/asignar-trabajo`,
+          { tecnico_id: asignTecnicoId, scheduled_start: fechaHora },
+          { headers }
+        );
+      } else if (cotizacionSeleccionada.work_order_id) {
+        await axios.put(
+          `${import.meta.env.VITE_API_BASE_URL}/work-orders/${cotizacionSeleccionada.work_order_id}/assign`,
+          { tecnico_id: asignTecnicoId, scheduled_at: fechaHora },
+          { headers }
+        );
+      } else {
+        mostrarAviso('Esta cotización no está ligada a un servicio o reporte, no se puede programar.');
+        return;
+      }
+      const tec = tecnicosLista.find(t => String(t.id) === String(asignTecnicoId));
+      setCotizacionSeleccionada(prev => ({
+        ...prev,
+        tecnico_id: Number(asignTecnicoId),
+        tecnico: tec?.name || prev.tecnico,
+        programado_en: fechaHora
+      }));
+      cargarCotizaciones();
+      mostrarAviso(`Trabajo asignado a ${tec?.name || 'el técnico'} para el ${new Date(`${asignFecha}T${asignHora}`).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' })}. Ya aparece en su calendario.`);
+    } catch (error) {
+      console.error('Error asignando técnico:', error);
+      mostrarAviso(error.response?.data?.message || 'No se pudo asignar el trabajo.');
+    } finally {
+      setAsignando(false);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -1524,10 +1639,12 @@ const VistaCotizaciones = () => {
               <div className="modal-body-content cotiz-detail-body">
                 
                 {cotizacionSeleccionada.created_by_role === 'Técnico' && !esCliente && (
-                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', borderLeft: '4px solid #f26624', marginBottom: '15px' }}>
-                    <p style={{ margin: 0, fontSize: '0.95rem', color: '#334155', fontWeight: '600' }}>
-                      🛠️ Propuesta técnica enviada al Administrador
-                    </p>
+                  <div className="cd-banner">
+                    <span className="cd-banner-icon"><Wrench size={18} /></span>
+                    <div className="cd-banner-text">
+                      <strong>Propuesta técnica</strong>
+                      <span>Enviada por el técnico al Administrador. Revísala y genera la cotización para el cliente.</span>
+                    </div>
                   </div>
                 )}
                 
@@ -1541,33 +1658,39 @@ const VistaCotizaciones = () => {
                   </div>
                 )}
 
-                <div className="cotiz-sheet-info">
-                  <span>
-                    <User size={15} /> <strong>Cliente / Dueño:</strong> {cotizacionSeleccionada.cliente}
-                  </span>
+                <div className="cd-info-grid">
+                  <div className="cd-info-item">
+                    <span className="cd-info-icon"><User size={16} /></span>
+                    <div><small>Cliente / Dueño</small><p>{cotizacionSeleccionada.cliente}</p></div>
+                  </div>
                   {(cotizacionSeleccionada.cliente_telefono || cotizacionSeleccionada.telefono_cliente || cotizacionSeleccionada.telefono) && (
-                    <span>
-                      <Phone size={15} /> <strong>Teléfono:</strong> {cotizacionSeleccionada.cliente_telefono || cotizacionSeleccionada.telefono_cliente || cotizacionSeleccionada.telefono}
-                    </span>
+                    <div className="cd-info-item">
+                      <span className="cd-info-icon"><Phone size={16} /></span>
+                      <div><small>Teléfono</small><p>{cotizacionSeleccionada.cliente_telefono || cotizacionSeleccionada.telefono_cliente || cotizacionSeleccionada.telefono}</p></div>
+                    </div>
                   )}
                   {cotizacionSeleccionada.propiedad_nombre && cotizacionSeleccionada.propiedad_nombre !== 'N/A' && (
-                    <span>
-                      <Home size={15} /> <strong>Propiedad:</strong> {cotizacionSeleccionada.propiedad_nombre}
-                    </span>
-                  )}
-                  {cotizacionSeleccionada.propiedad_direccion && cotizacionSeleccionada.propiedad_direccion !== 'N/A' && (
-                    <span>
-                      <MapPin size={15} /> <strong>Dirección:</strong> {cotizacionSeleccionada.propiedad_direccion}
-                    </span>
+                    <div className="cd-info-item">
+                      <span className="cd-info-icon"><Home size={16} /></span>
+                      <div><small>Propiedad</small><p>{cotizacionSeleccionada.propiedad_nombre}</p></div>
+                    </div>
                   )}
                   {cotizacionSeleccionada.tecnico && (
-                    <span>
-                      <Wrench size={15} /> <strong>Técnico responsable:</strong> {cotizacionSeleccionada.tecnico}
-                    </span>
+                    <div className="cd-info-item">
+                      <span className="cd-info-icon"><Wrench size={16} /></span>
+                      <div><small>Técnico responsable</small><p>{cotizacionSeleccionada.tecnico}</p></div>
+                    </div>
                   )}
-                  <span className="cotiz-sheet-info-divider">
-                    <Calendar size={15} /> <strong>Fecha de creación:</strong> {cotizacionSeleccionada.fecha}
-                  </span>
+                  <div className="cd-info-item">
+                    <span className="cd-info-icon"><Calendar size={16} /></span>
+                    <div><small>Fecha de creación</small><p>{cotizacionSeleccionada.fecha}</p></div>
+                  </div>
+                  {cotizacionSeleccionada.propiedad_direccion && cotizacionSeleccionada.propiedad_direccion !== 'N/A' && (
+                    <div className="cd-info-item cd-info-wide">
+                      <span className="cd-info-icon"><MapPin size={16} /></span>
+                      <div><small>Dirección</small><p>{cotizacionSeleccionada.propiedad_direccion}</p></div>
+                    </div>
+                  )}
                 </div>
 
                 {cotizacionSeleccionada.type === 'archivo' ? (
@@ -1621,42 +1744,36 @@ const VistaCotizaciones = () => {
                 )}
 
                 {cotizacionSeleccionada.status === 'Aprobado' && !esCliente && (
-                    <div style={{ marginTop: '20px', padding: '15px', background: '#f0fdf4', borderRadius: '12px', border: '1px solid #16a34a', textAlign: 'center' }}>
-                      <p style={{ margin: '0 0 10px 0', color: '#16a34a', fontWeight: 'bold' }}>✅ ESTA COTIZACIÓN HA SIDO APROBADA</p>
+                    <div className="cd-status-card">
+                      <div className="cd-status-head">
+                        <span className="cd-status-icon success"><CheckCircle size={18} /></span>
+                        <strong>Esta cotización ha sido aprobada</strong>
+                      </div>
                       {esTecnico ? (
-                        <button 
-                          onClick={() => navigate('/trabajos-tecnico')}
-                          style={{ background: 'linear-gradient(135deg, #16a34a, #15803d)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto', boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)' }}
-                        >
-                          <Layout size={18} /> IR A MIS TRABAJOS ASIGNADOS
+                        <button type="button" className="cd-btn cd-btn--success" onClick={() => navigate('/trabajos-tecnico')}>
+                          <Layout size={17} /> Ir a mis trabajos asignados
                         </button>
                       ) : (
-                        <button 
-                          onClick={() => navigate(`/tablero-servicios?jobId=${cotizacionSeleccionada.work_order_id || cotizacionSeleccionada.service_id}`)}
-                          style={{ background: '#16a34a', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
-                        >
-                          <Layout size={18} /> IR AL TABLERO DE TRABAJO
+                        <button type="button" className="cd-btn cd-btn--success" onClick={() => navigate(`/tablero-servicios?jobId=${cotizacionSeleccionada.work_order_id || cotizacionSeleccionada.service_id}`)}>
+                          <Layout size={17} /> Ir al tablero de trabajo
                         </button>
                       )}
                     </div>
                   )}
 
                 {cotizacionSeleccionada.status === 'Rechazado' && !esCliente && (
-                    <div style={{ marginTop: '20px', padding: '15px', background: '#fef2f2', borderRadius: '12px', border: '1px solid #ef4444', textAlign: 'center' }}>
-                      <p style={{ margin: '0 0 10px 0', color: '#ef4444', fontWeight: 'bold' }}>❌ ESTA COTIZACIÓN HA SIDO RECHAZADA / CANCELADA</p>
+                    <div className="cd-status-card">
+                      <div className="cd-status-head">
+                        <span className="cd-status-icon danger"><XCircle size={18} /></span>
+                        <strong>Esta cotización ha sido rechazada / cancelada</strong>
+                      </div>
                       {cotizacionSeleccionada.is_network_quote ? (
-                        <button 
-                          onClick={() => navigate('/mercado-trabajos')}
-                          style={{ background: 'linear-gradient(135deg, #ea580c, #c2410c)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto', boxShadow: '0 4px 12px rgba(234, 88, 12, 0.3)' }}
-                        >
-                          🌍 IR AL MERCADO PARA ENVIAR NUEVA OFERTA
+                        <button type="button" className="cd-btn cd-btn--primary" onClick={() => navigate('/mercado-trabajos')}>
+                          <Globe size={17} /> Ir al mercado para enviar nueva oferta
                         </button>
                       ) : (
-                        <button 
-                          onClick={() => navigate(`/tablero-servicios?jobId=${cotizacionSeleccionada.work_order_id || cotizacionSeleccionada.service_id}`)}
-                          style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
-                        >
-                          <Layout size={18} /> IR AL TABLERO PARA CANCELAR TRABAJO
+                        <button type="button" className="cd-btn cd-btn--danger" onClick={() => navigate(`/tablero-servicios?jobId=${cotizacionSeleccionada.work_order_id || cotizacionSeleccionada.service_id}`)}>
+                          <Layout size={17} /> Ir al tablero para cancelar trabajo
                         </button>
                       )}
                     </div>
@@ -1791,36 +1908,134 @@ const VistaCotizaciones = () => {
                   </div>
                 )}
 
-                {cotizacionSeleccionada.payment_receipt_path && (
-                  <div style={{ padding: '15px', background: '#fffbeb', borderRadius: '8px', marginTop: '15px', borderLeft: '4px solid #fbbf24' }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '0.95rem', color: '#b45309' }}>🧾 Comprobante de Pago ({cotizacionSeleccionada.payment_status || 'En Revisión'}):</h4>
-                    <div style={{ textAlign: 'center' }}>
-                      <img 
-                        src={cotizacionSeleccionada.payment_receipt_path} 
-                        alt="Comprobante de Pago" 
-                        style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px', cursor: 'pointer', objectFit: 'contain' }} 
-                        onClick={() => verPantallaCompleta(cotizacionSeleccionada.payment_receipt_path)}
-                      />
-                      <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '5px 0 10px 0' }}>Click para ampliar</p>
-                      
-                      {!esCliente && (cotizacionSeleccionada.status === 'Pago en Revisión' || cotizacionSeleccionada.payment_status === 'Pago en Revisión') && (
-                        <button 
-                          onClick={handleValidarPago}
-                          disabled={procesando}
-                          style={{ 
-                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
-                            color: 'white', border: 'none', padding: '12px 25px', borderRadius: '25px', 
-                            fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', 
-                            margin: '10px auto 0', boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' 
-                          }}
-                        >
-                          <CheckCircle size={20} /> 
-                          {procesando ? 'VALIDANDO...' : 'VALIDAR PAGO'}
-                        </button>
+                {/* --- SEGUIMIENTO: comprobante de pago + asignación del trabajo --- */}
+                {(() => {
+                  const esAdmin = !esCliente && !esTecnico;
+                  const esCotEmpresa = cotizacionSeleccionada.created_by_role !== 'Técnico';
+                  const estado = String(cotizacionSeleccionada.status || '');
+                  const descartada = estado === 'Rechazado' || estado.startsWith('Reemplazada');
+                  const mostrarSeguimiento = esAdmin && esCotEmpresa && !descartada && cotizacionSeleccionada.type !== 'archivo';
+                  const comprobante = cotizacionSeleccionada.payment_receipt_path;
+                  const comprobanteEsPdf = comprobante && /\.pdf($|\?)/i.test(comprobante);
+                  const pagoEnRevision = estado === 'Pago en Revisión' || cotizacionSeleccionada.payment_status === 'Pago en Revisión';
+                  const pagoValidado = cotizacionSeleccionada.payment_status === 'Validado' || estado === 'Pagado';
+                  const tieneTecnico = cotizacionSeleccionada.tecnico_id && cotizacionSeleccionada.tecnico && cotizacionSeleccionada.tecnico !== 'Sin Técnico';
+                  const hoyISO = new Date().toISOString().slice(0, 10);
+
+                  if (!mostrarSeguimiento && !comprobante) return null;
+
+                  return (
+                    <div className="cd-follow">
+                      {mostrarSeguimiento && <h4 className="cd-follow-title">Seguimiento del trabajo</h4>}
+
+                      {/* Comprobante de pago */}
+                      <div className="cd-follow-card">
+                        <div className="cd-follow-head">
+                          <span className="cd-banner-icon"><Receipt size={18} /></span>
+                          <div className="cd-follow-head-text">
+                            <strong>Comprobante de pago</strong>
+                            <span>{pagoValidado ? 'Pago validado' : comprobante ? 'Pendiente de validar' : 'Sube la foto o el PDF del pago como evidencia'}</span>
+                          </div>
+                          {comprobante && (
+                            <span className={`cd-follow-chip ${pagoValidado ? 'ok' : 'warn'}`}>
+                              {pagoValidado ? 'Validado' : 'En revisión'}
+                            </span>
+                          )}
+                        </div>
+
+                        {comprobante && (
+                          comprobanteEsPdf ? (
+                            <button type="button" className="cd-btn cd-btn--ghost" onClick={() => window.open(comprobante, '_blank', 'noopener')}>
+                              <FileText size={17} /> Ver comprobante (PDF)
+                            </button>
+                          ) : (
+                            <button type="button" className="cd-follow-photo" onClick={() => verPantallaCompleta(comprobante)} title="Ver en grande">
+                              <img src={comprobante} alt="Comprobante de pago" />
+                              <span><Maximize2 size={14} /> Ampliar</span>
+                            </button>
+                          )
+                        )}
+
+                        {mostrarSeguimiento && !pagoValidado && (
+                          <div className="cd-follow-upload">
+                            <label className="cd-file">
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,application/pdf"
+                                onChange={(e) => setArchivoComprobante(e.target.files?.[0] || null)}
+                              />
+                              <Upload size={16} />
+                              <span>{archivoComprobante ? archivoComprobante.name : (comprobante ? 'Reemplazar comprobante' : 'Elegir foto o PDF')}</span>
+                            </label>
+                            <button
+                              type="button"
+                              className="cd-btn cd-btn--primary"
+                              onClick={handleSubirComprobante}
+                              disabled={!archivoComprobante || subiendoComprobante}
+                            >
+                              {subiendoComprobante ? <><Loader2 size={17} className="spin-slow" /> Subiendo...</> : <><Upload size={17} /> Subir comprobante</>}
+                            </button>
+                          </div>
+                        )}
+
+                        {esAdmin && comprobante && pagoEnRevision && (
+                          <button type="button" className="cd-btn cd-btn--success" onClick={handleValidarPago} disabled={procesando}>
+                            <CheckCircle size={17} /> {procesando ? 'Validando...' : 'Validar pago'}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Asignación de técnico, fecha y hora */}
+                      {mostrarSeguimiento && (
+                        <div className="cd-follow-card">
+                          <div className="cd-follow-head">
+                            <span className="cd-banner-icon"><CalendarClock size={18} /></span>
+                            <div className="cd-follow-head-text">
+                              <strong>Asignar técnico y horario</strong>
+                              <span>
+                                {tieneTecnico
+                                  ? <>Asignado a <b>{cotizacionSeleccionada.tecnico}</b>{cotizacionSeleccionada.programado_en ? <> · {new Date(String(cotizacionSeleccionada.programado_en).replace(' ', 'T')).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</> : null}</>
+                                  : 'Se reflejará en el calendario del técnico'}
+                              </span>
+                            </div>
+                            {tieneTecnico && <span className="cd-follow-chip ok">Programado</span>}
+                          </div>
+
+                          <div className="cd-assign-grid">
+                            <label className="cd-field cd-field-wide">
+                              <small>Técnico</small>
+                              <select value={asignTecnicoId} onChange={(e) => setAsignTecnicoId(e.target.value)}>
+                                <option value="">Seleccionar técnico</option>
+                                {tecnicosLista.map(t => (
+                                  <option key={t.id} value={t.id}>{t.name || `${t.first_name || ''} ${t.last_name || ''}`.trim()}</option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="cd-field">
+                              <small>Fecha</small>
+                              <input type="date" min={hoyISO} value={asignFecha} onChange={(e) => setAsignFecha(e.target.value)} />
+                            </label>
+                            <label className="cd-field">
+                              <small>Hora</small>
+                              <input type="time" value={asignHora} onChange={(e) => setAsignHora(e.target.value)} />
+                            </label>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="cd-btn cd-btn--primary"
+                            onClick={handleAsignarTecnico}
+                            disabled={asignando || !asignTecnicoId || !asignFecha || !asignHora}
+                          >
+                            {asignando
+                              ? <><Loader2 size={17} className="spin-slow" /> Asignando...</>
+                              : <><CalendarClock size={17} /> {tieneTecnico ? 'Reprogramar trabajo' : 'Asignar y programar'}</>}
+                          </button>
+                        </div>
                       )}
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
                 
                 {/* --- SECCIÓN DE CHAT DE NEGOCIACIÓN --- */}
                 <div className="cotiz-detail-chat">
@@ -1877,12 +2092,9 @@ const VistaCotizaciones = () => {
                 </div>
 
                 {rechazando && (
-                  <div style={{ padding: '15px', background: '#ffebee', borderRadius: '8px', marginTop: '15px' }}>
-                    <label style={{ fontWeight: 'bold', color: '#b71c1c', display: 'block', marginBottom: '8px' }}>
-                      Motivo del rechazo:
-                    </label>
-                    <textarea 
-                      style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ffcdd2', outline: 'none' }}
+                  <div className="cd-reject-box">
+                    <label>Motivo del rechazo</label>
+                    <textarea
                       rows="3"
                       placeholder="Escribe por qué rechazas la cotización..."
                       value={motivoRechazo}
@@ -2103,60 +2315,57 @@ const VistaCotizaciones = () => {
                   
                   {/* SECCIÓN ESPECIAL ADMIN: ACCIONES DE GENERACIÓN / DERIVACIÓN */}
                   {!esCliente && !esTecnico && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px', width: '100%', marginBottom: '2px' }}>
-                      {cotizacionSeleccionada.created_by_role === 'Técnico' && (
-                        <button 
-                          className="btn-modal-action-premium" 
-                          style={{ 
-                            background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', 
-                            color: 'white', 
-                            width: '100%', 
-                            minHeight: '42px', 
-                            padding: '10px 16px', 
-                            boxShadow: '0 4px 14px rgba(234, 88, 12, 0.3)',
-                            fontSize: '0.88rem'
-                          }} 
-                          onClick={() => {
-                            setCotizacionParaAsignar(cotizacionSeleccionada);
-                            setCotizacionSeleccionada(null);
-                            setShowCreateModal(true);
-                          }}
-                        >
-                          🛠️ GENERAR COTIZACIÓN A CLIENTE
-                        </button>
-                      )}
-
-                      {(() => {
-                        const cotHija = cotizaciones.find(c => String(c.parent_id) === String(cotizacionSeleccionada.id));
-                        if (cotHija) {
-                          return (
-                            <button 
-                              className="btn-modal-action-premium" 
-                              style={{ 
-                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 
-                                color: 'white', 
-                                width: '100%', 
-                                minHeight: '42px', 
-                                padding: '10px 16px', 
-                                boxShadow: '0 4px 14px rgba(59, 130, 246, 0.3)',
-                                fontSize: '0.88rem'
-                              }} 
+                    (() => {
+                      const cotHija = cotizaciones.find(c => String(c.parent_id) === String(cotizacionSeleccionada.id));
+                      const cotPadreTecnico = cotizacionSeleccionada.parent_id
+                        ? cotizaciones.find(c => String(c.id) === String(cotizacionSeleccionada.parent_id) && c.created_by_role === 'Técnico')
+                        : null;
+                      const esPropuestaTecnico = cotizacionSeleccionada.created_by_role === 'Técnico';
+                      if (!esPropuestaTecnico && !cotHija && !cotPadreTecnico) return null;
+                      return (
+                        <div className="cd-btn-row">
+                          {esPropuestaTecnico && !cotHija && (
+                            <button
+                              type="button"
+                              className="cd-btn cd-btn--primary"
+                              onClick={() => {
+                                setCotizacionParaAsignar({ ...cotizacionSeleccionada, isRecotizacionTecnico: true });
+                                setCotizacionSeleccionada(null);
+                                setShowCreateModal(true);
+                              }}
+                            >
+                              <FilePlus size={17} /> Generar recotización
+                            </button>
+                          )}
+                          {cotHija && (
+                            <button
+                              type="button"
+                              className="cd-btn cd-btn--info"
                               onClick={() => setCotizacionSeleccionada(cotHija)}
                             >
-                              👁️ VER COTIZACIÓN NUEVA O ACTUALIZADA
+                              <Eye size={17} /> {esPropuestaTecnico ? 'Ver recotización de la empresa' : 'Ver cotización nueva o actualizada'}
                             </button>
-                          );
-                        }
-                        return null;
-                      })()}
-                    </div>
+                          )}
+                          {cotPadreTecnico && (
+                            <button
+                              type="button"
+                              className="cd-btn cd-btn--ghost"
+                              onClick={() => setCotizacionSeleccionada(cotPadreTecnico)}
+                            >
+                              <Wrench size={17} /> Ver propuesta del técnico
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()
                   )}
 
                   {/* Seccion de Recotización / Opciones de Versión V2 */}
                   {!esCliente && (cotizacionSeleccionada.status?.toLowerCase().includes('recotiza') || cotizacionSeleccionada.estado?.toLowerCase().includes('recotiza') || cotizacionSeleccionada.recotizacionSolicitada) && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginBottom: '6px', background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)', padding: '12px 14px', borderRadius: '10px', border: '1.5px solid #fed7aa', boxShadow: '0 3px 10px rgba(249, 115, 22, 0.08)' }}>
-                      <div style={{ color: '#c2410c', fontSize: '0.86rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <RefreshCw size={16} className="spin-slow" /> El cliente solicitó recotizar este servicio por caducidad.
+                    <div className="cd-recot">
+                      <div className="cd-recot-head">
+                        <span className="cd-banner-icon"><RefreshCw size={16} className="spin-slow" /></span>
+                        El cliente solicitó recotizar este servicio por caducidad.
                       </div>
 
                       {(() => {
@@ -2201,18 +2410,10 @@ const VistaCotizaciones = () => {
 
                         if (esDelTecnico) {
                           return (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '8px', width: '100%' }}>
-                              <button 
-                                className="btn-modal-action-premium" 
-                                style={{ 
-                                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', 
-                                  color: 'white', 
-                                  padding: '10px 14px', 
-                                  minHeight: '40px', 
-                                  fontSize: '0.85rem',
-                                  fontWeight: '800',
-                                  boxShadow: '0 3px 10px rgba(2, 132, 199, 0.3)'
-                                }}
+                            <div className="cd-btn-row">
+                              <button
+                                type="button"
+                                className="cd-btn cd-btn--info"
                                 onClick={() => handleSolicitarRecotizacionATecnico({
                                   ...cotizacionSeleccionada,
                                   tecnico: displayNombreTecnico,
@@ -2220,19 +2421,11 @@ const VistaCotizaciones = () => {
                                   tecnico_user_id: tecnicoId
                                 })}
                               >
-                                📩 REENVIAR A TÉCNICO ({displayNombreTecnico})
+                                <Forward size={17} /> Reenviar a técnico ({displayNombreTecnico})
                               </button>
-                              <button 
-                                className="btn-modal-action-premium" 
-                                style={{ 
-                                  background: 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)', 
-                                  color: 'white', 
-                                  padding: '10px 14px', 
-                                  minHeight: '40px', 
-                                  fontSize: '0.85rem',
-                                  fontWeight: '800',
-                                  boxShadow: '0 3px 10px rgba(234, 88, 12, 0.35)'
-                                }}
+                              <button
+                                type="button"
+                                className="cd-btn cd-btn--primary"
                                 onClick={() => {
                                   const target = cotizacionSeleccionada;
                                   setCotizacionSeleccionada(null);
@@ -2240,25 +2433,16 @@ const VistaCotizaciones = () => {
                                   setShowCreateModal(true);
                                 }}
                               >
-                                ✏️ RECOTIZAR DIRECTO (CREAR V2)
+                                <Pencil size={16} /> Recotizar directo (crear V2)
                               </button>
                             </div>
                           );
                         }
 
                         return (
-                          <button 
-                            className="btn-modal-action-premium" 
-                            style={{ 
-                              background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)', 
-                              color: 'white', 
-                              padding: '10px 16px', 
-                              minHeight: '42px', 
-                              width: '100%', 
-                              fontSize: '0.9rem', 
-                              fontWeight: '800', 
-                              boxShadow: '0 3px 10px rgba(234, 88, 12, 0.35)' 
-                            }}
+                          <button
+                            type="button"
+                            className="cd-btn cd-btn--primary"
                             onClick={() => {
                               const target = cotizacionSeleccionada;
                               setCotizacionSeleccionada(null);
@@ -2266,7 +2450,7 @@ const VistaCotizaciones = () => {
                               setShowCreateModal(true);
                             }}
                           >
-                            ✏️ RECOTIZAR Y CREAR VERSIÓN 2 (V2)
+                            <Pencil size={16} /> Recotizar y crear versión 2 (V2)
                           </button>
                         );
                       })()}
@@ -2275,62 +2459,30 @@ const VistaCotizaciones = () => {
 
                   {/* Si el usuario es Técnico y la cotización requiere recotización */}
                   {esTecnico && (cotizacionSeleccionada.status?.toLowerCase().includes('recotiza') || cotizacionSeleccionada.recotizacionSolicitada) && (
-                    <div style={{ width: '100%', marginBottom: '8px' }}>
-                      <button 
-                        className="btn-modal-action-premium" 
-                        style={{ 
-                          background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)', 
-                          color: 'white', 
-                          padding: '10px 16px', 
-                          minHeight: '42px', 
-                          width: '100%', 
-                          fontSize: '0.9rem', 
-                          fontWeight: '800', 
-                          boxShadow: '0 3px 10px rgba(234, 88, 12, 0.35)' 
-                        }}
-                        onClick={() => {
-                          const target = cotizacionSeleccionada;
-                          setCotizacionSeleccionada(null);
-                          setCotizacionParaAsignar({ ...target, isRecotizacionV2: true });
-                          setShowCreateModal(true);
-                        }}
-                      >
-                        <RefreshCw size={16} /> ✏️ RECOTIZAR Y CREAR VERSIÓN 2 (V2)
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      className="cd-btn cd-btn--primary"
+                      onClick={() => {
+                        const target = cotizacionSeleccionada;
+                        setCotizacionSeleccionada(null);
+                        setCotizacionParaAsignar({ ...target, isRecotizacionV2: true });
+                        setShowCreateModal(true);
+                      }}
+                    >
+                      <RefreshCw size={16} /> Recotizar y crear versión 2 (V2)
+                    </button>
                   )}
 
-                  {/* ROW: Validación de Pago (Solo Admin) */}
-                  {!esCliente && !esTecnico && cotizacionSeleccionada.status === 'Pago en Revisión' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%', marginBottom: '8px' }}>
-                      {cotizacionSeleccionada.payment_receipt_path && (
-                        <button 
-                          className="btn-modal-action-premium" 
-                          style={{ background: '#334155', color: 'white', minHeight: '40px', fontSize: '0.86rem' }} 
-                          onClick={() => verPantallaCompleta(cotizacionSeleccionada.payment_receipt_path)}
-                        >
-                          👁️ VER COMPROBANTE
-                        </button>
-                      )}
-                      <button 
-                        className="btn-modal-action-premium" 
-                        style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', minHeight: '40px', fontSize: '0.88rem', fontWeight: '800', boxShadow: '0 3px 10px rgba(16, 185, 129, 0.3)' }} 
-                        onClick={handleValidarPago}
-                        disabled={procesando}
-                      >
-                        ✅ VALIDAR PAGO
-                      </button>
-                    </div>
-                  )}
+                  {/* Validación de pago: vive en la tarjeta "Comprobante de pago" del cuerpo */}
 
                   {/* Si está aprobada/aceptada, mostrar botón de pagar gigante */}
                   {esCliente && (cotizacionSeleccionada.status === 'Aprobado' || cotizacionSeleccionada.status === 'Aceptada') && (
-                    <button 
-                      className="btn-modal-action-premium" 
-                      style={{ background: 'linear-gradient(135deg, #0284c7 0%, #009ee3 100%)', color: 'white', width: '100%', padding: '12px', fontSize: '1rem', fontWeight: '800', marginBottom: '8px', minHeight: '46px', boxShadow: '0 4px 14px rgba(0, 158, 227, 0.35)' }} 
+                    <button
+                      type="button"
+                      className="cd-btn cd-btn--mp"
                       onClick={() => setShowPagoModal(true)}
                     >
-                      PAGAR CON <img src={mpLogo} alt="MercadoPago" style={{ height: '22px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+                      Pagar con <img src={mpLogo} alt="MercadoPago" style={{ height: '22px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
                     </button>
                   )}
 
@@ -2338,51 +2490,25 @@ const VistaCotizaciones = () => {
                   {(esCliente || (!esCliente && !esTecnico && cotizacionSeleccionada.created_by_role === 'Técnico')) && 
                     (cotizacionSeleccionada.status === 'Pendiente' || cotizacionSeleccionada.status === 'En proceso' || cotizacionSeleccionada.status?.includes('Admin') || cotizacionSeleccionada.status === 'Rechazado') && 
                     !rechazando && (
-                      <div style={{ display: 'grid', gridTemplateColumns: cotizacionSeleccionada.status !== 'Rechazado' ? '1fr 1fr' : '1fr', gap: '8px', width: '100%', marginBottom: '8px' }}>
+                      <div className="cd-btn-row">
                         {(cotizacionSeleccionada.status !== 'Rechazado' || esCliente) && (
-                          <button 
-                            className="btn-modal-action-premium" 
-                            style={{ 
-                              background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)', 
-                              color: 'white', 
-                              width: '100%', 
-                              minHeight: '42px', 
-                              padding: '8px 14px', 
-                              fontWeight: '800', 
-                              fontSize: '0.9rem', 
-                              boxShadow: '0 3px 10px rgba(22, 163, 74, 0.3)',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px'
-                            }} 
+                          <button
+                            type="button"
+                            className="cd-btn cd-btn--success"
                             onClick={(e) => handleAceptarYEnviarAlCarrito(cotizacionSeleccionada, e)}
                             disabled={procesando}
                           >
-                            <CheckCircle size={17} /> ✓ ACEPTAR
+                            <CheckCircle size={17} /> Aceptar
                           </button>
                         )}
 
                         {cotizacionSeleccionada.status !== 'Rechazado' && (
-                          <button 
-                            className="btn-modal-action-premium" 
-                            style={{ 
-                              background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', 
-                              color: 'white', 
-                              width: '100%', 
-                              minHeight: '42px', 
-                              padding: '8px 14px', 
-                              fontWeight: '700', 
-                              fontSize: '0.9rem', 
-                              boxShadow: '0 3px 10px rgba(220, 38, 38, 0.25)',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px'
-                            }} 
+                          <button
+                            type="button"
+                            className="cd-btn cd-btn--danger-soft"
                             onClick={() => setRechazando(true)}
                           >
-                            ✕ RECHAZAR
+                            <X size={17} /> Rechazar
                           </button>
                         )}
                       </div>
@@ -2390,82 +2516,55 @@ const VistaCotizaciones = () => {
                   }
 
                   {(esCliente || (!esCliente && !esTecnico && cotizacionSeleccionada.created_by_role === 'Técnico')) && rechazando && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%', marginBottom: '8px' }}>
-                      <button 
-                        className="btn-modal-action-premium" 
-                        style={{ background: '#64748b', color: 'white', width: '100%', minHeight: '40px', fontWeight: '700', fontSize: '0.85rem' }} 
+                    <div className="cd-btn-row">
+                      <button
+                        type="button"
+                        className="cd-btn cd-btn--ghost"
                         onClick={() => { setRechazando(false); setMotivoRechazo(''); }}
                       >
-                        CANCELAR
+                        Cancelar
                       </button>
-                      <button 
-                        className="btn-modal-action-premium" 
-                        style={{ 
-                          background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', 
-                          color: 'white', 
-                          width: '100%', 
-                          minHeight: '40px',
-                          fontWeight: '800',
-                          fontSize: '0.85rem',
-                          boxShadow: '0 3px 10px rgba(220, 38, 38, 0.3)',
-                          opacity: (procesando || !motivoRechazo.trim()) ? 0.5 : 1,
-                          cursor: (procesando || !motivoRechazo.trim()) ? 'not-allowed' : 'pointer'
-                        }} 
+                      <button
+                        type="button"
+                        className="cd-btn cd-btn--danger"
                         onClick={() => procesarCotizacion('Rechazado')}
                         disabled={procesando || !motivoRechazo.trim()}
                       >
-                        CONFIRMAR RECHAZO
+                        <XCircle size={17} /> Confirmar rechazo
                       </button>
                     </div>
                   )}
 
                   {esTecnico && !cotizacionSeleccionada.is_network_quote && (
-                    <button 
-                      className="btn-modal-action-premium" 
-                      style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', width: '100%', minHeight: '40px', fontWeight: '800', marginBottom: '6px', fontSize: '0.88rem', boxShadow: '0 3px 10px rgba(59, 130, 246, 0.3)' }} 
+                    <button
+                      type="button"
+                      className="cd-btn cd-btn--info"
                       onClick={() => {
                         setCotizacionParaEditarTecnico(cotizacionSeleccionada);
                         setCotizacionSeleccionada(null);
                       }}
                     >
-                      ✏️ EDITAR MI COTIZACIÓN
+                      <Pencil size={16} /> Editar mi cotización
                     </button>
                   )}
 
                   {/* Fila de Acciones Finales: VER PDF + CERRAR */}
-                  <div style={{ display: 'grid', gridTemplateColumns: cotizacionSeleccionada.type !== 'archivo' ? '1fr 1fr' : '1fr', gap: '8px', width: '100%', marginTop: '2px' }}>
+                  <div className="cd-btn-row cd-btn-row--secondary">
                     {cotizacionSeleccionada.type !== 'archivo' && (
-                      <button 
-                        className="btn-modal-action-premium" 
-                        style={{ 
-                          background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', 
-                          color: 'white', 
-                          minHeight: '42px', 
-                          padding: '8px 14px', 
-                          fontWeight: '800', 
-                          fontSize: '0.9rem',
-                          boxShadow: '0 3px 10px rgba(234, 88, 12, 0.3)'
-                        }} 
+                      <button
+                        type="button"
+                        className="cd-btn cd-btn--ghost cd-btn--pdf"
                         onClick={handleImprimirPDF}
                       >
-                        <FileText size={18} />
-                        VER PDF
+                        <FileText size={17} /> Ver PDF
                       </button>
                     )}
-                    <button 
-                      className="btn-modal-close-premium" 
-                      style={{
-                        minHeight: '42px',
-                        padding: '8px 14px',
-                        background: 'rgba(255, 255, 255, 0.75)',
-                        color: '#0f172a',
-                        border: '1.5px solid rgba(15, 23, 42, 0.12)',
-                        fontSize: '0.9rem',
-                        fontWeight: '800'
-                      }}
+                    <button
+                      type="button"
+                      className="cd-btn cd-btn--ghost"
                       onClick={() => { setCotizacionSeleccionada(null); setRechazando(false); setMotivoRechazo(''); }}
                     >
-                      CERRAR
+                      Cerrar
                     </button>
                   </div>
             </div>
