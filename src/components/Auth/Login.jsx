@@ -122,24 +122,39 @@ const LoginAgente = () => {
   const [showWelcome, setShowWelcome] = useState(true);
   const [welcomeSlide, setWelcomeSlide] = useState(0);
   const [welcomeTouchStartX, setWelcomeTouchStartX] = useState(null);
+  // Arrastre: el texto sigue al dedo; al soltar entra el siguiente desde el lado correcto
+  const [welcomeDragX, setWelcomeDragX] = useState(0);
+  const [welcomeDir, setWelcomeDir] = useState("next");
+
+  const goToWelcomeSlide = (idx) => {
+    if (idx < 0 || idx >= WELCOME_SLIDES.length || idx === welcomeSlide) return;
+    setWelcomeDir(idx > welcomeSlide ? "next" : "prev");
+    setWelcomeSlide(idx);
+    // Pequeña vibración en Android para que el cambio se sienta
+    try { navigator.vibrate?.(8); } catch { /* sin soporte */ }
+  };
 
   const handleWelcomeTouchStart = (e) => {
     setWelcomeTouchStartX(e.touches[0].clientX);
   };
 
+  const handleWelcomeTouchMove = (e) => {
+    if (welcomeTouchStartX === null) return;
+    let delta = e.touches[0].clientX - welcomeTouchStartX;
+    // En los extremos se resiste (efecto liga) para indicar que no hay más
+    const atEdge =
+      (delta > 0 && welcomeSlide === 0) ||
+      (delta < 0 && welcomeSlide === WELCOME_SLIDES.length - 1);
+    if (atEdge) delta *= 0.3;
+    setWelcomeDragX(delta);
+  };
+
   const handleWelcomeTouchEnd = (e) => {
     if (welcomeTouchStartX === null) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const deltaX = touchEndX - welcomeTouchStartX;
-    if (deltaX < -40) {
-      if (welcomeSlide < WELCOME_SLIDES.length - 1) {
-        setWelcomeSlide((prev) => prev + 1);
-      }
-    } else if (deltaX > 40) {
-      if (welcomeSlide > 0) {
-        setWelcomeSlide((prev) => prev - 1);
-      }
-    }
+    const deltaX = e.changedTouches[0].clientX - welcomeTouchStartX;
+    if (deltaX < -50) goToWelcomeSlide(welcomeSlide + 1);
+    else if (deltaX > 50) goToWelcomeSlide(welcomeSlide - 1);
+    setWelcomeDragX(0);
     setWelcomeTouchStartX(null);
   };
 
@@ -628,7 +643,9 @@ const LoginAgente = () => {
         <div
           className="aiw-welcome-screen"
           onTouchStart={handleWelcomeTouchStart}
+          onTouchMove={handleWelcomeTouchMove}
           onTouchEnd={handleWelcomeTouchEnd}
+          onTouchCancel={handleWelcomeTouchEnd}
         >
           {/* Top Bar with Saltar button pinned to top right */}
           <div className="aiw-welcome-topbar">
@@ -652,18 +669,32 @@ const LoginAgente = () => {
               />
             </div>
 
-            <div className="aiw-welcome-badge">
-              <Sparkles size={14} className="aiw-welcome-badge-icon" />
-              <span>{WELCOME_SLIDES[welcomeSlide].badge}</span>
+            {/* Texto deslizable: sigue al dedo y, al cambiar, entra desde el lado correcto */}
+            <div
+              className={`aiw-welcome-drag ${welcomeTouchStartX !== null ? "is-dragging" : ""}`}
+              style={{
+                transform: `translateX(${welcomeDragX}px)`,
+                opacity: 1 - Math.min(Math.abs(welcomeDragX) / 400, 0.5),
+              }}
+            >
+              <div
+                key={welcomeSlide}
+                className={`aiw-welcome-slide aiw-enter-${welcomeDir}`}
+              >
+                <div className="aiw-welcome-badge">
+                  <Sparkles size={14} className="aiw-welcome-badge-icon" />
+                  <span>{WELCOME_SLIDES[welcomeSlide].badge}</span>
+                </div>
+
+                <h1 className="aiw-welcome-title">
+                  {WELCOME_SLIDES[welcomeSlide].title}
+                </h1>
+
+                <p className="aiw-welcome-desc">
+                  {WELCOME_SLIDES[welcomeSlide].subtitle}
+                </p>
+              </div>
             </div>
-
-            <h1 className="aiw-welcome-title">
-              {WELCOME_SLIDES[welcomeSlide].title}
-            </h1>
-
-            <p className="aiw-welcome-desc">
-              {WELCOME_SLIDES[welcomeSlide].subtitle}
-            </p>
 
             {/* Pagination Indicator Dots */}
             <div className="aiw-welcome-dots">
@@ -672,7 +703,7 @@ const LoginAgente = () => {
                   key={idx}
                   type="button"
                   className={`aiw-welcome-dot ${idx === welcomeSlide ? "active" : ""}`}
-                  onClick={() => setWelcomeSlide(idx)}
+                  onClick={() => goToWelcomeSlide(idx)}
                   aria-label={`Ir a slide ${idx + 1}`}
                 />
               ))}
@@ -686,7 +717,7 @@ const LoginAgente = () => {
               className="aiw-welcome-continue-btn"
               onClick={() => {
                 if (welcomeSlide < WELCOME_SLIDES.length - 1) {
-                  setWelcomeSlide(prev => prev + 1);
+                  goToWelcomeSlide(welcomeSlide + 1);
                 } else {
                   setShowWelcome(false);
                 }

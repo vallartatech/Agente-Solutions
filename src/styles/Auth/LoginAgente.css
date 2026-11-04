@@ -2613,3 +2613,58 @@
     transform: translateY(0);
   }
 }
+/* ══════════════════════════════════════════════════════════
+   BIENVENIDA: TEXTO DESLIZABLE
+   - Mientras arrastras, el texto sigue al dedo (sin transición).
+   - Al soltar regresa con un rebote suave.
+   - El texto nuevo entra desde el lado hacia donde avanzas,
+     escalonado: etiqueta → título → descripción.
+   ══════════════════════════════════════════════════════════ */
+.aiw-welcome-drag,
+.aiw-welcome-slide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: inherit;
+}
+
+.aiw-welcome-drag {
+  touch-action: pan-y;
+  will-change: transform;
+  transition:
+    transform 0.45s cubic-bezier(0.34, 1.4, 0.64, 1),
+    opacity 0.3s ease;
+}
+
+.aiw-welcome-drag.is-dragging {
+  transition: none;
+}
+
+.aiw-welcome-slide > * {
+  animation-duration: 0.55s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+}
+
+.aiw-enter-next > * { animation-name: aiwEnterFromRight; }
+.aiw-enter-prev > * { animation-name: aiwEnterFromLeft; }
+
+.aiw-welcome-slide > *:nth-child(1) { animation-delay: 0s; }
+.aiw-welcome-slide > *:nth-child(2) { animation-delay: 0.06s; }
+.aiw-welcome-slide > *:nth-child(3) { animation-delay: 0.12s; }
+
+@keyframes aiwEnterFromRight {
+  from { opacity: 0; transform: translateX(70px); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes aiwEnterFromLeft {
+  from { opacity: 0; transform: translateX(-70px); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aiw-welcome-drag { transition: none; }
+  .aiw-welcome-slide > * { animation: none; }
+}

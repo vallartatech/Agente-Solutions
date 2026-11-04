@@ -2694,3 +2694,197 @@
   .vcp-mobile-prop-drawer-content,
   .vcp-mobile-prop-drawer-content.is-cerrando { animation-duration: 0.01s !important; }
 }
+
+/* ══════════════════════════════════════════════════════════
+   PESTAÑA "PERFIL DE LA PROPIEDAD" (MÓVIL): LIQUID GLASS OSCURO
+   El vidrio blanco desaparecía sobre fondos claros; el gris/negro
+   translúcido se lee igual sobre fondos claros y oscuros.
+   ══════════════════════════════════════════════════════════ */
+.vcp-mobile-prop-drawer-tab {
+  background: linear-gradient(135deg,
+      rgba(15, 23, 42, 0.62) 0%,
+      rgba(30, 41, 59, 0.50) 50%,
+      rgba(15, 23, 42, 0.60) 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.28),
+    inset 0 -1px 1.5px rgba(0, 0, 0, 0.30) !important;
+}
+
+.vcp-mobile-prop-drawer-tab:hover,
+.vcp-mobile-prop-drawer-tab.is-open {
+  background: linear-gradient(135deg,
+      rgba(15, 23, 42, 0.74) 0%,
+      rgba(30, 41, 59, 0.62) 50%,
+      rgba(15, 23, 42, 0.72) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.34) !important;
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.40),
+    inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
+}
+
+.vcp-mobile-prop-drawer-tab .vcp-drawer-tab-btn {
+  background: rgba(255, 255, 255, 0.10) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  padding: 6px 10px !important;
+}
+
+.vcp-mobile-prop-drawer-tab:hover .vcp-drawer-tab-btn,
+.vcp-mobile-prop-drawer-tab.is-open .vcp-drawer-tab-btn {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* El título cede espacio para que quepan SERVICIO + DETALLES */
+.vcp-mobile-prop-drawer-tab .vcp-drawer-tab-main {
+  flex: 1 1 auto !important;
+}
+
+.vcp-mobile-prop-drawer-tab .vcp-drawer-tab-badge span {
+  white-space: normal;
+  line-height: 1.15;
+}
+
+/* Botón naranja "+ SERVICIO" junto a "DETALLES" */
+.vcp-drawer-tab-service {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(254, 215, 170, 0.70);
+  background: linear-gradient(135deg, rgba(242, 101, 34, 0.92) 0%, rgba(194, 65, 12, 0.85) 100%);
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.70rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(242, 101, 34, 0.40), inset 0 1px 1.5px rgba(255, 255, 255, 0.55);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vcp-drawer-tab-service:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(242, 101, 34, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.75);
+}
+
+.vcp-drawer-tab-service:active {
+  transform: scale(0.97);
+}
+
+/* En móvil el botón ya vive en la pestaña: no repetirlo al fondo del panel */
+.vcp-property-profile-inner.is-mobile-inner .vcp-actions-grid {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   FLECHA PARA OCULTAR / VER LA INFORMACIÓN DE LA PROPIEDAD
+   ══════════════════════════════════════════════════════════ */
+.vcp-info-toggle {
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.vcp-panel-edit-text-btn + .vcp-info-toggle {
+  margin-left: 0;
+}
+
+.vcp-info-toggle:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.65);
+}
+
+.vcp-info-toggle svg {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Abierto: flecha hacia arriba (para ocultar). Cerrado: hacia abajo (para ver) */
+.vcp-info-toggle.is-open svg {
+  transform: rotate(180deg);
+}
+
+.vcp-info-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+
+.vcp-info-collapse.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.vcp-info-collapse > .vcp-fields-list {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vcp-info-toggle svg,
+  .vcp-info-collapse { transition: none; }
+}
+
+/* Sin propiedad registrada: el botón se ve pero atenuado */
+.vcp-drawer-tab-service.is-disabled {
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+/* "+ SERVICIO" y "DETALLES" con el mismo tamaño exacto */
+.vcp-mobile-prop-drawer-tab .vcp-drawer-tab-service,
+.vcp-mobile-prop-drawer-tab .vcp-drawer-tab-btn {
+  box-sizing: border-box !important;
+  height: 30px !important;
+  min-width: 98px !important;
+  padding: 0 12px !important;
+  justify-content: center !important;
+  font-size: 0.70rem !important;
+  line-height: 1 !important;
+  border-width: 1.5px !important;
+  border-radius: 20px !important;
+}
+
+.vcp-mobile-prop-drawer-tab .vcp-drawer-tab-service svg,
+.vcp-mobile-prop-drawer-tab .vcp-drawer-tab-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+/* Flecha de información: forzar círculo con ícono visible
+   (un estilo global de button le metía relleno y aplastaba el ícono) */
+.vcp-info-toggle {
+  box-sizing: border-box !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+}
+
+.vcp-info-toggle svg {
+  flex-shrink: 0 !important;
+  width: 18px !important;
+  height: 18px !important;
+  stroke: #ffffff !important;
+  display: block !important;
+}

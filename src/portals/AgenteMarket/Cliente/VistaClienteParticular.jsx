@@ -113,6 +113,7 @@ const VistaClienteParticular = () => {
   const [isPlanExpanded, setIsPlanExpanded] = useState(false); // Oculto por defecto
   const [isMobilePropProfileOpen, setIsMobilePropProfileOpen] = useState(false); // Pestaña colapsable en móvil
   const [cerrandoPerfil, setCerrandoPerfil] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false); // Datos ocultos por defecto; la flecha los muestra
 
   // Al guardar se deja terminar la animación antes de desmontar el panel
   const alternarPerfilMovil = () => {
@@ -625,9 +626,21 @@ const VistaClienteParticular = () => {
             <span>EDITAR</span>
           </button>
         )}
+        {/* Flecha: oculta o muestra los datos (cliente, CURP, dirección, GPS) */}
+        <button
+          type="button"
+          className={`vcp-info-toggle ${isInfoOpen ? 'is-open' : ''}`}
+          onClick={() => setIsInfoOpen(v => !v)}
+          aria-expanded={isInfoOpen}
+          aria-label={isInfoOpen ? 'Ocultar información de la propiedad' : 'Ver información de la propiedad'}
+          title={isInfoOpen ? 'Ocultar información' : 'Ver información'}
+        >
+          <ChevronDown size={16} />
+        </button>
       </div>
 
-      {/* Fields List */}
+      {/* Fields List (colapsable con la flecha del encabezado) */}
+      <div className={`vcp-info-collapse ${isInfoOpen ? 'is-open' : ''}`}>
       <div className="vcp-fields-list">
         {/* Cliente Asociado */}
         <div className="vcp-field-item">
@@ -692,6 +705,7 @@ const VistaClienteParticular = () => {
             )}
           </div>
         </div>
+      </div>
       </div>
 
       {/* ── 2. MIDDLE: TABLERO DE CONTROL WIDGET ── */}
@@ -923,6 +937,22 @@ const VistaClienteParticular = () => {
                     <span>PERFIL DE LA PROPIEDAD</span>
                   </div>
                 </div>
+
+                {/* Solicitar servicio a la mano, junto a "Detalles" (en móvil ya no queda hasta abajo) */}
+                {/* Siempre visible; sin propiedad se ve atenuado y lleva a registrar una */}
+                <button
+                  type="button"
+                  className={`vcp-drawer-tab-service ${hasProperties ? '' : 'is-disabled'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (hasProperties) setShowModalSolicitarServicio(true);
+                    else handleAgregarPropiedad();
+                  }}
+                  title={hasProperties ? 'Crear o Solicitar un Nuevo Servicio' : 'Primero agrega una propiedad para solicitar servicios'}
+                >
+                  <Plus size={14} />
+                  <span>SERVICIO</span>
+                </button>
 
                 <div className="vcp-drawer-tab-btn">
                   <span>DETALLES</span>
