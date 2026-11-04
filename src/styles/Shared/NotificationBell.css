@@ -573,3 +573,108 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ══════════════════════════════════════════════════════════
+   ANIMACIÓN DE APERTURA / CIERRE ("sale de la campana")
+   - Abre: el panel nace desde el centro de la campana (--nb-ox/--nb-oy),
+     se infla con un pequeño rebote y se aclara de un desenfoque.
+   - Las notificaciones caen en cascada, una tras otra.
+   - Cierra: se encoge de regreso hacia la campana.
+   - La campana se mece en cada toque.
+   ══════════════════════════════════════════════════════════ */
+.nb-card-popover.nb-genie {
+  transform-origin: var(--nb-ox, 90%) var(--nb-oy, -20px);
+  animation: nbGenieIn 0.52s cubic-bezier(0.34, 1.32, 0.64, 1) both;
+  will-change: transform, opacity, filter;
+}
+
+.nb-card-popover.nb-genie.is-cerrando {
+  animation: nbGenieOut 0.28s cubic-bezier(0.55, 0, 0.75, 0.25) both;
+  pointer-events: none;
+}
+
+@keyframes nbGenieIn {
+  0%   { opacity: 0; transform: scale(0.12, 0.06); border-radius: 40px; filter: blur(6px); }
+  40%  { opacity: 1; filter: blur(0); }
+  70%  { transform: scale(1.015, 1.02); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+@keyframes nbGenieOut {
+  0%   { opacity: 1; transform: scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: scale(0.1, 0.05); filter: blur(4px); }
+}
+
+/* Contenido: aparece un instante después de que el panel se infla */
+.nb-card-popover.nb-genie .nb-header,
+.nb-card-popover.nb-genie .nb-push-banner,
+.nb-card-popover.nb-genie .nb-tabs-row,
+.nb-card-popover.nb-genie .nb-empty-state,
+.nb-card-popover.nb-genie .nb-footer {
+  animation: nbContenidoIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.14s both;
+}
+
+/* Cascada de notificaciones */
+.nb-card-popover.nb-genie .nb-item-card {
+  animation: nbItemIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(0.18s + var(--nb-i, 0) * 0.05s);
+}
+
+@keyframes nbContenidoIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes nbItemIn {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Al cerrar, el contenido se desvanece rápido para que el encogido se vea limpio */
+.nb-card-popover.nb-genie.is-cerrando .nb-header,
+.nb-card-popover.nb-genie.is-cerrando .nb-push-banner,
+.nb-card-popover.nb-genie.is-cerrando .nb-tabs-row,
+.nb-card-popover.nb-genie.is-cerrando .nb-empty-state,
+.nb-card-popover.nb-genie.is-cerrando .nb-footer,
+.nb-card-popover.nb-genie.is-cerrando .nb-item-card {
+  animation: nbContenidoOut 0.14s ease both;
+}
+
+@keyframes nbContenidoOut {
+  to { opacity: 0; }
+}
+
+/* Fondo: también se va suave al cerrar */
+.nb-backdrop.is-cerrando {
+  animation: nbBackdropOut 0.28s ease both;
+}
+
+@keyframes nbBackdropOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* La campana se mece */
+.nb-trigger-btn.nb-sonando .nb-trigger-icon {
+  transform-origin: 50% 10%;
+  animation: nbCampana 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes nbCampana {
+  0%   { transform: rotate(0); }
+  20%  { transform: rotate(18deg); }
+  40%  { transform: rotate(-14deg); }
+  60%  { transform: rotate(9deg); }
+  80%  { transform: rotate(-4deg); }
+  100% { transform: rotate(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-card-popover.nb-genie,
+  .nb-card-popover.nb-genie.is-cerrando,
+  .nb-card-popover.nb-genie *,
+  .nb-trigger-btn.nb-sonando .nb-trigger-icon {
+    animation-duration: 0.01s !important;
+    animation-delay: 0s !important;
+  }
+}

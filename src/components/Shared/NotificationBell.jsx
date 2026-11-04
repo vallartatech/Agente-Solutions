@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -306,12 +306,47 @@ const NotificationBell = ({ triggerClassName = '' }) => {
     }
   };
 
+  // ── Animación: el panel sale de la campana y regresa a ella al cerrar ──
+  const [cerrando, setCerrando] = useState(false);
+  const [sonando, setSonando] = useState(false);
+  const popoverRef = useRef(null);
+  const cierreTimerRef = useRef(null);
+
+  const cerrarPanel = () => {
+    if (!isOpen || cerrando) return;
+    setCerrando(true);
+    clearTimeout(cierreTimerRef.current);
+    cierreTimerRef.current = setTimeout(() => {
+      setIsOpen(false);
+      setCerrando(false);
+    }, 280);
+  };
+
+  useEffect(() => () => clearTimeout(cierreTimerRef.current), []);
+
+  // Punto de origen de la animación = centro de la campana, medido sobre el panel
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    const pop = popoverRef.current;
+    const btn = triggerBtnRef.current;
+    if (!pop || !btn) return;
+    const p = pop.getBoundingClientRect();
+    const b = btn.getBoundingClientRect();
+    pop.style.setProperty('--nb-ox', `${b.left + b.width / 2 - p.left}px`);
+    pop.style.setProperty('--nb-oy', `${b.top + b.height / 2 - p.top}px`);
+  }, [isOpen, popoverStyle]);
+
   const handleToggle = (e) => {
     e.stopPropagation();
-    if (!isOpen) {
-      updatePosition();
+    // La campana se mece en cada toque
+    setSonando(false);
+    requestAnimationFrame(() => setSonando(true));
+    if (isOpen) {
+      cerrarPanel();
+      return;
     }
-    setIsOpen((prev) => !prev);
+    updatePosition();
+    setIsOpen(true);
   };
 
   useEffect(() => {
@@ -437,7 +472,8 @@ const NotificationBell = ({ triggerClassName = '' }) => {
       <button
         type="button"
         ref={triggerBtnRef}
-        className={`nb-trigger-btn ${triggerClassName} ${isOpen ? 'active' : ''}`.trim()}
+        className={`nb-trigger-btn ${triggerClassName} ${isOpen && !cerrando ? 'active' : ''} ${sonando ? 'nb-sonando' : ''}`.trim()}
+        onAnimationEnd={() => setSonando(false)}
         onClick={handleToggle}
         title="Notificaciones"
         aria-label="Notificaciones"
@@ -455,15 +491,16 @@ const NotificationBell = ({ triggerClassName = '' }) => {
         <>
           {/* Backdrop invisible / translúcido para cerrar al hacer tap fuera */}
           <div
-            className="nb-backdrop"
+            className={`nb-backdrop ${cerrando ? 'is-cerrando' : ''}`}
             onClick={(e) => {
               e.stopPropagation();
-              setIsOpen(false);
+              cerrarPanel();
             }}
           />
 
           <div
-            className="nb-card-popover animate-popover-in"
+            ref={popoverRef}
+            className={`nb-card-popover nb-genie ${cerrando ? 'is-cerrando' : ''}`}
             style={popoverStyle}
             onClick={(e) => e.stopPropagation()}
           >
@@ -475,7 +512,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
                 className="nb-close-btn"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsOpen(false);
+                  cerrarPanel();
                 }}
                 title="Cerrar"
                 aria-label="Cerrar notificaciones"
@@ -556,7 +593,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
                   <p className="nb-empty-desc">No hay notificaciones pendientes en esta categoría.</p>
                 </div>
               ) : (
-                filteredNotifications.map((notif) => {
+                filteredNotifications.map((notif, idx) => {
                   const meta = getNotificationMeta(notif);
                   const titleText = notif.data?.title || notif.title || notif.titulo || notif.data?.message || notif.message || notif.mensaje || 'Notificación del sistema';
                   const timeText = formatNotifTime(notif.created_at || notif.fecha);
@@ -565,6 +602,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
                     <div
                       key={notif.id}
                       className="nb-item-card"
+                      style={{ '--nb-i': Math.min(idx, 8) }}
                       onClick={() => handleNotificationClick(notif)}
                     >
                       {/* Left Circular Icon with Orange Dot */}

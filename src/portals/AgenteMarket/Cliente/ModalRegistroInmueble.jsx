@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import SelectorUbicacionMapa from '../../../components/Shared/SelectorUbicacionMapa';
 import '../../../styles/AgenteMarket/Cliente/ModalRegistroInmueble.css';
+import useCierreAnimado from '../../../utils/useCierreAnimado';
 
 const TIPOS_INMUEBLE = [
   { value: 'Casa', label: 'CASA' },
@@ -29,6 +30,9 @@ const TIPOS_INMUEBLE = [
 ];
 
 const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
+  // Abre desde donde se tocó (o sube como hoja en celular) y se va animado al cerrar
+  const { cerrando: mriCerrando, cerrar: cerrarAnimado, ventanaRef: mriVentanaRef } = useCierreAnimado(isOpen, onClose);
+
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -171,9 +175,10 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
   };
 
   return createPortal(
-    <div className="mri-overlay" onClick={onClose}>
+    <div className={`mri-overlay ${mriCerrando ? 'is-cerrando' : ''}`} onClick={cerrarAnimado}>
       <div 
-        className="mri-card" 
+        ref={mriVentanaRef}
+        className={`mri-card mri-anim ${mriCerrando ? 'is-cerrando' : ''}`}
         onClick={e => e.stopPropagation()}
         style={{
           transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
@@ -200,7 +205,7 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
             <span className="mri-tag">NUEVA PROPIEDAD</span>
             <h2 className="mri-title">Registrar Propiedad</h2>
           </div>
-          <button className="mri-close-btn" onClick={onClose} title="Cerrar ventana" aria-label="Cerrar ventana" type="button">
+          <button className="mri-close-btn" onClick={cerrarAnimado} title="Cerrar ventana" aria-label="Cerrar ventana" type="button">
             <X size={18} color="#ffffff" strokeWidth={2.6} />
           </button>
         </div>

@@ -18,6 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import SelectorUbicacionMapa from './SelectorUbicacionMapa';
 import '../../styles/AgenteMarket/Cliente/ModalRegistroInmueble.css';
 import '../../styles/Shared/LiquidGlass.css';
+import useCierreAnimado from '../../utils/useCierreAnimado';
 
 const TIPOS_INMUEBLE = [
   { value: 'Casa', label: 'CASA' },
@@ -66,6 +67,9 @@ const formularioInicial = (property) => {
  * Con `property` entra en modo edición: precarga sus datos y guarda en /propiedades/{id}/update.
  */
 const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser, property = null }) => {
+  // Abre desde donde se tocó (o sube como hoja en celular) y se va animado al cerrar
+  const { cerrando: mriCerrando, cerrar: cerrarAnimado, ventanaRef: mriVentanaRef } = useCierreAnimado(isOpen, onClose);
+
   const esEdicion = Boolean(property?.id);
   const { user: authUser } = useAuth();
   const user = propUser || authUser || (() => {
@@ -236,9 +240,10 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser, pro
   };
 
   return createPortal(
-    <div className="mri-overlay" onClick={onClose}>
+    <div className={`mri-overlay ${mriCerrando ? 'is-cerrando' : ''}`} onClick={cerrarAnimado}>
       <div 
-        className="mri-card" 
+        ref={mriVentanaRef}
+        className={`mri-card mri-anim ${mriCerrando ? 'is-cerrando' : ''}`}
         onClick={e => e.stopPropagation()}
         style={{
           transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
@@ -265,7 +270,7 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user: propUser, pro
             <span className="mri-tag">{esEdicion ? 'EDITAR PROPIEDAD' : 'NUEVA PROPIEDAD'}</span>
             <h2 className="mri-title">{esEdicion ? (property.nombre_propiedad || 'Editar Propiedad') : 'Registrar Propiedad'}</h2>
           </div>
-          <button className="mri-close-btn" onClick={onClose} title="Cerrar ventana" aria-label="Cerrar ventana" type="button">
+          <button className="mri-close-btn" onClick={cerrarAnimado} title="Cerrar ventana" aria-label="Cerrar ventana" type="button">
             <X size={18} color="#ffffff" strokeWidth={2.6} />
           </button>
         </div>

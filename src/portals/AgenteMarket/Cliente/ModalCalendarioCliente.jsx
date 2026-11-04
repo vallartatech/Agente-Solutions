@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
@@ -71,7 +71,44 @@ const limpiarDescripcion = (rawDesc) => {
   return clean.trim() || rawDesc;
 };
 
-const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
+// Último punto tocado en pantalla: de ahí "sale" el calendario al abrirse
+// (así funciona con cualquier botón que lo abra, sin pasar referencias)
+let ultimoToqueCal = null;
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointerdown', (e) => {
+    ultimoToqueCal = { x: e.clientX, y: e.clientY };
+  }, true);
+}
+
+const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) => {
+  // ── Animación de cierre: se encoge hacia donde se abrió y luego avisa al padre ──
+  const [calCerrando, setCalCerrando] = useState(false);
+  const calVentanaRef = useRef(null);
+  const calCierreTimer = useRef(null);
+
+  const onClose = () => {
+    if (calCerrando) return;
+    setCalCerrando(true);
+    clearTimeout(calCierreTimer.current);
+    calCierreTimer.current = setTimeout(() => {
+      setCalCerrando(false);
+      onCloseProp?.();
+    }, 300);
+  };
+
+  useEffect(() => () => clearTimeout(calCierreTimer.current), []);
+
+  // Colocar el origen de la animación sobre la ventana
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    const win = calVentanaRef.current;
+    if (!win) return;
+    const r = win.getBoundingClientRect();
+    const o = ultimoToqueCal || { x: r.left + r.width / 2, y: r.top };
+    win.style.setProperty('--cal-ox', `${o.x - r.left}px`);
+    win.style.setProperty('--cal-oy', `${o.y - r.top}px`);
+  }, [isOpen]);
+
   const { user } = useAuth();
 
   // Roles de Técnico / Contratista / Admin
@@ -946,9 +983,10 @@ const ModalCalendarioCliente = ({ isOpen, onClose, onSelectJob }) => {
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="cal-modal-backdrop" onClick={onClose}>
+    <div className={`cal-modal-backdrop ${calCerrando ? 'is-cerrando' : ''}`} onClick={onClose}>
       <div 
-        className="modal-calendario-window" 
+        ref={calVentanaRef}
+        className={`modal-calendario-window cal-genie ${calCerrando ? 'is-cerrando' : ''}`} 
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── ENCABEZADO DEL MODAL ── */}

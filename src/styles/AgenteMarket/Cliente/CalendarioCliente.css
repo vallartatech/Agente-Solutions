@@ -2171,3 +2171,116 @@
   position: relative;
   z-index: 30;
 }
+
+/* ══════════════════════════════════════════════════════════
+   ANIMACIÓN DE APERTURA / CIERRE
+   Sale del punto donde se tocó (el botón del calendario) con un
+   pequeño rebote y regresa ahí al cerrar.
+   ══════════════════════════════════════════════════════════ */
+.modal-calendario-window.cal-genie {
+  transform-origin: var(--cal-ox, 50%) var(--cal-oy, 0px);
+  animation: calGenieIn 0.55s cubic-bezier(0.34, 1.25, 0.64, 1) both !important;
+  will-change: transform, opacity, filter;
+}
+
+.modal-calendario-window.cal-genie.is-cerrando {
+  animation: calGenieOut 0.3s cubic-bezier(0.55, 0, 0.75, 0.25) both !important;
+  pointer-events: none;
+}
+
+@keyframes calGenieIn {
+  0%   { opacity: 0; transform: scale(0.08, 0.05); filter: blur(8px); }
+  40%  { opacity: 1; filter: blur(0); }
+  72%  { transform: scale(1.01, 1.015); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes calGenieOut {
+  0%   { opacity: 1; transform: none; filter: none; }
+  100% { opacity: 0; transform: scale(0.08, 0.05); filter: blur(5px); }
+}
+
+/* El contenido aparece un instante después y en cascada */
+.modal-calendario-window.cal-genie .modal-cal-topbar,
+.modal-calendario-window.cal-genie .scheduler-toolbar-card,
+.modal-calendario-window.cal-genie .scheduler-canvas-card,
+.modal-calendario-window.cal-genie .cal-sidebar-col {
+  animation: calContenidoIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.modal-calendario-window.cal-genie .modal-cal-topbar       { animation-delay: 0.12s; }
+.modal-calendario-window.cal-genie .scheduler-toolbar-card { animation-delay: 0.18s; }
+.modal-calendario-window.cal-genie .scheduler-canvas-card  { animation-delay: 0.24s; }
+.modal-calendario-window.cal-genie .cal-sidebar-col        { animation-delay: 0.30s; }
+
+@keyframes calContenidoIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.modal-calendario-window.cal-genie.is-cerrando .modal-cal-topbar,
+.modal-calendario-window.cal-genie.is-cerrando .scheduler-toolbar-card,
+.modal-calendario-window.cal-genie.is-cerrando .scheduler-canvas-card,
+.modal-calendario-window.cal-genie.is-cerrando .cal-sidebar-col {
+  animation: calContenidoOut 0.15s ease both;
+}
+
+@keyframes calContenidoOut { to { opacity: 0; } }
+
+.cal-modal-backdrop.is-cerrando {
+  animation: calBackdropOut 0.3s ease both;
+}
+
+@keyframes calBackdropOut { from { opacity: 1; } to { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-calendario-window.cal-genie,
+  .modal-calendario-window.cal-genie *,
+  .modal-calendario-window.cal-genie.is-cerrando {
+    animation-duration: 0.01s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   COLOR: mismo vidrio gris de la barra inferior, menos oscuro
+   ══════════════════════════════════════════════════════════ */
+.cal-modal-backdrop {
+  background: rgba(15, 23, 42, 0.30) !important;
+}
+
+.cal-modal-backdrop .modal-calendario-window {
+  background: linear-gradient(135deg,
+      rgba(15, 23, 42, 0.72) 0%,
+      rgba(30, 41, 59, 0.62) 50%,
+      rgba(15, 23, 42, 0.70) 100%) !important;
+  backdrop-filter: blur(26px) saturate(190%) contrast(105%) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(190%) contrast(105%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+}
+
+.cal-modal-backdrop .modal-cal-topbar {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16) !important;
+}
+
+.cal-modal-backdrop .scheduler-toolbar-card,
+.cal-modal-backdrop .scheduler-canvas-card,
+.cal-modal-backdrop .sidebar-glass-card,
+.cal-modal-backdrop .sidebar-summary-card,
+.cal-modal-backdrop .mini-cal-card {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.10) !important;
+}
+
+.cal-modal-backdrop .cal-sidebar-col,
+.cal-modal-backdrop .cal-main-col,
+.cal-modal-backdrop .modal-cal-content-body {
+  background: transparent !important;
+}
+
+@media (max-width: 900px) {
+  .cal-modal-backdrop .modal-calendario-window {
+    border: none !important;
+  }
+}

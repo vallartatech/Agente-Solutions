@@ -6,8 +6,12 @@ import { useAuth } from '../../context/AuthContext';
 // Mismo diseño "liquid glass" / bottom sheet que el modal Registrar Propiedad
 import '../../styles/AgenteMarket/Cliente/ModalRegistroInmueble.css';
 import '../../styles/Shared/LiquidGlass.css';
+import useCierreAnimado from '../../utils/useCierreAnimado';
 
 const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
+  // Abre desde donde se tocó (o sube como hoja en celular) y se va animado al cerrar
+  const { cerrando: mriCerrando, cerrar: cerrarAnimado, ventanaRef: mriVentanaRef } = useCierreAnimado(isOpen, onClose);
+
   const { user } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -145,7 +149,7 @@ const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
   ];
 
   return createPortal(
-    <div className="mri-overlay" onClick={onClose}>
+    <div className={`mri-overlay ${mriCerrando ? 'is-cerrando' : ''}`} onClick={cerrarAnimado}>
       <style>{`
         .reg-role-box {
           display: flex;
@@ -183,7 +187,8 @@ const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
       `}</style>
 
       <div
-        className="mri-card"
+        ref={mriVentanaRef}
+        className={`mri-card mri-anim ${mriCerrando ? 'is-cerrando' : ''}`}
         onClick={e => e.stopPropagation()}
         style={{
           transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
@@ -211,7 +216,7 @@ const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
             <h2 className="mri-title">Registrar Técnico</h2>
           </div>
           {onClose && (
-            <button className="mri-close-btn" onClick={onClose} title="Cerrar ventana" aria-label="Cerrar ventana" type="button">
+            <button className="mri-close-btn" onClick={cerrarAnimado} title="Cerrar ventana" aria-label="Cerrar ventana" type="button">
               <X size={18} color="#ffffff" strokeWidth={2.6} />
             </button>
           )}
