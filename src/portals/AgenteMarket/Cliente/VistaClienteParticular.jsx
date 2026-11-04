@@ -11,7 +11,6 @@ import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
 import ModalCalificarTecnico from '../../../components/Shared/ModalCalificarTecnico';
 import NotificationBell from '../../../components/Shared/NotificationBell';
 import Header from '../../../components/Shared/Header';
-import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
 
 import {
@@ -40,7 +39,8 @@ import {
   Lock,
   Edit3,
   Bell,
-  Shield
+  Shield,
+  Hourglass
 } from 'lucide-react';
 
 import defaultPropImg from '../../../assets/propiedad_ejemplo.jpg';
@@ -77,7 +77,7 @@ const SubscriptionCountdown = ({ targetDate }) => {
     return (
       <span className="vcp-plan-timer-pill">
         <span className="vcp-timer-dot" />
-        ⏳ 180 días restantes
+        <Hourglass size={13} className="vcp-plan-ico" /> 180 días restantes
       </span>
     );
   }
@@ -85,7 +85,7 @@ const SubscriptionCountdown = ({ targetDate }) => {
   return (
     <span className="vcp-plan-timer-pill">
       <span className="vcp-timer-dot" />
-      ⏱️ {timeLeft || 'Calculando...'}
+      <Hourglass size={13} className="vcp-plan-ico" /> {timeLeft || 'Calculando...'}
     </span>
   );
 };
@@ -850,11 +850,11 @@ const VistaClienteParticular = () => {
 
                 <div className="vcp-plan-info-row">
                   <span className="vcp-plan-pill">
-                    📅 Vence: <strong>{subInfo?.subscription_expires_at ? new Date(subInfo.subscription_expires_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) : '30 de marzo de 2027'}</strong>
+                    <CalendarDays size={13} className="vcp-plan-ico" /> Vence: <strong>{subInfo?.subscription_expires_at ? new Date(subInfo.subscription_expires_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) : '30 de marzo de 2027'}</strong>
                   </span>
 
                   <span className="vcp-plan-pill">
-                    🏠 Propiedades: <strong>{currentPropsCount} / {maxAllowed}</strong>
+                    <Building2 size={13} className="vcp-plan-ico" /> Propiedades: <strong>{currentPropsCount} / {maxAllowed}</strong>
                   </span>
 
                   {currentPropsCount >= maxAllowed && (
@@ -1039,8 +1039,7 @@ const VistaClienteParticular = () => {
         </aside>
       </main>
 
-      {/* ── BARRA DE NAVEGACIÓN INFERIOR (MÓVIL / RESPONSIVO - SOLO ICONOS) ── */}
-      <MobileBottomNav activeModule="inicio" />
+      {/* La barra inferior ya la incluye <Header> (dos barras encimadas rompían la animación) */}
 
       {/* ── MODALES COMPARTIDOS ── */}
       {/* Modal Compra de Espacios */}

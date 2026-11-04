@@ -7,69 +7,135 @@
 }
 
 @media (max-width: 900px) {
+  /* Barra estilo iOS: pegada abajo, vidrio muy transparente y difuminado,
+     ícono delgado con su nombre debajo */
   .vcp-mobile-bottom-nav {
+    --n: 5;
+    --i: 0;
+    --pad: 6px;
     position: fixed !important;
-    bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
+    bottom: 0 !important;
     width: 100% !important;
-    /* 58px de barra + el área de la rayita de inicio del iPhone (requiere viewport-fit=cover) */
-    height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
-    z-index: 9999 !important;
-    background: linear-gradient(180deg,
-        rgba(20, 24, 34, 0.92) 0%,
-        rgba(10, 12, 18, 0.98) 100%) !important;
-    backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(180%) contrast(105%) !important;
-    border-top: 1.5px solid rgba(255, 255, 255, 0.16) !important;
-    border-bottom: none !important;
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.70), inset 0 1px 1.5px rgba(255, 255, 255, 0.20) !important;
+    height: calc(62px + env(safe-area-inset-bottom, 0px)) !important;
+    /* Encima del encabezado (999999) y debajo del panel "Más" (1000003) */
+    z-index: 1000002 !important;
+    /* Mismo vidrio gris oscuro que la pestaña "Perfil de la propiedad":
+       nunca se pierde, ni con fondo blanco ni con fondo negro */
+    background: linear-gradient(135deg,
+        rgba(15, 23, 42, 0.62) 0%,
+        rgba(30, 41, 59, 0.50) 50%,
+        rgba(15, 23, 42, 0.60) 100%) !important;
+    backdrop-filter: blur(24px) saturate(190%) contrast(105%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(190%) contrast(105%) !important;
+    border: none !important;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.22) !important;
+    border-radius: 0 !important;
+    box-shadow:
+      0 -8px 28px rgba(0, 0, 0, 0.30),
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.28) !important;
     display: flex !important;
-    align-items: center !important;
-    justify-content: space-around !important;
-    gap: 4px !important;
-    padding: 0 6px env(safe-area-inset-bottom, 0px) 6px !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 0 !important;
+    padding: 4px var(--pad) env(safe-area-inset-bottom, 0px) var(--pad) !important;
     box-sizing: border-box !important;
     margin: 0 !important;
   }
 
+  /* Brillo de vidrio suave que se desliza detrás del botón activo */
+  .vcp-nav-pill {
+    position: absolute;
+    top: 5px;
+    height: 52px;
+    left: var(--pad);
+    width: calc((100% - (var(--pad) * 2)) / var(--n));
+    transform: translateX(calc(var(--i) * 100%));
+    transition:
+      transform 0.5s cubic-bezier(0.34, 1.25, 0.64, 1),
+      opacity 0.25s ease;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .vcp-nav-pill::before {
+    content: '';
+    position: absolute;
+    inset: 0 6px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.10);
+    border: 0.5px solid rgba(255, 255, 255, 0.16);
+  }
+
+  /* Mientras viaja, el brillo se estira como una gota y luego se asienta */
+  .vcp-mobile-bottom-nav.moviendo .vcp-nav-pill::before {
+    animation: vcpNavGota 0.5s cubic-bezier(0.34, 1.2, 0.64, 1);
+  }
+
+  @keyframes vcpNavGota {
+    0%   { transform: scale(1, 1); }
+    35%  { transform: scale(1.35, 0.86); }
+    70%  { transform: scale(0.94, 1.04); }
+    100% { transform: scale(1, 1); }
+  }
+
+  .vcp-mobile-bottom-nav.tiene-activo .vcp-nav-pill {
+    opacity: 1;
+  }
+
+  .vcp-mobile-bottom-nav.sin-transicion .vcp-nav-pill {
+    transition: none !important;
+  }
+
+  /* Todas las casillas miden igual para que el brillo caiga exacto */
   .vcp-mobile-nav-item {
+    position: relative !important;
+    z-index: 1 !important;
     display: flex !important;
+    flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 3px !important;
     flex: 1 1 0 !important;
-    max-width: 46px !important;
-    min-width: 36px !important;
-    height: 42px !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 54px !important;
     background: transparent !important;
-    border: 1px solid transparent !important;
-    color: #94a3b8 !important;
-    border-radius: 14px !important;
+    border: none !important;
+    color: rgba(255, 255, 255, 0.62) !important;
+    border-radius: 16px !important;
     cursor: pointer !important;
-    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: color 0.3s ease, transform 0.2s ease !important;
     box-shadow: none !important;
-    padding: 0 !important;
+    padding: 0 2px !important;
     margin: 0 !important;
     touch-action: manipulation !important;
     -webkit-tap-highlight-color: transparent !important;
-    flex-shrink: 0 !important;
   }
 
   .vcp-mobile-nav-icon {
     width: 22px !important;
     height: 22px !important;
     stroke: currentColor !important;
-    stroke-width: 2.2 !important;
+    stroke-width: 1.6 !important;
     display: block !important;
     flex-shrink: 0 !important;
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease !important;
   }
 
-  .vcp-mobile-nav-item:hover {
-    color: #f26522 !important;
-    background: rgba(242, 101, 34, 0.14) !important;
-    border-color: rgba(242, 101, 34, 0.30) !important;
-    transform: translateY(-2px) !important;
+  .vcp-mobile-nav-text {
+    display: block !important;
+    max-width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Outfit', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: inherit;
   }
 
   .vcp-mobile-nav-item:active {
@@ -77,22 +143,38 @@
   }
 
   .vcp-mobile-nav-item.active {
-    color: #ff8c42 !important;
-    background: linear-gradient(135deg, rgba(242, 101, 34, 0.32) 0%, rgba(234, 88, 12, 0.20) 100%) !important;
-    border: 1.5px solid rgba(242, 101, 34, 0.70) !important;
-    box-shadow: 0 4px 14px rgba(242, 101, 34, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
   }
 
   .vcp-mobile-nav-item.active .vcp-mobile-nav-icon {
-    stroke: #ff8c42 !important;
-    color: #ff8c42 !important;
-    transform: scale(1.08) !important;
+    stroke: #ffffff !important;
+    color: #ffffff !important;
+    stroke-width: 2 !important;
+    animation: vcpNavPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.28s both;
   }
 
-  /* Ocultar texto para dejar exclusivamente los iconos */
-  .vcp-mobile-nav-text {
-    display: none !important;
+  .vcp-mobile-nav-item.active .vcp-mobile-nav-text {
+    font-weight: 700;
   }
+
+  /* El ícono "salta" un poco al llegar el brillo */
+  @keyframes vcpNavPop {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.18) translateY(-1px); }
+    100% { transform: scale(1); }
+  }
+
+  @media (hover: hover) {
+    .vcp-mobile-nav-item:not(.active):hover {
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+  }
+}
+
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) {
+  .vcp-nav-pill { transition: opacity 0.2s ease !important; }
+  .vcp-mobile-bottom-nav.moviendo .vcp-nav-pill::before { animation: none !important; }
+  .vcp-mobile-nav-item.active .vcp-mobile-nav-icon { animation: none !important; }
 }
 
 /* ── Panel "Más" de la barra inferior (admin): Comprobantes, mapas, Mercado... ── */

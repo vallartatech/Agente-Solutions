@@ -6,7 +6,6 @@ import Header from '../../../components/Shared/Header';
 import SelectorVistas from '../../../components/Shared/SelectorVistas';
 import CasaLoader from '../../../components/Shared/CasaLoader';
 import { SelectorMascota } from '../../../components/Shared/AlertaValidacion';
-import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import { useAuth } from '../../../context/AuthContext';
 import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Upload, CheckCircle2, Pencil, Calendar, ClipboardList, Image as ImageIcon, Camera, Video, Images, ShieldCheck } from 'lucide-react';
 import Swal from 'sweetalert2';
@@ -894,8 +893,7 @@ const VistaReportesGlobal = () => {
         document.body
       )}
 
-      {/* Mobile Bottom Dock Bar */}
-      <MobileBottomNav activeModule="reportes" />
+      {/* La barra inferior ya la incluye <Header> (dos barras encimadas rompían la animación) */}
     </div>
   );
 };

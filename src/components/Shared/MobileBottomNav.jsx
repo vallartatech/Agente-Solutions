@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usaSelectorRed } from '../../utils/entorno';
@@ -23,7 +23,76 @@ import '../../styles/Shared/MobileBottomNav.css';
 import '../../styles/Shared/EncabezadoMovil.css';
 import { MascotaAlerta } from './AlertaValidacion';
 
+// Cada pantalla monta su propia barra, así que guardamos aquí (fuera del componente)
+// en qué botón estaba la píldora para que, al cambiar de página, salga desde ahí y se deslice.
+let ultimoIndiceNav = null;
+
+// Brillo de vidrio que se desliza hasta el botón activo
+const useIndicadorDeslizante = () => {
+  const navRef = useRef(null);
+  const timersRef = useRef({ raf1: 0, raf2: 0, fin: 0 });
+
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const items = Array.from(nav.querySelectorAll(':scope > .vcp-mobile-nav-item'));
+    const idx = items.findIndex(el => el.classList.contains('active'));
+    nav.style.setProperty('--n', String(items.length || 1));
+
+    if (idx === -1) {
+      nav.classList.remove('tiene-activo');
+      return;
+    }
+
+    const actual = nav.style.getPropertyValue('--i');
+    const t = timersRef.current;
+
+    // Desliza al destino y, mientras viaja, el brillo se estira como gota (clase "moviendo")
+    const deslizar = () => {
+      nav.classList.remove('sin-transicion', 'moviendo');
+      void nav.offsetWidth; // reinicia la animación de estirado
+      nav.classList.add('moviendo');
+      nav.style.setProperty('--i', String(idx));
+      clearTimeout(t.fin);
+      t.fin = setTimeout(() => nav.classList.remove('moviendo'), 520);
+    };
+
+    nav.classList.add('tiene-activo');
+
+    if (actual === '') {
+      // Barra recién creada (cambio de página): poner el brillo donde estaba antes, sin animar,
+      // y deslizarlo hasta que el navegador ya lo pintó ahí (dos cuadros después)
+      const inicio = ultimoIndiceNav !== null && ultimoIndiceNav < items.length ? ultimoIndiceNav : idx;
+      nav.classList.add('sin-transicion');
+      nav.style.setProperty('--i', String(inicio));
+      if (inicio !== idx) {
+        cancelAnimationFrame(t.raf1);
+        cancelAnimationFrame(t.raf2);
+        t.raf1 = requestAnimationFrame(() => {
+          t.raf2 = requestAnimationFrame(deslizar);
+        });
+      }
+    } else if (actual !== String(idx)) {
+      // Misma página (pestañas): deslizar desde donde está
+      deslizar();
+    }
+
+    ultimoIndiceNav = idx;
+  });
+
+  // Limpiar al desmontar
+  useEffect(() => () => {
+    const t = timersRef.current;
+    cancelAnimationFrame(t.raf1);
+    cancelAnimationFrame(t.raf2);
+    clearTimeout(t.fin);
+  }, []);
+
+  return navRef;
+};
+
 const MobileBottomNav = ({ activeModule, onTabChange }) => {
+  const navRef = useIndicadorDeslizante();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -153,7 +222,8 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
     const isCotizacionesActive = !isPerfilActive && !isInicioActive && (activeModule === 'cotizaciones' || currentPath.includes('/vista-cotizaciones') || currentPath.includes('/cotizacion'));
 
     return (
-      <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Técnico Oficial">
+      <nav ref={navRef} className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Técnico Oficial">
+        <span className="vcp-nav-pill" aria-hidden="true" />
         {/* 1. INICIO */}
         <button 
           type="button" 
@@ -163,6 +233,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Inicio"
         >
           <Home size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Inicio</span>
         </button>
 
         {/* 2. TRABAJOS */}
@@ -174,6 +245,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Trabajos"
         >
           <Wrench size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Trabajos</span>
         </button>
 
         {/* 3. LEVANTAMIENTOS */}
@@ -185,6 +257,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Levantamientos"
         >
           <ClipboardList size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Levantamientos</span>
         </button>
 
         {/* 4. COTIZACIONES */}
@@ -196,6 +269,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Cotizaciones"
         >
           <Receipt size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Cotizaciones</span>
         </button>
 
         {/* 5. COMPROBANTES */}
@@ -207,6 +281,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Comprobantes"
         >
           <ReceiptText size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Comprobantes</span>
         </button>
       </nav>
     );
@@ -215,7 +290,8 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
   // CASO TÉCNICOS DE LA RED (ROLES 6 Y 8):
   if (isTechnician) {
     return (
-      <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Técnico Red">
+      <nav ref={navRef} className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Técnico Red">
+        <span className="vcp-nav-pill" aria-hidden="true" />
         {!ocultarInicioCasita && (
           <button 
             type="button" 
@@ -225,6 +301,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
             aria-label="Inicio"
           >
             <Home size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Inicio</span>
           </button>
         )}
 
@@ -236,6 +313,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Mercado (Solicitudes)"
         >
           <Globe size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Mercado</span>
         </button>
 
         <button 
@@ -246,6 +324,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Trabajos Aceptados"
         >
           <Briefcase size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Trabajos</span>
         </button>
 
         <button 
@@ -256,6 +335,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Mis Clientes"
         >
           <Users size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Clientes</span>
         </button>
       </nav>
     );
@@ -273,7 +353,8 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
 
     return (
       <>
-      <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Administrador">
+      <nav ref={navRef} className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Administrador">
+        <span className="vcp-nav-pill" aria-hidden="true" />
         <button 
           type="button" 
           className={`vcp-mobile-nav-item ${isInicioActive ? 'active' : ''}`} 
@@ -282,6 +363,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Inicio"
         >
           <Home size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Inicio</span>
         </button>
 
         <button 
@@ -292,6 +374,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Usuarios"
         >
           <Users size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Usuarios</span>
         </button>
 
         {/* Propiedades y Levantamientos en un solo botón (dentro se cambia con el selector) */}
@@ -303,6 +386,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Propiedades y levantamientos"
         >
           <Building2 size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Propiedades</span>
         </button>
 
         {/* Cotizaciones y Reportes en un solo botón (dentro se cambia con el selector) */}
@@ -314,6 +398,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Cotización y reporte"
         >
           <Receipt size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Cotización</span>
           <MascotaAlerta variante="barra" />
         </button>
 
@@ -325,6 +410,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Servicios"
         >
           <Wrench size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Servicios</span>
         </button>
 
         {/* Lo demás (igual que "MÁS ▾" en computadora): así siempre cabe la barra.
@@ -340,6 +426,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
               aria-label={label}
             >
               <Icon size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">{label}</span>
             </button>
           );
         })() : (
@@ -352,6 +439,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-expanded={masAbierto}
         >
           <LayoutGrid size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Más</span>
         </button>
         )}
       </nav>
@@ -387,7 +475,8 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
 
   // 3. CASO DEFAULT (CLIENTES / AUTÓNOMOS)
   return (
-    <nav className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil">
+    <nav ref={navRef} className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil">
+        <span className="vcp-nav-pill" aria-hidden="true" />
       {!ocultarInicioCasita && (
         <button 
           type="button" 
@@ -397,6 +486,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Inicio"
         >
           <Home size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Inicio</span>
         </button>
       )}
 
@@ -414,6 +504,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         aria-label="Usuarios"
       >
         <Users size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Usuarios</span>
       </button>
 
       <button 
@@ -424,6 +515,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         aria-label={unificarVistas ? 'Reportes, cotización y levantamiento' : 'Reportes'}
       >
         <FileText size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Reportes</span>
       </button>
 
       {!unificarVistas && (
@@ -435,6 +527,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           aria-label="Cotizaciones"
         >
           <Receipt size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Cotizaciones</span>
         </button>
       )}
 
@@ -452,6 +545,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         aria-label="Servicios"
       >
         <Wrench size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Servicios</span>
       </button>
 
       {/* Mercado / Red al final de la barra */}
@@ -469,6 +563,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         aria-label="Mercado / Red"
       >
         <Globe size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Mercado</span>
       </button>
     </nav>
   );
