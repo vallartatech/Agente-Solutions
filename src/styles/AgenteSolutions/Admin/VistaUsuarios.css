@@ -2013,24 +2013,30 @@
 .vu-user-block .vu-id-code { font-size: 0.72rem; color: #94a3b8; }
 
 /* Correo largo: se corta con "…" (completo al pasar el mouse) */
-.vu-contact-cell { max-width: 220px; }
+.vu-contact-cell { width: 100%; max-width: 0; } /* toma el espacio que sobra y nunca empuja la tabla */
 .vu-contact-box { min-width: 0; }
 .vu-contact-item { display: flex; max-width: 100%; min-width: 0; }
-.vu-contact-item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vu-contact-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Acciones siempre visibles aunque la tabla necesite desplazarse */
+/* Acciones: la columna mide lo que sus botones, con aire a la derecha */
 .vu-modern-table .vu-actions-head,
-.vu-modern-table .vu-actions-cell {
-  position: sticky;
-  right: 0;
-  z-index: 2;
-  background: rgba(248, 250, 252, 0.94);
-  box-shadow: -8px 0 12px -10px rgba(15, 23, 42, 0.35);
-}
-.vu-modern-table .vu-actions-head { z-index: 11; }
-.vu-modern-table tbody tr.vu-row-selected .vu-actions-cell { background: #fff1e8; }
+.vu-modern-table .vu-actions-cell { width: 1%; white-space: nowrap; padding-right: 18px; }
 .vu-mockup-actions { gap: 6px; }
 
+/* En pantallas angostas la tabla se desliza: ahí las acciones quedan fijas a la derecha,
+   con el mismo vidrio de la tarjeta para no verse como un bloque aparte */
 @media (max-width: 900px) {
   .vu-modern-table { min-width: 680px; }
+  .vu-modern-table .vu-actions-head,
+  .vu-modern-table .vu-actions-cell {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: -10px 0 14px -12px rgba(15, 23, 42, 0.4);
+  }
+  .vu-modern-table .vu-actions-head { z-index: 11; }
+  .vu-modern-table tbody tr.vu-row-selected .vu-actions-cell { background: rgba(255, 237, 226, 0.9); }
 }

@@ -651,11 +651,11 @@ const VistaUsuarios = () => {
                             <td data-label="Contacto" className="vu-contact-cell">
                               <div className="vu-contact-box">
                                 <span className="vu-contact-item" title={u.correo}>
-                                  <Mail size={12} className="vu-contact-icon" /> {u.correo}
+                                  <Mail size={12} className="vu-contact-icon" /> <span className="vu-contact-text">{u.correo}</span>
                                 </span>
                                 {u.telefono && (
                                   <span className="vu-contact-item phone" title={u.telefono}>
-                                    <Phone size={12} className="vu-contact-icon" /> {u.telefono}
+                                    <Phone size={12} className="vu-contact-icon" /> <span className="vu-contact-text">{u.telefono}</span>
                                   </span>
                                 )}
                               </div>
