@@ -345,7 +345,9 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
   // Módulos del header superior de administrador
   if (isAdminRole1 || isRoot) {
     // Mismas opciones que "MÁS ▾" del encabezado en computadora
+    // (en celular "Usuarios" también vive aquí para que la barra respire)
     const masItemsAdmin = [
+      { key: 'usuarios', label: 'Usuarios', Icon: Users, path: '/usuarios', active: isUsuariosActive },
       { key: 'mantenimiento', label: 'Mantenimiento', Icon: CalendarClock, path: '/mantenimiento', active: currentPath.includes('/mantenimiento') },
       { key: 'mapa', label: 'Mapa en vivo', Icon: Navigation, path: '/mapa-equipo', active: isMapaActive },
       { key: 'comprobantes', label: 'Comprobantes', Icon: ReceiptText, path: '/comprobantes', active: currentPath.includes('/comprobantes') },
@@ -365,17 +367,6 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         >
           <Home size={22} className="vcp-mobile-nav-icon" />
           <span className="vcp-mobile-nav-text">Inicio</span>
-        </button>
-
-        <button 
-          type="button" 
-          className={`vcp-mobile-nav-item ${isUsuariosActive ? 'active' : ''}`} 
-          onClick={() => navigate('/usuarios')} 
-          title="Usuarios"
-          aria-label="Usuarios"
-        >
-          <Users size={22} className="vcp-mobile-nav-icon" />
-          <span className="vcp-mobile-nav-text">Usuarios</span>
         </button>
 
         {/* Detalles de propiedades: Propiedades, Levantamientos, Cotizaciones y Reportes

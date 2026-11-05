@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import HojaCitasMovil from '../../../components/Shared/HojaCitasMovil';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
@@ -1441,6 +1442,16 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
     return null;
   }, [allEvents]);
 
+  // Lista de trabajos pendientes en el mismo orden de prioridad que "Próximo Servicio"
+  const trabajosProximos = useMemo(() => {
+    const porFecha = (a, b) => a.calendarDate - b.calendarDate;
+    return [
+      ...allEvents.filter(e => e.isOverdue).sort(porFecha),
+      ...allEvents.filter(e => e.isToday && !e.isCompleted && !e.isOverdue).sort(porFecha),
+      ...allEvents.filter(e => e.isFuture).sort(porFecha),
+    ];
+  }, [allEvents]);
+
   // Matriz de días del mes (ARRAY PLANO idéntico a CalendarioCliente)
   const monthMatrix = useMemo(() => {
     const year = currentDate.getFullYear();
@@ -1617,6 +1628,72 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
   }, [miniCalDate, allEvents]);
 
   if (!isOpen) return null;
+
+  // Tarjeta del próximo servicio (se usa en el sidebar de PC y en el panel móvil)
+  const tarjetaProximo = upNextJob ? (
+    <div className={`up-next-card ${upNextJob.timingCategory === 'overdue' ? 'is-overdue-alert' : ''}`}>
+      <div className="up-next-badge-row">
+        <span className={`up-next-pill ${upNextJob.timingCategory === 'overdue' ? 'pill-overdue-banner' : ''}`}>
+          <IconoEvento job={upNextJob} size={12} /> {upNextJob.timingCategory === 'overdue' ? 'CITA ATRASADA' : (upNextJob.timingCategory === 'today' ? 'CITA DE HOY' : 'PRÓXIMA CITA')}
+        </span>
+        <span className="up-next-time-tag">
+          <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} />
+          {upNextJob.calendarTime}
+        </span>
+      </div>
+
+      <h4 className="up-next-title">{upNextJob.titulo}</h4>
+
+      <div className="up-next-details">
+        <div className="cal-ico-text"><MapPin size={13} className="cal-ico" /> {upNextJob.calle || upNextJob.zona}</div>
+        <div className="cal-ico-text"><User size={13} className="cal-ico" /> {upNextJob.cliente || 'Cliente'}</div>
+        {upNextJob.assigned_tech_name && (
+          <div className="cal-ico-text"><Wrench size={13} className="cal-ico" /> Técnico: {upNextJob.assigned_tech_name}</div>
+        )}
+        <div style={{ color: upNextJob.timingCategory === 'overdue' ? '#fca5a5' : '#fdba74', fontWeight: 800, fontSize: '0.76rem' }}>
+          <span className="cal-ico-text"><CalendarDays size={13} className="cal-ico" /> {upNextJob.timingRelative}</span>
+        </div>
+      </div>
+
+      <button
+        className="btn-up-next-action"
+        onClick={() => handleEventClick(upNextJob)}
+      >
+        <MessageCircle size={15} />
+        <span>Abrir Trabajo / Coordinación</span>
+      </button>
+    </div>
+  ) : (
+    <div className="sidebar-glass-card">
+      No tienes servicios activos pendientes por coordinar.
+    </div>
+  );
+
+  // Fila compacta de una cita (resumen)
+  const renderResumenCita = (job) => (
+    <div
+      key={job.id}
+      className="sidebar-summary-card"
+      style={{
+        borderLeft: `3.5px solid ${job.timingCategory === 'overdue' ? '#ef4444' : (job.timingCategory === 'today' ? '#ff6600' : (job.timingCategory === 'future' ? '#06b6d4' : '#f59e0b'))}`
+      }}
+      onClick={() => handleEventClick(job)}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '0.7rem' }}>
+        <span>{job.calendarTime}</span>
+        <span style={{ fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px', color: job.timingCategory === 'overdue' ? '#fca5a5' : (job.timingCategory === 'today' ? '#fdba74' : '#6ee7b7') }}>
+          <IconoEvento job={job} size={11} /> {job.timingBadge}
+        </span>
+      </div>
+      <div style={{ fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {job.titulo}
+      </div>
+      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
+        <span className="cal-ico-text"><User size={11} className="cal-ico" /> {job.cliente}</span>
+      </div>
+    </div>
+  );
+
 
   return createPortal(
     <div className="cal-modal-backdrop" onClick={onClose}>
@@ -2127,9 +2204,9 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
 
           {/* COLUMNA DERECHA: SIDEBAR */}
           <div className="cal-sidebar-col">
-            
-            {/* 1. Mini Calendario */}
-            <div className="mini-calendar-card">
+
+            {/* 1. Mini Calendario (solo PC) */}
+            <div className="mini-calendar-card cal-solo-pc">
               <div className="mini-cal-header">
                 <span className="mini-cal-title">
                   <CalendarIcon size={14} color="#38BDF8" style={{ display: 'inline', marginRight: '6px' }} />
@@ -2139,11 +2216,23 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
               <div className="mini-cal-sub-header">
                 <span className="mini-cal-month-name">{MONTH_NAMES[miniCalDate.getMonth()]} {miniCalDate.getFullYear()}</span>
                 <div className="mini-cal-arrows">
-                  <button onClick={() => setMiniCalDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}>
-                    <ChevronLeft size={14} />
+                  <button
+                    type="button"
+                    className="cal-mini-flecha"
+                    title="Mes anterior"
+                    aria-label="Mes anterior"
+                    onClick={() => setMiniCalDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+                  >
+                    <ChevronLeft size={16} />
                   </button>
-                  <button onClick={() => setMiniCalDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}>
-                    <ChevronRight size={14} />
+                  <button
+                    type="button"
+                    className="cal-mini-flecha"
+                    title="Mes siguiente"
+                    aria-label="Mes siguiente"
+                    onClick={() => setMiniCalDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+                  >
+                    <ChevronRight size={16} />
                   </button>
                 </div>
               </div>
@@ -2152,8 +2241,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   <div key={i} className="mini-day-name">{d}</div>
                 ))}
                 {miniCalMatrix.map((c, i) => (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     className={`mini-day-cell ${!c.isCurrentMonth ? 'other-month' : ''} ${c.isToday ? 'is-today' : ''} ${c.hasEvents ? 'has-events' : ''}`}
                     onClick={() => {
                       if (c.isCurrentMonth) {
@@ -2167,86 +2256,35 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
               </div>
             </div>
 
-            {/* 2. Tarjeta "Up Next / Próximo Servicio" */}
-            <div>
+            {/* 2. Tarjeta "Up Next / Próximo Servicio" (solo PC) */}
+            <div className="cal-solo-pc">
               <div className="sidebar-section-title">
                 <span className="cal-ico-text"><Zap size={15} className="cal-ico" /> Próximo Servicio</span>
               </div>
-              {upNextJob ? (
-                <div className={`up-next-card ${upNextJob.timingCategory === 'overdue' ? 'is-overdue-alert' : ''}`}>
-                  <div className="up-next-badge-row">
-                    <span className={`up-next-pill ${upNextJob.timingCategory === 'overdue' ? 'pill-overdue-banner' : ''}`}>
-                      <IconoEvento job={upNextJob} size={12} /> {upNextJob.timingCategory === 'overdue' ? 'CITA ATRASADA' : (upNextJob.timingCategory === 'today' ? 'CITA DE HOY' : 'PRÓXIMA CITA')}
-                    </span>
-                    <span className="up-next-time-tag">
-                      <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} />
-                      {upNextJob.calendarTime}
-                    </span>
-                  </div>
-
-                  <h4 className="up-next-title">{upNextJob.titulo}</h4>
-
-                  <div className="up-next-details">
-                    <div className="cal-ico-text"><MapPin size={13} className="cal-ico" /> {upNextJob.calle || upNextJob.zona}</div>
-                    <div className="cal-ico-text"><User size={13} className="cal-ico" /> {upNextJob.cliente || 'Cliente'}</div>
-                    {upNextJob.assigned_tech_name && (
-                      <div className="cal-ico-text"><Wrench size={13} className="cal-ico" /> Técnico: {upNextJob.assigned_tech_name}</div>
-                    )}
-                    <div style={{ color: upNextJob.timingCategory === 'overdue' ? '#fca5a5' : '#fdba74', fontWeight: 800, fontSize: '0.76rem' }}>
-                      <span className="cal-ico-text"><CalendarDays size={13} className="cal-ico" /> {upNextJob.timingRelative}</span>
-                    </div>
-                  </div>
-
-                  <button 
-                    className="btn-up-next-action"
-                    onClick={() => handleEventClick(upNextJob)}
-                  >
-                    <MessageCircle size={15} />
-                    <span>Abrir Trabajo / Coordinación</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="sidebar-glass-card">
-                  No tienes servicios activos pendientes por coordinar.
-                </div>
-              )}
+              {tarjetaProximo}
             </div>
 
-            {/* 3. Resumen Rápido de Actividad */}
-            <div>
+            {/* 3. Resumen Rápido de Actividad (solo PC) */}
+            <div className="cal-solo-pc">
               <div className="sidebar-section-title">
                 <span className="cal-ico-text"><ClipboardList size={15} className="cal-ico" /> Resumen de Citas ({countAll})</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {allEvents.slice(0, 4).map((job) => (
-                  <div 
-                    key={job.id}
-                    className="sidebar-summary-card"
-                    style={{
-                      borderLeft: `3.5px solid ${job.timingCategory === 'overdue' ? '#ef4444' : (job.timingCategory === 'today' ? '#ff6600' : (job.timingCategory === 'future' ? '#06b6d4' : '#f59e0b'))}`
-                    }}
-                    onClick={() => handleEventClick(job)}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '0.7rem' }}>
-                      <span>{job.calendarTime}</span>
-                      <span style={{ fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px', color: job.timingCategory === 'overdue' ? '#fca5a5' : (job.timingCategory === 'today' ? '#fdba74' : '#6ee7b7') }}>
-                        <IconoEvento job={job} size={11} /> {job.timingBadge}
-                      </span>
-                    </div>
-                    <div style={{ fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {job.titulo}
-                    </div>
-                    <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                      <span className="cal-ico-text"><User size={11} className="cal-ico" /> {job.cliente}</span>
-                    </div>
-                  </div>
-                ))}
+                {allEvents.slice(0, 4).map(renderResumenCita)}
               </div>
             </div>
 
           </div>
 
         </div>
+
+        {/* Solo celular: hoja inferior con trabajos próximos y resumen de citas */}
+        <HojaCitasMovil
+          proximos={trabajosProximos}
+          citas={allEvents}
+          tarjetaProximo={tarjetaProximo}
+          renderCita={renderResumenCita}
+        />
 
         {/* ─── MODAL DE DETALLE Y GESTIÓN DE ORDEN DE TRABAJO ─── */}
         {showDetailModal && selectedJob && (
