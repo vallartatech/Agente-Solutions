@@ -1186,3 +1186,11 @@
   .via-perfil-drawer .vcp-mobile-prop-drawer-content,
   .via-perfil-drawer .vcp-mobile-prop-drawer-content.is-cerrando { animation-duration: 0.01s !important; }
 }
+
+/* La barra inferior fija mide 62px + la zona segura (en iPad/iPhone con barra de inicio ~20-34px).
+   Con solo 74px de espacio tapaba la parte de abajo del carrusel de inmuebles. */
+@media (max-width: 900px) {
+  .vcp-root.via-inicio-admin .vcp-body-layout {
+    padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px) + 16px) !important;
+  }
+}

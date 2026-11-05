@@ -457,7 +457,7 @@ const VistaInicioAdmin = () => {
   );
 
   return (
-    <div className="vcp-root">
+    <div className="vcp-root via-inicio-admin">
       {/* Fachada arquitectónica a pantalla completa con desenfoque dinámico */}
       <div 
         className="vcp-hero-bg-layer" 

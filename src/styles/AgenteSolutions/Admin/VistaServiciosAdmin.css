@@ -423,6 +423,34 @@
 
 .sv-glass-page .scrum-tabs-mobile .active-line { bottom: 2px; }
 
+/* Las 5 pestañas caben siempre: mismo ancho para todas y el nombre baja a dos líneas
+   (antes cada una medía lo que su texto en una línea y "Por aprobar" se salía de la pantalla) */
+.sv-glass-page .scrum-tabs-mobile { gap: 2px; box-sizing: border-box; }
+
+.sv-glass-page .scrum-tabs-mobile .tab-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: flex-start;
+  padding: 8px 2px 10px;
+}
+
+.sv-glass-page .scrum-tabs-mobile .tab-btn svg { flex-shrink: 0; width: 19px; height: 19px; }
+
+.sv-glass-page .scrum-tabs-mobile .tab-btn span {
+  display: block;
+  max-width: 100%;
+  font-size: 0.6rem;
+  line-height: 1.15;
+  letter-spacing: 0.1px;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 360px) {
+  .sv-glass-page .scrum-tabs-mobile .tab-btn span { font-size: 0.55rem; }
+}
+
 /* ==========================================================================
    MODAL ORDEN DE TRABAJO (se monta en body, por eso no usa .sv-glass-page)
    ========================================================================== */
