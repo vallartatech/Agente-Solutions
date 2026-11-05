@@ -1511,6 +1511,99 @@
 
 .cotiz-quote-card.rechazada { border-left: 4px solid #ef4444; }
 
+/* ── Hoja de la propiedad: una carpeta por trabajo con sus cotizaciones en cadena ── */
+.cotiz-carpeta {
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.42);
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.cotiz-carpeta-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 18px;
+    background: none;
+    font-family: inherit;
+    color: #0f172a;
+    text-align: left;
+    cursor: pointer;
+}
+
+.cotiz-carpeta-head:hover { background: rgba(255, 255, 255, 0.5); }
+
+.cotiz-carpeta-icono {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(242, 101, 34, 0.12);
+    color: #ea580c;
+}
+
+.cotiz-carpeta-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cotiz-carpeta-texto strong { font-size: 0.95rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cotiz-carpeta-texto small { font-size: 0.76rem; font-weight: 700; color: #64748b; }
+
+.cotiz-carpeta-flecha { flex-shrink: 0; color: #94a3b8; transition: transform 0.2s ease; }
+.cotiz-carpeta.abierta .cotiz-carpeta-flecha { transform: rotate(180deg); }
+
+.cotiz-carpeta-cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border-top: 1px dashed rgba(148, 163, 184, 0.4);
+}
+
+/* Cotización generada a partir de otra: sangría y línea que la une con su original */
+.cotiz-quote-card.derivada {
+    position: relative;
+    margin-left: calc(var(--cotiz-nivel, 1) * 18px);
+    border-left: 3px solid rgba(242, 101, 34, 0.45);
+}
+
+.cotiz-quote-card.derivada.rechazada { border-left-color: #ef4444; }
+
+.cotiz-quote-origen {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: -4px;
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: #ea580c;
+}
+
+.cotiz-version-chip {
+    align-self: flex-start;
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(242, 101, 34, 0.32);
+    background: rgba(242, 101, 34, 0.1);
+    color: #c2410c;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.cotiz-version-chip.tecnico { background: rgba(139, 92, 246, 0.12); color: #6d28d9; border-color: rgba(139, 92, 246, 0.3); }
+.cotiz-version-chip.sobre-tecnico { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; border-color: rgba(59, 130, 246, 0.3); }
+.cotiz-version-chip.recotizacion { background: rgba(245, 158, 11, 0.14); color: #b45309; border-color: rgba(245, 158, 11, 0.32); }
+
+@media (max-width: 600px) {
+    .cotiz-quote-card.derivada { margin-left: calc(var(--cotiz-nivel, 1) * 10px); }
+    .cotiz-carpeta-cuerpo { padding: 10px 8px; }
+}
+
 .cotiz-quote-top {
     display: flex;
     align-items: flex-start;

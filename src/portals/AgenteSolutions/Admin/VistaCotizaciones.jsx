@@ -17,7 +17,8 @@ import {
   MessageCircle, Maximize2, Image as ImageIcon, Send,
   X, Eye, Pencil, Forward, Globe, FilePlus,
   Receipt, CalendarClock, Upload, Loader2,
-  Landmark
+  Landmark,
+  Folder, FolderOpen, CornerDownRight, ChevronDown
 } from 'lucide-react';
 import CreateQuotationModal from "../../../components/Modals/CreateQuotationModal";
 import ModalCrearCotizacion from "../../../components/Shared/ModalCrearCotizacion";
@@ -26,6 +27,7 @@ import UniversalSearch from "../../../components/Shared/UniversalSearch";
 import Pago from "../Cliente/Pago";
 import mpLogo from "../../../assets/Mercado-Pago.png";
 import DatosBancarios from "../../../components/Shared/DatosBancarios";
+import { cadenasCotizaciones, origenCotizacion } from "./Expediente/flujoTrabajo";
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const VistaCotizaciones = () => {
@@ -151,6 +153,8 @@ const VistaCotizaciones = () => {
   });
 
   const [propiedadCotizKey, setPropiedadCotizKey] = useState(null);
+  // Carpetas de trabajo contraídas dentro de la hoja de una propiedad (por defecto todas abiertas)
+  const [carpetasCerradas, setCarpetasCerradas] = useState(() => new Set());
   const [hojaDragY, setHojaDragY] = useState(0);
   const [isHojaDragging, setIsHojaDragging] = useState(false);
   const hojaTouchStartY = useRef(0);
@@ -914,6 +918,38 @@ const VistaCotizaciones = () => {
 
   const propiedadCotizSeleccionada = propiedadesCotizadas.find(p => p.key === propiedadCotizKey) || null;
 
+  // Cotizaciones de la propiedad agrupadas por trabajo; dentro, cada una debajo de la que la originó
+  const trabajosDePropiedad = (() => {
+    if (!propiedadCotizSeleccionada) return [];
+    const grupos = new Map();
+    propiedadCotizSeleccionada.cotizaciones.forEach(c => {
+      const key = c.work_order_id ? `wo-${c.work_order_id}` : c.service_id ? `sv-${c.service_id}` : `cot-${c.id}`;
+      if (!grupos.has(key)) grupos.set(key, []);
+      grupos.get(key).push(c);
+    });
+    const fecha = (c) => new Date(c.created_at || c.fecha || 0).getTime() || 0;
+    return [...grupos.entries()]
+      .map(([key, cots]) => {
+        const base = cots[0];
+        const equipo = base.equipo && base.equipo !== 'General' ? base.equipo : (base.zona && base.zona !== 'Área de la propiedad' ? base.zona : '');
+        return {
+          key,
+          titulo: [base.tipo_falla || 'Trabajo', equipo].filter(Boolean).join(' - '),
+          folioTrabajo: base.work_order_id ? `WO-${base.work_order_id}` : base.service_id ? `SV-${base.service_id}` : null,
+          cotizaciones: cots,
+          cadena: cadenasCotizaciones(cots),
+          ultima: Math.max(...cots.map(fecha)),
+        };
+      })
+      .sort((a, b) => b.ultima - a.ultima);
+  })();
+
+  const alternarCarpeta = (key) => setCarpetasCerradas(prev => {
+    const sig = new Set(prev);
+    if (sig.has(key)) sig.delete(key); else sig.add(key);
+    return sig;
+  });
+
   const formatearMonto = (c) => c.type === 'archivo'
     ? 'Ver Archivo'
     : `$${calcularMontoFinalNum(c).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -1361,8 +1397,35 @@ const VistaCotizaciones = () => {
             </div>
 
             <div className="cotiz-sheet-list">
-              {propiedadCotizSeleccionada.cotizaciones.map(c => (
-                <div key={c.id} className={`cotiz-quote-card ${c.status === 'Rechazado' ? 'rechazada' : ''}`}>
+              {trabajosDePropiedad.map(trabajo => {
+                const abierta = !carpetasCerradas.has(trabajo.key);
+                const n = trabajo.cotizaciones.length;
+                return (
+                <section key={trabajo.key} className={`cotiz-carpeta ${abierta ? 'abierta' : ''}`}>
+                  <button type="button" className="cotiz-carpeta-head" onClick={() => alternarCarpeta(trabajo.key)} aria-expanded={abierta}>
+                    <span className="cotiz-carpeta-icono">{abierta ? <FolderOpen size={19} /> : <Folder size={19} />}</span>
+                    <span className="cotiz-carpeta-texto">
+                      <strong>{trabajo.titulo}</strong>
+                      <small>{[trabajo.folioTrabajo, `${n} ${n === 1 ? 'cotización' : 'cotizaciones'}`].filter(Boolean).join(' · ')}</small>
+                    </span>
+                    <ChevronDown size={18} className="cotiz-carpeta-flecha" />
+                  </button>
+                  {abierta && (
+                  <div className="cotiz-carpeta-cuerpo">
+              {trabajo.cadena.map(({ cotizacion: c, nivel }) => {
+                const origen = origenCotizacion(c, trabajo.cotizaciones);
+                return (
+                <div
+                  key={c.id}
+                  className={`cotiz-quote-card ${c.status === 'Rechazado' ? 'rechazada' : ''} ${nivel ? 'derivada' : ''}`}
+                  style={nivel ? { '--cotiz-nivel': Math.min(nivel, 3) } : undefined}
+                >
+                  {origen.padre && (
+                    <span className="cotiz-quote-origen">
+                      <CornerDownRight size={14} /> Generada a partir de {origen.padre.folio || `COT-${origen.padre.id}`}
+                    </span>
+                  )}
+                  <span className={`cotiz-version-chip ${origen.key}`}>{origen.texto}</span>
                   <div className="cotiz-quote-top">
                     <div className="cotiz-quote-folio">
                       <span className="cotiz-quote-folio-text">{c.folio}</span>
@@ -1381,7 +1444,13 @@ const VistaCotizaciones = () => {
 
                   {renderAcciones(c, () => setPropiedadCotizKey(null))}
                 </div>
-              ))}
+                );
+              })}
+                  </div>
+                  )}
+                </section>
+                );
+              })}
             </div>
           </div>
         </div>,
