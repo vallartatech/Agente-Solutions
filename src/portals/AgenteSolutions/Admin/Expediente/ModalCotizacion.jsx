@@ -13,7 +13,6 @@ import {
   API, authHeaders, dinero, fechaHora, totalCotizacion,
   origenCotizacion, cadenasCotizaciones, nombreCotizacion, folioCotizacion,
 } from './flujoTrabajo';
-import { mostrarAviso } from '../../../../utils/dialogos';
 import '../../../../styles/AgenteSolutions/Admin/VistaPropiedades.css';
 import '../../../../styles/Shared/LiquidGlass.css';
 import '../../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
@@ -181,7 +180,6 @@ const ModalCotizacion = ({ cotizacion, trabajo, onClose }) => {
   const todas = trabajo?.cotizaciones || [cotizacion];
   const [actual, setActual] = useState(cotizacion);
   const [visor, setVisor] = useState(null); // { fotos, inicio }
-  const [abriendoPdf, setAbriendoPdf] = useState(false);
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape' && !visor) onClose(); };
@@ -196,29 +194,12 @@ const ModalCotizacion = ({ cotizacion, trabajo, onClose }) => {
   const esArchivo = actual.type === 'archivo' || (!detalle && archivo);
   const derivadas = todas.filter((x) => x.parent_id && String(x.parent_id) === String(actual.id));
 
-  // La vista de impresión usa el mismo formato que la lista general de cotizaciones
-  const verPdf = async () => {
-    if (esArchivo && archivo) {
-      window.open(archivo, '_blank', 'noopener');
-      return;
-    }
-    const pestana = window.open('', '_blank');
-    setAbriendoPdf(true);
-    try {
-      const res = await axios.get(`${API}/cotizaciones`, { headers: authHeaders() });
-      const lista = Array.isArray(res.data) ? res.data : res.data?.data || [];
-      const completa = lista.find((x) => String(x.id) === String(actual.id));
-      if (!completa) throw new Error('no encontrada');
-      localStorage.setItem('cotizacion_para_imprimir', JSON.stringify(completa));
-      if (pestana) pestana.location.href = '/imprimir-cotizacion';
-      else window.open('/imprimir-cotizacion', '_blank');
-    } catch {
-      pestana?.close();
-      mostrarAviso('No se pudo preparar el PDF de esta cotización.', 'error');
-    } finally {
-      setAbriendoPdf(false);
-    }
-  };
+  // Reporte de trabajo (materiales por elemento + evidencias del técnico): lo arma la propia
+  // pantalla del reporte con los datos del trabajo, así que siempre trae lo último que se subió
+  const idReporte = trabajo?.id
+    ? `${trabajo.kind === 'trabajo' ? 'work_order' : 'servicio'}-${trabajo.id}`
+    : null;
+  const verReporte = () => navigate(`/reporte-trabajo-admin/${idReporte}`);
 
   const IconoOrigen = origen.key === 'tecnico' ? HardHat : origen.key === 'recotizacion' ? RefreshCw : FileText;
 
@@ -332,8 +313,8 @@ const ModalCotizacion = ({ cotizacion, trabajo, onClose }) => {
           </div>
 
           <div className="rp-footer xp-cot-footer">
-            <button type="button" className="xp-btn-glass" onClick={verPdf} disabled={abriendoPdf}>
-              <FileText size={17} /> {abriendoPdf ? 'Preparando...' : esArchivo ? 'Ver archivo' : 'Ver PDF'}
+            <button type="button" className="xp-btn-glass" onClick={verReporte} disabled={!idReporte} title="Materiales y evidencias del técnico">
+              <FileText size={17} /> Reporte PDF
             </button>
             <button
               type="button"

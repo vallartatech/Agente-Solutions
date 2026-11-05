@@ -348,6 +348,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
     const masItemsAdmin = [
       { key: 'mantenimiento', label: 'Mantenimiento', Icon: CalendarClock, path: '/mantenimiento', active: currentPath.includes('/mantenimiento') },
       { key: 'mapa', label: 'Mapa en vivo', Icon: Navigation, path: '/mapa-equipo', active: isMapaActive },
+      { key: 'comprobantes', label: 'Comprobantes', Icon: ReceiptText, path: '/comprobantes', active: currentPath.includes('/comprobantes') },
       ...(isRoot ? [{ key: 'mercado', label: 'Mercado / Red', Icon: Globe, path: '/red-autonomos', active: isMercadoActive }] : []),
     ];
 
@@ -377,28 +378,17 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           <span className="vcp-mobile-nav-text">Usuarios</span>
         </button>
 
-        {/* Propiedades y Levantamientos en un solo botón (dentro se cambia con el selector) */}
+        {/* Detalles de propiedades: Propiedades, Levantamientos, Cotizaciones y Reportes
+            en un solo botón (dentro se cambia con el selector) */}
         <button 
           type="button" 
-          className={`vcp-mobile-nav-item ${isPropiedadesActive || isLevantamientosActive ? 'active' : ''}`} 
+          className={`vcp-mobile-nav-item con-alerta-validacion ${isPropiedadesActive || isLevantamientosActive || isCotizacionesActive || isReportesActive ? 'active' : ''}`} 
           onClick={() => navigate('/propiedades')} 
-          title="Propiedades y levantamientos"
-          aria-label="Propiedades y levantamientos"
+          title="Detalles de propiedades"
+          aria-label="Detalles de propiedades"
         >
           <Building2 size={22} className="vcp-mobile-nav-icon" />
           <span className="vcp-mobile-nav-text">Propiedades</span>
-        </button>
-
-        {/* Cotizaciones y Reportes en un solo botón (dentro se cambia con el selector) */}
-        <button 
-          type="button" 
-          className={`vcp-mobile-nav-item con-alerta-validacion ${isCotizacionesActive || isReportesActive ? 'active' : ''}`}
-          onClick={() => navigate('/vista-cotizaciones')}
-          title="Cotización y reporte"
-          aria-label="Cotización y reporte"
-        >
-          <Receipt size={22} className="vcp-mobile-nav-icon" />
-          <span className="vcp-mobile-nav-text">Cotización</span>
           <MascotaAlerta variante="barra" />
         </button>
 

@@ -5,13 +5,12 @@ import '../../styles/Shared/SelectorVistas.css';
 // Vistas que comparten un solo botón en el menú del admin:
 // este selector (en vidrio blanco) cambia entre las vistas del mismo grupo.
 const GRUPOS = {
-  cotizaciones: [
-    { key: 'cotizaciones', label: 'Cotizaciones', Icon: FileText, path: '/vista-cotizaciones' },
-    { key: 'reportes', label: 'Reportes', Icon: Images, path: '/reportes-globales' },
-  ],
+  // "Detalles de propiedades" (Agente Solutions)
   propiedades: [
     { key: 'propiedades', label: 'Propiedades', Icon: Building2, path: '/propiedades' },
     { key: 'levantamientos', label: 'Levantamientos', Icon: ClipboardList, path: '/levantamientos' },
+    { key: 'cotizaciones', label: 'Cotizaciones', Icon: FileText, path: '/vista-cotizaciones' },
+    { key: 'reportes', label: 'Reportes', Icon: Images, path: '/reportes-globales' },
   ],
   red: [
     { key: 'reportes', label: 'Reportes', Icon: Images, path: '/reportes-globales' },

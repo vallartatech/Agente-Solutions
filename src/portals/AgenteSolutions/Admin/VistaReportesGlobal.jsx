@@ -473,7 +473,7 @@ const VistaReportesGlobal = () => {
         <div className="rg-action-bar">
           {esAdminPanel ? (
             <>
-              <SelectorVistas grupo="cotizaciones" activo="reportes" conteo={propiedadesConReportes.length} />
+              <SelectorVistas grupo="propiedades" activo="reportes" conteo={propiedadesConReportes.length} />
               {/* Quien recibe la alerta de "por validar" elige su mascota (o solo el número) */}
               <SelectorMascota />
             </>

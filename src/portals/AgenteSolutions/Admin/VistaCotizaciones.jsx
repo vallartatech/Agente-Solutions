@@ -1055,7 +1055,7 @@ const VistaCotizaciones = () => {
         {/* ── BARRA DE TÍTULO ── */}
         <div className="cotiz-action-bar">
           {esAdminPanel ? (
-            <SelectorVistas grupo="cotizaciones" activo="cotizaciones" conteo={cotizaciones.length} />
+            <SelectorVistas grupo="propiedades" activo="cotizaciones" conteo={cotizaciones.length} />
           ) : (
             <div className="cotiz-page-title-badge">
               <FileText size={18} className="cotiz-title-icon" />

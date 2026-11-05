@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarDays, Shield, User, LogOut, Navigation, ReceiptText, Globe, ChevronDown, ArrowLeft } from 'lucide-react';
+import { CalendarDays, Shield, User, LogOut, Navigation, Globe, ChevronDown, ArrowLeft } from 'lucide-react';
 import defaultLogo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
 import BotonChats from './BotonChats';
@@ -10,7 +10,6 @@ import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/Modal
 import MobileBottomNav from './MobileBottomNav';
 import { AlertaReportesFlotante, MascotaAlerta } from './AlertaValidacion';
 import axios from 'axios';
-import { obtenerEstadoUbicacion, suscribirEstadoUbicacion } from './ubicacionService';
 import { nombreRol } from '../../utils/roles';
 import '../../styles/Shared/Header.css';
 import '../../styles/Shared/EncabezadoMovil.css';
@@ -25,7 +24,6 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
   const [appLogo, setAppLogo] = useState(defaultLogo);
-  const [canViewMap, setCanViewMap] = useState(false);
   const dropdownRef = useRef(null);
   const masBtnRef = useRef(null);
   const [masAbierto, setMasAbierto] = useState(false);
@@ -44,14 +42,6 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
       document.removeEventListener('keydown', onKey);
     };
   }, [masAbierto]);
-
-  // Botón del mapa del equipo: solo para usuarios autorizados (el backend también lo valida)
-  useEffect(() => {
-    let active = true;
-    obtenerEstadoUbicacion().then(estado => { if (active) setCanViewMap(Boolean(estado?.can_view_map)); });
-    const unsub = suscribirEstadoUbicacion(estado => setCanViewMap(Boolean(estado?.can_view_map)));
-    return () => { active = false; unsub(); };
-  }, [user?.id]);
 
   // Logo dinámico
   useEffect(() => {
@@ -120,16 +110,15 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
 
   const isInicioActive = activeModule === 'inicio' || currentPath === '/vistaroot' || currentPath === '/vistaadmin';
   const isUsuariosActive = activeModule === 'usuarios' || currentPath.includes('/usuarios');
-  // Propiedades y Levantamientos comparten un botón; dentro se cambia con el selector de la vista
-  const isPropLevActive = activeModule === 'propiedades' || activeModule === 'levantamientos'
-    || ((currentPath.includes('/propiedades') || currentPath.includes('/levantamientos')));
-  // Reportes y Cotizaciones comparten un botón; dentro se cambia con el selector de la vista
-  const isReporteCotizacionActive = activeModule === 'reportes' || activeModule === 'cotizaciones'
-    || currentPath.includes('/reporte') || currentPath.includes('/cotizacion');
+  // "Detalles de propiedades" agrupa Propiedades, Levantamientos, Cotizaciones y Reportes;
+  // dentro se cambia con el selector de la vista
+  const isDetallesPropActive = ['propiedades', 'levantamientos', 'reportes', 'cotizaciones'].includes(activeModule)
+    || ['/propiedad', '/levantamientos', '/reporte', '/cotizacion'].some((r) => currentPath.includes(r));
   const isServiciosActive = activeModule === 'servicios' || currentPath.includes('/tablero-servicios') || currentPath.includes('/servicios');
   const isMantenimientoActive = activeModule === 'mantenimiento' || currentPath.includes('/mantenimiento');
   const isMercadoActive = activeModule === 'mercado' || currentPath.includes('/red-autonomos');
   const isMapaActive = activeModule === 'mapa' || currentPath.includes('/mapa-equipo');
+  const isComprobantesActive = activeModule === 'comprobantes' || currentPath.includes('/comprobantes');
 
   const masItems = [
     // Mapa en vivo: propiedades para Root/Admin y, con permiso de ubicación, el equipo
@@ -197,19 +186,11 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
 
           <button
             type="button"
-            className={`vcp-nav-btn ${isPropLevActive ? 'active' : ''}`}
+            className={`vcp-nav-btn con-alerta-validacion ${isDetallesPropActive ? 'active' : ''}`}
             onClick={() => navigate('/propiedades')}
           >
-            PROPIEDADES Y LEVANTAMIENTOS
-          </button>
-
-          <button
-            type="button"
-            className={`vcp-nav-btn con-alerta-validacion ${isReporteCotizacionActive ? 'active' : ''}`}
-            onClick={() => navigate('/vista-cotizaciones')}
-          >
-            COTIZACIÓN Y REPORTE
-            {/* Mascota + contador mientras haya trabajos terminados sin validar */}
+            DETALLES DE PROPIEDADES
+            {/* Mascota + contador mientras haya trabajos terminados sin validar (pestaña Reportes) */}
             <MascotaAlerta />
           </button>
 
@@ -227,6 +208,14 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
             onClick={() => navigate('/mantenimiento')}
           >
             MANTENIMIENTO
+          </button>
+
+          <button
+            type="button"
+            className={`vcp-nav-btn ${isComprobantesActive ? 'active' : ''}`}
+            onClick={() => navigate('/comprobantes')}
+          >
+            COMPROBANTES
           </button>
 
           {/* Apartados secundarios agrupados para que el menú no se amontone.
@@ -352,22 +341,6 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
             >
               <User size={16} /> Mi Perfil
             </button>
-            <button
-              type="button"
-              className="vcp-dropdown-item"
-              onClick={() => { setProfileDropdownOpen(false); navigate('/comprobantes'); }}
-            >
-              <ReceiptText size={16} /> Comprobantes
-            </button>
-            {canViewMap && (
-              <button
-                type="button"
-                className="vcp-dropdown-item"
-                onClick={() => { setProfileDropdownOpen(false); navigate('/mapa-equipo'); }}
-              >
-                <Navigation size={16} /> Mapa en vivo
-              </button>
-            )}
             <button
               type="button"
               className="vcp-dropdown-item logout"
