@@ -2,7 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import "../../../styles/AgenteSolutions/Tecnico/GaleriaReportes.css";
-import { ChevronLeft, FileText, Camera, CheckCircle2, Trash2, Edit3, Loader2, X, Upload, Video, Images } from 'lucide-react';
+import {
+  ChevronLeft, FileText, Camera, CheckCircle2, Trash2, Edit3, Loader2, Upload, Video, Images,
+  Hash, UserRound, Building2, Wrench, Clock, Send, AlertCircle, Circle, Maximize2, Receipt, Lock, ImageOff
+} from 'lucide-react';
 import Swal from 'sweetalert2';
 
 import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
@@ -10,9 +13,21 @@ import Header from '../../../components/Shared/Header';
 import { useAuth } from "../../../context/AuthContext";
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
-import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta, esPorElemento, etapasDelTrabajo, evidenciasDelElemento, avanceDelElemento } from '../Shared/etapasEvidencia';
+import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta, esPorElemento, etapasDelTrabajo, evidenciasDelElemento, avanceDelElemento, evidenciasSoloLectura, trabajoValidado } from '../Shared/etapasEvidencia';
 import '../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 import CarruselEtapas from '../Shared/CarruselEtapas';
+import { VisorFotos } from '../Admin/Expediente/ExpedienteUI';
+import '../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
+import '../../../styles/AgenteSolutions/Tecnico/EvidenciasTrabajo.css';
+
+// Tonos apagados por etapa (los de ETAPAS_EVIDENCIA son para insignias sólidas y resultan chillones aquí)
+const TONO_ETAPA = {
+  ANTES: '#c8607a',
+  DURANTE: '#d98545',
+  DESPUES: '#3f9a72',
+  EXTRA: '#7b8798',
+  TICKET: '#7e6fc4',
+};
 
 // Etapas compartidas con el panel de reportes del admin (incluye el ticket de conformidad)
 const STAGES = ETAPAS_EVIDENCIA.map(e => ({ ...e, placeholder: e.placeholderTecnico }));
@@ -24,9 +39,14 @@ const GaleriaReportes = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const trabajoId = id || location.state?.trabajoId;
-  const servicio = location.state?.servicio;
   const esAdmin = [0, 1].includes(Number(user?.role_id));
-  const returnPath = location.state?.from || (esAdmin ? '/tablero-servicios' : (trabajoId && String(trabajoId).startsWith('work_order-') ? '/mercado-trabajos' : `/trabajo-propiedad/${trabajoId}`));
+  // Datos del trabajo: los de la pantalla anterior y, encima, los del servidor (estado real aunque se abra por enlace)
+  const [detalleTrabajo, setDetalleTrabajo] = useState(null);
+  const servicio = detalleTrabajo ? { ...detalleTrabajo, ...(location.state?.servicio || {}) } : location.state?.servicio;
+  // El técnico regresa a su tablero de trabajos (antes caía en el mercado de trabajos)
+  const returnPath = location.state?.from || (esAdmin
+    ? '/tablero-servicios'
+    : (trabajoId && String(trabajoId).startsWith('work_order-') ? '/trabajos-tecnico' : `/trabajo-propiedad/${trabajoId}`));
 
   const [reportes, setReportes] = useState([]);
   // Estado de la orden: viene del trabajo (técnico) o de la tarjeta del tablero (admin)
@@ -89,6 +109,17 @@ const GaleriaReportes = () => {
 
   useEffect(() => {
     fetchReportes();
+  }, [trabajoId]);
+
+  useEffect(() => {
+    if (!trabajoId) return;
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios/${encodeURIComponent(String(trabajoId))}`)
+      .then(({ data }) => {
+        const detalle = data?.data || data;
+        setDetalleTrabajo(detalle);
+        if (detalle?.estado) setEstadoOrden(detalle.estado);
+      })
+      .catch(() => {});
   }, [trabajoId]);
 
   useEffect(() => {
@@ -282,6 +313,8 @@ const GaleriaReportes = () => {
   const ordenCerrada = ['Listo', 'Finalizado', 'Por Aprobar', 'done', 'review', 'rejected', 'Rechazado', 'Cancelado'].includes(estadoOrden);
   const esOrdenDeTrabajo = !String(trabajoId || '').toLowerCase().includes('servicio');
   const puedeEnviar = countRequiredDone === totalRequeridas && !cargandoElementos && !ordenCerrada && esOrdenDeTrabajo;
+  // Enviado a aprobación: el técnico ya no edita. Validado: nadie edita (el backend aplica lo mismo)
+  const soloLectura = esOrdenDeTrabajo && evidenciasSoloLectura(estadoOrden, esAdmin);
 
   const enviarAprobacion = async () => {
     const result = await Swal.fire({
@@ -321,437 +354,254 @@ const GaleriaReportes = () => {
     }
   };
 
+  const progreso = totalRequeridas ? Math.round((countRequiredDone / totalRequeridas) * 100) : 0;
+  const folioTrabajo = servicio?.property?.property_code
+    || (trabajoId ? (String(trabajoId).startsWith('work_order-') ? `#${String(trabajoId).replace('work_order-', '')}` : trabajoId) : 'N/A');
+
   return (
     <>
       {esAdmin ? <Header activeModule="servicios" titulo="SERVICIOS" /> : <TecnicoHeader activeTab="tablero" />}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', padding: '0 20px', minHeight: '90vh', background: '#f8fafc' }}>
-        
-        {/* ENCABEZADO E INFORMACIÓN DEL TRABAJO */}
-        <div style={{ 
-          width: '100%', 
-          maxWidth: '1500px', 
-          display: 'flex', 
-          flexWrap: 'wrap',
-          gap: '10px', 
-          marginTop: '15px'
-        }}>
-          <div className="id-property-tag" style={{ flex: 1, minWidth: '180px', padding: '8px 15px' }}>
-            <span>ID TRABAJO:</span>
-            <strong>{servicio?.property?.property_code || (trabajoId ? (String(trabajoId).startsWith('work_order-') ? `FOLIO #${String(trabajoId).replace('work_order-', '')}` : trabajoId) : 'N/A')}</strong>
-          </div>
-          <div className="id-property-tag" style={{ flex: 1, minWidth: '180px', padding: '8px 15px' }}>
-            <span>CLIENTE:</span>
-            <strong>{servicio?.client_name || servicio?.cliente || servicio?.propietario || 'Cliente'}</strong>
-          </div>
-          
-          <div className="id-property-tag" style={{ flex: 1, minWidth: '180px', padding: '8px 15px' }}>
-            <span>PROPIEDAD:</span>
-            <strong>{servicio?.property?.type || servicio?.tipoPropiedad || 'Propiedad'} - {servicio?.full_address || servicio?.calle || servicio?.property_name || servicio?.identificador_curp || 'Mérida'}</strong>
-          </div>
+      <div className="ge-page">
+        <div className="ge-container">
 
-          <div className="id-property-tag" style={{ flex: 1, minWidth: '180px', background: '#f1f5f9', padding: '8px 15px' }}>
-            <span>TRABAJO:</span>
-            <strong style={{ fontSize: '12px', textAlign: 'center' }}>{servicio?.titulo || servicio?.descripcion || servicio?.type || 'Mantenimiento General'}</strong>
-          </div>
-        </div>
+          {/* Datos del trabajo */}
+          <section className="ge-card ge-info">
+            {[
+              { Icono: Hash, etiqueta: 'Folio', valor: folioTrabajo },
+              { Icono: UserRound, etiqueta: 'Cliente', valor: servicio?.client_name || servicio?.cliente || servicio?.propietario || 'Cliente' },
+              { Icono: Building2, etiqueta: 'Propiedad', valor: `${servicio?.property?.type || servicio?.tipoPropiedad || 'Propiedad'} · ${servicio?.full_address || servicio?.calle || servicio?.property_name || servicio?.identificador_curp || 'Mérida'}` },
+              { Icono: Wrench, etiqueta: 'Trabajo', valor: servicio?.titulo || servicio?.descripcion || servicio?.type || 'Mantenimiento general' },
+            ].map(({ Icono, etiqueta, valor }) => (
+              <div key={etiqueta} className="ge-dato" title={valor}>
+                <span className="ge-dato-icono"><Icono size={17} /></span>
+                <span className="ge-dato-texto"><small>{etiqueta}</small><strong>{valor}</strong></span>
+              </div>
+            ))}
+          </section>
 
-        {/* BARRA DE ACCIÓN Y REGRESO */}
-        <div style={{ 
-          width: '100%', 
-          maxWidth: '1500px', 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginTop: '15px', 
-          marginBottom: '15px',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}>
-          <button 
-            onClick={() => navigate(returnPath, { state: { servicio, trabajoId } })}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#F26522', color: 'white', padding: '10px 22px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(242, 101, 34, 0.25)' }}
-          >
-            <ChevronLeft size={20} />
-            <span>{esAdmin && !location.state?.from ? 'REGRESAR A SERVICIOS' : 'REGRESAR AL TRABAJO'}</span>
-          </button>
-
-          <div style={{ 
-            background: countRequiredDone === totalRequeridas ? '#dcfce7' : '#fff7ed', 
-            border: `1.5px solid ${countRequiredDone === totalRequeridas ? '#16a34a' : '#ea580c'}`,
-            color: countRequiredDone === totalRequeridas ? '#15803d' : '#c2410c',
-            padding: '8px 18px',
-            borderRadius: '20px',
-            fontWeight: '800',
-            fontSize: '0.85rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <CheckCircle2 size={18} />
-            <span>Progreso Evidencias Obligatorias: {countRequiredDone} de {totalRequeridas} completadas</span>
-          </div>
-
-          {puedeEnviar && (
-            <button
-              onClick={enviarAprobacion}
-              disabled={enviandoAprobacion}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#16a34a', color: 'white', padding: '10px 20px', borderRadius: '25px', border: 'none', cursor: enviandoAprobacion ? 'wait' : 'pointer', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(22, 163, 74, 0.3)' }}
-            >
-              {enviandoAprobacion ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
-              <span>{esAdmin ? 'FINALIZAR TRABAJO' : 'ENVIAR A APROBACIÓN'}</span>
+          {/* Regreso, progreso y acciones */}
+          <div className="ge-barra">
+            <button type="button" className="ge-btn ge-btn-vidrio" onClick={() => navigate(returnPath, { state: { servicio, trabajoId } })}>
+              <ChevronLeft size={18} />
+              {esAdmin && !location.state?.from ? 'Regresar a servicios' : returnPath === '/trabajos-tecnico' ? 'Regresar a mis trabajos' : 'Regresar al trabajo'}
             </button>
-          )}
 
-          {estadoOrden === 'Por Aprobar' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#e0f2fe', border: '1.5px solid #0ea5e9', color: '#0369a1', padding: '8px 18px', borderRadius: '20px', fontWeight: '800', fontSize: '0.85rem' }}>
-              <CheckCircle2 size={18} />
-              <span>Pendiente de aprobación del administrador</span>
+            <div className={`ge-progreso ${countRequiredDone === totalRequeridas ? 'completo' : ''}`}>
+              <span>Evidencias obligatorias <strong>{countRequiredDone} de {totalRequeridas}</strong></span>
+              <span className="ge-progreso-barra"><span style={{ width: `${progreso}%` }} /></span>
             </div>
-          )}
 
-          {(user?.role_id === 0 || user?.role_id === 1) && (
-            <button 
-              onClick={() => navigate(`/reporte-trabajo-admin/${trabajoId}`, { 
-                state: { trabajoId, servicio, imagenes: reportes.filter(r => r.stage !== 'ticket').map(r => r.image_url) } 
-              })}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#0f172a', color: 'white', padding: '10px 20px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}
-            >
-              <FileText size={18} />
-              <span>REPORTE OFICIAL</span>
-            </button>
-          )}
-        </div>
-
-        {/* GRID DE LAS 4 EVIDENCIAS + TICKET DE CONFORMIDAD */}
-        <div style={{ width: '100%', maxWidth: '1500px', marginBottom: '40px' }}>
-          {porElemento && !loading && (
-            <div className="ev-elementos" role="tablist" aria-label="Elementos del trabajo">
-              {elementos.map((el) => {
-                const avance = avanceDelElemento(reportes, el.id);
-                return (
-                  <button
-                    key={el.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={el.id === elementoActivo}
-                    className={`ev-elemento ${el.id === elementoActivo ? 'on' : ''} ${avance === 2 ? 'completo' : ''}`}
-                    onClick={() => { setElementoActivo(el.id); setMenuEtapa(null); }}
-                    title={el.label}
-                  >
-                    <span>{el.label}</span> <em>{avance}/2</em>
-                  </button>
-                );
-              })}
+            <div className="ge-barra-fin">
+              {soloLectura ? (
+                <span className="ge-aviso"><Lock size={16} />
+                  {trabajoValidado(estadoOrden)
+                    ? 'Trabajo validado: el reporte es de solo lectura'
+                    : 'Enviado a aprobación: solo el administrador puede modificar las evidencias'}
+                </span>
+              ) : estadoOrden === 'Por Aprobar' && (
+                <span className="ge-aviso"><Clock size={16} /> Pendiente de aprobación del administrador</span>
+              )}
+              {puedeEnviar && (
+                <button type="button" className="ge-btn ge-btn-exito" onClick={enviarAprobacion} disabled={enviandoAprobacion}>
+                  {enviandoAprobacion ? <Loader2 className="ge-girar" size={17} /> : <Send size={17} />}
+                  {esAdmin ? 'Finalizar trabajo' : 'Enviar a aprobación'}
+                </button>
+              )}
+              {(user?.role_id === 0 || user?.role_id === 1) && (
+                <button
+                  type="button"
+                  className="ge-btn ge-btn-oscuro"
+                  onClick={() => navigate(`/reporte-trabajo-admin/${trabajoId}`, {
+                    state: { trabajoId, servicio, imagenes: reportes.filter(r => r.stage !== 'ticket').map(r => r.image_url) }
+                  })}
+                >
+                  <FileText size={17} /> Reporte oficial
+                </button>
+              )}
             </div>
-          )}
-          {loading || cargandoElementos ? (
-            <div style={{ textAlign: 'center', padding: '60px' }}>
-              <Loader2 className="animate-spin" size={42} color="#F26522" style={{ margin: 'auto' }} />
-              <p style={{ marginTop: '12px', fontWeight: 'bold', color: '#475569' }}>Cargando evidencias del trabajo...</p>
-            </div>
-          ) : (
-            // Una fila con las 5 en computadora; carrusel en tablet y celular
-            <CarruselEtapas className="gr-etapas">
-              {etapas.map((stage) => {
-                const report = getReportForSlot(stage);
-                const localState = slotData[claveSlot(stage)] || SLOT_VACIO;
-                const isSaving = submittingKey === stage.key;
-                const isDone = !!report && !localState.isEditing;
+          </div>
 
-                const displayImage = localState.preview || report?.image_url || null;
-                const displayEsVideo = localState.preview ? !!localState.previewEsVideo : esVideoUrl(report?.image_url);
-                const cleanReportDesc = limpiarEtiqueta(report?.description);
-                // El ticket se muestra como requerido aunque no bloquee el envío
-                const requerido = stage.required || stage.marcaRequerido;
+          {/* Etapas: una fila en computadora, carrusel en tablet y celular */}
+          <div>
+            {porElemento && !loading && (
+              <div className="ev-elementos" role="tablist" aria-label="Elementos del trabajo">
+                {elementos.map((el) => {
+                  const avance = avanceDelElemento(reportes, el.id);
+                  return (
+                    <button
+                      key={el.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={el.id === elementoActivo}
+                      className={`ev-elemento ${el.id === elementoActivo ? 'on' : ''} ${avance === 2 ? 'completo' : ''}`}
+                      onClick={() => { setElementoActivo(el.id); setMenuEtapa(null); }}
+                      title={el.label}
+                    >
+                      <span>{el.label}</span> <em>{avance}/2</em>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-                return (
-                  <div 
-                    key={stage.key}
-                    style={{
-                      background: '#ffffff',
-                      borderRadius: '22px',
-                      border: isDone ? '2px solid #10b981' : '2px dashed #cbd5e1',
-                      boxShadow: '0 10px 25px rgba(0,0,0,0.04)',
-                      padding: '16px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justify: 'space-between',
-                      transition: 'all 0.3s ease',
-                      position: 'relative'
-                    }}
-                  >
-                    {/* ENCABEZADO DE LA TARJETA / RECUADRO */}
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                        <span style={{ 
-                          background: stage.badgeColor, 
-                          color: 'white', 
-                          padding: '5px 12px', 
-                          borderRadius: '12px', 
-                          fontSize: '0.78rem', 
-                          fontWeight: '800',
-                          letterSpacing: '0.5px'
-                        }}>
-                          {stage.title}
+            {loading || cargandoElementos ? (
+              <div className="ge-cargando">
+                <Loader2 className="ge-girar" size={40} />
+                Cargando evidencias del trabajo...
+              </div>
+            ) : (
+              <CarruselEtapas className="gr-etapas">
+                {etapas.map((stage) => {
+                  const report = getReportForSlot(stage);
+                  const localState = slotData[claveSlot(stage)] || SLOT_VACIO;
+                  const isSaving = submittingKey === stage.key;
+                  const isDone = !!report && !localState.isEditing;
+
+                  const displayImage = localState.preview || report?.image_url || null;
+                  const displayEsVideo = localState.preview ? !!localState.previewEsVideo : esVideoUrl(report?.image_url);
+                  const cleanReportDesc = limpiarEtiqueta(report?.description);
+                  // El ticket se muestra como requerido aunque no bloquee el envío
+                  const requerido = stage.required || stage.marcaRequerido;
+                  const [, numero = '', nombre = stage.title] = String(stage.title).match(/^(\d+)\.\s*(.*)$/) || [];
+                  const estado = isDone ? 'completado' : requerido ? 'requerido' : 'opcional';
+                  const sinEvidencia = soloLectura && !report;
+
+                  return (
+                    <div key={stage.key} className={`ge-etapa ${isDone ? 'completa' : ''}`} style={{ '--etapa': TONO_ETAPA[stage.key] || '#7b8798' }}>
+                      <div className="ge-etapa-head">
+                        <span className="ge-etapa-nombre">
+                          <span className="ge-etapa-num">{numero || <Camera size={13} />}</span>
+                          {nombre}
                         </span>
-
-                        <span style={{
-                          fontSize: '0.72rem',
-                          fontWeight: '800',
-                          padding: '4px 10px',
-                          borderRadius: '10px',
-                          background: isDone ? '#dcfce7' : (requerido ? '#fee2e2' : '#f1f5f9'),
-                          color: isDone ? '#15803d' : (requerido ? '#b91c1c' : '#475569')
-                        }}>
-                          {isDone ? '✅ COMPLETADO' : (requerido ? '⚠️ REQUERIDO' : '🔵 OPCIONAL')}
+                        <span className={`ge-estado ${estado}`}>
+                          {estado === 'completado' ? <CheckCircle2 size={12} /> : estado === 'requerido' ? <AlertCircle size={12} /> : <Circle size={12} />}
+                          {estado === 'completado' ? 'Listo' : estado === 'requerido' ? 'Requerido' : 'Opcional'}
                         </span>
                       </div>
 
-                      {/* ZONA DE CARGA O MUESTRA DE FOTO */}
-                      <div 
+                      {/* Foto o video de la etapa */}
+                      <div
+                        className={`ge-foto ${displayImage ? '' : 'vacia'} ${sinEvidencia ? 'bloqueada' : ''}`}
                         onClick={() => {
                           if (isDone && report?.image_url) {
                             if (!displayEsVideo) setImagenExpandida(report.image_url);
-                          } else if (!isSaving) {
+                          } else if (!isSaving && !soloLectura) {
                             setMenuEtapa(menuEtapa === stage.key ? null : stage.key);
                           }
-                        }}
-                        style={{
-                          width: '100%',
-                          height: '170px',
-                          borderRadius: '16px',
-                          background: displayImage ? '#0f172a' : '#f8fafc',
-                          border: displayImage ? 'none' : '2px dashed #94a3b8',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          overflow: 'hidden',
-                          position: 'relative',
-                          marginBottom: '16px',
-                          transition: 'all 0.2s ease'
                         }}
                       >
                         {displayImage ? (
                           <>
                             {displayEsVideo ? (
-                              // Se reproduce en el mismo cuadro, con sus controles
                               <video
                                 src={displayImage}
                                 controls
                                 playsInline
                                 preload="metadata"
                                 onClick={(e) => { if (isDone) e.stopPropagation(); }}
-                                style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
                               />
                             ) : (
-                              <img
-                                src={displayImage}
-                                alt={stage.title}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                              />
+                              <img src={displayImage} alt={stage.title} />
                             )}
                             {isDone && !displayEsVideo && (
-                              <div style={{
-                                position: 'absolute',
-                                bottom: '10px',
-                                right: '10px',
-                                background: 'rgba(0,0,0,0.6)',
-                                color: 'white',
-                                padding: '4px 10px',
-                                borderRadius: '10px',
-                                fontSize: '0.75rem',
-                                fontWeight: 'bold',
-                                backdropFilter: 'blur(4px)'
-                              }}>
-                                Tap para ampliar
-                              </div>
+                              <span className="ge-foto-ampliar"><Maximize2 size={12} /> Ampliar</span>
                             )}
                           </>
+                        ) : sinEvidencia ? (
+                          <>
+                            <span className="ge-foto-icono gris"><ImageOff size={22} /></span>
+                            <strong>Sin evidencia</strong>
+                            <small>No se registró en esta etapa</small>
+                          </>
                         ) : (
-                          <div style={{ textAlign: 'center', padding: '15px', color: '#64748b' }}>
-                            <Camera size={44} strokeWidth={1.5} color="#F26522" style={{ marginBottom: '8px' }} />
-                            <p style={{ margin: 0, fontWeight: '800', fontSize: '0.85rem', color: '#1e293b' }}>
-                              {stage.esTicket ? 'TAP PARA SUBIR EL TICKET' : stage.permiteVideo ? 'TAP PARA SUBIR FOTO O VIDEO' : 'TAP PARA SUBIR FOTO'}
-                            </p>
-                            <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                          <>
+                            <span className="ge-foto-icono">{stage.esTicket ? <Receipt size={22} /> : <Camera size={22} />}</span>
+                            <strong>{stage.esTicket ? 'Subir el ticket' : stage.permiteVideo ? 'Subir foto o video' : 'Subir foto'}</strong>
+                            <small>
                               {stage.esTicket
-                                ? 'Foto del comprobante firmado o sellado por la empresa'
-                                : stage.permiteVideo ? `Cámara o Galería · video de máx. ${VIDEO_MAX_SEGUNDOS} s` : 'Cámara o Galería'}
-                            </span>
-                          </div>
+                                ? 'Comprobante firmado o sellado por la empresa'
+                                : stage.permiteVideo ? `Cámara o galería · video de máx. ${VIDEO_MAX_SEGUNDOS} s` : 'Cámara o galería'}
+                            </small>
+                          </>
                         )}
 
                         {/* Elegir de dónde sale la evidencia */}
                         {menuEtapa === stage.key && !isDone && (
-                          <div
-                            onClick={(e) => { e.stopPropagation(); setMenuEtapa(null); }}
-                            style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.82)', backdropFilter: 'blur(3px)', display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', gap: '8px', padding: '16px' }}
-                          >
+                          <div className="ge-origen" onClick={(e) => { e.stopPropagation(); setMenuEtapa(null); }}>
                             {[
-                              { modo: 'foto', icono: <Camera size={18} />, texto: 'Tomar foto' },
-                              ...(stage.permiteVideo ? [{ modo: 'video', icono: <Video size={18} />, texto: `Grabar video (máx. ${VIDEO_MAX_SEGUNDOS} s)` }] : []),
-                              { modo: 'galeria', icono: <Images size={18} />, texto: 'Elegir de la galería' }
-                            ].map(op => (
+                              { modo: 'foto', Icono: Camera, texto: 'Tomar foto' },
+                              ...(stage.permiteVideo ? [{ modo: 'video', Icono: Video, texto: `Grabar video (máx. ${VIDEO_MAX_SEGUNDOS} s)` }] : []),
+                              { modo: 'galeria', Icono: Images, texto: 'Elegir de la galería', sec: true }
+                            ].map(({ modo, Icono, texto, sec }) => (
                               <button
-                                key={op.modo}
+                                key={modo}
                                 type="button"
-                                onClick={(e) => { e.stopPropagation(); abrirArchivo(stage, op.modo); }}
-                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '11px', borderRadius: '12px', border: 'none', background: op.modo === 'galeria' ? 'rgba(255,255,255,0.14)' : '#F26522', color: 'white', fontWeight: '800', fontSize: '0.85rem', cursor: 'pointer' }}
+                                className={sec ? 'sec' : ''}
+                                onClick={(e) => { e.stopPropagation(); abrirArchivo(stage, modo); }}
                               >
-                                {op.icono} {op.texto}
+                                <Icono size={17} /> {texto}
                               </button>
                             ))}
                           </div>
                         )}
                       </div>
 
-                      {/* VISTA COMPLETADA VS VISTA FORMULARIO */}
-                      {isDone ? (
-                        <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '14px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
-                          <label style={{ fontSize: '0.72rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                            DESCRIPCIÓN REGISTRADA:
-                          </label>
-                          <p style={{ margin: 0, fontSize: '0.88rem', color: '#0f172a', fontWeight: '600', lineHeight: '1.4', whiteSpace: 'pre-line' }}>
-                            {cleanReportDesc || 'Sin descripción.'}
-                          </p>
+                      {/* Descripción registrada o formulario */}
+                      {isDone || sinEvidencia ? (
+                        <div className="ge-registrada">
+                          <small>Descripción</small>
+                          <p>{sinEvidencia ? 'Sin descripción.' : (cleanReportDesc || 'Sin descripción.')}</p>
                         </div>
                       ) : (
-                        <div style={{ marginBottom: '16px' }}>
-                          <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', display: 'block', marginBottom: '6px' }}>
-                            {stage.esTicket
-                              ? 'FOLIO O COMENTARIO (OPCIONAL)'
-                              : <>DESCRIPCIÓN OBLIGATORIA <span style={{ color: '#dc2626' }}>*</span></>}
+                        <div className="ge-campo">
+                          <label htmlFor={`desc-${claveSlot(stage)}`}>
+                            {stage.esTicket ? 'Folio o comentario (opcional)' : <>Descripción <em>*</em></>}
                           </label>
                           <textarea
-                            rows={3}
+                            id={`desc-${claveSlot(stage)}`}
+                            className="ge-textarea"
+                            rows={4}
                             value={localState.description}
                             onChange={(e) => handleDescriptionChange(claveSlot(stage), e.target.value)}
                             placeholder={stage.placeholder}
-                            style={{
-                              width: '100%',
-                              padding: '10px 12px',
-                              borderRadius: '12px',
-                              border: '1.5px solid #cbd5e1',
-                              fontSize: '0.85rem',
-                              outline: 'none',
-                              resize: 'none',
-                              background: '#ffffff',
-                              color: '#0f172a',
-                              fontFamily: 'inherit'
-                            }}
                           />
                         </div>
                       )}
-                    </div>
 
-                    {/* BOTONES DE ACCIÓN PARA CADA TARJETA */}
-                    <div>
-                      {isDone ? (
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button
-                            onClick={() => handleStartEditing(stage, report)}
-                            style={{
-                              flex: 1,
-                              background: '#f1f5f9',
-                              color: '#334155',
-                              border: '1px solid #cbd5e1',
-                              padding: '10px',
-                              borderRadius: '12px',
-                              fontWeight: '700',
-                              fontSize: '0.8rem',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px'
-                            }}
-                          >
-                            <Edit3 size={15} /> Editar
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSlot(report.id, stage.title)}
-                            style={{
-                              background: '#fee2e2',
-                              color: '#991b1b',
-                              border: '1px solid #fecaca',
-                              padding: '10px 14px',
-                              borderRadius: '12px',
-                              fontWeight: '700',
-                              fontSize: '0.8rem',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          {localState.isEditing && (
-                            <button
-                              onClick={() => {
-                                setSlotData(prev => ({ ...prev, [claveSlot(stage)]: SLOT_VACIO }));
-                              }}
-                              style={{
-                                background: '#e2e8f0',
-                                color: '#475569',
-                                border: 'none',
-                                padding: '10px 14px',
-                                borderRadius: '12px',
-                                fontWeight: '700',
-                                fontSize: '0.8rem',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Cancelar
+                      {/* Acciones de la tarjeta (ninguna si el reporte ya es de solo lectura) */}
+                      {!soloLectura && (
+                      <div className="ge-acciones">
+                        {isDone ? (
+                          <>
+                            <button type="button" className="ge-btn ge-btn-suave ge-crece" onClick={() => handleStartEditing(stage, report)}>
+                              <Edit3 size={15} /> Editar
                             </button>
-                          )}
-                          <button
-                            onClick={() => handleSaveSlot(stage)}
-                            disabled={isSaving}
-                            style={{
-                              flex: 1,
-                              background: isSaving ? '#cbd5e1' : '#F26522',
-                              color: 'white',
-                              border: 'none',
-                              padding: '12px',
-                              borderRadius: '12px',
-                              fontWeight: '800',
-                              fontSize: '0.85rem',
-                              cursor: isSaving ? 'not-allowed' : 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '8px',
-                              boxShadow: isSaving ? 'none' : '0 4px 12px rgba(242, 101, 34, 0.35)',
-                              textTransform: 'uppercase'
-                            }}
-                          >
-                            {isSaving ? (
-                              <>
-                                <Loader2 className="animate-spin" size={18} />
-                                <span>Guardando...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Upload size={18} />
-                                <span>Guardar {stage.esTicket ? 'ticket' : stage.key}</span>
-                              </>
+                            <button type="button" className="ge-btn ge-btn-peligro" onClick={() => handleDeleteSlot(report.id, stage.title)} aria-label={`Eliminar evidencia de ${nombre}`}>
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {localState.isEditing && (
+                              <button type="button" className="ge-btn ge-btn-suave" onClick={() => setSlotData(prev => ({ ...prev, [claveSlot(stage)]: SLOT_VACIO }))}>
+                                Cancelar
+                              </button>
                             )}
-                          </button>
-                        </div>
+                            <button type="button" className="ge-btn ge-btn-primario ge-crece" onClick={() => handleSaveSlot(stage)} disabled={isSaving}>
+                              {isSaving
+                                ? <><Loader2 className="ge-girar" size={16} /> Guardando...</>
+                                : <><Upload size={16} /> Guardar {stage.esTicket ? 'ticket' : nombre.toLowerCase()}</>}
+                            </button>
+                          </>
+                        )}
+                      </div>
                       )}
                     </div>
-
-                  </div>
-                );
-              })}
-            </CarruselEtapas>
-          )}
+                  );
+                })}
+              </CarruselEtapas>
+            )}
+          </div>
         </div>
 
         {grabadorEtapa && (
@@ -769,48 +619,10 @@ const GaleriaReportes = () => {
           style={{ display: 'none' }}
         />
 
-        {/* MODAL ZOOM PARA AMPLIAR IMAGEN AL HACER CLIC */}
+        {/* Foto ampliada: mismo visor que el expediente */}
         {imagenExpandida && (
-          <div 
-            onClick={() => setImagenExpandida(null)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 99999,
-              background: 'rgba(0,0,0,0.85)',
-              backdropFilter: 'blur(6px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px'
-            }}
-          >
-            {esVideoUrl(imagenExpandida) ? (
-              <video
-                src={imagenExpandida}
-                controls
-                autoPlay
-                playsInline
-                onClick={(e) => e.stopPropagation()}
-                style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
-              />
-            ) : (
-              <img
-                src={imagenExpandida}
-                alt="Ampliada"
-                onClick={(e) => e.stopPropagation()}
-                style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '16px', objectFit: 'contain', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
-              />
-            )}
-            <button 
-              onClick={() => setImagenExpandida(null)}
-              style={{ position: 'absolute', top: '20px', right: '25px', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}
-            >
-              <X size={36} />
-            </button>
-          </div>
+          <VisorFotos fotos={[imagenExpandida]} onClose={() => setImagenExpandida(null)} />
         )}
-
       </div>
     </>
   );

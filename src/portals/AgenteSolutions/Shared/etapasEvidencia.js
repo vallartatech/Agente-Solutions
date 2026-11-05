@@ -124,3 +124,13 @@ export const idReportesTrabajo = ({ kind, id, work_order_id, service_id }) => {
   if (!id) return null;
   return kind === 'trabajo' ? `work_order-${id}` : String(id);
 };
+
+// ── Evidencias cerradas (mismo criterio que el backend) ──
+// Validado (Listo / Finalizado): nadie las modifica. Enviado a aprobación: solo el admin las corrige.
+const ESTADOS_VALIDADOS = ['listo', 'finalizado', 'completed', 'completado', 'terminado'];
+const normalizar = (s) => String(s || '').trim().toLowerCase();
+
+export const trabajoValidado = (estado) => ESTADOS_VALIDADOS.includes(normalizar(estado));
+export const trabajoEnviadoOValidado = (estado) => trabajoValidado(estado) || normalizar(estado) === 'por aprobar';
+export const evidenciasSoloLectura = (estado, esAdmin) =>
+  esAdmin ? trabajoValidado(estado) : trabajoEnviadoOValidado(estado);

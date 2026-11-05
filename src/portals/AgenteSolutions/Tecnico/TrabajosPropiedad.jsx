@@ -18,6 +18,7 @@ import {
 import { useAuth } from "../../../context/AuthContext";
 import { reportarUbicacion } from "../../../components/Shared/ubicacionService";
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
+import { trabajoEnviadoOValidado } from '../Shared/etapasEvidencia';
 import { AccesoQRTecnico } from '../Shared/AccesoQR';
 
 const TrabajoPropiedad = () => {
@@ -186,7 +187,13 @@ const TrabajoPropiedad = () => {
       setLoading(true);
       const cleanId = encodeURIComponent(String(id).trim());
       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios/${cleanId}`);
-      setData(res.data.data || res.data);
+      const detalle = res.data.data || res.data;
+      // Técnico interno con un trabajo ya enviado o validado: en lugar de los datos, va directo a su reporte
+      if (effectiveRole === 2 && String(id).startsWith('work_order-') && trabajoEnviadoOValidado(detalle?.estado)) {
+        navigate(`/galeria-reportes/${id}`, { replace: true, state: { trabajoId: id, servicio: detalle, from: '/trabajos-tecnico' } });
+        return;
+      }
+      setData(detalle);
       try {
         const reportsRes = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios/${cleanId}/reportes`);
         if (reportsRes.data && reportsRes.data.length > 0) {

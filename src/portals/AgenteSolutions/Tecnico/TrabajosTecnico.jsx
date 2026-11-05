@@ -12,6 +12,7 @@ import { Package, Wrench, CheckCircle2, Lock, Settings,
 } from 'lucide-react';
 import Header from "../../../components/Shared/Header";
 import UniversalSearch from '../../../components/Shared/UniversalSearch';
+import { trabajoEnviadoOValidado } from '../Shared/etapasEvidencia';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const TrabajosTecnico = () => {
@@ -381,8 +382,18 @@ const TrabajosTecnico = () => {
   };
 
   const renderCard = (item, index) => {
-    const bloqueada = !isTecnicoRed && !materialRecibido;
-    const abrir = () => { if (!bloqueada) navigate(`/trabajo-propiedad/${item.composite_id || item.id}`); };
+    const compuesto = String(item.composite_id || item.id);
+    // Trabajo enviado a aprobación o ya validado: el técnico va directo a su reporte (solo lectura)
+    const verReporte = compuesto.startsWith('work_order-') && trabajoEnviadoOValidado(item.status);
+    const bloqueada = !isTecnicoRed && !materialRecibido && !verReporte;
+    const abrir = () => {
+      if (bloqueada) return;
+      if (verReporte) {
+        navigate(`/galeria-reportes/${compuesto}`, { state: { trabajoId: compuesto, servicio: item, from: '/trabajos-tecnico' } });
+        return;
+      }
+      navigate(`/trabajo-propiedad/${compuesto}`);
+    };
     const fechaVisita = item.scheduled_start || item.created_at;
     const hora = fechaVisita ? new Date(fechaVisita).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }) : '--:--';
     const [horaNum, ...sufijo] = hora.split(' ');
@@ -460,7 +471,7 @@ const TrabajosTecnico = () => {
                 )
               )}
               <span className="ttc-abrir">
-                {bloqueada ? <><Lock size={14} /> Confirma tu material</> : <>Ver trabajo <ChevronRight size={16} /></>}
+                {bloqueada ? <><Lock size={14} /> Confirma tu material</> : <>{verReporte ? 'Ver reporte' : 'Ver trabajo'} <ChevronRight size={16} /></>}
               </span>
             </div>
           </div>
