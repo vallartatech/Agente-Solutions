@@ -116,7 +116,7 @@ const VistaCotizacionPrint = () => {
       texto += `--- FASE 1: COTIZACIÓN COMERCIAL (PENDIENTE DE PAGO) ---\n`;
       texto += `• Vigencia de precios: 15 días naturales a partir de la fecha de emisión.\n`;
       texto += `• Garantía de mano de obra: 15 días naturales tras la entrega y conclusión del servicio.\n`;
-      texto += `• La asignación del técnico especialista y fecha de ejecución se programarán automáticamente al confirmarse el pago por Mercado Pago o en Efectivo.\n`;
+      texto += `• La asignación del técnico especialista y fecha de ejecución se programarán automáticamente al confirmarse el pago por transferencia o en efectivo.\n`;
     } else if (fase === 'pagado') {
       texto += `--- FASE 2: PAGO CONFIRMADO (TÉCNICO EN ASIGNACIÓN) ---\n`;
       if (cot.mp_payment_data?.mp_payment_id) {

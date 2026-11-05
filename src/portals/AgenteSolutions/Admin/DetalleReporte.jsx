@@ -7,7 +7,6 @@ import '../../../styles/AgenteSolutions/Admin/DetalleReporte.css';
 import '../../../styles/AgenteSolutions/Tecnico/RegistroDetalleHabitacion.css';
 import logo from "../../../assets/Logo3.png";
 import casaImg from '../../../assets/propiedad_ejemplo.jpg';
-import mpLogo from '../../../assets/Mercado-Pago.png';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const IVA_RATE = 0.16;
@@ -550,8 +549,8 @@ const DetalleReporte = () => {
                          filasMateriales.reduce((acc, f) => acc + (Number(f.cantidad) * Number(f.costo_u)), 0);
     const ivaGeneral = subtotalGeneral * IVA_RATE;
     const subtotalConIva = subtotalGeneral + ivaGeneral;
-    const comisionMPGeneral = (subtotalConIva * 0.0349 + 4) * 1.16;
-    const totalGeneral = subtotalConIva + comisionMPGeneral;
+    // Sin comisión de pasarela: se cobra por transferencia o en efectivo
+    const totalGeneral = subtotalConIva;
 
     const guardarCotizacion = async () => {
         try {
@@ -1217,12 +1216,6 @@ const DetalleReporte = () => {
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#aaa' }}>
                                       <span>IVA (16%)</span><span>{fmt(ivaGeneral)}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#009ee3', alignItems: 'center' }}>
-                                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <img src={mpLogo} alt="MP" style={{ height: '12px', objectFit: 'contain' }} /> Comisión (Tarifa Oficial)
-                                      </span>
-                                      <span>{fmt(comisionMPGeneral)}</span>
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #444', paddingTop: '4px', marginTop: '2px' }}>
                                       <span style={{ fontWeight: 'bold', color: '#fff' }}>TOTAL:</span>

@@ -1,0 +1,134 @@
+/* Datos bancarios para transferencia: tarjeta de vidrio blanco con botón de copiar por dato */
+.db-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06), inset 0 1px 0 #ffffff;
+  color: #0f172a;
+  font-family: inherit;
+  text-align: left;
+}
+
+.db-cargando { font-size: 0.85rem; color: #64748b; }
+
+.db-head { display: flex; align-items: center; gap: 10px; }
+
+.db-icono {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: rgba(242, 101, 34, 0.12);
+  color: #ea580c;
+}
+
+.db-head-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.db-head-texto strong { font-size: 0.92rem; font-weight: 800; }
+.db-head-texto small { font-size: 0.78rem; font-weight: 700; color: #64748b; }
+
+.db-editar {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 10px;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.db-editar:hover { color: #ea580c; border-color: #fdba74; }
+
+.db-filas { display: flex; flex-direction: column; gap: 8px; }
+
+.db-fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px 9px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.db-fila-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.db-fila-texto small { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #94a3b8; }
+.db-fila-texto strong { font-size: 0.98rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 0.3px; overflow-wrap: anywhere; user-select: all; }
+
+.db-copiar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 11px;
+  border: none;
+  border-radius: 10px;
+  background: #f26522;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.db-copiar:hover { background: #ea580c; }
+.db-copiar.ok { background: #16a34a; }
+
+.db-form { display: flex; flex-direction: column; gap: 8px; }
+
+.db-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #475569;
+}
+
+.db-form input {
+  padding: 9px 11px;
+  border: 1.5px solid rgba(203, 213, 225, 0.9);
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.db-form input:focus { outline: none; border-color: #f26522; box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.15); }
+
+.db-form-acciones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 2px; }
+
+.db-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 10px;
+  background: #f26522;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.db-btn.sec { background: #f1f5f9; color: #475569; }
+.db-btn:disabled { opacity: 0.6; cursor: wait; }
+
+.db-card.compacto { padding: 10px; gap: 8px; }
+.db-card.compacto .db-fila { padding: 7px 8px 7px 10px; }

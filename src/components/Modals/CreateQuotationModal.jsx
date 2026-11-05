@@ -7,7 +7,6 @@ import {
   AlertCircle, Upload,
   MapPin, Phone, Wrench
 } from 'lucide-react';
-import mpLogo from '../../assets/Mercado-Pago.png';
 import '../../styles/Shared/CreateQuotationModal.css';
 import { mostrarAviso } from '../../utils/dialogos';
 
@@ -201,9 +200,9 @@ const CreateQuotationModal = ({ onClose, onSuccess, prefillData }) => {
     }
     const iva = subtotal * IVA_RATE;
     const subtotalConIva = subtotal + iva;
-    const comisionMP = (subtotalConIva * 0.0349 + 4) * 1.16;
-    const total = subtotalConIva + comisionMP;
-    return { subtotal, iva, comisionMP, total };
+    // Ya no se cobra con Mercado Pago: la cotización de la empresa es Subtotal + IVA
+    const total = subtotalConIva;
+    return { subtotal, iva, total };
   };
 
   // Subtotal (sin IVA) de la propuesta original del técnico, con sus precios
@@ -855,7 +854,7 @@ className="cqm-input cqm-textarea internal"
 <div className="modal-summary-footer cqm-summary">
                 {/* Desglose de precios */}
                 {tab === 'manual' && (() => {
-                  const { subtotal, iva, comisionMP, total } = calcularTotales();
+                  const { subtotal, iva, total } = calcularTotales();
                   const fmt = (n) => `$${n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                   return (
                     <div style={{ width: '100%' }}>
@@ -866,12 +865,6 @@ className="cqm-input cqm-textarea internal"
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', color: '#555', marginBottom: '4px' }}>
                         <span>IVA (16%)</span>
                         <span style={{ fontWeight: '600' }}>{fmt(iva)}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', color: '#009ee3', marginBottom: '8px', alignItems: 'center' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          Comisión <img src={mpLogo} alt="MercadoPago" style={{ height: '16px', objectFit: 'contain' }} /> (Tarifa Oficial)
-                        </span>
-                        <span style={{ fontWeight: '600' }}>{fmt(comisionMP)}</span>
                       </div>
                       <div style={{ borderTop: '2px solid #ddd', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '0.9rem', color: '#333', fontWeight: '700' }}>TOTAL A COBRAR AL CLIENTE:</span>

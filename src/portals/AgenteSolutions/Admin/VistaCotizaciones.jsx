@@ -16,7 +16,8 @@ import {
   User, Wrench, Truck, Layout, Home, Phone, MapPin, RefreshCw,
   MessageCircle, Maximize2, Image as ImageIcon, Send,
   X, Eye, Pencil, Forward, Globe, FilePlus,
-  Receipt, CalendarClock, Upload, Loader2
+  Receipt, CalendarClock, Upload, Loader2,
+  Landmark
 } from 'lucide-react';
 import CreateQuotationModal from "../../../components/Modals/CreateQuotationModal";
 import ModalCrearCotizacion from "../../../components/Shared/ModalCrearCotizacion";
@@ -24,6 +25,7 @@ import ModalConfirmarPagoEfectivo from "../../../components/Modals/ModalConfirma
 import UniversalSearch from "../../../components/Shared/UniversalSearch";
 import Pago from "../Cliente/Pago";
 import mpLogo from "../../../assets/Mercado-Pago.png";
+import DatosBancarios from "../../../components/Shared/DatosBancarios";
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const VistaCotizaciones = () => {
@@ -576,6 +578,8 @@ const VistaCotizaciones = () => {
       }
     } catch {}
     let base = subtotalItems > 0 ? subtotalItems : parseFloat(cot.total || cot.estimated_amount || 0);
+    // La propuesta del técnico es su precio neto: el IVA lo cobra la empresa en su propia cotización
+    if (cot.created_by_role === 'Técnico') return base;
     if (base > 0) {
       const iva = base * 0.16;
       const subConIva = base + iva;
@@ -1832,9 +1836,20 @@ const VistaCotizaciones = () => {
                     ? (esPagadoMP ? (subtotalConIva + comisionMP) : subtotalConIva) 
                     : parseFloat(cotizacionSeleccionada.total || 0);
 
+                  const esPropuestaTecnico = cotizacionSeleccionada.created_by_role === 'Técnico';
+
                   return (
                     <div className="modal-total-section cotiz-detail-total">
-                      {esTecnico ? (
+                      {esPropuestaTecnico && !esTecnico ? (
+                        <>
+                          <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#1e293b' }}>
+                            TOTAL PROPUESTO POR EL TÉCNICO: ${(baseMonto > 0 ? baseMonto : parseFloat(cotizacionSeleccionada.total || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </h3>
+                          <small style={{ color: '#64748b', fontWeight: 600 }}>
+                            Sin IVA ni comisiones: el IVA se agrega cuando generes la cotización de la empresa.
+                          </small>
+                        </>
+                      ) : esTecnico ? (
                         <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#1e293b' }}>
                           TOTAL DEL TRABAJO: ${(baseMonto > 0 ? baseMonto : parseFloat(cotizacionSeleccionada.total || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </h3>
@@ -1909,6 +1924,13 @@ const VistaCotizaciones = () => {
                 )}
 
                 {/* --- SEGUIMIENTO: comprobante de pago + asignación del trabajo --- */}
+                {/* Datos bancarios a la mano para compartirlos con el cliente (Root/Admin pueden editarlos) */}
+                {esAdminPanel && cotizacionSeleccionada.created_by_role !== 'Técnico' && (
+                  <div style={{ width: '100%', margin: '4px 0 14px' }}>
+                    <DatosBancarios editable compacto />
+                  </div>
+                )}
+
                 {(() => {
                   const esAdmin = !esCliente && !esTecnico;
                   const esCotEmpresa = cotizacionSeleccionada.created_by_role !== 'Técnico';
@@ -2119,7 +2141,7 @@ const VistaCotizaciones = () => {
                             <CheckCircle size={22} />
                             <span>✅ Cotización Pagada</span>
                           </div>
-                          <img src={mpLogo} alt="MercadoPago" style={{ height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+                          {pd ? <img src={mpLogo} alt="MercadoPago" style={{ height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} /> : <Landmark size={24} color="#ffffff" />}
                         </div>
                         <div style={{ background: '#f0faf4', padding: '16px 18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px', fontSize: '0.85rem', color: '#333' }}>
                           {pd?.mp_payment_id && (
@@ -2154,7 +2176,7 @@ const VistaCotizaciones = () => {
                           )}
                           {!pd && (
                             <div style={{ gridColumn: '1 / -1', color: '#555', textAlign: 'center', padding: '8px 0' }}>
-                              ✅ Pago confirmado por MercadoPago
+                              ✅ Pago validado por la administración
                             </div>
                           )}
                         </div>
@@ -2482,7 +2504,7 @@ const VistaCotizaciones = () => {
                       className="cd-btn cd-btn--mp"
                       onClick={() => setShowPagoModal(true)}
                     >
-                      Pagar con <img src={mpLogo} alt="MercadoPago" style={{ height: '22px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+                      <Landmark size={18} /> Pagar por transferencia
                     </button>
                   )}
 

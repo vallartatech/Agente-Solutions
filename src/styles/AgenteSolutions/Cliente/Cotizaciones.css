@@ -2678,3 +2678,9 @@
   .cart-page-container .cart-header { padding: 18px; border-radius: 22px; }
   .cart-page-container .header-titles h2 { font-size: 1.25rem; }
 }
+
+/* Comprobante de transferencia en la ventana de pago */
+.pay-comprobante { display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+.pay-comprobante .pay-card-title { display: inline-flex; align-items: center; gap: 6px; }
+.pay-comprobante input[type="file"] { font-family: inherit; font-size: 0.85rem; max-width: 100%; }
+.pay-comprobante small { color: #64748b; font-size: 0.78rem; overflow-wrap: anywhere; }

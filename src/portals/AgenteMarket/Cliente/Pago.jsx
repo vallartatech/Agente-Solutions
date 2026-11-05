@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { X, CheckCircle2, Loader2, ShieldCheck, CreditCard, Banknote, Sparkles } from 'lucide-react';
+import { X, CheckCircle2, Loader2, ShieldCheck, CreditCard, Banknote, Landmark, Upload, ArrowLeft, Sparkles } from 'lucide-react';
 import '../../../styles/AgenteMarket/Cliente/Pagos.css';
-import mpLogo from '../../../assets/Mercado-Pago.png';
+import DatosBancarios from '../../../components/Shared/DatosBancarios';
 import { mostrarAviso } from '../../../utils/dialogos';
 
 const Pago = ({ cotizacion, onClose }) => {
   const [subiendo, setSubiendo] = useState(false);
+
+  // Transferencia: { stage, monto } mientras el cliente ve los datos bancarios y sube el comprobante
+  const [transferencia, setTransferencia] = useState(null);
+  const [comprobante, setComprobante] = useState(null);
+  const [comprobanteEnviado, setComprobanteEnviado] = useState(false);
 
   // Estado para efectivo
   const [modoEfectivo, setModoEfectivo] = useState(false);
@@ -15,7 +20,7 @@ const Pago = ({ cotizacion, onClose }) => {
   const [enviandoEfectivo, setEnviandoEfectivo] = useState(false);
   const [efectivoEnviado, setEfectivoEnviado] = useState(false);
 
-  // ── CÁLCULO DEL TOTAL FINAL FISCAL (Con IVA + MP) ──
+  // ── CÁLCULO DEL TOTAL FINAL FISCAL (Subtotal + IVA; ya no hay comisión de Mercado Pago) ──
   const calcularMontoFinal = (cot) => {
     if (!cot) return 0;
     let subtotalItems = 0;
@@ -33,9 +38,7 @@ const Pago = ({ cotizacion, onClose }) => {
     let base = subtotalItems > 0 ? subtotalItems : parseFloat(cot.total || cot.estimated_amount || 0);
     if (base > 0) {
       const iva = base * 0.16;
-      const subConIva = base + iva;
-      const comisionMP = (subConIva * 0.0349 + 4) * 1.16;
-      return subConIva + comisionMP;
+      return base + iva;
     }
     return 0;
   };
@@ -73,26 +76,33 @@ const Pago = ({ cotizacion, onClose }) => {
   const yaPayoAnticipo = cotizacion?.advance_paid === true;
   const fmt = (n) => `$${Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const handleMercadoPago = async (stage) => {
+  // Transferencia: se sube el comprobante y el admin valida el pago (sustituye a Mercado Pago)
+  const elegirTransferencia = (stage, monto) => {
+    setComprobante(null);
+    setTransferencia({ stage, monto });
+  };
+
+  const enviarComprobante = async () => {
+    if (!comprobante) {
+      mostrarAviso('Adjunta la foto o PDF del comprobante de tu transferencia.', 'warning');
+      return;
+    }
     try {
       setSubiendo(true);
       const token = localStorage.getItem('agente_token');
-
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/cotizaciones/${cotizacion.id}/mercadopago/preference`,
-        { payment_stage: stage },
+      const fd = new FormData();
+      fd.append('receipt_file', comprobante);
+      fd.append('payment_stage', transferencia.stage);
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/cotizaciones/${cotizacion.id}/pago`,
+        fd,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
-
-      if (response.data?.init_point) {
-        window.location.href = response.data.init_point;
-      } else {
-        mostrarAviso('No se recibió el enlace de pago. Intenta de nuevo.');
-        setSubiendo(false);
-      }
+      setComprobanteEnviado(true);
     } catch (error) {
-      console.error('Error iniciando MercadoPago:', error);
-      mostrarAviso('Hubo un error al conectar con MercadoPago. Intenta más tarde.');
+      console.error('Error subiendo comprobante:', error);
+      mostrarAviso(error.response?.data?.error || 'No se pudo enviar el comprobante. Intenta de nuevo.');
+    } finally {
       setSubiendo(false);
     }
   };
@@ -132,6 +142,66 @@ const Pago = ({ cotizacion, onClose }) => {
       setEnviandoEfectivo(false);
     }
   };
+
+  // ---------- PANTALLA: Comprobante de transferencia enviado ----------
+  if (comprobanteEnviado) {
+    return (
+      <div className="tp-modal-overlay" style={{ zIndex: 100000 }}>
+        <div className="payment-modal-card" style={{ maxWidth: '480px', textAlign: 'center', padding: '48px 28px' }}>
+          <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+            <CheckCircle2 size={42} color="#16a34a" />
+          </div>
+          <h2 style={{ color: '#0f172a', fontSize: '1.5rem', fontWeight: 800, margin: '0 0 10px 0' }}>¡Comprobante Recibido!</h2>
+          <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: '1.5', margin: '0 0 26px 0' }}>Revisaremos tu transferencia y te avisaremos en cuanto el pago quede validado.</p>
+          <button onClick={onClose} className="btn-pay-mp btn-full" style={{ maxWidth: '220px', margin: '0 auto' }}>
+            Entendido
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- PANTALLA: Datos bancarios + comprobante de la transferencia ----------
+  if (transferencia) {
+    return (
+      <div className="tp-modal-overlay" style={{ zIndex: 100000 }}>
+        <div className="payment-modal-card" style={{ maxWidth: '520px', padding: '28px 22px', position: 'relative' }}>
+          <button onClick={onClose} className="payment-close-btn" aria-label="Cerrar"><X size={20} /></button>
+          <button
+            type="button"
+            onClick={() => setTransferencia(null)}
+            disabled={subiendo}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: 0, border: 'none', background: 'none', color: '#64748b', fontWeight: 700, cursor: 'pointer', marginBottom: '12px' }}
+          >
+            <ArrowLeft size={16} /> Otras formas de pago
+          </button>
+          <h2 style={{ color: '#0f172a', fontSize: '1.3rem', fontWeight: 800, margin: '0 0 4px 0' }}>Pago por transferencia</h2>
+          <p style={{ color: '#64748b', fontSize: '0.88rem', margin: '0 0 16px 0' }}>
+            {transferencia.stage === 'advance' ? 'Anticipo (60%)' : transferencia.stage === 'remaining' ? 'Saldo restante (40%)' : 'Pago total (100%)'} · Cotización #{cotizacion?.folio || cotizacion?.id}
+          </p>
+
+          <DatosBancarios monto={transferencia.monto} />
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '14px', padding: '14px', borderRadius: '14px', border: '1.5px dashed #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 800, color: '#0f172a', fontSize: '0.9rem' }}>
+              <Upload size={16} /> Comprobante de la transferencia
+            </span>
+            <input type="file" accept="image/*,application/pdf" onChange={(e) => setComprobante(e.target.files?.[0] || null)} />
+            <small style={{ color: '#64748b' }}>{comprobante ? comprobante.name : 'Foto o PDF del comprobante (máx. 10 MB).'}</small>
+          </label>
+
+          <button
+            onClick={enviarComprobante}
+            disabled={subiendo || !comprobante}
+            className="btn-pay-mp btn-full"
+            style={{ width: '100%', marginTop: '16px' }}
+          >
+            {subiendo ? <Loader2 className="spin-icon" size={20} /> : 'Enviar comprobante'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ---------- PANTALLA: Anticipo ya pagado, solo queda el 40% ----------
   if (yaPayoAnticipo && !cotizacion?.remaining_paid) {
@@ -184,12 +254,12 @@ const Pago = ({ cotizacion, onClose }) => {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <button
-              onClick={() => handleMercadoPago('remaining')}
+              onClick={() => elegirTransferencia('remaining', restante)}
               disabled={subiendo || enviandoEfectivo}
               className="btn-pay-mp btn-advance"
               style={{ padding: '16px', width: '100%' }}
             >
-              {subiendo ? <Loader2 className="spin-icon" size={22} /> : <>Liquidar Saldo ({fmt(restante)}) con <img src={mpLogo} alt="MP" style={{ height: '24px', filter: 'brightness(0) invert(1)' }} /></>}
+              <Landmark size={20} /> Liquidar Saldo ({fmt(restante)}) por transferencia
             </button>
 
             <button
@@ -248,7 +318,7 @@ const Pago = ({ cotizacion, onClose }) => {
           <button onClick={onClose} className="payment-close-btn"><X size={20} /></button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
             <ShieldCheck size={22} color="#fdba74" />
-            <p className="payment-modal-subtitle">Pasarela de Pago Segura</p>
+            <p className="payment-modal-subtitle">Pago Seguro</p>
           </div>
           <h1 className="payment-modal-title">Selecciona tu Modalidad</h1>
           <p style={{ fontSize: '0.9rem', opacity: 0.85, margin: 0 }}>Cotización #{cotizacion?.folio || cotizacion?.id}</p>
@@ -291,11 +361,11 @@ const Pago = ({ cotizacion, onClose }) => {
                 <strong style={{ fontSize: '1.25rem', color: '#1d4ed8' }}>{fmt(anticipo)}</strong>
               </div>
               <button
-                onClick={() => handleMercadoPago('advance')}
+                onClick={() => elegirTransferencia('advance', anticipo)}
                 disabled={subiendo}
                 className="btn-pay-mp btn-advance"
               >
-                {subiendo ? <Loader2 className="spin-icon" size={20} /> : <>Pagar {fmt(anticipo)} con <img src={mpLogo} alt="MP" style={{ height: '22px', filter: 'brightness(0) invert(1)' }} /></>}
+                <Landmark size={20} /> Pagar {fmt(anticipo)} por transferencia
               </button>
             </div>
           </div>
@@ -318,11 +388,11 @@ const Pago = ({ cotizacion, onClose }) => {
                 <strong style={{ fontSize: '1.25rem', color: '#c2410c' }}>{fmt(total)}</strong>
               </div>
               <button
-                onClick={() => handleMercadoPago('full')}
+                onClick={() => elegirTransferencia('full', total)}
                 disabled={subiendo}
                 className="btn-pay-mp btn-full"
               >
-                {subiendo ? <Loader2 className="spin-icon" size={20} /> : <>Pagar {fmt(total)} con <img src={mpLogo} alt="MP" style={{ height: '22px', filter: 'brightness(0) invert(1)' }} /></>}
+                <Landmark size={20} /> Pagar {fmt(total)} por transferencia
               </button>
             </div>
           </div>

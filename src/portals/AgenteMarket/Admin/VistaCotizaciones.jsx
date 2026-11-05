@@ -19,7 +19,8 @@ import {
   XCircle, Clock, ChevronDown, ChevronRight,
   User, Wrench, Truck, Layout, Home, Phone, MapPin, ShoppingCart, RefreshCw,
   MessageCircle, Maximize2, Image as ImageIcon, Send,
-  X, Globe, Briefcase, CalendarDays, CheckCircle2
+  X, Globe, Briefcase, CalendarDays, CheckCircle2,
+  Landmark
 } from 'lucide-react';
 import CreateQuotationModal from "../../../components/Modals/CreateQuotationModal";
 import ModalCrearCotizacion from "../../../components/Shared/ModalCrearCotizacion";
@@ -1940,7 +1941,7 @@ const VistaCotizaciones = () => {
                             <CheckCircle size={22} />
                             <span>✅ Cotización Pagada</span>
                           </div>
-                          <img src={mpLogo} alt="MercadoPago" style={{ height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+                          {pd ? <img src={mpLogo} alt="MercadoPago" style={{ height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} /> : <Landmark size={24} color="#ffffff" />}
                         </div>
                         <div style={{ background: '#f0faf4', padding: '16px 18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px', fontSize: '0.85rem', color: '#333' }}>
                           {pd?.mp_payment_id && (
@@ -1975,7 +1976,7 @@ const VistaCotizaciones = () => {
                           )}
                           {!pd && (
                             <div style={{ gridColumn: '1 / -1', color: '#555', textAlign: 'center', padding: '8px 0' }}>
-                              ✅ Pago confirmado por MercadoPago
+                              ✅ Pago validado por la administración
                             </div>
                           )}
                         </div>
@@ -2361,10 +2362,10 @@ const VistaCotizaciones = () => {
                   {esCliente && (cotizacionSeleccionada.status === 'Aprobado' || cotizacionSeleccionada.status === 'Aceptada') && (
                     <button 
                       className="btn-modal-action-premium" 
-                      style={{ background: 'linear-gradient(135deg, #0284c7 0%, #009ee3 100%)', color: 'white', width: '100%', padding: '12px', fontSize: '1rem', fontWeight: '800', marginBottom: '8px', minHeight: '46px', boxShadow: '0 4px 14px rgba(0, 158, 227, 0.35)' }} 
+                      style={{ background: '#f26522', color: 'white', width: '100%', padding: '12px', fontSize: '1rem', fontWeight: '800', marginBottom: '8px', minHeight: '46px', boxShadow: '0 4px 14px rgba(242, 101, 34, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} 
                       onClick={() => setShowPagoModal(true)}
                     >
-                      PAGAR CON <img src={mpLogo} alt="MercadoPago" style={{ height: '22px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+                      <Landmark size={18} /> PAGAR POR TRANSFERENCIA
                     </button>
                   )}
 

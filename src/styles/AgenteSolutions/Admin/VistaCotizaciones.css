@@ -2116,8 +2116,8 @@
 .cotiz-detail-sheet .cd-btn--info { background: #2563eb; color: #ffffff; }
 .cotiz-detail-sheet .cd-btn--info:hover:not(:disabled) { background: #1d4ed8; }
 
-.cotiz-detail-sheet .cd-btn--mp { background: #009ee3; color: #ffffff; min-height: 50px; font-size: 0.95rem; }
-.cotiz-detail-sheet .cd-btn--mp:hover:not(:disabled) { background: #0284c7; }
+.cotiz-detail-sheet .cd-btn--mp { background: #f26522; color: #ffffff; min-height: 50px; font-size: 0.95rem; gap: 8px; }
+.cotiz-detail-sheet .cd-btn--mp:hover:not(:disabled) { background: #ea580c; }
 
 .cotiz-detail-sheet .cd-btn--ghost {
     background: rgba(255, 255, 255, 0.85);

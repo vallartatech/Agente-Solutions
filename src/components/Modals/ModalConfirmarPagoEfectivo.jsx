@@ -23,7 +23,7 @@ const ContenidoPagoEfectivo = ({ onClose, cotizacion, onPaymentConfirmed }) => {
   const clientName = cotizacion.client_name || cotizacion.cliente || cotizacion.property?.client?.name || cotizacion.property?.client?.propietario || 'Cliente';
   const propertyName = cotizacion.property_name || cotizacion.propiedad || cotizacion.property?.nombre_propiedad || cotizacion.property?.address || 'Propiedad General';
   
-  // Calcular desglose exacto (Subtotal + 16% IVA, sin comisión de Mercado Pago)
+  // Calcular desglose exacto (Subtotal + 16% IVA, sin comisiones)
   let subtotalCalculado = 0;
   try {
     const rawConcept = cotizacion.concept || cotizacion.concepto;
@@ -259,7 +259,7 @@ const ContenidoPagoEfectivo = ({ onClose, cotizacion, onPaymentConfirmed }) => {
                   Subtotal: <strong>{formatCurrency(subtotalBase)}</strong> + IVA (16%): <strong>{formatCurrency(ivaCalculado)}</strong>
                 </div>
                 <div style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: '700', marginTop: '2px' }}>
-                  ✓ Exento de comisión de pasarela Mercado Pago ($0.00)
+                  ✓ Sin comisiones ($0.00)
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>

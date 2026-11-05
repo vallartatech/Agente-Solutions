@@ -565,8 +565,13 @@
 .cqm-recot-stats .neg p { color: #dc2626; }
 
 .cqm-ref-tecnico {
+    /* Debajo del campo, sin empujarlo: si ocupara espacio, el campo de precio
+       se levantaría respecto a Cant. y al botón de borrar */
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 5px;
     display: inline-block;
-    margin-top: 4px;
     padding: 2px 8px;
     border-radius: 999px;
     background: rgba(242, 101, 34, 0.1);
@@ -578,4 +583,20 @@
 
 @media (max-width: 520px) {
     .cqm-recot-stats { grid-template-columns: 1fr; }
+}
+
+/* Referencia del técnico: el campo de precio es el ancla y la fila deja espacio abajo */
+.cqm-row-num { position: relative; }
+.cqm-row:has(.cqm-ref-tecnico) { padding-bottom: 36px; }
+
+/* Sin flechas de subir/bajar en los campos numéricos (cantidad y precio) */
+.cqm-input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.cqm-input[type="number"]::-webkit-inner-spin-button,
+.cqm-input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }

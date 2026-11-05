@@ -7,11 +7,11 @@ import {
   RefreshCw, AlertCircle, CalendarX, Lock, Trash2, Banknote,
   X, ArrowRight, Loader2, MapPin,
   Navigation, FileText, Zap,
-  User, Wrench, ImageIcon
+  User, Wrench, ImageIcon, Landmark, Upload
 } from 'lucide-react';
 import '../../../styles/AgenteSolutions/Cliente/Cotizaciones.css';
 import '../../../styles/AgenteSolutions/Tecnico/TrabajoPropiedad.css';
-import mpLogo from '../../../assets/Mercado-Pago.png';
+import DatosBancarios from '../../../components/Shared/DatosBancarios';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 const CotizacionesPendientes = () => {
@@ -24,7 +24,8 @@ const CotizacionesPendientes = () => {
 
   // Estados para el Modal de Pago Integrado
   const [showPagoModal, setShowPagoModal] = useState(false);
-  const [metodoPago, setMetodoPago] = useState('mercadopago'); // 'mercadopago' | 'efectivo'
+  const [metodoPago, setMetodoPago] = useState('transferencia'); // 'transferencia' | 'efectivo'
+  const [comprobante, setComprobante] = useState(null); // comprobante de la transferencia
   const [tipoMonto, setTipoMonto] = useState('full'); // 'full' (100%) | 'advance' (60%)
   const [timingEfectivo, setTimingEfectivo] = useState('immediate'); // 'immediate' | 'on_completion'
   const [procesandoPago, setProcesandoPago] = useState(false);
@@ -348,12 +349,8 @@ const CotizacionesPendientes = () => {
   // Cálculo fiscal e IVA
   const ivaCalculado = totalSubtotal * 0.16;
   const subConIva = Math.round((totalSubtotal + ivaCalculado) * 100) / 100;
-  const comisionMP = totalSubtotal > 0 ? Math.round(((subConIva * 0.0349 + 4) * 1.16) * 100) / 100 : 0;
-  const totalConImpuestos = Math.round((subConIva + comisionMP) * 100) / 100;
-
-  // Si es efectivo: Solo Subtotal + IVA (sin comisión de Mercado Pago)
-  // Si es Mercado Pago: Subtotal + IVA + Comisión MP
-  const totalFinalPagar = metodoPago === 'mercadopago' ? totalConImpuestos : subConIva;
+  // Transferencia o efectivo: Subtotal + IVA, sin comisiones (ya no se cobra con Mercado Pago)
+  const totalFinalPagar = subConIva;
   const anticipoPagar = Math.round(totalFinalPagar * 0.60 * 100) / 100;
   const montoAPagarAhora = tipoMonto === 'advance' ? anticipoPagar : totalFinalPagar;
 
@@ -383,24 +380,33 @@ const CotizacionesPendientes = () => {
     const selectedQuoteIds = cotizacionesSeleccionadas.map(c => c.quote_id || c.id);
 
     try {
-      if (metodoPago === 'mercadopago') {
-        // Generar preferencia de Mercado Pago con el primer ID o lote
-        const firstQuoteId = selectedQuoteIds[0];
-        const res = await axios.post(
-          `${API_URL}/cotizaciones/${firstQuoteId}/mercadopago/preference`,
-          { 
-            payment_stage: tipoMonto,
-            quote_ids: selectedQuoteIds
-          },
-          { headers }
-        );
-
-        if (res.data?.init_point) {
-          window.location.href = res.data.init_point;
+      if (metodoPago === 'transferencia') {
+        if (!comprobante) {
+          mostrarAviso("Adjunta la foto o PDF del comprobante de tu transferencia.", 'warning');
           return;
-        } else {
-          mostrarAviso("No se pudo iniciar la pasarela de Mercado Pago. Por favor intenta de nuevo.");
         }
+        // El mismo comprobante queda en cada cotización; el admin lo revisa y valida el pago
+        for (const id of selectedQuoteIds) {
+          const fd = new FormData();
+          fd.append('receipt_file', comprobante);
+          fd.append('payment_stage', tipoMonto);
+          await axios.post(`${API_URL}/cotizaciones/${id}/pago`, fd, { headers });
+        }
+
+        setPagoCompletadoExito({
+          cantidad: cotizacionesSeleccionadas.length,
+          folios: cotizacionesSeleccionadas.map(c => c.folio || `#${c.id}`).join(', '),
+          monto: montoAPagarAhora,
+          tipo: tipoMonto === 'advance' ? 'Anticipo (60%)' : 'Total (100%)',
+          noSeleccionadasCount: cotizacionesNoSeleccionadas.length,
+          transferencia: true,
+        });
+        setComprobante(null);
+
+        const guardadas = JSON.parse(localStorage.getItem('carrito_cotizaciones') || '[]');
+        const restantes = guardadas.filter(item => !selectedQuoteIds.includes(item.id) && !selectedQuoteIds.includes(item.quote_id));
+        localStorage.setItem('carrito_cotizaciones', JSON.stringify(restantes));
+        fetchCotizaciones();
       } else {
         // Pago en Efectivo (Registrar en Backend y notificar a Admin y Root)
         await axios.post(
@@ -756,7 +762,7 @@ const CotizacionesPendientes = () => {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          MODAL DE PAGO INTEGRADO (MERCADO PAGO / EFECTIVO / TRANSFERENCIA)
+          MODAL DE PAGO INTEGRADO (TRANSFERENCIA / EFECTIVO)
       ══════════════════════════════════════════════════════════════════════ */}
       {showPagoModal && (
         <div className="modal-overlay pay-overlay" onClick={() => !procesandoPago && setShowPagoModal(false)}>
@@ -797,12 +803,12 @@ const CotizacionesPendientes = () => {
               <div className="pay-options">
                 <button
                   type="button"
-                  className={`pay-option ${metodoPago === 'mercadopago' ? 'active mp' : ''}`}
-                  onClick={() => setMetodoPago('mercadopago')}
+                  className={`pay-option ${metodoPago === 'transferencia' ? 'active cash' : ''}`}
+                  onClick={() => setMetodoPago('transferencia')}
                 >
-                  <img src={mpLogo} alt="Mercado Pago" className="pay-option-logo" />
-                  <strong>Tarjeta / Mercado Pago</strong>
-                  <small>Crédito, débito o SPEI</small>
+                  <span className="pay-option-icon cash"><Landmark size={20} /></span>
+                  <strong>Transferencia</strong>
+                  <small>SPEI a nuestra cuenta</small>
                 </button>
                 <button
                   type="button"
@@ -818,13 +824,12 @@ const CotizacionesPendientes = () => {
               <div className="pay-card pay-breakdown">
                 <div><span>Subtotal</span><strong>{formatCurrency(totalSubtotal)}</strong></div>
                 <div><span>IVA (16%)</span><strong>{formatCurrency(ivaCalculado)}</strong></div>
-                {metodoPago === 'mercadopago' ? (
-                  <div className="mp"><span><CreditCard size={14} /> Comisión pasarela (tarifa oficial)</span><strong>+{formatCurrency(comisionMP)}</strong></div>
-                ) : (
-                  <div className="cash"><span><Banknote size={14} /> Pago en efectivo</span><strong>Sin comisión ($0.00)</strong></div>
-                )}
+                <div className="cash">
+                  <span>{metodoPago === 'efectivo' ? <><Banknote size={14} /> Pago en efectivo</> : <><Landmark size={14} /> Transferencia bancaria</>}</span>
+                  <strong>Sin comisión ($0.00)</strong>
+                </div>
                 <div className="pay-breakdown-total">
-                  <span>Total {metodoPago === 'efectivo' ? 'en efectivo' : 'Mercado Pago'}</span>
+                  <span>Total {metodoPago === 'efectivo' ? 'en efectivo' : 'por transferencia'}</span>
                   <strong>{formatCurrency(totalFinalPagar)}</strong>
                 </div>
               </div>
@@ -850,6 +855,22 @@ const CotizacionesPendientes = () => {
                   <small>Liquidación completa</small>
                 </button>
               </div>
+
+              {metodoPago === 'transferencia' && (
+                <>
+                  <h4 className="pay-step"><span>3</span> Transfiere y adjunta tu comprobante</h4>
+                  <DatosBancarios monto={montoAPagarAhora} />
+                  <label className="pay-card pay-comprobante">
+                    <span className="pay-card-title"><Upload size={15} /> Comprobante de la transferencia</span>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={(e) => setComprobante(e.target.files?.[0] || null)}
+                    />
+                    <small>{comprobante ? comprobante.name : 'Foto o PDF del comprobante (máx. 10 MB). Lo revisamos y te confirmamos el pago.'}</small>
+                  </label>
+                </>
+              )}
 
               {metodoPago === 'efectivo' && (
                 <div className="pay-card">
@@ -880,12 +901,12 @@ const CotizacionesPendientes = () => {
                 type="button"
                 className={`pay-confirm ${metodoPago === 'efectivo' ? 'cash' : ''}`}
                 onClick={handleConfirmarPago}
-                disabled={procesandoPago}
+                disabled={procesandoPago || (metodoPago === 'transferencia' && !comprobante)}
               >
                 {procesandoPago ? (
                   <><Loader2 size={20} className="spin-slow" /> Procesando solicitud...</>
-                ) : metodoPago === 'mercadopago' ? (
-                  <>Pagar con Mercado Pago <ArrowRight size={18} /></>
+                ) : metodoPago === 'transferencia' ? (
+                  <>{comprobante ? 'Enviar comprobante' : 'Adjunta tu comprobante'} <ArrowRight size={18} /></>
                 ) : (
                   <><CheckCircle2 size={18} /> Confirmar pago en efectivo</>
                 )}
@@ -939,7 +960,9 @@ const CotizacionesPendientes = () => {
                 🚀 Flujo Operativo Agente Solutions:
               </p>
               <p style={{ margin: 0 }}>
-                El <strong>Administrador y Root</strong> han recibido la notificación en tiempo real. Procederán a asignar a los técnicos de tu zona y programar la fecha de visita para realizar los trabajos.
+                {pagoCompletadoExito.transferencia
+                  ? <>Recibimos tu comprobante. El <strong>Administrador</strong> revisará la transferencia y, al validarla, asignará a los técnicos de tu zona y programará la visita.</>
+                  : <>El <strong>Administrador y Root</strong> han recibido la notificación en tiempo real. Procederán a asignar a los técnicos de tu zona y programar la fecha de visita para realizar los trabajos.</>}
               </p>
             </div>
 
