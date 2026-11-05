@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import HojaCitasMovil from '../../../components/Shared/HojaCitasMovil';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
@@ -819,6 +820,17 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
     return networkJobs[0];
   }, [networkJobs]);
 
+  // Trabajos pendientes: primero el destacado, luego atrasados > hoy > futuros
+  const trabajosProximos = useMemo(() => {
+    const porFecha = (a, b) => a.calendarDate - b.calendarDate;
+    const resto = [
+      ...networkJobs.filter(j => j.timingCategory === 'overdue').sort(porFecha),
+      ...networkJobs.filter(j => j.timingCategory === 'today').sort(porFecha),
+      ...networkJobs.filter(j => j.timingCategory === 'future').sort(porFecha),
+    ].filter(j => j !== upNextJob);
+    return upNextJob ? [upNextJob, ...resto] : resto;
+  }, [networkJobs, upNextJob]);
+
   // Navegación de mes principal
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
@@ -981,6 +993,74 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
   }, [filteredEvents]);
 
   if (!isOpen) return null;
+
+  // Tarjeta del próximo servicio (sidebar de PC y panel móvil)
+  const tarjetaProximo = (
+    upNextJob ? (
+      <div className={`up-next-card ${upNextJob.timingCategory === 'overdue' ? 'is-overdue-alert' : ''}`}>
+        <div className="up-next-badge-row">
+          <span className={`up-next-pill ${upNextJob.timingCategory === 'overdue' ? 'pill-overdue-banner' : ''}`}>
+            {upNextJob.timingCategory === 'overdue' ? '🚨 CITA ATRASADA' : (upNextJob.timingCategory === 'today' ? '⚡ CITA DE HOY' : 'PRÓXIMA CITA')}
+          </span>
+          <span className="up-next-time-tag">
+            <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} />
+            {upNextJob.calendarTime}
+          </span>
+        </div>
+
+        <h4 className="up-next-title">{upNextJob.titulo}</h4>
+
+        <div className="up-next-details">
+          <div>📍 {upNextJob.calle || upNextJob.zona}</div>
+          <div>🧑‍💼 {upNextJob.cliente || upNextJob.assigned_tech_name || 'Cliente'}</div>
+          <div style={{ color: upNextJob.timingCategory === 'overdue' ? '#fca5a5' : '#fdba74', fontWeight: 800, fontSize: '0.76rem' }}>
+            📅 {upNextJob.timingHumanFull}
+          </div>
+          {upNextJob.agreed_price > 0 && (
+            <div style={{ color: '#4ade80', fontWeight: 800 }}>💰 ${parseFloat(upNextJob.agreed_price).toFixed(2)} MXN</div>
+          )}
+        </div>
+
+        <button 
+          className="btn-up-next-action"
+          onClick={() => handleEventClick(upNextJob)}
+        >
+          <MessageCircle size={15} />
+          <span>Abrir Trabajo / Coordinación</span>
+        </button>
+      </div>
+    ) : (
+      <div className="sidebar-glass-card">
+        No tienes servicios activos por el momento.
+      </div>
+    )
+  );
+
+  // Fila compacta de una cita (resumen)
+  const renderResumenCita = (job) => (
+    <div 
+      key={job.id}
+      className="sidebar-summary-card"
+      style={{
+        borderLeft: `3.5px solid ${job.timingCategory === 'overdue' ? '#ef4444' : (job.timingCategory === 'today' ? '#ff6600' : (job.timingCategory === 'future' ? '#06b6d4' : '#f59e0b'))}`
+      }}
+      onClick={() => handleEventClick(job)}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '0.7rem' }}>
+        <span>{job.calendarTime}</span>
+        <span style={{ fontWeight: 800, color: job.timingCategory === 'overdue' ? '#fca5a5' : (job.timingCategory === 'today' ? '#fdba74' : '#6ee7b7') }}>
+          {job.timingBadge}
+        </span>
+      </div>
+      <div style={{ fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {job.titulo}
+      </div>
+      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
+        🧑‍💼 {job.cliente}
+      </div>
+    </div>
+  );
+
 
   return createPortal(
     <div className={`cal-modal-backdrop ${calCerrando ? 'is-cerrando' : ''}`} onClick={onClose}>
@@ -1323,9 +1403,9 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
 
           {/* COLUMNA DERECHA: SIDEBAR CON MINI CALENDARIO & UP NEXT */}
           <div className="cal-sidebar-col">
-            
+
             {/* 1. Mini Calendario */}
-            <div>
+            <div className="cal-solo-pc">
               <div className="sidebar-section-title">
                 <span>📅 Calendario Rápido</span>
               </div>
@@ -1366,86 +1446,35 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
               </div>
             </div>
 
-            {/* 2. Tarjeta "Up Next / Próximo Servicio" */}
-            <div>
+            {/* 2. Tarjeta "Up Next / Próximo Servicio" (solo PC) */}
+            <div className="cal-solo-pc">
               <div className="sidebar-section-title">
                 <span>⚡ Próximo Servicio</span>
               </div>
-              {upNextJob ? (
-                <div className={`up-next-card ${upNextJob.timingCategory === 'overdue' ? 'is-overdue-alert' : ''}`}>
-                  <div className="up-next-badge-row">
-                    <span className={`up-next-pill ${upNextJob.timingCategory === 'overdue' ? 'pill-overdue-banner' : ''}`}>
-                      {upNextJob.timingCategory === 'overdue' ? '🚨 CITA ATRASADA' : (upNextJob.timingCategory === 'today' ? '⚡ CITA DE HOY' : 'PRÓXIMA CITA')}
-                    </span>
-                    <span className="up-next-time-tag">
-                      <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} />
-                      {upNextJob.calendarTime}
-                    </span>
-                  </div>
-
-                  <h4 className="up-next-title">{upNextJob.titulo}</h4>
-
-                  <div className="up-next-details">
-                    <div>📍 {upNextJob.calle || upNextJob.zona}</div>
-                    <div>🧑‍💼 {upNextJob.cliente || upNextJob.assigned_tech_name || 'Cliente'}</div>
-                    <div style={{ color: upNextJob.timingCategory === 'overdue' ? '#fca5a5' : '#fdba74', fontWeight: 800, fontSize: '0.76rem' }}>
-                      📅 {upNextJob.timingHumanFull}
-                    </div>
-                    {upNextJob.agreed_price > 0 && (
-                      <div style={{ color: '#4ade80', fontWeight: 800 }}>💰 ${parseFloat(upNextJob.agreed_price).toFixed(2)} MXN</div>
-                    )}
-                  </div>
-
-                  <button 
-                    className="btn-up-next-action"
-                    onClick={() => handleEventClick(upNextJob)}
-                  >
-                    <MessageCircle size={15} />
-                    <span>Abrir Trabajo / Coordinación</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="sidebar-glass-card">
-                  No tienes servicios activos por el momento.
-                </div>
-              )}
+              {tarjetaProximo}
             </div>
 
-            {/* 3. Resumen Rápido de Actividad */}
-            <div>
+            {/* 3. Resumen Rápido de Actividad (solo PC) */}
+            <div className="cal-solo-pc">
               <div className="sidebar-section-title">
                 <span>📋 Resumen de Citas ({countAll})</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {networkJobs.slice(0, 4).map((job) => (
-                  <div 
-                    key={job.id}
-                    className="sidebar-summary-card"
-                    style={{
-                      borderLeft: `3.5px solid ${job.timingCategory === 'overdue' ? '#ef4444' : (job.timingCategory === 'today' ? '#ff6600' : (job.timingCategory === 'future' ? '#06b6d4' : '#f59e0b'))}`
-                    }}
-                    onClick={() => handleEventClick(job)}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '0.7rem' }}>
-                      <span>{job.calendarTime}</span>
-                      <span style={{ fontWeight: 800, color: job.timingCategory === 'overdue' ? '#fca5a5' : (job.timingCategory === 'today' ? '#fdba74' : '#6ee7b7') }}>
-                        {job.timingBadge}
-                      </span>
-                    </div>
-                    <div style={{ fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {job.titulo}
-                    </div>
-                    <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                      🧑‍💼 {job.cliente}
-                    </div>
-                  </div>
-                ))}
+                {networkJobs.slice(0, 4).map(renderResumenCita)}
               </div>
             </div>
 
           </div>
 
         </div>
+
+        {/* Solo celular: hoja inferior con trabajos próximos y resumen de citas */}
+        <HojaCitasMovil
+          proximos={trabajosProximos}
+          citas={networkJobs}
+          tarjetaProximo={tarjetaProximo}
+          renderCita={renderResumenCita}
+        />
 
         {/* ─── MODAL RECICLADO: DETALLE DE PUBLICACIÓN Y COTIZACIONES (EXACTAMENTE IGUAL A VISTA RED) ─── */}
         {showQuotesModal && selectedJobForQuotes && (
