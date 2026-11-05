@@ -8,7 +8,7 @@ import "../../../styles/Shared/ToolbarAcciones.css";
 import "../../../styles/AgenteSolutions/Tecnico/TrabajosTecnicoGlass.css";
 import "../../../styles/Shared/TarjetaTrabajo.css";
 import { Package, Wrench, CheckCircle2, Lock, Settings, 
-  Calendar, Clock, MapPin, AlertTriangle, ChevronRight, X, LayoutGrid
+  Calendar, Clock, MapPin, AlertTriangle, ChevronRight, X, LayoutGrid, QrCode
 } from 'lucide-react';
 import Header from "../../../components/Shared/Header";
 import UniversalSearch from '../../../components/Shared/UniversalSearch';
@@ -432,6 +432,7 @@ const TrabajosTecnico = () => {
               {item.priority === 'Urgente' && <span className="ttc-chip rojo"><AlertTriangle size={12} /> SOS</span>}
               <span className={`ttc-chip ${estado.tono}`}>{estado.texto}</span>
               {tipo && <span className="ttc-chip neutro"><Wrench size={12} /> {tipo}</span>}
+              {item.tiene_qr && <span className="ttc-chip ambar"><QrCode size={12} /> Requiere QR</span>}
               {item.es_levantamiento && (
                 <span className={`ttc-chip ${item.tiene_levantamiento ? 'verde' : 'ambar'}`}>
                   <LayoutGrid size={12} />

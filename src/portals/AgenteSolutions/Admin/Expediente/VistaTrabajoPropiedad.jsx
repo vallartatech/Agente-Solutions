@@ -9,6 +9,7 @@ import CasaLoader from '../../../../components/Shared/CasaLoader';
 import useExpediente from './useExpediente';
 import { Chip, FlujoBarra, ListaCotizaciones, LineaTiempo } from './ExpedienteUI';
 import { etiquetaEstado, etiquetaTipo, fechaHora, construirHistorial } from './flujoTrabajo';
+import { AccesoQRAdmin } from '../../Shared/AccesoQR';
 import '../../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
 
 const TABS = [
@@ -124,6 +125,8 @@ const VistaTrabajoPropiedad = () => {
             </section>
 
             <div className="xp-columna">
+              <AccesoQRAdmin tipo={trabajo.kind === 'trabajo' ? 'work_order' : 'servicio'} id={trabajo.id} />
+
               <section className="xp-card xp-panel">
                 <h3 className="xp-panel-titulo"><MapPin size={18} /> Lugar</h3>
                 <p className="xp-lugar-nombre">{propiedad.property_name || propiedad.nombre_propiedad || 'Propiedad'}</p>

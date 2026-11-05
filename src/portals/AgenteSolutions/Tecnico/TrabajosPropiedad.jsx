@@ -18,6 +18,7 @@ import {
 import { useAuth } from "../../../context/AuthContext";
 import { reportarUbicacion } from "../../../components/Shared/ubicacionService";
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
+import { AccesoQRTecnico } from '../Shared/AccesoQR';
 
 const TrabajoPropiedad = () => {
   const { user } = useAuth();
@@ -356,6 +357,9 @@ const TrabajoPropiedad = () => {
 
         <div className="tp-main-grid">
           <div className="tp-details-column">
+            {/* QR de acceso: visible solo después de confirmar la llegada */}
+            <AccesoQRTecnico compositeId={id} />
+
             <motion.div 
               className="tp-card tp-work-description-card"
               initial={{ opacity: 0, y: 20 }}
