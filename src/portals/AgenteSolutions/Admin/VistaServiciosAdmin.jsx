@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Circle, X, UserCircle, Calendar, 
   ArrowLeft, Camera, Layout, FileText, Maximize2, AlertTriangle, Timer, Settings, Filter,
   MapPin, Navigation, Users, Package, Zap, Banknote, ListChecks, Hash, ClipboardList, ShieldCheck,
-  Search, ChevronDown, ChevronLeft
+  Search, ChevronDown, ChevronLeft, CalendarCheck
 } from 'lucide-react';
 
 const ROL_EQUIPO = { 0: 'Root', 1: 'Admin', 2: 'Técnico', 8: 'Cuadrilla' };
@@ -43,10 +43,34 @@ const diaCorto = (fecha) => {
   return fecha.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
 };
 
+// La BD guarda la visita con la hora de Mérida tal cual, pero la API la manda marcada como UTC ("...Z").
+// Se lee la fecha y hora escritas, sin convertir de zona horaria, para que se vea igual en cualquier equipo.
+const fechaVisita = (valor) => {
+  const m = String(valor || '').match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) return null;
+  const [, anio, mes, dia, hora, minuto] = m;
+  return {
+    fecha: `${anio}-${mes}-${dia}`,
+    hora: `${hora}:${minuto}`,
+    date: new Date(Number(anio), Number(mes) - 1, Number(dia), Number(hora), Number(minuto)),
+  };
+};
+
+// "jueves 5 de noviembre de 2026" · "10:00 a.m." · "Mañana" / "Hoy" / "Atrasada"
+const describirVisita = (valor) => {
+  const v = fechaVisita(valor);
+  if (!v) return null;
+  const dia = v.date.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const hora = v.date.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
+  const corto = diaCorto(v.date);
+  const relativo = v.date < new Date() ? 'Atrasada' : ['Hoy', 'Mañana'].includes(corto) ? corto : null;
+  return { dia, hora, relativo };
+};
+
 // Color de la hora según columna, SOS o atraso (lo usan la tarjeta y su miniatura en la columna achicada)
 const tonoHoraTarea = (tarea) => {
   const info = ESTADO_TARJETA[tarea.estado] || ESTADO_TARJETA.todo;
-  const fecha = tarea.scheduledAt ? new Date(tarea.scheduledAt) : null;
+  const fecha = fechaVisita(tarea.scheduledAt)?.date || null;
   if (!fecha) return 'sin-fecha';
   if (tarea.estado === 'sos' || tarea.prioridad === 'SOS' || tarea.isOverdue) return 'atrasado';
   return info.hora || (diaCorto(fecha) === 'Hoy' ? 'hoy' : '');
@@ -265,7 +289,7 @@ const VistaServiciosAdmin = () => {
         is_network_service: item.is_network_service,
         isFromNetwork: isFromNetwork,
         isOverdue: (item.scheduled_at && !['Listo', 'Finalizado'].includes(item.status)) 
-                   ? new Date(item.scheduled_at) < new Date() 
+                   ? (fechaVisita(item.scheduled_at)?.date || 0) < new Date() 
                    : false
       };
     });
@@ -663,7 +687,7 @@ const VistaServiciosAdmin = () => {
         if (filtroFecha === 'sin_fecha') return !t.scheduledAt;
         if (!t.scheduledAt) return false;
 
-        const d = new Date(t.scheduledAt);
+        const d = new Date(fechaVisita(t.scheduledAt)?.date || 0);
         d.setHours(0,0,0,0);
 
         if (filtroFecha === 'hoy') return d.getTime() === hoy.getTime();
@@ -770,7 +794,7 @@ const VistaServiciosAdmin = () => {
             tareasFiltradasCol.map(tarea => {
               const esSos = tarea.estado === 'sos' || tarea.prioridad === 'SOS';
               const info = ESTADO_TARJETA[tarea.estado] || ESTADO_TARJETA.todo;
-              const fecha = tarea.scheduledAt ? new Date(tarea.scheduledAt) : null;
+              const fecha = fechaVisita(tarea.scheduledAt)?.date || null;
               const [horaNum, ...sufijo] = fecha
                 ? fecha.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }).split(' ')
                 : ['—'];
@@ -1329,51 +1353,76 @@ const VistaServiciosAdmin = () => {
                         );
                       }
 
-                      const citaBloqueada = Boolean(activeTask.scheduledAt && !editandoCita);
+                      const visita = describirVisita(activeTask.scheduledAt);
+                      const valoresVisita = fechaVisita(activeTask.scheduledAt);
+                      const mostrarFormularioVisita = !visita || editandoCita;
 
                       return (
                         <>
                           <div className="svm-section">
                             <label className="svm-section-label">
-                              <Calendar size={16} /> Programar visita <span className="svm-section-hint">(Notifica al cliente)</span>
+                              <Calendar size={16} /> {visita ? 'Visita programada' : 'Programar visita'}
+                              {mostrarFormularioVisita && <span className="svm-section-hint">(Notifica al cliente)</span>}
                             </label>
-                            <div className="svm-visit-row">
-                              <label className="svm-field">
-                                <span>Fecha</span>
-                                <input
-                                  type="date"
-                                  className="svm-input"
-                                  defaultValue={activeTask.scheduledAt ? new Date(activeTask.scheduledAt).toISOString().split('T')[0] : ''}
-                                  id="input-date-visit"
-                                  onClick={(e) => !e.target.disabled && e.target.showPicker()}
-                                  disabled={citaBloqueada}
-                                />
-                              </label>
-                              <label className="svm-field">
-                                <span>Hora</span>
-                                <input
-                                  type="time"
-                                  className="svm-input"
-                                  id="input-time-visit"
-                                  defaultValue={activeTask.scheduledAt ? new Date(activeTask.scheduledAt).toISOString().split('T')[1].substring(0,5) : ''}
-                                  onClick={(e) => !e.target.disabled && e.target.showPicker()}
-                                  disabled={citaBloqueada}
-                                />
-                              </label>
-                            </div>
 
-                            {citaBloqueada ? (
-                              <button type="button" className="svm-btn glass svm-btn-full" onClick={() => setEditandoCita(true)}>
-                                <Calendar size={16} /> Reprogramar visita
-                              </button>
+                            {visita && (
+                              <div className={`svm-visita-actual ${editandoCita ? 'atenuada' : ''}`}>
+                                <span className="svm-visita-icono"><CalendarCheck size={20} /></span>
+                                <div className="svm-visita-texto">
+                                  <strong>{visita.dia}</strong>
+                                  <span>{visita.hora}</span>
+                                </div>
+                                {visita.relativo && (
+                                  <span className={`svm-visita-chip ${visita.relativo === 'Atrasada' ? 'atrasada' : ''}`}>{visita.relativo}</span>
+                                )}
+                              </div>
+                            )}
+
+                            {mostrarFormularioVisita ? (
+                              <>
+                                {visita && <p className="svm-visita-nueva">Nueva fecha y hora</p>}
+                                {/* key: al cambiar de trabajo o guardar, los campos toman el valor vigente */}
+                                <div className="svm-visit-row" key={`${activeTask.dbId}-${activeTask.scheduledAt || 'sin'}`}>
+                                  <label className="svm-field">
+                                    <span>Fecha</span>
+                                    <input
+                                      type="date"
+                                      className="svm-input"
+                                      defaultValue={valoresVisita?.fecha || ''}
+                                      id="input-date-visit"
+                                      onClick={(e) => e.target.showPicker?.()}
+                                    />
+                                  </label>
+                                  <label className="svm-field">
+                                    <span>Hora</span>
+                                    <input
+                                      type="time"
+                                      className="svm-input"
+                                      id="input-time-visit"
+                                      defaultValue={valoresVisita?.hora || ''}
+                                      onClick={(e) => e.target.showPicker?.()}
+                                    />
+                                  </label>
+                                </div>
+                                <div className="svm-visita-acciones">
+                                  {visita && (
+                                    <button type="button" className="svm-btn glass" onClick={() => setEditandoCita(false)} disabled={procesandoAccion}>
+                                      Cancelar
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className="svm-btn primary"
+                                    onClick={() => handleSaveSchedule(document.getElementById('input-date-visit').value, document.getElementById('input-time-visit').value, activeTask.dbId)}
+                                    disabled={procesandoAccion}
+                                  >
+                                    {procesandoAccion ? 'Guardando...' : visita ? 'Reprogramar y notificar' : 'Guardar y notificar'}
+                                  </button>
+                                </div>
+                              </>
                             ) : (
-                              <button
-                                type="button"
-                                className="svm-btn primary svm-btn-full"
-                                onClick={() => handleSaveSchedule(document.getElementById('input-date-visit').value, document.getElementById('input-time-visit').value, activeTask.dbId)}
-                                disabled={procesandoAccion}
-                              >
-                                {procesandoAccion ? 'Guardando...' : 'Guardar y notificar'}
+                              <button type="button" className="svm-visita-reprogramar" onClick={() => setEditandoCita(true)}>
+                                <Calendar size={15} /> ¿Deseas reprogramar la visita?
                               </button>
                             )}
                           </div>
@@ -1652,7 +1701,7 @@ const VistaServiciosAdmin = () => {
                           </div>
                           {activeTask.scheduledAt && (
                             <div style={{ fontSize: '0.75rem', color: '#3b82f6', marginTop: '3px', fontWeight: '600' }}>
-                              📅 Visita programada: {new Date(activeTask.scheduledAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}
+                              📅 Visita programada: {fechaVisita(activeTask.scheduledAt)?.date.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}
                             </div>
                           )}
                         </div>
