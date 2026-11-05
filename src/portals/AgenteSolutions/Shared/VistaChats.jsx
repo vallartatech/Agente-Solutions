@@ -5,7 +5,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import {
   MessageCircle, Search, Plus, ArrowLeft, Users, Send, X, Check, CheckCheck,
-  UserPlus, LogOut, Pencil, Loader2, UserMinus, Info, Smile, Paperclip, Trash2, Palette, Ban, ImagePlus
+  UserPlus, LogOut, Pencil, Loader2, UserMinus, Info, Smile, Paperclip, Trash2, Palette, Ban, ImagePlus, Download
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
@@ -25,6 +25,28 @@ const TIPO_POR_EXTENSION = { webp: 'image/webp', png: 'image/png', gif: 'image/g
 
 // Devuelve el archivo como imagen válida para sticker, o null si no lo es.
 // Algunos exploradores entregan los .webp sin tipo: se corrige por la extensión.
+// Descarga la foto como archivo. Se baja como blob porque el atributo `download`
+// se ignora cuando la imagen vive en otro dominio (servidor/API).
+const descargarFoto = async (url) => {
+  const ext = (url.split('?')[0].match(/\.(jpe?g|png|gif|webp|heic)$/i) || [])[1] || 'jpg';
+  const nombre = `foto-chat-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.${ext}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(res.status);
+    const blobUrl = URL.createObjectURL(await res.blob());
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  } catch {
+    // Si el servidor no permite leerla (CORS), se abre en otra pestaña para guardarla desde ahí
+    window.open(url, '_blank', 'noopener');
+  }
+};
+
 const comoImagenSticker = (f) => {
   const tipo = TIPO_POR_EXTENSION[(f.name.split('.').pop() || '').toLowerCase()];
   if (f.type && Object.values(TIPO_POR_EXTENSION).includes(f.type)) return f;
@@ -1297,7 +1319,12 @@ const VistaChats = () => {
 
       {visor && createPortal(
         <div className="vch-visor" onClick={() => setVisor(null)}>
-          <button type="button" className="vch-visor-cerrar" aria-label="Cerrar"><X size={22} /></button>
+          <div className="vch-visor-acciones" onClick={e => e.stopPropagation()}>
+            <button type="button" className="vch-visor-cerrar" aria-label="Descargar foto" title="Descargar"
+              onClick={() => descargarFoto(visor)}><Download size={20} /></button>
+            <button type="button" className="vch-visor-cerrar" aria-label="Cerrar" title="Cerrar"
+              onClick={() => setVisor(null)}><X size={22} /></button>
+          </div>
           <img src={visor} alt="Foto" onClick={e => e.stopPropagation()} />
         </div>,
         document.body
