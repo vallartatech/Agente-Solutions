@@ -1996,3 +1996,41 @@
     max-width: 120px !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   TABLA COMPACTA: cabe junto a la tarjeta de perfil sin scroll horizontal.
+   ID + foto + nombre van en una sola columna y las acciones quedan fijas a la derecha.
+   ══════════════════════════════════════════════════════════════ */
+.vu-modern-table { min-width: 720px; }
+.vu-modern-table thead th { padding: 14px 12px; }
+.vu-modern-table td { padding: 12px; }
+
+.vu-user-cell { min-width: 170px; }
+.vu-user-block { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.vu-user-block .vu-avatar-wrap { flex-shrink: 0; }
+.vu-user-block .vu-name-block { min-width: 0; }
+.vu-user-block .vu-user-name-title { line-height: 1.2; }
+.vu-user-block .vu-id-code { font-size: 0.72rem; color: #94a3b8; }
+
+/* Correo largo: se corta con "…" (completo al pasar el mouse) */
+.vu-contact-cell { max-width: 220px; }
+.vu-contact-box { min-width: 0; }
+.vu-contact-item { display: flex; max-width: 100%; min-width: 0; }
+.vu-contact-item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Acciones siempre visibles aunque la tabla necesite desplazarse */
+.vu-modern-table .vu-actions-head,
+.vu-modern-table .vu-actions-cell {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: rgba(248, 250, 252, 0.94);
+  box-shadow: -8px 0 12px -10px rgba(15, 23, 42, 0.35);
+}
+.vu-modern-table .vu-actions-head { z-index: 11; }
+.vu-modern-table tbody tr.vu-row-selected .vu-actions-cell { background: #fff1e8; }
+.vu-mockup-actions { gap: 6px; }
+
+@media (max-width: 900px) {
+  .vu-modern-table { min-width: 680px; }
+}

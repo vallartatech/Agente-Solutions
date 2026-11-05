@@ -510,20 +510,18 @@ const VistaUsuarios = () => {
                 <table className="vu-modern-table">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>NOMBRE</th>
-                      <th>FOTO</th>
-                      <th>ESTADO (ESTATUS)</th>
+                      <th>USUARIO</th>
+                      <th>ESTADO</th>
                       <th>ROL / TIPO</th>
                       <th>CONTACTO</th>
                       <th>CALIFICACIÓN</th>
-                      <th>ACCIONES</th>
+                      <th className="vu-actions-head">ACCIONES</th>
                     </tr>
                   </thead>
                   <tbody>
                     {cargando ? (
                       <tr>
-                        <td colSpan="8" className="vu-loading-cell">
+                        <td colSpan="6" className="vu-loading-cell">
                           <div className="vu-loader-content">
                             <div className="vu-spinner"></div>
                             <span>Cargando directorio...</span>
@@ -539,38 +537,32 @@ const VistaUsuarios = () => {
                             className={`${u.bloqueado ? "vu-row-blocked" : ""} ${isSelected ? "vu-row-selected" : ""}`}
                             onClick={() => setSelectedTecnicoId(u.id)}
                           >
-                            {/* ID Formateado */}
-                            <td data-label="ID" className="vu-id-cell">
-                              <span className="vu-id-code">{String(u.rawId || String(u.id).replace(/\D/g, '') || u.id).padStart(5, '0')}</span>
-                            </td>
-
-                            {/* Nombre */}
+                            {/* Usuario: foto, nombre (abre el expediente) e ID */}
                             <td
-                              data-label="Nombre"
-                              className="vu-name-cell vu-clickable-name"
+                              data-label="Usuario"
+                              className="vu-user-cell vu-clickable-name"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleVerExpediente(u);
                               }}
                               title="Clic para ver expediente"
                             >
-                              <div className="vu-name-block">
-                                <span className="vu-user-name-title">{u.nombre}</span>
-                                {u.bloqueado && <span className="vu-blocked-tag">Bloqueado</span>}
-                                {u.valida_trabajos && <span className="vu-validador-tag"><ShieldCheck size={11} /> Valida trabajos</span>}
-                              </div>
-                            </td>
-
-                            {/* Foto / Avatar Redondo */}
-                            <td data-label="Foto" className="vu-photo-cell">
-                              <div className="vu-avatar-wrap">
-                                {u.profile_picture_url ? (
-                                  <img src={u.profile_picture_url} alt={u.nombre} className="vu-avatar-circle" />
-                                ) : (
-                                  <div className="vu-avatar-circle fallback">
-                                    {u.nombre ? u.nombre.charAt(0).toUpperCase() : <User size={16} />}
-                                  </div>
-                                )}
+                              <div className="vu-user-block">
+                                <div className="vu-avatar-wrap">
+                                  {u.profile_picture_url ? (
+                                    <img src={u.profile_picture_url} alt={u.nombre} className="vu-avatar-circle" />
+                                  ) : (
+                                    <div className="vu-avatar-circle fallback">
+                                      {u.nombre ? u.nombre.charAt(0).toUpperCase() : <User size={16} />}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="vu-name-block">
+                                  <span className="vu-user-name-title">{u.nombre}</span>
+                                  <span className="vu-id-code">#{String(u.rawId || String(u.id).replace(/\D/g, '') || u.id).padStart(5, '0')}</span>
+                                  {u.bloqueado && <span className="vu-blocked-tag">Bloqueado</span>}
+                                  {u.valida_trabajos && <span className="vu-validador-tag"><ShieldCheck size={11} /> Valida trabajos</span>}
+                                </div>
                               </div>
                             </td>
 
@@ -745,7 +737,7 @@ const VistaUsuarios = () => {
                       })
                     ) : (
                       <tr>
-                        <td colSpan="8" className="vu-empty-cell">
+                        <td colSpan="6" className="vu-empty-cell">
                           <div className="vu-empty-state">
                             <Users size={36} className="vu-empty-icon" />
                             <p className="vu-empty-title">No se encontraron técnicos</p>
