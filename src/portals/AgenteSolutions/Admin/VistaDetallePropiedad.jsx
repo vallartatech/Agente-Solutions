@@ -9,7 +9,8 @@ import CasaLoader from '../../../components/Shared/CasaLoader';
 import useExpediente from './Expediente/useExpediente';
 import ModalNuevaSolicitud from './Expediente/ModalNuevaSolicitud';
 import MantenimientosDePropiedad from './Mantenimiento/MantenimientosDePropiedad';
-import { TrabajoCard, ListaCotizaciones, LineaTiempo } from './Expediente/ExpedienteUI';
+import { TrabajoCard, CarpetasCotizaciones, LineaTiempo } from './Expediente/ExpedienteUI';
+import ModalCotizacion from './Expediente/ModalCotizacion';
 import { esActivo, esFinalizado, esCancelado, etiquetaTipo, nombreTecnicos } from './Expediente/flujoTrabajo';
 import '../../../styles/Shared/UniversalSearch.css';
 import '../../../styles/Shared/ToolbarAcciones.css';
@@ -49,6 +50,8 @@ const VistaDetallePropiedad = () => {
   const [filtroAbierto, setFiltroAbierto] = useState(false);
   const [modalSolicitud, setModalSolicitud] = useState(false);
   const [versionEquipos, setVersionEquipos] = useState(0);
+  // Cotización abierta en el modal: { cotizacion, trabajo }
+  const [cotAbierta, setCotAbierta] = useState(null);
   const filtroRef = useRef(null);
 
   useEffect(() => {
@@ -271,9 +274,10 @@ const VistaDetallePropiedad = () => {
         {tab === 'cotizaciones' && (
           <section className="xp-card xp-panel">
             <h3 className="xp-panel-titulo"><FileText size={18} /> Cotizaciones de la propiedad</h3>
-            <ListaCotizaciones
-              cotizaciones={cotizaciones}
-              onAbrir={(c) => abrirTrabajo(c._trabajo.uid, 'cotizaciones')}
+            <CarpetasCotizaciones
+              trabajos={trabajos}
+              onAbrir={(c, t) => setCotAbierta({ cotizacion: c, trabajo: t })}
+              onVerTrabajo={(t) => abrirTrabajo(t.uid, 'cotizaciones')}
               vacio="Esta propiedad todavía no tiene cotizaciones."
             />
           </section>
@@ -290,6 +294,14 @@ const VistaDetallePropiedad = () => {
           </section>
         )}
       </main>
+
+      {cotAbierta && (
+        <ModalCotizacion
+          cotizacion={cotAbierta.cotizacion}
+          trabajo={cotAbierta.trabajo}
+          onClose={() => setCotAbierta(null)}
+        />
+      )}
 
       {modalSolicitud && (
         <ModalNuevaSolicitud

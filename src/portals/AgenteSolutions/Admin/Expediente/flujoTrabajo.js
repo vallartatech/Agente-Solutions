@@ -136,3 +136,70 @@ export const construirHistorial = (t) => {
 
   return ev.sort((a, b) => new Date(String(a.fecha).replace(' ', 'T')) - new Date(String(b.fecha).replace(' ', 'T')));
 };
+
+// ── Cotizaciones: origen y versiones ──
+// created_by_role = 'Técnico' → propuesta del técnico (el cliente no la ve)
+// parent_id → se generó a partir de otra cotización (sobre la del técnico o recotización)
+const mismoId = (a, b) => String(a) === String(b);
+const padreDe = (c, todas) => (c.parent_id ? todas.find((x) => mismoId(x.id, c.parent_id)) : null);
+
+export const nombreCotizacion = (c) => (c.folio ? `Cotización #${c.folio}` : `Cotización ${c.id}`);
+export const folioCotizacion = (c) => `COT-${String(c.folio || c.id).padStart(3, '0')}`;
+
+// Número de versión dentro de las cotizaciones de la administración (V1, V2, ...)
+export const versionCotizacion = (c, todas = []) => {
+  let v = 1;
+  let actual = c;
+  const vistos = new Set();
+  while (actual?.parent_id && !vistos.has(String(actual.id))) {
+    vistos.add(String(actual.id));
+    const padre = padreDe(actual, todas);
+    if (!padre) { v += 1; break; } // el padre no está en la lista: al menos es una segunda versión
+    if (padre.created_by_role === 'Técnico') break;
+    v += 1;
+    actual = padre;
+  }
+  return v;
+};
+
+export const origenCotizacion = (c, todas = []) => {
+  const rol = c.created_by_role;
+  if (rol === 'Técnico') {
+    return { key: 'tecnico', texto: 'Propuesta del técnico', tono: 'violet',
+      detalle: 'Enviada por el técnico a la administración. El cliente no la ve: sirve de base para la cotización final.' };
+  }
+  if (rol === 'Proveedor') {
+    return { key: 'proveedor', texto: 'Proveedor', tono: 'blue', detalle: 'Cotización enviada por un proveedor.' };
+  }
+  if (c.parent_id) {
+    const padre = padreDe(c, todas);
+    if (padre?.created_by_role === 'Técnico') {
+      return { key: 'sobre-tecnico', texto: 'Sobre propuesta del técnico', tono: 'blue', padre,
+        detalle: 'Generada por la administración a partir de la propuesta del técnico.' };
+    }
+    const v = versionCotizacion(c, todas);
+    return { key: 'recotizacion', texto: `Recotización V${v}`, tono: 'amber', padre,
+      detalle: 'Nueva versión de una cotización anterior de este trabajo.' };
+  }
+  return { key: 'propia', texto: 'Cotización propia', tono: 'orange',
+    detalle: 'Creada directamente por la administración, sin propuesta de técnico.' };
+};
+
+// Ordena las cotizaciones como cadenas: cada original seguida de las que se generaron a partir de ella
+export const cadenasCotizaciones = (cots = []) => {
+  const fechaDe = (c) => new Date(String(c.created_at || '').replace(' ', 'T')).getTime() || 0;
+  const porFecha = (a, b) => fechaDe(a) - fechaDe(b);
+  const hijos = (id) => cots.filter((x) => x.parent_id && mismoId(x.parent_id, id)).sort(porFecha);
+  const raices = cots.filter((c) => !padreDe(c, cots)).sort(porFecha);
+  const salida = [];
+  const vistos = new Set();
+  const visitar = (c, nivel) => {
+    if (vistos.has(String(c.id))) return;
+    vistos.add(String(c.id));
+    salida.push({ cotizacion: c, nivel });
+    hijos(c.id).forEach((h) => visitar(h, nivel + 1));
+  };
+  raices.forEach((c) => visitar(c, 0));
+  cots.forEach((c) => visitar(c, 0)); // por si hubiera ciclos o datos sueltos
+  return salida;
+};

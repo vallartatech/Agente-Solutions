@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   LayoutGrid, FileText, History, MapPin, Tag, Phone, Mail, UserRound, HardHat,
@@ -7,9 +7,10 @@ import {
 import Header from '../../../../components/Shared/Header';
 import CasaLoader from '../../../../components/Shared/CasaLoader';
 import useExpediente from './useExpediente';
-import { Chip, FlujoBarra, ListaCotizaciones, LineaTiempo } from './ExpedienteUI';
+import { Chip, FlujoBarra, ListaCotizaciones, LineaTiempo, VisorFotos } from './ExpedienteUI';
 import { etiquetaEstado, etiquetaTipo, fechaHora, construirHistorial } from './flujoTrabajo';
 import { AccesoQRAdmin } from '../../Shared/AccesoQR';
+import ModalCotizacion from './ModalCotizacion';
 import '../../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
 
 const TABS = [
@@ -43,6 +44,11 @@ const VistaTrabajoPropiedad = () => {
 
   const trabajo = data?.trabajos?.find((t) => t.uid === uid);
   const historial = useMemo(() => (trabajo ? construirHistorial(trabajo).reverse() : []), [trabajo]);
+  // Índice de la foto abierta en el visor (null = cerrado)
+  const [fotoAbierta, setFotoAbierta] = useState(null);
+  const cerrarVisor = useCallback(() => setFotoAbierta(null), []);
+  const [cotAbierta, setCotAbierta] = useState(null);
+  const cerrarCotizacion = useCallback(() => setCotAbierta(null), []);
 
   const headerTabs = TABS.map((t) => ({
     ...t,
@@ -102,6 +108,7 @@ const VistaTrabajoPropiedad = () => {
 
         {tab === 'datos' && (
           <div className="xp-detalle-grid">
+            <div className="xp-columna">
             <section className="xp-card xp-panel">
               <h3 className="xp-panel-titulo"><FileText size={18} /> Detalle de la solicitud</h3>
               <dl className="xp-datos">
@@ -116,13 +123,42 @@ const VistaTrabajoPropiedad = () => {
               {trabajo.fotos.length ? (
                 <div className="xp-galeria">
                   {trabajo.fotos.map((f, i) => (
-                    <a key={i} href={f} target="_blank" rel="noopener noreferrer"><img src={f} alt={`Evidencia ${i + 1}`} /></a>
+                    <button key={i} type="button" className="xp-galeria-item" onClick={() => setFotoAbierta(i)} aria-label={`Ver evidencia ${i + 1}`}>
+                      <img src={f} alt={`Evidencia ${i + 1}`} />
+                    </button>
                   ))}
                 </div>
               ) : (
                 <p className="xp-vacio xp-vacio-inline"><ImageOff size={16} /> No se adjuntaron imágenes.</p>
               )}
             </section>
+
+              {/* Personas: lado a lado bajo el detalle para equilibrar las dos columnas */}
+              <div className="xp-contactos-grid">
+                <section className="xp-card xp-panel">
+                  <h3 className="xp-panel-titulo"><HardHat size={18} /> Técnico asignado</h3>
+                  {trabajo.tecnicos.length ? (
+                    trabajo.tecnicos.map((t) => (
+                      <Contacto key={t.id} nombre={t.nombre} rol="Técnico" telefono={t.telefono} email={t.email} foto={t.foto} Icono={HardHat} />
+                    ))
+                  ) : (
+                    <p className="xp-vacio xp-vacio-inline">Aún no hay técnico asignado.</p>
+                  )}
+                </section>
+
+                <section className="xp-card xp-panel">
+                  <h3 className="xp-panel-titulo"><UserRound size={18} /> Encargado de la propiedad</h3>
+                  <Contacto
+                    nombre={encargado?.name}
+                    rol="Responsable"
+                    telefono={encargado?.phone}
+                    email={encargado?.email}
+                    foto={encargado?.profile_picture}
+                    Icono={UserRound}
+                  />
+                </section>
+              </div>
+            </div>
 
             <div className="xp-columna">
               <AccesoQRAdmin tipo={trabajo.kind === 'trabajo' ? 'work_order' : 'servicio'} id={trabajo.id} />
@@ -148,29 +184,6 @@ const VistaTrabajoPropiedad = () => {
                   <p className="xp-vacio xp-vacio-inline">Sin coordenadas registradas.</p>
                 )}
               </section>
-
-              <section className="xp-card xp-panel">
-                <h3 className="xp-panel-titulo"><HardHat size={18} /> Técnico asignado</h3>
-                {trabajo.tecnicos.length ? (
-                  trabajo.tecnicos.map((t) => (
-                    <Contacto key={t.id} nombre={t.nombre} rol="Técnico" telefono={t.telefono} email={t.email} foto={t.foto} Icono={HardHat} />
-                  ))
-                ) : (
-                  <p className="xp-vacio xp-vacio-inline">Aún no hay técnico asignado.</p>
-                )}
-              </section>
-
-              <section className="xp-card xp-panel">
-                <h3 className="xp-panel-titulo"><UserRound size={18} /> Encargado de la propiedad</h3>
-                <Contacto
-                  nombre={encargado?.name}
-                  rol="Responsable"
-                  telefono={encargado?.phone}
-                  email={encargado?.email}
-                  foto={encargado?.profile_picture}
-                  Icono={UserRound}
-                />
-              </section>
             </div>
           </div>
         )}
@@ -180,7 +193,7 @@ const VistaTrabajoPropiedad = () => {
             <h3 className="xp-panel-titulo"><FileText size={18} /> Cotizaciones de este trabajo</h3>
             <ListaCotizaciones
               cotizaciones={trabajo.cotizaciones}
-              onAbrir={(c) => navigate(`/vista-cotizaciones?quote_id=${c.id}`)}
+              onAbrir={setCotAbierta}
               vacio="Este trabajo todavía no tiene cotizaciones."
             />
           </section>
@@ -193,6 +206,14 @@ const VistaTrabajoPropiedad = () => {
           </section>
         )}
       </main>
+
+      {cotAbierta && (
+        <ModalCotizacion cotizacion={cotAbierta} trabajo={trabajo} onClose={cerrarCotizacion} />
+      )}
+
+      {fotoAbierta !== null && (
+        <VisorFotos fotos={trabajo.fotos} inicio={fotoAbierta} onClose={cerrarVisor} />
+      )}
     </div>
   );
 };

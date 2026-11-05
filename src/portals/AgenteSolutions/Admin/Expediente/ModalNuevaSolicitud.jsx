@@ -5,7 +5,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import {
   X, FileText, Home, Wrench, MessageSquare, Camera, ImageIcon, PlusCircle,
-  Users, User, ClipboardList, Hammer, ChevronRight, CheckCircle2, CalendarClock, Layers, Pencil
+  Users, User, ClipboardList, Hammer, ChevronRight, CheckCircle2, CalendarClock, Layers, Pencil, ChevronDown
 } from 'lucide-react';
 import { API, authHeaders } from './flujoTrabajo';
 import '../../../../styles/AgenteSolutions/Admin/VistaPropiedades.css';
@@ -47,6 +47,8 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
   const [tecnicoIds, setTecnicoIds] = useState([]);
   const [tecnicos, setTecnicos] = useState([]);
   const [cargandoTecnicos, setCargandoTecnicos] = useState(true);
+  const [equipoAbierto, setEquipoAbierto] = useState(false);
+  const tecnicosPedidos = useRef(false);
   const [zonas, setZonas] = useState([]);
   const [cargandoZonas, setCargandoZonas] = useState(true);
   const [equipos, setEquipos] = useState({});
@@ -63,7 +65,10 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
   const navigate = useNavigate();
   const esAdmin = esAdministrador();
 
-  useEffect(() => {
+  // El equipo es opcional: la lista (con sus fotos) solo se descarga la primera vez que se despliega
+  const cargarTecnicos = () => {
+    if (tecnicosPedidos.current) return;
+    tecnicosPedidos.current = true;
     const headers = authHeaders();
     const miId = String(sesion().id ?? '');
     // Técnicos y admins, sin quien está solicitando; primero los técnicos
@@ -76,7 +81,15 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
         .sort((a, b) => Number(b.role_id) - Number(a.role_id))))
       .catch(() => setTecnicos([]))
       .finally(() => setCargandoTecnicos(false));
+  };
 
+  const alternarEquipo = () => {
+    if (!equipoAbierto) cargarTecnicos();
+    setEquipoAbierto((v) => !v);
+  };
+
+  useEffect(() => {
+    const headers = authHeaders();
     if (!propiedad) {
       setZonas([]);
       setCargandoZonas(false);
@@ -515,10 +528,22 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
               </>
             )}
 
-            <div className="xp-equipo">
-              <label className="rp-label">
-                <Users size={16} color="#ff8c42" /> Equipo de trabajo <span className="xp-equipo-hint">(Selecciona uno o más)</span>
-              </label>
+            <div className={`xp-equipo xp-equipo-plegable ${equipoAbierto ? 'abierto' : ''}`}>
+              <button
+                type="button"
+                className="xp-equipo-toggle"
+                onClick={alternarEquipo}
+                aria-expanded={equipoAbierto}
+              >
+                <span className="rp-label">
+                  <Users size={16} color="#ff8c42" /> Equipo de trabajo <span className="xp-equipo-hint">(Opcional)</span>
+                </span>
+                <span className="xp-equipo-resumen">
+                  {tecnicoIds.length ? nombresEquipo() : 'Sin asignar'}
+                </span>
+                <ChevronDown size={18} className="xp-equipo-flecha" />
+              </button>
+              {equipoAbierto && (<>
               {cargandoTecnicos ? (
                 <p className="xp-equipo-vacio">Cargando equipo...</p>
               ) : !tecnicos.length ? (
@@ -566,6 +591,7 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
                   la primera que elegiste queda como responsable.
                 </small>
               )}
+              </>)}
             </div>
 
             {esAdmin && (
