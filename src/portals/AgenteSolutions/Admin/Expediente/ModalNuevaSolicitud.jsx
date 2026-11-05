@@ -8,7 +8,6 @@ import {
   Users, User, ClipboardList, Hammer, ChevronRight, CheckCircle2, CalendarClock, Layers, Pencil
 } from 'lucide-react';
 import { API, authHeaders } from './flujoTrabajo';
-import PanelEquiposSolicitud from '../Mantenimiento/PanelEquiposSolicitud';
 import '../../../../styles/AgenteSolutions/Admin/VistaPropiedades.css';
 import '../../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
 import '../../../../styles/Shared/LiquidGlass.css';
@@ -54,8 +53,6 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
   const [cargandoEquipos, setCargandoEquipos] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [menuFoto, setMenuFoto] = useState(false);
-  const [carrito, setCarrito] = useState([]); // equipos elegidos para un mantenimiento
-  const [panelEquiposAbierto, setPanelEquiposAbierto] = useState(false); // solo aplica en responsivo
   // Trabajos ya guardados que se enviarán juntos como un lote
   const [lote, setLote] = useState([]);
   const loteIdRef = useRef(null);
@@ -65,8 +62,6 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
   const galleryRef = useRef(null);
   const navigate = useNavigate();
   const esAdmin = esAdministrador();
-  const mostrarEquipos = esAdmin && Boolean(propiedad) && modo === 'trabajo' && form.tipo === 'Mantenimiento';
-  const conCarrito = mostrarEquipos && carrito.length > 0;
 
   useEffect(() => {
     const headers = authHeaders();
@@ -99,8 +94,6 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
     setPropiedad((propiedades || []).find((p) => String(p.id) === String(id)) || null);
     setForm((f) => ({ ...f, area_id: '', zona: '', equipo: '' }));
     setEquipos({});
-    setCarrito([]);
-    setPanelEquiposAbierto(false);
   };
 
   const cambiarZona = async (areaId) => {
@@ -181,12 +174,12 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
   };
 
   // ¿Ya se empezó a llenar el trabajo que está en pantalla?
-  const hayTrabajoEnCurso = Boolean(form.tipo || form.area_id || form.descripcion.trim() || form.fotos.length || carrito.length);
+  const hayTrabajoEnCurso = Boolean(form.tipo || form.area_id || form.descripcion.trim() || form.fotos.length);
 
   const faltaEnTrabajo = () => {
     if (!propiedad) return { title: 'Elige la propiedad', text: 'Selecciona la propiedad donde se hará el trabajo.' };
-    if (modo === 'trabajo' && (!form.tipo || (!conCarrito && !form.area_id) || !form.descripcion.trim())) {
-      return { title: 'Faltan datos', text: conCarrito ? 'Completa la descripción.' : 'Completa el tipo, la zona y la descripción.' };
+    if (modo === 'trabajo' && (!form.tipo || !form.area_id || !form.descripcion.trim())) {
+      return { title: 'Faltan datos', text: 'Completa el tipo, la zona y la descripción.' };
     }
     // La visita se refleja en el calendario: el administrador siempre la programa
     if (esAdmin && (!form.fecha || !form.hora)) {
@@ -202,7 +195,6 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
     id: Date.now(),
     form,
     tecnicoIds,
-    carrito: conCarrito ? carrito : [],
     equipo: nombresEquipo(),
   });
 
@@ -216,9 +208,7 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
     // Suele ser la misma visita: la fecha y la hora se conservan
     setForm({ ...FORM_VACIO, fecha: form.fecha, hora: form.hora });
     setTecnicoIds([]);
-    setCarrito([]);
     setEquipos({});
-    setPanelEquiposAbierto(false);
     modalRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -261,16 +251,14 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
     setPosicionEditada(hayTrabajoEnCurso && !faltaEnTrabajo() && (posicionEditada ?? lote.length) <= posicion ? posicion + 1 : posicion);
     setForm(trabajo.form);
     setTecnicoIds(trabajo.tecnicoIds);
-    setCarrito(trabajo.carrito);
     setEquipos({});
-    setPanelEquiposAbierto(false);
     if (trabajo.form.area_id && trabajo.form.area_id !== 'otro') cargarEquipos(trabajo.form.area_id);
     modalRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Crea la orden de un trabajo. Devuelve true si la agenda o la cuadrilla quedaron pendientes.
   const crearOrden = async (trabajo, batchId) => {
-    const { form: datos, carrito: elegidos, tecnicoIds: integrantes } = trabajo;
+    const { form: datos, tecnicoIds: integrantes } = trabajo;
     const ids = integrantes.map(Number);
     const headers = authHeaders();
     const visita = esAdmin && datos.fecha && datos.hora ? `${datos.fecha} ${datos.hora}` : null;
@@ -279,19 +267,11 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
     fd.append('property_id', propiedad.id);
     fd.append('type', datos.tipo);
     if (batchId) fd.append('batch_id', batchId);
-    if (elegidos.length) {
-      const etiquetas = elegidos.map((r) => r.label).join(', ');
-      fd.append('zone', elegidos.length === 1 && elegidos[0].area ? elegidos[0].area : 'Varias zonas');
-      fd.append('equipment', etiquetas.length > 150 ? `${etiquetas.slice(0, 149)}…` : etiquetas);
-      fd.append('description', `${datos.descripcion}\n\n[EQUIPO AFECTADO]: ${etiquetas}`);
-      elegidos.forEach((r) => fd.append(r.tipo === 'equipo' ? 'equipo_ids[]' : 'component_ids[]', r.id));
-    } else {
-      fd.append('zone', datos.zona);
-      fd.append('equipment', datos.equipo || '');
-      fd.append('description', datos.equipo
-        ? `${datos.descripcion}\n\n[EQUIPO AFECTADO]: ${datos.equipo}`
-        : datos.descripcion);
-    }
+    fd.append('zone', datos.zona);
+    fd.append('equipment', datos.equipo || '');
+    fd.append('description', datos.equipo
+      ? `${datos.descripcion}\n\n[EQUIPO AFECTADO]: ${datos.equipo}`
+      : datos.descripcion);
     if (ids[0]) fd.append('tecnico_id', ids[0]);
     datos.fotos.forEach((foto, i) => fd.append(`evidence_${i + 1}`, foto));
     const res = await axios.post(`${API}/work-orders/cliente`, fd, {
@@ -342,7 +322,6 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
       if (hayTrabajoEnCurso) {
         setForm({ ...FORM_VACIO, fecha: form.fecha, hora: form.hora });
         setTecnicoIds([]);
-        setCarrito([]);
         setEquipos({});
       }
       Swal.fire({
@@ -458,7 +437,7 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
   return createPortal(
     <>
       <div className="rp-overlay" onClick={onClose}>
-        <div className={`mt-solicitud ${mostrarEquipos ? 'con-equipos' : ''}`}>
+        <div className="mt-solicitud">
         <div className="rp-modal" ref={modalRef} onClick={(e) => e.stopPropagation()}>
           <div className="rp-header">
             <div className="rp-header-text">
@@ -486,7 +465,7 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
                 {lote.map((t, i) => (
                   <div key={t.id} className="mt-lote-item">
                     <span className="mt-lote-texto">
-                      <strong>{t.form.tipo} · {t.carrito.length ? t.carrito.map((r) => r.label).join(', ') : (t.form.equipo || t.form.zona)}</strong>
+                      <strong>{t.form.tipo} · {t.form.equipo || t.form.zona}</strong>
                       <small>{t.equipo || 'Sin técnico asignado'}{t.form.fecha && t.form.hora ? ` · ${t.form.fecha} ${t.form.hora}` : ''}</small>
                     </span>
                     <button type="button" className="mt-lote-editar" onClick={() => editarTrabajo(t, i)} aria-label="Editar este trabajo">
@@ -632,11 +611,6 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
                   </select>
                 </div>
 
-                {conCarrito ? (
-                  <p className="mt-solicitud-nota">
-                    <CheckCircle2 size={15} /> {carrito.length} {carrito.length === 1 ? 'equipo elegido' : 'equipos elegidos'}: {carrito.map((r) => r.label).join(', ')}
-                  </p>
-                ) : (
                 <>
                 <div className="rp-group">
                   <label className="rp-label"><Home size={16} color="#ff8c42" /> Zona de la propiedad *</label>
@@ -680,7 +654,6 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
                   </select>
                 </div>
                 </>
-                )}
               </>
             ) : (
               <div className="rp-group">
@@ -753,28 +726,6 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
           </form>
         </div>
 
-        {mostrarEquipos && (
-          <>
-            <button
-              type="button"
-              className="mt-flecha-equipos"
-              onClick={(e) => { e.stopPropagation(); setPanelEquiposAbierto(true); }}
-              aria-label={`Elegir equipos${carrito.length ? `, ${carrito.length} elegidos` : ''}`}
-            >
-              <ChevronRight size={24} strokeWidth={2.6} />
-              {carrito.length > 0 && <span className="mt-flecha-cuenta">{carrito.length}</span>}
-            </button>
-            {panelEquiposAbierto && <div className="mt-panel-fondo" onClick={(e) => { e.stopPropagation(); setPanelEquiposAbierto(false); }} />}
-            <PanelEquiposSolicitud
-              propiedad={propiedad}
-              carrito={carrito}
-              ocultos={lote.flatMap((t) => t.carrito.map((r) => r.clave))}
-              onChange={setCarrito}
-              abierto={panelEquiposAbierto}
-              onCerrar={() => setPanelEquiposAbierto(false)}
-            />
-          </>
-        )}
         </div>
       </div>
 
