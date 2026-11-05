@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { GoogleMap, useJsApiLoader, MarkerF, Autocomplete } from '@react-google-maps/api';
 import { X, Search, LocateFixed, Loader2, Check, MapPin, AlertTriangle } from 'lucide-react';
 import { GOOGLE_MAPS_LOADER } from './googleMapsConfig';
+import { obtenerDireccion } from './direccionGoogle';
 import '../../styles/Shared/SelectorUbicacionMapa.css';
 
 const CENTRO_MERIDA = { lat: 20.9673, lng: -89.6236 };
@@ -37,7 +38,8 @@ const parseCoords = (texto) => {
  * intenta detectar el GPS y, si falla o es impreciso, deja buscar la dirección
  * o marcarla tocando el mapa / arrastrando el pin.
  */
-const SelectorUbicacionMapa = ({ isOpen, onClose, onConfirm, coordenadasIniciales }) => {
+// pedirDireccion: al confirmar también busca la dirección del punto y la manda como 2º argumento de onConfirm
+const SelectorUbicacionMapa = ({ isOpen, onClose, onConfirm, coordenadasIniciales, pedirDireccion = false }) => {
   const { isLoaded, loadError } = useJsApiLoader(GOOGLE_MAPS_LOADER);
 
   const [posicion, setPosicion] = useState(CENTRO_MERIDA);
@@ -48,6 +50,7 @@ const SelectorUbicacionMapa = ({ isOpen, onClose, onConfirm, coordenadasIniciale
   const [precision, setPrecision] = useState(null);
 
   const [motivoError, setMotivoError] = useState('');
+  const [buscandoDireccion, setBuscandoDireccion] = useState(false);
 
   const autocompleteRef = useRef(null);
   const tocoManualmente = useRef(false);
@@ -143,8 +146,17 @@ const SelectorUbicacionMapa = ({ isOpen, onClose, onConfirm, coordenadasIniciale
     detectarUbicacion();
   };
 
-  const confirmar = () => {
-    onConfirm(`${posicion.lat.toFixed(6)}, ${posicion.lng.toFixed(6)}`);
+  const confirmar = async () => {
+    const coords = `${posicion.lat.toFixed(6)}, ${posicion.lng.toFixed(6)}`;
+    if (!pedirDireccion) {
+      onConfirm(coords);
+      onClose();
+      return;
+    }
+    setBuscandoDireccion(true);
+    const resultado = await obtenerDireccion(posicion);
+    setBuscandoDireccion(false);
+    onConfirm(coords, resultado);
     onClose();
   };
 
@@ -223,8 +235,10 @@ const SelectorUbicacionMapa = ({ isOpen, onClose, onConfirm, coordenadasIniciale
           <span className="sum-coords">{posicion.lat.toFixed(6)}, {posicion.lng.toFixed(6)}</span>
           <div className="sum-actions">
             <button type="button" className="sum-btn-sec" onClick={onClose}>Cancelar</button>
-            <button type="button" className="sum-btn-main" onClick={confirmar} disabled={!isLoaded}>
-              <Check size={17} /> Confirmar
+            <button type="button" className="sum-btn-main" onClick={confirmar} disabled={!isLoaded || buscandoDireccion}>
+              {buscandoDireccion
+                ? <><Loader2 size={17} className="sum-spin" /> Obteniendo dirección...</>
+                : <><Check size={17} /> {pedirDireccion ? 'Confirmar y llenar dirección' : 'Confirmar'}</>}
             </button>
           </div>
         </div>
