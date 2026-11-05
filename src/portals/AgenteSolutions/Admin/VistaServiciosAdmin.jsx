@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Circle, X, UserCircle, Calendar, 
   ArrowLeft, Camera, Layout, FileText, Maximize2, AlertTriangle, Timer, Settings, Filter,
   MapPin, Navigation, Users, Package, Zap, Banknote, ListChecks, Hash, ClipboardList, ShieldCheck,
-  Search, ChevronDown
+  Search, ChevronDown, ChevronLeft
 } from 'lucide-react';
 
 const ROL_EQUIPO = { 0: 'Root', 1: 'Admin', 2: 'Técnico', 8: 'Cuadrilla' };
@@ -43,6 +43,22 @@ const diaCorto = (fecha) => {
   return fecha.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
 };
 
+// Color de la hora según columna, SOS o atraso (lo usan la tarjeta y su miniatura en la columna achicada)
+const tonoHoraTarea = (tarea) => {
+  const info = ESTADO_TARJETA[tarea.estado] || ESTADO_TARJETA.todo;
+  const fecha = tarea.scheduledAt ? new Date(tarea.scheduledAt) : null;
+  if (!fecha) return 'sin-fecha';
+  if (tarea.estado === 'sos' || tarea.prioridad === 'SOS' || tarea.isOverdue) return 'atrasado';
+  return info.hora || (diaCorto(fecha) === 'Hoy' ? 'hoy' : '');
+};
+
+// Columnas que el admin abrió o achicó a mano (por navegador). Sin elección: las vacías van achicadas.
+const CLAVE_COLAPSO = 'sv_columnas_colapso';
+const leerColapso = () => {
+  try { return JSON.parse(localStorage.getItem(CLAVE_COLAPSO) || '{}') || {}; } catch { return {}; }
+};
+const MINIATURAS_MAX = 8;
+
 const VistaServiciosAdmin = () => {
   const navigate = useNavigate();
   
@@ -65,6 +81,14 @@ const VistaServiciosAdmin = () => {
   const [tecnicosEquipo, setTecnicosEquipo] = useState([]);
   const [editandoCita, setEditandoCita] = useState(false);
   const [tabActiva, setTabActiva] = useState('sos'); // Estado para pestañas en móvil
+  const [colapsoManual, setColapsoManual] = useState(leerColapso);
+  const [esMovil, setEsMovil] = useState(() => window.matchMedia('(max-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const alCambiar = (e) => setEsMovil(e.matches);
+    mq.addEventListener('change', alCambiar);
+    return () => mq.removeEventListener('change', alCambiar);
+  }, []);
   const [showModalCotizacion, setShowModalCotizacion] = useState(false);
   const [cotizacionesData, setCotizacionesData] = useState([]);
   const [filtroFecha, setFiltroFecha] = useState('todas');
@@ -624,7 +648,7 @@ const VistaServiciosAdmin = () => {
     }
   };
 
-  const renderColumna = (colId, titulo, clase) => {
+  const tareasDeColumna = (colId) => {
     let tareasFiltradasCol = tareasAgrupadas.filter(t => t.estado === colId);
 
     if (colId === 'todo' && filtroFecha !== 'todas') {
@@ -649,13 +673,82 @@ const VistaServiciosAdmin = () => {
         return true;
       });
     }
-    
+    return tareasFiltradasCol;
+  };
+
+  // En móvil se usan pestañas: ahí nunca se achica. Vacía = sin trabajos en ese estado (sin contar el
+  // filtro de fecha de "Por hacer", para que filtrar no esconda la columna junto con su filtro).
+  const estaColapsada = (colId) =>
+    !esMovil && (colapsoManual[colId] ?? !tareasAgrupadas.some(t => t.estado === colId));
+
+  const alternarColumna = (colId, colapsar) => {
+    setColapsoManual(prev => {
+      const siguiente = { ...prev, [colId]: colapsar };
+      try { localStorage.setItem(CLAVE_COLAPSO, JSON.stringify(siguiente)); } catch { /* sin almacenamiento */ }
+      return siguiente;
+    });
+  };
+
+  // Columna achicada: riel delgado con su contador y una miniatura por trabajo
+  const renderColumnaColapsada = (colId, titulo, clase, tareasFiltradasCol) => (
+    <div
+      className={`scrum-column ${clase} sv-col-colapsada`}
+      role="button"
+      tabIndex={0}
+      title={`Abrir ${titulo.toLowerCase()}`}
+      onClick={() => alternarColumna(colId, false)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternarColumna(colId, false); } }}
+    >
+      <span className={`sv-col-rail-contador ${tareasFiltradasCol.length ? 'con-trabajos' : ''}`}>{tareasFiltradasCol.length}</span>
+      <span className="sv-col-rail-titulo">{titulo}</span>
+      {tareasFiltradasCol.length > 0 && (
+        <div className="sv-col-miniaturas">
+          {tareasFiltradasCol.slice(0, MINIATURAS_MAX).map(tarea => {
+            const nombre = tarea.nombrePropiedad || tarea.propiedad || 'Sin propiedad';
+            return (
+              <button
+                key={tarea.dbId}
+                type="button"
+                className={`sv-miniatura ${tonoHoraTarea(tarea)}`}
+                title={`${nombre}${tarea.isBatch ? ' · lote' : ` · #${tarea.dbId}`}`}
+                onClick={(e) => { e.stopPropagation(); abrirModal(tarea); }}
+              >
+                {tarea.fotoFachada ? <img src={tarea.fotoFachada} alt="" /> : <span>{nombre.charAt(0)}</span>}
+                {tarea.isBatch && <em>{tarea.batchTasks?.length || ''}</em>}
+              </button>
+            );
+          })}
+          {tareasFiltradasCol.length > MINIATURAS_MAX && (
+            <span className="sv-miniatura-mas">+{tareasFiltradasCol.length - MINIATURAS_MAX}</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderColumna = (colId, titulo, clase) => {
+    const tareasFiltradasCol = tareasDeColumna(colId);
+    if (estaColapsada(colId)) {
+      return renderColumnaColapsada(colId, titulo, clase, tareasFiltradasCol);
+    }
+
     return (
       <div className={`scrum-column ${clase}`}>
         <div className="column-header" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
             <span className="column-title-text">{titulo}</span>
-            <span className="column-badge">{tareasFiltradasCol.length}</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="column-badge">{tareasFiltradasCol.length}</span>
+              <button
+                type="button"
+                className="sv-col-achicar"
+                title={`Achicar ${titulo.toLowerCase()}`}
+                aria-label={`Achicar ${titulo.toLowerCase()}`}
+                onClick={() => alternarColumna(colId, true)}
+              >
+                <ChevronLeft size={16} />
+              </button>
+            </span>
           </div>
           {colId === 'todo' && (
             <select
@@ -681,10 +774,7 @@ const VistaServiciosAdmin = () => {
               const [horaNum, ...sufijo] = fecha
                 ? fecha.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }).split(' ')
                 : ['—'];
-              const esHoy = fecha && diaCorto(fecha) === 'Hoy';
-              const tonoHora = !fecha ? 'sin-fecha'
-                : (esSos || tarea.isOverdue) ? 'atrasado'
-                : info.hora || (esHoy ? 'hoy' : '');
+              const tonoHora = tonoHoraTarea(tarea);
               const nombre = tarea.nombrePropiedad || tarea.propiedad || 'Sin propiedad';
               const direccion = tarea.direccionPropiedad !== nombre ? tarea.direccionPropiedad : '';
               const persona = tarea.tecnicoAsignado || '';
@@ -898,7 +988,9 @@ const VistaServiciosAdmin = () => {
               className="scrum-board-layout" 
               style={{ 
                 display: 'grid',
-                gridTemplateColumns: seccionTab === 'activos' ? 'repeat(5, minmax(280px, 1fr))' : 'repeat(2, minmax(0, 1fr))',
+                gridTemplateColumns: columnasMostrar
+                  .map(col => estaColapsada(col.id) ? '64px' : 'minmax(260px, 1fr)')
+                  .join(' '),
                 overflowX: 'auto',
                 paddingBottom: '8px',
                 gap: '14px',
