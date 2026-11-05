@@ -10,8 +10,6 @@ import logo from "../../../assets/Logo3.png";
 import mpLogo from "../../../assets/Mercado-Pago.png";
 import html2pdf from 'html2pdf.js';
 import CasaLoader from "../../../components/Shared/CasaLoader";
-import { agruparPorEtapa, idReportesTrabajo, limpiarEtiqueta } from "../Shared/etapasEvidencia";
-import { esVideoUrl, miniaturaVideo } from "../../../utils/evidencia";
 
 const IVA_RATE = 0.16;
 
@@ -29,8 +27,6 @@ const VistaCotizacionPrint = () => {
   const [pdfGenerado, setPdfGenerado] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
   const [toastMessage, setToastMessage] = useState("");
-  // Evidencias que el técnico ya subió al trabajo; se consultan cada vez que se abre el PDF
-  const [evidencias, setEvidencias] = useState([]);
   
   // Fase seleccionada para el PDF: 'por_pagar' | 'pagado' | 'finalizado'
   const [faseActual, setFaseActual] = useState('por_pagar');
@@ -208,16 +204,6 @@ const VistaCotizacionPrint = () => {
       const data = JSON.parse(datosGuardados);
       setCotizacion(data);
 
-      const idReportes = idReportesTrabajo({ work_order_id: data.work_order_id, service_id: data.service_id });
-      if (idReportes) {
-        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/servicios/${idReportes}/reportes`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        })
-          .then((res) => setEvidencias(Array.isArray(res.data) ? res.data : []))
-          .catch(() => setEvidencias([]));
-      }
-
       const faseInicial = detectarFaseMaximaDisponible(data);
       setFaseActual(faseInicial);
       setNotas(generarTextoEspecificaciones(data, faseInicial));
@@ -290,9 +276,7 @@ const VistaCotizacionPrint = () => {
       filename: `cotizacion_${cotizacion.folio || cotizacion.id}_${faseActual}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-      // Que ninguna foto de evidencia quede partida entre dos páginas
-      pagebreak: { mode: ['css', 'legacy'], avoid: ['.cp-evidencia', '.cp-evidencias-titulo'] }
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
     try {
@@ -637,45 +621,6 @@ const VistaCotizacionPrint = () => {
                 }}
               />
             </div>
-
-            {/* Evidencias del técnico: solo las etapas que ya tienen foto o video */}
-            {(() => {
-              const grupos = agruparPorEtapa(evidencias)
-                .map((g) => ({ ...g, items: g.items.filter((r) => r.image_url) }))
-                .filter((g) => g.items.length);
-              if (!grupos.length) return null;
-              return (
-                <div className="cp-evidencias" style={{ marginTop: '18px' }}>
-                  <h3 className="cp-evidencias-titulo" style={{ background: '#0f172a', color: '#ffffff', display: 'inline-block', padding: '4px 10px', fontSize: '11px', fontWeight: '800', borderRadius: '4px', margin: '0 0 10px 0', borderLeft: '4px solid #f26624' }}>
-                    EVIDENCIAS DEL TÉCNICO
-                  </h3>
-                  {grupos.map(({ etapa, items }) => (
-                    <div key={etapa.key} style={{ marginBottom: '10px' }}>
-                      <div style={{ fontSize: '10px', fontWeight: '800', color: etapa.badgeColor || '#64748b', letterSpacing: '0.5px', marginBottom: '6px' }}>
-                        {etapa.title.replace(/^\d+\.\s*/, '')}
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                        {items.map((r) => (
-                          <div key={r.id || r.image_url} className="cp-evidencia" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                            <img
-                              src={esVideoUrl(r.image_url) ? miniaturaVideo(r.image_url) : r.image_url}
-                              alt=""
-                              crossOrigin="anonymous"
-                              style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0', display: 'block' }}
-                            />
-                            {limpiarEtiqueta(r.description) && (
-                              <div style={{ fontSize: '9px', color: '#475569', marginTop: '3px', lineHeight: 1.3 }}>
-                                {esVideoUrl(r.image_url) ? '🎬 ' : ''}{limpiarEtiqueta(r.description)}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
 
             {/* Cuadros de Firmas / Conformidad (Fase 3: Finalizado) */}
             {faseActual === 'finalizado' && (
