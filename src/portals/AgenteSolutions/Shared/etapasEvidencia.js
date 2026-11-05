@@ -99,3 +99,28 @@ export const evidenciaDeEtapa = (reportes, etapa) => {
   const posicion = libres.findIndex(e => e.key === etapa.key);
   return posicion !== -1 ? (sinEtapa[posicion] || null) : null;
 };
+
+// Todas las evidencias agrupadas por etapa, en orden (Antes, Durante, Después, Extra, Ticket).
+// Las viejas sin etapa reconocible quedan en "Otras evidencias". Devuelve también las etapas sin nada.
+export const agruparPorEtapa = (reportes) => {
+  const lista = (reportes || []).filter(r => r?.image_url || r?.description);
+  const usados = new Set();
+  const grupos = ETAPAS_EVIDENCIA.map(etapa => {
+    const items = lista.filter(r => esDeEtapa(r, etapa));
+    items.forEach(r => usados.add(r));
+    return { etapa, items };
+  });
+  const otros = lista.filter(r => !usados.has(r));
+  if (otros.length) {
+    grupos.push({ etapa: { key: 'OTRAS', title: 'OTRAS EVIDENCIAS', badgeColor: '#64748b', required: false }, items: otros });
+  }
+  return grupos;
+};
+
+// Cómo se pide la evidencia de un trabajo a la API de reportes
+export const idReportesTrabajo = ({ kind, id, work_order_id, service_id }) => {
+  if (work_order_id) return `work_order-${work_order_id}`;
+  if (service_id) return String(service_id);
+  if (!id) return null;
+  return kind === 'trabajo' ? `work_order-${id}` : String(id);
+};

@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   X, FileText, HardHat, RefreshCw, Info, Paperclip, ExternalLink, Layers, StickyNote, Lock, Hammer, CornerDownRight,
+  Camera, PlayCircle, ImageOff,
 } from 'lucide-react';
+import { agruparPorEtapa, idReportesTrabajo, limpiarEtiqueta } from '../../Shared/etapasEvidencia';
+import { esVideoUrl, miniaturaVideo } from '../../../../utils/evidencia';
 import { Chip, VisorFotos } from './ExpedienteUI';
 import {
   API, authHeaders, dinero, fechaHora, totalCotizacion,
@@ -81,19 +84,110 @@ const Partidas = ({ detalle }) => {
   return bloque(detalle);
 };
 
+const CADA_CUANTO_MS = 30000;
+
+// Evidencias que el técnico va subiendo; se consultan al abrir y cada 30 s mientras el modal está abierto
+const EvidenciasTecnico = ({ trabajo, onVer }) => {
+  const idApi = trabajo ? idReportesTrabajo(trabajo) : null;
+  const [reportes, setReportes] = useState(trabajo?.reportes || []);
+  const [cargando, setCargando] = useState(Boolean(idApi));
+  const [actualizado, setActualizado] = useState(null);
+
+  const cargar = useCallback(async () => {
+    if (!idApi) return;
+    try {
+      const res = await axios.get(`${API}/servicios/${idApi}/reportes`, { headers: authHeaders() });
+      if (Array.isArray(res.data)) setReportes(res.data);
+      setActualizado(new Date());
+    } catch {
+      // Si falla se quedan las que venían en el expediente
+    } finally {
+      setCargando(false);
+    }
+  }, [idApi]);
+
+  useEffect(() => {
+    cargar();
+    const intervalo = setInterval(() => { if (!document.hidden) cargar(); }, CADA_CUANTO_MS);
+    const alVolver = () => { if (!document.hidden) cargar(); };
+    document.addEventListener('visibilitychange', alVolver);
+    return () => { clearInterval(intervalo); document.removeEventListener('visibilitychange', alVolver); };
+  }, [cargar]);
+
+  const grupos = agruparPorEtapa(reportes);
+  const todasLasFotos = grupos.flatMap((g) => g.items.map((r) => r.image_url).filter(Boolean));
+  const etapasBase = grupos.filter((g) => g.etapa.key !== 'OTRAS');
+  const conFoto = etapasBase.filter((g) => g.items.some((r) => r.image_url));
+
+  return (
+    <>
+      <div className="xp-cot-evid-head">
+        <h4 className="xp-subtitulo"><Camera size={13} /> Evidencias del técnico</h4>
+        <button type="button" className="xp-cot-evid-refrescar" onClick={cargar} title="Actualizar evidencias">
+          <RefreshCw size={13} className={cargando ? 'girando' : ''} />
+          {actualizado ? `Actualizado ${actualizado.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` : 'Actualizar'}
+        </button>
+      </div>
+
+      {cargando && !reportes.length ? (
+        <p className="xp-vacio xp-vacio-inline">Cargando evidencias...</p>
+      ) : !todasLasFotos.length ? (
+        <p className="xp-vacio xp-vacio-inline"><ImageOff size={16} /> El técnico aún no ha subido evidencias. Aparecerán aquí en cuanto las suba.</p>
+      ) : (
+        <>
+          <small className="xp-cot-evid-resumen">
+            {conFoto.length} de {etapasBase.length} etapas con evidencia · {todasLasFotos.length} {todasLasFotos.length === 1 ? 'archivo' : 'archivos'}
+          </small>
+          <div className="xp-cot-evid">
+            {grupos.map(({ etapa, items }) => {
+              const fotos = items.filter((r) => r.image_url);
+              if (!fotos.length && (etapa.key === 'OTRAS' || !(etapa.required || etapa.marcaRequerido))) return null;
+              return (
+                <div key={etapa.key} className="xp-cot-evid-etapa">
+                  <span className="xp-cot-evid-etiqueta" style={{ '--etapa': etapa.badgeColor }}>
+                    {etapa.title.replace(/^\d+\.\s*/, '')}
+                  </span>
+                  {fotos.length ? (
+                    <div className="xp-cot-evid-fotos">
+                      {fotos.map((r) => (
+                        <button
+                          key={r.id || r.image_url}
+                          type="button"
+                          className="xp-galeria-item"
+                          onClick={() => onVer(todasLasFotos, todasLasFotos.indexOf(r.image_url))}
+                          title={limpiarEtiqueta(r.description) || undefined}
+                        >
+                          <img src={esVideoUrl(r.image_url) ? miniaturaVideo(r.image_url) : r.image_url} alt="" loading="lazy" />
+                          {esVideoUrl(r.image_url) && <PlayCircle size={22} className="xp-cot-evid-play" />}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="xp-cot-evid-pendiente">Pendiente</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </>
+  );
+};
+
 // Detalle de una cotización dentro del expediente, sin salir de la propiedad
 const ModalCotizacion = ({ cotizacion, trabajo, onClose }) => {
   const navigate = useNavigate();
   const todas = trabajo?.cotizaciones || [cotizacion];
   const [actual, setActual] = useState(cotizacion);
-  const [verFoto, setVerFoto] = useState(false);
+  const [visor, setVisor] = useState(null); // { fotos, inicio }
   const [abriendoPdf, setAbriendoPdf] = useState(false);
 
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape' && !verFoto) onClose(); };
+    const onKey = (e) => { if (e.key === 'Escape' && !visor) onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, verFoto]);
+  }, [onClose, visor]);
 
   const origen = origenCotizacion(actual, todas);
   const detalle = leerConcepto(actual.concept);
@@ -223,11 +317,13 @@ const ModalCotizacion = ({ cotizacion, trabajo, onClose }) => {
               </>
             )}
 
+            <EvidenciasTecnico trabajo={trabajo} onVer={(fotos, inicio) => setVisor({ fotos, inicio })} />
+
             {actual.evidence_photo_path && (
               <>
-                <h4 className="xp-subtitulo">Evidencia</h4>
+                <h4 className="xp-subtitulo">Foto adjunta a la cotización</h4>
                 <div className="xp-galeria">
-                  <button type="button" className="xp-galeria-item" onClick={() => setVerFoto(true)} aria-label="Ver evidencia">
+                  <button type="button" className="xp-galeria-item" onClick={() => setVisor({ fotos: [actual.evidence_photo_path], inicio: 0 })} aria-label="Ver evidencia">
                     <img src={actual.evidence_photo_path} alt="Evidencia de la cotización" />
                   </button>
                 </div>
@@ -251,9 +347,7 @@ const ModalCotizacion = ({ cotizacion, trabajo, onClose }) => {
         </div>
       </div>
 
-      {verFoto && actual.evidence_photo_path && (
-        <VisorFotos fotos={[actual.evidence_photo_path]} onClose={() => setVerFoto(false)} />
-      )}
+      {visor && <VisorFotos fotos={visor.fotos} inicio={visor.inicio} onClose={() => setVisor(null)} />}
     </>,
     document.body
   );

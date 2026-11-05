@@ -8,6 +8,7 @@ import {
   calcularFlujo, etiquetaEstado, etiquetaTipo, fechaHora, dinero, totalCotizacion, nombreTecnicos,
   esActivo, origenCotizacion, cadenasCotizaciones, nombreCotizacion,
 } from './flujoTrabajo';
+import { esVideoUrl } from '../../../../utils/evidencia';
 
 export const Chip = ({ tono = 'slate', children }) => <span className={`xp-chip ${tono}`}>{children}</span>;
 
@@ -171,39 +172,111 @@ export const CarpetasCotizaciones = ({ trabajos, onAbrir, onVerTrabajo, vacio = 
   );
 };
 
+// Agrupa los eventos por fecha: Hoy, Ayer y después por mes ("Noviembre 2026")
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const grupoFecha = (fecha) => {
+  const d = new Date(String(fecha || '').replace(' ', 'T'));
+  if (Number.isNaN(d.getTime())) return { key: 'sin-fecha', titulo: 'Sin fecha' };
+  const dia = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const hoy = new Date();
+  const diff = Math.round((dia(hoy) - dia(d)) / 86400000);
+  const corta = d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+  if (diff === 0) return { key: 'hoy', titulo: 'Hoy', sub: corta };
+  if (diff === 1) return { key: 'ayer', titulo: 'Ayer', sub: corta };
+  if (diff === -1) return { key: 'manana', titulo: 'Mañana', sub: corta };
+  return { key: `${d.getFullYear()}-${d.getMonth()}`, titulo: `${MESES[d.getMonth()]} ${d.getFullYear()}` };
+};
+
+const EventoTiempo = ({ e, onSelect, onFoto }) => (
+  <li className={`xp-evento ${e.tono || 'slate'}`}>
+    <span className="xp-evento-punto" />
+    <div
+      className={`xp-evento-cuerpo ${onSelect ? 'clicable' : ''}`}
+      onClick={onSelect ? () => onSelect(e) : undefined}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onKeyDown={onSelect ? (k) => k.key === 'Enter' && onSelect(e) : undefined}
+    >
+      <div className="xp-evento-top">
+        <strong>{e.titulo}</strong>
+        {!e.sinHora && <small>{fechaHora(e.fecha)}</small>}
+      </div>
+      {e.contexto && <span className="xp-evento-contexto">{e.contexto}</span>}
+      {e.texto && <p>{e.texto}</p>}
+      {e.fotos?.length > 0 && (
+        <div className="xp-evento-fotos">
+          {e.fotos.map((f, j) => (
+            <button key={j} type="button" onClick={(ev) => { ev.stopPropagation(); onFoto(e.fotos, j); }} aria-label={`Ver foto ${j + 1}`}>
+              <img src={f} alt="" loading="lazy" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  </li>
+);
+
 export const LineaTiempo = ({ eventos, onSelect, vacio = 'Sin movimientos todavía.' }) => {
+  const grupos = [];
+  const porKey = new Map();
+  eventos.forEach((e) => {
+    const g = grupoFecha(e.fecha);
+    if (!porKey.has(g.key)) {
+      const nuevo = { ...g, eventos: [] };
+      porKey.set(g.key, nuevo);
+      grupos.push(nuevo);
+    }
+    porKey.get(g.key).eventos.push(e);
+  });
+
+  // Solo el grupo más reciente abierto; el resto se despliega a demanda
+  const [abiertos, setAbiertos] = useState(() => new Set(grupos.length ? [grupos[0].key] : []));
+  const [visor, setVisor] = useState(null);
+  const cerrarVisor = useCallback(() => setVisor(null), []);
+
   if (!eventos.length) return <p className="xp-vacio">{vacio}</p>;
+
+  const alternar = (key) => setAbiertos((prev) => {
+    const sig = new Set(prev);
+    if (sig.has(key)) sig.delete(key); else sig.add(key);
+    return sig;
+  });
+  const todosAbiertos = grupos.every((g) => abiertos.has(g.key));
+
   return (
-    <ol className="xp-timeline">
-      {eventos.map((e, i) => (
-        <li key={i} className={`xp-evento ${e.tono || 'slate'}`}>
-          <span className="xp-evento-punto" />
-          <div
-            className={`xp-evento-cuerpo ${onSelect ? 'clicable' : ''}`}
-            onClick={onSelect ? () => onSelect(e) : undefined}
-            role={onSelect ? 'button' : undefined}
-            tabIndex={onSelect ? 0 : undefined}
-            onKeyDown={onSelect ? (k) => k.key === 'Enter' && onSelect(e) : undefined}
-          >
-            <div className="xp-evento-top">
-              <strong>{e.titulo}</strong>
-              {!e.sinHora && <small>{fechaHora(e.fecha)}</small>}
-            </div>
-            {e.contexto && <span className="xp-evento-contexto">{e.contexto}</span>}
-            {e.texto && <p>{e.texto}</p>}
-            {e.fotos?.length > 0 && (
-              <div className="xp-evento-fotos">
-                {e.fotos.map((f, j) => (
-                  <a key={j} href={f} target="_blank" rel="noopener noreferrer" onClick={(ev) => ev.stopPropagation()}>
-                    <img src={f} alt="" loading="lazy" />
-                  </a>
+    <div className="xp-historial">
+      {grupos.length > 1 && (
+        <button
+          type="button"
+          className="xp-historial-todo"
+          onClick={() => setAbiertos(todosAbiertos ? new Set() : new Set(grupos.map((g) => g.key)))}
+        >
+          {todosAbiertos ? 'Contraer todo' : 'Expandir todo'}
+        </button>
+      )}
+      {grupos.map((g) => {
+        const abierto = abiertos.has(g.key);
+        return (
+          <section key={g.key} className={`xp-historial-grupo ${abierto ? 'abierto' : ''}`}>
+            <button type="button" className="xp-historial-head" onClick={() => alternar(g.key)} aria-expanded={abierto}>
+              <CalendarClock size={16} />
+              <strong>{g.titulo}</strong>
+              {g.sub && <span className="xp-historial-sub">{g.sub}</span>}
+              <span className="xp-historial-n">{g.eventos.length} {g.eventos.length === 1 ? 'movimiento' : 'movimientos'}</span>
+              <ChevronDown size={18} className="xp-historial-flecha" />
+            </button>
+            {abierto && (
+              <ol className="xp-timeline">
+                {g.eventos.map((e, i) => (
+                  <EventoTiempo key={i} e={e} onSelect={onSelect} onFoto={(fotos, inicio) => setVisor({ fotos, inicio })} />
                 ))}
-              </div>
+              </ol>
             )}
-          </div>
-        </li>
-      ))}
-    </ol>
+          </section>
+        );
+      })}
+      {visor && <VisorFotos fotos={visor.fotos} inicio={visor.inicio} onClose={cerrarVisor} />}
+    </div>
   );
 };
 
@@ -284,7 +357,11 @@ export const VisorFotos = ({ fotos, inicio = 0, onClose }) => {
           <ChevronLeft size={26} />
         </button>
       )}
-      <img key={url} src={url} alt={`Evidencia ${indice + 1}`} onClick={(e) => e.stopPropagation()} />
+      {esVideoUrl(url) ? (
+        <video key={url} src={url} controls autoPlay playsInline onClick={(e) => e.stopPropagation()} />
+      ) : (
+        <img key={url} src={url} alt={`Evidencia ${indice + 1}`} onClick={(e) => e.stopPropagation()} />
+      )}
       {total > 1 && (
         <button type="button" className="xp-visor-btn xp-visor-nav next" aria-label="Foto siguiente" onClick={(e) => { e.stopPropagation(); ir(1); }}>
           <ChevronRight size={26} />
