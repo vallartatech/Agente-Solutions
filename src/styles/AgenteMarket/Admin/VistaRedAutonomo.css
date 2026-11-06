@@ -1546,6 +1546,41 @@
 
 .red-mapa-vivo .red-filtro-publicar:hover { background: #ea580c; }
 
+/* "Publicar problema" a la vista, debajo del buscador */
+.red-mapa-vivo .red-publicar-fila {
+  padding: 0 18px 10px;
+}
+
+.red-mapa-vivo .red-publicar-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 11px 14px;
+  border: none;
+  border-radius: 12px;
+  background: #f26522;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.35);
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.red-mapa-vivo .red-publicar-btn:hover { background: #ea580c; }
+.red-mapa-vivo .red-publicar-btn:active { transform: scale(0.98); }
+.red-mapa-vivo .red-publicar-btn:focus { outline: none; }
+.red-mapa-vivo .red-publicar-btn:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.7); outline-offset: 2px; }
+
+@media (max-width: 900px) {
+  .red-mapa-vivo .red-publicar-fila { padding: 0 16px 8px; }
+  .red-mapa-vivo .red-publicar-btn { padding: 10px 12px; font-size: 0.88rem; }
+}
+
 /* Lista: sin línea blanca arriba */
 .red-mapa-vivo .mercado-job-list {
   border-top: none !important;

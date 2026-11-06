@@ -2168,7 +2168,8 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
   line-height: 1.2;
 }
 
-.jm-badge-urgente {
+.jm-badge-urgente,
+.jm-badge-deseada {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -2570,7 +2571,8 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
 .mi-globo-etiquetas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
 .mi-globo-urgente,
-.mi-globo-cotizado {
+.mi-globo-cotizado,
+.mi-globo-deseada {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -2584,6 +2586,8 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
 
 .mi-globo-urgente { background: rgba(242, 101, 34, 0.1); color: #ea580c; }
 .mi-globo-cotizado { background: rgba(16, 185, 129, 0.12); color: #047857; }
+/* Fecha estimada en que el cliente necesita el trabajo */
+.mi-globo-deseada { background: rgba(37, 99, 235, 0.1); color: #1d4ed8; }
 
 .mi-globo-btn {
   width: 100%;
@@ -3465,3 +3469,9 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
 .jm-grid-cotizar .jm-textarea { min-height: 80px; }
 .jm-modal .mercado-premium-header { padding-top: 14px !important; padding-bottom: 14px !important; }
 .jm-modal .mercado-premium-footer { padding-top: 12px !important; padding-bottom: 12px !important; }
+
+/* Fecha estimada en que el cliente necesita el trabajo (al publicar con "Programar") */
+.jm-badge-deseada {
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+}

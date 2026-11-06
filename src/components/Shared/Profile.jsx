@@ -1,18 +1,30 @@
+import { lazy, Suspense } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import PerfilTecnico from '../../portals/AgenteMarket/Tecnico/PerfilTecnico';
-import PerfilCliente from '../../portals/AgenteMarket/Cliente/PerfilCliente';
+import CasaLoader from './CasaLoader';
+
+// Cada entorno tiene su propio perfil; se cargan solo cuando se usan
+// (así el CSS de un entorno no se descarga en el otro).
+const PerfilTecnicoSolutions = lazy(() => import('../../portals/AgenteSolutions/Tecnico/PerfilTecnico'));
+const PerfilTecnicoRed = lazy(() => import('../../portals/AgenteMarket/Tecnico/PerfilTecnico'));
+const PerfilCliente = lazy(() => import('../../portals/AgenteMarket/Cliente/PerfilCliente'));
 
 const Profile = () => {
   const { user } = useAuth();
   const roleId = Number(user?.role_id);
 
-  // Roles Técnicos y Proveedores de Servicio (2: Técnico Agente, 6: Contratista, 8: Técnico de la Red)
-  if ([2, 6, 8].includes(roleId)) {
-    return <PerfilTecnico />;
+  let perfil;
+  if (roleId === 2) {
+    // Técnico Agente (interno)
+    perfil = <PerfilTecnicoSolutions />;
+  } else if ([6, 8].includes(roleId)) {
+    // Técnicos de la red: 6 Técnico independiente, 8 Técnico de cuadrilla
+    perfil = <PerfilTecnicoRed />;
+  } else {
+    // Clientes, propietarios y administradores (0, 1, 3, 4, 5, 7)
+    perfil = <PerfilCliente />;
   }
 
-  // Roles Cliente y Propietarios de Inmuebles (3: Cliente, 4: Negocio / Autónomo Empresarial, 5: Autónomo Personal, 7: Admin Propiedades, 0/1: Admin)
-  return <PerfilCliente />;
+  return <Suspense fallback={<CasaLoader />}>{perfil}</Suspense>;
 };
 
 export default Profile;

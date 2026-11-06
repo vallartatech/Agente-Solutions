@@ -9,7 +9,7 @@ import PanelChatLateral from '../../../components/Shared/PanelChatLateral';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import { Plus, MapPin, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, Check, ClipboardList, ChevronDown, ChevronUp, Zap, Wrench } from 'lucide-react';
-import { DARK_MAP_STYLES, getCategoryIcon, ICONOS_CATEGORIA, descripcionTarjeta } from '../Tecnico/MercadoTrabajos';
+import { DARK_MAP_STYLES, getCategoryIcon, ICONOS_CATEGORIA, descripcionTarjeta, fechaDeseada } from '../Tecnico/MercadoTrabajos';
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
 const mapContainerStyle = {
@@ -916,19 +916,20 @@ const VistaRedAutonomo = () => {
                     <span className="red-filtro-opcion-txt">Trabajos asignados <small>{aceptadosJobs.length}</small></span>
                     {activeTab === 'aceptados' && <Check size={15} />}
                   </button>
-
-                  <span className="red-filtro-separador" />
-
-                  <button
-                    type="button"
-                    className="red-filtro-publicar"
-                    onClick={() => { setFiltroAbierto(false); setShowModal(true); }}
-                  >
-                    <Plus size={16} /> Publicar problema
-                  </button>
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Acción principal a la vista (antes estaba escondida dentro del filtro) */}
+          <div className="red-publicar-fila">
+            <button
+              type="button"
+              className="red-publicar-btn"
+              onClick={() => { setFiltroAbierto(false); setShowModal(true); }}
+            >
+              <Plus size={17} strokeWidth={2.8} /> Publicar problema
+            </button>
           </div>
 
           <div className="mercado-job-list">
@@ -943,7 +944,7 @@ const VistaRedAutonomo = () => {
                   <>
                     <div style={{ fontSize: '32px', marginBottom: '8px' }}>🌐</div>
                     <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#ffffff' }}>No tienes publicaciones abiertas en la red</p>
-                    <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>Abre el filtro y elige "Publicar problema" para solicitar cotizaciones de técnicos.</span>
+                    <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>Toca "Publicar problema" para solicitar cotizaciones de técnicos.</span>
                   </>
                 ) : (
                   <>
@@ -988,6 +989,10 @@ const VistaRedAutonomo = () => {
                         </span>
                         {job.is_urgent ? (
                           <span className="rj-chip urgente"><Zap size={11} /> Urgente</span>
+                        ) : fechaDeseada(job.descripcion) ? (
+                          <span className="rj-chip programado" title="Fecha estimada en que necesitas el trabajo">
+                            <Calendar size={11} /> Para: {fechaDeseada(job.descripcion).texto}
+                          </span>
                         ) : (job.scheduled_at || job.priority === 'Programado') ? (
                           <span className="rj-chip programado"><Calendar size={11} /> Programado</span>
                         ) : null}

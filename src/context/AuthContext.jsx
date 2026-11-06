@@ -65,6 +65,19 @@ export const AuthProvider = ({ children }) => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
+        // Técnico de la red sin validar (el backend lo bloquea): se marca en la sesión
+        // y App.jsx lo manda a "Completa tu perfil"
+        if (error.response?.status === 403 && error.response.data?.reason === 'perfil_profesional_pendiente') {
+          setUser(prev => {
+            if (!prev || prev.perfil_profesional?.bloqueado) return prev;
+            const actualizado = { ...prev, perfil_profesional: { bloqueado: true, estado: error.response.data.estado } };
+            try {
+              const sesion = JSON.parse(localStorage.getItem('agente_session') || '{}');
+              localStorage.setItem('agente_session', JSON.stringify({ ...sesion, userData: actualizado }));
+            } catch { /* la sesión en memoria basta */ }
+            return actualizado;
+          });
+        }
         if (error.response && error.response.status === 401) {
           const url = error.config?.url || '';
           // Si el 401 viene del login o rutas públicas, no forzar recarga de página para permitir mostrar el mensaje de error

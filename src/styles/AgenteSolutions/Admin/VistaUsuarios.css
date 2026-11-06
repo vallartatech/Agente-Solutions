@@ -2040,3 +2040,32 @@
   .vu-modern-table .vu-actions-head { z-index: 11; }
   .vu-modern-table tbody tr.vu-row-selected .vu-actions-cell { background: rgba(255, 237, 226, 0.9); }
 }
+
+/* Acceso a "Validar técnicos" (perfiles profesionales de la red): Root y Admin */
+.vu-validar-btn {
+  margin: 0 0 0 auto;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(16, 185, 129, 0.55);
+  background: #ecfdf5;
+  color: #047857;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.vu-validar-btn:hover { background: #d1fae5; }
+.vu-validar-btn.con-pendientes { border-color: #f26522; background: #fff7ed; color: #c2410c; }
+.vu-validar-num {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f26522;
+  color: #ffffff;
+  font-size: 0.75rem;
+  text-align: center;
+}
+.vu-validar-btn:focus-visible { outline: 2px solid #f26522; outline-offset: 2px; }

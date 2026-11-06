@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -16,11 +16,8 @@ import {
   MapPin,
   CalendarDays,
   LogOut,
-  Wrench,
   ShieldCheck,
-  CheckCircle2,
   Award,
-  Briefcase,
   Home
 } from 'lucide-react';
 import axios from 'axios';
@@ -33,6 +30,7 @@ import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import Header from '../../../components/Shared/Header';
 import '../../../styles/Shared/Profile.css';
 import { mostrarAviso } from '../../../utils/dialogos';
+import PanelPerfilProfesional from './PerfilProfesional/PanelPerfilProfesional';
 
 export const ESPECIALIDADES_CATALOGO = [
   { id: 1, name: "Electricidad", icon: "⚡", desc: "Instalaciones, cableado, tableros y cortos" },
@@ -63,7 +61,7 @@ const PerfilTecnico = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPhotoMenuOpen, setIsPhotoMenuOpen] = useState(false);
   const [selectedSpecialties, setSelectedSpecialties] = useState([]);
-  const [modalSpecialties, setModalSpecialties] = useState([]);
+  const [, setModalSpecialties] = useState([]);
   const [savingSpecs, setSavingSpecs] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
@@ -142,25 +140,22 @@ const PerfilTecnico = () => {
     setIsModalOpen(true);
   };
 
-  const handleToggleModalSpecialty = (specName) => {
-    setModalSpecialties(prev => {
-      if (prev.includes(specName)) {
-        if (prev.length <= 1) return prev; // Mantener al menos 1
-        return prev.filter(s => s !== specName);
-      } else {
-        return [...prev, specName];
-      }
-    });
-  };
+  // Perfil profesional (cobro, habilidades, currículum, INE): sus insignias se muestran en la tarjeta izquierda
+  const [insignias, setInsignias] = useState({ identidad_verificada: false, estudios_verificados: false });
+  const actualizarPerfilProfesional = useCallback((perfilProfesional) => {
+    setInsignias(perfilProfesional?.insignias || { identidad_verificada: false, estudios_verificados: false });
+    const nombres = (perfilProfesional?.especialidades || []).map(e => e.name);
+    if (nombres.length) setSelectedSpecialties(nombres);
+  }, []);
+  const calificacion = Number(user?.rating_stars_avg || 5).toFixed(1);
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setSavingSpecs(true);
     try {
       const token = localStorage.getItem('agente_token');
-      const rawId = String(user.id).replace(/[^\d]/g, '');
 
-      // 1. Guardar datos personales
+      // Datos personales (las habilidades se guardan en "Perfil profesional")
       await axios.post(`${import.meta.env.VITE_API_BASE_URL}/usuarios/update-profile`, {
         user_id: user.id,
         ...formData
@@ -168,35 +163,17 @@ const PerfilTecnico = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      // 2. Guardar especialidades
-      let updatedSpecs = modalSpecialties;
-      try {
-        const specRes = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/u_${rawId}/specialties`, {
-          specialties: modalSpecialties
-        }, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (specRes.data?.specialties) {
-          updatedSpecs = specRes.data.specialties;
-        }
-      } catch (err) {
-        console.error("Error sincronizando especialidades:", err);
-      }
-
-      setSelectedSpecialties(modalSpecialties);
-
       loginGlobal({
         ...user,
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email,
         phone_number: formData.phone_number,
-        birth_date: formData.birth_date,
-        specialties: updatedSpecs
+        birth_date: formData.birth_date
       });
 
       setIsModalOpen(false);
-      mostrarAviso("¡Perfil y especialidades actualizados con éxito!");
+      mostrarAviso("¡Datos actualizados con éxito!");
     } catch (error) {
       console.error("Error al guardar perfil:", error);
       const errorMsg = error.response?.data?.message || error.response?.data?.error || "Hubo un error al actualizar los datos.";
@@ -303,17 +280,6 @@ const PerfilTecnico = () => {
   const nombreCompleto = `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.name || 'Técnico';
   const coverUrl = user?.cover_picture || DEFAULT_COVER;
 
-  // Filtrar objetos completos de las especialidades activas para la vista
-  const activeSpecialtiesList = useMemo(() => {
-    if (!selectedSpecialties || selectedSpecialties.length === 0) {
-      return [{ id: 1, name: "Electricidad", icon: "⚡", desc: "Instalaciones y cableado general" }];
-    }
-    return selectedSpecialties.map(specName => {
-      const match = ESPECIALIDADES_CATALOGO.find(cat => cat.name === specName);
-      if (match) return match;
-      return { id: specName, name: specName, icon: "🔧", desc: "Servicios técnicos especializados" };
-    });
-  }, [selectedSpecialties]);
 
   return (
     <div className="profile-liquid-root">
@@ -534,13 +500,12 @@ const PerfilTecnico = () => {
             </button>
           </section>
 
-          {/* ── 2. 3 COLUMNS VIEWPORT ── */}
-          <div className="profile-three-col-viewport">
-        
-            {/* ── COLUMNA 1: IDENTIDAD TÉCNICO (IZQUIERDA) ── */}
-            <section className="profile-col-identity">
-              <div className="profile-identity-card">
-                
+          {/* ── 2. DOS COLUMNAS: tarjeta del técnico (izquierda) y perfil profesional (derecha) ── */}
+          <div className="ptr-layout">
+
+            {/* ── IZQUIERDA: identidad, insignias y datos personales ── */}
+            <aside className="ptr-lateral">
+              <div className="ptr-identidad">
                 <div className="profile-identity-avatar-wrap" onClick={() => openPhotoMenu('profile_picture')} title="Cambiar foto de perfil">
                   {user?.profile_picture ? (
                     <img src={user.profile_picture} alt="Perfil" className="profile-identity-avatar-img" />
@@ -555,193 +520,71 @@ const PerfilTecnico = () => {
                   </div>
                 </div>
 
-                <div className="profile-identity-info">
-                  <h1 className="profile-identity-name" title={nombreCompleto}>
-                    {nombreCompleto}
-                  </h1>
-                  <div className="profile-identity-tags-row">
-                    <span className="profile-identity-role-badge">
-                      <Shield size={11} /> {obtenerNombreRol(user?.role_id)}
-                    </span>
-                    <span className="profile-identity-status-badge">
-                      <Sparkles size={10} /> ACTIVO
-                    </span>
-                  </div>
-                </div>
-
-                <button 
-                  type="button" 
-                  className="profile-identity-edit-btn" 
-                  onClick={openModal}
-                  title="Editar información y especialidades de perfil"
-                >
-                  <Edit3 size={15} />
-                  <span>EDITAR DATOS</span>
-                </button>
-
-                <div className="profile-identity-danger-zone">
-                  <button
-                    type="button"
-                    className="profile-identity-delete-btn"
-                    onClick={() => {
-                      setDeleteConfirmEmail('');
-                      setDeleteError('');
-                      setIsDeleteModalOpen(true);
-                    }}
-                    title="Eliminar mi cuenta"
-                  >
-                    <Trash2 size={12} />
-                    <span>Eliminar mi Cuenta</span>
-                  </button>
-                </div>
-
-              </div>
-            </section>
-
-            {/* ── COLUMNA 2: DATOS DEL TÉCNICO (CENTRO) ── */}
-            <section className="profile-col-data">
-              
-              <div className="profile-data-heading">
-                <span className="profile-heading-text">DATOS DEL PROFESIONAL</span>
-                <div className="profile-heading-line" />
-              </div>
-
-              <div className="profile-data-tiles-list">
-                <div className="profile-floating-tile">
-                  <div className="profile-tile-icon-wrap">
-                    <User size={15} />
-                  </div>
-                  <div className="profile-tile-content">
-                    <span className="profile-tile-label">NOMBRE COMPLETO</span>
-                    <span className="profile-tile-val">{nombreCompleto}</span>
-                  </div>
-                </div>
-
-                <div className="profile-floating-tile is-accent">
-                  <div className="profile-tile-icon-wrap is-accent">
-                    <Shield size={15} />
-                  </div>
-                  <div className="profile-tile-content">
-                    <span className="profile-tile-label">ROL EN SISTEMA</span>
-                    <span className="profile-tile-val is-accent-text">{obtenerNombreRol(user?.role_id)}</span>
-                  </div>
-                </div>
-
-                <div className="profile-floating-tile">
-                  <div className="profile-tile-icon-wrap">
-                    <Mail size={15} />
-                  </div>
-                  <div className="profile-tile-content">
-                    <span className="profile-tile-label">CORREO ELECTRÓNICO</span>
-                    <span className="profile-tile-val" title={user?.email}>{user?.email || 'No registrado'}</span>
-                  </div>
-                </div>
-
-                <div className="profile-floating-tile">
-                  <div className="profile-tile-icon-wrap">
-                    <Phone size={15} />
-                  </div>
-                  <div className="profile-tile-content">
-                    <span className="profile-tile-label">TELÉFONO</span>
-                    <span className="profile-tile-val">{user?.phone_number || 'No registrado'}</span>
-                  </div>
-                </div>
-
-                <div className="profile-floating-tile">
-                  <div className="profile-tile-icon-wrap">
-                    <Calendar size={15} />
-                  </div>
-                  <div className="profile-tile-content">
-                    <span className="profile-tile-label">FECHA DE NACIMIENTO</span>
-                    <span className="profile-tile-val">{formatearFecha(user?.birth_date)}</span>
-                  </div>
-                </div>
-
-                <div className="profile-floating-tile">
-                  <div className="profile-tile-icon-wrap">
-                    <Clock size={15} />
-                  </div>
-                  <div className="profile-tile-content">
-                    <span className="profile-tile-label">MIEMBRO DESDE</span>
-                    <span className="profile-tile-val">{formatearFecha(user?.created_at)}</span>
-                  </div>
-                </div>
-              </div>
-
-            </section>
-
-            {/* ── COLUMNA 3: ESPECIALIDADES ACTIVAS (SOLO VISTA / READ-ONLY) ── */}
-            <section className="profile-col-technician-panel">
-              <div className="profile-tech-header-row">
-                <div className="profile-tech-title-wrap">
-                  <Wrench size={18} color="#f26522" />
-                  <h2 className="profile-tech-title">MIS ESPECIALIDADES Y SERVICIOS</h2>
-                  <span className="profile-tech-count-pill">
-                    {activeSpecialtiesList.length} {activeSpecialtiesList.length === 1 ? 'Especialidad Activa' : 'Especialidades Activas'}
+                <h1 className="ptr-nombre" title={nombreCompleto}>{nombreCompleto}</h1>
+                <div className="profile-identity-tags-row">
+                  <span className="profile-identity-role-badge">
+                    <Shield size={11} /> {obtenerNombreRol(user?.role_id)}
                   </span>
-                </div>
-              </div>
-
-              {/* Showcase Card Limpio de Solo Lectura */}
-              <div className="profile-tech-showcase-card">
-                <div className="profile-tech-specs-subheading">
-                  <span>🛠️ Ramos de Especialidad Registrados:</span>
-                  <small>Visible para los clientes en la Red</small>
-                </div>
-
-                <div className="profile-tech-specs-grid readonly-grid" style={{ maxHeight: '200px' }}>
-                  {activeSpecialtiesList.map((spec, idx) => (
-                    <div 
-                      key={idx}
-                      className="profile-tech-spec-item is-selected"
-                      style={{ cursor: 'default', transform: 'none' }}
-                      title={`${spec.name}: ${spec.desc || 'Especialidad del técnico'}`}
-                    >
-                      <span className="profile-tech-spec-icon">{spec.icon}</span>
-                      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                        <span className="profile-tech-spec-name">{spec.name}</span>
-                        {spec.desc && (
-                          <span style={{ fontSize: '0.58rem', color: '#cbd5e1', lineHeight: '1.2', marginTop: '1px' }}>
-                            {spec.desc}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Nota explicativa para editar */}
-                <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '10px', padding: '7px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '0.85rem' }}>💡</span>
-                  <span style={{ fontSize: '0.68rem', color: '#cbd5e1' }}>
-                    Para modificar o agregar especialidades, pulsa en el botón <strong>"EDITAR DATOS"</strong> en la columna izquierda.
+                  <span className="profile-identity-status-badge">
+                    <Sparkles size={10} /> ACTIVO
                   </span>
                 </div>
 
-                {/* Bottom Metrics Bar */}
-                <div className="profile-tech-metrics-bar">
-                  <div className="profile-tech-metric-box">
-                    <span className="profile-tech-metric-val star">
-                      ★ 5.0
-                    </span>
-                    <span className="profile-tech-metric-label">Calificación</span>
-                  </div>
-                  <div className="profile-tech-metric-box">
-                    <span className="profile-tech-metric-val status">
-                      <ShieldCheck size={14} /> Verificado
-                    </span>
-                    <span className="profile-tech-metric-label">Proveedor de Red</span>
-                  </div>
-                  <div className="profile-tech-metric-box">
-                    <span className="profile-tech-metric-val">
-                      <MapPin size={13} color="#f26522" /> Mérida
-                    </span>
-                    <span className="profile-tech-metric-label">Zona Cobertura</span>
-                  </div>
+                {/* Insignias reales del perfil profesional */}
+                <div className="ptr-insignias">
+                  <span className={`ptr-insignia ${insignias.identidad_verificada ? 'on' : ''}`}>
+                    {insignias.identidad_verificada ? <ShieldCheck size={13} /> : <Shield size={13} />}
+                    {insignias.identidad_verificada ? 'Identidad verificada' : 'Identidad sin verificar'}
+                  </span>
+                  <span className={`ptr-insignia ${insignias.estudios_verificados ? 'on' : ''}`}>
+                    <Award size={13} />
+                    {insignias.estudios_verificados ? 'Estudios verificados' : 'Estudios sin verificar'}
+                  </span>
+                </div>
+
+                <div className="ptr-stats">
+                  <span><strong className="ptr-estrella">★ {calificacion}</strong> Calificación</span>
+                  <span><MapPin size={13} /> <strong>Mérida</strong> Cobertura</span>
                 </div>
               </div>
-            </section>
 
+              {/* Datos personales en lista compacta */}
+              <dl className="ptr-datos">
+                <div><dt><Mail size={14} /> Correo</dt><dd title={user?.email}>{user?.email || 'No registrado'}</dd></div>
+                <div><dt><Phone size={14} /> Teléfono</dt><dd>{user?.phone_number || 'No registrado'}</dd></div>
+                <div><dt><Calendar size={14} /> Nacimiento</dt><dd>{formatearFecha(user?.birth_date)}</dd></div>
+                <div><dt><Clock size={14} /> Miembro desde</dt><dd>{formatearFecha(user?.created_at)}</dd></div>
+              </dl>
+
+              <button
+                type="button"
+                className="profile-identity-edit-btn"
+                onClick={openModal}
+                title="Editar nombre, teléfono, correo y fecha de nacimiento"
+              >
+                <Edit3 size={15} />
+                <span>EDITAR DATOS</span>
+              </button>
+
+              <button
+                type="button"
+                className="profile-identity-delete-btn ptr-eliminar"
+                onClick={() => {
+                  setDeleteConfirmEmail('');
+                  setDeleteError('');
+                  setIsDeleteModalOpen(true);
+                }}
+                title="Eliminar mi cuenta"
+              >
+                <Trash2 size={12} />
+                <span>Eliminar mi Cuenta</span>
+              </button>
+            </aside>
+
+            {/* ── DERECHA: perfil profesional (cobro, habilidades, currículum e INE) ── */}
+            <div className="ptr-principal">
+              <PanelPerfilProfesional onCambio={actualizarPerfilProfesional} />
+            </div>
           </div>
 
         </div>
@@ -793,31 +636,9 @@ const PerfilTecnico = () => {
                 <input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
               </div>
 
-              {/* Selector interactivo de Especialidades adentro del Modal */}
-              <div className="profile-form-group" style={{ marginTop: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <label style={{ color: '#f26522', fontWeight: 900 }}>🛠️ SELECCIONA TUS ESPECIALIDADES:</label>
-                  <span style={{ fontSize: '0.66rem', color: '#94a3b8' }}>{modalSpecialties.length} activas</span>
-                </div>
-                <div className="profile-modal-specs-list" style={{ maxHeight: '160px' }}>
-                  {ESPECIALIDADES_CATALOGO.map(spec => {
-                    const isSelected = modalSpecialties.includes(spec.name);
-                    return (
-                      <button
-                        key={spec.id}
-                        type="button"
-                        onClick={() => handleToggleModalSpecialty(spec.name)}
-                        className={`profile-spec-toggle-btn ${isSelected ? 'is-selected' : ''}`}
-                        title={spec.desc}
-                      >
-                        <span>{spec.icon}</span> 
-                        <span>{spec.name}</span>
-                        {isSelected && <span style={{ marginLeft: '4px', fontSize: '0.75rem' }}>✓</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#94a3b8' }}>
+                🛠️ Tus habilidades, datos de cobro, currículum e INE se editan en la sección <strong>Perfil profesional</strong>, más abajo.
+              </p>
 
               <div className="profile-modal-actions">
                 <button type="button" className="profile-btn-cancel" onClick={() => setIsModalOpen(false)}>Cancelar</button>

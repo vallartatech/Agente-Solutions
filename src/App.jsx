@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { iniciarOneSignal, vincularUsuarioOneSignal } from "./components/Shared/oneSignalPush";
 import { useEffect, lazy, Suspense } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -133,6 +133,11 @@ const RedTrabajoInicio = lazy(() => import("./portals/AgenteMarket/Tecnico/Traba
 const RedTrabajosAsignados = lazy(() => import("./portals/AgenteMarket/Tecnico/TrabajosAsignados"));
 const RedRegistroZonas = lazy(() => import("./portals/AgenteMarket/Tecnico/RegistroZonas"));
 const RedLevantamientoPropiedad = lazy(() => import("./portals/AgenteMarket/Tecnico/LevantamientoPropiedad"));
+// Técnico nuevo de la red: "Completa tu perfil" hasta que Admin/Root lo valide
+const CompletarPerfil = lazy(() => import("./portals/AgenteMarket/Tecnico/PerfilProfesional/CompletarPerfil"));
+
+// Lo único que puede abrir un técnico de la red con el perfil sin validar
+const RUTAS_SIN_CANDADO = ['/', '/completar-perfil', '/privacidad', '/eliminar-cuenta'];
 
 
 axios.defaults.headers.common["Accept"] = "application/json";
@@ -202,6 +207,7 @@ const AppRoutes = () => {
   }, []);
 
   const { user, initialized } = useAuth();
+  const location = useLocation();
 
   // Vincular el dispositivo al usuario en OneSignal (espera a que termine init)
   useEffect(() => {
@@ -210,8 +216,16 @@ const AppRoutes = () => {
 
   if (!initialized) return null;
 
+  // Candado del perfil profesional (el backend también lo aplica)
+  if (esRed(user) && user?.perfil_profesional?.bloqueado && !RUTAS_SIN_CANDADO.includes(location.pathname)) {
+    return <Navigate to="/completar-perfil" replace />;
+  }
+
   return (
     <Routes>
+      <Route path="/completar-perfil" element={
+        user ? <Suspense fallback={<CasaLoader />}><CompletarPerfil /></Suspense> : <Navigate to="/" replace />
+      } />
       <Route path="/" element={<LoginAgente />} />
       <Route path="/registro-cliente" element={<RegistroCliente />} />
       <Route path="/activacion-cuenta" element={<ActivacionCuenta />} />

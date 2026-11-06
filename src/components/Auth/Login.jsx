@@ -334,7 +334,8 @@ const LoginAgente = () => {
   useEffect(() => {
     if (user) {
       const role = Number(user.role_id);
-      if (role === 0 || role === 1) navigate("/VistaRoot");
+      if (user.perfil_profesional?.bloqueado) navigate("/completar-perfil");
+      else if (role === 0 || role === 1) navigate("/VistaRoot");
       else if (role === 4 || role === 5 || role === 7) navigate("/VistaMarket");
       else if (role === 2) navigate("/VistaTecnico");
       else if (role === 6 || role === 8) navigate("/mercado-trabajos");
@@ -398,13 +399,19 @@ const LoginAgente = () => {
         tenant_id: user?.tenant_id,
         profile_picture,
         cover_picture,
-        created_at
+        created_at,
+        // Técnicos de la red: { bloqueado, estado } del perfil profesional
+        perfil_profesional: res.data.perfil_profesional || null
       });
 
       setIsLoading(false);
       // Redirecciones y mensajes personalizados según el rol
       const roleNum = Number(role_id);
-      if (roleNum === 0) {
+      if (res.data.perfil_profesional?.bloqueado) {
+        // Técnico nuevo de la red: primero completa su perfil y espera la validación
+        setMensaje(`¡Hola ${first_name}! Antes de empezar, completa tu perfil profesional...`);
+        setTimeout(() => navigate("/completar-perfil"), 1000);
+      } else if (roleNum === 0) {
         setMensaje(`¡Bienvenido ROOT ${first_name}! Entrando al panel principal...`);
         setTimeout(() => navigate("/VistaRoot"), 1000);
       } else if (roleNum === 1) {

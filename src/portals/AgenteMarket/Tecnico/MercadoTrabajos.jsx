@@ -133,6 +133,32 @@ export const descripcionTarjeta = (desc) => {
     .trim();
 };
 
+// Fecha estimada que pidió el cliente al publicar ("Programar"): viene en la descripción como
+// "[FECHA / HORARIO DESEADO]: 2026-11-08 - Por la tarde (12pm - 5pm)". No es una cita confirmada.
+// Devuelve { fecha, texto: "Mañana · Tarde", vencida } o null.
+export const fechaDeseada = (desc) => {
+  const m = String(desc || '').match(/\[FECHA \/ HORARIO DESEADO\]:\s*(\d{4}-\d{2}-\d{2})(?:\s*-\s*([^\n]*))?/i);
+  if (!m) return null;
+  const [y, mo, d] = m[1].split('-').map(Number);
+  const fecha = new Date(y, mo - 1, d);
+  if (isNaN(fecha.getTime())) return null;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const dias = Math.round((fecha - hoy) / 86400000);
+  let dia;
+  if (dias === 0) dia = 'Hoy';
+  else if (dias === 1) dia = 'Mañana';
+  else if (dias === 2) dia = 'Pasado mañana';
+  else {
+    const txt = fecha.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '').replace(',', '').replace(/ de /g, ' ');
+    dia = txt.charAt(0).toUpperCase() + txt.slice(1);
+  }
+  // "Por la tarde (12pm - 5pm)" → "Tarde"; "Cualquier hora" no se muestra
+  const horario = String(m[2] || '').replace(/^por la\s+/i, '').replace(/\s*\(.*\)\s*$/, '').trim();
+  const horarioTxt = horario && !/cualquier/i.test(horario) ? horario.charAt(0).toUpperCase() + horario.slice(1) : '';
+  return { fecha: m[1], texto: [dia, horarioTxt].filter(Boolean).join(' · '), vencida: dias < 0 };
+};
+
 // Quita emojis de textos guardados (ej. "[URGENCIA]: ⚡ Atención Urgente")
 const sinEmojis = (texto) => String(texto || '').replace(/[\p{Extended_Pictographic}️]\s*/gu, '');
 
@@ -3493,6 +3519,7 @@ const MercadoTrabajos = () => {
                     const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
                     const IconoCategoria = ICONOS_CATEGORIA[cat.label] || Wrench;
                     const desc = descripcionTarjeta(job.descripcion);
+                    const deseada = fechaDeseada(job.descripcion);
                     return (
                       <div
                         key={job.id}
@@ -3514,6 +3541,11 @@ const MercadoTrabajos = () => {
                               </span>
                               {job.is_urgent && (
                                 <span className="rj-chip urgente"><Zap size={11} /> Urgente</span>
+                              )}
+                              {!job.is_urgent && deseada && (
+                                <span className="rj-chip programado" title="Fecha estimada en que el cliente necesita el trabajo">
+                                  <Calendar size={11} /> Lo necesita: {deseada.texto}
+                                </span>
                               )}
                             </div>
                           </div>
@@ -3871,9 +3903,12 @@ const MercadoTrabajos = () => {
                           </div>
                         </div>
 
-                        {(selectedJob.is_urgent || selectedJob.myQuote) && (
+                        {(selectedJob.is_urgent || selectedJob.myQuote || fechaDeseada(selectedJob.descripcion)) && (
                           <div className="mi-globo-etiquetas">
                             {selectedJob.is_urgent && <span className="mi-globo-urgente"><Zap size={11} strokeWidth={2.6} /> Urgente</span>}
+                            {!selectedJob.is_urgent && fechaDeseada(selectedJob.descripcion) && (
+                              <span className="mi-globo-deseada"><Calendar size={11} strokeWidth={2.6} /> Lo necesita: {fechaDeseada(selectedJob.descripcion).texto}</span>
+                            )}
                             {selectedJob.myQuote && <span className="mi-globo-cotizado"><CheckCircle2 size={11} strokeWidth={2.6} /> Ya cotizaste</span>}
                           </div>
                         )}
@@ -4560,8 +4595,10 @@ const MercadoTrabajos = () => {
                     // La descripción trae "[URGENCIA]: ⚡ Atención Urgente…": se muestra como etiqueta
                     const textoDesc = selectedJob.descripcion || '';
                     const corte = textoDesc.indexOf('[URGENCIA]');
-                    const descLimpia = (corte === -1 ? textoDesc : textoDesc.slice(0, corte)).replace(/[\s\-–:]+$/, '').trim();
+                    // Sin las notas de urgencia y fecha deseada: van como etiquetas
+                    const descLimpia = descripcionTarjeta(textoDesc).replace(/[\s\-–:]+$/, '').trim();
                     const esUrgente = selectedJob.is_urgent || corte !== -1;
+                    const deseada = !esUrgente && fechaDeseada(textoDesc);
                     const fotos = selectedJob.problem_photos || [];
                     const cotizacion = selectedJob.myQuote;
                     const tienePrecio = cotizacion && cotizacion.price > 0;
@@ -4579,6 +4616,7 @@ const MercadoTrabajos = () => {
                                 <h3 className="jm-titulo">{selectedJob.titulo}</h3>
                               </div>
                               {esUrgente && <span className="jm-badge-urgente"><Zap size={12} strokeWidth={2.6} /> Urgente</span>}
+                              {deseada && <span className="jm-badge-deseada" title="Fecha estimada en que el cliente necesita el trabajo"><Calendar size={12} strokeWidth={2.6} /> Lo necesita: {deseada.texto}</span>}
                             </div>
 
                             {descLimpia && <p className="jm-desc">{descLimpia}</p>}
@@ -4705,6 +4743,7 @@ const MercadoTrabajos = () => {
                     const cotizacion = selectedJob.myQuote;
                     const tienePrecio = cotizacion && cotizacion.price > 0;
                     const esUrgente = selectedJob.is_urgent || (selectedJob.descripcion || '').includes('[URGENCIA]');
+                    const deseada = !esUrgente && fechaDeseada(selectedJob.descripcion);
 
                     return (
                       <div className="jm-grid jm-grid-chat">
@@ -4725,6 +4764,7 @@ const MercadoTrabajos = () => {
                             <div className="jm-pills">
                               <span className="jm-pill"><MapPin size={13} /> {selectedJob.zona}</span>
                               {esUrgente && <span className="jm-badge-urgente"><Zap size={12} strokeWidth={2.6} /> Urgente</span>}
+                              {deseada && <span className="jm-badge-deseada" title="Fecha estimada en que el cliente necesita el trabajo"><Calendar size={12} strokeWidth={2.6} /> Lo necesita: {deseada.texto}</span>}
                             </div>
                           </section>
 
@@ -4839,8 +4879,10 @@ const MercadoTrabajos = () => {
                 : (selectedJob.fotos || []);
               const textoDesc = selectedJob.descripcion || '';
               const corte = textoDesc.indexOf('[URGENCIA]');
-              const descLimpia = (corte === -1 ? textoDesc : textoDesc.slice(0, corte)).replace(/[\s\-–:]+$/, '').trim();
+              // Sin las notas de urgencia y fecha deseada: van como etiquetas
+              const descLimpia = descripcionTarjeta(textoDesc).replace(/[\s\-–:]+$/, '').trim();
               const esUrgente = selectedJob.is_urgent || corte !== -1;
+              const deseada = !esUrgente && fechaDeseada(textoDesc);
               // Solo números y un punto decimal (máx. 2 decimales): sin negativos ni cambios con la rueda del mouse
               const limpiarPrecio = (valor) => {
                 const soloNumeros = valor.replace(/[^\d.]/g, '');
@@ -4908,6 +4950,7 @@ const MercadoTrabajos = () => {
                               <h3 className="jm-titulo jm-titulo-sm">{selectedJob.titulo}</h3>
                             </div>
                             {esUrgente && <span className="jm-badge-urgente"><Zap size={12} strokeWidth={2.6} /> Urgente</span>}
+                              {deseada && <span className="jm-badge-deseada" title="Fecha estimada en que el cliente necesita el trabajo"><Calendar size={12} strokeWidth={2.6} /> Lo necesita: {deseada.texto}</span>}
                           </div>
                           {descLimpia && <p className="jm-desc">{descLimpia}</p>}
                           <div className="jm-pills">

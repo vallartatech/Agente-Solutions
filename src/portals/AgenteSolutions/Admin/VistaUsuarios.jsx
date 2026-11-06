@@ -86,6 +86,17 @@ const getRoleStyle = (roleId) => {
 const VistaUsuarios = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Root y Admin: acceso a la validación de perfiles de técnicos de la red, con cuántos esperan
+  const puedeValidarTecnicos = [0, 1].includes(Number(user?.role_id));
+  const [tecnicosPorValidar, setTecnicosPorValidar] = useState(0);
+  useEffect(() => {
+    if (!puedeValidarTecnicos) return;
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/admin/perfiles-profesionales`, { params: { estado: 'en_revision' } })
+      .then(res => setTecnicosPorValidar((res.data.data || []).length))
+      .catch(() => {});
+  }, [puedeValidarTecnicos]);
+
   const [filtro, setFiltro] = useState("TODOS");
   const [cargando, setCargando] = useState(true);
   const [listaUsuarios, setListaUsuarios] = useState([]);
@@ -379,6 +390,18 @@ const VistaUsuarios = () => {
             <span>{isClientPortalUser ? "DIRECTORIO DE TÉCNICOS & HISTORIAL" : "DIRECTORIO GENERAL DE USUARIOS"}</span>
             <span className="vu-count-pill">{listaUsuarios.length}</span>
           </div>
+          {puedeValidarTecnicos && (
+            <button
+              type="button"
+              className={`vu-validar-btn ${tecnicosPorValidar > 0 ? 'con-pendientes' : ''}`}
+              onClick={() => navigate('/sala-espera-tecnicos?pestana=perfiles')}
+              title="Perfiles profesionales de técnicos de la red esperando validación"
+            >
+              <ShieldCheck size={16} />
+              <span>Validar técnicos</span>
+              {tecnicosPorValidar > 0 && <span className="vu-validar-num">{tecnicosPorValidar}</span>}
+            </button>
+          )}
         </div>
 
         {/* Barra Unificada: Buscador + Filtro Icono + Registrar Icono */}

@@ -7,6 +7,39 @@ import {
 import '../../../styles/AgenteMarket/Admin/ModalServicioAutonomo.css';
 import { mostrarAviso } from '../../../utils/dialogos';
 
+// ── Fecha estimada ("Programar") ──
+// Es la fecha en que el cliente necesita el trabajo, no una cita confirmada: el técnico propone la cita después.
+// Fecha local YYYY-MM-DD (toISOString usa UTC y en la noche de México ya marca el día siguiente)
+const fechaLocal = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+const enDias = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return fechaLocal(d); };
+// Sábado de esta semana (si hoy ya es sábado o domingo, el de la próxima)
+const finDeSemana = () => { const d = new Date(); const dia = d.getDay(); d.setDate(d.getDate() + (dia === 6 ? 7 : 6 - dia)); return fechaLocal(d); };
+// Lunes de la próxima semana
+const proximaSemana = () => { const d = new Date(); d.setDate(d.getDate() + (((8 - d.getDay()) % 7) || 7)); return fechaLocal(d); };
+
+const ATAJOS_FECHA = [
+  { key: 'manana', label: 'Mañana', fecha: () => enDias(1) },
+  { key: 'pasado', label: 'Pasado mañana', fecha: () => enDias(2) },
+  { key: 'finde', label: 'Este fin de semana', fecha: finDeSemana },
+  { key: 'semana', label: 'Próxima semana', fecha: proximaSemana },
+];
+
+const HORARIOS = [
+  { value: 'Por la mañana (8am - 12pm)', label: 'Mañana (8am - 12pm)' },
+  { value: 'Por la tarde (12pm - 5pm)', label: 'Tarde (12pm - 5pm)' },
+  { value: 'Por la noche (5pm - 8pm)', label: 'Noche (5pm - 8pm)' },
+  { value: 'Cualquier hora', label: 'Cualquier horario' },
+];
+
+// "Sábado 8 de noviembre"
+const fechaLarga = (yyyyMmDd) => {
+  if (!yyyyMmDd) return '';
+  const [y, m, d] = yyyyMmDd.split('-').map(Number);
+  const txt = new Date(y, m - 1, d).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '');
+  return txt.charAt(0).toUpperCase() + txt.slice(1);
+};
+
 const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
   const [propiedades, setPropiedades] = useState([]);
   const [selectedPropertyId, setSelectedPropertyId] = useState(propertyId || '');
@@ -270,9 +303,10 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
         
         let scheduleNote = '';
         if (item.urgencia === 'programado' && item.fechaProgramada) {
+          // Fecha estimada: no se manda scheduled_at, porque eso es la cita que acuerda el técnico.
+          // Los técnicos la ven como etiqueta "Lo necesita: …" (se lee de esta nota).
           formData.append('priority', 'Programado');
-          formData.append('scheduled_at', `${item.fechaProgramada} 12:00:00`);
-          scheduleNote = `\n\n[FECHA / HORARIO DESEADO]: ${item.fechaProgramada} - ${item.horarioPreferido || 'Tarde'}`;
+          scheduleNote = `\n\n[FECHA / HORARIO DESEADO]: ${item.fechaProgramada} - ${item.horarioPreferido || 'Cualquier hora'}`;
         } else {
           formData.append('priority', 'Urgente');
           scheduleNote = `\n\n[URGENCIA]: ⚡ Atención Urgente - Hoy Mismo`;
@@ -603,10 +637,10 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                     <button
                       type="button"
                       onClick={() => setNuevoServicio({
-                        ...nuevoServicio, 
-                        urgencia: 'programado', 
-                        fechaProgramada: nuevoServicio.fechaProgramada || new Date(Date.now() + 86400000).toISOString().split('T')[0], 
-                        horarioPreferido: nuevoServicio.horarioPreferido || 'Por la tarde (12pm - 5pm)'
+                        ...nuevoServicio,
+                        urgencia: 'programado',
+                        fechaProgramada: nuevoServicio.fechaProgramada || enDias(1),
+                        horarioPreferido: nuevoServicio.horarioPreferido || 'Cualquier hora'
                       })}
                       className={`msa-urgencia-btn ${nuevoServicio.urgencia === 'programado' ? 'active-programado' : ''}`}
                     >
@@ -615,33 +649,62 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                     </button>
                   </div>
 
-                  {nuevoServicio.urgencia === 'programado' && (
-                    <div className="msa-programar-fields">
-                      <div className="msa-programar-field">
-                        <span className="msa-sublabel">Fecha deseada:</span>
-                        <input
-                          type="date"
-                          value={nuevoServicio.fechaProgramada || ''}
-                          min={new Date().toISOString().split('T')[0]}
-                          onChange={(e) => setNuevoServicio({...nuevoServicio, fechaProgramada: e.target.value})}
-                          className="msa-input"
-                        />
+                  {nuevoServicio.urgencia === 'programado' && (() => {
+                    const fecha = nuevoServicio.fechaProgramada;
+                    const atajoActivo = ATAJOS_FECHA.find(a => a.fecha() === fecha)?.key;
+                    return (
+                      <div className="msa-programar-fields msa-programar-estimado">
+                        <span className="msa-sublabel">¿Para cuándo lo necesitas? (fecha estimada)</span>
+                        <div className="msa-atajos-fecha">
+                          {ATAJOS_FECHA.map(a => (
+                            <button
+                              key={a.key}
+                              type="button"
+                              className={`msa-atajo-fecha ${atajoActivo === a.key ? 'activo' : ''}`}
+                              onClick={() => setNuevoServicio({ ...nuevoServicio, fechaProgramada: a.fecha() })}
+                            >
+                              {a.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="msa-programar-fila">
+                          <label className="msa-programar-field">
+                            <span className="msa-sublabel">Otra fecha:</span>
+                            <input
+                              type="date"
+                              value={fecha || ''}
+                              min={enDias(1)}
+                              onChange={(e) => setNuevoServicio({ ...nuevoServicio, fechaProgramada: e.target.value })}
+                              className="msa-input"
+                            />
+                          </label>
+                          <label className="msa-programar-field">
+                            <span className="msa-sublabel">Horario preferido:</span>
+                            <select
+                              value={nuevoServicio.horarioPreferido || 'Cualquier hora'}
+                              onChange={(e) => setNuevoServicio({ ...nuevoServicio, horarioPreferido: e.target.value })}
+                              className="msa-select"
+                            >
+                              {HORARIOS.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+                            </select>
+                          </label>
+                        </div>
+
+                        {fecha && (
+                          <p className="msa-fecha-resumen">
+                            <Calendar size={13} />
+                            <span>
+                              Lo necesitas para el <strong>{fechaLarga(fecha)}</strong>
+                              {nuevoServicio.horarioPreferido && nuevoServicio.horarioPreferido !== 'Cualquier hora'
+                                ? `, ${nuevoServicio.horarioPreferido.toLowerCase()}` : ''}.
+                              {' '}Los técnicos lo verán al cotizar y te propondrán la cita.
+                            </span>
+                          </p>
+                        )}
                       </div>
-                      <div className="msa-programar-field">
-                        <span className="msa-sublabel">Horario preferido:</span>
-                        <select
-                          value={nuevoServicio.horarioPreferido || 'Por la tarde (12pm - 5pm)'}
-                          onChange={(e) => setNuevoServicio({...nuevoServicio, horarioPreferido: e.target.value})}
-                          className="msa-select"
-                        >
-                          <option value="Por la mañana (8am - 12pm)">Mañana (8am - 12pm)</option>
-                          <option value="Por la tarde (12pm - 5pm)">Tarde (12pm - 5pm)</option>
-                          <option value="Por la noche (5pm - 8pm)">Noche (5pm - 8pm)</option>
-                          <option value="Cualquier hora">Cualquier horario</option>
-                        </select>
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
 
                 {/* 🛡️ DESTINO DEL SERVICIO */}
@@ -899,7 +962,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                   </span>
                   <strong className="msa-ficha-item-val">
                     {solicitudExitosa.primerServicio?.urgencia === 'programado'
-                      ? `📅 Programado` 
+                      ? `📅 Para el ${fechaLarga(solicitudExitosa.primerServicio.fechaProgramada)}`
                       : '⚡ Urgente (Hoy)'}
                   </strong>
                 </div>

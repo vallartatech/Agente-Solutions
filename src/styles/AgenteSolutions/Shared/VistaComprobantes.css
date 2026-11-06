@@ -449,7 +449,7 @@
 .vcb-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000000; /* encima del encabezado (999999) */
+  z-index: 1000004; /* encima del encabezado (999999), la barra inferior del celular (1000002) y el panel "Más" (1000003) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -713,7 +713,7 @@
 .vcb-viewer {
   position: fixed;
   inset: 0;
-  z-index: 1000001;
+  z-index: 1000005; /* encima de la barra inferior del celular */
   display: flex;
   flex-direction: column;
   align-items: center;

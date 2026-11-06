@@ -13,11 +13,13 @@ import {
   MapPinned,
   X,
   CheckCircle2,
+  AlertTriangle,
   Loader2
 } from 'lucide-react';
 import SelectorUbicacionMapa from '../../../components/Shared/SelectorUbicacionMapa';
 import '../../../styles/AgenteMarket/Cliente/ModalRegistroInmueble.css';
 import useCierreAnimado from '../../../utils/useCierreAnimado';
+import { confirmarAccion } from '../../../utils/dialogos';
 
 const TIPOS_INMUEBLE = [
   { value: 'Casa', label: 'CASA' },
@@ -28,6 +30,23 @@ const TIPOS_INMUEBLE = [
   { value: 'Terreno', label: 'TERRENO' },
   { value: 'Local Comercial', label: 'LOCAL COMERCIAL' }
 ];
+
+const sinAcentos = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+// Campos que se pueden llenar con la ubicación del mapa (los cruzamientos Google no los da)
+const CAMPOS_DIRECCION = [
+  ['estado', 'Estado'],
+  ['municipio', 'Ciudad / Municipio'],
+  ['colonia', 'Colonia'],
+  ['calle', 'Calle'],
+  ['numero', 'Número'],
+];
+
+const AVISOS_MAPA = {
+  sin_api: 'No se pudo obtener la dirección automáticamente: falta activar la Geocoding API de Google. Llénala a mano.',
+  sin_resultados: 'Google no tiene la dirección de ese punto. Llénala a mano.',
+  fallo: 'No se pudo obtener la dirección en este momento. Llénala a mano.',
+};
 
 const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
   // Abre desde donde se tocó (o sube como hoja en celular) y se va animado al cerrar
@@ -51,6 +70,10 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
   const [fotoPreview, setFotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [mapaAbierto, setMapaAbierto] = useState(false);
+  // Llenado con el mapa: qué escribió el usuario (no se pisa sin preguntar) y qué llenó el mapa (se marca para verificar)
+  const [tocados, setTocados] = useState(() => new Set());
+  const [autollenados, setAutollenados] = useState(() => new Set());
+  const [notaMapa, setNotaMapa] = useState(null); // { tipo: 'ok' | 'aviso', texto }
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
 
@@ -92,8 +115,64 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setTocados(prev => new Set(prev).add(name));
+    if (autollenados.has(name)) {
+      setAutollenados(prev => { const s = new Set(prev); s.delete(name); return s; });
+    }
   };
+
+  // Al confirmar el punto en el mapa: guarda las coordenadas y llena la dirección con lo que detecta Google.
+  // Llena los campos vacíos (y Estado/Ciudad por defecto); si el usuario ya escribió algo distinto,
+  // pregunta antes de reemplazarlo.
+  const aplicarUbicacion = async (coords, resultado) => {
+    setFormData(prev => ({ ...prev, coordinates: coords }));
+    if (!resultado) return;
+    const { direccion, error } = resultado;
+    if (!direccion) {
+      setNotaMapa({ tipo: 'aviso', texto: AVISOS_MAPA[error] || AVISOS_MAPA.fallo });
+      return;
+    }
+
+    const libres = {};
+    const distintos = [];
+    CAMPOS_DIRECCION.forEach(([campo, etiqueta]) => {
+      const sugerido = direccion[campo];
+      const actual = String(formData[campo] || '').trim();
+      if (!sugerido || sinAcentos(sugerido) === sinAcentos(actual)) return;
+      const reemplazable = !actual || !tocados.has(campo);
+      if (reemplazable) libres[campo] = sugerido;
+      else distintos.push({ campo, etiqueta, actual, sugerido });
+    });
+
+    let cambios = libres;
+    if (distintos.length) {
+      const lista = distintos.map(d => `• ${d.etiqueta}: "${d.actual}" → "${d.sugerido}"`).join('\n');
+      const reemplazar = await confirmarAccion(
+        `El mapa sugiere una dirección distinta a la que escribiste:\n\n${lista}\n\n¿Quieres reemplazarla?`,
+        { titulo: 'Dirección distinta', confirmar: 'Reemplazar', cancelar: 'Conservar la mía', peligro: false }
+      );
+      if (reemplazar) cambios = { ...libres, ...Object.fromEntries(distintos.map(d => [d.campo, d.sugerido])) };
+    }
+
+    const llenados = Object.keys(cambios);
+    if (llenados.length) {
+      setFormData(prev => ({ ...prev, ...cambios }));
+      setAutollenados(prev => new Set([...prev, ...llenados]));
+    }
+    const faltan = CAMPOS_DIRECCION.filter(([campo]) => !direccion[campo]).map(([, etiqueta]) => etiqueta.toLowerCase());
+    setNotaMapa({
+      tipo: 'ok',
+      texto: (llenados.length
+        ? `Completamos ${llenados.length} ${llenados.length === 1 ? 'campo' : 'campos'} con el mapa (marcados en verde). Verifica que estén bien.`
+        : 'La dirección del mapa coincide con la que tienes.')
+        + (faltan.length ? ` Google no dio: ${faltan.join(', ')}.` : '')
+        + ' Los cruzamientos van a mano.',
+    });
+  };
+
+  const claseInput = (campo) => `mri-input${autollenados.has(campo) ? ' mri-input-auto' : ''}`;
 
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
@@ -277,6 +356,38 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
               </select>
             </div>
 
+            {/* Ubicación: llena la dirección con el mapa */}
+            <div className="mri-field-two-thirds">
+              <div className="mri-gps-widget">
+                <div className="mri-gps-left">
+                  <div className="mri-gps-icon">
+                    <MapPinned size={20} />
+                  </div>
+                  <div className="mri-gps-info">
+                    <span className="mri-gps-label">UBICACIÓN GPS</span>
+                    <span className={`mri-gps-val ${!formData.coordinates ? 'empty' : ''}`}>
+                      {formData.coordinates || 'Llena la dirección con tu ubicación'}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="mri-gps-btn"
+                  onClick={() => setMapaAbierto(true)}
+                >
+                  <MapPin size={15} /> {formData.coordinates ? 'MODIFICAR' : 'USAR MI UBICACIÓN'}
+                </button>
+              </div>
+            </div>
+
+            {notaMapa && (
+              <div className={`mri-field-full mri-mapa-nota ${notaMapa.tipo}`}>
+                {notaMapa.tipo === 'ok' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                <span>{notaMapa.texto}</span>
+              </div>
+            )}
+
             {/* Estado */}
             <div className="mri-field-one-third">
               <label className="mri-label">
@@ -285,7 +396,7 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
               <input
                 type="text"
                 name="estado"
-                className="mri-input"
+                className={claseInput('estado')}
                 placeholder="Ej. Yucatán"
                 value={formData.estado}
                 onChange={handleChange}
@@ -300,7 +411,7 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
               <input
                 type="text"
                 name="municipio"
-                className="mri-input"
+                className={claseInput('municipio')}
                 placeholder="Ingresa tu Ciudad"
                 value={formData.municipio}
                 onChange={handleChange}
@@ -315,7 +426,7 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
               <input
                 type="text"
                 name="colonia"
-                className="mri-input"
+                className={claseInput('colonia')}
                 placeholder="Ej. San Francisco"
                 value={formData.colonia}
                 onChange={handleChange}
@@ -330,7 +441,7 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
               <input
                 type="text"
                 name="calle"
-                className="mri-input"
+                className={claseInput('calle')}
                 placeholder="Ej. 11 o Calle 11"
                 value={formData.calle}
                 onChange={handleChange}
@@ -345,7 +456,7 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
               <input
                 type="text"
                 name="numero"
-                className="mri-input"
+                className={claseInput('numero')}
                 placeholder="Ej. 108F"
                 value={formData.numero}
                 onChange={handleChange}
@@ -365,31 +476,6 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
                 value={formData.cruzamientos}
                 onChange={handleChange}
               />
-            </div>
-
-            {/* Coordenadas GPS Widget */}
-            <div className="mri-field-two-thirds">
-              <div className="mri-gps-widget">
-                <div className="mri-gps-left">
-                  <div className="mri-gps-icon">
-                    <MapPinned size={20} />
-                  </div>
-                  <div className="mri-gps-info">
-                    <span className="mri-gps-label">COORDENADAS GPS</span>
-                    <span className={`mri-gps-val ${!formData.coordinates ? 'empty' : ''}`}>
-                      {formData.coordinates || 'Sin ubicación asignada'}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="mri-gps-btn"
-                  onClick={() => setMapaAbierto(true)}
-                >
-                  <MapPin size={15} /> {formData.coordinates ? 'MODIFICAR' : 'FIJAR EN MAPA'}
-                </button>
-              </div>
             </div>
 
           </div>
@@ -421,8 +507,9 @@ const ModalRegistroInmueble = ({ isOpen, onClose, onSuccess, user }) => {
       <SelectorUbicacionMapa
         isOpen={mapaAbierto}
         onClose={() => setMapaAbierto(false)}
-        onConfirm={(coords) => setFormData(prev => ({ ...prev, coordinates: coords }))}
+        onConfirm={aplicarUbicacion}
         coordenadasIniciales={formData.coordinates}
+        pedirDireccion
       />
     </div>,
     document.body

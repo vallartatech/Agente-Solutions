@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Header from '../../../components/Shared/Header';
-import { useNavigate } from 'react-router-dom';
-import { UserCheck, Clock, Phone, Mail, RefreshCw, CheckCircle, AlertCircle, Eye, X, MessageSquare, Building2, Calendar, User } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { UserCheck, Clock, Phone, Mail, RefreshCw, CheckCircle, AlertCircle, Eye, X, MessageSquare, Building2, Calendar, User, ShieldCheck } from 'lucide-react';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
+import { useAuth } from '../../../context/AuthContext';
+import PerfilesPorValidar from './PerfilesPorValidar/PerfilesPorValidar';
 
 // Solo los 10 dígitos del número; el enlace de WhatsApp ya antepone 521
 const cleanPhone = (tel) => String(tel || '').replace(/\D/g, '').slice(-10);
@@ -14,6 +16,23 @@ const VistaSalaEsperaTecnicos = () => {
   const [message, setMessage] = useState('');
   const [selectedTechDetails, setSelectedTechDetails] = useState(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  // Root y Admin también validan los perfiles profesionales de los técnicos de la red
+  const puedeValidar = [0, 1].includes(Number(user?.role_id));
+  const [searchParams] = useSearchParams();
+  const validarId = searchParams.get('validar');
+  // ?validar=ID (desde la notificación) o ?pestana=perfiles (desde Usuarios): abre la validación
+  const abrirPerfiles = Boolean(validarId) || searchParams.get('pestana') === 'perfiles';
+  const [pestana, setPestana] = useState(abrirPerfiles && puedeValidar ? 'perfiles' : 'ingreso');
+  const [porValidar, setPorValidar] = useState(null);
+  useEffect(() => { if (abrirPerfiles && puedeValidar) setPestana('perfiles'); }, [abrirPerfiles, puedeValidar]);
+  // Cuántos perfiles esperan validación (para el número de la pestaña)
+  useEffect(() => {
+    if (!puedeValidar) return;
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/admin/perfiles-profesionales`, { params: { estado: 'en_revision' } })
+      .then(res => setPorValidar((res.data.data || []).length))
+      .catch(() => {});
+  }, [puedeValidar]);
 
   const fetchPendingTechs = async () => {
     setLoading(true);
@@ -103,6 +122,38 @@ const VistaSalaEsperaTecnicos = () => {
           </button>
         </div>
 
+        {puedeValidar && (
+          <div role="tablist" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+            {[
+              { clave: 'ingreso', texto: 'Solicitudes de ingreso', Icono: UserCheck, cuenta: loading ? null : pendingTechs.length },
+              { clave: 'perfiles', texto: 'Perfiles por validar', Icono: ShieldCheck, cuenta: porValidar },
+            ].map(({ clave, texto, Icono, cuenta }) => (
+              <button
+                key={clave}
+                type="button"
+                role="tab"
+                aria-selected={pestana === clave}
+                onClick={() => setPestana(clave)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', cursor: 'pointer',
+                  fontWeight: 'bold', fontSize: '0.95rem',
+                  border: pestana === clave ? '2px solid #FF6600' : '2px solid #e2e8f0',
+                  backgroundColor: pestana === clave ? '#FFF3E0' : '#fff',
+                  color: pestana === clave ? '#E65100' : '#475569',
+                }}
+              >
+                <Icono size={18} /> {texto}
+                {cuenta > 0 && (
+                  <span style={{ minWidth: '22px', padding: '1px 7px', borderRadius: '999px', backgroundColor: '#FF6600', color: '#fff', fontSize: '0.78rem' }}>{cuenta}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {pestana === 'perfiles' && puedeValidar ? (
+          <PerfilesPorValidar abrirId={validarId ? Number(validarId) : null} onConteo={setPorValidar} />
+        ) : (<>
         <div style={{ backgroundColor: '#FFF3E0', borderRadius: '12px', padding: '20px', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '15px', borderLeft: '5px solid #FF9800' }}>
           <Clock size={35} color="#FF6600" style={{ flexShrink: 0 }} />
           <div>
@@ -231,6 +282,7 @@ const VistaSalaEsperaTecnicos = () => {
             ))}
           </div>
         )}
+        </>)}
       </div>
 
       {/* MODAL DE DETALLE DEL TÉCNICO REGISTRADO */}
