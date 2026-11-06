@@ -492,11 +492,11 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         type="button" 
         className={`vcp-mobile-nav-item ${isReportesActive || (unificarVistas && (isCotizacionesActive || isLevantamientosActive)) ? 'active' : ''}`}
         onClick={() => navigate('/reportes-globales')}
-        title={unificarVistas ? 'Reportes, cotización y levantamiento' : 'Reportes'}
-        aria-label={unificarVistas ? 'Reportes, cotización y levantamiento' : 'Reportes'}
+        title={unificarVistas ? 'Detalles de propiedad' : 'Reportes'}
+        aria-label={unificarVistas ? 'Detalles de propiedad' : 'Reportes'}
       >
         <FileText size={22} className="vcp-mobile-nav-icon" />
-          <span className="vcp-mobile-nav-text">Reportes</span>
+          <span className="vcp-mobile-nav-text">{unificarVistas ? 'Detalles' : 'Reportes'}</span>
       </button>
 
       {!unificarVistas && (
