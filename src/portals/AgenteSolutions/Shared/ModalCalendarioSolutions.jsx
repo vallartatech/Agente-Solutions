@@ -2541,7 +2541,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
               : (a.hasScheduledDate ? 1 : -1)));
           const cerrarDia = () => setDiaAbierto(null);
 
-          return (
+          return createPortal(
             <div className="solutions-submodal-overlay nq-overlay" onClick={cerrarDia}>
               <div className="nq-window nq-light cal-dia-window" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="cal-dia-title">
                 <div className="nq-header">
@@ -2592,7 +2592,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   </div>
                 )}
               </div>
-            </div>
+            </div>,
+            document.body
           );
         })()}
 
@@ -2638,7 +2639,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
           const miembrosFiltrados = q ? teamMembers.filter(m => normalizeText(memberName(m)).includes(q)) : teamMembers;
           const faltanPersonas = noticeForm.audience === 'some' && noticeForm.participants.length === 0;
 
-          return (
+          return createPortal(
             <div className="solutions-submodal-overlay nq-overlay" onClick={closeModal}>
               <div
                 className={`nq-window nq-light ${noticeForm.important ? 'is-important' : ''}`}
@@ -2977,7 +2978,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   </div>
                 </form>
               </div>
-            </div>
+            </div>,
+            document.body
           );
         })()}
 
@@ -3032,7 +3034,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
             return d === 1 ? 'ayer' : `hace ${d} días`;
           })();
 
-          return (
+          return createPortal(
             <div className="solutions-submodal-overlay nq-overlay" onClick={cerrarDetalle}>
               <div className="nq-window nq-light nd-window" style={{ '--nq-accent': color }} onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="nd-title">
                 <div className="nq-header">
@@ -3208,7 +3210,8 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                   </div>
                 )}
               </div>
-            </div>
+            </div>,
+            document.body
           );
         })()}
 
