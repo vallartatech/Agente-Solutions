@@ -581,18 +581,22 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
         const jobs = Array.from(jobMap.values());
         setNetworkJobs(jobs);
 
-        if (selectedJobForQuotes) {
-          const updated = jobs.find(j => j.id === selectedJobForQuotes.id);
-          if (updated) {
-            setSelectedJobForQuotes(updated);
-            if (activeChatQuote) {
-              const updatedActiveQuote = updated.cotizaciones_list.find(q => (q.technician_id || q.technician?.id) === (activeChatQuote.technician_id || activeChatQuote.technician?.id));
-              if (updatedActiveQuote) {
-                setActiveChatQuote(updatedActiveQuote);
-              }
-            }
-          }
-        }
+        // Setters funcionales: este fetch corre desde intervalos de renders viejos
+        setSelectedJobForQuotes(prevSel => {
+          if (!prevSel) return prevSel;
+          const updated = jobs.find(j => j.id === prevSel.id);
+          if (!updated) return prevSel;
+          setActiveChatQuote(prevQ => {
+            if (!prevQ) return prevQ;
+            const techDe = q => q.technician_id || q.technician?.id;
+            const updatedActiveQuote = updated.cotizaciones_list.find(q => techDe(q) === techDe(prevQ));
+            if (!updatedActiveQuote) return prevQ;
+            const prevLen = prevQ.chat_history?.length || 0;
+            const newLen = updatedActiveQuote.chat_history?.length || 0;
+            return newLen >= prevLen ? updatedActiveQuote : { ...updatedActiveQuote, chat_history: prevQ.chat_history };
+          });
+          return updated;
+        });
       }
     } catch (e) {
       console.error("Error fetching jobs in modal calendar", e);

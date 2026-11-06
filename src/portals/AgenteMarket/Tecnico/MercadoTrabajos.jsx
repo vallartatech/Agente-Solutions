@@ -5216,6 +5216,28 @@ const MercadoTrabajos = () => {
                   </div>
                 </div>
 
+                {/* Fecha que pidió el cliente al publicar, para que el técnico proponga algo cercano */}
+                {(() => {
+                  const desc = selectedBoardJob.descripcion || '';
+                  const urgente = selectedBoardJob.is_urgent || desc.includes('[URGENCIA]');
+                  const deseada = !urgente && fechaDeseada(desc);
+                  if (!urgente && !deseada) return null;
+                  return (
+                    <div className={`mercado-schedule-deseada ${urgente ? 'urgente' : ''} ${deseada?.vencida ? 'vencida' : ''}`}>
+                      {urgente ? <Zap size={16} /> : <Calendar size={16} />}
+                      <div>
+                        <small>{urgente ? 'El cliente lo pidió' : 'El cliente lo necesita'}</small>
+                        <strong>
+                          {urgente
+                            ? 'Urgente · Hoy mismo'
+                            : `${deseada.texto} (${new Date(`${deseada.fecha}T00:00:00`).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' })})`}
+                        </strong>
+                        {deseada?.vencida && <span>Esa fecha ya pasó; acuérdala con el cliente por chat.</span>}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className="mercado-schedule-form-group">
                   <label>
                     Fecha y Hora de la Visita *

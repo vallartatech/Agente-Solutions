@@ -433,19 +433,25 @@ const VistaRedAutonomo = () => {
 
         setNetworkJobs(jobs);
 
-        // Si tenemos un trabajo seleccionado, actualizar en vivo
-        if (selectedJobForQuotes) {
-          const updated = jobs.find(j => j.id === selectedJobForQuotes.id);
-          if (updated) {
-            setSelectedJobForQuotes(updated);
-            if (activeChatQuote) {
-              const updatedActiveQuote = updated.cotizaciones_list.find(q => (q.technician_id || q.technician?.id) === (activeChatQuote.technician_id || activeChatQuote.technician?.id));
-              if (updatedActiveQuote) {
-                setActiveChatQuote(updatedActiveQuote);
-              }
-            }
-          }
-        }
+        // Si tenemos un trabajo seleccionado, actualizar en vivo.
+        // Con setters funcionales: fetchJobs corre desde intervalos creados en renders viejos,
+        // y leer selectedJobForQuotes directo daba null y el panel nunca recibía la fecha propuesta.
+        setSelectedJobForQuotes(prevSel => {
+          if (!prevSel) return prevSel;
+          const updated = jobs.find(j => j.id === prevSel.id);
+          if (!updated) return prevSel;
+          setActiveChatQuote(prevQ => {
+            if (!prevQ) return prevQ;
+            const techDe = q => q.technician_id || q.technician?.id;
+            const updatedActiveQuote = updated.cotizaciones_list.find(q => techDe(q) === techDe(prevQ));
+            if (!updatedActiveQuote) return prevQ;
+            // Conserva el historial más largo (el sondeo del chat puede ir adelante)
+            const prevLen = prevQ.chat_history?.length || 0;
+            const newLen = updatedActiveQuote.chat_history?.length || 0;
+            return newLen >= prevLen ? updatedActiveQuote : { ...updatedActiveQuote, chat_history: prevQ.chat_history };
+          });
+          return updated;
+        });
       }
     } catch (e) {
       console.error("Error fetching network jobs", e);
@@ -1348,6 +1354,42 @@ const VistaRedAutonomo = () => {
                                   <p>{quote.displayAlertMsg}</p>
                                 </div>
                               )}
+
+                              {/* Horario de visita propuesto por el técnico asignado: confirmar o re-coordinar aquí mismo */}
+                              {isAcceptedQuote && selectedJobForQuotes.scheduled_at && (() => {
+                                const sched = getJobScheduleStatus(selectedJobForQuotes, quote);
+                                const fechaTxt = new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' });
+                                if (sched.isScheduleConfirmed) {
+                                  return (
+                                    <div className="red-visita red-visita-ok">
+                                      <small><CheckCircle size={13} /> Visita confirmada</small>
+                                      <strong>{fechaTxt}</strong>
+                                    </div>
+                                  );
+                                }
+                                if (sched.isRescheduleRequested) {
+                                  return (
+                                    <div className="red-visita red-visita-espera">
+                                      <small><Clock size={13} /> Pediste otro horario</small>
+                                      <span>Esperando que el técnico proponga una nueva fecha. Puedes platicarlo en el chat.</span>
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <div className="red-visita red-visita-pendiente">
+                                    <small><Calendar size={13} /> El técnico propone visitarte</small>
+                                    <strong>{fechaTxt}</strong>
+                                    <div className="red-visita-acciones">
+                                      <button type="button" className="red-visita-btn confirmar" onClick={() => handleResponderVisita('confirm')}>
+                                        <Check size={14} /> Confirmar horario
+                                      </button>
+                                      <button type="button" className="red-visita-btn otro" onClick={() => handleResponderVisita('reschedule')}>
+                                        <MessageCircle size={14} /> Proponer otro
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
 
                               {/* Estado y acciones de esta oferta */}
                               <div className="red-quote-pie">

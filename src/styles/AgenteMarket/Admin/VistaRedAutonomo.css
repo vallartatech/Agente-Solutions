@@ -690,6 +690,51 @@
 .red-quote-estado.aceptada { background: #dcfce7; color: #15803d; }
 .red-quote-estado.rechazada { background: #fef2f2; color: #dc2626; }
 
+/* Horario de visita propuesto por el técnico (dentro de la tarjeta aceptada) */
+.red-visita {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px solid;
+}
+.red-visita small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.red-visita strong { font-size: 0.95rem; color: #0f172a; text-transform: capitalize; }
+.red-visita span { font-size: 0.82rem; color: #7c2d12; }
+.red-visita-pendiente { background: #eff6ff; border-color: #bfdbfe; }
+.red-visita-pendiente small { color: #1d4ed8; }
+.red-visita-ok { background: #dcfce7; border-color: #86efac; }
+.red-visita-ok small { color: #15803d; }
+.red-visita-espera { background: #fff7ed; border-color: #fed7aa; }
+.red-visita-espera small { color: #c2410c; }
+.red-visita-acciones { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.red-visita-btn {
+  flex: 1 1 140px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.red-visita-btn.confirmar { background: #16a34a; color: #fff; border: none; }
+.red-visita-btn.confirmar:hover { background: #15803d; }
+.red-visita-btn.otro { background: #fff; color: #ea580c; border: 1.5px solid #fed7aa; }
+.red-visita-btn.otro:hover { background: #fff7ed; }
+
 .red-quote-acciones {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
