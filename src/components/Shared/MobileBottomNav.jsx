@@ -494,7 +494,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
       <button 
         type="button" 
         className={`vcp-mobile-nav-item ${isReportesActive || (unificarVistas && (isCotizacionesActive || isLevantamientosActive || isPropiedadesActive)) ? 'active' : ''}`}
-        onClick={() => navigate('/reportes-globales')}
+        onClick={() => navigate(unificarVistas ? '/propiedades' : '/reportes-globales')}
         title={unificarVistas ? 'Detalles de propiedad' : 'Reportes'}
         aria-label={unificarVistas ? 'Detalles de propiedad' : 'Reportes'}
       >

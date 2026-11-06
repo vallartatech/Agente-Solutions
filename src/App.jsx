@@ -62,7 +62,6 @@ import VistaGestionAutonomos from "./portals/AgenteSolutions/Admin/VistaGestionA
 import VistaSalaEsperaTecnicos from "./portals/AgenteSolutions/Admin/VistaSalaEsperaTecnicos";
 import VistaCodigoAutonomo from "./portals/AgenteMarket/Admin/VistaCodigoAutonomo";
 import VistaApoyoAutonomo from "./portals/AgenteMarket/Admin/VistaApoyoAutonomo";
-import VistaDetallePropiedadAutonomo from "./portals/AgenteMarket/Admin/DetallePropiedad";
 import VistaRedAutonomo from "./portals/AgenteMarket/Admin/VistaRedAutonomo";
 import MisTecnicos from "./portals/AgenteMarket/Cliente/MisTecnicos";
 import PerfilTecnicoRed from "./portals/AgenteMarket/Admin/PerfilTecnicoRed";
@@ -141,18 +140,14 @@ instalarProgresoSubida();
 // Interno y red usan la misma vista de propiedades (diseño de vidrio); dentro se ajusta por rol
 const PropiedadesWrapper = () => <VistaPropiedadesAdmin />;
 
-const DetallePropiedadWrapper = () => {
-  const { user } = useAuth();
-  const roleId = Number(user?.role_id);
-  if (roleId === 0 || roleId === 1) return <VistaDetallePropiedadAdmin />;
-  return <VistaDetallePropiedadAutonomo />;
-};
+// Interno y red usan el mismo expediente de la propiedad; dentro se ocultan las piezas internas
+const DetallePropiedadWrapper = () => <VistaDetallePropiedadAdmin />;
 
-// Detalle de un trabajo dentro del expediente de la propiedad: solo Root (0) y Admin (1)
+// Detalle de un trabajo dentro del expediente de la propiedad: Root (0), Admin (1) y la red
 const TrabajoPropiedadWrapper = () => {
   const { user } = useAuth();
   const roleId = Number(user?.role_id);
-  if (roleId === 0 || roleId === 1) return <VistaTrabajoPropiedad />;
+  if (roleId === 0 || roleId === 1 || esRed(user)) return <VistaTrabajoPropiedad />;
   return <Navigate to="/propiedades" replace />;
 };
 

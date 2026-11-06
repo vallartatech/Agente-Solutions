@@ -163,8 +163,8 @@ const ClienteHeader = ({ activeModule }) => {
             <button
               type="button"
               className={`vcp-nav-btn ${isReportesActive || isCotizacionesActive || isLevantamientoActive || currentPath.startsWith('/propiedades') ? 'active' : ''}`}
-              onClick={() => navigate('/reportes-globales')}
-              title="Detalles de propiedad: reportes, cotización y levantamiento"
+              onClick={() => navigate('/propiedades')}
+              title="Detalles de propiedad: propiedades, reportes, cotizaciones y levantamientos"
             >
               <ClipboardList size={18} className="vcp-nav-icon" />
               <span className="vcp-nav-text">DETALLES DE PROPIEDAD</span>
