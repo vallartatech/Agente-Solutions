@@ -15,6 +15,8 @@ import {
   MessageSquare, Camera, UserCheck, ImageIcon, Loader2 
 } from "lucide-react";
 import { mostrarAviso } from '../../../utils/dialogos';
+import SelectorVistas from '../../../components/Shared/SelectorVistas';
+import { usaSelectorRed } from '../../../utils/entorno';
 
 const TIPOS_PROPIEDAD = [
   { label: "TODAS", icon: "🌐", title: "TODAS" },
@@ -568,6 +570,13 @@ const VistaPropiedades = () => {
                 </button>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Clientes de la red: Propiedades comparte botón con Reportes, Cotizaciones y Levantamientos */}
+        {usaSelectorRed(user) && (
+          <div className="vp-selector-red">
+            <SelectorVistas grupo="red" activo="propiedades" conteo={listaPropiedades.length} />
           </div>
         )}
 

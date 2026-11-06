@@ -1,0 +1,294 @@
+/* ==========================================================================
+   MIS TÉCNICOS (cliente particular) - WHITE LIQUID GLASS
+   Historial de técnicos con favoritos y bloqueos.
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+.mt-page {
+  min-height: 100vh;
+  background: url('../../../assets/geometric-poly-bg.png') center center / cover no-repeat fixed;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
+  padding-bottom: 40px;
+}
+
+.mt-contenido {
+  width: 96%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding-top: 20px;
+  box-sizing: border-box;
+}
+
+/* Panel de vidrio blanco que comparten título, barra, tarjetas y estado vacío */
+.mt-titulo,
+.mt-barra,
+.mt-card,
+.mt-vacio {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.62) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+}
+
+/* ── TÍTULO ── */
+.mt-titulo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 22px;
+  margin-bottom: 14px;
+}
+.mt-titulo-icono {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: #f26522;
+  color: #fff;
+}
+.mt-titulo h1 {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+.mt-titulo p { margin: 2px 0 0; color: #475569; font-size: 0.88rem; }
+
+/* ── BUSCADOR + FILTROS ── */
+.mt-barra {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px;
+  border-radius: 20px;
+  margin-bottom: 18px;
+}
+.mt-buscador {
+  flex: 1 1 260px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: #64748b;
+}
+.mt-buscador input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font: inherit;
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+.mt-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
+.mt-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.6);
+  color: #334155;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.mt-filtro small {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.08);
+  font-size: 0.75rem;
+}
+.mt-filtro.activo { background: #f26522; border-color: #f26522; color: #fff; }
+.mt-filtro.activo small { background: rgba(255, 255, 255, 0.25); }
+
+/* ── TARJETAS ── */
+.mt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.mt-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 22px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.mt-card:hover { transform: translateY(-2px); box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14); }
+.mt-card.is-bloqueado { opacity: 0.78; }
+.mt-card.is-bloqueado .mt-avatar { filter: grayscale(1); }
+
+.mt-card-cabecera { display: flex; align-items: center; gap: 12px; }
+.mt-avatar {
+  flex: 0 0 54px;
+  height: 54px;
+  border-radius: 16px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #f26522;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+}
+.mt-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.mt-identidad { flex: 1; min-width: 0; }
+.mt-identidad h3 {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mt-rol { display: inline-flex; align-items: center; gap: 4px; color: #64748b; font-size: 0.8rem; font-weight: 600; }
+
+.mt-sello {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.mt-sello.favorito { background: #fef3c7; color: #b45309; }
+.mt-sello.bloqueado { background: #fee2e2; color: #b91c1c; }
+
+.mt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mt-chip {
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(242, 101, 34, 0.1);
+  color: #c2410c;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.mt-datos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.mt-dato {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  text-align: center;
+  color: #f26522;
+}
+.mt-dato span { color: #0f172a; font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 800; line-height: 1.1; }
+.mt-dato small { color: #64748b; font-size: 0.68rem; font-weight: 600; line-height: 1.2; }
+
+.mt-historial {
+  list-style: none;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mt-historial li {
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  column-gap: 8px;
+  align-items: center;
+}
+.mt-punto { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
+.mt-punto.trabajo { background: #10b981; }
+.mt-historial-titulo {
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mt-historial small { grid-column: 2; color: #64748b; font-size: 0.74rem; }
+
+.mt-miembro { display: flex; align-items: center; gap: 5px; margin: 0; color: #64748b; font-size: 0.78rem; }
+
+/* ── ACCIONES (botones sólidos, sin brillo) ── */
+.mt-acciones { display: flex; gap: 8px; }
+.mt-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 13px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.85);
+  color: #334155;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.mt-btn:disabled { opacity: 0.6; cursor: wait; }
+.mt-btn-primario { background: #f26522; border-color: #f26522; color: #fff; }
+.mt-btn-primario:hover:not(:disabled) { background: #ea580c; }
+.mt-btn-fav-activo { background: #fef3c7; border-color: #fde68a; color: #b45309; }
+.mt-btn-peligro { flex: 0 0 auto; color: #dc2626; }
+.mt-btn-peligro:hover:not(:disabled) { background: #dc2626; border-color: #dc2626; color: #fff; }
+
+/* ── VACÍO ── */
+.mt-vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 20px;
+  border-radius: 22px;
+  text-align: center;
+}
+.mt-vacio-icono {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: #f26522;
+  color: #fff;
+}
+.mt-vacio strong { font-family: 'Outfit', sans-serif; font-size: 1.05rem; }
+.mt-vacio p { margin: 0; color: #64748b; font-size: 0.88rem; max-width: 420px; }
+
+@media (max-width: 768px) {
+  .mt-page { padding-bottom: 110px; }
+  .mt-contenido { width: auto; margin: 0 16px; padding-top: 14px; }
+  .mt-titulo { padding: 14px; }
+  .mt-titulo p { font-size: 0.82rem; }
+  .mt-filtros { width: 100%; }
+  .mt-filtro { flex: 1; justify-content: center; padding: 0 8px; }
+  .mt-grid { grid-template-columns: 1fr; }
+  .mt-datos { grid-template-columns: repeat(2, 1fr); }
+}

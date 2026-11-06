@@ -13,6 +13,7 @@ const GRUPOS = {
     { key: 'reportes', label: 'Reportes', Icon: Images, path: '/reportes-globales' },
   ],
   red: [
+    { key: 'propiedades', label: 'Propiedades', Icon: Building2, path: '/propiedades' },
     { key: 'reportes', label: 'Reportes', Icon: Images, path: '/reportes-globales' },
     { key: 'cotizaciones', label: 'Cotizaciones', Icon: FileText, path: '/vista-cotizaciones' },
     { key: 'levantamientos', label: 'Levantamientos', Icon: ClipboardList, path: '/levantamientos' },

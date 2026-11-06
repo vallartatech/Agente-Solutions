@@ -24,6 +24,7 @@ import {
   Folder, FolderPlus, FolderInput, FolderOpen, ArrowLeft, FolderX, Check, MapPinned
 } from "lucide-react";
 import { mostrarAviso } from '../../../utils/dialogos';
+import { esRed, usaSelectorRed } from '../../../utils/entorno';
 
 const COLORES_CARPETA = ["#F26522", "#2563eb", "#10b981", "#8b5cf6", "#e11d48", "#0f172a"];
 
@@ -135,6 +136,8 @@ const VistaPropiedades = () => {
   const isRoot = Number(user?.role_id) === 0;
   const isAgenteAdmin = Number(user?.role_id) === 1;
   const puedeOrganizar = !isClient && (isRoot || isAgenteAdmin);
+  // La red (roles 4-8) usa esta misma vista; sus clientes comparten selector con Reportes/Cotizaciones/Levantamientos
+  const enRed = esRed(user);
 
   useEffect(() => {
     obtenerPropiedades();
@@ -176,7 +179,7 @@ const VistaPropiedades = () => {
       setGlobalStats(statsRes.data);
 
       if (user?.role_id === 5 || user?.role_id === 4) {
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/suscripcion-info`, {
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/tenant/subscription-status`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
           .then(r => { if (r.data.success) setSubInfo(r.data); })
@@ -819,6 +822,8 @@ const VistaPropiedades = () => {
             {/* Root y admin: Propiedades comparte botón con Levantamientos */}
             {isRoot || isAgenteAdmin ? (
               <SelectorVistas grupo="propiedades" activo="propiedades" conteo={listaPropiedades.length} />
+            ) : usaSelectorRed(user) ? (
+              <SelectorVistas grupo="red" activo="propiedades" conteo={listaPropiedades.length} />
             ) : (
               <div className="vu-page-title-badge">
                 <span style={{ fontSize: '1.05rem' }}>🏠</span>
@@ -964,7 +969,12 @@ const VistaPropiedades = () => {
                       <button
                         type="button"
                         className="tb-actions-item"
-                        onClick={() => { setAccionesAbiertas(false); setMostrarModalSolicitud(true); }}
+                        onClick={() => {
+                          setAccionesAbiertas(false);
+                          // La red conserva su flujo de "Reportar problema"; la interna usa la nueva solicitud
+                          if (enRed) handleAbrirReportarProblema();
+                          else setMostrarModalSolicitud(true);
+                        }}
                       >
                         <span className="tb-actions-icon orange"><PlusCircle size={16} strokeWidth={2.6} /></span>
                         <span>Solicitar servicio</span>
