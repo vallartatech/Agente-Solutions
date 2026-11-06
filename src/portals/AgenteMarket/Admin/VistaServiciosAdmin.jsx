@@ -4,7 +4,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Clock, CheckCircle2, Circle, X, UserCircle, Calendar, 
-  ArrowLeft, Camera, Layout, FileText, Maximize2, AlertTriangle, Timer, Settings, Filter
+  ArrowLeft, Camera, Layout, FileText, Maximize2, AlertTriangle, Timer, Settings, Filter,
+  MapPin, ChevronLeft
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import CasaLoader from '../../../components/Shared/CasaLoader';
@@ -16,6 +17,57 @@ import '../../../styles/AgenteMarket/Cliente/TableroScrum.css'; // Reutilizamos 
 import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteMarket/Admin/VistaServiciosAdmin.css';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
+import '../../../styles/Shared/TarjetaTrabajo.css';
+
+// Etiqueta y color de cada columna en la tarjeta
+const ESTADO_TARJETA = {
+  sos: { texto: 'SOS', tono: 'rojo', hora: '' },
+  unassigned: { texto: 'Por asignar', tono: 'morado', hora: 'por-asignar' },
+  todo: { texto: 'Por hacer', tono: 'naranja', hora: '' },
+  progress: { texto: 'En proceso', tono: 'ambar', hora: '' },
+  review: { texto: 'Por aprobar', tono: 'azul', hora: 'por-aprobar' },
+  done: { texto: 'Finalizado', tono: 'verde', hora: '' },
+  rejected: { texto: 'Rechazado', tono: 'neutro', hora: 'rechazado' },
+};
+
+const diaCorto = (fecha) => {
+  const clave = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const hoy = new Date();
+  const manana = new Date();
+  manana.setDate(manana.getDate() + 1);
+  if (clave(fecha) === clave(hoy)) return 'Hoy';
+  if (clave(fecha) === clave(manana)) return 'Mañana';
+  return fecha.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+};
+
+// La BD guarda la visita con la hora de Mérida tal cual, pero la API la manda marcada como UTC ("...Z").
+// Se lee la fecha y hora escritas, sin convertir de zona horaria, para que se vea igual en cualquier equipo.
+const fechaVisita = (valor) => {
+  const m = String(valor || '').match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) return null;
+  const [, anio, mes, dia, hora, minuto] = m;
+  return {
+    fecha: `${anio}-${mes}-${dia}`,
+    hora: `${hora}:${minuto}`,
+    date: new Date(Number(anio), Number(mes) - 1, Number(dia), Number(hora), Number(minuto)),
+  };
+};
+
+// Color de la hora según columna, SOS o atraso (lo usan la tarjeta y su miniatura en la columna achicada)
+const tonoHoraTarea = (tarea) => {
+  const info = ESTADO_TARJETA[tarea.estado] || ESTADO_TARJETA.todo;
+  const fecha = fechaVisita(tarea.scheduledAt)?.date || null;
+  if (!fecha) return 'sin-fecha';
+  if (tarea.estado === 'sos' || tarea.prioridad === 'SOS' || tarea.isOverdue) return 'atrasado';
+  return info.hora || (diaCorto(fecha) === 'Hoy' ? 'hoy' : '');
+};
+
+// Columnas que el admin abrió o achicó a mano (por navegador). Sin elección: las vacías van achicadas.
+const CLAVE_COLAPSO = 'sv_columnas_colapso';
+const leerColapso = () => {
+  try { return JSON.parse(localStorage.getItem(CLAVE_COLAPSO) || '{}') || {}; } catch { return {}; }
+};
+const MINIATURAS_MAX = 8;
 
 const VistaServiciosAdmin = () => {
   const navigate = useNavigate();
@@ -35,6 +87,14 @@ const VistaServiciosAdmin = () => {
   const [tecnicosEquipo, setTecnicosEquipo] = useState([]);
   const [editandoCita, setEditandoCita] = useState(false);
   const [tabActiva, setTabActiva] = useState('sos'); // Estado para pestañas en móvil
+  const [colapsoManual, setColapsoManual] = useState(leerColapso);
+  const [esMovil, setEsMovil] = useState(() => window.matchMedia('(max-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const alCambiar = (e) => setEsMovil(e.matches);
+    mq.addEventListener('change', alCambiar);
+    return () => mq.removeEventListener('change', alCambiar);
+  }, []);
   const [showModalCotizacion, setShowModalCotizacion] = useState(false);
   const [cotizacionesData, setCotizacionesData] = useState([]);
   const [filtroFecha, setFiltroFecha] = useState('todas');
@@ -170,6 +230,10 @@ const VistaServiciosAdmin = () => {
         titulo: `${item.zone} - ${item.equipment || 'General'}`,
         propiedad: item.property ? (item.property.nombre_propiedad || item.property.address) : 'Sin Propiedad',
         direccionPropiedad: item.property?.address || item.property?.direccion || 'Dirección no especificada',
+        // Para la tarjeta del tablero: nombre real de la propiedad y su foto de fachada
+        nombrePropiedad: item.property?.property_name || item.property?.nombre_propiedad || '',
+        fotoFachada: item.property?.facade_photo_path || '',
+        tecnicoAsignado: nombreTecnico,
         cliente: isUnknownClient ? (nombreTecnico || 'Sin Asignar') : rawClient,
         titularTarjeta: titularTarjeta,
         telefonoCliente: item.property?.client?.phone || item.property?.telefono || item.telefono_cliente || 'No registrado',
@@ -200,7 +264,7 @@ const VistaServiciosAdmin = () => {
         is_network_service: item.is_network_service,
         isFromNetwork: isFromNetwork,
         isOverdue: (item.scheduled_at && !['Listo', 'Finalizado'].includes(item.status)) 
-                   ? new Date(item.scheduled_at) < new Date() 
+                   ? (fechaVisita(item.scheduled_at)?.date || 0) < new Date() 
                    : false
       };
     });
@@ -572,7 +636,7 @@ const VistaServiciosAdmin = () => {
     }
   };
 
-  const renderColumna = (colId, titulo, clase) => {
+  const tareasDeColumna = (colId) => {
     let tareasFiltradasCol = tareasAgrupadas.filter(t => t.estado === colId);
 
     if (colId === 'todo' && filtroFecha !== 'todas') {
@@ -587,7 +651,7 @@ const VistaServiciosAdmin = () => {
         if (filtroFecha === 'sin_fecha') return !t.scheduledAt;
         if (!t.scheduledAt) return false;
 
-        const d = new Date(t.scheduledAt);
+        const d = new Date(fechaVisita(t.scheduledAt)?.date || 0);
         d.setHours(0,0,0,0);
 
         if (filtroFecha === 'hoy') return d.getTime() === hoy.getTime();
@@ -597,13 +661,82 @@ const VistaServiciosAdmin = () => {
         return true;
       });
     }
-    
+    return tareasFiltradasCol;
+  };
+
+  // En móvil se usan pestañas: ahí nunca se achica. Vacía = sin trabajos en ese estado (sin contar el
+  // filtro de fecha de "Por hacer", para que filtrar no esconda la columna junto con su filtro).
+  const estaColapsada = (colId) =>
+    !esMovil && (colapsoManual[colId] ?? !tareasAgrupadas.some(t => t.estado === colId));
+
+  const alternarColumna = (colId, colapsar) => {
+    setColapsoManual(prev => {
+      const siguiente = { ...prev, [colId]: colapsar };
+      try { localStorage.setItem(CLAVE_COLAPSO, JSON.stringify(siguiente)); } catch { /* sin almacenamiento */ }
+      return siguiente;
+    });
+  };
+
+  // Columna achicada: riel delgado con su contador y una miniatura por trabajo
+  const renderColumnaColapsada = (colId, titulo, clase, tareasFiltradasCol) => (
+    <div
+      className={`scrum-column ${clase} sv-col-colapsada`}
+      role="button"
+      tabIndex={0}
+      title={`Abrir ${titulo.toLowerCase()}`}
+      onClick={() => alternarColumna(colId, false)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternarColumna(colId, false); } }}
+    >
+      <span className={`sv-col-rail-contador ${tareasFiltradasCol.length ? 'con-trabajos' : ''}`}>{tareasFiltradasCol.length}</span>
+      <span className="sv-col-rail-titulo">{titulo}</span>
+      {tareasFiltradasCol.length > 0 && (
+        <div className="sv-col-miniaturas">
+          {tareasFiltradasCol.slice(0, MINIATURAS_MAX).map(tarea => {
+            const nombre = tarea.nombrePropiedad || tarea.propiedad || 'Sin propiedad';
+            return (
+              <button
+                key={tarea.dbId}
+                type="button"
+                className={`sv-miniatura ${tonoHoraTarea(tarea)}`}
+                title={`${nombre}${tarea.isBatch ? ' · lote' : ` · #${tarea.dbId}`}`}
+                onClick={(e) => { e.stopPropagation(); abrirModal(tarea); }}
+              >
+                {tarea.fotoFachada ? <img src={tarea.fotoFachada} alt="" /> : <span>{nombre.charAt(0)}</span>}
+                {tarea.isBatch && <em>{tarea.batchTasks?.length || ''}</em>}
+              </button>
+            );
+          })}
+          {tareasFiltradasCol.length > MINIATURAS_MAX && (
+            <span className="sv-miniatura-mas">+{tareasFiltradasCol.length - MINIATURAS_MAX}</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderColumna = (colId, titulo, clase) => {
+    const tareasFiltradasCol = tareasDeColumna(colId);
+    if (estaColapsada(colId)) {
+      return renderColumnaColapsada(colId, titulo, clase, tareasFiltradasCol);
+    }
+
     return (
       <div className={`scrum-column ${clase}`}>
         <div className="column-header" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
             <span className="column-title-text">{titulo}</span>
-            <span className="column-badge">{tareasFiltradasCol.length}</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="column-badge">{tareasFiltradasCol.length}</span>
+              <button
+                type="button"
+                className="sv-col-achicar"
+                title={`Achicar ${titulo.toLowerCase()}`}
+                aria-label={`Achicar ${titulo.toLowerCase()}`}
+                onClick={() => alternarColumna(colId, true)}
+              >
+                <ChevronLeft size={16} />
+              </button>
+            </span>
           </div>
           {colId === 'todo' && (
             <select
@@ -622,123 +755,107 @@ const VistaServiciosAdmin = () => {
         </div>
         <div className="cards-container">
           {tareasFiltradasCol.length > 0 ? (
-            tareasFiltradasCol.map(tarea => (
-              <div key={tarea.dbId} className="card-wrapper">
-                <button 
-                  className={`task-card-premium ${
-                    tarea.isOverdue ? 'is-overdue' : ''
-                  } ${
-                    tarea.estado === 'sos' ? 'is-sos' : 
-                    tarea.estado === 'unassigned' ? 'is-unassigned' :
-                    tarea.estado === 'progress' ? (tarea.prioridad === 'SOS' ? 'is-sos is-active' : 'is-active') : 
-                    tarea.estado === 'done' ? 'is-done' : ''
-                  }`}
-                  onClick={() => abrirModal(tarea)}
-                >
-                  <div className="prop-badge-card" style={{ whiteSpace: 'normal', marginBottom: '5px', lineHeight: '1.4' }}>
-                    <div style={{ color: '#F26522', fontWeight: 'bold' }}>
-                      {tarea.titularTarjeta || tarea.tecnico || 'Por Asignar'}
-                    </div>
-                    <div style={{ color: '#555', fontSize: '0.75rem' }}>{tarea.propiedad}</div>
-                  </div>
-                  <h5 className="task-title-card" style={{ whiteSpace: 'normal', lineHeight: '1.3' }}>
-                    {(tarea.estado === 'sos' || (tarea.estado === 'progress' && tarea.prioridad === 'SOS')) && <AlertTriangle size={14} className="sos-icon-inline" />}
-                    {tarea.titulo}
-                  </h5>
-                  {(() => {
-                    const is2daReq = 
-                      tarea.status === 'Segunda Visita Solicitada' || 
-                      tarea.estado === 'Segunda Visita Solicitada' || 
-                      (tarea.descripcion && tarea.descripcion.includes('[SOLICITUD 2DA VISITA]'));
+            tareasFiltradasCol.map(tarea => {
+              const esSos = tarea.estado === 'sos' || tarea.prioridad === 'SOS';
+              const info = ESTADO_TARJETA[tarea.estado] || ESTADO_TARJETA.todo;
+              const fecha = fechaVisita(tarea.scheduledAt)?.date || null;
+              const [horaNum, ...sufijo] = fecha
+                ? fecha.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }).split(' ')
+                : ['—'];
+              const tonoHora = tonoHoraTarea(tarea);
+              const nombre = tarea.nombrePropiedad || tarea.propiedad || 'Sin propiedad';
+              const direccion = tarea.direccionPropiedad !== nombre ? tarea.direccionPropiedad : '';
+              const persona = tarea.tecnicoAsignado || '';
+              const is2daReq = tarea.status === 'Segunda Visita Solicitada'
+                || tarea.estado === 'Segunda Visita Solicitada'
+                || (tarea.descripcion && tarea.descripcion.includes('[SOLICITUD 2DA VISITA]'));
+              const loteMatch = !tarea.isBatch && tarea.descripcion ? tarea.descripcion.match(/\[LOTE-[A-Z0-9]+\] \((\d+)\/(\d+)\)/) : null;
+              const coti = buscarCotizacionTarea(tarea);
+              const esEfectivo = coti && (coti.cash_requested || coti.payment_scheme === 'cash' || String(coti.status || '').toLowerCase().includes('efectivo') || String(coti.status || '').toLowerCase().includes('anticipo pagado'));
+              const efectivoPagado = coti && (coti.remaining_paid || coti.status === 'Pagado (Efectivo)');
+              const anticipo = coti && (coti.advance_paid || coti.status?.includes('Anticipo Pagado'));
 
-                    if (is2daReq) {
-                      return (
-                        <div style={{ background: '#fff7ed', color: '#c2410c', border: '1.5px solid #ea580c', padding: '6px 8px', borderRadius: '8px', fontSize: '0.72rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px', boxShadow: '0 2px 6px rgba(234,88,12,0.15)' }}>
-                          <AlertTriangle size={14} color="#ea580c" />
-                          <span>2DA VISITA SOLICITADA</span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-                  {tarea.isBatch ? (
-                    <div style={{ background: '#e0f2fe', color: '#0284c7', padding: '6px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '10px', border: '1px solid #7dd3fc', width: '100%' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <span style={{ fontSize: '14px' }}>📦</span> LISTADO MÚLTIPLE
-                      </div>
-                      <div style={{ fontSize: '0.7rem', color: '#0369a1' }}>
-                        {tarea.batchProgressText}
-                      </div>
+              return (
+                <div key={tarea.dbId} className="card-wrapper">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className={`ttc-card ${esSos ? 'is-sos' : ''} ${tarea.estado === 'done' ? 'is-done' : ''}`}
+                    onClick={() => abrirModal(tarea)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModal(tarea); } }}
+                  >
+                    {/* Hora programada y día (color según la columna) */}
+                    <div className={`ttc-hora ${tonoHora}`}>
+                      <strong>{horaNum}</strong>
+                      {sufijo.length > 0 && <small>{sufijo.join(' ')}</small>}
+                      <span>{fecha ? (tarea.isOverdue ? `Atrasado · ${diaCorto(fecha)}` : diaCorto(fecha)) : 'Sin programar'}</span>
                     </div>
-                  ) : (
-                    (() => {
-                      const loteMatch = tarea.descripcion ? tarea.descripcion.match(/\[LOTE-[A-Z0-9]+\] \((\d+)\/(\d+)\)/) : null;
-                      if (loteMatch && loteMatch[2] !== '1') {
-                        return (
-                          <div style={{ background: '#e0f2fe', color: '#0284c7', padding: '4px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '10px', border: '1px solid #7dd3fc', width: 'fit-content' }}>
-                            <span style={{ fontSize: '12px' }}>📦</span> LISTADO MULTIPLE: {loteMatch[0]}
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()
-                  )}
-                  <div style={{ fontSize: '0.7rem', color: '#777', textAlign: 'left', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <div><strong>Solicitado:</strong> {tarea.fechaSolicitud}</div>
-                    {!tarea.isBatch && <div><strong>Solucionado:</strong> {tarea.fechaSolucion}</div>}
-                  </div>
-                    <div className="card-status-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {tarea.estado === 'done' ? (
-                        <div className="status-pill-done">
-                          <CheckCircle2 size={12} /> <span>Finalizado</span>
+
+                    <div className="ttc-cuerpo">
+                      <div className="ttc-cabecera">
+                        <div className="ttc-foto">
+                          {tarea.fotoFachada ? <img src={tarea.fotoFachada} alt="" /> : <span>{nombre.charAt(0)}</span>}
+                        </div>
+                        <div className="ttc-titulo">
+                          <h4>{nombre}</h4>
+                          {direccion && <p><MapPin size={12} /> {direccion}</p>}
+                        </div>
+                        {!tarea.isBatch && <span className="ttc-folio">#{tarea.dbId}</span>}
+                      </div>
+
+                      <div className="ttc-chips">
+                        {esSos && tarea.estado !== 'sos' && <span className="ttc-chip rojo"><AlertTriangle size={12} /> SOS</span>}
+                        <span className={`ttc-chip ${info.tono}`}>
+                          {tarea.estado === 'sos' && <AlertTriangle size={12} />}
+                          {tarea.estado === 'done' && <CheckCircle2 size={12} />}
+                          {info.texto}
+                        </span>
+                        {is2daReq && <span className="ttc-chip naranja"><AlertTriangle size={12} /> 2da visita solicitada</span>}
+                        {tarea.isFromNetwork && <span className="ttc-chip morado">Red</span>}
+                        {loteMatch && loteMatch[2] !== '1' && <span className="ttc-chip azul">📦 Lote {loteMatch[1]}/{loteMatch[2]}</span>}
+                      </div>
+
+                      {tarea.isBatch ? (
+                        <div className="ttc-lote">
+                          <span>📦 {tarea.batchTasks?.length || ''} trabajos en lote</span>
+                          <small>{tarea.batchProgressText}</small>
                         </div>
                       ) : (
-                        <span className={`priority-tag ${tarea.prioridad.toLowerCase()}`}>
-                          {tarea.prioridad.toUpperCase()}
-                        </span>
+                        <p className="ttc-tarea">{tarea.titulo}</p>
                       )}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {(() => {
-                        const coti = buscarCotizacionTarea(tarea);
-                        if (!coti) return null;
-                        const isCash = coti.cash_requested || coti.payment_scheme === 'cash' || String(coti.status || '').toLowerCase().includes('efectivo') || String(coti.status || '').toLowerCase().includes('anticipo pagado');
-                        if (!isCash) return null;
-                        const isPaid = coti.remaining_paid || coti.status === 'Pagado (Efectivo)';
-                        const isAdvance = coti.advance_paid || coti.status?.includes('Anticipo Pagado');
-                        return (
-                          <span style={{ 
-                            background: isPaid ? '#10b981' : (isAdvance ? '#059669' : '#d97706'), 
-                            color: 'white', 
-                            padding: '3px 8px', 
-                            borderRadius: '6px', 
-                            fontSize: '0.68rem', 
-                            fontWeight: '800',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '3px'
-                          }} title="Servicio solicitado para pagar en efectivo">
-                            💵 {isPaid ? 'Efectivo' : (isAdvance ? 'Anticipo 60%' : 'Pago Efectivo')}
-                          </span>
-                        );
-                      })()}
-                      {(() => {
-                        const coti = buscarCotizacionTarea(tarea);
-                        if (!coti) return null;
-                        const badgeText = coti.created_by_role === 'Admin' ? 'CA' : 'CT';
-                        const bgColor = coti.created_by_role === 'Admin' ? '#1b8a5a' : '#333';
-                        return (
-                          <span style={{ background: bgColor, color: 'white', padding: '3px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 'bold' }} title={coti.created_by_role === 'Admin' ? 'Cotización realizada por el Admin' : 'Cotización realizada por el Técnico'}>
-                            {badgeText}
-                          </span>
-                        );
-                      })()}
+
+                      <div className="ttc-persona">
+                        <span className={`ttc-persona-avatar ${persona ? '' : 'vacio'}`}>{persona ? persona.charAt(0) : <UserCircle size={15} />}</span>
+                        <span>{persona || <small>Sin técnico asignado</small>}</span>
+                      </div>
+
+                      <div className="ttc-pie">
+                        <span className="ttc-fecha-sol">
+                          Solicitado {tarea.fechaSolicitud}
+                          {tarea.estado === 'done' && tarea.fechaSolucion !== 'Pendiente' ? ` · Resuelto ${tarea.fechaSolucion}` : ''}
+                        </span>
+                        <span className="ttc-badges">
+                          {esEfectivo && (
+                            <span className="ttc-badge" style={{ background: efectivoPagado ? '#10b981' : (anticipo ? '#059669' : '#d97706') }} title="Servicio solicitado para pagar en efectivo">
+                              💵 {efectivoPagado ? 'Efectivo' : (anticipo ? 'Anticipo 60%' : 'Pago efectivo')}
+                            </span>
+                          )}
+                          {coti && (
+                            <span
+                              className="ttc-badge"
+                              style={{ background: coti.created_by_role === 'Admin' ? '#1b8a5a' : '#334155' }}
+                              title={coti.created_by_role === 'Admin' ? 'Cotización realizada por el Admin' : 'Cotización realizada por el Técnico'}
+                            >
+                              {coti.created_by_role === 'Admin' ? 'CA' : 'CT'}
+                            </span>
+                          )}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </button>
-              </div>
-            ))
+                </div>
+              );
+            })
           ) : (
             <div className="empty-column-message">
               <p>No hay servicios en {titulo.toLowerCase()}</p>
@@ -748,7 +865,6 @@ const VistaServiciosAdmin = () => {
       </div>
     );
   };
-
   return (
     <div className="scrum-container admin-theme sv-glass-page">
       <Header activeModule="servicios" titulo="SERVICIOS" />
@@ -849,7 +965,11 @@ const VistaServiciosAdmin = () => {
               className="scrum-board-layout" 
               style={{ 
                 display: 'grid',
-                gridTemplateColumns: seccionTab === 'activos' ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
+                gridTemplateColumns: columnasMostrar
+                  .map(col => estaColapsada(col.id) ? '64px' : 'minmax(260px, 1fr)')
+                  .join(' '),
+                overflowX: 'auto',
+                paddingBottom: '8px',
                 gap: '14px',
                 width: '100%',
                 alignItems: 'start'

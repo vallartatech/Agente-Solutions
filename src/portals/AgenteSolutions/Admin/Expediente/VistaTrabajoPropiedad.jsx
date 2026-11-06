@@ -11,6 +11,8 @@ import { Chip, FlujoBarra, ListaCotizaciones, LineaTiempo, VisorFotos } from './
 import { etiquetaEstado, etiquetaTipo, fechaHora, construirHistorial } from './flujoTrabajo';
 import { AccesoQRAdmin } from '../../Shared/AccesoQR';
 import ModalCotizacion from './ModalCotizacion';
+import { useAuth } from '../../../../context/AuthContext';
+import { esRed } from '../../../../utils/entorno';
 import '../../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
 
 const TABS = [
@@ -37,6 +39,9 @@ const Contacto = ({ nombre, rol, telefono, email, foto, Icono }) => (
 
 const VistaTrabajoPropiedad = () => {
   const { id, uid } = useParams();
+  // La red ve este mismo detalle, sin el QR de acceso (herramienta interna)
+  const { user } = useAuth();
+  const enRed = esRed(user);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = TABS.some((t) => t.key === searchParams.get('tab')) ? searchParams.get('tab') : 'datos';
@@ -161,7 +166,7 @@ const VistaTrabajoPropiedad = () => {
             </div>
 
             <div className="xp-columna">
-              <AccesoQRAdmin tipo={trabajo.kind === 'trabajo' ? 'work_order' : 'servicio'} id={trabajo.id} />
+              {!enRed && <AccesoQRAdmin tipo={trabajo.kind === 'trabajo' ? 'work_order' : 'servicio'} id={trabajo.id} />}
 
               <section className="xp-card xp-panel">
                 <h3 className="xp-panel-titulo"><MapPin size={18} /> Lugar</h3>

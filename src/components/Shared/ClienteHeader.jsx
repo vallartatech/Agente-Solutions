@@ -13,7 +13,8 @@ import {
   Receipt, 
   Wrench,
   Globe,
-  ClipboardList
+  ClipboardList,
+  HardHat
 } from 'lucide-react';
 import logo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
@@ -117,6 +118,7 @@ const ClienteHeader = ({ activeModule }) => {
   const isLevantamientoActive = activeModule === 'levantamientos' || currentPath.includes('/levantamientos');
   // Reportes, Cotizaciones y Levantamientos comparten un botón; dentro se cambia con el selector de la vista
   const unificarVistas = usaSelectorRed(user);
+  const esClienteParticular = Number(user?.role_id) === 4;
 
   return (
     <>
@@ -144,25 +146,28 @@ const ClienteHeader = ({ activeModule }) => {
             <span className="vcp-nav-text">INICIO</span>
           </button>
 
-          <button
-            type="button"
-            className={`vcp-nav-btn ${isUsuariosActive ? 'active' : ''}`}
-            onClick={() => navigate('/usuarios')}
-            title="Usuarios"
-          >
-            <Users size={18} className="vcp-nav-icon" />
-            <span className="vcp-nav-text">USUARIOS</span>
-          </button>
+          {/* El cliente particular no administra usuarios: tiene "Mis técnicos" en el menú del perfil */}
+          {!esClienteParticular && (
+            <button
+              type="button"
+              className={`vcp-nav-btn ${isUsuariosActive ? 'active' : ''}`}
+              onClick={() => navigate('/usuarios')}
+              title="Usuarios"
+            >
+              <Users size={18} className="vcp-nav-icon" />
+              <span className="vcp-nav-text">USUARIOS</span>
+            </button>
+          )}
 
           {unificarVistas ? (
             <button
               type="button"
-              className={`vcp-nav-btn ${isReportesActive || isCotizacionesActive || isLevantamientoActive ? 'active' : ''}`}
-              onClick={() => navigate('/reportes-globales')}
-              title="Reportes, cotización y levantamiento"
+              className={`vcp-nav-btn ${isReportesActive || isCotizacionesActive || isLevantamientoActive || currentPath.startsWith('/propiedades') ? 'active' : ''}`}
+              onClick={() => navigate('/propiedades')}
+              title="Detalles de propiedad: propiedades, reportes, cotizaciones y levantamientos"
             >
               <ClipboardList size={18} className="vcp-nav-icon" />
-              <span className="vcp-nav-text">REPORTES, COTIZACIÓN Y LEVANTAMIENTO</span>
+              <span className="vcp-nav-text">DETALLES DE PROPIEDAD</span>
             </button>
           ) : (
             <>
@@ -291,6 +296,18 @@ const ClienteHeader = ({ activeModule }) => {
             >
               <User size={16} /> Mi Perfil
             </button>
+            {esClienteParticular && (
+              <button
+                type="button"
+                className="vcp-dropdown-item"
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  navigate('/mis-tecnicos');
+                }}
+              >
+                <HardHat size={16} /> Mis técnicos
+              </button>
+            )}
             <button
               type="button"
               className="vcp-dropdown-item logout"

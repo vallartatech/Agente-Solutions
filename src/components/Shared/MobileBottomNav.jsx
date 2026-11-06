@@ -326,17 +326,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           <Briefcase size={22} className="vcp-mobile-nav-icon" />
           <span className="vcp-mobile-nav-text">Trabajos</span>
         </button>
-
-        <button 
-          type="button" 
-          className={`vcp-mobile-nav-item ${isUsuariosActive ? 'active' : ''}`} 
-          onClick={() => handleSelectTab('usuarios')} 
-          title="Mis Clientes"
-          aria-label="Mis Clientes"
-        >
-          <Users size={22} className="vcp-mobile-nav-icon" />
-          <span className="vcp-mobile-nav-text">Clientes</span>
-        </button>
+        {/* "Mis clientes" vive en el menú del perfil (avatar) */}
       </nav>
     );
   }
@@ -471,6 +461,8 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         </button>
       )}
 
+      {/* El cliente particular (rol 4) no administra usuarios: tiene "Mis técnicos" en el menú del perfil */}
+      {role !== 4 && (
       <button
         type="button"
         className={`vcp-mobile-nav-item ${isUsuariosActive ? 'active' : ''}`}
@@ -480,23 +472,24 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           } else {
             navigate('/usuarios');
           }
-        }} 
+        }}
         title="Usuarios"
         aria-label="Usuarios"
       >
         <Users size={22} className="vcp-mobile-nav-icon" />
           <span className="vcp-mobile-nav-text">Usuarios</span>
       </button>
+      )}
 
       <button 
         type="button" 
-        className={`vcp-mobile-nav-item ${isReportesActive || (unificarVistas && (isCotizacionesActive || isLevantamientosActive)) ? 'active' : ''}`}
-        onClick={() => navigate('/reportes-globales')}
-        title={unificarVistas ? 'Reportes, cotización y levantamiento' : 'Reportes'}
-        aria-label={unificarVistas ? 'Reportes, cotización y levantamiento' : 'Reportes'}
+        className={`vcp-mobile-nav-item ${isReportesActive || (unificarVistas && (isCotizacionesActive || isLevantamientosActive || isPropiedadesActive)) ? 'active' : ''}`}
+        onClick={() => navigate(unificarVistas ? '/propiedades' : '/reportes-globales')}
+        title={unificarVistas ? 'Detalles de propiedad' : 'Reportes'}
+        aria-label={unificarVistas ? 'Detalles de propiedad' : 'Reportes'}
       >
         <FileText size={22} className="vcp-mobile-nav-icon" />
-          <span className="vcp-mobile-nav-text">Reportes</span>
+          <span className="vcp-mobile-nav-text">{unificarVistas ? 'Detalles' : 'Reportes'}</span>
       </button>
 
       {!unificarVistas && (

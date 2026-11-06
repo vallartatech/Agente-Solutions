@@ -9,6 +9,9 @@ import CasaLoader from '../../../components/Shared/CasaLoader';
 import useExpediente from './Expediente/useExpediente';
 import ModalNuevaSolicitud from './Expediente/ModalNuevaSolicitud';
 import MantenimientosDePropiedad from './Mantenimiento/MantenimientosDePropiedad';
+import ModalServicioAutonomo from '../../AgenteMarket/Admin/ModalServicioAutonomo';
+import { useAuth } from '../../../context/AuthContext';
+import { esRed } from '../../../utils/entorno';
 import { TrabajoCard, CarpetasCotizaciones, LineaTiempo } from './Expediente/ExpedienteUI';
 import ModalCotizacion from './Expediente/ModalCotizacion';
 import { esActivo, esFinalizado, esCancelado, etiquetaTipo, nombreTecnicos } from './Expediente/flujoTrabajo';
@@ -49,6 +52,9 @@ const VistaDetallePropiedad = () => {
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [filtroAbierto, setFiltroAbierto] = useState(false);
   const [modalSolicitud, setModalSolicitud] = useState(false);
+  // La red (roles 4-8) usa este mismo detalle
+  const { user } = useAuth();
+  const enRed = esRed(user);
   const [versionEquipos, setVersionEquipos] = useState(0);
   // Cotización abierta en el modal: { cotizacion, trabajo }
   const [cotAbierta, setCotAbierta] = useState(null);
@@ -266,7 +272,8 @@ const VistaDetallePropiedad = () => {
                 </div>
               </section>
 
-              <MantenimientosDePropiedad key={versionEquipos} propiedadId={id} />
+              {/* Mantenimiento por periodo es de Agente Solutions (el servidor lo niega a la red) */}
+              {!enRed && <MantenimientosDePropiedad key={versionEquipos} propiedadId={id} />}
             </div>
           </>
         )}
@@ -303,7 +310,16 @@ const VistaDetallePropiedad = () => {
         />
       )}
 
-      {modalSolicitud && (
+      {/* La red pide servicio con su propio flujo (publicación en la red), no con el de técnicos internos */}
+      {modalSolicitud && enRed && (
+        <ModalServicioAutonomo
+          propertyId={id}
+          onClose={() => setModalSolicitud(false)}
+          onSuccess={() => recargar(true)}
+        />
+      )}
+
+      {modalSolicitud && !enRed && (
         <ModalNuevaSolicitud
           propiedad={{ ...propiedad, encargado }}
           onClose={() => setModalSolicitud(false)}

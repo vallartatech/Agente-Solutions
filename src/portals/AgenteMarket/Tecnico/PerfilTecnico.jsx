@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { 
   Camera, 
@@ -14,19 +13,11 @@ import {
   Trash2,
   Sparkles,
   MapPin,
-  CalendarDays,
-  LogOut,
   ShieldCheck,
-  Award,
-  Home
+  Award
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
-import logo from '../../../assets/Logo4.png';
-import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
-import ModalCalendarioSolutions from '../../AgenteSolutions/Shared/ModalCalendarioSolutions';
-import NotificationBell from '../../../components/Shared/NotificationBell';
-import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import Header from '../../../components/Shared/Header';
 import '../../../styles/Shared/Profile.css';
 import { mostrarAviso } from '../../../utils/dialogos';
@@ -52,7 +43,6 @@ const DEFAULT_COVER = 'https://images.unsplash.com/photo-1581092160607-ee22621dd
 const PerfilTecnico = () => {
   const { user, loginGlobal, logoutGlobal } = useAuth();
   const navigate = useNavigate();
-  const isRol2 = Number(user?.role_id) === 2;
 
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
@@ -67,20 +57,6 @@ const PerfilTecnico = () => {
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const [showModalCalendario, setShowModalCalendario] = useState(false);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  // Cerrar dropdown al hacer clic fuera
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setProfileDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // Cargar especialidades del técnico desde el backend
   useEffect(() => {
@@ -283,198 +259,8 @@ const PerfilTecnico = () => {
 
   return (
     <div className="profile-liquid-root">
-      {/* Técnico oficial: el mismo encabezado que el resto de su portal. Red (6/8): barra propia del perfil */}
-      {isRol2 ? <Header activeModule="perfil" /> : (
-      <header className="profile-liquid-topbar" ref={dropdownRef}>
-        <div className="profile-topbar-left">
-          <img 
-            src={logo} 
-            alt="Agente Solutions" 
-            className="profile-brand-logo"
-            onClick={() => navigate(isRol2 ? '/VistaTecnico' : '/mercado-trabajos')} 
-            title={isRol2 ? "Ir a Inicio" : "Ir al Mercado de Trabajos"}
-          />
-        </div>
-
-        {/* Center Nav Links: TÉCNICO NAVIGATION */}
-        <nav className="vcp-header-nav profile-topbar-nav">
-          {isRol2 ? (
-            <>
-              <button 
-                type="button" 
-                className="vcp-nav-btn" 
-                onClick={() => navigate('/VistaTecnico')}
-                title="Inicio"
-              >
-                INICIO
-              </button>
-              <button 
-                type="button" 
-                className="vcp-nav-btn" 
-                onClick={() => navigate('/trabajos-tecnico')}
-                title="Trabajos"
-              >
-                TRABAJOS
-              </button>
-              <button 
-                type="button" 
-                className="vcp-nav-btn" 
-                onClick={() => navigate('/trabajos-asignados')}
-                title="Levantamientos"
-              >
-                LEVANTAMIENTOS
-              </button>
-              <button 
-                type="button" 
-                className="vcp-nav-btn" 
-                onClick={() => navigate('/vista-cotizaciones')}
-                title="Cotizaciones"
-              >
-                COTIZACIONES
-              </button>
-              <button 
-                type="button" 
-                className="vcp-nav-btn active" 
-                onClick={() => navigate('/mi-perfil')}
-                title="Mi Perfil"
-              >
-                MI PERFIL
-              </button>
-            </>
-          ) : (
-            <>
-              <button 
-                type="button" 
-                className="vcp-nav-btn" 
-                onClick={() => navigate('/mercado-trabajos', { state: { view: 'mercado' } })}
-              >
-                MERCADO (SOLICITUDES)
-              </button>
-              <button 
-                type="button" 
-                className="vcp-nav-btn" 
-                onClick={() => navigate('/mercado-trabajos', { state: { view: 'tablero' } })}
-              >
-                TRABAJOS ACEPTADOS
-              </button>
-              <button 
-                type="button" 
-                className="vcp-nav-btn" 
-                onClick={() => navigate('/mercado-trabajos', { state: { view: 'usuarios' } })}
-              >
-                MIS CLIENTES
-              </button>
-              <button 
-                type="button" 
-                className="vcp-nav-btn active" 
-                onClick={() => navigate('/mi-perfil')}
-              >
-                MI PERFIL
-              </button>
-            </>
-          )}
-        </nav>
-
-        {/* Right Actions & User Profile */}
-        <div className="vcp-header-right profile-topbar-right">
-          <button 
-            type="button"
-            className="profile-change-cover-header-btn" 
-            onClick={() => openPhotoMenu('cover_picture')}
-            disabled={isUploading}
-            title="Cambiar imagen de portada"
-          >
-            <Camera size={14} />
-            <span>{isUploading ? 'SUBIENDO...' : 'CAMBIAR PORTADA'}</span>
-          </button>
-
-          <div className="vcp-header-actions-group">
-            <button 
-              type="button"
-              className="vcp-header-icon-btn profile-header-icon-btn" 
-              title="Abrir Calendario y Citas"
-              onClick={() => setShowModalCalendario(true)}
-            >
-              <CalendarDays size={18} strokeWidth={2.2} />
-            </button>
-
-            <NotificationBell triggerClassName="vcp-header-icon-btn" />
-          </div>
-
-          <button 
-            type="button"
-            className="vcp-avatar-btn profile-avatar-btn" 
-            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            title="Opciones de sesión"
-          >
-            {user?.profile_picture ? (
-              <img src={user.profile_picture} alt="Avatar" className="vcp-avatar-img profile-avatar-img" />
-            ) : (
-              <div className="vcp-avatar-initial profile-avatar-initial">
-                {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : 'T')}
-              </div>
-            )}
-          </button>
-        </div>
-      </header>
-      )}
-
-      {/* ── PORTAL GLOBAL DE PERFIL FLOTANTE ── */}
-      {profileDropdownOpen && createPortal(
-        <div className="vcp-profile-portal-root">
-          <div 
-            className="vcp-profile-backdrop" 
-            onClick={() => setProfileDropdownOpen(false)}
-          />
-          <div 
-            className="profile-header-dropdown vcp-profile-dropdown"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="vcp-dropdown-user-header">
-              <div className="vcp-dropdown-role-pill">
-                <Shield size={12} className="vcp-dropdown-role-icon" />
-                <span>{obtenerNombreRol(user?.role_id)}</span>
-              </div>
-              <div className="vcp-dropdown-user-name">{nombreCompleto}</div>
-              {user?.email && (
-                <div className="vcp-dropdown-user-email">{user.email}</div>
-              )}
-            </div>
-
-            <div className="vcp-dropdown-divider" />
-
-            <button 
-              type="button"
-              className="profile-dropdown-item vcp-dropdown-item" 
-              onClick={() => { 
-                setProfileDropdownOpen(false); 
-                navigate(isRol2 ? '/VistaTecnico' : '/mercado-trabajos'); 
-              }}
-            >
-              <Home size={16} /> Ir a Inicio
-            </button>
-            <button 
-              type="button"
-              className="profile-dropdown-item vcp-dropdown-item" 
-              onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
-            >
-              <User size={16} /> Mi Perfil
-            </button>
-            <button 
-              type="button"
-              className="profile-dropdown-item logout vcp-dropdown-item" 
-              onClick={() => { 
-                setProfileDropdownOpen(false); 
-                if (logoutGlobal) logoutGlobal(); 
-                navigate('/', { replace: true }); 
-              }}
-            >
-              <LogOut size={16} /> Cerrar Sesión
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Mismo encabezado que el resto del portal del técnico (incluye calendario, menú de perfil y barra móvil) */}
+      <Header activeModule="perfil" />
 
       {/* ── MAIN DASHBOARD VIEWPORT ── */}
       <main className="profile-dashboard-viewport">
@@ -757,21 +543,6 @@ const PerfilTecnico = () => {
         onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} 
       />
 
-      {/* Modal de Calendario: 0-3 Solutions vs 4+ Market (igual que los headers) */}
-      {Number(user?.role_id) <= 3 ? (
-        <ModalCalendarioSolutions
-          isOpen={showModalCalendario}
-          onClose={() => setShowModalCalendario(false)}
-        />
-      ) : (
-        <ModalCalendarioCliente
-          isOpen={showModalCalendario}
-          onClose={() => setShowModalCalendario(false)}
-        />
-      )}
-
-      {/* Responsive Bottom Navigation (Only Icons); el encabezado del técnico oficial ya la incluye */}
-      {!isRol2 && <MobileBottomNav />}
 
     </div>
   );

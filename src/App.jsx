@@ -62,10 +62,8 @@ import VistaGestionAutonomos from "./portals/AgenteSolutions/Admin/VistaGestionA
 import VistaSalaEsperaTecnicos from "./portals/AgenteSolutions/Admin/VistaSalaEsperaTecnicos";
 import VistaCodigoAutonomo from "./portals/AgenteMarket/Admin/VistaCodigoAutonomo";
 import VistaApoyoAutonomo from "./portals/AgenteMarket/Admin/VistaApoyoAutonomo";
-import VistaPropiedadesAutonomo from "./portals/AgenteMarket/Admin/VistaPropiedades";
-import VistaDetallePropiedadAutonomo from "./portals/AgenteMarket/Admin/DetallePropiedad";
 import VistaRedAutonomo from "./portals/AgenteMarket/Admin/VistaRedAutonomo";
-import FavoritosAutonomo from "./portals/AgenteMarket/Admin/FavoritosAutonomo";
+import MisTecnicos from "./portals/AgenteMarket/Cliente/MisTecnicos";
 import PerfilTecnicoRed from "./portals/AgenteMarket/Admin/PerfilTecnicoRed";
 import VistaInicioMarket from "./portals/AgenteMarket/Admin/VistaInicioMarket";
 import CalendarioCliente from "./portals/AgenteMarket/Cliente/CalendarioCliente";
@@ -144,25 +142,17 @@ axios.defaults.headers.common["Accept"] = "application/json";
 // "Subiendo… 45%" en cualquier pantalla que suba fotos, videos o archivos
 instalarProgresoSubida();
 
-const PropiedadesWrapper = () => {
-  const { user } = useAuth();
-  const roleId = Number(user?.role_id);
-  if (roleId === 0 || roleId === 1) return <VistaPropiedadesAdmin />;
-  return <VistaPropiedadesAutonomo />;
-};
+// Interno y red usan la misma vista de propiedades (diseño de vidrio); dentro se ajusta por rol
+const PropiedadesWrapper = () => <VistaPropiedadesAdmin />;
 
-const DetallePropiedadWrapper = () => {
-  const { user } = useAuth();
-  const roleId = Number(user?.role_id);
-  if (roleId === 0 || roleId === 1) return <VistaDetallePropiedadAdmin />;
-  return <VistaDetallePropiedadAutonomo />;
-};
+// Interno y red usan el mismo expediente de la propiedad; dentro se ocultan las piezas internas
+const DetallePropiedadWrapper = () => <VistaDetallePropiedadAdmin />;
 
-// Detalle de un trabajo dentro del expediente de la propiedad: solo Root (0) y Admin (1)
+// Detalle de un trabajo dentro del expediente de la propiedad: Root (0), Admin (1) y la red
 const TrabajoPropiedadWrapper = () => {
   const { user } = useAuth();
   const roleId = Number(user?.role_id);
-  if (roleId === 0 || roleId === 1) return <VistaTrabajoPropiedad />;
+  if (roleId === 0 || roleId === 1 || esRed(user)) return <VistaTrabajoPropiedad />;
   return <Navigate to="/propiedades" replace />;
 };
 
@@ -301,7 +291,8 @@ const AppRoutes = () => {
       <Route path="/red-autonomos" element={<VistaRedAutonomo />} />
       <Route path="/calendario-cliente" element={<CalendarioWrapper />} />
       <Route path="/calendario" element={<CalendarioWrapper />} />
-      <Route path="/mis-favoritos" element={<FavoritosAutonomo />} />
+      <Route path="/mis-tecnicos" element={<MisTecnicos />} />
+      <Route path="/mis-favoritos" element={<Navigate to="/mis-tecnicos" replace />} />
       <Route path="/tecnico-perfil/:id" element={<PerfilTecnicoRed />} />
       <Route path="/mercado-trabajos" element={<MercadoTrabajos />} />
       <Route path="/mercado_trabajos" element={<MercadoTrabajos />} />
