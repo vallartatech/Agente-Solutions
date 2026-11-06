@@ -3329,7 +3329,7 @@
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  z-index: 1100;
+  z-index: 1000005; /* encima del encabezado (999999) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5056,7 +5056,7 @@
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  z-index: 1100;
+  z-index: 1000005; /* encima del encabezado (999999) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5955,7 +5955,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3500;
+  z-index: 1000010; /* encima de los demás modales */
   padding: 20px;
   animation: overlayFadeIn 0.2s ease-out;
 }

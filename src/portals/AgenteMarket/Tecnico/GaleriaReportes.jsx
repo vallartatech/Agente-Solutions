@@ -636,7 +636,7 @@ const GaleriaReportes = () => {
             style={{
               position: 'fixed',
               inset: 0,
-              zIndex: 99999,
+              zIndex: 1000005,
               background: 'rgba(0,0,0,0.85)',
               backdropFilter: 'blur(6px)',
               display: 'flex',

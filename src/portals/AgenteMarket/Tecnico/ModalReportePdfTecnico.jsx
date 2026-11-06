@@ -523,7 +523,7 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], bo
             width: '100vw',
             height: '100vh',
             background: 'rgba(0, 0, 0, 0.85)',
-            zIndex: 100005,
+            zIndex: 1000005,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

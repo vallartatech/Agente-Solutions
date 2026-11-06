@@ -662,7 +662,7 @@
 .ppm-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100000;
+  z-index: 1000005; /* encima del encabezado (999999) */
   display: flex;
   align-items: center;
   justify-content: center;

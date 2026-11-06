@@ -175,7 +175,7 @@
   align-items: center;
   padding: 20px;
   box-sizing: border-box;
-  z-index: 999999 !important;
+  z-index: 1000005 !important; /* encima del encabezado (999999) */
 }
 
 /* Caja del Modal */

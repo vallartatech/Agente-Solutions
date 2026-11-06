@@ -542,7 +542,7 @@ body, html { margin: 0; padding: 0; }
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  z-index: 1000005; /* encima del encabezado (999999) */
   backdrop-filter: blur(4px);
 }
 

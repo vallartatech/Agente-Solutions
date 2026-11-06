@@ -1170,7 +1170,7 @@ html, body {
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  z-index: 10000;
+  z-index: 1000005; /* encima del encabezado (999999) */
   display: flex;
   align-items: center;
   justify-content: center;
