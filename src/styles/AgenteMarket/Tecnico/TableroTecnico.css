@@ -3465,3 +3465,30 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
 .jm-grid-cotizar .jm-textarea { min-height: 80px; }
 .jm-modal .mercado-premium-header { padding-top: 14px !important; padding-bottom: 14px !important; }
 .jm-modal .mercado-premium-footer { padding-top: 12px !important; padding-bottom: 12px !important; }
+
+/* ── MIS CLIENTES: favorito y bloqueo que marca el técnico ── */
+.mercado-container.mercado-usuarios-mode .mercado-user-card-footer { flex-wrap: wrap; }
+.mercado-container.mercado-usuarios-mode .mercado-user-role-badge.favorito {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #b45309;
+}
+.mercado-container.mercado-usuarios-mode .mercado-user-role-badge.bloqueado {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+.mercado-container.mercado-usuarios-mode .mercado-user-btn-action.favorito-activo {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #b45309;
+}
+.mercado-container.mercado-usuarios-mode .mercado-user-btn-action.bloquear { color: #dc2626; }
+.mercado-container.mercado-usuarios-mode .mercado-user-btn-action.bloquear:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff;
+}
+.mercado-container.mercado-usuarios-mode .mercado-user-btn-action:disabled { opacity: 0.6; cursor: wait; }
+.mercado-container.mercado-usuarios-mode .mercado-user-card.is-bloqueado { opacity: 0.78; }
+.mercado-container.mercado-usuarios-mode .mercado-user-card.is-bloqueado .mercado-user-avatar { filter: grayscale(1); }

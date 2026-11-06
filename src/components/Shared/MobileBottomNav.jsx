@@ -326,17 +326,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           <Briefcase size={22} className="vcp-mobile-nav-icon" />
           <span className="vcp-mobile-nav-text">Trabajos</span>
         </button>
-
-        <button 
-          type="button" 
-          className={`vcp-mobile-nav-item ${isUsuariosActive ? 'active' : ''}`} 
-          onClick={() => handleSelectTab('usuarios')} 
-          title="Mis Clientes"
-          aria-label="Mis Clientes"
-        >
-          <Users size={22} className="vcp-mobile-nav-icon" />
-          <span className="vcp-mobile-nav-text">Clientes</span>
-        </button>
+        {/* "Mis clientes" vive en el menú del perfil (avatar) */}
       </nav>
     );
   }

@@ -13,7 +13,8 @@ import {
   RotateCw, AlertTriangle, Users, UserPlus, PhoneCall, Mail, Star, Award, History,
   Home, Car, Navigation, Wrench, Camera, Plus, Trash2, Check, ArrowRight, Play, Eye, Sparkles, Lock, Zap,
   Sun, Moon, Globe, SlidersHorizontal, ChevronDown, ChevronUp, Maximize, Minimize,
-  Snowflake, Droplets, Paintbrush, KeyRound, Hammer, Leaf, Siren, ClipboardList, FolderOpen, BarChart3, Bell
+  Snowflake, Droplets, Paintbrush, KeyRound, Hammer, Leaf, Siren, ClipboardList, FolderOpen, BarChart3, Bell,
+  Ban, Undo2
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
@@ -571,6 +572,9 @@ const MercadoTrabajos = () => {
   }, [userFiltroAbierto]);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedClientForHistory, setSelectedClientForHistory] = useState(null);
+  // Mis clientes: favoritos y bloqueos que marca el técnico (client_user_id -> 'favorito' | 'bloqueado')
+  const [marcasClientes, setMarcasClientes] = useState({});
+  const [guardandoMarca, setGuardandoMarca] = useState(null);
 
   const { user, logoutGlobal } = useAuth();
   const authUser = user;
@@ -870,6 +874,7 @@ const MercadoTrabajos = () => {
             cliente: clientName,
             client_name: clientName,
             client_phone: clientPhone,
+            client_user_id: order.client_user_id ?? null,
             lugar: order.property?.property_name || 'Lugar no especificado',
             property_name: order.property?.property_name || '',
             zona: coloniaTexto,
@@ -970,6 +975,7 @@ const MercadoTrabajos = () => {
                 calle: existing.calle || job.calle,
                 client_name: existing.client_name || job.client_name,
                 client_phone: existing.client_phone || job.client_phone,
+                client_user_id: existing.client_user_id || job.client_user_id || null,
                 scheduled_at: existing.scheduled_at || job.scheduled_at,
               });
             } else {
@@ -1981,18 +1987,7 @@ const MercadoTrabajos = () => {
         return j;
       }));
 
-      setSelectedBoardJob(prev => {
-        if (prev && prev.id === targetJob.id) {
-          return {
-            ...prev,
-            scheduled_at: savedDate,
-            scheduled_date: savedDate,
-            visit_notes: boardScheduleNotes,
-            visit_status: 'CONFIRMED'
-          };
-        }
-        return prev;
-      });
+      // selectedBoardJob se deriva de la lista de trabajos (ya actualizada arriba)
 
       if (activeNavJob && activeNavJob.id === targetJob.id) {
         setActiveNavJob(prev => ({
@@ -2044,6 +2039,58 @@ const MercadoTrabajos = () => {
     }
   };
 
+  // Marcas de "Mis clientes" (las guarda el servidor; el bloqueo se hace cumplir allá)
+  useEffect(() => {
+    if (mainView !== 'usuarios') return;
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/mis-clientes`)
+      .then(r => {
+        const mapa = {};
+        (r.data?.relaciones || []).forEach(rel => { mapa[rel.client_user_id] = rel.estado; });
+        setMarcasClientes(mapa);
+      })
+      .catch(() => {});
+  }, [mainView]);
+
+  const marcarCliente = async (client, estado) => {
+    if (!client.clientUserId) return;
+    if (estado === 'bloqueado') {
+      const r = await Swal.fire({
+        icon: 'warning',
+        title: '¿Bloquear a este cliente?',
+        text: `Ya no verás los trabajos que ${client.nombre} publique en la red y no podrá enviarte mensajes. Puedes desbloquearlo cuando quieras.`,
+        showCancelButton: true,
+        confirmButtonText: 'Sí, bloquear',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc2626',
+        reverseButtons: true,
+        focusCancel: true,
+      });
+      if (!r.isConfirmed) return;
+    }
+    setGuardandoMarca(client.clientUserId);
+    try {
+      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/mis-clientes/${client.clientUserId}`, { estado });
+      setMarcasClientes(prev => {
+        const sig = { ...prev };
+        if (estado) sig[client.clientUserId] = estado; else delete sig[client.clientUserId];
+        return sig;
+      });
+    } catch (e) {
+      mostrarAviso(e.response?.data?.message || 'No se pudo guardar el cambio.', 'error');
+    } finally {
+      setGuardandoMarca(null);
+    }
+  };
+
+  // Solo la zona (colonia y ciudad): la dirección exacta del cliente es privada
+  const zonaPublica = (job) => {
+    const dir = job.full_address || job.calle || '';
+    const col = dir.search(/col(onia)?\.?\s/i);
+    if (col >= 0) return dir.slice(col);
+    const partes = dir.split(',').map(p => p.trim()).filter(Boolean);
+    return partes.length > 1 ? partes.slice(-2).join(', ') : (job.colonia || job.zona || 'Mérida, Yucatán');
+  };
+
   // Group accepted jobs by client to build the technician's actual client directory
   const myClientsDirectory = useMemo(() => {
     const map = new Map();
@@ -2051,7 +2098,7 @@ const MercadoTrabajos = () => {
     acceptedJobs.forEach(job => {
       const clientName = job.client_name || job.cliente || 'Cliente de la Red';
       const cleanPhone = (job.client_phone || '').replace(/\D/g, '');
-      const key = cleanPhone || clientName.toLowerCase().trim();
+      const key = job.client_user_id ? `u${job.client_user_id}` : (cleanPhone || clientName.toLowerCase().trim());
 
       const price = parseFloat(job.agreed_price || 0);
       const jobReviews = job.review ? [job.review] : [];
@@ -2062,23 +2109,20 @@ const MercadoTrabajos = () => {
           key,
           id: job.id,
           nombre: clientName,
-          telefono: job.client_phone || '',
-          correo: job.property?.client?.email || job.creator?.email || 'Registrado en la Red',
-          direccion: job.full_address || job.calle || job.zona || 'Mérida, Yucatán',
+          clientUserId: job.client_user_id || null,
+          // Sin teléfono, correo ni dirección exacta: solo la zona
+          zona: zonaPublica(job),
           avatar: job.property?.client?.profile_picture || null,
           trabajos: [job],
           trabajosCount: 1,
           totalFacturado: price,
           ultimoTrabajo: job,
           reviews: jobReviews,
-          // Se categoriza como favorito si tiene recurrencia o asignación preferente
-          esFavorito: Boolean(job.is_favorite || job.cotizaciones >= 2 || (job.id % 2 === 1)),
         });
       } else {
         existing.trabajos.push(job);
         existing.trabajosCount += 1;
         existing.totalFacturado += price;
-        existing.esFavorito = true; // Cliente recurrente
         if (job.review) {
           existing.reviews.push(job.review);
         }
@@ -2098,33 +2142,38 @@ const MercadoTrabajos = () => {
         ? (revs.reduce((sum, r) => sum + (Number(r.rating_time) || 5), 0) / revs.length)
         : 5.0;
 
+      const estado = client.clientUserId ? (marcasClientes[client.clientUserId] || null) : null;
       return {
         ...client,
+        estado,
+        esFavorito: estado === 'favorito',
+        bloqueado: estado === 'bloqueado',
         reviewsCount: revs.length,
         hasReviews,
         avgStars,
         avgTime
       };
-    });
-  }, [acceptedJobs]);
+    })
+      // Favoritos primero y bloqueados al final
+      .sort((a, b) => (a.esFavorito ? 0 : a.bloqueado ? 2 : 1) - (b.esFavorito ? 0 : b.bloqueado ? 2 : 1));
+  }, [acceptedJobs, marcasClientes]);
 
   const filteredMyClients = myClientsDirectory.filter(c => {
     if (userFilter === 'FAVORITOS' && !c.esFavorito) return false;
-    if (userFilter === 'HISTORIAL' && c.trabajosCount === 0) return false;
+    if (userFilter === 'BLOQUEADOS' && !c.bloqueado) return false;
 
     if (!userSearch.trim()) return true;
     const q = userSearch.toLowerCase();
     return (
       (c.nombre && c.nombre.toLowerCase().includes(q)) ||
-      (c.telefono && c.telefono.toLowerCase().includes(q)) ||
-      (c.correo && c.correo.toLowerCase().includes(q)) ||
-      (c.direccion && c.direccion.toLowerCase().includes(q)) ||
+      (c.zona && c.zona.toLowerCase().includes(q)) ||
       c.trabajos.some(t => (t.titulo && t.titulo.toLowerCase().includes(q)) || (t.descripcion && t.descripcion.toLowerCase().includes(q)))
     );
   });
 
   const totalClientesAtendidos = myClientsDirectory.length;
   const totalFavoritos = myClientsDirectory.filter(c => c.esFavorito).length;
+  const totalBloqueados = myClientsDirectory.filter(c => c.bloqueado).length;
   const totalServiciosRealizados = acceptedJobs.length;
   const totalFacturadoHistorico = myClientsDirectory.reduce((sum, c) => sum + c.totalFacturado, 0);
 
@@ -2861,7 +2910,7 @@ const MercadoTrabajos = () => {
                     <Users size={22} color="#ffffff" /> MIS CLIENTES Y CONTACTOS DE LA RED
                   </h2>
                   <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#94a3b8' }}>
-                    Historial de clientes a los que has trabajado y usuarios que te tienen en sus favoritos
+                    Clientes a los que les has trabajado. Guarda a tus favoritos o bloquea a quien no quieras volver a atender.
                   </p>
                 </div>
               </div>
@@ -2891,7 +2940,7 @@ const MercadoTrabajos = () => {
                 <div className="mercado-users-kpi-icon"><Star size={22} color="#ffffff" /></div>
                 <div className="mercado-users-kpi-info">
                   <span className="mercado-users-kpi-val">{totalFavoritos}</span>
-                  <span className="mercado-users-kpi-label">Te Tienen en Favoritos</span>
+                  <span className="mercado-users-kpi-label">Mis Favoritos</span>
                 </div>
               </div>
 
@@ -2919,7 +2968,7 @@ const MercadoTrabajos = () => {
                 <input
                   type="text"
                   className="mercado-users-search-input"
-                  placeholder="Buscar por nombre de cliente, teléfono, dirección o servicio realizado..."
+                  placeholder="Buscar por nombre de cliente, zona o servicio realizado..."
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                 />
@@ -2931,9 +2980,9 @@ const MercadoTrabajos = () => {
               {/* Filtro: un botón que abre las opciones (mismo patrón que el Tablero) */}
               {(() => {
                 const opciones = [
-                  { id: 'TODOS', label: 'Todos mis contactos', Icono: Users, tono: 'slate', total: myClientsDirectory.length },
-                  { id: 'HISTORIAL', label: 'Clientes atendidos', Icono: Briefcase, tono: 'blue', total: totalClientesAtendidos },
-                  { id: 'FAVORITOS', label: 'Me tienen en favoritos', Icono: Star, tono: 'amber', total: totalFavoritos },
+                  { id: 'TODOS', label: 'Todos mis clientes', Icono: Users, tono: 'slate', total: totalClientesAtendidos },
+                  { id: 'FAVORITOS', label: 'Favoritos', Icono: Star, tono: 'amber', total: totalFavoritos },
+                  { id: 'BLOQUEADOS', label: 'Bloqueados', Icono: Ban, tono: 'red', total: totalBloqueados },
                 ];
                 const actual = opciones.find(o => o.id === userFilter) || opciones[0];
                 return (
@@ -2979,16 +3028,20 @@ const MercadoTrabajos = () => {
             {filteredMyClients.length === 0 ? (
               <div style={{ color: '#94a3b8', textAlign: 'center', padding: '60px 0', gridColumn: '1 / -1', background: '#141722', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <Search size={34} color="#ffffff" style={{ marginBottom: '10px' }} />
-                <h4 style={{ color: '#ffffff', margin: '0 0 6px 0', fontSize: '1.1rem' }}>No se encontraron clientes</h4>
+                <h4 style={{ color: '#ffffff', margin: '0 0 6px 0', fontSize: '1.1rem' }}>
+                  {userFilter === 'FAVORITOS' ? 'Aún no tienes clientes favoritos'
+                    : userFilter === 'BLOQUEADOS' ? 'No has bloqueado a ningún cliente'
+                    : 'No se encontraron clientes'}
+                </h4>
                 <p style={{ margin: 0, fontSize: '13px' }}>
                   {userSearch ? 'Intenta con otro término de búsqueda.' : 'En cuanto ganes y aceptes solicitudes del mercado, tus clientes aparecerán aquí automáticamente.'}
                 </p>
               </div>
             ) : (
               filteredMyClients.map(client => {
-                const cleanPhone = (client.telefono || '').replace(/\D/g, '');
+                const ocupado = guardandoMarca === client.clientUserId;
                 return (
-                  <div key={`cli-${client.key}`} className="mercado-user-card">
+                  <div key={`cli-${client.key}`} className={`mercado-user-card ${client.bloqueado ? 'is-bloqueado' : ''}`}>
                     <div className="mercado-user-card-top">
                       <div className="mercado-user-avatar">
                         {client.avatar ? (
@@ -3008,7 +3061,9 @@ const MercadoTrabajos = () => {
                         </h4>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           {client.esFavorito ? (
-                            <span className="mercado-user-role-badge"><Star size={12} /> Cliente favorito / frecuente</span>
+                            <span className="mercado-user-role-badge favorito"><Star size={12} fill="currentColor" /> Cliente favorito</span>
+                          ) : client.bloqueado ? (
+                            <span className="mercado-user-role-badge bloqueado"><Ban size={12} /> Bloqueado</span>
                           ) : (
                             <span className="mercado-user-role-badge"><Briefcase size={12} /> Cliente atendido</span>
                           )}
@@ -3019,11 +3074,7 @@ const MercadoTrabajos = () => {
                     <div className="mercado-user-info-rows">
                       <div className="mercado-user-info-row">
                         <MapPin size={14} style={{ flexShrink: 0 }} />
-                        <span>{client.direccion}</span>
-                      </div>
-                      <div className="mercado-user-info-row">
-                        <Phone size={14} style={{ flexShrink: 0 }} />
-                        <span>{client.telefono || 'Sin teléfono registrado'}</span>
+                        <span>{client.zona}</span>
                       </div>
                       <div className="mercado-user-info-row mercado-user-servicio-row" style={{ marginTop: '2px', paddingTop: '6px' }}>
                         <span className="mercado-user-etiqueta"><Wrench size={14} /> Último servicio:</span>
@@ -3065,25 +3116,38 @@ const MercadoTrabajos = () => {
                     </div>
 
                     <div className="mercado-user-card-footer">
-                      {cleanPhone ? (
+                      {/* Favorito / bloqueo: lo guarda el servidor (sin cuenta ligada no se puede marcar) */}
+                      {client.clientUserId ? (
                         <div style={{ display: 'flex', gap: '6px' }}>
-                          <a 
-                            href={`https://wa.me/52${cleanPhone}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="mercado-user-btn-action whatsapp"
-                          >
-                            <MessageCircle size={15} /> WhatsApp
-                          </a>
-                          <a 
-                            href={`tel:${cleanPhone}`} 
-                            className="mercado-user-btn-action"
-                          >
-                            <Phone size={15} /> Llamar
-                          </a>
+                          {client.bloqueado ? (
+                            <button type="button" className="mercado-user-btn-action" disabled={ocupado} onClick={() => marcarCliente(client, null)}>
+                              <Undo2 size={15} /> Desbloquear
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                className={`mercado-user-btn-action ${client.esFavorito ? 'favorito-activo' : ''}`}
+                                disabled={ocupado}
+                                onClick={() => marcarCliente(client, client.esFavorito ? null : 'favorito')}
+                                title={client.esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                              >
+                                <Star size={15} fill={client.esFavorito ? 'currentColor' : 'none'} /> Favorito
+                              </button>
+                              <button
+                                type="button"
+                                className="mercado-user-btn-action bloquear"
+                                disabled={ocupado}
+                                onClick={() => marcarCliente(client, 'bloqueado')}
+                                title="Bloquear cliente"
+                              >
+                                <Ban size={15} /> Bloquear
+                              </button>
+                            </>
+                          )}
                         </div>
                       ) : (
-                        <span style={{ fontSize: '11px', color: '#64748b' }}>Sin contacto directo</span>
+                        <span style={{ fontSize: '11px', color: '#64748b' }}>Cliente sin cuenta en la red</span>
                       )}
 
                       <button
@@ -3129,8 +3193,7 @@ const MercadoTrabajos = () => {
                     <span className="hc-kicker">Historial del cliente</span>
                     <h3 className="hc-nombre">{cli.nombre}</h3>
                     <div className="hc-contacto">
-                      <span className="hc-chip"><MapPin size={13} /> <span className="hc-chip-txt">{cli.direccion}</span></span>
-                      {cli.telefono && <span className="hc-chip"><Phone size={13} /> {cli.telefono}</span>}
+                      <span className="hc-chip"><MapPin size={13} /> <span className="hc-chip-txt">{cli.zona}</span></span>
                     </div>
                   </div>
                   <button

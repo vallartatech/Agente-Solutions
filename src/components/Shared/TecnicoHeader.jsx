@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CalendarDays, ShieldCheck, User, Calendar, LogOut } from 'lucide-react';
+import { CalendarDays, ShieldCheck, User, Users, Calendar, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import defaultLogo from '../../assets/Logo4.png';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
@@ -200,16 +200,7 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
                 <span className="vcp-tab-full">TABLERO DE TRABAJOS{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
                 <span className="vcp-tab-short">TABLERO{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
               </button>
-
-              <button 
-                type="button" 
-                className={`vcp-nav-btn ${isUsuariosActive ? 'active' : ''}`}
-                onClick={() => handleSelectTab('usuarios')}
-                title="Mis clientes"
-              >
-                <span className="vcp-tab-full">MIS CLIENTES{liveUsersCount > 0 ? ` (${liveUsersCount})` : ''}</span>
-                <span className="vcp-tab-short">CLIENTES{liveUsersCount > 0 ? ` (${liveUsersCount})` : ''}</span>
-              </button>
+              {/* "Mis clientes" vive en el menú del perfil */}
             </>
           )}
         </nav>
@@ -274,19 +265,22 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
               )}
             </div>
 
-            <button 
+            {/* Técnico de la red: solo Mi perfil, Mis clientes y Cerrar sesión (inicio y calendario ya están en la barra) */}
+            {isRol2 && (
+              <button
+                type="button"
+                className="tecnico-dropdown-item"
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  irAlInicio();
+                }}
+              >
+                <User size={16} /> Ir a Inicio
+              </button>
+            )}
+            <button
               type="button"
-              className="tecnico-dropdown-item" 
-              onClick={() => {
-                setProfileDropdownOpen(false);
-                irAlInicio();
-              }}
-            >
-              <User size={16} /> Ir a Inicio
-            </button>
-            <button 
-              type="button"
-              className="tecnico-dropdown-item" 
+              className="tecnico-dropdown-item"
               onClick={() => {
                 setProfileDropdownOpen(false);
                 navigate('/mi-perfil');
@@ -294,16 +288,30 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
             >
               <User size={16} /> Mi Perfil
             </button>
-            <button 
-              type="button"
-              className="tecnico-dropdown-item" 
-              onClick={() => {
-                setProfileDropdownOpen(false);
-                setShowModalCalendario(true);
-              }}
-            >
-              <Calendar size={16} /> Ver Calendario
-            </button>
+            {!isRol2 && (
+              <button
+                type="button"
+                className={`tecnico-dropdown-item ${isUsuariosActive ? 'active' : ''}`}
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  handleSelectTab('usuarios');
+                }}
+              >
+                <Users size={16} /> Mis clientes{liveUsersCount > 0 ? ` (${liveUsersCount})` : ''}
+              </button>
+            )}
+            {isRol2 && (
+              <button
+                type="button"
+                className="tecnico-dropdown-item"
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  setShowModalCalendario(true);
+                }}
+              >
+                <Calendar size={16} /> Ver Calendario
+              </button>
+            )}
             <div className="tecnico-dropdown-divider" />
             <button 
               type="button"
