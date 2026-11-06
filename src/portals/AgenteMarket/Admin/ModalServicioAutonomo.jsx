@@ -305,7 +305,8 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
         if (item.urgencia === 'programado' && item.fechaProgramada) {
           // Fecha estimada: no se manda scheduled_at, porque eso es la cita que acuerda el técnico.
           // Los técnicos la ven como etiqueta "Lo necesita: …" (se lee de esta nota).
-          formData.append('priority', 'Programado');
+          // La columna priority solo acepta Normal/Urgente; lo "programado" vive en la nota de fecha.
+          formData.append('priority', 'Normal');
           scheduleNote = `\n\n[FECHA / HORARIO DESEADO]: ${item.fechaProgramada} - ${item.horarioPreferido || 'Cualquier hora'}`;
         } else {
           formData.append('priority', 'Urgente');
