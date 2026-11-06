@@ -160,6 +160,33 @@ export const fechaDeseada = (desc) => {
   return { fecha: m[1], texto: [dia, horarioTxt].filter(Boolean).join(' · '), vencida: dias < 0 };
 };
 
+// Estado del horario de visita según el chat del trabajo: lo que propuso el técnico
+// y lo último que respondió el cliente (confirmó o pidió otro horario).
+const estadoHorarioDe = (job) => {
+  const msgs = job?.myQuote?.chat_history || [];
+  const respuestas = msgs.filter(m => m.is_schedule_response);
+  const propuestas = msgs.filter(m => m.is_schedule);
+  const respuesta = respuestas.length ? respuestas[respuestas.length - 1] : null;
+  const propuesta = propuestas.length ? propuestas[propuestas.length - 1] : null;
+  // La respuesta cuenta solo si es posterior a la última propuesta del técnico
+  const vigente = Boolean(respuesta && (!propuesta || new Date(respuesta.created_at) >= new Date(propuesta.created_at)));
+  const pideOtro = vigente && respuesta.schedule_confirmed === false;
+  const confirmado = vigente && respuesta.schedule_confirmed === true;
+  let nota = '';
+  if (pideOtro) {
+    // Mensajes nuevos traen "note"; los viejos solo el texto "…horario de visita: "nota""
+    nota = respuesta.note || String(respuesta.message || '').replace(/^.*?horario de visita:\s*/i, '').replace(/^"|"$/g, '').trim();
+  }
+  return {
+    pideOtro,
+    confirmado,
+    pendiente: Boolean(job?.scheduled_at && !pideOtro && !confirmado),
+    nota,
+    respuesta,
+    propuesta,
+  };
+};
+
 // Quita emojis de textos guardados (ej. "[URGENCIA]: ⚡ Atención Urgente")
 const sinEmojis = (texto) => String(texto || '').replace(/[\p{Extended_Pictographic}️]\s*/gu, '');
 
@@ -1346,6 +1373,60 @@ const MercadoTrabajos = () => {
     setShowQuoteModal(true);
   };
 
+  // ─── Aviso en vivo cuando el cliente responde el horario propuesto ───
+  // Se guarda la última respuesta vista por trabajo; la primera carga solo registra (no avisa).
+  const respuestasVistasRef = useRef(null);
+  useEffect(() => {
+    if (!acceptedJobs.length) return;
+    const vistas = respuestasVistasRef.current;
+    const nuevas = {};
+    acceptedJobs.forEach(j => {
+      const { respuesta } = estadoHorarioDe(j);
+      if (respuesta) nuevas[j.id] = respuesta.created_at;
+    });
+    respuestasVistasRef.current = nuevas;
+    if (!vistas) return;
+
+    const job = acceptedJobs.find(j => nuevas[j.id] && nuevas[j.id] !== vistas[j.id]);
+    // SweetAlert muestra uno a la vez: no se interrumpe otro diálogo (la etiqueta y el aviso del mapa quedan)
+    if (!job || Swal.isVisible()) return;
+    const h = estadoHorarioDe(job);
+    const cliente = job.client_name || job.cliente || 'El cliente';
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: h.confirmado ? 'success' : 'warning',
+      title: h.confirmado ? `${cliente} confirmó la visita` : `${cliente} pidió otro horario`,
+      text: h.confirmado ? job.titulo : (h.nota ? `“${h.nota}” · ${job.titulo}` : job.titulo),
+      showConfirmButton: !h.confirmado,
+      confirmButtonText: 'Proponer horario',
+      confirmButtonColor: '#f26522',
+      showCloseButton: true,
+      timer: h.confirmado ? 6000 : 15000,
+      timerProgressBar: true,
+    }).then(r => {
+      if (r.isConfirmed) handleOpenBoardScheduler(job);
+    });
+  }, [acceptedJobs]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Enlace desde la notificación: /mercado-trabajos?trabajo=ID abre ese trabajo ───
+  const trabajoDeEnlaceRef = useRef(null);
+  useEffect(() => {
+    const id = new URLSearchParams(location.search).get('trabajo');
+    if (id) trabajoDeEnlaceRef.current = id;
+  }, [location.search]);
+  useEffect(() => {
+    const id = trabajoDeEnlaceRef.current;
+    if (!id || !acceptedJobs.length) return;
+    const job = acceptedJobs.find(j => String(j.id) === String(id));
+    if (!job) return;
+    trabajoDeEnlaceRef.current = null;
+    setMainView('mercado');
+    setActiveTab('aceptados');
+    openQuoteModalForJob(job);
+    navigate(location.pathname, { replace: true });
+  }, [acceptedJobs, location.search]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const getStatusLabel = (status) => {
     if (status === 'rejected') return 'Rechazada';
     if (status === 'accepted') return 'Aceptada';
@@ -1355,34 +1436,11 @@ const MercadoTrabajos = () => {
   const chatMessages = selectedJob?.myQuote?.chat_history || [];
   const lastClientMsg = selectedJob?.lastClientMsg;
 
-  // Respuestas del cliente sobre la visita
-  const scheduleResponses = chatMessages.filter(m => m.is_schedule_response);
-  const lastScheduleResponse = scheduleResponses.length > 0 ? scheduleResponses[scheduleResponses.length - 1] : null;
-
-  // Propuestas de horario del técnico
-  const scheduleProposals = chatMessages.filter(m => m.is_schedule);
-  const lastScheduleProposal = scheduleProposals.length > 0 ? scheduleProposals[scheduleProposals.length - 1] : null;
-
-  // Determinar si el cliente solicitó re-coordinar
-  const isRescheduleRequested = Boolean(
-    lastScheduleResponse &&
-    lastScheduleResponse.schedule_confirmed === false &&
-    (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
-  );
-
-  // Determinar si el cliente confirmó el horario
-  const isScheduleConfirmed = Boolean(
-    lastScheduleResponse &&
-    lastScheduleResponse.schedule_confirmed === true &&
-    (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
-  );
-
-  // Determinar si hay propuesta enviada pendiente de confirmar por el cliente
-  const isPendingClientConfirm = Boolean(
-    selectedJob?.scheduled_at &&
-    !isScheduleConfirmed &&
-    !isRescheduleRequested
-  );
+  // Estado del horario de visita del trabajo abierto (confirmado / pide otro / esperando)
+  const horarioSel = estadoHorarioDe(selectedJob);
+  const isRescheduleRequested = horarioSel.pideOtro;
+  const isScheduleConfirmed = horarioSel.confirmado;
+  const isPendingClientConfirm = horarioSel.pendiente;
 
   // ─── FILTROS ESPECÍFICOS (FECHA, HORA, TRABAJO) ───
   const getJobDateObj = (job) => {
@@ -3670,6 +3728,7 @@ const MercadoTrabajos = () => {
                     const IconoCategoria = ICONOS_CATEGORIA[cat.label] || Wrench;
                     const scheduleInfo = getSmartScheduleStatus(job);
                     const isArrived = job.arrived_at || job.arrival_status === 'EN_SITIO';
+                    const horarioJob = estadoHorarioDe(job);
 
                     return (
                       <div
@@ -3695,6 +3754,14 @@ const MercadoTrabajos = () => {
                               </span>
                               {scheduleInfo.isUrgentGlow && (
                                 <span className="rj-chip urgente"><Zap size={11} /> {scheduleInfo.label}</span>
+                              )}
+                              {horarioJob.pideOtro && (
+                                <span className="rj-chip rj-chip-cambio" title={horarioJob.nota ? `El cliente escribió: “${horarioJob.nota}”` : 'El cliente pidió otro horario'}>
+                                  <AlertCircle size={11} /> Pide otro horario
+                                </span>
+                              )}
+                              {horarioJob.confirmado && (
+                                <span className="rj-chip rj-chip-confirmado"><CheckCircle2 size={11} /> Visita confirmada</span>
                               )}
                             </div>
                           </div>
@@ -4019,6 +4086,9 @@ const MercadoTrabajos = () => {
                     ══════════════════════════════════════════════════ */}
                 {activeNavJob && (() => {
                   const navSched = getTimeRemainingInfo(activeNavJob);
+                  // activeNavJob es una copia del momento en que se inició la ruta; el chat vivo está en acceptedJobs
+                  const navVivo = acceptedJobs.find(j => j.id === activeNavJob.id) || activeNavJob;
+                  const navHorario = estadoHorarioDe(navVivo);
 
                   return (
                     <div className="nv-panel">
@@ -4090,6 +4160,43 @@ const MercadoTrabajos = () => {
                           <Calendar size={14} strokeWidth={2.4} /> {navSched.hasSchedule ? 'Modificar' : 'Agendar'}
                         </button>
                       </div>
+
+                      {/* Respuesta del cliente al horario propuesto */}
+                      {navHorario.pideOtro && (
+                        <div className="nv-aviso nv-aviso-cambio">
+                          <span className="nv-aviso-icono"><AlertCircle size={16} strokeWidth={2.4} /></span>
+                          <div className="nv-aviso-txt">
+                            <strong>El cliente pidió otro horario</strong>
+                            {navHorario.nota && <span>“{navHorario.nota}”</span>}
+                          </div>
+                          <div className="nv-aviso-acciones">
+                            <button type="button" className="nv-aviso-btn" onClick={() => handleOpenBoardScheduler(navVivo)}>
+                              <Calendar size={13} strokeWidth={2.4} /> Proponer
+                            </button>
+                            <button
+                              type="button"
+                              className="nv-aviso-btn secundario"
+                              onClick={() => { openQuoteModalForJob(navVivo); setActiveModalTab('chat'); }}
+                              title="Abrir el chat con el cliente"
+                              aria-label="Abrir el chat con el cliente"
+                            >
+                              <MessageCircle size={13} strokeWidth={2.4} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {navHorario.confirmado && (
+                        <div className="nv-aviso nv-aviso-ok">
+                          <span className="nv-aviso-icono"><CheckCircle2 size={16} strokeWidth={2.4} /></span>
+                          <div className="nv-aviso-txt"><strong>El cliente confirmó la visita</strong></div>
+                        </div>
+                      )}
+                      {navHorario.pendiente && (
+                        <div className="nv-aviso nv-aviso-espera">
+                          <span className="nv-aviso-icono"><Clock size={16} strokeWidth={2.4} /></span>
+                          <div className="nv-aviso-txt"><strong>Esperando que el cliente confirme el horario</strong></div>
+                        </div>
+                      )}
 
                       {/* Acciones */}
                       <button
@@ -4186,470 +4293,390 @@ const MercadoTrabajos = () => {
 
                 <div className="mercado-premium-body">
                   {/* ─────────────────────────────────────────────────────────────
-                      CASO A: TRABAJO ACEPTADO - VISTA DE COORDINACIÓN Y HORARIO
+                      CASO A: TRABAJO ACEPTADO - COORDINACIÓN Y HORARIO
                   ───────────────────────────────────────────────────────────── */}
-                  {selectedJob.is_accepted && activeModalTab === 'detalle' && (
-                    <>
-                      {/* Columna Izquierda: Galería de Fotos y Problema Reportado */}
-                      <div className="mercado-premium-details" style={{ flex: '0.95', gap: '14px' }}>
-                        {/* Galería de Fotos */}
-                        {activePhoto ? (
-                          <div className="mercado-photo-gallery">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                              {activePhoto === selectedJob.facade_photo ? (
-                                <span className="mercado-gallery-type-badge facade">
-                                  🏡 Fachada del Inmueble (Registro del Levantamiento)
-                                </span>
-                              ) : (
-                                <span className="mercado-gallery-type-badge problem">
-                                  📸 Evidencia de Falla {selectedJob.problem_photos && selectedJob.problem_photos.length > 1 ? `(${selectedJob.problem_photos.indexOf(activePhoto) + 1} de ${selectedJob.problem_photos.length})` : ''}
-                                </span>
+                  {selectedJob.is_accepted && activeModalTab === 'detalle' && (() => {
+                    const textoDesc = selectedJob.descripcion || '';
+                    const descLimpia = descripcionTarjeta(textoDesc).replace(/[\s\-–:]+$/, '').trim();
+                    const esUrgente = selectedJob.is_urgent || textoDesc.includes('[URGENCIA]');
+                    const deseada = !esUrgente && fechaDeseada(textoDesc);
+                    const fotos = selectedJob.fotos || [];
+                    const coords = extraerCoordenadas(selectedJob);
+                    const fechaCita = selectedJob.scheduled_at
+                      ? new Date(selectedJob.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })
+                      : null;
+                    const estadoCita = isRescheduleRequested ? 'cambio' : isScheduleConfirmed ? 'ok' : isPendingClientConfirm ? 'espera' : 'sin';
+                    const chipCita = {
+                      cambio: 'Pide otro horario',
+                      ok: 'Confirmada por el cliente',
+                      espera: 'Esperando confirmación',
+                      sin: 'Sin agendar',
+                    }[estadoCita];
+
+                    return (
+                      <div className="jm-grid">
+                        {/* ── Columna izquierda: el trabajo ── */}
+                        <div className="jm-col">
+                          <section className="jm-card">
+                            <div className="jm-card-head">
+                              <span className="tb-actions-icon orange"><Wrench size={16} strokeWidth={2.4} /></span>
+                              <div className="jm-card-head-txt">
+                                <span className="jm-kicker">Trabajo asignado a ti</span>
+                                <h3 className="jm-titulo">{selectedJob.titulo}</h3>
+                              </div>
+                              {esUrgente && <span className="jm-badge-urgente"><Zap size={12} strokeWidth={2.6} /> Urgente</span>}
+                            </div>
+
+                            {descLimpia && <p className="jm-desc">{descLimpia}</p>}
+
+                            <div className="jm-pills">
+                              <span className="jm-pill"><Clock size={13} /> Solicitado {selectedJob.fecha}</span>
+                              {deseada && <span className="jm-badge-deseada" title="Fecha en que el cliente necesita el trabajo"><Calendar size={12} strokeWidth={2.6} /> Lo necesita: {deseada.texto}</span>}
+                            </div>
+                          </section>
+
+                          {fotos.length > 0 && activePhoto ? (
+                            <section className="jm-card jm-fotos">
+                              <div className="jm-seccion-titulo">
+                                <span>{activePhoto === selectedJob.facade_photo ? 'Fachada del inmueble' : 'Fotos de la falla'}</span>
+                                {fotos.length > 1 && <span className="jm-contador">{fotos.indexOf(activePhoto) + 1} de {fotos.length}</span>}
+                              </div>
+                              <button type="button" className="jm-foto-principal" onClick={() => setIsPhotoZoomed(true)} title="Ampliar foto">
+                                <img src={activePhoto} alt="Fotografía del servicio" />
+                                <span className="jm-foto-zoom"><Maximize2 size={13} /> Ampliar</span>
+                              </button>
+                              {fotos.length > 1 && (
+                                <div className="jm-miniaturas">
+                                  {fotos.map((f, idx) => (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      className={`jm-miniatura ${activePhoto === f ? 'activa' : ''}`}
+                                      onClick={() => setActivePhoto(f)}
+                                      title={f === selectedJob.facade_photo ? 'Ver fachada' : `Ver foto ${idx + 1}`}
+                                    >
+                                      <img src={f} alt={f === selectedJob.facade_photo ? 'Fachada' : `Foto ${idx + 1}`} />
+                                      {f === selectedJob.facade_photo && <span className="jm-miniatura-tag"><Home size={10} /></span>}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </section>
+                          ) : (
+                            <section className="jm-card jm-sin-fotos">
+                              <span className="jm-sin-fotos-icono"><ImageIcon size={22} /></span>
+                              <div>
+                                <strong>Sin fotos</strong>
+                                <span>El cliente no adjuntó fotografías.</span>
+                              </div>
+                            </section>
+                          )}
+                        </div>
+
+                        {/* ── Columna derecha: horario, cliente y acciones ── */}
+                        <div className="jm-col">
+                          <section className={`jm-card jm-horario ${estadoCita}`}>
+                            <div className="jm-seccion-titulo">
+                              <span>Hora de la visita</span>
+                              <span className={`jm-horario-chip ${estadoCita}`}>{chipCita}</span>
+                            </div>
+
+                            {isRescheduleRequested && (
+                              <div className="jm-horario-aviso cambio">
+                                <AlertCircle size={16} />
+                                <div>
+                                  <strong>El cliente pidió otro horario</strong>
+                                  {horarioSel.nota && <span>“{horarioSel.nota}”</span>}
+                                  <small>Elige la nueva hora acordada y propónla.</small>
+                                </div>
+                              </div>
+                            )}
+
+                            {fechaCita && !isRescheduleRequested && (
+                              <div className="jm-horario-fecha">
+                                <Calendar size={16} />
+                                <strong>{fechaCita}</strong>
+                              </div>
+                            )}
+                            {isPendingClientConfirm && <p className="jm-texto-suave">El cliente ya recibió tu propuesta; te avisaremos cuando la confirme o pida otra hora.</p>}
+                            {!fechaCita && <p className="jm-texto-suave">Elige cuándo llegarás para que el cliente lo confirme.</p>}
+
+                            <div className="jm-horario-form">
+                              <button
+                                type="button"
+                                className="jm-horario-selector"
+                                onClick={() => setShowDatePickerModal(true)}
+                                title="Elegir fecha y hora"
+                              >
+                                <Clock size={15} />
+                                <span>{formatDateTimeHuman(scheduleDate)}</span>
+                                <ChevronDown size={15} className="jm-horario-flecha" />
+                              </button>
+                              <button
+                                type="button"
+                                className="jm-btn-principal"
+                                onClick={() => handleProgramarVisita(selectedJob.id)}
+                                disabled={savingSchedule}
+                              >
+                                <Send size={16} strokeWidth={2.4} />
+                                {savingSchedule ? 'Enviando…' : (isRescheduleRequested ? 'Proponer nuevo horario' : (fechaCita ? 'Cambiar horario' : 'Proponer horario'))}
+                              </button>
+                            </div>
+
+                            <MaterialDateTimePicker
+                              isOpen={showDatePickerModal}
+                              value={scheduleDate}
+                              onChange={(newVal) => setScheduleDate(newVal)}
+                              onClose={() => setShowDatePickerModal(false)}
+                              title="Programar hora de llegada"
+                            />
+                          </section>
+
+                          <section className="jm-card jm-cliente">
+                            <div className="jm-card-head">
+                              <span className="tb-actions-icon blue"><User size={16} strokeWidth={2.4} /></span>
+                              <div className="jm-card-head-txt">
+                                <span className="jm-kicker">Cliente</span>
+                                <h3 className="jm-titulo jm-titulo-sm">{selectedJob.client_name || selectedJob.cliente}</h3>
+                              </div>
+                              <div className="jm-monto">
+                                <small>Acordado</small>
+                                <strong>${parseFloat(selectedJob.agreed_price || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>
+                              </div>
+                            </div>
+
+                            <div className="jm-direccion">
+                              <MapPin size={15} />
+                              <div>
+                                <strong>{selectedJob.full_address || selectedJob.calle}</strong>
+                                {selectedJob.property_name && selectedJob.property_name !== selectedJob.full_address && <span>{selectedJob.property_name}</span>}
+                                {coords && <span className="jm-gps">GPS {coords.formatted}</span>}
+                              </div>
+                            </div>
+
+                            <div className="jm-contacto">
+                              <button type="button" className="jm-btn-suave" onClick={() => abrirEnGoogleMaps(selectedJob)}>
+                                <ExternalLink size={14} /> Maps
+                              </button>
+                              {selectedJob.client_phone && (
+                                <>
+                                  <a className="jm-btn-suave" href={`tel:${selectedJob.client_phone}`}>
+                                    <Phone size={14} /> Llamar
+                                  </a>
+                                  <a
+                                    className="jm-btn-suave verde"
+                                    href={`https://wa.me/52${selectedJob.client_phone.replace(/\D/g, '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <MessageCircle size={14} /> WhatsApp
+                                  </a>
+                                </>
                               )}
                             </div>
+                          </section>
 
-                            <div
-                              className="mercado-premium-image-wrapper"
-                              onClick={() => setIsPhotoZoomed(true)}
-                              title="Clic para ampliar imagen"
-                              style={{ height: '200px' }}
-                            >
-                              <img src={activePhoto} alt="Fotografía del servicio" className="mercado-premium-image" />
-                              <div className="mercado-image-zoom-badge">
-                                <Maximize2 size={12} /> Clic para ampliar foto
-                              </div>
-                            </div>
-
-                            {selectedJob.fotos && selectedJob.fotos.length > 1 && (
-                              <div className="mercado-thumbnails-row">
-                                {selectedJob.fotos.map((f, idx) => {
-                                  const isFacade = f === selectedJob.facade_photo;
-                                  const probIndex = selectedJob.problem_photos ? selectedJob.problem_photos.indexOf(f) : idx;
-                                  return (
-                                    <div key={idx} className="mercado-thumb-wrapper">
-                                      <div
-                                        className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
-                                        onClick={() => setActivePhoto(f)}
-                                        title={isFacade ? 'Ver Fachada de la Casa' : `Ver Evidencia ${probIndex + 1}`}
-                                      >
-                                        <img src={f} alt={isFacade ? 'Fachada' : `Evidencia ${probIndex + 1}`} />
-                                      </div>
-                                      <span className={`mercado-thumb-badge ${isFacade ? 'facade' : (activePhoto === f ? 'active' : '')}`}>
-                                        {isFacade ? '🏡 Fachada' : `📸 Falla ${probIndex >= 0 ? probIndex + 1 : idx + 1}`}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="mercado-no-photo-placeholder" style={{ height: '140px' }}>
-                            <ImageIcon size={32} color="#94a3b8" />
-                            <span>Sin fotografías adjuntas</span>
-                          </div>
-                        )}
-
-                        {/* Detalle del Problema Solicitado */}
-                        <div className="mercado-problem-detail-box">
-                          <div className="mercado-problem-detail-header">
-                            <FileText size={18} color="#ea580c" />
-                            <span>{selectedJob.titulo}</span>
-                          </div>
-                          <div className="mercado-problem-detail-desc">
-                            {selectedJob.descripcion}
-                          </div>
-                          <div className="mercado-problem-detail-footer">
-                            <span><Clock size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} /> Solicitado: {selectedJob.fecha}</span>
-                            <span style={{ fontWeight: '700', color: '#16a34a' }}>✓ Servicio Asignado a Ti</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Columna Derecha: HORARIO HERO, DIRECCIÓN ESPACIOSA Y ACCESO AL CHAT */}
-                      <div className="mercado-premium-form" style={{ flex: '1.25', padding: '20px 24px', gap: '14px', display: 'flex', flexDirection: 'column' }}>
-                        
-                        {/* 1. SECCIÓN HERO: PROGRAMAR HORA DE IDA / VISITA */}
-                        <div className="mercado-hero-scheduler-box">
-                          <div className="mercado-hero-scheduler-header">
-                            <strong>
-                              <Clock size={18} color="#16a34a" /> Programar Hora de Llegada / Visita
-                            </strong>
-                            {isRescheduleRequested ? (
-                              <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '3px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: '800' }}>
-                                ⚠️ Re-coordinación Solicitada
-                              </span>
-                            ) : isScheduleConfirmed ? (
-                              <span className="mercado-hero-scheduler-badge">
-                                ✓ Confirmada por el Cliente
-                              </span>
-                            ) : isPendingClientConfirm ? (
-                              <span style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '3px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: '800' }}>
-                                ⏳ Esperando Confirmación
-                              </span>
-                            ) : selectedJob.scheduled_at ? (
-                              <span className="mercado-hero-scheduler-badge">
-                                ✓ Programada
-                              </span>
-                            ) : (
-                              <span style={{ background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '800' }}>
-                                Pendiente
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Alerta de re-coordinación solicitada */}
-                          {isRescheduleRequested && lastScheduleResponse && (
-                            <div style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px 14px', marginBottom: '12px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#c2410c', fontWeight: '800', fontSize: '13px' }}>
-                                <AlertCircle size={16} /> El cliente solicitó acordar otro horario:
-                              </div>
-                              <div style={{ margin: '6px 0 2px 0', fontSize: '13px', color: '#7c2d12', fontWeight: '600', fontStyle: 'italic', background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #ffedd5' }}>
-                                "{lastScheduleResponse.message.replace(/^⚠️\s*[^:]+:\s*/, '').replace(/^"|"$/g, '') || lastScheduleResponse.message}"
-                              </div>
-                              <div style={{ fontSize: '11.5px', color: '#ea580c', marginTop: '6px', fontWeight: '700' }}>
-                                👉 Selecciona abajo la nueva hora acordada con el cliente y haz clic en "Proponer Nuevo Horario":
+                          {lastClientMsg && (
+                            <div className="jm-aviso-mensaje">
+                              <span className="tb-actions-icon green"><MessageCircle size={15} strokeWidth={2.4} /></span>
+                              <div>
+                                <strong>El cliente te escribió</strong>
+                                <span>“{lastClientMsg.message}”</span>
                               </div>
                             </div>
                           )}
 
-                          {isScheduleConfirmed && (
-                            <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '12px 14px', marginBottom: '12px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#166534', fontWeight: '800', fontSize: '13px' }}>
-                                <CheckCircle2 size={16} /> Cita Confirmada por el Cliente
-                              </div>
-                              <div style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#0f172a', fontWeight: '800' }}>
-                                📅 {new Date(selectedJob.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
-                              </div>
-                            </div>
-                          )}
-
-                          {isPendingClientConfirm && (
-                            <div style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '12px', padding: '12px 14px', marginBottom: '12px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1d4ed8', fontWeight: '800', fontSize: '13px' }}>
-                                <Clock size={16} /> Horario Propuesto Enviado al Cliente
-                              </div>
-                              <div style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#1e3a8a', fontWeight: '800' }}>
-                                📅 {new Date(selectedJob.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
-                              </div>
-                              <div style={{ fontSize: '11.5px', color: '#3b82f6', marginTop: '4px' }}>
-                                El cliente ha recibido la propuesta y te responderá confirmando o re-coordinando.
-                              </div>
-                            </div>
-                          )}
-
-                          {!selectedJob.scheduled_at && !isRescheduleRequested && (
-                            <div className="mercado-hero-scheduler-status">
-                              ⚠️ Selecciona cuándo acudirás al domicilio para que el cliente confirme el horario:
-                            </div>
-                          )}
-
-                          <div className="mercado-hero-scheduler-input-row">
-                            <button
-                              type="button"
-                              className="mdtp-trigger-btn"
-                              onClick={() => setShowDatePickerModal(true)}
-                              title="Clic para seleccionar fecha y hora con el reloj dinámico"
-                            >
-                              <div className="mdtp-trigger-content">
-                                <span className="mdtp-trigger-icon"><Clock size={16} /></span>
-                                <span>{formatDateTimeHuman(scheduleDate)}</span>
-                              </div>
-                              <span style={{ fontSize: '12px', color: '#6200ee', fontWeight: '800' }}>Cambiar ▾</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              className="mercado-hero-scheduler-btn"
-                              onClick={() => handleProgramarVisita(selectedJob.id)}
-                              disabled={savingSchedule}
-                            >
-                              <Clock size={16} />
-                              <span>{savingSchedule ? 'Guardando...' : (isRescheduleRequested ? '📅 Proponer Nuevo Horario' : (selectedJob.scheduled_at ? '✏️ Modificar Horario' : '📅 Proponer Hora de Ida'))}</span>
-                            </button>
-                          </div>
-
-                          <MaterialDateTimePicker
-                            isOpen={showDatePickerModal}
-                            value={scheduleDate}
-                            onChange={(newVal) => setScheduleDate(newVal)}
-                            onClose={() => setShowDatePickerModal(false)}
-                            title="Programar Hora de Llegada"
-                          />
-                        </div>
-
-                        {/* 2. DIRECCIÓN EXACTA Y CONTACTO DIRECTO */}
-                        <div className="mercado-accepted-address-box">
-                          <div className="mercado-address-header">
-                            <span className="mercado-address-label">
-                              📍 DIRECCIÓN COMPLETA DEL CLIENTE
+                          <button type="button" className="jm-card jm-chat-btn" onClick={() => setActiveModalTab('chat')}>
+                            <span className="tb-actions-icon orange"><MessageCircle size={16} strokeWidth={2.4} /></span>
+                            <span className="jm-chat-txt">
+                              <strong>Chat con el cliente</strong>
+                              <span>Conversación solo de este trabajo</span>
                             </span>
+                            {chatMessages.length > 0 && <span className="jm-chat-total">{chatMessages.length}</span>}
+                            <ChevronRight size={18} className="jm-chat-flecha" />
+                          </button>
+
+                          <div className="jm-acciones-trabajo">
                             <button
                               type="button"
-                              onClick={() => abrirEnGoogleMaps(selectedJob)}
-                              className="mercado-maps-btn"
-                              title={extraerCoordenadas(selectedJob) ? "Abrir ubicación exacta por coordenadas GPS" : "Abrir dirección en Google Maps"}
-                            >
-                              <ExternalLink size={12} /> Abrir Maps ↗
-                            </button>
-                          </div>
-
-                          <div className="mercado-address-text">
-                            {selectedJob.full_address}
-                          </div>
-
-                          {extraerCoordenadas(selectedJob) && (
-                            <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: '600', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span>🛰️ GPS Detectado: {extraerCoordenadas(selectedJob).formatted}</span>
-                            </div>
-                          )}
-
-                          {/* Ficha Visual de Fachada de la Propiedad (Levantamiento) */}
-                          {selectedJob.facade_photo ? (
-                            <div 
-                              className="mercado-facade-card-accepted"
-                              onClick={() => { setActivePhoto(selectedJob.facade_photo); setIsPhotoZoomed(true); }}
-                              title="Clic para ampliar y ver la fachada de la propiedad"
-                            >
-                              <img src={selectedJob.facade_photo} alt="Fachada del Inmueble" className="mercado-facade-card-img" />
-                              <div className="mercado-facade-card-info">
-                                <span className="mercado-facade-card-tag">🏡 Fachada del Inmueble</span>
-                                <span className="mercado-facade-card-text">{selectedJob.property_name || selectedJob.full_address}</span>
-                                <span className="mercado-facade-card-zoom">🔍 Clic para ampliar foto de fachada</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="mercado-facade-card-empty">
-                              <span>🏡 Sin foto de fachada registrada en el levantamiento</span>
-                            </div>
-                          )}
-
-                          {selectedJob.property_name && selectedJob.property_name !== selectedJob.full_address && (
-                            <div className="mercado-address-property-name" style={{ marginTop: '6px' }}>
-                              Propiedad: {selectedJob.property_name}
-                            </div>
-                          )}
-
-                          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                            Cliente: <strong style={{ color: '#0f172a' }}>{selectedJob.client_name}</strong>
-                          </div>
-
-                          {/* Botones de Acción: Chat con el Cliente y Aviso de Llegada al Lugar */}
-                          <div className="mercado-contact-actions-row">
-                            <button
-                              type="button"
-                              className="mercado-contact-action-btn chat-action"
-                              onClick={() => setActiveModalTab('chat')}
-                              title="Abrir chat directo con el cliente"
-                            >
-                              <MessageCircle size={17} />
-                              <span>Chat con el Cliente {chatMessages.length > 0 ? `(${chatMessages.length})` : ''}</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              className={`mercado-contact-action-btn arrival-action ${arrivalAlertSent[selectedJob.id] ? 'sent' : ''}`}
+                              className={`jm-btn-suave ${arrivalAlertSent[selectedJob.id] ? 'verde' : ''}`}
                               onClick={() => handleSendArrivalAlert(selectedJob)}
                               disabled={sendingArrivalAlert}
-                              title="Enviar aviso al cliente informando que te encuentras en el domicilio"
+                              title="Avisar al cliente que ya estás en el domicilio"
                             >
-                              <MapPin size={17} />
-                              <span>
-                                {sendingArrivalAlert 
-                                  ? 'Enviando aviso...' 
-                                  : (arrivalAlertSent[selectedJob.id] 
-                                      ? `✓ Aviso Enviado (${arrivalAlertSent[selectedJob.id]})` 
-                                      : 'Aviso: Me encuentro en el lugar')}
-                              </span>
+                              <MapPin size={14} />
+                              {sendingArrivalAlert
+                                ? 'Enviando aviso…'
+                                : (arrivalAlertSent[selectedJob.id] ? `Aviso enviado (${arrivalAlertSent[selectedJob.id]})` : 'Avisar que llegué')}
                             </button>
-
                             <button
                               type="button"
-                              className="mercado-contact-action-btn cancel-service-action"
+                              className="jm-btn-suave rojo"
                               onClick={() => handleCancelServiceByTech(selectedJob)}
-                              title="Cancelar mi asistencia para este servicio"
-                              style={{ gridColumn: 'span 2', borderColor: '#fca5a5', color: '#ef4444', background: '#fef2f2' }}
+                              title="Cancelar tu asistencia y liberar la solicitud"
                             >
-                              <X size={17} color="#ef4444" />
-                              <span>Cancelar Servicio (Liberar Solicitud)</span>
+                              <X size={14} /> Cancelar servicio
                             </button>
                           </div>
 
-                          {/* Banner de confirmación de aviso de llegada */}
                           {arrivalAlertToast && (
-                            <div className="mercado-arrival-toast-banner">
-                              <CheckCircle2 size={16} color="#16a34a" />
-                              <span>{arrivalAlertToast}</span>
+                            <div className="jm-aviso-mensaje">
+                              <span className="tb-actions-icon green"><CheckCircle2 size={15} strokeWidth={2.4} /></span>
+                              <div><strong>{arrivalAlertToast}</strong></div>
                             </div>
                           )}
                         </div>
-
-                        {/* 3. MONTO ACORDADO GANADO */}
-                        <div className="mercado-accepted-price-box">
-                          <span className="mercado-accepted-price-label">Monto Aceptado del Trabajo:</span>
-                          <span className="mercado-accepted-price-val">
-                            ${parseFloat(selectedJob.agreed_price).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
-                          </span>
-                        </div>
-
-                        {/* 4. BOTÓN DESTACADO PARA ABRIR EL CHAT */}
-                        <div>
-                          {lastClientMsg && (
-                            <div className="mercado-chat-alert-banner" style={{ marginBottom: '8px' }}>
-                              <div className="mercado-chat-alert-icon">🔔</div>
-                              <div className="mercado-chat-alert-text">
-                                <strong>Mensaje reciente del Cliente:</strong>
-                                <span>"{lastClientMsg.message}"</span>
-                              </div>
-                            </div>
-                          )}
-
-                          <button
-                            type="button"
-                            className="mercado-open-chat-card-btn"
-                            onClick={() => setActiveModalTab('chat')}
-                          >
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <MessageCircle size={18} />
-                              <span>Abrir Conversación con el Cliente ({chatMessages.length})</span>
-                            </span>
-                            <span style={{ fontSize: '16px', fontWeight: '900' }}>→</span>
-                          </button>
-                        </div>
-
                       </div>
-                    </>
-                  )}
+                    );
+                  })()}
 
                   {/* ─────────────────────────────────────────────────────────────
-                      CASO B: TRABAJO ACEPTADO - VISTA DE CHAT DIRECTO
+                      CASO B: TRABAJO ACEPTADO - CHAT DEL TRABAJO
+                      (cada trabajo tiene su propio chat: es el de su cotización)
                   ───────────────────────────────────────────────────────────── */}
-                  {selectedJob.is_accepted && activeModalTab === 'chat' && (
-                    <>
-                      {/* Columna Izquierda: Botón de volver y Resumen Rápido */}
-                      <div className="mercado-premium-details" style={{ flex: '0.85', gap: '14px' }}>
-                        <button
-                          type="button"
-                          onClick={() => setActiveModalTab('detalle')}
-                          style={{
-                            padding: '10px 14px',
-                            background: '#ffffff',
-                            color: '#ea580c',
-                            border: '1.5px solid #fed7aa',
-                            borderRadius: '12px',
-                            fontWeight: '800',
-                            fontSize: '13px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            boxShadow: '0 2px 6px rgba(234, 88, 12, 0.1)'
-                          }}
-                        >
-                          <ChevronLeft size={16} /> Volver a Coordinación y Horario
-                        </button>
+                  {selectedJob.is_accepted && activeModalTab === 'chat' && (() => {
+                    const fechaCita = selectedJob.scheduled_at
+                      ? new Date(selectedJob.scheduled_at).toLocaleString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                      : null;
 
-                        <div className="mercado-accepted-address-box">
-                          <span className="mercado-address-label">📍 Ubicación</span>
-                          <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
-                            {selectedJob.full_address}
-                          </div>
-                          {selectedJob.client_phone && (
-                            <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                              <a
-                                href={`https://wa.me/52${selectedJob.client_phone.replace(/\D/g, '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="mercado-contact-action-btn whatsapp"
-                                style={{ padding: '6px 10px', fontSize: '11.5px' }}
-                              >
-                                💬 WhatsApp
-                              </a>
-                            </div>
-                          )}
-                        </div>
-
-                        {selectedJob.scheduled_at && (
-                          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '12px', fontSize: '12px', color: '#166534' }}>
-                            <strong>📅 Hora de Visita:</strong>
-                            <div>{new Date(selectedJob.scheduled_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</div>
-                          </div>
-                        )}
-
-                        <div className="mercado-accepted-price-box" style={{ padding: '10px 14px' }}>
-                          <span style={{ fontSize: '12px', color: '#64748b' }}>Monto:</span>
-                          <span style={{ fontSize: '16px', fontWeight: '900', color: '#16a34a' }}>
-                            ${parseFloat(selectedJob.agreed_price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Columna Derecha: CHAT INTEGRADO */}
-                      <div className="mercado-embedded-chat-panel" style={{ flex: '1.25' }}>
-                        <div className="mercado-chat-header">
-                          <div className="mercado-chat-header-title">
-                            <h3><MessageCircle size={18} color="#ea580c" /> Chat con {selectedJob.client_name}</h3>
-                          </div>
-                          <div className="mercado-chat-online-badge">
-                            <span className="mercado-chat-online-dot" /> En línea
-                          </div>
-                        </div>
-
-                        {/* Stream de Mensajes */}
-                        <div className="mercado-chat-messages-container">
-                          {chatMessages.length === 0 ? (
-                            <div className="mercado-chat-empty-state">
-                              <div className="icon-wrap">
-                                <MessageCircle size={26} />
-                              </div>
-                              <p>Inicia el chat con el cliente</p>
-                              <span>Escribe aquí abajo para aclarar dudas, avisar que vas en camino o confirmar el servicio.</span>
-                            </div>
-                          ) : (
-                            chatMessages.map((msg, idx) => {
-                              const isMe = Number(msg.sender_id) === Number(authUser?.id) || msg.sender_role === 'Técnico de la Red' || msg.sender_role === 'Técnico';
-                              return (
-                                <div
-                                  key={idx}
-                                  className={`mercado-chat-bubble-row ${isMe ? 'sent' : 'received'}`}
-                                >
-                                  <span className="mercado-chat-bubble-sender">
-                                    {isMe ? 'Tú (Técnico)' : (msg.sender_name || 'Cliente')}
-                                  </span>
-                                  <div className="mercado-chat-bubble">
-                                    {msg.message}
-                                  </div>
-                                  <span className="mercado-chat-bubble-time">
-                                    {formatTime(msg.created_at)}
-                                  </span>
-                                </div>
-                              );
-                            })
-                          )}
-                          <div ref={chatEndRef} />
-                        </div>
-
-                        {/* Input Bar integrado */}
-                        <form onSubmit={handleSendEmbeddedChat} className="mercado-chat-input-bar">
-                          <input
-                            type="text"
-                            placeholder="Escribe un mensaje al cliente..."
-                            value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
-                            disabled={sendingChat}
-                          />
-                          <button
-                            type="submit"
-                            className="mercado-chat-send-btn"
-                            disabled={sendingChat || !chatInput.trim()}
-                          >
-                            <Send size={15} />
-                            <span>{sendingChat ? 'Enviando...' : 'Enviar'}</span>
+                    return (
+                      <div className="jm-grid jm-grid-chat">
+                        {/* ── Columna izquierda: de qué trabajo se habla ── */}
+                        <div className="jm-col">
+                          <button type="button" className="jm-volver" onClick={() => setActiveModalTab('detalle')}>
+                            <ChevronLeft size={16} strokeWidth={2.6} /> Volver a coordinación
                           </button>
-                        </form>
+
+                          <section className="jm-card">
+                            <div className="jm-card-head">
+                              <span className="tb-actions-icon orange"><Wrench size={16} strokeWidth={2.4} /></span>
+                              <div className="jm-card-head-txt">
+                                <span className="jm-kicker">Folio #{selectedJob.id}</span>
+                                <h3 className="jm-titulo jm-titulo-sm">{selectedJob.titulo}</h3>
+                              </div>
+                            </div>
+                            <div className="jm-direccion jm-direccion-sm">
+                              <MapPin size={14} />
+                              <div><strong>{selectedJob.full_address || selectedJob.calle || selectedJob.zona}</strong></div>
+                            </div>
+                            <div className="jm-pills">
+                              <span className="jm-pill"><DollarSign size={13} /> ${parseFloat(selectedJob.agreed_price || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                          </section>
+
+                          <section className={`jm-card jm-horario ${isRescheduleRequested ? 'cambio' : isScheduleConfirmed ? 'ok' : isPendingClientConfirm ? 'espera' : 'sin'}`}>
+                            <div className="jm-seccion-titulo"><span>Hora de la visita</span></div>
+                            {isRescheduleRequested ? (
+                              <div className="jm-horario-aviso cambio">
+                                <AlertCircle size={16} />
+                                <div>
+                                  <strong>Pidió otro horario</strong>
+                                  {horarioSel.nota && <span>“{horarioSel.nota}”</span>}
+                                </div>
+                              </div>
+                            ) : fechaCita ? (
+                              <div className="jm-horario-fecha">
+                                <Calendar size={16} />
+                                <strong>{fechaCita}</strong>
+                              </div>
+                            ) : (
+                              <p className="jm-texto-suave">Aún sin agendar.</p>
+                            )}
+                            <button type="button" className="jm-btn-suave" onClick={() => setActiveModalTab('detalle')}>
+                              <Calendar size={14} /> {isRescheduleRequested ? 'Proponer nuevo horario' : (fechaCita ? 'Cambiar horario' : 'Agendar visita')}
+                            </button>
+                          </section>
+
+                          {selectedJob.client_phone && (
+                            <a
+                              className="jm-btn-suave verde jm-btn-ancho"
+                              href={`https://wa.me/52${selectedJob.client_phone.replace(/\D/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <MessageCircle size={14} /> Escribir por WhatsApp
+                            </a>
+                          )}
+                        </div>
+
+                        {/* ── Columna derecha: el chat ── */}
+                        <section className="jm-card jm-chat">
+                          <div className="jm-chat-head">
+                            <span className="tb-actions-icon orange"><MessageCircle size={16} strokeWidth={2.4} /></span>
+                            <div className="jm-chat-head-txt">
+                              <strong>Chat con {selectedJob.client_name || 'el cliente'}</strong>
+                              <span>Solo de este trabajo · folio #{selectedJob.id}</span>
+                            </div>
+                            <span className="jm-chat-linea"><span /> En línea</span>
+                          </div>
+
+                          <div className="jm-chat-mensajes">
+                            {chatMessages.length === 0 ? (
+                              <div className="jm-chat-vacio">
+                                <span className="jm-chat-vacio-icono"><MessageCircle size={24} /></span>
+                                <strong>Inicia la conversación</strong>
+                                <span>Avisa que vas en camino, aclara dudas o confirma el servicio.</span>
+                              </div>
+                            ) : (
+                              chatMessages.map((msg, idx) => {
+                                // Propuestas y respuestas de horario se muestran como avisos del sistema
+                                if (msg.is_schedule || msg.is_schedule_response) {
+                                  const tipo = msg.is_schedule ? 'propuesta' : (msg.schedule_confirmed ? 'ok' : 'cambio');
+                                  const texto = msg.is_schedule
+                                    ? `Propusiste visita: ${new Date(msg.scheduled_at || selectedJob.scheduled_at).toLocaleString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+                                    : (msg.schedule_confirmed
+                                      ? `${msg.sender_name || 'El cliente'} confirmó el horario`
+                                      : `${msg.sender_name || 'El cliente'} pidió otro horario`);
+                                  const nota = msg.is_schedule_response && !msg.schedule_confirmed
+                                    ? (msg.note || String(msg.message || '').replace(/^.*?horario de visita:\s*/i, '').replace(/^"|"$/g, ''))
+                                    : '';
+                                  return (
+                                    <div key={idx} className={`jm-msg-sistema ${tipo}`}>
+                                      {tipo === 'ok' ? <CheckCircle2 size={13} /> : tipo === 'cambio' ? <AlertCircle size={13} /> : <Calendar size={13} />}
+                                      <span>
+                                        {texto}
+                                        {nota && <em> · “{nota}”</em>}
+                                      </span>
+                                      <small>{formatTime(msg.created_at)}</small>
+                                    </div>
+                                  );
+                                }
+                                const isMe = Number(msg.sender_id) === Number(authUser?.id) || msg.sender_role === 'Técnico de la Red' || msg.sender_role === 'Técnico';
+                                return (
+                                  <div key={idx} className={`jm-msg ${isMe ? 'mio' : 'suyo'}`}>
+                                    <div className="jm-msg-burbuja">{msg.message}</div>
+                                    <span className="jm-msg-meta">
+                                      {isMe ? 'Tú' : (msg.sender_name || 'Cliente')} · {formatTime(msg.created_at)}
+                                    </span>
+                                  </div>
+                                );
+                              })
+                            )}
+                            <div ref={chatEndRef} />
+                          </div>
+
+                          <form onSubmit={handleSendEmbeddedChat} className="jm-chat-input">
+                            <input
+                              type="text"
+                              placeholder="Escribe un mensaje al cliente…"
+                              value={chatInput}
+                              onChange={(e) => setChatInput(e.target.value)}
+                              disabled={sendingChat}
+                            />
+                            <button
+                              type="submit"
+                              className="jm-chat-enviar"
+                              disabled={sendingChat || !chatInput.trim()}
+                              title="Enviar mensaje"
+                              aria-label="Enviar mensaje"
+                            >
+                              <Send size={17} strokeWidth={2.4} />
+                            </button>
+                          </form>
+                        </section>
                       </div>
-                    </>
-                  )}
+                    );
+                  })()}
 
                   {/* ─────────────────────────────────────────────────────────────
                       CASO C: TRABAJO DISPONIBLE - VISTA DE DETALLE & COTIZACIÓN

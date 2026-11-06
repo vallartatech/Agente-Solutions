@@ -2248,3 +2248,15 @@
 @media (max-width: 380px) {
   .rj-fecha { display: none; }
 }
+
+/* Respuesta del cliente al horario (tarjetas de trabajos aceptados del técnico) */
+.rj-chip.rj-chip-cambio {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.22);
+  border: 1px solid rgba(248, 113, 113, 0.55);
+}
+.rj-chip.rj-chip-confirmado {
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+}

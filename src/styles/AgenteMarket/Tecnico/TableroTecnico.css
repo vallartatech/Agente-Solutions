@@ -3534,3 +3534,242 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
   border-color: rgba(234, 179, 8, 0.35);
   color: #fde047;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   TRABAJO ACEPTADO (modal): horario, cliente, acciones y chat
+   ══════════════════════════════════════════════════════════════ */
+.jm-horario { border-left: 4px solid #cbd5e1; }
+.jm-horario.cambio { border-left-color: #ef4444; }
+.jm-horario.ok { border-left-color: #10b981; }
+.jm-horario.espera { border-left-color: #3b82f6; }
+.jm-horario.sin { border-left-color: #f59e0b; }
+
+.jm-horario-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+  background: #f1f5f9;
+  color: #475569;
+}
+.jm-horario-chip.cambio { background: #fef2f2; color: #dc2626; }
+.jm-horario-chip.ok { background: #ecfdf5; color: #059669; }
+.jm-horario-chip.espera { background: #eff6ff; color: #2563eb; }
+.jm-horario-chip.sin { background: #fffbeb; color: #b45309; }
+
+.jm-horario-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+.jm-horario-aviso > svg { flex-shrink: 0; margin-top: 2px; }
+.jm-horario-aviso div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.jm-horario-aviso strong { font-size: 0.86rem; font-weight: 800; }
+.jm-horario-aviso span { font-size: 0.86rem; font-style: italic; overflow-wrap: anywhere; }
+.jm-horario-aviso small { font-size: 0.74rem; opacity: 0.85; }
+.jm-horario-aviso.cambio { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+.jm-horario-aviso.cambio span { color: #7f1d1d; }
+
+.jm-horario-fecha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  color: #0f172a;
+}
+.jm-horario-fecha svg { color: #f26522; flex-shrink: 0; }
+.jm-horario-fecha strong { font-size: 0.98rem; font-weight: 800; text-transform: capitalize; }
+
+.jm-horario-form { display: flex; flex-direction: column; margin-top: 12px; }
+.jm-horario-form .jm-btn-principal { margin-top: 10px; }
+.jm-horario-form .jm-btn-principal:disabled { opacity: 0.6; cursor: wait; }
+
+.jm-horario-selector {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.jm-horario-selector svg { color: #f26522; flex-shrink: 0; }
+.jm-horario-selector span { flex: 1; min-width: 0; text-transform: capitalize; }
+.jm-horario-selector .jm-horario-flecha { color: #94a3b8; }
+.jm-horario-selector:hover { border-color: rgba(242, 101, 34, 0.45); }
+.jm-horario-selector:focus { outline: none; }
+.jm-horario-selector:focus-visible { box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.2); }
+
+/* Cliente */
+.jm-monto { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+.jm-monto small { color: #94a3b8; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; }
+.jm-monto strong { color: #059669; font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 900; }
+
+.jm-direccion {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+}
+.jm-direccion > svg { color: #f26522; flex-shrink: 0; margin-top: 2px; }
+.jm-direccion div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.jm-direccion strong { color: #0f172a; font-size: 0.86rem; font-weight: 700; line-height: 1.4; }
+.jm-direccion span { color: #64748b; font-size: 0.76rem; }
+.jm-direccion .jm-gps { color: #059669; font-weight: 600; }
+.jm-direccion.jm-direccion-sm { margin-top: 12px; padding: 10px 12px; }
+.jm-direccion.jm-direccion-sm strong { font-size: 0.8rem; font-weight: 600; }
+
+.jm-contacto { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.jm-contacto .jm-btn-suave { flex: 1 1 90px; }
+
+/* Botón secundario claro: Maps, Llamar, WhatsApp, avisos */
+.jm-btn-suave {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.jm-btn-suave svg { color: #f26522; flex-shrink: 0; }
+.jm-btn-suave:hover { background: #fff7f2; border-color: rgba(242, 101, 34, 0.35); }
+.jm-btn-suave:disabled { opacity: 0.6; cursor: wait; }
+.jm-btn-suave:focus { outline: none; }
+.jm-btn-suave:focus-visible { outline: 2px solid #f26522; outline-offset: 2px; }
+.jm-btn-suave.verde { color: #047857; border-color: #a7f3d0; background: #f0fdf4; }
+.jm-btn-suave.verde svg { color: #059669; }
+.jm-btn-suave.verde:hover { background: #dcfce7; }
+.jm-btn-suave.rojo { color: #dc2626; border-color: #fecaca; background: #fff5f5; }
+.jm-btn-suave.rojo svg { color: #dc2626; }
+.jm-btn-suave.rojo:hover { background: #fef2f2; }
+.jm-btn-ancho { width: 100%; }
+.jm-horario > .jm-btn-suave { width: 100%; margin-top: 10px; }
+
+.jm-acciones-trabajo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* Etiqueta de fachada en la miniatura */
+.jm-miniatura { position: relative; }
+.jm-miniatura-tag {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+}
+
+/* Avisos de horario dentro del chat */
+.jm-msg-sistema {
+  align-self: center;
+  max-width: 92%;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-align: center;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.jm-msg-sistema em { font-weight: 600; }
+.jm-msg-sistema small { color: #94a3b8; font-weight: 600; }
+.jm-msg-sistema.ok { background: #ecfdf5; color: #047857; }
+.jm-msg-sistema.cambio { background: #fef2f2; color: #b91c1c; }
+
+@media (max-width: 600px) {
+  .jm-acciones-trabajo { grid-template-columns: 1fr; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PANEL "EN CAMINO" (mapa): respuesta del cliente al horario
+   ══════════════════════════════════════════════════════════════ */
+.nv-aviso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 10px 12px;
+  border-radius: 16px;
+  border: 1px solid;
+}
+.nv-aviso-icono {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+.nv-aviso-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.nv-aviso-txt strong { font-size: 0.84rem; font-weight: 800; }
+.nv-aviso-txt span { font-size: 0.76rem; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nv-aviso-acciones { display: flex; gap: 6px; flex-shrink: 0; }
+.nv-aviso-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 11px;
+  background: #dc2626;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.nv-aviso-btn:hover { background: #b91c1c; }
+.nv-aviso-btn.secundario { padding: 8px 10px; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; }
+.nv-aviso-btn.secundario:hover { background: #fef2f2; }
+.nv-aviso-cambio { background: #fef2f2; border-color: #fecaca; color: #b91c1c; animation: nv-aviso-entra 0.35s ease; }
+.nv-aviso-cambio .nv-aviso-icono { background: #fee2e2; color: #dc2626; }
+.nv-aviso-cambio .nv-aviso-txt span { color: #7f1d1d; }
+.nv-aviso-ok { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+.nv-aviso-ok .nv-aviso-icono { background: #d1fae5; color: #059669; }
+.nv-aviso-espera { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.nv-aviso-espera .nv-aviso-icono { background: #dbeafe; color: #2563eb; }
+
+@keyframes nv-aviso-entra {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nv-aviso-cambio { animation: none; }
+}
