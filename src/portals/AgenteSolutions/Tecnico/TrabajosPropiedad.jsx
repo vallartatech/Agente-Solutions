@@ -20,6 +20,7 @@ import { reportarUbicacion } from "../../../components/Shared/ubicacionService";
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 import { trabajoEnviadoOValidado } from '../Shared/etapasEvidencia';
 import { AccesoQRTecnico } from '../Shared/AccesoQR';
+import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 
 const TrabajoPropiedad = () => {
   const { user } = useAuth();
@@ -941,7 +942,7 @@ const TrabajoPropiedad = () => {
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#1e293b', marginBottom: '6px' }}>
                   FECHA Y HORA SUGERIDA PARA 2DA VISITA <span style={{ color: '#dc2626' }}>*</span>
                 </label>
-                <input 
+                <CampoFechaHora 
                   type="datetime-local" 
                   value={fechaSegundaVisita}
                   onChange={(e) => setFechaSegundaVisita(e.target.value)}

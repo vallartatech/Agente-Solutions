@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Camera } from 'lucide-react';
+import CampoFechaHora from '../../../../components/Shared/CampoFechaHora';
 import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -58,33 +59,17 @@ export const proximaFecha = (e) => e.visits?.[0]?.fecha_programada?.slice(0, 10)
 export const porFecha = (a, b) => (proximaFecha(a) || '9999').localeCompare(proximaFecha(b) || '9999');
 
 // Se elige siempre en el calendario: así no se puede escribir una fecha que no existe
-export const CampoFecha = ({ value, onChange, min, max, ariaLabel }) => {
-  const abrirCalendario = (e) => {
-    try {
-      e.currentTarget.showPicker();
-    } catch {
-      // Navegador sin showPicker: abre con su propio icono
-    }
-  };
-
-  return (
-    <input
-      type="date"
-      className="mt-input-fecha"
-      min={min}
-      max={max}
-      aria-label={ariaLabel}
-      value={value}
-      onChange={onChange}
-      onClick={abrirCalendario}
-      onKeyDown={(e) => {
-        if (e.key === 'Tab') return;
-        e.preventDefault();
-        if (e.key === 'Enter' || e.key === ' ') abrirCalendario(e);
-      }}
-    />
-  );
-};
+export const CampoFecha = ({ value, onChange, min, max, ariaLabel }) => (
+  <CampoFechaHora
+    type="date"
+    className="mt-input-fecha"
+    min={min}
+    max={max}
+    aria-label={ariaLabel}
+    value={value || ''}
+    onChange={onChange}
+  />
+);
 
 // `actual`: URL de la foto ya guardada, se muestra hasta que se elija otra
 export const CampoFoto = ({ etiqueta, archivo, actual = null, onChange }) => {

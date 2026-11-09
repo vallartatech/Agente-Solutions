@@ -10,6 +10,7 @@ import { QrCode, Lock, Upload, Trash2, Eye, RefreshCw, X, MapPin, ShieldCheck, P
 import { comprimirImagen } from '../../../components/Shared/comprimirImagen';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 import '../../../styles/AgenteSolutions/Shared/AccesoQR.css';
+import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 
 const API = import.meta.env.VITE_API_BASE_URL;
 const SLOTS = [1, 2];
@@ -182,7 +183,7 @@ const FormularioQR = ({ trabajo, slot, existente, onGuardado, onCancelar }) => {
       </label>
       <label className="aqr-campo">
         <span>Válido hasta <em>(opcional)</em></span>
-        <input type="datetime-local" value={vigencia} onChange={(e) => setVigencia(e.target.value)} />
+        <CampoFechaHora type="datetime-local" value={vigencia} onChange={(e) => setVigencia(e.target.value)} />
       </label>
 
       <div className="aqr-form-acciones">

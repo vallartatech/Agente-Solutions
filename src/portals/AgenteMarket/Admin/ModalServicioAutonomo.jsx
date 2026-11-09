@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Admin/ModalServicioAutonomo.css';
 import { mostrarAviso } from '../../../utils/dialogos';
+import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 
 // ── Fecha estimada ("Programar") ──
 // Es la fecha en que el cliente necesita el trabajo, no una cita confirmada: el técnico propone la cita después.
@@ -672,7 +673,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                         <div className="msa-programar-fila">
                           <label className="msa-programar-field">
                             <span className="msa-sublabel">Otra fecha:</span>
-                            <input
+                            <CampoFechaHora
                               type="date"
                               value={fecha || ''}
                               min={enDias(1)}

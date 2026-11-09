@@ -4,6 +4,7 @@ import Header from '../../../components/Shared/Header';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, ArrowRightLeft, RefreshCw, AlertCircle, Phone, Mail } from 'lucide-react';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
+import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 
 const VistaGestionAutonomos = () => {
   const [activeTenants, setActiveTenants] = useState([]);
@@ -494,7 +495,7 @@ const VistaGestionAutonomos = () => {
 
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.88rem', color: '#555', marginBottom: '6px' }}>📅 Fecha de Vencimiento / Próximo Pago:</label>
-                  <input type="date" value={planForm.subscription_expires_at} onChange={e => setPlanForm({ ...planForm, subscription_expires_at: e.target.value })}
+                  <CampoFechaHora type="date" value={planForm.subscription_expires_at} onChange={e => setPlanForm({ ...planForm, subscription_expires_at: e.target.value })}
                     style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontWeight: 'bold' }} />
                   <span style={{ fontSize: '0.78rem', color: '#888' }}>* Puedes ampliar o reducir el periodo de prueba o fecha límite de pago aquí.</span>
                 </div>

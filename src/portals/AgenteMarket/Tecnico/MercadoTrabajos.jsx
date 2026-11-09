@@ -27,6 +27,7 @@ import RegisterModal from '../../../components/Auth/Register';
 import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
 import ModalReportePdfTecnico from './ModalReportePdfTecnico';
 import { mostrarAviso } from '../../../utils/dialogos';
+import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 
 const mapContainerStyle = {
   width: '100%',
@@ -1392,9 +1393,11 @@ const MercadoTrabajos = () => {
     if (!job || Swal.isVisible()) return;
     const h = estadoHorarioDe(job);
     const cliente = job.client_name || job.cliente || 'El cliente';
+    // Aviso centrado y compacto (antes era un toast lateral que se estiraba a todo lo alto)
     Swal.fire({
-      toast: true,
-      position: 'top-end',
+      position: 'center',
+      width: 380,
+      backdrop: true,
       icon: h.confirmado ? 'success' : 'warning',
       title: h.confirmado ? `${cliente} confirmó la visita` : `${cliente} pidió otro horario`,
       text: h.confirmado ? job.titulo : (h.nota ? `“${h.nota}” · ${job.titulo}` : job.titulo),
@@ -5168,7 +5171,7 @@ const MercadoTrabajos = () => {
               <div className="mercado-second-visit-body">
                 <div className="mercado-second-visit-field">
                   <label className="mercado-second-visit-label">Fecha y Hora Sugerida</label>
-                  <input
+                  <CampoFechaHora
                     type="datetime-local"
                     className="mercado-second-visit-input"
                     value={secondVisitDate}
@@ -5269,7 +5272,7 @@ const MercadoTrabajos = () => {
                   <label>
                     Fecha y Hora de la Visita *
                   </label>
-                  <input
+                  <CampoFechaHora
                     type="datetime-local"
                     className="mercado-schedule-datetime-input"
                     value={boardScheduleDate}

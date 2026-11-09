@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import '../../styles/AgenteSolutions/Admin/VistaCotizaciones.css'; // Reusing styles
+import CampoFechaHora from '../Shared/CampoFechaHora';
 
 const AssignWorkModal = ({ cotizacion, onClose, onAssign }) => {
   const [tecnicos, setTecnicos] = useState([]);
@@ -174,7 +175,7 @@ const AssignWorkModal = ({ cotizacion, onClose, onAssign }) => {
             </div>
             <div>
               <label style={{ fontWeight: 'bold' }}>Fecha y Hora Programada:</label>
-              <input type="datetime-local" className="cotiz-input-field" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={{ padding: '10px' }} />
+              <CampoFechaHora type="datetime-local" className="cotiz-input-field" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={{ padding: '10px' }} />
             </div>
           </div>
 

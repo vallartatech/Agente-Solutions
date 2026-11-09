@@ -7,6 +7,7 @@ import { useAuth } from '../../../context/AuthContext';
 import Swal from 'sweetalert2';
 import { suscribirPushOneSignal } from '../../../components/Shared/oneSignalPush';
 import { revisarDispositivoPush } from '../../../components/Shared/diagnosticoPush';
+import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 
 // Botón extra en los avisos de "push no enviada": revisa y repara este dispositivo
 const BOTON_REVISAR_PUSH = { showDenyButton: true, denyButtonText: 'Revisar mi dispositivo', denyButtonColor: '#64748b' };
@@ -2427,7 +2428,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                           {/* Fecha y hora por separado, igual que al solicitar un trabajo */}
                           <label>
                             <span>Fecha</span>
-                            <input
+                            <CampoFechaHora
                               type="date"
                               className="solutions-wo-input"
                               value={editScheduledAt.split(/[T ]/)[0] || ''}
@@ -2439,7 +2440,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                           </label>
                           <label>
                             <span>Hora</span>
-                            <input
+                            <CampoFechaHora
                               type="time"
                               className="solutions-wo-input"
                               value={(editScheduledAt.split(/[T ]/)[1] || '').substring(0, 5)}
@@ -2773,7 +2774,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                           </button>
                         </div>
                         {noticeForm.dateMode === 'other' && (
-                          <input
+                          <CampoFechaHora
                             type="date"
                             className="nq-input nq-input-sm nq-date-input"
                             aria-label="Fecha del aviso"
@@ -2801,7 +2802,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                         </div>
                         {!noticeForm.allDay && (
                           <div className="nq-time-row">
-                            <input
+                            <CampoFechaHora
                               type="time"
                               className="nq-input nq-input-sm nq-date-input"
                               aria-label="Desde"
@@ -2810,7 +2811,7 @@ const ModalCalendarioSolutions = ({ isOpen, onClose, onSelectJob }) => {
                               required
                             />
                             <span className="nq-time-sep">a</span>
-                            <input
+                            <CampoFechaHora
                               type="time"
                               className="nq-input nq-input-sm nq-date-input"
                               aria-label="Hasta"

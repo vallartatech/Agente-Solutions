@@ -18,6 +18,7 @@ import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteMarket/Admin/VistaServiciosAdmin.css';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 import '../../../styles/Shared/TarjetaTrabajo.css';
+import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 
 // Etiqueta y color de cada columna en la tarjeta
 const ESTADO_TARJETA = {
@@ -1294,35 +1295,21 @@ const VistaServiciosAdmin = () => {
                                 </label>
                                 <div style={{ display: 'flex', gap: '8px', marginTop: '10px', alignItems: 'center' }}>
                                   <div className="input-with-icon" style={{ flex: 1.1, position: 'relative' }}>
-                                    <Calendar size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#F26522', pointerEvents: 'none', zIndex: 1 }} />
-                                    <input 
-                                      type="date" 
+                                    <CampoFechaHora
+                                      type="date"
                                       defaultValue={activeTask.scheduledAt ? new Date(activeTask.scheduledAt).toISOString().split('T')[0] : ''}
                                       id="input-date-visit"
-                                      onClick={(e) => !e.target.disabled && e.target.showPicker()}
-                                      disabled={activeTask.scheduledAt && !editandoCita}
-                                      style={{ 
-                                        width: '100%', padding: '12px 10px 12px 30px', 
-                                        border: '1px solid #ccc', borderRadius: '10px', 
-                                        outline: 'none', background: (activeTask.scheduledAt && !editandoCita) ? '#f0f0f0' : 'white', fontSize: '0.85rem',
-                                        color: '#333', fontWeight: '600', display: 'block', cursor: (activeTask.scheduledAt && !editandoCita) ? 'default' : 'pointer'
-                                      }}
+                                      disabled={!!(activeTask.scheduledAt && !editandoCita)}
+                                      style={{ fontSize: '0.85rem' }}
                                     />
                                   </div>
                                   <div className="input-with-icon" style={{ flex: 0.9, position: 'relative' }}>
-                                    <Clock size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#F26522', pointerEvents: 'none', zIndex: 1 }} />
-                                    <input 
-                                      type="time" 
+                                    <CampoFechaHora
+                                      type="time"
                                       id="input-time-visit"
                                       defaultValue={activeTask.scheduledAt ? new Date(activeTask.scheduledAt).toISOString().split('T')[1].substring(0,5) : ''}
-                                      onClick={(e) => !e.target.disabled && e.target.showPicker()}
-                                      disabled={activeTask.scheduledAt && !editandoCita}
-                                      style={{ 
-                                        width: '100%', padding: '12px 10px 12px 30px', 
-                                        border: '1px solid #ccc', borderRadius: '10px', 
-                                        outline: 'none', background: (activeTask.scheduledAt && !editandoCita) ? '#f0f0f0' : 'white', fontSize: '0.85rem',
-                                        color: '#333', fontWeight: '600', display: 'block', cursor: (activeTask.scheduledAt && !editandoCita) ? 'default' : 'pointer'
-                                      }}
+                                      disabled={!!(activeTask.scheduledAt && !editandoCita)}
+                                      style={{ fontSize: '0.85rem' }}
                                     />
                                   </div>
                                 </div>

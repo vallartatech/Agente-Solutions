@@ -12,6 +12,7 @@ import '../../../../styles/AgenteSolutions/Admin/VistaPropiedades.css';
 import '../../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
 import '../../../../styles/Shared/LiquidGlass.css';
 import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
+import CampoFechaHora from '../../../../components/Shared/CampoFechaHora';
 
 // Solicitud de trabajo o de levantamiento para una propiedad, asignada a técnicos (rol 2) y/o admins (rol 1).
 // Si se eligen varias personas, forman una cuadrilla: la primera elegida es la responsable.
@@ -602,7 +603,7 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
                 <div className="xp-visita">
                   <label>
                     <span>Fecha</span>
-                    <input
+                    <CampoFechaHora
                       type="date"
                       className="xp-rp-input"
                       required
@@ -613,7 +614,7 @@ const ModalNuevaSolicitud = ({ propiedad: propiedadFija = null, propiedades = nu
                   </label>
                   <label>
                     <span>Hora</span>
-                    <input
+                    <CampoFechaHora
                       type="time"
                       required
                       className="xp-rp-input"

@@ -29,6 +29,7 @@ import mpLogo from "../../../assets/Mercado-Pago.png";
 import DatosBancarios from "../../../components/Shared/DatosBancarios";
 import { cadenasCotizaciones, origenCotizacion } from "./Expediente/flujoTrabajo";
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
+import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 
 const VistaCotizaciones = () => {
   const navigate = useNavigate();
@@ -2104,11 +2105,11 @@ const VistaCotizaciones = () => {
                             </label>
                             <label className="cd-field">
                               <small>Fecha</small>
-                              <input type="date" min={hoyISO} value={asignFecha} onChange={(e) => setAsignFecha(e.target.value)} />
+                              <CampoFechaHora type="date" min={hoyISO} value={asignFecha} onChange={(e) => setAsignFecha(e.target.value)} />
                             </label>
                             <label className="cd-field">
                               <small>Hora</small>
-                              <input type="time" value={asignHora} onChange={(e) => setAsignHora(e.target.value)} />
+                              <CampoFechaHora type="time" value={asignHora} onChange={(e) => setAsignHora(e.target.value)} />
                             </label>
                           </div>
 

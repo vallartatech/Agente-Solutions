@@ -22,6 +22,7 @@ import CasaLoader from "../../../components/Shared/CasaLoader";
 import "../../../styles/AgenteSolutions/Admin/VistaLevantamientos.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 import { mostrarAviso } from '../../../utils/dialogos';
+import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 
 const VistaLevantamientos = () => {
   const navigate = useNavigate();
@@ -762,7 +763,7 @@ const VistaLevantamientos = () => {
 
               <div className="lev-form-group">
                 <label className="lev-form-label">FECHA DE VISITA *</label>
-                <input
+                <CampoFechaHora
                   type="date"
                   className="lev-form-input"
                   required
@@ -773,7 +774,7 @@ const VistaLevantamientos = () => {
 
               <div className="lev-form-group">
                 <label className="lev-form-label">HORARIO SUGERIDO *</label>
-                <input
+                <CampoFechaHora
                   type="time"
                   className="lev-form-input"
                   required
@@ -849,7 +850,7 @@ const VistaLevantamientos = () => {
               <form onSubmit={enviarReprogramacion}>
                 <div className="lev-form-group">
                   <label className="lev-form-label">NUEVA FECHA Y HORA SUGERIDA *</label>
-                  <input
+                  <CampoFechaHora
                     type="datetime-local"
                     className="lev-form-input"
                     required

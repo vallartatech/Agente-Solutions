@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../../../context/AuthContext';
 import Logo3 from '../../../assets/Logo3.png';
 import CreateQuotationModal from '../../../components/Modals/CreateQuotationModal';
+import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 
 const DetallePropiedad = () => {
   const { id } = useParams();
@@ -2797,7 +2798,7 @@ const DetallePropiedad = () => {
               <div className="input-row" style={{ display: 'flex', gap: '15px' }}>
                 <div className="input-group" style={{ flex: 1 }}>
                   <label style={{ fontWeight: 'bold', color: '#334155', marginBottom: '8px', display: 'block' }}>Fecha Inicio</label>
-                  <input 
+                  <CampoFechaHora 
                     type="date" 
                     value={formPlanificacion.fecha} 
                     onChange={(e) => setFormPlanificacion({...formPlanificacion, fecha: e.target.value})} 
@@ -2857,7 +2858,7 @@ const DetallePropiedad = () => {
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#1e293b', marginBottom: '6px' }}>
                   NUEVA FECHA Y HORA <span style={{ color: '#dc2626' }}>*</span>
                 </label>
-                <input 
+                <CampoFechaHora 
                   type="datetime-local"
                   value={fecha2daCliente}
                   onChange={(e) => setFecha2daCliente(e.target.value)}
@@ -2902,7 +2903,7 @@ const DetallePropiedad = () => {
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', color: '#1e293b', marginBottom: '6px' }}>
                   FECHA Y HORA DE LA 2DA VISITA <span style={{ color: '#dc2626' }}>*</span>
                 </label>
-                <input 
+                <CampoFechaHora 
                   type="datetime-local" 
                   value={fecha2daAdmin}
                   onChange={(e) => setFecha2daAdmin(e.target.value)}

@@ -7,6 +7,7 @@ import { CheckCircle2, Circle, X, UserCircle, Calendar,
   MapPin, Navigation, Users, Package, Zap, Banknote, ListChecks, Hash, ClipboardList, ShieldCheck,
   Search, ChevronDown, ChevronLeft, CalendarCheck
 } from 'lucide-react';
+import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 
 const ROL_EQUIPO = { 0: 'Root', 1: 'Admin', 2: 'Técnico', 8: 'Cuadrilla' };
 import Header from '../../../components/Shared/Header';
@@ -1385,22 +1386,20 @@ const VistaServiciosAdmin = () => {
                                 <div className="svm-visit-row" key={`${activeTask.dbId}-${activeTask.scheduledAt || 'sin'}`}>
                                   <label className="svm-field">
                                     <span>Fecha</span>
-                                    <input
+                                    <CampoFechaHora
                                       type="date"
                                       className="svm-input"
                                       defaultValue={valoresVisita?.fecha || ''}
                                       id="input-date-visit"
-                                      onClick={(e) => e.target.showPicker?.()}
                                     />
                                   </label>
                                   <label className="svm-field">
                                     <span>Hora</span>
-                                    <input
+                                    <CampoFechaHora
                                       type="time"
                                       className="svm-input"
                                       id="input-time-visit"
                                       defaultValue={valoresVisita?.hora || ''}
-                                      onClick={(e) => e.target.showPicker?.()}
                                     />
                                   </label>
                                 </div>
