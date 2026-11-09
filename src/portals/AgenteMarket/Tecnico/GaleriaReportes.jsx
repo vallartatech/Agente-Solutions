@@ -4,8 +4,8 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import "../../../styles/AgenteSolutions/Tecnico/GaleriaReportes.css";
 import {
-  ChevronLeft, FileText, Camera, CheckCircle2, Trash2, Edit3, Loader2, Upload, Video, Images,
-  Hash, UserRound, Building2, Wrench, Clock, Send, AlertCircle, Circle, Maximize2, Receipt, Lock, ImageOff, ChevronDown, ChevronUp
+  FileText, Camera, CheckCircle2, Trash2, Edit3, Loader2, Upload, Video, Images,
+  Hash, UserRound, Building2, Wrench, Send, AlertCircle, Circle, Maximize2, Receipt, Lock, ImageOff, ChevronDown, ChevronUp
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -13,7 +13,7 @@ import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
 import { useAuth } from "../../../context/AuthContext";
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
-import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta, esPorElemento, etapasDelTrabajo, evidenciasDelElemento, avanceDelElemento, evidenciasSoloLectura, trabajoValidado } from '../Shared/etapasEvidencia';
+import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta, esPorElemento, etapasDelTrabajo, evidenciasDelElemento, avanceDelElemento, trabajoEnviadoOValidado } from '../Shared/etapasEvidencia';
 import '../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 import CarruselEtapas from '../../AgenteSolutions/Shared/CarruselEtapas';
 import { VisorFotos } from '../../AgenteSolutions/Admin/Expediente/ExpedienteUI';
@@ -29,8 +29,10 @@ const TONO_ETAPA = {
   TICKET: '#7e6fc4',
 };
 
-// Etapas compartidas con el panel de reportes del admin (incluye el ticket de conformidad)
-const STAGES = ETAPAS_EVIDENCIA.map(e => ({ ...e, placeholder: e.placeholderTecnico }));
+// Red: sin ticket de conformidad (el reporte se entrega directo al cliente)
+const STAGES = ETAPAS_EVIDENCIA
+  .filter(e => !e.esTicket)
+  .map(e => ({ ...e, placeholder: e.placeholderTecnico }));
 const SLOT_VACIO = { file: null, preview: null, description: '', isEditing: false };
 
 const GaleriaReportes = () => {
@@ -39,14 +41,9 @@ const GaleriaReportes = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const trabajoId = id || location.state?.trabajoId;
-  const esAdmin = [0, 1].includes(Number(user?.role_id));
   // Datos del trabajo: los de la pantalla anterior y, encima, los del servidor (estado real aunque se abra por enlace)
   const [detalleTrabajo, setDetalleTrabajo] = useState(null);
   const servicio = detalleTrabajo ? { ...detalleTrabajo, ...(location.state?.servicio || {}) } : location.state?.servicio;
-  // Red: el técnico regresa al tablero de trabajos de la Red (con este trabajo seleccionado)
-  const returnPath = location.state?.from || (esAdmin
-    ? '/tablero-servicios'
-    : (trabajoId && String(trabajoId).startsWith('work_order-') ? '/mercado-trabajos' : `/trabajo-propiedad/${trabajoId}`));
 
   const [reportes, setReportes] = useState([]);
   // Estado de la orden: viene del trabajo (técnico) o de la tarjeta del tablero (admin)
@@ -179,6 +176,91 @@ const GaleriaReportes = () => {
     }));
   };
 
+  // Envía al servidor la evidencia de una etapa (crea o actualiza). La usan "Guardar" y "Subir todo".
+  const subirEvidencia = async (stage, dataForSlot, existingReport, descToSave) => {
+    const formData = new FormData();
+    // Incluir tag identificador en la descripción
+    formData.append('description', `${stage.tag} ${limpiarEtiqueta(descToSave)}`);
+    formData.append('stage', stage.stage);
+    if (dataForSlot.file) formData.append('image', dataForSlot.file);
+
+    if (existingReport && existingReport.id) {
+      // Actualizar reporte existente
+      formData.append('_method', 'PUT');
+      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/reportes/${existingReport.id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    } else {
+      // Crear nuevo reporte
+      if (porElemento && !stage.esTicket) formData.append('work_order_component_id', elementoActivo);
+      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/servicios/${trabajoId}/reportes`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+  };
+
+  // Etapas con algo capturado y sin guardar: una foto/video nuevo, o texto en una etapa vacía o en edición
+  const etapasPendientes = () => etapas.filter((stage) => {
+    const local = slotData[claveSlot(stage)] || SLOT_VACIO;
+    const report = getReportForSlot(stage);
+    return !!local.file || (!!local.description.trim() && (!report || local.isEditing));
+  });
+
+  // SUBIR TODO: guarda de una vez las etapas completas (foto + descripción). Las incompletas se
+  // quedan como están y se avisa qué les falta. El guardado uno por uno sigue igual.
+  const [subiendoTodo, setSubiendoTodo] = useState(false);
+  const handleSubirTodo = async () => {
+    const pendientes = etapasPendientes();
+    if (!pendientes.length) return;
+
+    setSubiendoTodo(true);
+    const guardadas = [];
+    const avisos = [];
+
+    for (const stage of pendientes) {
+      const clave = claveSlot(stage);
+      const local = slotData[clave] || SLOT_VACIO;
+      const report = getReportForSlot(stage);
+      const desc = local.description.trim();
+      const nombre = limpiarEtiqueta(String(stage.title).replace(/^\d+\.\s*/, ''));
+
+      if (!desc) {
+        avisos.push(`<b>${nombre}</b>: falta la descripción, no se subió.`);
+        continue;
+      }
+      if (!local.file && !report) {
+        avisos.push(`<b>${nombre}</b>: falta la ${stage.permiteVideo ? 'foto o video' : 'foto'}, no se subió.`);
+        continue;
+      }
+
+      setSubmittingKey(stage.key);
+      try {
+        await subirEvidencia(stage, local, report, desc);
+        guardadas.push(nombre);
+        setSlotData(prev => ({ ...prev, [clave]: SLOT_VACIO }));
+      } catch (error) {
+        console.error('Error al subir evidencia:', error);
+        avisos.push(`<b>${nombre}</b>: ${error.response?.data?.error || 'no se pudo subir, inténtalo de nuevo.'}`);
+      }
+    }
+
+    setSubmittingKey(null);
+    setSubiendoTodo(false);
+    if (guardadas.length) await fetchReportes();
+
+    const lista = (items) => `<ul style="text-align:left;margin:8px 0 0;padding-left:18px">${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
+    Swal.fire({
+      icon: !guardadas.length ? 'warning' : avisos.length ? 'info' : 'success',
+      title: guardadas.length
+        ? `${guardadas.length} ${guardadas.length === 1 ? 'evidencia guardada' : 'evidencias guardadas'}`
+        : 'No se subió ninguna evidencia',
+      html: (guardadas.length ? `Se guardaron: ${guardadas.join(', ')}.` : '')
+        + (avisos.length ? `<div style="margin-top:10px">Pendientes:${lista(avisos)}</div>` : ''),
+      confirmButtonColor: '#F26522',
+      confirmButtonText: 'Entendido'
+    });
+  };
+
   const handleSaveSlot = async (stage) => {
     const dataForSlot = slotData[claveSlot(stage)] || SLOT_VACIO;
     const existingReport = getReportForSlot(stage);
@@ -211,30 +293,7 @@ const GaleriaReportes = () => {
     setSubmittingKey(stage.key);
 
     try {
-      const formData = new FormData();
-      // Incluir tag identificador en la descripción
-      const finalDesc = `${stage.tag} ${limpiarEtiqueta(descToSave)}`;
-
-      formData.append('description', finalDesc);
-      formData.append('stage', stage.stage);
-
-      if (dataForSlot.file) {
-        formData.append('image', dataForSlot.file);
-      }
-
-      if (existingReport && existingReport.id) {
-        // Actualizar reporte existente
-        formData.append('_method', 'PUT');
-        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/reportes/${existingReport.id}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      } else {
-        // Crear nuevo reporte
-        if (porElemento && !stage.esTicket) formData.append('work_order_component_id', elementoActivo);
-        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/servicios/${trabajoId}/reportes`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      }
+      await subirEvidencia(stage, dataForSlot, existingReport, descToSave);
 
       Swal.fire({
         icon: 'success',
@@ -310,25 +369,22 @@ const GaleriaReportes = () => {
     ? elementos.reduce((suma, el) => suma + avanceDelElemento(reportes, el.id), 0)
     : STAGES.filter(s => s.required && getReportForSlot(s)).length;
 
-  // Con las evidencias obligatorias se puede cerrar desde aquí, sin regresar al trabajo.
-  // El técnico lo manda a aprobación (el backend lo deja "Por Aprobar"); el admin lo finaliza.
+  // Red: con las evidencias obligatorias el técnico entrega el reporte AL CLIENTE (sin aprobación de un
+  // administrador). Una vez entregado, nadie puede modificar las evidencias.
   const ordenCerrada = ['Listo', 'Finalizado', 'Por Aprobar', 'done', 'review', 'rejected', 'Rechazado', 'Cancelado'].includes(estadoOrden);
   const esOrdenDeTrabajo = !String(trabajoId || '').toLowerCase().includes('servicio');
   const puedeEnviar = countRequiredDone === totalRequeridas && !cargandoElementos && !ordenCerrada && esOrdenDeTrabajo;
-  // Enviado a aprobación: el técnico ya no edita. Validado: nadie edita (el backend aplica lo mismo)
-  const soloLectura = esOrdenDeTrabajo && evidenciasSoloLectura(estadoOrden, esAdmin);
+  const soloLectura = esOrdenDeTrabajo && trabajoEnviadoOValidado(estadoOrden);
 
   const enviarAprobacion = async () => {
     const result = await Swal.fire({
-      title: esAdmin ? '¿Finalizar el trabajo?' : '¿Enviar a aprobación?',
-      text: esAdmin
-        ? 'El trabajo quedará finalizado y se le avisará al técnico.'
-        : 'El administrador revisará tu reporte y lo aprobará. Te llegará una notificación.',
+      title: '¿Enviar el reporte al cliente?',
+      text: 'El cliente recibirá tu reporte con las evidencias. Después de enviarlo ya no se podrá modificar.',
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#16a34a',
       cancelButtonColor: '#64748b',
-      confirmButtonText: esAdmin ? 'Sí, finalizar' : 'Sí, enviar',
+      confirmButtonText: 'Sí, enviar al cliente',
       cancelButtonText: 'Cancelar'
     });
     if (!result.isConfirmed) return;
@@ -337,25 +393,23 @@ const GaleriaReportes = () => {
     try {
       const realId = String(trabajoId).match(/\d+/)?.[0];
       const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/work-orders/${realId}/status`, { status: 'Listo' });
-      const nuevo = res.data?.status || 'Listo';
-      setEstadoOrden(nuevo);
+      setEstadoOrden(res.data?.status || 'Listo');
       Swal.fire({
         icon: 'success',
-        title: nuevo === 'Por Aprobar' ? '¡Enviado a revisión!' : '¡Trabajo finalizado!',
-        text: nuevo === 'Por Aprobar'
-          ? 'Un administrador lo revisará. Te avisaremos cuando quede aprobado.'
-          : 'El trabajo quedó finalizado.',
-        timer: 2200,
+        title: '¡Reporte enviado al cliente!',
+        text: 'El trabajo quedó concluido y el reporte ya no se puede modificar.',
+        timer: 2400,
         showConfirmButton: false
       });
     } catch (error) {
-      console.error('Error al enviar a aprobación:', error);
+      console.error('Error al enviar el reporte al cliente:', error);
       Swal.fire('Error', error.response?.data?.error || 'No se pudo actualizar el trabajo. Inténtalo de nuevo.', 'error');
     } finally {
       setEnviandoAprobacion(false);
     }
   };
 
+  const pendientesSubir = etapasPendientes().length;
   const progreso = totalRequeridas ? Math.round((countRequiredDone / totalRequeridas) * 100) : 0;
   const folioTrabajo = servicio?.property?.property_code
     || (trabajoId ? (String(trabajoId).startsWith('work_order-') ? `#${String(trabajoId).replace('work_order-', '')}` : trabajoId) : 'N/A');
@@ -398,32 +452,34 @@ const GaleriaReportes = () => {
             ))}
           </section>
 
-          {/* Regreso, progreso y acciones */}
+          {/* Progreso y acciones (sin botón de regreso: se navega con el encabezado) */}
           <div className="ge-barra">
-            <button type="button" className="ge-btn ge-btn-vidrio" onClick={() => navigate(returnPath, { state: { servicio, trabajoId } })}>
-              <ChevronLeft size={18} />
-              {esAdmin && !location.state?.from ? 'Regresar a servicios' : 'Regresar al trabajo'}
-            </button>
-
             <div className={`ge-progreso ${countRequiredDone === totalRequeridas ? 'completo' : ''}`}>
               <span>Evidencias obligatorias <strong>{countRequiredDone} de {totalRequeridas}</strong></span>
               <span className="ge-progreso-barra"><span style={{ width: `${progreso}%` }} /></span>
             </div>
 
             <div className="ge-barra-fin">
-              {soloLectura ? (
-                <span className="ge-aviso"><Lock size={16} />
-                  {trabajoValidado(estadoOrden)
-                    ? 'Trabajo validado: el reporte es de solo lectura'
-                    : 'Enviado a aprobación: solo el administrador puede modificar las evidencias'}
-                </span>
-              ) : estadoOrden === 'Por Aprobar' && (
-                <span className="ge-aviso"><Clock size={16} /> Pendiente de aprobación del administrador</span>
+              {soloLectura && (
+                <span className="ge-aviso"><Lock size={16} /> Reporte enviado al cliente: ya no se puede modificar</span>
+              )}
+              {/* Subir todas las etapas capturadas de una vez (el guardado por etapa sigue disponible) */}
+              {!soloLectura && pendientesSubir > 0 && (
+                <button
+                  type="button"
+                  className="ge-btn ge-btn-primario"
+                  onClick={handleSubirTodo}
+                  disabled={subiendoTodo || !!submittingKey}
+                  title="Guarda de una vez todas las etapas que ya tienen foto y descripción"
+                >
+                  {subiendoTodo ? <Loader2 className="ge-girar" size={17} /> : <Upload size={17} />}
+                  {subiendoTodo ? 'Subiendo...' : `Subir todo (${pendientesSubir})`}
+                </button>
               )}
               {puedeEnviar && (
                 <button type="button" className="ge-btn ge-btn-exito" onClick={enviarAprobacion} disabled={enviandoAprobacion}>
                   {enviandoAprobacion ? <Loader2 className="ge-girar" size={17} /> : <Send size={17} />}
-                  {esAdmin ? 'Finalizar trabajo' : 'Enviar a aprobación'}
+                  Enviar al cliente
                 </button>
               )}
               {(user?.role_id === 0 || user?.role_id === 1) && (
