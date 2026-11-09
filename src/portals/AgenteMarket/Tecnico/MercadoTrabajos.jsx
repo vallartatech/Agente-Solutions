@@ -14,7 +14,7 @@ import {
   Home, Car, Navigation, Wrench, Camera, Plus, Trash2, Check, ArrowRight, Play, Eye, Sparkles, Lock, Zap,
   Sun, Moon, Globe, SlidersHorizontal, ChevronDown, ChevronUp, Maximize, Minimize,
   Snowflake, Droplets, Paintbrush, KeyRound, Hammer, Leaf, Siren, ClipboardList, FolderOpen, BarChart3, Bell,
-  Ban, Undo2
+  Ban, Undo2, Building2
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
@@ -962,7 +962,7 @@ const MercadoTrabajos = () => {
             client_phone: clientPhone,
             client_user_id: order.client_user_id ?? null,
             lugar: order.property?.property_name || 'Lugar no especificado',
-            property_name: order.property?.property_name || '',
+            property_name: order.property?.property_name || order.property?.nombre_propiedad || order.property?.name || '',
             zona: coloniaTexto,
             colonia: coloniaTexto,
             calle: isAccepted ? fullAddress : 'Dirección protegida',
@@ -1809,12 +1809,19 @@ const MercadoTrabajos = () => {
 
   // Camino de progreso en celular: al abrir el detalle se centra en el paso actual
   const caminoMovilRef = useRef(null);
+  // Plegado por defecto para no ocupar media pantalla; se recuerda la preferencia
+  const [caminoMovilAbierto, setCaminoMovilAbierto] = useState(() => {
+    try { return localStorage.getItem('agente_camino_movil_abierto') === '1'; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('agente_camino_movil_abierto', caminoMovilAbierto ? '1' : '0'); } catch { /* sin almacenamiento */ }
+  }, [caminoMovilAbierto]);
   useEffect(() => {
     const pista = caminoMovilRef.current;
     if (!pista || mobileBoardTab !== 'detalle') return;
     const centro = CAMINO_PASO_ANCHO * (currentStage - 1) + CAMINO_PASO_ANCHO / 2;
     pista.scrollTo({ left: Math.max(0, centro - pista.clientWidth / 2), behavior: 'smooth' });
-  }, [currentStage, selectedBoardJob?.id, mobileBoardTab]);
+  }, [currentStage, selectedBoardJob?.id, mobileBoardTab, caminoMovilAbierto]);
 
   const handleSetStage = (stageNum) => {
     if (!selectedBoardJob) return;
@@ -2672,7 +2679,7 @@ const MercadoTrabajos = () => {
                     </div>
 
                     {/* ── PROGRESO EN CELULAR: camino sobre césped que avanza de izquierda a derecha ── */}
-                    <div className="rt-camino-movil">
+                    <div className={`rt-camino-movil ${caminoMovilAbierto ? 'abierto' : 'plegado'}`}>
                       <div className="rt-camino-movil-head">
                         <span className="rt-camino-movil-titulo">
                           <Sparkles size={13} color="#f26522" /> PROGRESO
@@ -2680,9 +2687,43 @@ const MercadoTrabajos = () => {
                         <span className="rt-camino-movil-paso">
                           {currentStage}/6 · {PASOS_CAMINO[currentStage - 1]?.title}
                         </span>
+                        <button
+                          type="button"
+                          className="rt-camino-movil-toggle"
+                          onClick={() => setCaminoMovilAbierto(v => !v)}
+                          aria-expanded={caminoMovilAbierto}
+                          title={caminoMovilAbierto ? 'Ocultar el camino' : 'Mostrar el camino completo'}
+                        >
+                          {caminoMovilAbierto ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          <span>{caminoMovilAbierto ? 'Ocultar' : 'Ver más'}</span>
+                        </button>
                       </div>
 
-                      {/* Se desliza con el dedo; al abrir se centra en el paso actual */}
+                      {/* Plegado: los 6 pasos en una línea compacta */}
+                      {!caminoMovilAbierto && (
+                        <div className="rt-camino-movil-linea">
+                          {PASOS_CAMINO.map((st) => {
+                            const isCompleted = currentStage > st.step;
+                            const isCurrent = currentStage === st.step;
+                            const Icono = st.Icono;
+                            return (
+                              <button
+                                key={st.step}
+                                type="button"
+                                className={`rt-camino-movil-punto ${isCompleted ? 'completed' : (isCurrent ? 'current' : 'pending')}`}
+                                onClick={() => handleSetStage(st.step)}
+                                title={`Etapa ${st.step}: ${st.title}`}
+                                aria-label={`Etapa ${st.step}: ${st.title}`}
+                              >
+                                {isCompleted ? <Check size={14} strokeWidth={3} /> : <Icono size={14} />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Abierto: camino sobre césped; se desliza con el dedo y se centra en el paso actual */}
+                      {caminoMovilAbierto && (
                       <div className="rt-camino-movil-pista" ref={caminoMovilRef}>
                         <div className="rt-camino-movil-lienzo" style={{ width: `${PASOS_CAMINO.length * CAMINO_PASO_ANCHO}px` }}>
                           <svg
@@ -2729,10 +2770,11 @@ const MercadoTrabajos = () => {
                           })}
                         </div>
                       </div>
-
-                      {/* Botones del flujo justo debajo del camino */}
-                      <div className="rt-camino-movil-botones">{botonesFlujo}</div>
+                      )}
                     </div>
+
+                    {/* Botones del flujo: fuera del panel de progreso, justo debajo */}
+                    <div className="rt-camino-movil-botones">{botonesFlujo}</div>
 
                       {/* Foto principal: fachada a todo el ancho con folio y tipo encima */}
                       <div
@@ -2871,10 +2913,30 @@ const MercadoTrabajos = () => {
                               </button>
                             )}
 
-                            <ul className="rd-lista">
-                              <li><span><Wrench size={15} /></span> {selectedBoardJob.equipo || '25 (MV) / Instalaciones Generales'}</li>
-                              <li><span><MapPin size={15} /></span> {selectedBoardJob.zona || selectedBoardJob.colonia || 'Mérida, Yucatán'}</li>
-                              <li><span><Home size={15} /></span> {selectedBoardJob.property?.type || 'Casa'}</li>
+                            {/* Datos del servicio: cada uno con su etiqueta */}
+                            <ul className="rd-lista rd-datos">
+                              <li className="destacado">
+                                <span><Building2 size={15} /></span>
+                                <div>
+                                  <small>Propiedad</small>
+                                  <strong>{selectedBoardJob.property_name || selectedBoardJob.property?.property_code || 'Propiedad sin nombre'}</strong>
+                                  {selectedBoardJob.property_name && selectedBoardJob.property?.property_code && (
+                                    <em>{selectedBoardJob.property.property_code}</em>
+                                  )}
+                                </div>
+                              </li>
+                              <li>
+                                <span><Wrench size={15} /></span>
+                                <div><small>Equipo / especialidad</small><strong>{selectedBoardJob.equipo || 'Instalaciones generales'}</strong></div>
+                              </li>
+                              <li>
+                                <span><MapPin size={15} /></span>
+                                <div><small>Zona</small><strong>{selectedBoardJob.zona || selectedBoardJob.colonia || 'Mérida, Yucatán'}</strong></div>
+                              </li>
+                              <li>
+                                <span><Home size={15} /></span>
+                                <div><small>Tipo de inmueble</small><strong>{selectedBoardJob.property?.type || 'Casa'}</strong></div>
+                              </li>
                             </ul>
                           </div>
 
