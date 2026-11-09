@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow } from '@react-google-maps/api';
 import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig";
 import Header from '../../../components/Shared/Header';
@@ -12,6 +12,7 @@ import { Plus, MapPin, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, L
 import { DARK_MAP_STYLES, getCategoryIcon, ICONOS_CATEGORIA, descripcionTarjeta, fechaDeseada } from '../Tecnico/MercadoTrabajos';
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
+import CurriculumTecnico from '../Shared/CurriculumTecnico';
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
@@ -47,6 +48,7 @@ const VistaRedAutonomo = () => {
   const [selectedJobForQuotes, setSelectedJobForQuotes] = useState(null);
   const [selectedTechnicianProfile, setSelectedTechnicianProfile] = useState(null);
   const [showTechModal, setShowTechModal] = useState(false);
+  const cerrarCurriculum = useCallback(() => setShowTechModal(false), []);
   const [activeChatQuote, setActiveChatQuote] = useState(null);
   const [chatAbierto, setChatAbierto] = useState(false);
   const [activePhoto, setActivePhoto] = useState(null);
@@ -1611,75 +1613,13 @@ const VistaRedAutonomo = () => {
         </div>
       )}
 
-      {/* ─── MODAL DEL PERFIL DEL TÉCNICO ─── */}
-      {showTechModal && selectedTechnicianProfile && (
-        <div className="mercado-modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowTechModal(false)}>
-          <div className="mercado-premium-modal" style={{ maxWidth: '480px' }}>
-            <div className="mercado-premium-header">
-              <h2>👤 Perfil del Técnico</h2>
-              <span className="mercado-modal-close" onClick={() => setShowTechModal(false)}>×</span>
-            </div>
-            <div className="mercado-premium-body" style={{ flexDirection: 'column', padding: '24px', background: '#ffffff' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-                <div style={{ 
-                  width: '68px', 
-                  height: '68px', 
-                  borderRadius: '50%', 
-                  background: 'linear-gradient(135deg, #ff6600, #ea580c)', 
-                  color: 'white', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  fontSize: '26px', 
-                  fontWeight: '800',
-                  boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)'
-                }}>
-                  {selectedTechnicianProfile.first_name?.charAt(0) || 'T'}
-                </div>
-                <div>
-                  <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>
-                    {selectedTechnicianProfile.first_name} {selectedTechnicianProfile.last_name}
-                  </h3>
-                  <span className="red-quote-role" style={{ background: '#fff7ed', padding: '4px 10px', borderRadius: '20px', border: '1px solid #fed7aa' }}>
-                    Técnico Verificado
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '14px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
-                <div style={{ marginBottom: '10px', fontSize: '13px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Mail size={15} color="#ea580c" />
-                  <strong>Correo:</strong> {selectedTechnicianProfile.email || 'No disponible'}
-                </div>
-                <div style={{ marginBottom: '10px', fontSize: '13px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Phone size={15} color="#ea580c" />
-                  <strong>Teléfono:</strong> {selectedTechnicianProfile.phone_number || 'No disponible'}
-                </div>
-                {selectedTechnicianProfile.birth_date && (
-                  <div style={{ fontSize: '13px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Calendar size={15} color="#ea580c" />
-                    <strong>Fecha de Nacimiento:</strong> {new Date(selectedTechnicianProfile.birth_date).toLocaleDateString('es-MX')}
-                  </div>
-                )}
-              </div>
-
-              <h4 style={{ margin: '0 0 12px 0', color: '#0f172a', fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Award size={16} color="#ea580c" /> Especialidades Verificadas
-              </h4>
-              {selectedTechnicianProfile.specialties && selectedTechnicianProfile.specialties.length > 0 ? (
-                <div className="red-quote-specialties" style={{ marginTop: 0 }}>
-                  {selectedTechnicianProfile.specialties.map(spec => (
-                    <span key={spec.id} className="red-specialty-badge">
-                      ✓ {spec.name}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p style={{ color: '#94a3b8', fontStyle: 'italic', margin: 0, fontSize: '13px' }}>No ha registrado especialidades adicionales.</p>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* ─── CURRÍCULUM DEL TÉCNICO ─── */}
+      {showTechModal && selectedTechnicianProfile?.id && (
+        <CurriculumTecnico
+          tecnicoId={selectedTechnicianProfile.id}
+          respaldo={selectedTechnicianProfile}
+          onCerrar={cerrarCurriculum}
+        />
       )}
 
       {/* ─── Lightbox Fullscreen Zoom Modal ─── */}

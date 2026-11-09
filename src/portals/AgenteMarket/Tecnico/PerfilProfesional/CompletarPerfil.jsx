@@ -19,7 +19,7 @@ const PASOS = [
   { titulo: 'Cobro y facturación', corto: 'Cobro', Icono: Receipt, claves: ['emite_factura', 'rfc', 'razon_social', 'banco', 'titular_cuenta', 'clabe', 'acepta_efectivo', 'tiene_terminal'] },
   { titulo: 'Habilidades y experiencia', corto: 'Habilidades', Icono: Wrench, claves: ['especialidades', 'anios_experiencia'] },
   { titulo: 'Currículum', corto: 'Currículum', Icono: GraduationCap, claves: ['nivel_estudios', 'presentacion'] },
-  { titulo: 'Identificación (INE)', corto: 'INE', Icono: IdCard, claves: ['ine_frente', 'ine_reverso'] },
+  { titulo: 'Identidad y documentos', corto: 'Identidad', Icono: IdCard, claves: ['foto', 'fecha_nacimiento', 'ine_frente', 'ine_reverso', 'comprobante_domicilio', 'antecedentes_penales'] },
 ];
 
 const pasoCompleto = (paso, faltantes = {}) => !paso.claves.some(c => c in faltantes);

@@ -9,7 +9,8 @@ import {
   Zap, 
   CheckCircle2, 
   BellRing,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
@@ -53,9 +54,17 @@ const formatNotifTime = (dateString) => {
 
 const getNotificationMeta = (notif) => {
   const type = (notif.data?.alert_type || notif.data?.type || notif.type || notif.alert_type || '').toLowerCase();
-  const title = (notif.data?.title || notif.title || notif.titulo || '').toLowerCase();
-  const msg = (notif.data?.message || notif.message || notif.mensaje || '').toLowerCase();
+  const title = (notif.data?.title || notif.title || notif.titulo || notif.data?.titulo || '').toLowerCase();
+  const msg = (notif.data?.message || notif.message || notif.mensaje || notif.data?.mensaje || '').toLowerCase();
 
+  // Validación del perfil profesional de técnicos de la red
+  if (type === 'perfil_profesional' || msg.includes('perfil profesional') || title.includes('por validar')) {
+    return {
+      category: 'Perfil Profesional',
+      icon: <ShieldCheck size={18} strokeWidth={2.2} color="#0f172a" />,
+      tab: 'alertas'
+    };
+  }
   if (type.includes('quote') || type.includes('pago') || type.includes('payment') || title.includes('cotiza') || title.includes('pago') || title.includes('costo') || msg.includes('cotiza')) {
     return { 
       category: 'Alerta de Cotización / Costo', 
@@ -381,7 +390,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
       const isTecnico = user?.role_id === 2;
       const isCliente = user?.role_id === 3;
       const workOrderId = notification.data?.work_order_id || notification.data?.service_id || notification.data?.id || notification.work_order_id || notification.service_id || notification.id;
-      const titleLower = (notification.data?.title || notification.title || notification.titulo || '').toLowerCase();
+      const titleLower = (notification.data?.title || notification.title || notification.titulo || notification.data?.titulo || '').toLowerCase();
 
       if (type === 'new_quote_message' || titleLower.includes('nuevo mensaje') || titleLower.includes('mensaje en la red')) {
         if ([2, 6, 8].includes(Number(user?.role_id))) {
@@ -595,7 +604,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
               ) : (
                 filteredNotifications.map((notif, idx) => {
                   const meta = getNotificationMeta(notif);
-                  const titleText = notif.data?.title || notif.title || notif.titulo || notif.data?.message || notif.message || notif.mensaje || 'Notificación del sistema';
+                  const titleText = notif.data?.title || notif.title || notif.titulo || notif.data?.titulo || notif.data?.message || notif.message || notif.mensaje || notif.data?.mensaje || 'Notificación del sistema';
                   const timeText = formatNotifTime(notif.created_at || notif.fecha);
 
                   return (

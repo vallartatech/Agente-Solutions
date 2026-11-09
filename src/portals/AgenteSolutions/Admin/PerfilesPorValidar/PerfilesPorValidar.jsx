@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import {
   ShieldCheck, Clock, RefreshCw, AlertCircle, Eye, X, Check, Ban, Phone, Mail, IdCard, Receipt,
   Wrench, GraduationCap, Briefcase, Award, Loader2, FileText, ExternalLink, MessageSquare, History,
+  Cake, CalendarDays, UserRound, FolderCheck,
 } from 'lucide-react';
 import { mostrarAviso, confirmarAccion } from '../../../../utils/dialogos';
 import '../../../../styles/AgenteSolutions/Admin/PerfilesPorValidar.css';
@@ -36,9 +38,22 @@ const MOTIVOS_RAPIDOS = [
   'El titular de la cuenta bancaria no coincide con el técnico.',
   'El RFC o la razón social no coinciden.',
   'La presentación no describe su experiencia.',
+  'El comprobante de domicilio no es legible o tiene más de 3 meses.',
+  'La constancia de antecedentes no penales no es legible o no está vigente.',
+  'Falta una foto de perfil clara de su cara.',
 ];
 
 const fecha = (iso) => (iso ? new Date(iso).toLocaleString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
+const fechaCorta = (iso) => (iso ? new Date(String(iso).length === 10 ? `${iso}T00:00:00` : iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : null);
+const edadDe = (iso) => {
+  if (!iso) return null;
+  const n = new Date(`${String(iso).slice(0, 10)}T00:00:00`);
+  const hoy = new Date();
+  let e = hoy.getFullYear() - n.getFullYear();
+  if (hoy.getMonth() < n.getMonth() || (hoy.getMonth() === n.getMonth() && hoy.getDate() < n.getDate())) e -= 1;
+  return e;
+};
+const esUrl = (u) => String(u || '').startsWith('http');
 const siNo = (v) => (v === true ? 'Sí' : v === false ? 'No' : '—');
 const telefono10 = (t) => String(t || '').replace(/\D/g, '').slice(-10);
 const formatoClabe = (c) => {
@@ -61,7 +76,7 @@ const mensajeError = (err, porDefecto) => {
 /** Foto de un lado de la INE (o PDF), con opción de abrirla en grande. */
 const FotoIne = ({ userId, tipo, titulo, existe }) => {
   const [archivo, setArchivo] = useState(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!existe) return undefined;
@@ -69,7 +84,7 @@ const FotoIne = ({ userId, tipo, titulo, existe }) => {
     let cancelado = false;
     archivoPrivado(userId, tipo)
       .then((a) => { actual = a; if (!cancelado) setArchivo(a); })
-      .catch(() => !cancelado && setError(true));
+      .catch((err) => !cancelado && setError(err?.response?.status === 404 ? 'El archivo no está en este servidor' : 'No se pudo cargar'));
     return () => { cancelado = true; if (actual) URL.revokeObjectURL(actual.url); };
   }, [userId, tipo, existe]);
 
@@ -79,7 +94,7 @@ const FotoIne = ({ userId, tipo, titulo, existe }) => {
       {!existe ? (
         <div className="vpp-ine-vacio falta">No la subió</div>
       ) : error ? (
-        <div className="vpp-ine-vacio falta">No se pudo cargar</div>
+        <div className="vpp-ine-vacio falta"><AlertCircle size={20} /> {error}</div>
       ) : !archivo ? (
         <div className="vpp-ine-vacio"><Loader2 size={20} className="vpp-girar" /></div>
       ) : archivo.pdf ? (
@@ -152,17 +167,72 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
   const faltantes = Object.values(p?.faltantes || {});
   const tel = telefono10(p?.telefono);
 
-  return (
+  // Puntos que revisa Root antes de validar (verde = completo)
+  const revision = p ? [
+    { clave: 'identidad', texto: 'Identidad', Icono: IdCard, ok: esUrl(p.foto) && Boolean(p.fecha_nacimiento) && p.tiene_ine_frente && p.tiene_ine_reverso },
+    { clave: 'documentos', texto: 'Documentos', Icono: FolderCheck, ok: p.tiene_comprobante_domicilio && p.tiene_antecedentes_penales },
+    { clave: 'cobro', texto: 'Cobro', Icono: Receipt, ok: Boolean(p.clabe && p.titular_cuenta) },
+    { clave: 'habilidades', texto: 'Habilidades', Icono: Wrench, ok: (p.especialidades || []).length > 0 },
+    { clave: 'curriculum', texto: 'Currículum', Icono: GraduationCap, ok: Boolean(p.nivel_estudios_texto && p.presentacion) },
+  ] : [];
+
+  const irA = (clave) => document.getElementById(`vpp-sec-${clave}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // En el body: así ningún encabezado fijo de la página queda encima del modal
+  return createPortal(
     <div className="vpp-overlay" onClick={() => !enviando && onCerrar()}>
       <div className="vpp-modal" role="dialog" aria-modal="true" aria-label="Revisar perfil" onClick={(e) => e.stopPropagation()}>
-        <header className="vpp-modal-head">
-          <div>
+        <div className="vpp-modal-scroll">
+        <header className="vpp-ficha">
+          <button type="button" className="vpp-cerrar" onClick={onCerrar} disabled={enviando} aria-label="Cerrar"><X size={20} /></button>
+          <div className={`vpp-ficha-foto ${p && !esUrl(p.foto) ? 'sin-foto' : ''}`}>
+            {p && esUrl(p.foto)
+              ? <a href={p.foto} target="_blank" rel="noreferrer" title="Ver foto en grande"><img src={p.foto} alt={`Foto de ${p.nombre}`} /></a>
+              : <span>{p ? <><UserRound size={30} /><small>Sin foto</small></> : <Loader2 size={26} className="vpp-girar" />}</span>}
+          </div>
+          <div className="vpp-ficha-info">
             <span className="vpp-kicker">Revisión de perfil profesional</span>
             <h2>{p?.nombre || 'Cargando…'}</h2>
-            {p && <span className="vpp-sub">{ROLES[p.role_id] || 'Técnico de la red'} · ID {p.user_id}</span>}
+            {p && (
+              <>
+                <div className="vpp-ficha-sub">
+                  <span className={`vpp-estado ${estado.clase}`}>{estado.texto}</span>
+                  <span>{ROLES[p.role_id] || 'Técnico de la red'}</span>
+                  <span>ID {p.user_id}</span>
+                </div>
+                <dl className="vpp-ficha-datos">
+                  <div>
+                    <dt><Cake size={13} /> Edad</dt>
+                    <dd className={p.fecha_nacimiento ? '' : 'falta'}>
+                      {p.fecha_nacimiento ? `${edadDe(p.fecha_nacimiento)} años` : 'Sin registrar'}
+                      {p.fecha_nacimiento && <small>{fechaCorta(p.fecha_nacimiento)}</small>}
+                    </dd>
+                  </div>
+                  <div><dt><Phone size={13} /> Teléfono</dt><dd>{tel || '—'}</dd></div>
+                  <div><dt><CalendarDays size={13} /> Registrado</dt><dd>{fechaCorta(p.registrado_at) || '—'}</dd></div>
+                  <div className="ancho"><dt><Mail size={13} /> Correo</dt><dd title={p.email}>{p.email || '—'}</dd></div>
+                  <div><dt><Clock size={13} /> Enviado</dt><dd>{fecha(p.enviado_at)}</dd></div>
+                  {p.revisado_at && <div><dt><History size={13} /> Última revisión</dt><dd>{fecha(p.revisado_at)}</dd></div>}
+                </dl>
+                <div className="vpp-ficha-contacto">
+                  {tel && <a href={`https://wa.me/521${tel}`} target="_blank" rel="noreferrer" className="wa"><MessageSquare size={15} /> WhatsApp</a>}
+                  {tel && <a href={`tel:${tel}`}><Phone size={15} /> Llamar</a>}
+                  {p.email && <a href={`mailto:${p.email}`}><Mail size={15} /> Correo</a>}
+                </div>
+              </>
+            )}
           </div>
-          <button type="button" className="vpp-cerrar" onClick={onCerrar} disabled={enviando} aria-label="Cerrar"><X size={20} /></button>
         </header>
+
+        {p && (
+          <nav className="vpp-pasos" aria-label="Puntos a revisar">
+            {revision.map(({ clave, texto, Icono, ok }) => (
+              <button key={clave} type="button" className={ok ? 'ok' : 'falta'} onClick={() => irA(clave)}>
+                <Icono size={15} /> {texto} {ok ? <Check size={14} strokeWidth={3} /> : <AlertCircle size={14} />}
+              </button>
+            ))}
+          </nav>
+        )}
 
         <div className="vpp-modal-cuerpo">
           {error && <div className="vpp-alerta rojo"><AlertCircle size={16} /> {error}</div>}
@@ -170,15 +240,6 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
 
           {p && (
             <>
-              <div className="vpp-resumen">
-                <span className={`vpp-estado ${estado.clase}`}>{estado.texto}</span>
-                <span><Clock size={14} /> Enviado: {fecha(p.enviado_at)}</span>
-                {p.revisado_at && <span><History size={14} /> Última revisión: {fecha(p.revisado_at)}</span>}
-                {p.email && <a href={`mailto:${p.email}`}><Mail size={14} /> {p.email}</a>}
-                {tel && <a href={`https://wa.me/521${tel}`} target="_blank" rel="noreferrer"><MessageSquare size={14} /> WhatsApp {tel}</a>}
-                {p.telefono && <a href={`tel:${tel}`}><Phone size={14} /> Llamar</a>}
-              </div>
-
               {p.estado === 'rechazado' && p.motivo_rechazo && (
                 <div className="vpp-alerta rojo"><Ban size={16} /> <div><strong>Motivo del último rechazo:</strong> {p.motivo_rechazo}</div></div>
               )}
@@ -186,16 +247,31 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
                 <div className="vpp-alerta naranja"><AlertCircle size={16} /> <div><strong>Le falta:</strong> {faltantes.join(', ')}.</div></div>
               )}
 
-              <section className="vpp-bloque">
+              <section className="vpp-bloque" id="vpp-sec-identidad">
                 <h3><IdCard size={17} /> Identidad {p.insignias?.identidad_verificada && <span className="vpp-ok"><ShieldCheck size={14} /> Verificada</span>}</h3>
-                <p className="vpp-nota">Compara el nombre y la foto de la INE con los datos de la cuenta: <strong>{p.nombre}</strong>.</p>
+                <p className="vpp-nota">Compara la foto de perfil y el nombre con la INE: <strong>{p.nombre}</strong>{p.fecha_nacimiento ? <>, nacido el <strong>{fechaCorta(p.fecha_nacimiento)}</strong></> : ''}.</p>
                 <div className="vpp-ines">
+                  <figure className="vpp-ine vpp-ine-perfil">
+                    <figcaption>Foto de perfil</figcaption>
+                    {esUrl(p.foto)
+                      ? <a href={p.foto} target="_blank" rel="noreferrer" title="Abrir en grande"><img src={p.foto} alt="Foto de perfil" /></a>
+                      : <div className="vpp-ine-vacio falta"><UserRound size={22} /> No la subió</div>}
+                  </figure>
                   <FotoIne userId={p.user_id} tipo="ine_frente" titulo="Frente" existe={p.tiene_ine_frente} />
                   <FotoIne userId={p.user_id} tipo="ine_reverso" titulo="Reverso" existe={p.tiene_ine_reverso} />
                 </div>
               </section>
 
-              <section className="vpp-bloque">
+              <section className="vpp-bloque" id="vpp-sec-documentos">
+                <h3><FolderCheck size={17} /> Documentos</h3>
+                <p className="vpp-nota">Revisa que el domicilio sea reciente (máximo 3 meses) y que la constancia de antecedentes esté vigente y a nombre de <strong>{p.nombre}</strong>.</p>
+                <div className="vpp-docs">
+                  <FotoIne userId={p.user_id} tipo="comprobante_domicilio" titulo="Comprobante de domicilio" existe={p.tiene_comprobante_domicilio} />
+                  <FotoIne userId={p.user_id} tipo="antecedentes_penales" titulo="Antecedentes no penales" existe={p.tiene_antecedentes_penales} />
+                </div>
+              </section>
+
+              <section className="vpp-bloque" id="vpp-sec-cobro">
                 <h3><Receipt size={17} /> Cobro y facturación</h3>
                 <dl className="vpp-datos">
                   <div><dt>Emite factura</dt><dd>{siNo(p.emite_factura)}</dd></div>
@@ -209,15 +285,15 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
                 </dl>
               </section>
 
-              <section className="vpp-bloque">
+              <section className="vpp-bloque" id="vpp-sec-habilidades">
                 <h3><Wrench size={17} /> Habilidades · {p.anios_experiencia ?? '—'} {p.anios_experiencia === 1 ? 'año' : 'años'} de experiencia</h3>
                 <div className="vpp-chips">
-                  {(p.especialidades || []).map(e => <span key={e.id}>{e.icon || '🔧'} {e.name}</span>)}
+                  {(p.especialidades || []).map(e => <span key={e.id}><Check size={13} strokeWidth={3} /> {e.name}</span>)}
                   {!p.especialidades?.length && <span className="vacio">Sin habilidades</span>}
                 </div>
               </section>
 
-              <section className="vpp-bloque">
+              <section className="vpp-bloque" id="vpp-sec-curriculum">
                 <h3><GraduationCap size={17} /> Currículum {p.insignias?.estudios_verificados && <span className="vpp-ok"><ShieldCheck size={14} /> Verificado</span>}</h3>
                 <dl className="vpp-datos">
                   <div><dt>Nivel de estudios</dt><dd>{p.nivel_estudios_texto || '—'}</dd></div>
@@ -256,6 +332,8 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
           )}
         </div>
 
+        </div>
+
         {p?.estado === 'en_revision' && (
           <footer className="vpp-modal-pie">
             {rechazando ? (
@@ -289,7 +367,8 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
           </footer>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
@@ -358,19 +437,19 @@ const PerfilesPorValidar = ({ abrirId = null, onConteo }) => {
           {lista.map(t => {
             const est = ESTADOS[t.estado] || ESTADOS.incompleto;
             return (
-              <article key={t.user_id} className="vpp-card">
+              <article key={t.user_id} className={`vpp-card ${est.clase}`}>
                 <div className="vpp-card-head">
                   <div className="vpp-avatar">{String(t.foto || '').startsWith('http') ? <img src={t.foto} alt="" /> : (t.nombre || '?').charAt(0).toUpperCase()}</div>
                   <div className="vpp-card-txt">
-                    <h3>{t.nombre || 'Sin nombre'}</h3>
+                    <h3 title={t.nombre}>{t.nombre || 'Sin nombre'}</h3>
                     <span>{ROLES[t.role_id] || 'Técnico de la red'}</span>
                   </div>
                   <span className={`vpp-estado ${est.clase}`}>{est.texto}</span>
                 </div>
                 <div className="vpp-card-datos">
-                  {t.email && <span><Mail size={14} /> {t.email}</span>}
-                  {t.telefono && <span><Phone size={14} /> {t.telefono}</span>}
-                  <span><Clock size={14} /> Enviado: {fecha(t.enviado_at)}</span>
+                  {t.email && <span title={t.email}><Mail size={14} /> <em>{t.email}</em></span>}
+                  {t.telefono && <span><Phone size={14} /> <em>{t.telefono}</em></span>}
+                  <span><Clock size={14} /> <em>Enviado: {fecha(t.enviado_at)}</em></span>
                 </div>
                 {t.estado === 'en_revision' && (
                   <span className={`vpp-tipo ${t.ya_aprobado_antes ? 'cambio' : 'nuevo'}`}>

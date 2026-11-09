@@ -26,7 +26,8 @@ const SECCION_DE = {
   clabe: 'cobro', acepta_efectivo: 'cobro', tiene_terminal: 'cobro',
   especialidades: 'habilidades', anios_experiencia: 'habilidades',
   nivel_estudios: 'curriculum', presentacion: 'curriculum',
-  ine_frente: 'ine', ine_reverso: 'ine',
+  foto: 'ine', fecha_nacimiento: 'ine', ine_frente: 'ine', ine_reverso: 'ine',
+  comprobante_domicilio: 'ine', antecedentes_penales: 'ine',
 };
 
 /** Ventana de edición de una sección (formulario claro, igual que en el registro). */
@@ -175,8 +176,15 @@ const PanelPerfilProfesional = ({ onCambio }) => {
       texto: perfil.presentacion,
     },
     {
-      clave: 'ine', titulo: 'Identificación (INE)', Icono: IdCard, verificado: idOk, boton: 'Cambiar',
-      filas: [['Frente', perfil.tiene_ine_frente ? 'Subida' : 'Falta'], ['Reverso', perfil.tiene_ine_reverso ? 'Subida' : 'Falta']],
+      clave: 'ine', titulo: 'Identidad y documentos', Icono: IdCard, verificado: idOk, boton: 'Cambiar',
+      filas: [
+        ['Foto de perfil', String(perfil.foto || '').startsWith('http') ? 'Subida' : 'Falta'],
+        ['Nacimiento', perfil.fecha_nacimiento ? new Date(`${perfil.fecha_nacimiento}T00:00:00`).toLocaleDateString('es-MX') : 'Falta'],
+        ['INE frente', perfil.tiene_ine_frente ? 'Subida' : 'Falta'],
+        ['INE reverso', perfil.tiene_ine_reverso ? 'Subida' : 'Falta'],
+        ['Comprobante de domicilio', perfil.tiene_comprobante_domicilio ? 'Subido' : 'Falta'],
+        ['Antecedentes no penales', perfil.tiene_antecedentes_penales ? 'Subidos' : 'Falta'],
+      ],
     },
   ];
 

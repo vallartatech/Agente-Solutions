@@ -14,7 +14,8 @@ import {
   Clock, 
   ArrowRight, 
   Inbox,
-  Sparkles
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
 import Header from './Header';
 import '../../styles/Shared/VistaNotificaciones.css';
@@ -94,9 +95,19 @@ const VistaNotificaciones = () => {
 
   const getNotificationMeta = (notif) => {
     const type = (notif.data?.alert_type || notif.data?.type || notif.type || notif.alert_type || '').toLowerCase();
-    const title = (notif.data?.title || notif.title || notif.titulo || '').toLowerCase();
-    const msg = (notif.data?.message || notif.message || notif.mensaje || '').toLowerCase();
+    const title = (notif.data?.title || notif.title || notif.titulo || notif.data?.titulo || '').toLowerCase();
+    const msg = (notif.data?.message || notif.message || notif.mensaje || notif.data?.mensaje || '').toLowerCase();
 
+    // Validación del perfil profesional de técnicos de la red (va con los avisos)
+    if (type === 'perfil_profesional' || msg.includes('perfil profesional') || title.includes('por validar')) {
+      return {
+        key: 'avisos',
+        category: 'Perfil profesional',
+        categoryClass: 'alert',
+        avatarClass: 'type-alert',
+        Icon: ShieldCheck
+      };
+    }
     if (type.includes('message') || title.includes('mensaje') || msg.includes('mensaje')) {
       return {
         key: 'mensajes',
@@ -154,8 +165,8 @@ const VistaNotificaciones = () => {
       // Filtro de búsqueda
       if (busqueda.trim()) {
         const query = busqueda.toLowerCase().trim();
-        const title = (notif.data?.title || notif.title || notif.titulo || '').toLowerCase();
-        const msg = (notif.data?.message || notif.message || notif.mensaje || '').toLowerCase();
+        const title = (notif.data?.title || notif.title || notif.titulo || notif.data?.titulo || '').toLowerCase();
+        const msg = (notif.data?.message || notif.message || notif.mensaje || notif.data?.mensaje || '').toLowerCase();
         return title.includes(query) || msg.includes(query);
       }
 
@@ -493,8 +504,8 @@ const VistaNotificaciones = () => {
               const esNueva = notif.read_at === null;
               const meta = getNotificationMeta(notif);
               const IconComp = meta.Icon;
-              const titulo = notif.data?.title || notif.title || notif.titulo || 'Notificación';
-              const mensaje = notif.data?.message || notif.message || notif.mensaje || '';
+              const titulo = notif.data?.title || notif.title || notif.titulo || notif.data?.titulo || 'Notificación';
+              const mensaje = notif.data?.message || notif.message || notif.mensaje || notif.data?.mensaje || '';
               const fecha = notif.created_at || notif.data?.created_at;
 
               return (

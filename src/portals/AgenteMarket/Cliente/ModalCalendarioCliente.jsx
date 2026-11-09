@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
+import CurriculumTecnico from '../Shared/CurriculumTecnico';
 // ── Agenda de Agente Market ──
 // Misma interfaz que el calendario de Agente Solutions (ModalCalendarioSolutions), con los datos de la red:
 // trabajos de /mercado-trabajos, cotizaciones y chat de /network-quotes, publicar servicio y calificar técnicos.
@@ -246,6 +247,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
   const [activeChatQuote, setActiveChatQuote] = useState(null);
   const [selectedTechnicianProfile, setSelectedTechnicianProfile] = useState(null);
   const [showTechModal, setShowTechModal] = useState(false);
+  const cerrarCurriculum = useCallback(() => setShowTechModal(false), []);
   const [showNewServiceModal, setShowNewServiceModal] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [ratingTargetTech, setRatingTargetTech] = useState(null);
@@ -2607,81 +2609,13 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
           </div>
         )}
 
-        {/* ─── MODAL DEL PERFIL DEL TÉCNICO ─── */}
-        {showTechModal && selectedTechnicianProfile && (
-          <div 
-            className="mercado-modal-overlay" 
-            style={{ zIndex: 105000 }}
-            onClick={(e) => e.target === e.currentTarget && setShowTechModal(false)}
-          >
-            <div className="mercado-premium-modal" style={{ maxWidth: '480px' }}>
-              <div className="mercado-premium-header">
-                <h2>👤 Perfil del Técnico</h2>
-                <span className="mercado-modal-close" onClick={() => setShowTechModal(false)}>×</span>
-              </div>
-              <div className="mercado-premium-body" style={{ flexDirection: 'column', padding: '24px', background: '#ffffff' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-                  <div style={{ 
-                    width: '68px', 
-                    height: '68px', 
-                    borderRadius: '50%', 
-                    background: 'linear-gradient(135deg, #ff6600, #ea580c)', 
-                    color: 'white', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    fontSize: '26px', 
-                    fontWeight: '800',
-                    boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)'
-                  }}>
-                    {selectedTechnicianProfile.first_name?.charAt(0) || 'T'}
-                  </div>
-                    <div>
-                    <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>
-                      {selectedTechnicianProfile.first_name} {selectedTechnicianProfile.last_name}
-                    </h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span className="red-quote-role" style={{ background: '#fff7ed', padding: '4px 10px', borderRadius: '20px', border: '1px solid #fed7aa' }}>
-                        Técnico Verificado
-                      </span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '800', color: '#b45309', background: '#fef3c7', padding: '3px 8px', borderRadius: '8px', border: '1px solid #fde68a' }} title="Calidad del trabajo">
-                        <Star size={13} style={{ fill: '#f59e0b', color: '#f59e0b' }} /> {Number(selectedTechnicianProfile.rating_stars_avg || 5.0).toFixed(1)} Calidad
-                      </span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '800', color: '#0369a1', background: '#e0f2fe', padding: '3px 8px', borderRadius: '8px', border: '1px solid #bae6fd' }} title="Puntualidad de llegada">
-                        <Clock size={13} color="#0284c7" /> {Number(selectedTechnicianProfile.rating_time_avg || 5.0).toFixed(1)} Puntualidad
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '14px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ marginBottom: '10px', fontSize: '13px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Mail size={15} color="#ea580c" />
-                    <strong>Correo:</strong> {selectedTechnicianProfile.email || 'No disponible'}
-                  </div>
-                  <div style={{ marginBottom: '10px', fontSize: '13px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Phone size={15} color="#ea580c" />
-                    <strong>Teléfono:</strong> {selectedTechnicianProfile.phone_number || 'No disponible'}
-                  </div>
-                </div>
-
-                <h4 style={{ margin: '0 0 12px 0', color: '#0f172a', fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Award size={16} color="#ea580c" /> Especialidades Verificadas
-                </h4>
-                {selectedTechnicianProfile.specialties && selectedTechnicianProfile.specialties.length > 0 ? (
-                  <div className="red-quote-specialties" style={{ marginTop: 0 }}>
-                    {selectedTechnicianProfile.specialties.map(spec => (
-                      <span key={spec.id} className="red-specialty-badge">
-                        ✓ {spec.name}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{ color: '#94a3b8', fontStyle: 'italic', margin: 0, fontSize: '13px' }}>No ha registrado especialidades adicionales.</p>
-                )}
-              </div>
-            </div>
-          </div>
+        {/* ─── CURRÍCULUM DEL TÉCNICO ─── */}
+        {showTechModal && selectedTechnicianProfile?.id && (
+          <CurriculumTecnico
+            tecnicoId={selectedTechnicianProfile.id}
+            respaldo={selectedTechnicianProfile}
+            onCerrar={cerrarCurriculum}
+          />
         )}
 
         {/* ─── MODAL PARA PUBLICAR NUEVO SERVICIO DESDE EL CALENDARIO ─── */}

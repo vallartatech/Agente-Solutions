@@ -49,3 +49,17 @@ export const mensajeError = (err, porDefecto = 'No se pudo guardar. Intenta de n
   if (d?.errors) return Object.values(d.errors).flat()[0] || porDefecto;
   return d?.message || d?.error || porDefecto;
 };
+
+/** Foto de perfil (obligatoria para validar). Responde { url, data }. */
+export const subirFotoPerfil = (foto) => {
+  const fd = new FormData();
+  fd.append('foto', foto);
+  return axios.post(`${API}/tecnico/perfil-profesional/foto`, fd).then((res) => res.data);
+};
+
+/** Comprobante de domicilio o antecedentes no penales (privados). tipo: 'comprobante_domicilio' | 'antecedentes_penales' */
+export const subirDocumento = (tipo, archivo) => {
+  const fd = new FormData();
+  fd.append('archivo', archivo);
+  return axios.post(`${API}/tecnico/perfil-profesional/documento/${tipo}`, fd).then(datos);
+};

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Wrench, Plus, Check, Search, X, Hourglass } from 'lucide-react';
 import { catalogoEspecialidades } from './perfilProfesionalApi';
+import { IconoEspecialidad } from '../../Shared/iconoEspecialidad';
 
 const normalizar = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
@@ -77,14 +78,14 @@ const SeccionHabilidades = ({ form, setForm }) => {
         <div className="pp-chips">
           {nuevas.map(e => (
             <button key={`nueva-${e.name}`} type="button" className="pp-chip activo nueva" onClick={() => alternar(e)} title="Quitar">
-              <span>{e.icon || '🔧'}</span> {e.name} <small>nueva</small> <X size={13} />
+              <IconoEspecialidad nombre={e.name} size={15} /> {e.name} <small>nueva</small> <X size={13} />
             </button>
           ))}
           {visibles.map(esp => {
             const on = estaElegida(esp);
             return (
               <button key={esp.id} type="button" className={`pp-chip ${on ? 'activo' : ''}`} aria-pressed={on} onClick={() => alternar(esp)}>
-                <span>{esp.icon || '🔧'}</span> {esp.name} {on && <Check size={14} strokeWidth={3} />}
+                <IconoEspecialidad nombre={esp.name} size={15} /> {esp.name} {on && <Check size={14} strokeWidth={3} />}
               </button>
             );
           })}

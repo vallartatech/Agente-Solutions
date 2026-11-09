@@ -318,6 +318,7 @@
 .pp-chip:hover:not(.activo) { border-color: #fdba74; }
 .pp-chip.activo { border-color: var(--pp-naranja); background: rgba(242, 101, 34, 0.08); color: var(--pp-naranja-hover); font-weight: 700; }
 .pp-chip small { padding: 1px 6px; border-radius: 999px; background: var(--pp-naranja); color: #ffffff; font-size: 0.65rem; text-transform: uppercase; }
+.pp-chip > svg:first-child { color: var(--pp-naranja); flex-shrink: 0; }
 
 .pp-agregar { display: flex; gap: 8px; }
 .pp-agregar input { flex: 1; min-width: 0; }
@@ -846,3 +847,48 @@
   .ptr-lateral { padding: 18px 12px 14px; border-radius: 20px; }
 }
 .ptr-identidad .profile-identity-tags-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+
+/* ── Foto de perfil y fecha de nacimiento (paso de identidad) ── */
+.pp-personales { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.pp-foto {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px dashed #fdba74;
+  background: #fff7ed;
+  color: var(--pp-naranja);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pp-foto span { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pp-foto.con-foto { border: 3px solid var(--pp-naranja); background: #ffffff; }
+.pp-foto img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.pp-foto i {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  background: var(--pp-naranja);
+  color: #ffffff;
+}
+.pp-foto:focus-visible { outline: 2px solid var(--pp-naranja); outline-offset: 3px; }
+.pp-foto:disabled { cursor: wait; }
+.pp-personales-datos { flex: 1; min-width: 200px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.pp-personales-datos > strong { color: var(--pp-tinta); font-size: 1.1rem; }
+.pp-personales-datos .pp-campo { width: 100%; margin-top: 4px; }
+.pp-personales-datos .pp-campo > span { display: inline-flex; align-items: center; gap: 5px; }
