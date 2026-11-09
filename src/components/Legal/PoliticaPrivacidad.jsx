@@ -1,98 +1,277 @@
-import { Link } from 'react-router-dom';
+// src/pages/Privacidad.jsx
+// Aviso de Privacidad público de la app Agente Solutions.
+// IMPORTANTE: esta ruta debe abrir SIN iniciar sesión (fuera de cualquier ruta protegida).
 
-// Página pública requerida por Google Play (URL de política de privacidad)
-const CORREO_SOPORTE = 'soporte@agentesolutions.com';
-const ULTIMA_ACTUALIZACION = '28 de octubre de 2026';
-
-const Seccion = ({ titulo, children }) => (
-  <section style={{ marginBottom: '28px' }}>
-    <h2 style={{ fontSize: '1.15rem', color: '#f26522', marginBottom: '10px' }}>{titulo}</h2>
-    <div style={{ lineHeight: 1.65, color: '#ddd', fontSize: '0.98rem' }}>{children}</div>
-  </section>
-);
-
-const PoliticaPrivacidad = () => {
-  return (
-    <div style={{ position: 'fixed', inset: 0, overflowY: 'auto', backgroundColor: '#111', color: '#fff', padding: '32px 16px' }}>
-      <div style={{ maxWidth: '760px', margin: '0 auto' }}>
-        <h1 style={{ fontStyle: 'italic', marginBottom: '6px' }}>AVISO DE PRIVACIDAD</h1>
-        <p style={{ color: '#999', marginBottom: '32px' }}>Agente Solutions · Última actualización: {ULTIMA_ACTUALIZACION}</p>
-
-        <Seccion titulo="1. Responsable">
-          <p>
-            Agente Solutions (“nosotros”) es responsable del tratamiento de los datos personales que se recaban a través
-            de la aplicación móvil y el sitio web Agente Solutions, conforme a la Ley Federal de Protección de Datos
-            Personales en Posesión de los Particulares. Contacto: <a href={`mailto:${CORREO_SOPORTE}`} style={{ color: '#f26522' }}>{CORREO_SOPORTE}</a>.
-          </p>
-        </Seccion>
-
-        <Seccion titulo="2. Datos que recabamos">
-          <ul style={{ paddingLeft: '20px' }}>
-            <li><b>Identificación y contacto:</b> nombre, correo electrónico, teléfono y, en el caso de técnicos, CURP y especialidades.</li>
-            <li><b>Datos de inmuebles y servicios:</b> direcciones, zonas, equipos registrados, órdenes de trabajo, cotizaciones, reportes y firmas.</li>
-            <li><b>Fotografías, videos y documentos</b> que el usuario captura o adjunta como evidencia de los trabajos.</li>
-            <li><b>Ubicación precisa:</b> se usa al registrar una propiedad o un trabajo y, para el personal que lo autoriza expresamente, para mostrar su posición al equipo mientras la aplicación está abierta. La ubicación no se recaba en segundo plano.</li>
-            <li><b>Identificador de notificaciones</b> del dispositivo, para enviar avisos de trabajos y alarmas.</li>
-            <li><b>Datos de pago:</b> los pagos se procesan a través de MercadoPago. No almacenamos números de tarjeta; solo conservamos el estado y el monto de la transacción.</li>
-          </ul>
-        </Seccion>
-
-        <Seccion titulo="3. Para qué usamos los datos">
-          <ul style={{ paddingLeft: '20px' }}>
-            <li>Crear y administrar tu cuenta y autenticarte.</li>
-            <li>Asignar, ejecutar y documentar servicios de mantenimiento en inmuebles.</li>
-            <li>Generar cotizaciones, reportes y comprobantes.</li>
-            <li>Enviarte notificaciones relacionadas con tus servicios.</li>
-            <li>Prevenir fraude y abuso (por ejemplo, con Google reCAPTCHA en el registro).</li>
-          </ul>
-          <p>No vendemos tus datos personales ni los usamos con fines publicitarios.</p>
-        </Seccion>
-
-        <Seccion titulo="4. Con quién compartimos los datos">
-          <p>Solo con los proveedores necesarios para operar el servicio:</p>
-          <ul style={{ paddingLeft: '20px' }}>
-            <li>Railway (alojamiento de servidores y base de datos).</li>
-            <li>Google (Maps para ubicación y reCAPTCHA para seguridad).</li>
-            <li>OneSignal (envío de notificaciones push).</li>
-            <li>MercadoPago (procesamiento de pagos).</li>
-          </ul>
-          <p>
-            Los datos de un servicio también son visibles para los participantes de ese servicio (por ejemplo, el cliente,
-            el técnico asignado y la empresa que lo administra). Toda la información viaja cifrada mediante HTTPS.
-          </p>
-        </Seccion>
-
-        <Seccion titulo="5. Conservación y eliminación">
-          <p>
-            Conservamos tus datos mientras tu cuenta esté activa. Puedes eliminar tu cuenta desde la sección de perfil de
-            la aplicación o desde <Link to="/eliminar-cuenta" style={{ color: '#f26522' }}>esta página</Link>, sin necesidad
-            de tener la app instalada. Al eliminarla, tu acceso se desactiva de inmediato y tus datos personales se eliminan
-            o anonimizan en un plazo máximo de 90 días. Podemos conservar la información que la ley nos obligue a guardar
-            (por ejemplo, registros fiscales de pagos) y los reportes de servicios realizados que pertenecen a la empresa
-            que los contrató.
-          </p>
-        </Seccion>
-
-        <Seccion titulo="6. Tus derechos (ARCO)">
-          <p>
-            Puedes solicitar el acceso, rectificación, cancelación u oposición al tratamiento de tus datos, así como revocar
-            tu consentimiento, escribiendo a <a href={`mailto:${CORREO_SOPORTE}`} style={{ color: '#f26522' }}>{CORREO_SOPORTE}</a>.
-            Responderemos en un plazo máximo de 20 días hábiles.
-          </p>
-        </Seccion>
-
-        <Seccion titulo="7. Menores de edad">
-          <p>La aplicación está dirigida a personas mayores de 18 años y no recaba intencionalmente datos de menores.</p>
-        </Seccion>
-
-        <Seccion titulo="8. Cambios a este aviso">
-          <p>Publicaremos cualquier cambio en esta misma página e indicaremos la fecha de la última actualización.</p>
-        </Seccion>
-
-        <Link to="/" style={{ color: '#f26522', fontWeight: 'bold' }}>← Volver al inicio</Link>
-      </div>
-    </div>
-  );
+const EMPRESA = {
+  responsable: "Jorge Ernesto Vallarta Sosa",
+  nombreComercial: "Agente Solutions",
+  domicilio:
+    "Calle 69 #273 por 48 y 46, Unidad Habitacional Cordemex, C.P. 97115, Mérida, Yucatán, México",
+  correo: "contacto@agentesolutions.com.mx",
+  telefono: "999 242 6030",
+  encargadaDatos: "Tania A. García Montero, Asistente de Dirección",
+  telefonoEncargada: "999 110 0088",
+  url: "app.agentesolutions.com.mx/privacidad",
+  ultimaActualizacion: "9 de noviembre de 2026",
 };
 
-export default PoliticaPrivacidad;
+const C = {
+  bg: "#111111",
+  texto: "#f3f4f6",
+  suave: "#9ca3af",
+  naranja: "#FF6600",
+  borde: "#2a2a2a",
+};
+
+const s = {
+  wrap: { background: C.bg, minHeight: "100vh", width: "100%" },
+  page: {
+    maxWidth: 860,
+    margin: "0 auto",
+    padding: "40px 16px 80px",
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+    lineHeight: 1.7,
+    color: C.texto,
+    fontSize: 16,
+  },
+  h1: { fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 900, margin: "0 0 4px", letterSpacing: 1 },
+  sub: { color: C.suave, fontWeight: 600, margin: "0 0 24px" },
+  h2: { color: C.naranja, fontSize: 22, fontWeight: 800, margin: "36px 0 10px" },
+  ul: { paddingLeft: 22, margin: "8px 0" },
+  li: { marginBottom: 8 },
+  a: { color: C.naranja, textDecoration: "none", fontWeight: 700 },
+  caja: {
+    border: `1px solid ${C.borde}`,
+    borderRadius: 12,
+    padding: "14px 18px",
+    margin: "12px 0",
+    background: "#181818",
+  },
+  volver: {
+    display: "inline-block",
+    marginTop: 40,
+    padding: "10px 20px",
+    borderRadius: 999,
+    background: C.naranja,
+    color: "#fff",
+    fontWeight: 800,
+    textDecoration: "none",
+  },
+};
+
+export default function Privacidad() {
+  const e = EMPRESA;
+  const mail = (
+    <a style={s.a} href={`mailto:${e.correo}`}>
+      {e.correo}
+    </a>
+  );
+
+  return (
+    <div style={s.wrap}>
+      <main style={s.page}>
+        <h1 style={s.h1}>AVISO DE PRIVACIDAD</h1>
+        <p style={s.sub}>
+          {e.nombreComercial} · Última actualización: {e.ultimaActualizacion}
+        </p>
+
+        {/* 1 */}
+        <h2 style={s.h2}>1. Responsable</h2>
+        <p>
+          <strong>{e.responsable}</strong>, con nombre comercial <strong>{e.nombreComercial}</strong>{" "}
+          ("nosotros"), con domicilio en {e.domicilio}, es responsable del tratamiento de los datos
+          personales que se recaban a través de la aplicación móvil y el sitio web {e.nombreComercial}{" "}
+          (app.agentesolutions.com.mx), conforme a la Ley Federal de Protección de Datos Personales en
+          Posesión de los Particulares.
+        </p>
+        <div style={s.caja}>
+          <strong>Contacto de privacidad</strong>
+          <br />
+          Encargada de datos personales: {e.encargadaDatos} · Tel. {e.telefonoEncargada}
+          <br />
+          Correo: {mail} · Tel. {e.telefono}
+        </div>
+
+        {/* 2 */}
+        <h2 style={s.h2}>2. A quién aplica</h2>
+        <ul style={s.ul}>
+          <li style={s.li}>Clientes que se registran por sí mismos en la aplicación.</li>
+          <li style={s.li}>
+            Personal y colaboradores a quienes asignamos una cuenta: administradores, técnicos, técnicos de
+            red, técnicos de cuadrilla, encargados de cuadrilla y agentes inmobiliarios.
+          </li>
+        </ul>
+
+        {/* 3 */}
+        <h2 style={s.h2}>3. Datos que recabamos</h2>
+        <ul style={s.ul}>
+          <li style={s.li}>
+            <strong>Identificación y contacto:</strong> nombre, correo electrónico, teléfono, domicilio o
+            dirección del servicio, usuario y contraseña (almacenada de forma cifrada). En el caso de
+            técnicos y personal, también CURP y especialidades.
+          </li>
+          <li style={s.li}>
+            <strong>Inmuebles y servicios:</strong> direcciones, zonas, equipos registrados, órdenes de
+            trabajo, cotizaciones, reportes y firmas de conformidad.
+          </li>
+          <li style={s.li}>
+            <strong>Fotografías, videos y documentos</strong> que el usuario captura con la cámara o
+            adjunta desde su dispositivo como evidencia de los trabajos o de los inmuebles.
+          </li>
+          <li style={s.li}>
+            <strong>Ubicación precisa:</strong> se usa al registrar una propiedad o un trabajo y, para el
+            personal que lo autoriza expresamente, para mostrar su posición al equipo mientras la
+            aplicación está abierta. <strong>La ubicación no se recaba en segundo plano.</strong>
+          </li>
+          <li style={s.li}>
+            <strong>Notificaciones:</strong> identificador de notificaciones del dispositivo, para enviar
+            avisos de trabajos y alarmas.
+          </li>
+          <li style={s.li}>
+            <strong>Datos de pago:</strong> los pagos se procesan a través de MercadoPago. No almacenamos
+            números de tarjeta; solo conservamos el estado y el monto de la transacción.
+          </li>
+          <li style={s.li}>
+            <strong>Datos técnicos:</strong> tipo de dispositivo, sistema operativo, fecha y hora de acceso
+            y registros necesarios para el funcionamiento y la seguridad del servicio.
+          </li>
+        </ul>
+        <p>
+          No solicitamos datos personales sensibles (como origen étnico, estado de salud, creencias o
+          preferencias sexuales). La firma se usa únicamente como constancia de conformidad y no para
+          identificar biométricamente a la persona.
+        </p>
+
+        {/* 4 */}
+        <h2 style={s.h2}>4. Para qué usamos sus datos</h2>
+        <p>
+          <strong>Finalidades principales</strong> (necesarias para prestar el servicio):
+        </p>
+        <ul style={s.ul}>
+          <li style={s.li}>Crear y administrar cuentas y controlar el acceso según el rol asignado.</li>
+          <li style={s.li}>
+            Recibir, asignar, dar seguimiento y cerrar solicitudes, órdenes de trabajo, cotizaciones y
+            servicios.
+          </li>
+          <li style={s.li}>
+            Registrar evidencia (fotografías, videos, ubicación y firmas) de los trabajos realizados.
+          </li>
+          <li style={s.li}>Mostrar ubicaciones en mapas y coordinar al personal en campo.</li>
+          <li style={s.li}>Enviar notificaciones sobre trabajos, asignaciones y alarmas.</li>
+          <li style={s.li}>Procesar y registrar pagos.</li>
+          <li style={s.li}>Comunicarnos con usted sobre su cuenta o sus servicios.</li>
+          <li style={s.li}>Mantener la seguridad de la aplicación y prevenir usos indebidos.</li>
+        </ul>
+        <p>
+          <strong>Finalidades secundarias</strong> (opcionales):
+        </p>
+        <ul style={s.ul}>
+          <li style={s.li}>Enviar información sobre nuevos servicios o promociones.</li>
+          <li style={s.li}>Evaluar la calidad del servicio mediante encuestas.</li>
+        </ul>
+        <p>
+          Si no desea que sus datos se usen para las finalidades secundarias, escríbanos a {mail}. Esto no
+          afectará el servicio que recibe.
+        </p>
+
+        {/* 5 */}
+        <h2 style={s.h2}>5. Con quién compartimos sus datos</h2>
+        <p>
+          No vendemos ni rentamos sus datos personales. Para operar la aplicación utilizamos proveedores
+          que tratan datos por nuestra cuenta:
+        </p>
+        <ul style={s.ul}>
+          <li style={s.li}>
+            <strong>Google Maps (Google LLC):</strong> visualización de mapas y ubicaciones.
+          </li>
+          <li style={s.li}>
+            <strong>OneSignal:</strong> envío de notificaciones push.
+          </li>
+          <li style={s.li}>
+            <strong>MercadoPago:</strong> procesamiento de pagos; recibe directamente los datos de pago que
+            usted captura.
+          </li>
+          <li style={s.li}>
+            <strong>Google reCAPTCHA:</strong> protección contra registros y accesos automatizados.
+          </li>
+          <li style={s.li}>
+            <strong>Railway:</strong> hospedaje en la nube de la aplicación y su base de datos.
+          </li>
+        </ul>
+        <p>
+          Algunos de estos proveedores pueden estar ubicados fuera de México y tratan los datos conforme a
+          sus propias políticas de privacidad. También podremos compartir datos cuando lo requiera una
+          autoridad competente conforme a la ley.
+        </p>
+
+        {/* 6 */}
+        <h2 style={s.h2}>6. Permisos del dispositivo</h2>
+        <p>
+          La aplicación puede solicitar acceso a la <strong>ubicación</strong>, la{" "}
+          <strong>cámara</strong>, las <strong>fotos, videos y archivos</strong> y las{" "}
+          <strong>notificaciones</strong>. Cada permiso se solicita solo cuando se necesita para una
+          función y puede retirarse en cualquier momento desde la configuración del dispositivo; algunas
+          funciones podrían dejar de estar disponibles.
+        </p>
+
+        {/* 7 */}
+        <h2 style={s.h2}>7. Conservación y seguridad</h2>
+        <p>
+          Conservamos los datos mientras la cuenta esté activa y durante el tiempo necesario para cumplir
+          obligaciones legales, fiscales o contractuales; después se eliminan o anonimizan. Aplicamos
+          medidas de seguridad administrativas, técnicas y físicas, como conexión cifrada (HTTPS),
+          contraseñas cifradas y control de acceso por roles.
+        </p>
+
+        {/* 8 */}
+        <h2 style={s.h2}>8. Sus derechos ARCO</h2>
+        <p>
+          Usted puede <strong>Acceder</strong> a sus datos, <strong>Rectificarlos</strong>,{" "}
+          <strong>Cancelarlos</strong> u <strong>Oponerse</strong> a su uso, así como revocar su
+          consentimiento o limitar su uso. Envíe su solicitud a {mail} indicando:
+        </p>
+        <ul style={s.ul}>
+          <li style={s.li}>Su nombre y un medio para responderle.</li>
+          <li style={s.li}>Copia de una identificación oficial.</li>
+          <li style={s.li}>La descripción clara de lo que solicita.</li>
+          <li style={s.li}>Cualquier documento que ayude a localizar sus datos.</li>
+        </ul>
+        <p>Responderemos dentro de los plazos que establece la ley.</p>
+
+        {/* 9 */}
+        <h2 style={s.h2}>9. Eliminación de cuenta</h2>
+        <p>
+          Puede solicitar la eliminación de su cuenta y de los datos asociados escribiendo a {mail} con el
+          asunto <strong>"Eliminar cuenta"</strong> desde el correo registrado. Eliminaremos sus datos,
+          salvo aquellos que debamos conservar por obligación legal o fiscal (por ejemplo, registros de
+          pagos), lo cual le informaremos al responder su solicitud.
+        </p>
+
+        {/* 10 */}
+        <h2 style={s.h2}>10. Menores de edad</h2>
+        <p>
+          La aplicación está dirigida a personas mayores de 18 años y no recaba intencionalmente datos de
+          menores de edad.
+        </p>
+
+        {/* 11 */}
+        <h2 style={s.h2}>11. Cambios a este aviso</h2>
+        <p>
+          Podemos actualizar este aviso. Cualquier cambio se publicará en esta misma página ({e.url}) con
+          su fecha de actualización.
+        </p>
+
+        {/* 12 */}
+        <h2 style={s.h2}>12. Autoridad</h2>
+        <p>
+          Si considera que su derecho a la protección de datos personales ha sido vulnerado, puede acudir a
+          la Secretaría Anticorrupción y Buen Gobierno, autoridad competente en la materia.
+        </p>
+
+        <a href="/" style={s.volver}>
+          ← Volver a la app
+        </a>
+      </main>
+    </div>
+  );
+}
