@@ -22,6 +22,7 @@ import Header from '../../../components/Shared/Header';
 import '../../../styles/Shared/Profile.css';
 import { mostrarAviso } from '../../../utils/dialogos';
 import PanelPerfilProfesional from './PerfilProfesional/PanelPerfilProfesional';
+import MiQrTecnico from './MiQrTecnico';
 
 export const ESPECIALIDADES_CATALOGO = [
   { id: 1, name: "Electricidad", icon: "⚡", desc: "Instalaciones, cableado, tableros y cortos" },
@@ -341,6 +342,11 @@ const PerfilTecnico = () => {
                 <div><dt><Calendar size={14} /> Nacimiento</dt><dd>{formatearFecha(user?.birth_date)}</dd></div>
                 <div><dt><Clock size={14} /> Miembro desde</dt><dd>{formatearFecha(user?.created_at)}</dd></div>
               </dl>
+
+              <MiQrTecnico
+                nombre={`${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.name}
+                subtitulo={obtenerNombreRol(user?.role_id)}
+              />
 
               <button
                 type="button"

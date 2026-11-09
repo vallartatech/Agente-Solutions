@@ -7,6 +7,7 @@ import {
 import '../../../styles/AgenteMarket/Admin/ModalServicioAutonomo.css';
 import { mostrarAviso } from '../../../utils/dialogos';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
+import { useAuth } from '../../../context/AuthContext';
 
 // ── Fecha estimada ("Programar") ──
 // Es la fecha en que el cliente necesita el trabajo, no una cita confirmada: el técnico propone la cita después.
@@ -42,6 +43,11 @@ const fechaLarga = (yyyyMmDd) => {
 };
 
 const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
+  // Cliente particular de la red (rol 4): "A mis técnicos" son sus favoritos (máx. 3) y la solicitud
+  // va dirigida: queda en la red pero solo la ve ese técnico, que la cotiza y sigue el flujo normal.
+  const { user } = useAuth();
+  const esClienteRed = Number(user?.role_id) === 4;
+
   const [propiedades, setPropiedades] = useState([]);
   const [selectedPropertyId, setSelectedPropertyId] = useState(propertyId || '');
   const [loadingPropiedades, setLoadingPropiedades] = useState(false);
@@ -122,7 +128,17 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
+
+      if (esClienteRed) {
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mis-tecnicos`, { headers });
+        const favoritos = (res.data?.tecnicos || [])
+          .filter(t => t.estado === 'favorito')
+          .map(t => ({ id: t.id, name: t.nombre, profile_picture: t.foto, rolTexto: t.rol, especialidades: t.especialidades || [] }));
+        setTecnicos(favoritos);
+        if (favoritos.length > 0) setSelectedTechId(favoritos[0].id);
+        return;
+      }
+
       // La red solo asigna técnicos de la red: los Técnicos Agente (rol 2) son de uso interno
       const soloTecnicosRed = (lista) => lista.filter(u => [6, 8].includes(Number(u.role_id)));
 
@@ -329,6 +345,9 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
 
         if (isToNetwork) {
           formData.append('publish_network', '1');
+        } else if (targetTechId && esClienteRed) {
+          formData.append('tecnico_dirigido_id', targetTechId);
+          formData.append('publish_network', '1');
         } else if (targetTechId) {
           formData.append('tecnico_id', targetTechId);
           formData.append('assigned_technician_id', targetTechId);
@@ -355,6 +374,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
       // Mostramos la elegante Ficha de Solicitud en vez del alert del navegador
       const exitosaData = {
         isToNetwork,
+        esDirigida: !isToNetwork && esClienteRed,
         techName,
         propiedadNombre: propName,
         totalSolicitudes: total,
@@ -366,7 +386,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
       setSolicitudExitosa(exitosaData);
     } catch (error) {
       console.error("Error enviando lote:", error);
-      setErrorEnvio("Hubo un error al procesar tu solicitud. Por favor intenta de nuevo.");
+      setErrorEnvio(error.response?.data?.message || "Hubo un error al procesar tu solicitud. Por favor intenta de nuevo.");
     } finally {
       setLoadingSubmit(false);
     }
@@ -741,7 +761,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                         <span>A MIS TÉCNICOS</span>
                       </div>
                       <span className="msa-destino-btn-sub">
-                        Tus técnicos ligados
+                        {esClienteRed ? 'Tus favoritos (máx. 3)' : 'Tus técnicos ligados'}
                       </span>
                     </button>
                   </div>
@@ -756,13 +776,17 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                       ) : tecnicos.length > 0 ? (
                         <div className="msa-tecnicos-wrapper">
                           <label className="msa-tecnicos-sublabel">
-                            Selecciona el técnico que atenderá la solicitud:
+                            {esClienteRed
+                              ? 'Elige a tu técnico favorito. Solo él verá la solicitud y te enviará su cotización:'
+                              : 'Selecciona el técnico que atenderá la solicitud:'}
                           </label>
                           {/* Lista de técnicos en tarjetas (en vez del select nativo del navegador) */}
                           <div className="msa-tech-list" role="radiogroup" aria-label="Técnico que atenderá la solicitud">
                             {tecnicos.map(t => {
                               const fullName = `${t.first_name || t.name || ''} ${t.last_name || ''}`.trim() || `Técnico #${t.id}`;
-                              const rol = t.role_id === 2 ? 'Técnico Agente' : (t.role_id === 6 ? 'Contratista' : (t.role_id === 8 ? 'Técnico de la Red' : 'Técnico'));
+                              const rol = t.rolTexto
+                                ? [t.rolTexto, t.especialidades?.[0]].filter(Boolean).join(' · ')
+                                : t.role_id === 2 ? 'Técnico Agente' : (t.role_id === 6 ? 'Contratista' : (t.role_id === 8 ? 'Técnico de la Red' : 'Técnico'));
                               const iniciales = fullName.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
                               const elegido = String(selectedTechId) === String(t.id);
                               return (
@@ -805,10 +829,12 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                         /* ESTADO VACÍO CUANDO NO TIENE TÉCNICOS */
                         <div className="msa-no-tecnicos-card">
                           <div className="msa-no-tecnicos-title">
-                            <AlertCircle size={15} /> Sin técnicos vinculados
+                            <AlertCircle size={15} /> {esClienteRed ? 'Aún no tienes técnicos favoritos' : 'Sin técnicos vinculados'}
                           </div>
                           <p className="msa-no-tecnicos-desc">
-                            No tienes técnicos directos registrados. Te recomendamos enviar esta solicitud a la <strong>Red de Técnicos</strong> para recibir cotizaciones.
+                            {esClienteRed
+                              ? <>Agrega hasta 3 favoritos desde <strong>Mis técnicos</strong> o escaneando el código QR de un técnico. Mientras tanto, envía esta solicitud a la <strong>Red de Técnicos</strong> para recibir cotizaciones.</>
+                              : <>No tienes técnicos directos registrados. Te recomendamos enviar esta solicitud a la <strong>Red de Técnicos</strong> para recibir cotizaciones.</>}
                           </p>
                           <button
                             type="button"
@@ -910,12 +936,15 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                 <CheckCircle2 size={36} color="#16a34a" strokeWidth={2.4} />
               </div>
               <h3 className="msa-ficha-title">
-                {solicitudExitosa.isToNetwork ? '¡Solicitud Publicada en la Red!' : '¡Solicitud Asignada con Éxito!'}
+                {solicitudExitosa.isToNetwork ? '¡Solicitud Publicada en la Red!'
+                  : solicitudExitosa.esDirigida ? '¡Solicitud enviada a tu técnico!' : '¡Solicitud Asignada con Éxito!'}
               </h3>
               <p className="msa-ficha-subtitle">
                 {solicitudExitosa.isToNetwork 
                   ? 'Tu requerimiento ya está visible para los técnicos disponibles para cotizar.' 
-                  : `Se ha notificado y asignado directamente a ${solicitudExitosa.techName}.`}
+                  : solicitudExitosa.esDirigida
+                    ? `Solo ${solicitudExitosa.techName} puede verla. Te avisaremos cuando te envíe su cotización.`
+                    : `Se ha notificado y asignado directamente a ${solicitudExitosa.techName}.`}
               </p>
             </div>
 
@@ -926,7 +955,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                   {solicitudExitosa.loteId ? `LOTE: ${solicitudExitosa.loteId}` : 'FOLIO: EN RED'}
                 </span>
                 <span className={`msa-ficha-status-pill ${solicitudExitosa.isToNetwork ? 'network' : 'tech'}`}>
-                  ● {solicitudExitosa.isToNetwork ? 'EN VIVO EN LA RED' : 'ASIGNADO'}
+                  ● {solicitudExitosa.isToNetwork ? 'EN VIVO EN LA RED' : solicitudExitosa.esDirigida ? 'ESPERANDO COTIZACIÓN' : 'ASIGNADO'}
                 </span>
               </div>
 

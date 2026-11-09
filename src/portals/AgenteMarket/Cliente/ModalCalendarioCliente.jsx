@@ -42,7 +42,8 @@ import {
   Hourglass,
   Globe,
   Wrench,
-  ClipboardList
+  ClipboardList,
+  Star
 } from 'lucide-react';
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
@@ -518,6 +519,9 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
       fotos: fotos,
       cotizaciones: groupedQuotes.length,
       cotizaciones_list: groupedQuotes,
+      // Solicitud enviada solo a un técnico favorito (null si está abierta a toda la red)
+      tecnico_dirigido_id: order.tecnico_dirigido_id || null,
+      tecnico_dirigido_nombre: order.tecnico_dirigido_nombre || null,
       cliente: clientName,
       client_name: clientName,
       client_phone: order.client_phone || order.property?.client?.phone || '',
@@ -2245,11 +2249,31 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                         );
                       })()}
 
+                      {selectedJobForQuotes.tecnico_dirigido_id && !selectedJobForQuotes.is_accepted && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '14px', margin: '14px 0 0', borderRadius: '16px', background: '#fef3c7', color: '#92400e' }}>
+                          <span style={{ display: 'flex', alignItems: 'flex-start', gap: '7px', fontSize: '13px', fontWeight: '600', lineHeight: 1.4 }}>
+                            <Star size={15} fill="currentColor" style={{ flexShrink: 0, marginTop: '1px' }} />
+                            Enviada solo a tu técnico favorito {selectedJobForQuotes.tecnico_dirigido_nombre}. Si no te responde o prefieres más opciones, ábrela a toda la red.
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleReopenJobInNetwork(selectedJobForQuotes)}
+                            style={{ height: '40px', border: 'none', borderRadius: '12px', background: '#f26522', color: '#fff', fontWeight: '800', fontSize: '13px', cursor: 'pointer' }}
+                          >
+                            Abrir a toda la red
+                          </button>
+                        </div>
+                      )}
+
                       {(!selectedJobForQuotes.cotizaciones_list || selectedJobForQuotes.cotizaciones_list.length === 0) ? (
                         <div style={{ textAlign: 'center', color: '#64748b', padding: '40px 20px', background: '#fffaf5', borderRadius: '16px', border: '2px dashed #fed7aa', margin: '20px 0' }}>
                           <div style={{ fontSize: '36px', marginBottom: '10px' }}>⏳</div>
                           <p style={{ margin: '0 0 6px 0', fontWeight: '700', fontSize: '15px', color: '#0f172a' }}>Aún no hay cotizaciones</p>
-                          <span style={{ fontSize: '13px', color: '#94a3b8' }}>Los técnicos de la red te notificarán en cuanto envíen su propuesta.</span>
+                          <span style={{ fontSize: '13px', color: '#94a3b8' }}>
+                            {selectedJobForQuotes.tecnico_dirigido_id
+                              ? `${selectedJobForQuotes.tecnico_dirigido_nombre || 'Tu técnico'} te notificará en cuanto envíe su propuesta.`
+                              : 'Los técnicos de la red te notificarán en cuanto envíen su propuesta.'}
+                          </span>
                         </div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

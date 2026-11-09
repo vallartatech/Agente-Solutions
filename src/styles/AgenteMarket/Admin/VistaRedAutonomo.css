@@ -1968,6 +1968,13 @@
   border: 1px solid rgba(255, 255, 255, 0.28);
 }
 
+/* Solicitud dirigida: el cliente se la mandó solo a este técnico (es su favorito) */
+.rj-chip.directa {
+  color: #fde68a;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
 .rj-estado {
   flex-shrink: 0;
   padding: 4px 10px;

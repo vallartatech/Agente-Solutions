@@ -995,6 +995,7 @@ const MercadoTrabajos = () => {
             cotizaciones: order.network_quotes_count || 0,
             priority: order.priority || 'Normal',
             is_urgent: Boolean(order.is_urgent || order.priority === 'Urgente' || order.type === 'SOS'),
+            dirigida_a_mi: Boolean(order.dirigida_a_mi),
             scheduled_at: order.scheduled_at,
             agreed_price: myQuote?.price ? parseFloat(myQuote.price) : 0,
             is_accepted: isAccepted,
@@ -3742,6 +3743,11 @@ const MercadoTrabajos = () => {
                                 <MapPin size={12} />
                                 {job.zona}
                               </span>
+                              {job.dirigida_a_mi && (
+                                <span className="rj-chip directa" title="Eres técnico favorito de este cliente: solo tú ves esta solicitud">
+                                  <Star size={11} fill="currentColor" /> Solo para ti
+                                </span>
+                              )}
                               {job.is_urgent && (
                                 <span className="rj-chip urgente"><Zap size={11} /> Urgente</span>
                               )}

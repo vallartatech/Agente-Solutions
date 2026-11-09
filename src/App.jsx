@@ -133,6 +133,8 @@ const RedRegistroZonas = lazy(() => import("./portals/AgenteMarket/Tecnico/Regis
 const RedLevantamientoPropiedad = lazy(() => import("./portals/AgenteMarket/Tecnico/LevantamientoPropiedad"));
 // Técnico nuevo de la red: "Completa tu perfil" hasta que Admin/Root lo valide
 const CompletarPerfil = lazy(() => import("./portals/AgenteMarket/Tecnico/PerfilProfesional/CompletarPerfil"));
+// Perfil público al que lleva el QR del técnico (se abre sin sesión)
+const PerfilQrPublico = lazy(() => import("./portals/AgenteMarket/Shared/PerfilQrPublico"));
 
 // Lo único que puede abrir un técnico de la red con el perfil sin validar
 const RUTAS_SIN_CANDADO = ['/', '/completar-perfil', '/privacidad', '/eliminar-cuenta'];
@@ -217,6 +219,7 @@ const AppRoutes = () => {
         user ? <Suspense fallback={<CasaLoader />}><CompletarPerfil /></Suspense> : <Navigate to="/" replace />
       } />
       <Route path="/" element={<LoginAgente />} />
+      <Route path="/t/:codigo" element={<Suspense fallback={<CasaLoader />}><PerfilQrPublico /></Suspense>} />
       <Route path="/registro-cliente" element={<RegistroCliente />} />
       <Route path="/activacion-cuenta" element={<ActivacionCuenta />} />
       <Route path="/revisa-tu-correo" element={<CheckEmail />} />

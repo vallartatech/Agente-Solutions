@@ -24,6 +24,18 @@ import {
 import Logo4 from "../../assets/Logo4.png";
 import LoginArtwork from "../../assets/Atardecer.png";
 
+// Cliente de la red que llegó desde el QR de un técnico (/t/:codigo): al entrar regresa a ese perfil.
+// Lo guarda ContratarTecnico en sessionStorage; se usa una sola vez.
+const tomarVolverA = () => {
+  try {
+    const ruta = sessionStorage.getItem("agente_volver_a");
+    sessionStorage.removeItem("agente_volver_a");
+    return ruta && /^\/t\/[A-Za-z0-9]{6,20}$/.test(ruta) ? ruta : null;
+  } catch {
+    return null;
+  }
+};
+
 // Catálogo de roles públicos clasificados en 2 categorías
 const ROLES_PUBLICOS = [
   // ── CATEGORÍA 1: CLIENTES (1) ──
@@ -334,7 +346,9 @@ const LoginAgente = () => {
   useEffect(() => {
     if (user) {
       const role = Number(user.role_id);
-      if (user.perfil_profesional?.bloqueado) navigate("/completar-perfil");
+      const volverA = role === 4 ? tomarVolverA() : null;
+      if (volverA) navigate(volverA, { replace: true });
+      else if (user.perfil_profesional?.bloqueado) navigate("/completar-perfil");
       else if (role === 0 || role === 1) navigate("/VistaRoot");
       else if (role === 4 || role === 5 || role === 7) navigate("/VistaMarket");
       else if (role === 2) navigate("/VistaTecnico");
@@ -424,8 +438,9 @@ const LoginAgente = () => {
         setMensaje(`¡Bienvenido CLIENTE ${first_name}! Abriendo tu portal...`);
         setTimeout(() => navigate("/propiedades"), 1000);
       } else if (roleNum === 4) {
-        setMensaje(`¡Bienvenido CLIENTE PARTICULAR ${first_name}! Entrando a Agente Market...`);
-        setTimeout(() => navigate("/VistaMarket"), 1000);
+        const volverA = tomarVolverA();
+        setMensaje(`¡Bienvenido CLIENTE PARTICULAR ${first_name}! ${volverA ? "Abriendo el perfil del técnico..." : "Entrando a Agente Market..."}`);
+        setTimeout(() => navigate(volverA || "/VistaMarket"), 1000);
       } else if (roleNum === 5) {
         setMensaje(`¡Bienvenido GESTOR INMOBILIARIO ${first_name}! Entrando al panel de gestión...`);
         setTimeout(() => navigate("/VistaMarket"), 1000);
