@@ -287,7 +287,7 @@ const PerfilTecnico = () => {
             </button>
           </section>
 
-          {/* ── 2. DOS COLUMNAS: tarjeta del técnico (izquierda) y perfil profesional (derecha) ── */}
+          {/* ── 2. TRES COLUMNAS (cada una con su propio scroll): datos del técnico, perfil profesional y código QR ── */}
           <div className="ptr-layout">
 
             {/* ── IZQUIERDA: identidad, insignias y datos personales ── */}
@@ -343,11 +343,6 @@ const PerfilTecnico = () => {
                 <div><dt><Clock size={14} /> Miembro desde</dt><dd>{formatearFecha(user?.created_at)}</dd></div>
               </dl>
 
-              <MiQrTecnico
-                nombre={`${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.name}
-                subtitulo={obtenerNombreRol(user?.role_id)}
-              />
-
               <button
                 type="button"
                 className="profile-identity-edit-btn"
@@ -373,10 +368,18 @@ const PerfilTecnico = () => {
               </button>
             </aside>
 
-            {/* ── DERECHA: perfil profesional (cobro, habilidades, currículum e INE) ── */}
+            {/* ── CENTRO: perfil profesional (cobro, habilidades, currículum e INE) en ventanas desplegables ── */}
             <div className="ptr-principal">
               <PanelPerfilProfesional onCambio={actualizarPerfilProfesional} />
             </div>
+
+            {/* ── DERECHA: código QR del técnico ── */}
+            <aside className="ptr-qr">
+              <MiQrTecnico
+                nombre={`${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.name}
+                subtitulo={obtenerNombreRol(user?.role_id)}
+              />
+            </aside>
           </div>
 
         </div>
@@ -429,7 +432,7 @@ const PerfilTecnico = () => {
               </div>
 
               <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#94a3b8' }}>
-                🛠️ Tus habilidades, datos de cobro, currículum e INE se editan en la sección <strong>Perfil profesional</strong>, más abajo.
+                🛠️ Tus habilidades, datos de cobro, currículum e INE se editan en la columna <strong>Perfil profesional</strong>.
               </p>
 
               <div className="profile-modal-actions">

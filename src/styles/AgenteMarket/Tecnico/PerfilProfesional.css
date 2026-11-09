@@ -600,18 +600,57 @@
 .ppp-btn:hover:not(:disabled) { background: #ea580c; }
 .ppp-btn:disabled { opacity: 0.6; cursor: wait; }
 
-.ppp-tarjetas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ppp-tarjetas { display: flex; flex-direction: column; gap: 10px; }
 .ppp-tarjeta {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
+  padding: 0;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(0, 0, 0, 0.22);
   min-width: 0;
 }
-.ppp-tarjeta-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.ppp-tarjeta.abierta { border-color: rgba(242, 101, 34, 0.45); }
+/* Cabecera de la ventana desplegable */
+.ppp-tarjeta-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 13px 14px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ppp-tarjeta-head:hover { background: rgba(255, 255, 255, 0.04); }
+.ppp-tarjeta-head:focus-visible { outline: 2px solid #f26522; outline-offset: -2px; }
+.ppp-tarjeta-marcas { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.ppp-pendientes {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+.ppp-flecha { color: #94a3b8; transition: transform 0.2s ease; }
+.ppp-tarjeta.abierta .ppp-flecha { transform: rotate(180deg); color: #f26522; }
+.ppp-tarjeta-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 14px 14px;
+  animation: ppp-desplegar 0.2s ease;
+}
+@keyframes ppp-desplegar { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 .ppp-tarjeta-head h3 { display: flex; align-items: center; gap: 6px; margin: 0; color: #ffffff; font-size: 0.86rem; font-weight: 800; }
 .ppp-tarjeta-head h3 svg { color: #f26522; flex-shrink: 0; }
 .ppp-ok { color: #34d399; flex-shrink: 0; }
@@ -644,7 +683,7 @@
   overflow: hidden;
 }
 .ppp-editar {
-  margin-top: auto;
+  margin-top: 4px;
   padding: 8px 10px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.07);
@@ -704,7 +743,8 @@
   cursor: pointer;
 }
 .ppm-cerrar:hover { background: #e2e8f0; }
-.ppm-cuerpo { flex: 1; overflow-y: auto; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; }
+.ppm-cuerpo { flex: 1; overflow-y: auto; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; scrollbar-width: none; -ms-overflow-style: none; }
+.ppm-cuerpo::-webkit-scrollbar { display: none; }
 .ppm-cuerpo .pp-info { margin-top: 0; align-items: flex-start; }
 .ppm-cuerpo .pp-info svg { flex-shrink: 0; margin-top: 2px; }
 .ppm-cuerpo .pp-seccion { margin-top: 0; }
@@ -746,20 +786,21 @@
 .ppp-falta:focus-visible { outline: 2px solid #f26522; outline-offset: 2px; }
 
 /* ==========================================================================
-   "MI PERFIL" DEL TÉCNICO DE LA RED: DOS COLUMNAS
-   Izquierda: tarjeta del técnico (foto, insignias, datos). Derecha: perfil profesional.
+   "MI PERFIL" DEL TÉCNICO DE LA RED: TRES COLUMNAS
+   1) datos del técnico  2) perfil profesional (ventanas desplegables)  3) código QR.
+   En escritorio cada columna tiene su propio scroll invisible.
    ========================================================================== */
 .ptr-layout {
+  --ptr-alto: calc(100dvh - 150px); /* alto visible bajo el encabezado */
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-columns: 300px minmax(0, 1fr) 320px;
   gap: 20px;
   align-items: start;
   position: relative;
   z-index: 10;
 }
-.ptr-lateral {
-  position: sticky;
-  top: 16px;
+.ptr-lateral,
+.ptr-qr {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -774,6 +815,22 @@
   color: #e2e8f0;
   box-sizing: border-box;
 }
+.ptr-qr { padding: 12px; }
+.ptr-qr .tqr-mi-qr { margin: 0; }
+
+/* Scroll propio por columna, sin barra visible */
+.ptr-lateral,
+.ptr-principal .ppp-panel,
+.ptr-qr {
+  max-height: var(--ptr-alto);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.ptr-lateral::-webkit-scrollbar,
+.ptr-principal .ppp-panel::-webkit-scrollbar,
+.ptr-qr::-webkit-scrollbar { display: none; }
 .ptr-identidad { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
 .ptr-nombre { margin: 4px 0 0; color: #ffffff; font-size: 1.35rem; font-weight: 900; line-height: 1.15; overflow-wrap: anywhere; }
 
@@ -838,9 +895,17 @@
 .ptr-principal { min-width: 0; }
 .ptr-principal .ppp-panel { min-height: 100%; }
 
+/* Pantallas medianas: el QR baja debajo de los datos del técnico */
+@media (max-width: 1250px) {
+  .ptr-layout { grid-template-columns: 300px minmax(0, 1fr); }
+  .ptr-qr { grid-column: 1; }
+  .ptr-principal { grid-column: 2; grid-row: 1 / span 2; }
+}
+/* Móvil/tableta: una sola columna y la página hace scroll normal */
 @media (max-width: 1000px) {
   .ptr-layout { grid-template-columns: 1fr; gap: 14px; }
-  .ptr-lateral { position: static; }
+  .ptr-qr, .ptr-principal { grid-column: auto; grid-row: auto; }
+  .ptr-lateral, .ptr-principal .ppp-panel, .ptr-qr { max-height: none; overflow: visible; }
 }
 @media (max-width: 600px) {
   .ppp-tarjetas { grid-template-columns: 1fr; }

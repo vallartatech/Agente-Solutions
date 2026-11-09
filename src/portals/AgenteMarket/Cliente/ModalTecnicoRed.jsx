@@ -36,18 +36,23 @@ const ModalTecnicoRed = ({ tecnico = null, codigo = null, pie = null, onContrata
   const [relacion, setRelacion] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  // Por qué no hay QR en "Ver detalles": 'no_red' (técnico interno, el servidor respondió 404) o 'error'
+  const [sinQr, setSinQr] = useState(null);
 
   useEffect(() => {
     let vivo = true;
     setCargando(true);
     setError(null);
+    setSinQr(null);
     const url = codigo ? `${API}/red/qr/${codigo}` : `${API}/mis-tecnicos/${tecnico.id}/detalle`;
     axios.get(url)
       .then((r) => { if (vivo) { setPerfil(r.data.data); setRelacion(r.data.relacion || null); } })
       .catch((e) => {
         if (!vivo) return;
-        if (tecnico) setPerfil(desdeTarjeta(tecnico));
-        else setError(e.response?.status === 404 ? 'Este código QR no corresponde a ningún técnico de la red.' : 'No se pudo cargar el perfil del técnico.');
+        if (tecnico) {
+          setPerfil(desdeTarjeta(tecnico));
+          setSinQr(e.response?.status === 404 && e.response?.data?.message ? 'no_red' : 'error');
+        } else setError(e.response?.status === 404 ? 'Este código QR no corresponde a ningún técnico de la red.' : 'No se pudo cargar el perfil del técnico.');
       })
       .finally(() => { if (vivo) setCargando(false); });
     return () => { vivo = false; };
@@ -95,8 +100,11 @@ const ModalTecnicoRed = ({ tecnico = null, codigo = null, pie = null, onContrata
                   </ul>
                 </section>
               )}
-              {tecnico && !perfil?.qr_codigo && (
+              {sinQr === 'no_red' && (
                 <p className="tqr-nota"><AlertCircle size={15} /> Este técnico no es de la red de técnicos independientes, por eso no tiene código QR.</p>
+              )}
+              {sinQr === 'error' && (
+                <p className="tqr-nota tqr-nota-alerta"><AlertCircle size={15} /> No se pudo cargar el perfil completo ni el código QR. Intenta de nuevo en unos minutos.</p>
               )}
             </FichaTecnicoQr>
           )}

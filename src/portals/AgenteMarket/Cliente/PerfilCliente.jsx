@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { 
   Camera, 
@@ -16,19 +15,11 @@ import {
   Building2,
   MapPin,
   ExternalLink,
-  CalendarDays,
-  LogOut,
-  Plus,
-  Home
+  Plus
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
-import logo from '../../../assets/Logo4.png';
 import defaultPropImg from '../../../assets/propiedad_ejemplo.jpg';
-import ModalCalendarioCliente from './ModalCalendarioCliente';
-import ModalCalendarioSolutions from '../../AgenteSolutions/Shared/ModalCalendarioSolutions';
-import NotificationBell from '../../../components/Shared/NotificationBell';
-import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import Header from '../../../components/Shared/Header';
 import '../../../styles/Shared/Profile.css';
 import { mostrarAviso } from '../../../utils/dialogos';
@@ -50,24 +41,10 @@ const PerfilCliente = () => {
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const [showModalCalendario, setShowModalCalendario] = useState(false);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
 
   // Propiedades del cliente / negocio
   const [propiedades, setPropiedades] = useState([]);
   const [selectedPropId, setSelectedPropId] = useState(null);
-
-  // Cerrar dropdown al hacer clic fuera
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setProfileDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // Cargar propiedades del cliente/negocio (mismo método que en VistaMarket)
   useEffect(() => {
@@ -286,197 +263,11 @@ const PerfilCliente = () => {
   const nombreCompleto = `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.name || 'Cliente';
   const coverUrl = user?.cover_picture || getPropImage(activeProperty) || DEFAULT_COVER;
 
-  const roleId = Number(user?.role_id);
-  const showAdminNav = [0, 1].includes(roleId);
-
   return (
     <div className="profile-liquid-root">
-      {/* Admins: el mismo encabezado que el resto de la app. Otros roles: barra propia del perfil */}
-      {showAdminNav ? <Header activeModule="perfil" /> : (
-      <header className="profile-liquid-topbar" ref={dropdownRef}>
-        <div className="profile-topbar-left">
-          <img 
-            src={logo} 
-            alt="Agente Solutions" 
-            className="profile-brand-logo"
-            onClick={() => {
-              if (showAdminNav) navigate('/VistaRoot');
-              else if (roleId === 2) navigate('/VistaTecnico');
-              else navigate('/VistaMarket');
-            }} 
-            title="Ir al Inicio"
-          />
-        </div>
-
-        {/* Center Nav Links: Sincronizado exactamente con AdminHeader para Rol 1/0 */}
-        <nav className="vcp-header-nav profile-topbar-nav">
-          {showAdminNav ? (
-            <>
-              <button className="vcp-nav-btn" onClick={() => navigate('/VistaRoot')}>
-                INICIO
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
-                USUARIOS
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/propiedades')}>
-                PROPIEDADES
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/levantamientos')}>
-                LEVANTAMIENTOS
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
-                REPORTE
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
-                COTIZACION
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
-                SERVICIOS
-              </button>
-              {roleId === 0 && (
-                <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
-                  MERCADO / RED
-                </button>
-              )}
-            </>
-          ) : roleId === 2 ? (
-            <>
-              <button className="vcp-nav-btn" onClick={() => navigate('/VistaTecnico')}>
-                INICIO
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/trabajos-tecnico')}>
-                TRABAJOS
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/levantamiento-propiedad')}>
-                LEVANTAMIENTOS
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
-                COTIZACIONES
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="vcp-nav-btn" onClick={() => navigate('/VistaMarket')}>
-                INICIO
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/usuarios')}>
-                USUARIOS
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/reportes-globales')}>
-                REPORTE
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/vista-cotizaciones')}>
-                COTIZACION
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/tablero-servicios')}>
-                SERVICIOS
-              </button>
-              <button className="vcp-nav-btn" onClick={() => navigate('/red-autonomos')}>
-                MERCADO / RED
-              </button>
-            </>
-          )}
-        </nav>
-
-        {/* Right Actions & User Profile */}
-        <div className="vcp-header-right profile-topbar-right">
-          <button 
-            type="button"
-            className="profile-change-cover-header-btn" 
-            onClick={() => openPhotoMenu('cover_picture')}
-            disabled={isUploading}
-            title="Cambiar imagen de portada"
-          >
-            <Camera size={14} />
-            <span>{isUploading ? 'SUBIENDO...' : 'CAMBIAR PORTADA'}</span>
-          </button>
-
-          <div className="vcp-header-actions-group">
-            <button 
-              type="button"
-              className="vcp-header-icon-btn profile-header-icon-btn" 
-              title="Abrir Calendario y Citas"
-              onClick={() => setShowModalCalendario(true)}
-            >
-              <CalendarDays size={18} strokeWidth={2.2} />
-            </button>
-
-            <NotificationBell triggerClassName="vcp-header-icon-btn" />
-          </div>
-
-          <button 
-            type="button"
-            className="vcp-avatar-btn profile-avatar-btn" 
-            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            title="Opciones de sesión"
-          >
-            {user?.profile_picture ? (
-              <img src={user.profile_picture} alt="Avatar" className="vcp-avatar-img profile-avatar-img" />
-            ) : (
-              <div className="vcp-avatar-initial profile-avatar-initial">
-                {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : 'C')}
-              </div>
-            )}
-          </button>
-        </div>
-      </header>
-      )}
-
-      {/* ── PORTAL GLOBAL DE PERFIL FLOTANTE ── */}
-      {profileDropdownOpen && createPortal(
-        <div className="vcp-profile-portal-root">
-          <div 
-            className="vcp-profile-backdrop" 
-            onClick={() => setProfileDropdownOpen(false)}
-          />
-          <div 
-            className="profile-header-dropdown vcp-profile-dropdown"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="vcp-dropdown-user-header">
-              <div className="vcp-dropdown-role-pill">
-                <Shield size={12} className="vcp-dropdown-role-icon" />
-                <span>{obtenerNombreRol(user?.role_id)}</span>
-              </div>
-              <div className="vcp-dropdown-user-name">{nombreCompleto}</div>
-              {user?.email && (
-                <div className="vcp-dropdown-user-email">{user.email}</div>
-              )}
-            </div>
-
-            <div className="vcp-dropdown-divider" />
-
-            <button 
-              className="profile-dropdown-item vcp-dropdown-item" 
-              onClick={() => { 
-                setProfileDropdownOpen(false); 
-                if (showAdminNav) navigate('/VistaRoot');
-                else if (roleId === 2) navigate('/VistaTecnico');
-                else navigate('/VistaMarket');
-              }}
-            >
-              <Home size={16} /> Ir a Inicio
-            </button>
-            <button 
-              className="profile-dropdown-item vcp-dropdown-item" 
-              onClick={() => { setProfileDropdownOpen(false); navigate('/mi-perfil'); }}
-            >
-              <User size={16} /> Mi Perfil
-            </button>
-            <button 
-              className="profile-dropdown-item logout vcp-dropdown-item" 
-              onClick={() => { 
-                setProfileDropdownOpen(false); 
-                if (logoutGlobal) logoutGlobal(); 
-                navigate('/', { replace: true }); 
-              }}
-            >
-              <LogOut size={16} /> Cerrar Sesión
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Mismo encabezado que el resto de la app según el rol (cliente, negocio, admin);
+          incluye calendario, notificaciones, menú de perfil y barra inferior móvil */}
+      <Header activeModule="perfil" />
 
       {/* ── MAIN DASHBOARD VIEWPORT ── */}
       <main className="profile-dashboard-viewport">
@@ -870,22 +661,6 @@ const PerfilCliente = () => {
         style={{ display: 'none' }} 
         onChange={(e) => handleFileUpload(e, uploadTargetRef.current)} 
       />
-
-      {/* Modal de Calendario: 0-3 Solutions vs 4+ Market (igual que los headers) */}
-      {Number(user?.role_id) <= 3 ? (
-        <ModalCalendarioSolutions
-          isOpen={showModalCalendario}
-          onClose={() => setShowModalCalendario(false)}
-        />
-      ) : (
-        <ModalCalendarioCliente
-          isOpen={showModalCalendario}
-          onClose={() => setShowModalCalendario(false)}
-        />
-      )}
-
-      {/* Responsive Bottom Navigation (Only Icons); el encabezado de admin ya la incluye */}
-      {!showAdminNav && <MobileBottomNav />}
 
     </div>
   );

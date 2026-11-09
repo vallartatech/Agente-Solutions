@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Receipt, Wrench, GraduationCap, IdCard, Pencil, ShieldCheck, ShieldAlert, Award, X, Loader2,
-  Check, Clock, AlertTriangle, Send, Info, Landmark,
+  Check, Clock, AlertTriangle, Send, Info, Landmark, ChevronDown,
 } from 'lucide-react';
 import { enviarARevision, guardarPerfil, mensajeError, obtenerPerfil } from './perfilProfesionalApi';
 import SeccionCobro, { erroresCobro, formCobro, payloadCobro } from './SeccionCobro';
@@ -77,6 +77,9 @@ const PanelPerfilProfesional = ({ onCambio }) => {
   const [errorVentana, setErrorVentana] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+  // Ventanas desplegables: cuáles están abiertas (empieza abierta la de cobro)
+  const [abiertas, setAbiertas] = useState({ cobro: true });
+  const alternar = (clave) => setAbiertas(a => ({ ...a, [clave]: !a[clave] }));
 
   const aplicar = useCallback((data) => {
     setPerfil(data);
@@ -233,30 +236,48 @@ const PanelPerfilProfesional = ({ onCambio }) => {
       {mensaje && <div className={`ppp-alerta ${mensaje.tipo === 'ok' ? 'verde' : 'rojo'}`} role="status">{mensaje.texto}</div>}
 
       <div className="ppp-tarjetas">
-        {tarjetas.map(t => (
-          <article key={t.clave} className="ppp-tarjeta">
-            <div className="ppp-tarjeta-head">
-              <h3><t.Icono size={16} /> {t.titulo}</h3>
-              {t.verificado && <ShieldCheck size={16} className="ppp-ok" aria-label="Verificado" />}
-            </div>
-            {t.chips && (
-              <div className="ppp-chips">
-                {t.chips.slice(0, 6).map(c => <span key={c.id}>{c.icon || '🔧'} {c.name}</span>)}
-                {t.chips.length > 6 && <span>+{t.chips.length - 6}</span>}
-                {t.chips.length === 0 && <span className="vacio">Sin habilidades</span>}
-              </div>
-            )}
-            <dl className="ppp-filas">
-              {t.filas.map(([k, v]) => (
-                <div key={k}><dt>{k}</dt><dd className={v === 'Falta' ? 'falta' : ''}>{v}</dd></div>
-              ))}
-            </dl>
-            {t.texto && <p className="ppp-texto">{t.texto}</p>}
-            <button type="button" className="ppp-editar" onClick={() => abrir(t.clave)}>
-              <Pencil size={14} /> {t.boton || 'Editar'}
-            </button>
-          </article>
-        ))}
+        {tarjetas.map(t => {
+          const abierta = !!abiertas[t.clave];
+          const pendientes = t.filas.filter(([, v]) => v === 'Falta').length;
+          return (
+            <article key={t.clave} className={`ppp-tarjeta ${abierta ? 'abierta' : ''}`}>
+              <button
+                type="button"
+                className="ppp-tarjeta-head"
+                onClick={() => alternar(t.clave)}
+                aria-expanded={abierta}
+                aria-controls={`ppp-cuerpo-${t.clave}`}
+              >
+                <h3><t.Icono size={16} /> {t.titulo}</h3>
+                <span className="ppp-tarjeta-marcas">
+                  {pendientes > 0 && <span className="ppp-pendientes">{pendientes} {pendientes === 1 ? 'falta' : 'faltan'}</span>}
+                  {t.verificado && <ShieldCheck size={16} className="ppp-ok" aria-label="Verificado" />}
+                  <ChevronDown size={18} className="ppp-flecha" />
+                </span>
+              </button>
+              {abierta && (
+                <div className="ppp-tarjeta-cuerpo" id={`ppp-cuerpo-${t.clave}`}>
+                  {t.chips && (
+                    <div className="ppp-chips">
+                      {t.chips.slice(0, 6).map(c => <span key={c.id}>{c.icon || '🔧'} {c.name}</span>)}
+                      {t.chips.length > 6 && <span>+{t.chips.length - 6}</span>}
+                      {t.chips.length === 0 && <span className="vacio">Sin habilidades</span>}
+                    </div>
+                  )}
+                  <dl className="ppp-filas">
+                    {t.filas.map(([k, v]) => (
+                      <div key={k}><dt>{k}</dt><dd className={v === 'Falta' ? 'falta' : ''}>{v}</dd></div>
+                    ))}
+                  </dl>
+                  {t.texto && <p className="ppp-texto">{t.texto}</p>}
+                  <button type="button" className="ppp-editar" onClick={() => abrir(t.clave)}>
+                    <Pencil size={14} /> {t.boton || 'Editar'}
+                  </button>
+                </div>
+              )}
+            </article>
+          );
+        })}
       </div>
 
       {editando === 'cobro' && (
