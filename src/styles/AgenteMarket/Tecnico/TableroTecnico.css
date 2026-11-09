@@ -3773,3 +3773,172 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
 @media (prefers-reduced-motion: reduce) {
   .nv-aviso-cambio { animation: none; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   PROGRESO EN CELULAR / TABLET (≤1024px): camino horizontal sobre césped
+   y debajo los botones del flujo (Comenzar / Finalizar / 2da visita)
+   ══════════════════════════════════════════════════════════════ */
+.rt-camino-movil { display: none; }
+
+@media (max-width: 1024px) {
+  /* En celular los botones viven bajo el camino; la tarjeta de abajo se oculta */
+  .rt-flujo-escritorio { display: none !important; }
+
+  .rt-camino-movil {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+    padding: 10px;
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    background: #4a8a3a url('../../../assets/cesped-pixel.png') repeat;
+    background-size: 128px 128px;
+    image-rendering: pixelated;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3), inset 0 1.5px 2px rgba(255, 255, 255, 0.5);
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .rt-camino-movil-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.78);
+  }
+
+  .rt-camino-movil-titulo {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  .rt-camino-movil-paso {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #f26522;
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  /* Pista deslizable: el camino va de izquierda a derecha */
+  .rt-camino-movil-pista {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -4px;
+  }
+
+  .rt-camino-movil-pista::-webkit-scrollbar { display: none; }
+
+  .rt-camino-movil-lienzo {
+    position: relative;
+    height: 150px; /* = CAMINO_ALTO en el JSX */
+    margin: 0 auto;
+  }
+
+  .rt-camino-movil-svg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .rt-camino-movil-svg path {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.55);
+    stroke-width: 5;
+    stroke-dasharray: 8 7;
+    stroke-linecap: round;
+  }
+
+  .rt-camino-movil-svg path.hecho {
+    stroke: #ffffff;
+    stroke-dasharray: none;
+  }
+
+  .rt-camino-movil-nodo {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    scroll-snap-align: center;
+    z-index: 1;
+    font-family: inherit;
+  }
+
+  .rt-camino-movil-circulo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.75);
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.88);
+    color: #cbd5e1;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.28);
+    box-sizing: border-box;
+  }
+
+  .rt-camino-movil-nodo.completed .rt-camino-movil-circulo {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: #15803d;
+  }
+
+  .rt-camino-movil-nodo.current .rt-camino-movil-circulo {
+    background: #f26522;
+    border-color: #ffffff;
+    color: #ffffff;
+    animation: caminoNodoActivo 1.6s ease-in-out infinite;
+  }
+
+  .rt-camino-movil-letrero {
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.8);
+    color: #ffffff;
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  .rt-camino-movil-nodo.pending .rt-camino-movil-letrero { color: #cbd5e1; }
+
+  /* Botones del flujo sobre el césped */
+  .rt-camino-movil-botones {
+    padding: 10px;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .rt-camino-movil-botones .mercado-board-flow-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rt-camino-movil-nodo.current .rt-camino-movil-circulo { animation: none; }
+  }
+}

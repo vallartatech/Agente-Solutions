@@ -161,6 +161,19 @@ export const fechaDeseada = (desc) => {
   return { fecha: m[1], texto: [dia, horarioTxt].filter(Boolean).join(' · '), vencida: dias < 0 };
 };
 
+// Camino de progreso horizontal (celular): cada paso ocupa CAMINO_PASO_ANCHO px y sube/baja en zigzag
+const PASOS_CAMINO = [
+  { step: 1, title: 'Cita', Icono: Home },
+  { step: 2, title: 'En camino', Icono: Car },
+  { step: 3, title: 'Diagnóstico', Icono: Search },
+  { step: 4, title: 'Reparación', Icono: Wrench },
+  { step: 5, title: 'Evidencias', Icono: Camera },
+  { step: 6, title: 'Concluido', Icono: CheckCircle2 },
+];
+const CAMINO_PASO_ANCHO = 92;
+const CAMINO_ALTO = 150;
+const caminoY = (i) => (i % 2 === 0 ? 42 : 92);
+
 // Marcador del técnico mientras va en ruta: casco de obra blanco sobre círculo naranja (trazos de lucide HardHat)
 const ICONO_CASCO_RUTA = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 46 46">' +
@@ -1794,6 +1807,15 @@ const MercadoTrabajos = () => {
     return 1;
   }, [selectedBoardJob, boardJobStages, completedReportsCount, arrivalAlertSent]);
 
+  // Camino de progreso en celular: al abrir el detalle se centra en el paso actual
+  const caminoMovilRef = useRef(null);
+  useEffect(() => {
+    const pista = caminoMovilRef.current;
+    if (!pista || mobileBoardTab !== 'detalle') return;
+    const centro = CAMINO_PASO_ANCHO * (currentStage - 1) + CAMINO_PASO_ANCHO / 2;
+    pista.scrollTo({ left: Math.max(0, centro - pista.clientWidth / 2), behavior: 'smooth' });
+  }, [currentStage, selectedBoardJob?.id, mobileBoardTab]);
+
   const handleSetStage = (stageNum) => {
     if (!selectedBoardJob) return;
     setBoardJobStages(prev => {
@@ -2413,58 +2435,6 @@ const MercadoTrabajos = () => {
                   <span className="rt-lista-riel-total">{filteredBoardJobs.length}</span>
                 </div>
 
-                {/* ── BARRA DE PROGRESO INTEGRADA SOBRE MIS TRABAJOS (SOLO MÓVIL) ── */}
-                {selectedBoardJob && (
-                  <div className="mercado-board-mobile-progress-card">
-                    <div className="mercado-board-mobile-progress-header">
-                      <div className="mercado-board-mobile-progress-title-row">
-                        <span className="mercado-board-mobile-progress-label">
-                          <Sparkles size={12} color="#f26522" /> PROGRESO
-                        </span>
-                        <span className="mercado-board-mobile-progress-folio">
-                          {selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}
-                        </span>
-                      </div>
-                      <span className="mercado-board-mobile-progress-step-pill">
-                        {currentStage === 1 && '1/6: Cita'}
-                        {currentStage === 2 && '2/6: En Camino'}
-                        {currentStage === 3 && '3/6: Diagnóstico'}
-                        {currentStage === 4 && '4/6: Reparación'}
-                        {currentStage === 5 && '5/6: Evidencias'}
-                        {currentStage === 6 && '6/6: Concluido'}
-                      </span>
-                    </div>
-
-                    {/* Stepper Horizontal Compacto */}
-                    <div className="mercado-board-mobile-stepper">
-                      {[
-                        { step: 1, label: 'Cita', icon: <Home size={12} /> },
-                        { step: 2, label: 'Camino', icon: <Car size={12} /> },
-                        { step: 3, label: 'Diag.', icon: <Search size={12} /> },
-                        { step: 4, label: 'Repar.', icon: <Wrench size={12} /> },
-                        { step: 5, label: 'Evid.', icon: <Camera size={12} /> },
-                        { step: 6, label: 'Listo', icon: <CheckCircle2 size={12} /> },
-                      ].map((st) => {
-                        const isCompleted = currentStage > st.step;
-                        const isCurrent = currentStage === st.step;
-                        return (
-                          <div
-                            key={st.step}
-                            className={`mercado-board-mobile-step-item ${isCompleted ? 'completed' : (isCurrent ? 'current' : 'pending')}`}
-                            onClick={() => handleSetStage(st.step)}
-                            title={`Etapa ${st.step}: ${st.label}`}
-                          >
-                            <div className="mercado-board-mobile-step-icon">
-                              {isCompleted ? <Check size={11} strokeWidth={3} /> : st.icon}
-                            </div>
-                            <span className="mercado-board-mobile-step-label">{st.label}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
                 <div className="mercado-board-col-list-header">
                   <span className="mercado-board-col-list-title">
                     <Briefcase size={15} color="#f26522" />
@@ -2629,6 +2599,56 @@ const MercadoTrabajos = () => {
                 const boardSched = getTimeRemainingInfo(selectedBoardJob);
                 const isJobCompleted = isJobDone(selectedBoardJob.status) || selectedBoardJob.status === 'Listo' || selectedBoardJob.status === 'Finalizado';
 
+                // Botones del flujo: se muestran abajo en escritorio y bajo el camino de progreso en celular
+                const botonesFlujo = (
+                  <div className="mercado-board-flow-buttons-grid">
+                    {/* Botón 1: Comenzar trabajo (0 fotos) / Ver Reporte (1+ fotos o Finalizado) */}
+                    {completedReportsCount === 0 && !isJobCompleted ? (
+                      <button
+                        type="button"
+                        className="mercado-board-flow-btn btn-start"
+                        onClick={handleStartBoardJob}
+                        title="Comenzar el trabajo y registrar la primera foto de evidencia"
+                      >
+                        <Play size={15} /> COMENZAR TRABAJO
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="mercado-board-flow-btn btn-continue"
+                        onClick={() => handleOpenReportFlow()}
+                        title="Consultar evidencias y reporte técnico"
+                      >
+                        <Eye size={15} /> VER REPORTE
+                      </button>
+                    )}
+
+                    {/* Botón 2: Finalizar Trabajo (Habilitado solo si >= 3 evidencias) */}
+                    <button
+                      type="button"
+                      className="mercado-board-flow-btn btn-finish"
+                      disabled={completedReportsCount < 3 || selectedBoardJob.status === 'Finalizado' || selectedBoardJob.status === 'Listo'}
+                      onClick={handleFinishBoardJob}
+                      title={completedReportsCount < 3 ? 'Requiere al menos 3 fotos de evidencia con descripción (Antes, Durante y Después)' : 'Finalizar servicio'}
+                    >
+                      {completedReportsCount < 3
+                        ? <><Lock size={14} /> FINALIZAR (MÍN. 3 FOTOS)</>
+                        : <><CheckCircle2 size={15} /> FINALIZAR TRABAJO</>}
+                    </button>
+
+                    {/* Botón 3: Programar Segunda Visita */}
+                    <button
+                      type="button"
+                      className={`mercado-board-flow-btn btn-second-visit ${selectedBoardJob.has_second_visit ? 'has-visit' : ''}`}
+                      onClick={handleOpenSecondVisitModal}
+                      title="Programar una segunda visita técnica"
+                    >
+                      <Calendar size={15} />
+                      {selectedBoardJob.has_second_visit ? '2DA VISITA AGENDADA' : '2DA VISITA'}
+                    </button>
+                  </div>
+                );
+
                 return (
                   <div className={`mercado-board-col-detail ${mobileBoardTab === 'detalle' ? 'is-mobile-active' : 'is-mobile-hidden'}`}>
                     {/* Barra de Subnavegación Móvil para Detalle */}
@@ -2651,54 +2671,67 @@ const MercadoTrabajos = () => {
                       </div>
                     </div>
 
-                    {/* ── BARRA DE PROGRESO INTEGRADA SOBRE DETALLE DEL SERVICIO (SOLO MÓVIL) ── */}
-                    <div className="mercado-board-mobile-progress-card">
-                      <div className="mercado-board-mobile-progress-header">
-                        <div className="mercado-board-mobile-progress-title-row">
-                          <span className="mercado-board-mobile-progress-label">
-                            <Sparkles size={12} color="#f26522" /> PROGRESO
-                          </span>
-                          <span className="mercado-board-mobile-progress-folio">
-                            {selectedBoardJob.property?.property_code || `FOLIO #${selectedBoardJob.id}`}
-                          </span>
-                        </div>
-                        <span className="mercado-board-mobile-progress-step-pill">
-                          {currentStage === 1 && '1/6: Cita'}
-                          {currentStage === 2 && '2/6: En Camino'}
-                          {currentStage === 3 && '3/6: Diagnóstico'}
-                          {currentStage === 4 && '4/6: Reparación'}
-                          {currentStage === 5 && '5/6: Evidencias'}
-                          {currentStage === 6 && '6/6: Concluido'}
+                    {/* ── PROGRESO EN CELULAR: camino sobre césped que avanza de izquierda a derecha ── */}
+                    <div className="rt-camino-movil">
+                      <div className="rt-camino-movil-head">
+                        <span className="rt-camino-movil-titulo">
+                          <Sparkles size={13} color="#f26522" /> PROGRESO
+                        </span>
+                        <span className="rt-camino-movil-paso">
+                          {currentStage}/6 · {PASOS_CAMINO[currentStage - 1]?.title}
                         </span>
                       </div>
 
-                      {/* Stepper Horizontal Compacto */}
-                      <div className="mercado-board-mobile-stepper">
-                        {[
-                          { step: 1, label: 'Cita', icon: <Home size={12} /> },
-                          { step: 2, label: 'Camino', icon: <Car size={12} /> },
-                          { step: 3, label: 'Diag.', icon: <Search size={12} /> },
-                          { step: 4, label: 'Repar.', icon: <Wrench size={12} /> },
-                          { step: 5, label: 'Evid.', icon: <Camera size={12} /> },
-                          { step: 6, label: 'Listo', icon: <CheckCircle2 size={12} /> },
-                        ].map((st) => {
-                          const isCompleted = currentStage > st.step;
-                          const isCurrent = currentStage === st.step;
-                          return (
-                            <div
-                              key={st.step}
-                              className={`mercado-board-mobile-step-item ${isCompleted ? 'completed' : (isCurrent ? 'current' : 'pending')}`}
-                              onClick={() => handleSetStage(st.step)}
-                              title={`Etapa ${st.step}: ${st.label}`}
-                            >
-                              <div className="mercado-board-mobile-step-icon">
-                                {isCompleted ? <Check size={11} strokeWidth={3} /> : st.icon}
-                              </div>
-                              <span className="mercado-board-mobile-step-label">{st.label}</span>
-                            </div>
-                          );
-                        })}
+                      {/* Se desliza con el dedo; al abrir se centra en el paso actual */}
+                      <div className="rt-camino-movil-pista" ref={caminoMovilRef}>
+                        <div className="rt-camino-movil-lienzo" style={{ width: `${PASOS_CAMINO.length * CAMINO_PASO_ANCHO}px` }}>
+                          <svg
+                            className="rt-camino-movil-svg"
+                            width={PASOS_CAMINO.length * CAMINO_PASO_ANCHO}
+                            height={CAMINO_ALTO}
+                            aria-hidden="true"
+                          >
+                            {PASOS_CAMINO.slice(0, -1).map((_, i) => {
+                              const x1 = CAMINO_PASO_ANCHO * i + CAMINO_PASO_ANCHO / 2;
+                              const x2 = x1 + CAMINO_PASO_ANCHO;
+                              const y1 = caminoY(i);
+                              const y2 = caminoY(i + 1);
+                              const medio = CAMINO_PASO_ANCHO / 2;
+                              return (
+                                <path
+                                  key={i}
+                                  className={currentStage > i + 1 ? 'hecho' : ''}
+                                  d={`M${x1} ${y1} C${x1 + medio} ${y1} ${x2 - medio} ${y2} ${x2} ${y2}`}
+                                />
+                              );
+                            })}
+                          </svg>
+
+                          {PASOS_CAMINO.map((st, i) => {
+                            const isCompleted = currentStage > st.step;
+                            const isCurrent = currentStage === st.step;
+                            const Icono = st.Icono;
+                            return (
+                              <button
+                                key={st.step}
+                                type="button"
+                                className={`rt-camino-movil-nodo ${isCompleted ? 'completed' : (isCurrent ? 'current' : 'pending')}`}
+                                style={{ left: `${CAMINO_PASO_ANCHO * i}px`, top: `${caminoY(i) - 20}px`, width: `${CAMINO_PASO_ANCHO}px` }}
+                                onClick={() => handleSetStage(st.step)}
+                                title={`Etapa ${st.step}: ${st.title}`}
+                              >
+                                <span className="rt-camino-movil-circulo">
+                                  {isCompleted ? <Check size={18} strokeWidth={3} /> : <Icono size={17} />}
+                                </span>
+                                <span className="rt-camino-movil-letrero">{st.title}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
+
+                      {/* Botones del flujo justo debajo del camino */}
+                      <div className="rt-camino-movil-botones">{botonesFlujo}</div>
                     </div>
 
                       {/* Foto principal: fachada a todo el ancho con folio y tipo encima */}
@@ -2845,60 +2878,9 @@ const MercadoTrabajos = () => {
                             </ul>
                           </div>
 
-                        {/* Tarjeta 4: Botones Principales de Flujo */}
-                        <div className="rd-panel mercado-board-flow-card">
-                          <div className="mercado-board-flow-buttons-grid">
-                            {/* Botón 1: Iniciar Reporte (0 fotos) / Ver Reporte (1+ fotos o Finalizado) */}
-                            {completedReportsCount === 0 && !isJobCompleted ? (
-                              <button
-                                type="button"
-                                className="mercado-board-flow-btn btn-start"
-                                onClick={handleStartBoardJob}
-                                title="Comenzar el trabajo y registrar la primera foto de evidencia"
-                              >
-                                <Play size={15} /> COMENZAR TRABAJO
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className="mercado-board-flow-btn btn-continue"
-                                onClick={() => handleOpenReportFlow()}
-                                title="Consultar evidencias y reporte técnico"
-                              >
-                                <Eye size={15} /> VER REPORTE
-                              </button>
-                            )}
-    
-                            {/* Botón 2: Finalizar Trabajo (Habilitado solo si >= 3 evidencias) */}
-                            <button
-                              type="button"
-                              className="mercado-board-flow-btn btn-finish"
-                              disabled={completedReportsCount < 3 || selectedBoardJob.status === 'Finalizado' || selectedBoardJob.status === 'Listo'}
-                              onClick={handleFinishBoardJob}
-                              title={completedReportsCount < 3 ? 'Requiere al menos 3 fotos de evidencia con descripción (Antes, Durante y Después)' : 'Finalizar servicio'}
-                            >
-                              {completedReportsCount < 3 ? (
-                                <>
-                                  <Lock size={14} /> FINALIZAR (MÍN. 3 FOTOS)
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle2 size={15} /> FINALIZAR TRABAJO
-                                </>
-                              )}
-                            </button>
-    
-                            {/* Botón 3: Programar Segunda Visita */}
-                            <button
-                              type="button"
-                              className={`mercado-board-flow-btn btn-second-visit ${selectedBoardJob.has_second_visit ? 'has-visit' : ''}`}
-                              onClick={handleOpenSecondVisitModal}
-                              title="Programar una segunda visita técnica"
-                            >
-                              <Calendar size={15} />
-                              {selectedBoardJob.has_second_visit ? '2DA VISITA AGENDADA' : '2DA VISITA'}
-                            </button>
-                          </div>
+                        {/* Tarjeta 4: Botones Principales de Flujo (en celular van debajo del camino de progreso) */}
+                        <div className="rd-panel mercado-board-flow-card rt-flujo-escritorio">
+                          {botonesFlujo}
                         </div>
                         </div>
                       </div>
