@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 import axios from 'axios';
 import {
   ShieldCheck, Clock, RefreshCw, AlertCircle, Eye, X, Check, Ban, Phone, Mail, IdCard, Receipt,
-  Wrench, GraduationCap, Briefcase, Award, Loader2, FileText, ExternalLink, MessageSquare, History,
-  Cake, CalendarDays, UserRound, FolderCheck,
+  Wrench, GraduationCap, Briefcase, Award, Loader2, FileText, MessageSquare, History,
+  Cake, CalendarDays, UserRound, FolderCheck, ZoomIn, ZoomOut, Download, Maximize2,
 } from 'lucide-react';
 import { mostrarAviso, confirmarAccion } from '../../../../utils/dialogos';
 import '../../../../styles/AgenteSolutions/Admin/PerfilesPorValidar.css';
@@ -73,8 +73,53 @@ const mensajeError = (err, porDefecto) => {
   return d?.message || d?.error || porDefecto;
 };
 
-/** Foto de un lado de la INE (o PDF), con opción de abrirla en grande. */
-const FotoIne = ({ userId, tipo, titulo, existe }) => {
+/**
+ * Visor dentro de la app para fotos y PDF (INE, documentos, diplomas, foto de perfil).
+ * Va en el body por encima de la revisión; Escape o el fondo lo cierran sin cerrar la revisión.
+ */
+const Visor = ({ archivo, onCerrar }) => {
+  const [ampliada, setAmpliada] = useState(false);
+
+  useEffect(() => {
+    const alTeclear = (e) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      onCerrar();
+    };
+    window.addEventListener('keydown', alTeclear, true);
+    return () => window.removeEventListener('keydown', alTeclear, true);
+  }, [onCerrar]);
+
+  // Los clics no deben llegar a la ventana de revisión (en React el portal sigue dentro de su árbol)
+  const detener = (e) => e.stopPropagation();
+  const nombreDescarga = `${archivo.titulo.replace(/[^\w\u00C0-\u017F]+/g, '_')}${archivo.pdf ? '.pdf' : '.jpg'}`;
+
+  return createPortal(
+    <div className="vpp-visor" onClick={(e) => { detener(e); onCerrar(); }} role="dialog" aria-modal="true" aria-label={archivo.titulo}>
+      <div className="vpp-visor-barra" onClick={detener}>
+        <strong>{archivo.titulo}</strong>
+        <div className="vpp-visor-acciones">
+          {!archivo.pdf && (
+            <button type="button" onClick={() => setAmpliada(a => !a)} aria-label={ampliada ? 'Ajustar a la pantalla' : 'Ver tamaño real'} title={ampliada ? 'Ajustar a la pantalla' : 'Ver tamaño real'}>
+              {ampliada ? <ZoomOut size={18} /> : <ZoomIn size={18} />}
+            </button>
+          )}
+          <a href={archivo.url} download={nombreDescarga} aria-label="Descargar" title="Descargar"><Download size={18} /></a>
+          <button type="button" onClick={onCerrar} aria-label="Cerrar"><X size={20} /></button>
+        </div>
+      </div>
+      <div className={`vpp-visor-cuerpo ${ampliada ? 'ampliada' : ''}`} onClick={(e) => { detener(e); if (e.target === e.currentTarget) onCerrar(); }}>
+        {archivo.pdf
+          ? <iframe src={archivo.url} title={archivo.titulo} onClick={detener} />
+          : <img src={archivo.url} alt={archivo.titulo} onClick={(e) => { detener(e); setAmpliada(a => !a); }} />}
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+/** Foto de un lado de la INE o un documento (o PDF); al tocarla se abre en el visor. */
+const FotoIne = ({ userId, tipo, titulo, existe, onVer }) => {
   const [archivo, setArchivo] = useState(null);
   const [error, setError] = useState(null);
 
@@ -98,11 +143,12 @@ const FotoIne = ({ userId, tipo, titulo, existe }) => {
       ) : !archivo ? (
         <div className="vpp-ine-vacio"><Loader2 size={20} className="vpp-girar" /></div>
       ) : archivo.pdf ? (
-        <a className="vpp-ine-vacio" href={archivo.url} target="_blank" rel="noreferrer"><FileText size={22} /> Abrir PDF</a>
+        <button type="button" className="vpp-ine-vacio vpp-ver" onClick={() => onVer({ ...archivo, titulo })}><FileText size={22} /> Ver PDF</button>
       ) : (
-        <a href={archivo.url} target="_blank" rel="noreferrer" title="Abrir en grande">
-          <img src={archivo.url} alt={`INE ${titulo}`} />
-        </a>
+        <button type="button" className="vpp-ver" onClick={() => onVer({ ...archivo, titulo })} title="Ver en grande">
+          <img src={archivo.url} alt={titulo} />
+          <span className="vpp-ver-icono"><Maximize2 size={14} /></span>
+        </button>
       )}
     </figure>
   );
@@ -116,6 +162,14 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
   const [rechazando, setRechazando] = useState(false);
   const [motivo, setMotivo] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [visor, setVisor] = useState(null); // { url, pdf, titulo, liberar }
+
+  const cerrarVisor = useCallback(() => {
+    setVisor((v) => {
+      if (v?.liberar) URL.revokeObjectURL(v.url);
+      return null;
+    });
+  }, []);
 
   useEffect(() => {
     axios.get(`${API}/admin/perfiles-profesionales/${userId}`)
@@ -126,8 +180,8 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
   const verDiploma = async (cursoId) => {
     try {
       const a = await archivoPrivado(userId, 'curso', cursoId);
-      window.open(a.url, '_blank', 'noopener');
-      setTimeout(() => URL.revokeObjectURL(a.url), 60000);
+      const curso = p?.cursos?.find(c => c.id === cursoId);
+      setVisor({ ...a, titulo: curso ? `Diploma · ${curso.nombre}` : 'Diploma', liberar: true });
     } catch {
       mostrarAviso('No se pudo abrir el diploma.');
     }
@@ -187,7 +241,7 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
           <button type="button" className="vpp-cerrar" onClick={onCerrar} disabled={enviando} aria-label="Cerrar"><X size={20} /></button>
           <div className={`vpp-ficha-foto ${p && !esUrl(p.foto) ? 'sin-foto' : ''}`}>
             {p && esUrl(p.foto)
-              ? <a href={p.foto} target="_blank" rel="noreferrer" title="Ver foto en grande"><img src={p.foto} alt={`Foto de ${p.nombre}`} /></a>
+              ? <button type="button" className="vpp-ver" onClick={() => setVisor({ url: p.foto, pdf: false, titulo: `Foto de perfil · ${p.nombre}` })} title="Ver foto en grande"><img src={p.foto} alt={`Foto de ${p.nombre}`} /></button>
               : <span>{p ? <><UserRound size={30} /><small>Sin foto</small></> : <Loader2 size={26} className="vpp-girar" />}</span>}
           </div>
           <div className="vpp-ficha-info">
@@ -254,11 +308,16 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
                   <figure className="vpp-ine vpp-ine-perfil">
                     <figcaption>Foto de perfil</figcaption>
                     {esUrl(p.foto)
-                      ? <a href={p.foto} target="_blank" rel="noreferrer" title="Abrir en grande"><img src={p.foto} alt="Foto de perfil" /></a>
+                      ? (
+                        <button type="button" className="vpp-ver" onClick={() => setVisor({ url: p.foto, pdf: false, titulo: `Foto de perfil · ${p.nombre}` })} title="Ver en grande">
+                          <img src={p.foto} alt="Foto de perfil" />
+                          <span className="vpp-ver-icono"><Maximize2 size={14} /></span>
+                        </button>
+                      )
                       : <div className="vpp-ine-vacio falta"><UserRound size={22} /> No la subió</div>}
                   </figure>
-                  <FotoIne userId={p.user_id} tipo="ine_frente" titulo="Frente" existe={p.tiene_ine_frente} />
-                  <FotoIne userId={p.user_id} tipo="ine_reverso" titulo="Reverso" existe={p.tiene_ine_reverso} />
+                  <FotoIne onVer={setVisor} userId={p.user_id} tipo="ine_frente" titulo="Frente" existe={p.tiene_ine_frente} />
+                  <FotoIne onVer={setVisor} userId={p.user_id} tipo="ine_reverso" titulo="Reverso" existe={p.tiene_ine_reverso} />
                 </div>
               </section>
 
@@ -266,8 +325,8 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
                 <h3><FolderCheck size={17} /> Documentos</h3>
                 <p className="vpp-nota">Revisa que el domicilio sea reciente (máximo 3 meses) y que la constancia de antecedentes esté vigente y a nombre de <strong>{p.nombre}</strong>.</p>
                 <div className="vpp-docs">
-                  <FotoIne userId={p.user_id} tipo="comprobante_domicilio" titulo="Comprobante de domicilio" existe={p.tiene_comprobante_domicilio} />
-                  <FotoIne userId={p.user_id} tipo="antecedentes_penales" titulo="Antecedentes no penales" existe={p.tiene_antecedentes_penales} />
+                  <FotoIne onVer={setVisor} userId={p.user_id} tipo="comprobante_domicilio" titulo="Comprobante de domicilio" existe={p.tiene_comprobante_domicilio} />
+                  <FotoIne onVer={setVisor} userId={p.user_id} tipo="antecedentes_penales" titulo="Antecedentes no penales" existe={p.tiene_antecedentes_penales} />
                 </div>
               </section>
 
@@ -307,7 +366,7 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
                       <li key={c.id}>
                         <div><strong>{c.nombre}</strong><span>{[c.institucion, c.anio].filter(Boolean).join(' · ') || 'Sin institución'}</span></div>
                         {c.tiene_archivo
-                          ? <button type="button" className="vpp-btn-link" onClick={() => verDiploma(c.id)}><ExternalLink size={14} /> Ver diploma</button>
+                          ? <button type="button" className="vpp-btn-link" onClick={() => verDiploma(c.id)}><Eye size={14} /> Ver diploma</button>
                           : <small>Sin diploma</small>}
                       </li>
                     ))}
@@ -367,6 +426,7 @@ const DetalleRevision = ({ userId, onCerrar, onResuelto }) => {
           </footer>
         )}
       </div>
+      {visor && <Visor archivo={visor} onCerrar={cerrarVisor} />}
     </div>,
     document.body
   );

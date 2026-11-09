@@ -479,3 +479,96 @@
   .vpp-grid { grid-template-columns: 1fr; }
   .vpp-intro { align-items: flex-start; }
 }
+
+/* ── Miniaturas que abren el visor ── */
+.vpp-ver {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+  font-family: inherit;
+}
+.vpp-ver img { display: block; }
+.vpp-ver-icono {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  padding: 6px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  color: #ffffff;
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+}
+.vpp-ver:hover .vpp-ver-icono { opacity: 1; }
+.vpp-ver.vpp-ine-vacio { cursor: pointer; color: var(--vpp-naranja-hover); border-color: #fdba74; background: var(--vpp-naranja-suave); }
+.vpp-ver:focus-visible { outline: 2px solid var(--vpp-naranja); outline-offset: 2px; border-radius: 12px; }
+
+/* ── Visor de fotos y PDF dentro de la app ── */
+.vpp-visor {
+  position: fixed;
+  inset: 0;
+  z-index: 1000010; /* encima de la revisión (1000005), debajo de los avisos */
+  display: flex;
+  flex-direction: column;
+  background: rgba(2, 6, 23, 0.92);
+  font-family: 'Outfit', system-ui, sans-serif;
+  animation: vpp-aparecer 0.15s ease-out;
+}
+.vpp-visor-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  color: #ffffff;
+}
+.vpp-visor-barra strong { min-width: 0; font-size: 1rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vpp-visor-acciones { display: flex; gap: 8px; flex-shrink: 0; }
+.vpp-visor-acciones button, .vpp-visor-acciones a {
+  margin: 0;
+  padding: 9px;
+  display: flex;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  cursor: pointer;
+  text-decoration: none;
+}
+.vpp-visor-acciones button:hover, .vpp-visor-acciones a:hover { background: rgba(255, 255, 255, 0.22); }
+.vpp-visor-acciones button:focus-visible, .vpp-visor-acciones a:focus-visible { outline: 2px solid #fdba74; outline-offset: 2px; }
+.vpp-visor-cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  overflow: auto;
+}
+.vpp-visor-cuerpo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  cursor: zoom-in;
+}
+.vpp-visor-cuerpo.ampliada { align-items: flex-start; justify-content: flex-start; }
+.vpp-visor-cuerpo.ampliada img { max-width: none; max-height: none; margin: auto; cursor: zoom-out; }
+.vpp-visor-cuerpo iframe {
+  width: min(100%, 1000px);
+  height: 100%;
+  border: none;
+  border-radius: 10px;
+  background: #ffffff;
+}
+@keyframes vpp-aparecer { from { opacity: 0; } to { opacity: 1; } }
