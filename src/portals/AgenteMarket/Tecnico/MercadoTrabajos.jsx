@@ -1767,27 +1767,16 @@ const MercadoTrabajos = () => {
   }, [currentJobSlots]);
 
   // Navegación al flujo de reportes (NuevoReporte si 0, GaleriaReportes si 1+)
-  const handleOpenReportFlow = (slotKey = 'ANTES') => {
+  // Siempre abre la vista de etapas (Antes / Durante / Después / Extra / Ticket), igual que la app interna
+  const handleOpenReportFlow = () => {
     if (!selectedBoardJob) return;
-    const hasReports = (boardJobReports && boardJobReports.length > 0) || completedReportsCount > 0;
-    if (hasReports) {
-      navigate(`/galeria-reportes/work_order-${selectedBoardJob.id}`, {
-        state: {
-          trabajoId: `work_order-${selectedBoardJob.id}`,
-          servicio: selectedBoardJob,
-          from: '/mercado-trabajos'
-        }
-      });
-    } else {
-      navigate('/nuevo-reporte', {
-        state: {
-          trabajoId: `work_order-${selectedBoardJob.id}`,
-          servicio: selectedBoardJob,
-          from: '/mercado-trabajos',
-          stageKey: slotKey
-        }
-      });
-    }
+    navigate(`/galeria-reportes/work_order-${selectedBoardJob.id}`, {
+      state: {
+        trabajoId: `work_order-${selectedBoardJob.id}`,
+        servicio: selectedBoardJob,
+        from: '/mercado-trabajos'
+      }
+    });
   };
 
   // Active Progress Stage (1 to 6)
