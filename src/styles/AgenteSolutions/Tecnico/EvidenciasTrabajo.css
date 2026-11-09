@@ -440,3 +440,99 @@
 @media (max-width: 480px) {
   .ge-info { grid-template-columns: 1fr; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   DATOS DEL TRABAJO EN CELULAR: plegados al entrar, con botón
+   Mostrar / Ocultar. En computadora siempre visibles (sin botón).
+   ══════════════════════════════════════════════════════════════ */
+.ge-info-toggle { display: none; }
+
+@media (max-width: 700px) {
+  .ge-info {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .ge-info-toggle {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px !important;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.6);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .ge-info-toggle .ge-dato-texto { flex: 1; }
+
+  .ge-info-toggle-accion {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+    padding: 5px 8px 5px 10px;
+    border-radius: 999px;
+    background: var(--ge-naranja);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .ge-info.plegado .ge-dato { display: none; }
+
+  .ge-info.abierto .ge-dato {
+    animation: geDatoAparece 0.2s ease-out;
+  }
+
+  /* Folio y cliente en dos columnas; propiedad y trabajo a lo ancho, hasta 2 líneas */
+  .ge-dato { padding: 8px 10px; gap: 8px; }
+  .ge-dato .ge-dato-icono { width: 30px; height: 30px; border-radius: 9px; }
+  .ge-dato.ancho { grid-column: 1 / -1; }
+
+  .ge-dato.ancho .ge-dato-texto strong {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  .ge-dato-texto strong { font-size: 0.84rem; }
+}
+
+@media (max-width: 480px) {
+  /* Anula la regla anterior de una sola columna */
+  .ge-info { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@keyframes geDatoAparece {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SCROLL INVISIBLE en la vista de evidencias (sigue desplazándose,
+   solo se oculta la barra)
+   ══════════════════════════════════════════════════════════════ */
+html:has(.ge-page),
+html:has(.ge-page) body,
+.ge-page,
+.ge-page * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html:has(.ge-page)::-webkit-scrollbar,
+html:has(.ge-page) body::-webkit-scrollbar,
+.ge-page::-webkit-scrollbar,
+.ge-page *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}

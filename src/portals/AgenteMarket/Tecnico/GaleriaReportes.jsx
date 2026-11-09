@@ -5,7 +5,7 @@ import axios from 'axios';
 import "../../../styles/AgenteSolutions/Tecnico/GaleriaReportes.css";
 import {
   ChevronLeft, FileText, Camera, CheckCircle2, Trash2, Edit3, Loader2, Upload, Video, Images,
-  Hash, UserRound, Building2, Wrench, Clock, Send, AlertCircle, Circle, Maximize2, Receipt, Lock, ImageOff
+  Hash, UserRound, Building2, Wrench, Clock, Send, AlertCircle, Circle, Maximize2, Receipt, Lock, ImageOff, ChevronDown, ChevronUp
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -55,6 +55,8 @@ const GaleriaReportes = () => {
   const [loading, setLoading] = useState(true);
   const [submittingKey, setSubmittingKey] = useState(null);
   const [imagenExpandida, setImagenExpandida] = useState(null);
+  // Datos del trabajo en celular: ocultos al entrar, se muestran con el botón
+  const [datosAbiertos, setDatosAbiertos] = useState(false);
 
   // Elementos del trabajo: con 2 o más, cada uno lleva su ANTES y su DESPUÉS
   const [elementos, setElementos] = useState([]);
@@ -365,14 +367,31 @@ const GaleriaReportes = () => {
         <div className="ge-container">
 
           {/* Datos del trabajo */}
-          <section className="ge-card ge-info">
+          <section className={`ge-card ge-info ${datosAbiertos ? 'abierto' : 'plegado'}`}>
+            {/* Solo en celular: resumen con botón para mostrar u ocultar los datos */}
+            <button
+              type="button"
+              className="ge-info-toggle"
+              onClick={() => setDatosAbiertos(v => !v)}
+              aria-expanded={datosAbiertos}
+            >
+              <span className="ge-dato-icono"><Hash size={17} /></span>
+              <span className="ge-dato-texto">
+                <small>Datos del trabajo</small>
+                <strong>{folioTrabajo} · {servicio?.client_name || servicio?.cliente || servicio?.propietario || 'Cliente'}</strong>
+              </span>
+              <span className="ge-info-toggle-accion">
+                {datosAbiertos ? 'Ocultar' : 'Mostrar'}
+                {datosAbiertos ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </span>
+            </button>
             {[
               { Icono: Hash, etiqueta: 'Folio', valor: folioTrabajo },
               { Icono: UserRound, etiqueta: 'Cliente', valor: servicio?.client_name || servicio?.cliente || servicio?.propietario || 'Cliente' },
               { Icono: Building2, etiqueta: 'Propiedad', valor: `${servicio?.property?.type || servicio?.tipoPropiedad || 'Propiedad'} · ${servicio?.full_address || servicio?.calle || servicio?.property_name || servicio?.identificador_curp || 'Mérida'}` },
               { Icono: Wrench, etiqueta: 'Trabajo', valor: servicio?.titulo || servicio?.descripcion || servicio?.type || 'Mantenimiento general' },
             ].map(({ Icono, etiqueta, valor }) => (
-              <div key={etiqueta} className="ge-dato" title={valor}>
+              <div key={etiqueta} className={`ge-dato ${etiqueta === 'Propiedad' || etiqueta === 'Trabajo' ? 'ancho' : ''}`} title={valor}>
                 <span className="ge-dato-icono"><Icono size={17} /></span>
                 <span className="ge-dato-texto"><small>{etiqueta}</small><strong>{valor}</strong></span>
               </div>
