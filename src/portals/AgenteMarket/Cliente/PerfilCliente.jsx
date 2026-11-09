@@ -32,6 +32,7 @@ import MobileBottomNav from '../../../components/Shared/MobileBottomNav';
 import Header from '../../../components/Shared/Header';
 import '../../../styles/Shared/Profile.css';
 import { mostrarAviso } from '../../../utils/dialogos';
+import MiCalificacion from './MiCalificacion';
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80';
 
@@ -535,6 +536,9 @@ const PerfilCliente = () => {
                     </span>
                   </div>
                 </div>
+
+                {/* Clientes de la red: su calificación (★ trato, ⏱ pago) */}
+                {[4, 5, 7].includes(Number(user?.role_id)) && <MiCalificacion />}
 
                 <button 
                   type="button" 

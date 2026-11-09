@@ -1,0 +1,109 @@
+/* ==========================================================================
+   CALIFICACIONES (★ estrellas / ⏱ relojes) Y RESUMEN DEL TÉCNICO EN COTIZACIONES
+   Prefijos .cal- y .rt-
+   ========================================================================== */
+
+/* ── Calificación ── */
+.cal { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.82rem; }
+.cal-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.cal-item strong { font-weight: 800; }
+.cal-item small { font-size: 0.72rem; font-weight: 600; opacity: 0.85; }
+.cal-item.estrellas { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.cal-item.estrellas svg { fill: #f59e0b; color: #f59e0b; }
+.cal-item.relojes { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+.cal-item.relojes svg { color: #0284c7; }
+.cal-total { color: #64748b; font-size: 0.75rem; font-weight: 600; }
+.cal.compacta .cal-item { padding: 2px 7px; font-size: 0.75rem; }
+.cal.compacta .cal-total { display: none; }
+.cal-nuevo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.cal-nuevo svg { color: #f26522; }
+
+/* ── Foto e insignia en la tarjeta ── */
+.rt-foto { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+.rt-insignia { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+.rt-insignia.ok { background: #dcfce7; color: #166534; }
+.rt-insignia.pend { background: #f1f5f9; color: #64748b; }
+
+/* ── Resumen ── */
+.rt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 2px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+.rt-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.rt-datos span { display: inline-flex; align-items: center; gap: 5px; color: #334155; font-size: 0.8rem; font-weight: 600; }
+.rt-datos svg { color: #f26522; }
+.rt-chips { gap: 6px; }
+.rt-chips span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.rt-chips span svg { color: #f26522; }
+.rt-chips span.mas { background: #fff7ed; }
+.rt-btn {
+  align-self: flex-start;
+  margin: 0;
+  padding: 7px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 10px;
+  border: 1.5px solid #f26522;
+  background: #ffffff;
+  color: #ea580c;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.rt-btn:hover { background: #fff7ed; }
+.rt-btn:focus-visible { outline: 2px solid #f26522; outline-offset: 2px; }
+
+.rt-cargando { gap: 8px; }
+.rt-cargando span { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, #e2e8f0, #f1f5f9, #e2e8f0); background-size: 200% 100%; animation: rt-brillo 1.2s linear infinite; }
+.rt-cargando span:first-child { width: 60%; }
+.rt-cargando span:last-child { width: 85%; }
+@keyframes rt-brillo { to { background-position: -200% 0; } }
+.red-quote-avatar { overflow: hidden; }
+
+/* Calificación del cliente en el detalle del trabajo (técnico, antes de cotizar) */
+.jm-cliente-calif { align-items: center; padding-top: 10px; border-top: 1px dashed #e2e8f0; }
+.jm-cliente-calif .jm-kicker { margin-right: 2px; }
+
+/* Calificación propia del cliente en su perfil */
+.cal-mia { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 16px; background: #ffffff; border: 1px solid #e2e8f0; }
+.cal-mia h4 { display: flex; align-items: center; gap: 6px; margin: 0; color: #0f172a; font-size: 0.95rem; font-weight: 800; }
+.cal-mia h4 svg { color: #f26522; }
+.cal-mia p { margin: 0; color: #64748b; font-size: 0.82rem; line-height: 1.45; }

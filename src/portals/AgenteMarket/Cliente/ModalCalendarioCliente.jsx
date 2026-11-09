@@ -34,7 +34,6 @@ import {
   DollarSign,
   AlertTriangle,
   CheckCircle2,
-  Star,
   SlidersHorizontal,
   ChevronDown,
   Check,
@@ -48,6 +47,7 @@ import {
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
 import CurriculumTecnico from '../Shared/CurriculumTecnico';
+import ResumenTecnico, { FotoTecnico, InsigniaTecnico } from '../Shared/ResumenTecnico';
 // ── Agenda de Agente Market ──
 // Misma interfaz que el calendario de Agente Solutions (ModalCalendarioSolutions), con los datos de la red:
 // trabajos de /mercado-trabajos, cotizaciones y chat de /network-quotes, publicar servicio y calificar técnicos.
@@ -2276,7 +2276,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                                       style={isAcceptedQuote ? { background: 'linear-gradient(135deg, #16a34a, #15803d)' } : {}}
                                       title="Ver perfil completo del técnico"
                                     >
-                                      {quote.technician?.first_name?.charAt(0) || 'T'}
+                                      <FotoTecnico tecnicoId={(quote.technician_id || quote.technician?.id)} inicial={quote.technician?.first_name?.charAt(0) || 'T'} />
                                     </div>
                                     <div>
                                       <h4 
@@ -2294,13 +2294,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                                         )}
                                       </h4>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '2px' }}>
-                                        <span className="red-quote-role">Técnico Verificado</span>
-                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: '700', color: '#b45309', background: '#fef3c7', padding: '1px 6px', borderRadius: '6px', border: '1px solid #fde68a' }} title="Calidad del trabajo">
-                                          <Star size={11} style={{ fill: '#f59e0b', color: '#f59e0b' }} /> {Number(quote.technician?.rating_stars_avg || 5.0).toFixed(1)}
-                                        </span>
-                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: '700', color: '#0369a1', background: '#e0f2fe', padding: '1px 6px', borderRadius: '6px', border: '1px solid #bae6fd' }} title="Puntualidad de llegada">
-                                          <Clock size={11} color="#0284c7" /> {Number(quote.technician?.rating_time_avg || 5.0).toFixed(1)}
-                                        </span>
+                                        <InsigniaTecnico tecnicoId={(quote.technician_id || quote.technician?.id)} />
                                       </div>
                                     </div>
                                   </div>
@@ -2308,6 +2302,12 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                                     {quote.price > 0 ? `$${parseFloat(quote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Iniciado'}
                                   </div>
                                 </div>
+
+                                {/* Currículum simplificado: calificación, experiencia y especialidades */}
+                                <ResumenTecnico
+                                  tecnicoId={(quote.technician_id || quote.technician?.id)}
+                                  onVerCompleto={() => { setSelectedTechnicianProfile(quote.technician); setShowTechModal(true); }}
+                                />
 
                                 {quote.message && (
                                   <div className="red-quote-message">

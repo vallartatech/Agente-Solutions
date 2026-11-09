@@ -28,6 +28,8 @@ import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
 import ModalReportePdfTecnico from './ModalReportePdfTecnico';
 import { mostrarAviso } from '../../../utils/dialogos';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
+import ModalCalificarCliente from './ModalCalificarCliente';
+import Calificacion from '../Shared/Calificacion';
 
 const mapContainerStyle = {
   width: '100%',
@@ -659,6 +661,21 @@ const MercadoTrabajos = () => {
   const { user, logoutGlobal } = useAuth();
   const authUser = user;
 
+  // Calificar al cliente de cada trabajo terminado es obligatorio para seguir cotizando
+  const [pendientesCalifCliente, setPendientesCalifCliente] = useState([]);
+  const cargarPendientesCalifCliente = async () => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/tecnico/calificaciones-cliente/pendientes`);
+      setPendientesCalifCliente(Array.isArray(res.data?.data) ? res.data.data : []);
+    } catch {
+      // Si falla, el backend igual lo pide al intentar cotizar
+    }
+  };
+  useEffect(() => {
+    if ([6, 7, 8].includes(Number(authUser?.role_id))) cargarPendientesCalifCliente();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser?.id]);
+
   // Timer reactivo para actualizar dinámicamente minutos restantes cada 30 segundos
   const [currentTime, setCurrentTime] = useState(Date.now());
   useEffect(() => {
@@ -961,6 +978,7 @@ const MercadoTrabajos = () => {
             client_name: clientName,
             client_phone: clientPhone,
             client_user_id: order.client_user_id ?? null,
+            calificacion_cliente: order.owner_rating ?? null,
             lugar: order.property?.property_name || 'Lugar no especificado',
             property_name: order.property?.property_name || order.property?.nombre_propiedad || order.property?.name || '',
             zona: coloniaTexto,
@@ -1238,6 +1256,11 @@ const MercadoTrabajos = () => {
         fetchJobs();
       }
     } catch (e) {
+      if (e?.response?.status === 409 && e.response.data?.reason === 'calificacion_cliente_pendiente') {
+        await cargarPendientesCalifCliente();
+        mostrarAviso(e.response.data.message);
+        return;
+      }
       console.error(e);
       mostrarAviso("Hubo un error al enviar tu cotización. Intenta de nuevo.");
     }
@@ -2375,6 +2398,10 @@ const MercadoTrabajos = () => {
         acceptedCount={acceptedJobs.length}
         usersCount={totalClientesAtendidos}
       />
+
+      {pendientesCalifCliente.length > 0 && (
+        <ModalCalificarCliente pendientes={pendientesCalifCliente} onListo={setPendientesCalifCliente} />
+      )}
 
       {/* ════════════════════════════════════════════════════════════
           VISTA 1: NUEVO TABLERO OPERATIVO 3 COLUMNAS (COMBINACIÓN DE VISTAS)
@@ -4095,13 +4122,16 @@ const MercadoTrabajos = () => {
                           </div>
                         </div>
 
-                        {(selectedJob.is_urgent || selectedJob.myQuote || fechaDeseada(selectedJob.descripcion)) && (
+                        {(selectedJob.is_urgent || selectedJob.myQuote || fechaDeseada(selectedJob.descripcion) || selectedJob.calificacion_cliente?.total > 0) && (
                           <div className="mi-globo-etiquetas">
                             {selectedJob.is_urgent && <span className="mi-globo-urgente"><Zap size={11} strokeWidth={2.6} /> Urgente</span>}
                             {!selectedJob.is_urgent && fechaDeseada(selectedJob.descripcion) && (
                               <span className="mi-globo-deseada"><Calendar size={11} strokeWidth={2.6} /> Lo necesita: {fechaDeseada(selectedJob.descripcion).texto}</span>
                             )}
                             {selectedJob.myQuote && <span className="mi-globo-cotizado"><CheckCircle2 size={11} strokeWidth={2.6} /> Ya cotizaste</span>}
+                            {selectedJob.calificacion_cliente?.total > 0 && (
+                              <Calificacion compacta estrellas={selectedJob.calificacion_cliente.trato} relojes={selectedJob.calificacion_cliente.pago} total={selectedJob.calificacion_cliente.total} etiquetas={{ estrellas: 'Trato del cliente', relojes: 'Pago del cliente' }} />
+                            )}
                           </div>
                         )}
 
@@ -4776,6 +4806,16 @@ const MercadoTrabajos = () => {
                             <div className="jm-pills">
                               <span className="jm-pill"><Clock size={13} /> Publicado {selectedJob.fecha}</span>
                               <span className="jm-pill"><Users size={13} /> {selectedJob.cotizaciones} {Number(selectedJob.cotizaciones) === 1 ? 'oferta enviada' : 'ofertas enviadas'}</span>
+                            </div>
+                            <div className="jm-pills jm-cliente-calif">
+                              <span className="jm-kicker">Cliente</span>
+                              <Calificacion
+                                estrellas={selectedJob.calificacion_cliente?.trato}
+                                relojes={selectedJob.calificacion_cliente?.pago}
+                                total={selectedJob.calificacion_cliente?.total || 0}
+                                etiquetas={{ estrellas: 'Trato', relojes: 'Pago' }}
+                                textoNuevo="Cliente nuevo, sin calificaciones"
+                              />
                             </div>
                           </section>
 

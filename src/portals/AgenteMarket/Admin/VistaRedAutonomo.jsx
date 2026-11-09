@@ -13,6 +13,7 @@ import { DARK_MAP_STYLES, getCategoryIcon, ICONOS_CATEGORIA, descripcionTarjeta,
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
 import CurriculumTecnico from '../Shared/CurriculumTecnico';
+import ResumenTecnico, { FotoTecnico, InsigniaTecnico } from '../Shared/ResumenTecnico';
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
@@ -1317,7 +1318,7 @@ const VistaRedAutonomo = () => {
                                     style={isAcceptedQuote ? { background: 'linear-gradient(135deg, #16a34a, #15803d)' } : {}}
                                     title="Ver perfil completo y especialidades del técnico"
                                   >
-                                    {quote.technician?.first_name?.charAt(0) || 'T'}
+                                    <FotoTecnico tecnicoId={(quote.technician_id || quote.technician?.id)} inicial={quote.technician?.first_name?.charAt(0) || 'T'} />
                                   </div>
                                   <div>
                                     <h4 
@@ -1334,13 +1335,19 @@ const VistaRedAutonomo = () => {
                                         </span>
                                       )}
                                     </h4>
-                                    <span className="red-quote-role">Técnico Verificado</span>
+                                    <InsigniaTecnico tecnicoId={(quote.technician_id || quote.technician?.id)} />
                                   </div>
                                 </div>
                                 <div className="red-quote-price" style={{ color: isAcceptedQuote ? '#16a34a' : '#ea580c' }}>
                                   {quote.price > 0 ? `$${parseFloat(quote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Iniciado'}
                                 </div>
                               </div>
+
+                              {/* Currículum simplificado: calificación, experiencia y especialidades */}
+                              <ResumenTecnico
+                                tecnicoId={(quote.technician_id || quote.technician?.id)}
+                                onVerCompleto={() => { setSelectedTechnicianProfile(quote.technician); setShowTechModal(true); }}
+                              />
 
                               {quote.message && (
                                 <div className="red-quote-bloque">
