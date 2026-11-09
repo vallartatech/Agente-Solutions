@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "../../styles/Auth/LoginAgente.css";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -1778,6 +1778,20 @@ const LoginAgente = () => {
           </div>
         </div>
       )}
+
+      {/* Enlaces legales (requeridos por Google Play) */}
+      <div style={{
+        position: 'fixed', bottom: 8, left: 0, right: 0, zIndex: 50,
+        textAlign: 'center', fontSize: '0.75rem', pointerEvents: 'none'
+      }}>
+        <Link to="/privacidad" style={{ color: '#aaa', textDecoration: 'underline', pointerEvents: 'auto' }}>
+          Aviso de privacidad
+        </Link>
+        <span style={{ color: '#666', margin: '0 8px' }}>·</span>
+        <Link to="/eliminar-cuenta" style={{ color: '#aaa', textDecoration: 'underline', pointerEvents: 'auto' }}>
+          Eliminar cuenta
+        </Link>
+      </div>
     </div>
   );
 };

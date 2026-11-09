@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // 'prompt' requiere mostrar un aviso de "Hay una actualización" en la app.
+      // Si la app NO tiene ese aviso, cambiar a 'autoUpdate'.
       registerType: 'prompt',
       injectRegister: 'auto',
       includeAssets: ['apple-touch-icon.png'],
@@ -14,14 +16,17 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5000000,
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        // El service worker de OneSignal vive en su propio scope; la PWA no debe interceptarlo
-        navigateFallbackDenylist: [/^\/push\//]
+        // /push/      -> service worker de OneSignal (vive en su propio scope)
+        // /.well-known/ -> assetlinks.json para la app de Android (TWA)
+        navigateFallbackDenylist: [/^\/push\//, /^\/\.well-known\//]
       },
 
       manifest: {
         id: "/",
-        short_name: "Agente",
+        short_name: "Agente Solutions",
         name: "Agente Solutions",
+        description: "Gestión de servicios técnicos de Agente Solutions",
+        lang: "es-MX",
         start_url: "/",
         scope: "/",
         display: "standalone",
