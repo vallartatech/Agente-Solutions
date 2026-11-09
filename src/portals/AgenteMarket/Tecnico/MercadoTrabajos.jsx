@@ -161,6 +161,19 @@ export const fechaDeseada = (desc) => {
   return { fecha: m[1], texto: [dia, horarioTxt].filter(Boolean).join(' · '), vencida: dias < 0 };
 };
 
+// Marcador del técnico mientras va en ruta: casco de obra blanco sobre círculo naranja (trazos de lucide HardHat)
+const ICONO_CASCO_RUTA = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 46 46">' +
+    '<circle cx="23" cy="23" r="20" fill="#f26522" stroke="#ffffff" stroke-width="3"/>' +
+    '<g transform="translate(11 10)" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/>' +
+      '<path d="M14 6a6 6 0 0 1 6 6v3"/>' +
+      '<path d="M4 15v-3a6 6 0 0 1 6-6"/>' +
+      '<rect x="2" y="15" width="20" height="4" rx="1"/>' +
+    '</g>' +
+  '</svg>'
+);
+
 // Estado del horario de visita según el chat del trabajo: lo que propuso el técnico
 // y lo último que respondió el cliente (confirmó o pidió otro horario).
 const estadoHorarioDe = (job) => {
@@ -815,6 +828,29 @@ const MercadoTrabajos = () => {
   // Confirmar llegada al sitio (Validación GPS y registro arrived_at)
   const handleConfirmArrival = async (job) => {
     const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+
+    // Al llegar: se cierra la navegación y se abre el tablero de ESTE trabajo para comenzar
+    const irAlTablero = (titulo) => {
+      setActiveNavJob(null);
+      setNavDirections(null);
+      setNavStatus('idle');
+      setBoardJobStages(prev => {
+        const updated = { ...prev, [job.id]: Math.max(prev[job.id] || 0, 3) };
+        try { localStorage.setItem('agente_board_stages', JSON.stringify(updated)); } catch (e) {}
+        return updated;
+      });
+      setSelectedBoardJobId(job.id);
+      setActiveTab('aceptados');
+      setMainView('tablero');
+      Swal.fire({
+        title: titulo,
+        text: 'Ya estás en el tablero de este trabajo. Presiona "Comenzar trabajo" cuando estés listo.',
+        icon: 'success',
+        confirmButtonColor: '#f26522',
+        confirmButtonText: 'Entendido'
+      });
+    };
+
     try {
       await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/work-orders/${job.id}/confirm-arrival`,
@@ -825,28 +861,11 @@ const MercadoTrabajos = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setNavStatus('en_sitio');
-      Swal.fire({
-        title: '📍 ¡Llegada Confirmada!',
-        text: 'Se ha registrado tu hora de llegada exitosamente y se notificó al cliente.',
-        icon: 'success',
-        confirmButtonColor: '#f26522',
-        confirmButtonText: 'Excelente'
-      });
-
       setAcceptedJobs(prev => prev.map(j => j.id === job.id ? { ...j, arrived_at: new Date().toISOString(), arrival_status: 'EN_SITIO' } : j));
-      if (activeNavJob && activeNavJob.id === job.id) {
-        setActiveNavJob(prev => ({ ...prev, arrived_at: new Date().toISOString(), arrival_status: 'EN_SITIO' }));
-      }
+      irAlTablero('Llegada confirmada');
     } catch (error) {
       console.error("Error confirmando llegada:", error);
-      setNavStatus('en_sitio');
-      Swal.fire({
-        title: '📍 Llegada Registrada',
-        text: 'Tu llegada al lugar ha sido confirmada.',
-        icon: 'success',
-        confirmButtonColor: '#f26522'
-      });
+      irAlTablero('Llegada registrada');
     }
   };
 
@@ -2846,9 +2865,9 @@ const MercadoTrabajos = () => {
                                 type="button"
                                 className="mercado-board-flow-btn btn-start"
                                 onClick={handleStartBoardJob}
-                                title="Iniciar trabajo y registrar la primera foto de evidencia"
+                                title="Comenzar el trabajo y registrar la primera foto de evidencia"
                               >
-                                <Play size={15} /> INICIAR REPORTE
+                                <Play size={15} /> COMENZAR TRABAJO
                               </button>
                             ) : (
                               <button
@@ -3985,10 +4004,16 @@ const MercadoTrabajos = () => {
                       />
                       <Marker
                         position={technicianLocation}
-                        title="Tu Ubicación Actual"
-                        icon={{
-                          url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-                        }}
+                        title={activeNavJob ? 'Vas en camino al trabajo' : 'Tu Ubicación Actual'}
+                        zIndex={activeNavJob ? 999 : undefined}
+                        icon={activeNavJob && window.google
+                          ? {
+                              // En ruta: el técnico se ve como un casco de obra que avanza hacia el trabajo
+                              url: ICONO_CASCO_RUTA,
+                              scaledSize: new window.google.maps.Size(46, 46),
+                              anchor: new window.google.maps.Point(23, 23),
+                            }
+                          : { url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' }}
                       />
                     </>
                   )}
@@ -3998,7 +4023,8 @@ const MercadoTrabajos = () => {
                     <DirectionsRenderer
                       directions={navDirections}
                       options={{
-                        suppressMarkers: false,
+                        // Sin marcadores A/B: el origen es el casco del técnico y el destino ya tiene su pin
+                        suppressMarkers: true,
                         polylineOptions: {
                           strokeColor: '#f26522',
                           strokeWeight: 5,
