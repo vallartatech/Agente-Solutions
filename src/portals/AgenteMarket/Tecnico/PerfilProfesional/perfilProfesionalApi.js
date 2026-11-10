@@ -10,6 +10,10 @@ export const obtenerPerfil = () => axios.get(`${API}/tecnico/perfil-profesional`
 
 export const guardarPerfil = (cambios) => axios.post(`${API}/tecnico/perfil-profesional`, cambios).then(datos);
 
+/** Consentimiento expreso para datos financieros y de identificación (se guarda fecha y hora). */
+export const aceptarConsentimiento = () =>
+  axios.post(`${API}/tecnico/perfil-profesional/consentimiento`, { acepto: true }).then(datos);
+
 export const subirIne = ({ frente, reverso }) => {
   const fd = new FormData();
   if (frente) fd.append('frente', frente);

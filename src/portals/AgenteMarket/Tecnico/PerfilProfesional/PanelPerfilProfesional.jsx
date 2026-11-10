@@ -9,6 +9,7 @@ import SeccionCobro, { erroresCobro, formCobro, payloadCobro } from './SeccionCo
 import SeccionHabilidades, { formHabilidades, payloadHabilidades } from './SeccionHabilidades';
 import SeccionCurriculum, { erroresCurriculum, formCurriculum, payloadCurriculum } from './SeccionCurriculum';
 import SeccionIdentidad from './SeccionIdentidad';
+import ConsentimientoDatos from './ConsentimientoDatos';
 import '../../../../styles/AgenteMarket/Tecnico/PerfilProfesional.css';
 
 const ESTADOS = {
@@ -22,6 +23,7 @@ const siNo = (v) => (v === true ? 'Sí' : v === false ? 'No' : '—');
 
 // En qué sección se llena cada dato faltante (claves del backend)
 const SECCION_DE = {
+  consentimiento_datos: 'cobro',
   emite_factura: 'cobro', rfc: 'cobro', razon_social: 'cobro', banco: 'cobro', titular_cuenta: 'cobro',
   clabe: 'cobro', acepta_efectivo: 'cobro', tiene_terminal: 'cobro',
   especialidades: 'habilidades', anios_experiencia: 'habilidades',
@@ -148,7 +150,8 @@ const PanelPerfilProfesional = ({ onCambio }) => {
   const faltantes = Object.values(faltantesMapa);
   const puedeEnviar = faltantes.length === 0 && ['incompleto', 'rechazado'].includes(perfil.estado);
   // Avance: datos obligatorios completos (RFC y razón social solo cuentan si factura)
-  const totalObligatorios = 12 + (perfil.emite_factura ? 2 : 0);
+  // Datos obligatorios de PerfilProfesional::faltantes() en el backend (17, + RFC y razón social si factura)
+  const totalObligatorios = 17 + (perfil.emite_factura ? 2 : 0);
   const completos = Math.max(totalObligatorios - faltantes.length, 0);
   const porcentaje = Math.round((completos / totalObligatorios) * 100);
   const { identidad_verificada: idOk, estudios_verificados: estOk } = perfil.insignias || {};
@@ -281,8 +284,10 @@ const PanelPerfilProfesional = ({ onCambio }) => {
       </div>
 
       {editando === 'cobro' && (
-        <VentanaEdicion titulo="Cobro y facturación" Icono={Landmark} onCerrar={() => setEditando(null)} onGuardar={guardar} guardando={guardando} error={errorVentana}>
-          <SeccionCobro form={cobro} setForm={setCobro} errores={errores} />
+        <VentanaEdicion titulo="Cobro y facturación" Icono={Landmark} onCerrar={() => setEditando(null)} onGuardar={guardar} guardando={guardando} error={errorVentana} soloCerrar={!perfil.consentimiento_datos_at}>
+          {perfil.consentimiento_datos_at
+            ? <SeccionCobro form={cobro} setForm={setCobro} errores={errores} />
+            : <ConsentimientoDatos onAceptado={aplicar} />}
         </VentanaEdicion>
       )}
       {editando === 'habilidades' && (
@@ -311,7 +316,9 @@ const PanelPerfilProfesional = ({ onCambio }) => {
           onCerrar={() => setEditando(null)}
           soloCerrar
         >
-          <SeccionIdentidad perfil={perfil} onPerfil={aplicar} />
+          {perfil.consentimiento_datos_at
+            ? <SeccionIdentidad perfil={perfil} onPerfil={aplicar} />
+            : <ConsentimientoDatos onAceptado={aplicar} />}
         </VentanaEdicion>
       )}
     </section>

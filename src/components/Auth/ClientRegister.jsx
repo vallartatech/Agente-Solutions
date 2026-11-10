@@ -17,7 +17,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import axios from "axios";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import Logo4 from "../../assets/Logo4.png";
 import "../../styles/Auth/LoginAgente.css";
@@ -209,6 +209,7 @@ const ClientRegister = () => {
   const [isCaptchaValid, setIsCaptchaValid] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
   const [message, setMessage] = useState("");
+  const [aceptaPrivacidad, setAceptaPrivacidad] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -305,6 +306,11 @@ const ClientRegister = () => {
       return;
     }
 
+    if (!aceptaPrivacidad) {
+      setMessage("Error: Debes aceptar el Aviso de Privacidad para crear tu cuenta.");
+      return;
+    }
+
     const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
     if (!isLocalhost && !isCaptchaValid && !captchaToken) {
@@ -331,6 +337,7 @@ const ClientRegister = () => {
         specialties: [2, 6, 7, 8].includes(roleId) ? selectedSpecialties : [],
         // En localhost el backend (APP_ENV local) no valida el captcha
         captcha_token: captchaToken || null,
+        acepta_privacidad: aceptaPrivacidad
       };
 
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/registro-usuario`, payload);
@@ -1175,6 +1182,23 @@ const ClientRegister = () => {
                   </div>
                 )}
               </div>
+
+              {/* AVISO DE PRIVACIDAD (obligatorio) */}
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.82rem', color: '#ccc', lineHeight: 1.4, cursor: 'pointer', margin: '6px 0', textAlign: 'left' }}>
+                <input
+                  type="checkbox"
+                  checked={aceptaPrivacidad}
+                  onChange={(e) => setAceptaPrivacidad(e.target.checked)}
+                  required
+                  style={{ marginTop: '2px', accentColor: '#f26522', flexShrink: 0 }}
+                />
+                <span>
+                  He leído y acepto el{' '}
+                  <Link to="/privacidad" target="_blank" rel="noopener noreferrer" style={{ color: '#f26522', textDecoration: 'underline' }}>
+                    Aviso de Privacidad
+                  </Link>.
+                </span>
+              </label>
 
               {/* MENSAJES DE ERROR / ÉXITO */}
               {message && (

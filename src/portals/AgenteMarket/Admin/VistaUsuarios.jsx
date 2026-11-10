@@ -30,7 +30,8 @@ import {
   Building2,
   HardHat,
   Crown,
-  Clock
+  Clock,
+  RotateCcw
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 import UniversalSearch from "../../../components/Shared/UniversalSearch";
@@ -272,13 +273,18 @@ const VistaUsuarios = () => {
     if (role_id === 0) return Swal.fire('Seguridad', 'No puedes eliminar al usuario ROOT.', 'warning');
 
     const confirmacion = await Swal.fire({
-      title: '¿Eliminar Usuario?',
-      text: 'Esta acción es irreversible y eliminará el acceso de este usuario.',
+      title: '¿Eliminar definitivamente?',
+      html: 'Se borrarán <b>ahora mismo</b> sus datos personales: nombre, correo, teléfono, fotos, documentos (INE, CLABE, RFC), ubicaciones y mensajes. '
+        + 'Sus órdenes de trabajo, propiedades y pagos se conservan como <b>"Usuario eliminado"</b>.<br/><br/>'
+        + 'Úsalo para solicitudes de eliminación recibidas por correo. <b>No se puede deshacer.</b><br/><br/>Escribe <b>ELIMINAR</b> para confirmar:',
+      input: 'text',
+      inputPlaceholder: 'ELIMINAR',
+      inputValidator: (v) => (v?.trim().toUpperCase() === 'ELIMINAR' ? undefined : 'Escribe ELIMINAR para confirmar'),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#dc2626',
       cancelButtonColor: '#64748b',
-      confirmButtonText: 'Sí, Eliminar Permanentemente',
+      confirmButtonText: 'Eliminar definitivamente',
       cancelButtonText: 'Cancelar'
     });
 
@@ -289,10 +295,36 @@ const VistaUsuarios = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/usuarios/${id}`, { headers });
       setListaUsuarios(prev => prev.filter(u => u.id !== id));
-      Swal.fire('Eliminado', 'El usuario ha sido eliminado correctamente.', 'success');
+      Swal.fire('Eliminado', 'La cuenta fue eliminada definitivamente.', 'success');
     } catch (error) {
       console.error(error);
-      Swal.fire('Error', 'Hubo un problema al eliminar el usuario.', 'error');
+      Swal.fire('Error', error.response?.data?.error || 'Hubo un problema al eliminar el usuario.', 'error');
+    }
+  };
+
+  // Cuenta en eliminación pendiente (30 días): soporte la reactiva
+  const cancelarEliminacion = async (id) => {
+    const confirmacion = await Swal.fire({
+      title: '¿Cancelar la eliminación?',
+      text: 'El usuario pidió eliminar su cuenta. Si la cancelas, la cuenta se reactiva y podrá iniciar sesión otra vez.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#16a34a',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, reactivar cuenta',
+      cancelButtonText: 'No'
+    });
+    if (!confirmacion.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/usuarios/${id}/cancelar-eliminacion`, {}, { headers });
+      setListaUsuarios(prev => prev.map(u => (u.id === id ? { ...u, approval_status: 'approved', bloqueado: false, estado: 'Activo' } : u)));
+      Swal.fire('Cuenta reactivada', 'La eliminación fue cancelada.', 'success');
+    } catch (error) {
+      console.error(error);
+      Swal.fire('Error', error.response?.data?.error || 'No se pudo cancelar la eliminación.', 'error');
     }
   };
 
@@ -601,7 +633,17 @@ const VistaUsuarios = () => {
 
                             {/* Estado / Estatus Interactivo */}
                             <td data-label="Estado" className="vu-status-cell" onClick={(e) => e.stopPropagation()}>
-                              {isClientPortalUser ? (
+                              {u.approval_status === 'pending_deletion' && !isClientPortalUser ? (
+                                <button
+                                  type="button"
+                                  className="vu-status-pill-btn offline"
+                                  onClick={() => cancelarEliminacion(u.id)}
+                                  title="El usuario pidió eliminar su cuenta: se borrará a los 30 días. Clic para cancelar y reactivarla."
+                                >
+                                  <span className="vu-status-dot"></span>
+                                  Eliminación pendiente
+                                </button>
+                              ) : isClientPortalUser ? (
                                 <span
                                   className={`vu-status-pill-btn ${u.bloqueado ? "offline" : "online"}`}
                                   style={{ cursor: 'default' }}
@@ -735,11 +777,22 @@ const VistaUsuarios = () => {
                                       {u.bloqueado ? <Unlock size={15} /> : <Lock size={15} />}
                                     </button>
 
+                                    {u.approval_status === 'pending_deletion' && (
+                                      <button
+                                        type="button"
+                                        className="vu-mockup-btn unblock"
+                                        onClick={() => cancelarEliminacion(u.id)}
+                                        title="Cancelar la eliminación y reactivar la cuenta"
+                                      >
+                                        <RotateCcw size={15} />
+                                      </button>
+                                    )}
+
                                     <button
                                       type="button"
                                       className="vu-mockup-btn delete"
                                       onClick={() => eliminarUsuario(u.id, u.role_id)}
-                                      title="Eliminar usuario permanentemente"
+                                      title="Eliminar definitivamente (borra sus datos personales)"
                                     >
                                       <Trash2 size={15} />
                                     </button>

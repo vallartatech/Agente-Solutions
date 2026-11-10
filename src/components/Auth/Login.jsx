@@ -188,6 +188,7 @@ const LoginAgente = () => {
   const [regConfirmPassword, setRegConfirmPassword] = useState("");
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regMessage, setRegMessage] = useState("");
+  const [regAceptaPrivacidad, setRegAceptaPrivacidad] = useState(false);
   const [regCaptchaToken, setRegCaptchaToken] = useState(null);
   const esLocalhost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
@@ -603,6 +604,11 @@ const LoginAgente = () => {
       return;
     }
 
+    if (!regAceptaPrivacidad) {
+      setRegMessage("Error: Debes aceptar el Aviso de Privacidad para crear tu cuenta.");
+      return;
+    }
+
     if (!esLocalhost && !regCaptchaToken) {
       setRegMessage("Error: Por favor completa la verificación del reCAPTCHA.");
       return;
@@ -619,6 +625,7 @@ const LoginAgente = () => {
         password: regPassword,
         role_id: rolActual?.roleId || 3,
         captcha_token: regCaptchaToken,
+        acepta_privacidad: regAceptaPrivacidad
       };
 
       await axios.post(`${import.meta.env.VITE_API_BASE_URL}/registro-usuario`, payload);
@@ -1347,6 +1354,23 @@ const LoginAgente = () => {
                         />
                       </div>
                     )}
+
+                    {/* Aviso de privacidad (obligatorio) */}
+                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem', color: '#ccc', lineHeight: 1.4, cursor: 'pointer', textAlign: 'left' }}>
+                      <input
+                        type="checkbox"
+                        checked={regAceptaPrivacidad}
+                        onChange={(e) => setRegAceptaPrivacidad(e.target.checked)}
+                        required
+                        style={{ marginTop: '2px', accentColor: '#f26522', flexShrink: 0 }}
+                      />
+                      <span>
+                        He leído y acepto el{' '}
+                        <Link to="/privacidad" target="_blank" rel="noopener noreferrer" style={{ color: '#f26522', textDecoration: 'underline' }}>
+                          Aviso de Privacidad
+                        </Link>.
+                      </span>
+                    </label>
 
                     {/* Submit Button */}
                     <button type="submit" className="aiw-btn-primary" disabled={isLoading}>

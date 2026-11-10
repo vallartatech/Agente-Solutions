@@ -12,11 +12,12 @@ import SeccionCobro, { erroresCobro, formCobro, payloadCobro } from './SeccionCo
 import SeccionHabilidades, { formHabilidades, payloadHabilidades } from './SeccionHabilidades';
 import SeccionCurriculum, { erroresCurriculum, formCurriculum, payloadCurriculum } from './SeccionCurriculum';
 import SeccionIdentidad from './SeccionIdentidad';
+import ConsentimientoDatos from './ConsentimientoDatos';
 import '../../../../styles/AgenteMarket/Tecnico/PerfilProfesional.css';
 
 // Qué datos pide cada paso (claves de "faltantes" del backend)
 const PASOS = [
-  { titulo: 'Cobro y facturación', corto: 'Cobro', Icono: Receipt, claves: ['emite_factura', 'rfc', 'razon_social', 'banco', 'titular_cuenta', 'clabe', 'acepta_efectivo', 'tiene_terminal'] },
+  { titulo: 'Cobro y facturación', corto: 'Cobro', Icono: Receipt, claves: ['consentimiento_datos', 'emite_factura', 'rfc', 'razon_social', 'banco', 'titular_cuenta', 'clabe', 'acepta_efectivo', 'tiene_terminal'] },
   { titulo: 'Habilidades y experiencia', corto: 'Habilidades', Icono: Wrench, claves: ['especialidades', 'anios_experiencia'] },
   { titulo: 'Currículum', corto: 'Currículum', Icono: GraduationCap, claves: ['nivel_estudios', 'presentacion'] },
   { titulo: 'Identidad y documentos', corto: 'Identidad', Icono: IdCard, claves: ['foto', 'fecha_nacimiento', 'ine_frente', 'ine_reverso', 'comprobante_domicilio', 'antecedentes_penales'] },
@@ -107,6 +108,8 @@ const CompletarPerfil = () => {
   const guardarPaso = async () => {
     let erroresPaso = {};
     let payload = null;
+    // Sin consentimiento esos pasos solo muestran la casilla: no hay nada que guardar
+    if (!perfil?.consentimiento_datos_at && (paso === 0 || paso === 3)) return true;
     if (paso === 0) { erroresPaso = erroresCobro(cobro); payload = payloadCobro(cobro); }
     if (paso === 1) { payload = payloadHabilidades(habilidades); }
     if (paso === 2) { erroresPaso = erroresCurriculum(curriculum); payload = payloadCurriculum(curriculum); }
@@ -181,6 +184,15 @@ const CompletarPerfil = () => {
     </header>
   );
 
+  // Google Play: eliminar la cuenta debe estar disponible aunque el perfil no esté aprobado
+  const enlaceEliminar = (
+    <p style={{ textAlign: 'center', margin: '18px 0 8px', fontSize: '0.82rem' }}>
+      <button type="button" className="pp-btn-link" onClick={() => navigate('/eliminar-cuenta')} style={{ color: '#94a3b8' }}>
+        Eliminar mi cuenta
+      </button>
+    </p>
+  );
+
   if (cargando) {
     return (
       <div className="pp-pagina">{encabezado}
@@ -231,6 +243,7 @@ const CompletarPerfil = () => {
             <button type="button" className="pp-btn-sec" onClick={() => { setVista('pasos'); setPaso(0); }}>Ver o corregir mis datos</button>
           </div>
         </main>
+        {enlaceEliminar}
       </div>
     );
   }
@@ -287,10 +300,16 @@ const CompletarPerfil = () => {
 
         <h2 className="pp-titulo-paso"><Icono size={20} /> {PASOS[paso].titulo}</h2>
 
-        {paso === 0 && <SeccionCobro form={cobro} setForm={setCobro} errores={errores} />}
+        {(paso === 0 || paso === 3) && !perfil?.consentimiento_datos_at ? (
+          <ConsentimientoDatos onAceptado={(data) => { aplicarPerfil(data); setAviso(null); }} />
+        ) : (
+          <>
+            {paso === 0 && <SeccionCobro form={cobro} setForm={setCobro} errores={errores} />}
+            {paso === 3 && <SeccionIdentidad perfil={perfil} onPerfil={aplicarPerfil} />}
+          </>
+        )}
         {paso === 1 && <SeccionHabilidades form={habilidades} setForm={setHabilidades} />}
         {paso === 2 && <SeccionCurriculum form={curriculum} setForm={setCurriculum} perfil={perfil} onPerfil={aplicarPerfil} errores={errores} />}
-        {paso === 3 && <SeccionIdentidad perfil={perfil} onPerfil={aplicarPerfil} />}
 
         {esUltimo && (
           <div className="pp-resumen">
@@ -332,6 +351,7 @@ const CompletarPerfil = () => {
           )}
         </footer>
       </main>
+      {enlaceEliminar}
     </div>
   );
 };

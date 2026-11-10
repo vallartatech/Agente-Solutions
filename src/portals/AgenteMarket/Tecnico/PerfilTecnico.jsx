@@ -58,6 +58,7 @@ const PerfilTecnico = () => {
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [deleteDoneMsg, setDeleteDoneMsg] = useState('');
 
   // Cargar especialidades del técnico desde el backend
   useEffect(() => {
@@ -201,6 +202,11 @@ const PerfilTecnico = () => {
     }
   };
 
+  const cerrarTrasEliminar = () => {
+    logoutGlobal();
+    navigate('/');
+  };
+
   const handleConfirmDeleteAccount = async () => {
     if (deleteConfirmEmail !== user?.email) {
       setDeleteError("El correo no coincide con tu usuario.");
@@ -210,13 +216,15 @@ const PerfilTecnico = () => {
     setDeleteError('');
     try {
       const token = localStorage.getItem("agente_token");
-      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/users/delete-my-account`, {
+      const res = await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/users/delete-my-account`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      logoutGlobal();
-      navigate('/login');
+      // La cuenta queda en eliminación pendiente (30 días): se avisa y luego se cierra sesión
+      setIsDeleteModalOpen(false);
+      setDeletingAccount(false);
+      setDeleteDoneMsg(res.data?.message || 'Tu cuenta se eliminará definitivamente en 30 días. Si fue un error, contacta a soporte.');
     } catch (error) {
       console.error("Error al eliminar cuenta:", error);
       setDeleteError(error.response?.data?.error || "No se pudo eliminar tu cuenta. Por favor contacta a soporte.");
@@ -446,6 +454,25 @@ const PerfilTecnico = () => {
         </div>
       )}
 
+      {/* ── AVISO: ELIMINACIÓN SOLICITADA ── */}
+      {deleteDoneMsg && (
+        <div className="profile-modal-backdrop">
+          <div className="profile-modal-liquid-card delete-card" onClick={e => e.stopPropagation()}>
+            <h3 className="profile-modal-title" style={{ color: '#ef4444' }}>
+              <Trash2 size={20} /> Eliminación solicitada
+            </h3>
+            <p style={{ margin: '0 0 16px', color: '#e2e8f0', fontSize: '0.9rem', lineHeight: '1.5' }}>
+              {deleteDoneMsg}
+            </p>
+            <div className="profile-modal-actions">
+              <button type="button" className="profile-btn-danger" onClick={cerrarTrasEliminar}>
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── MODAL: ELIMINAR CUENTA ── */}
       {isDeleteModalOpen && (
         <div className="profile-modal-backdrop" onClick={() => setIsDeleteModalOpen(false)}>
@@ -463,7 +490,7 @@ const PerfilTecnico = () => {
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <p style={{ margin: 0, color: '#e2e8f0', fontSize: '0.88rem', lineHeight: '1.5' }}>
-                Estás a punto de solicitar la desactivación de tu cuenta en <strong>Agente Solutions</strong>.
+                Tu cuenta en <strong>Agente Solutions</strong> se desactivará de inmediato y se <strong>eliminará definitivamente en 30 días</strong>: nombre, correo, teléfono, fotos, documentos, ubicaciones y mensajes. Las órdenes de trabajo y los pagos se conservan sin tus datos personales. Si fue un error, contacta a soporte dentro de ese plazo.
               </p>
               <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '10px 14px', borderRadius: '10px' }}>
                 <p style={{ margin: 0, color: '#fca5a5', fontSize: '0.80rem' }}>
