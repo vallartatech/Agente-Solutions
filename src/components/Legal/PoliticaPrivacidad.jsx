@@ -1,4 +1,4 @@
-// src/pages/Privacidad.jsx
+// src/components/Legal/PoliticaPrivacidad.jsx  (ruta pública: ver App.jsx)
 // Aviso de Privacidad público de la app Agente Solutions.
 // IMPORTANTE: esta ruta debe abrir SIN iniciar sesión (fuera de cualquier ruta protegida).
 
@@ -59,7 +59,7 @@ const s = {
   },
 };
 
-export default function Privacidad() {
+export default function PoliticaPrivacidad() {
   const e = EMPRESA;
   const mail = (
     <a style={s.a} href={`mailto:${e.correo}`}>
@@ -106,13 +106,20 @@ export default function Privacidad() {
         <h2 style={s.h2}>3. Datos que recabamos</h2>
         <ul style={s.ul}>
           <li style={s.li}>
-            <strong>Identificación y contacto:</strong> nombre, correo electrónico, teléfono, domicilio o
-            dirección del servicio, usuario y contraseña (almacenada de forma cifrada). En el caso de
-            técnicos y personal, también CURP y especialidades.
+            <strong>Identificación y contacto:</strong> nombre, correo electrónico, teléfono, fecha de
+            nacimiento, foto de perfil, domicilio o dirección del servicio, usuario y contraseña
+            (almacenada de forma cifrada). En el caso de técnicos, también sus especialidades.
           </li>
           <li style={s.li}>
-            <strong>Inmuebles y servicios:</strong> direcciones, zonas, equipos registrados, órdenes de
-            trabajo, cotizaciones, reportes y firmas de conformidad.
+            <strong>Técnicos de la red, encargados y técnicos de cuadrilla:</strong> RFC, razón social,
+            banco, titular y CLABE interbancaria (el RFC y la CLABE se almacenan cifrados); copia de
+            identificación oficial (INE), comprobante de domicilio, constancia de antecedentes penales,
+            diplomas o constancias de cursos, y currículum (estudios, experiencia y presentación).
+          </li>
+          <li style={s.li}>
+            <strong>Inmuebles y servicios:</strong> direcciones, zonas, áreas, equipos registrados, órdenes
+            de trabajo, cotizaciones, reportes, comprobantes de gastos, calificaciones y reseñas, y códigos
+            QR de acceso a inmuebles.
           </li>
           <li style={s.li}>
             <strong>Fotografías, videos y documentos</strong> que el usuario captura con la cámara o
@@ -129,18 +136,34 @@ export default function Privacidad() {
           </li>
           <li style={s.li}>
             <strong>Datos de pago:</strong> los pagos se procesan a través de MercadoPago. No almacenamos
-            números de tarjeta; solo conservamos el estado y el monto de la transacción.
+            el número completo de la tarjeta; conservamos el folio, monto, fecha y estado de la
+            transacción, y la información que MercadoPago nos devuelve, como el nombre del titular y los
+            últimos 4 dígitos de la tarjeta.
           </li>
           <li style={s.li}>
-            <strong>Datos técnicos:</strong> tipo de dispositivo, sistema operativo, fecha y hora de acceso
-            y registros necesarios para el funcionamiento y la seguridad del servicio.
+            <strong>Mensajes:</strong> mensajes de chat y archivos adjuntos que intercambian clientes,
+            técnicos y personal dentro de la aplicación.
+          </li>
+          <li style={s.li}>
+            <strong>Datos técnicos:</strong> dirección IP, navegador o tipo de dispositivo, sistema
+            operativo, fecha y hora de acceso y registros necesarios para el funcionamiento y la seguridad
+            del servicio.
           </li>
         </ul>
         <p>
-          No solicitamos datos personales sensibles (como origen étnico, estado de salud, creencias o
-          preferencias sexuales). La firma se usa únicamente como constancia de conformidad y no para
-          identificar biométricamente a la persona.
+          No solicitamos datos sobre origen étnico, estado de salud, creencias religiosas o filosóficas,
+          opiniones políticas ni preferencias sexuales.
         </p>
+        <div style={s.caja}>
+          <strong>Datos financieros, de identificación y antecedentes</strong>
+          <br />
+          La CLABE y los datos bancarios son datos financieros; la INE es una identificación oficial; y la
+          constancia de antecedentes penales es información especialmente delicada. Solo se solicitan a
+          técnicos de la red, encargados y técnicos de cuadrilla, y su tratamiento requiere su{" "}
+          <strong>consentimiento expreso</strong>, que se otorga marcando la casilla correspondiente al
+          completar su perfil profesional. Se almacenan en un área privada, el RFC y la CLABE de forma
+          cifrada, y solo el personal administrativo autorizado tiene acceso.
+        </div>
 
         {/* 4 */}
         <h2 style={s.h2}>4. Para qué usamos sus datos</h2>
@@ -154,11 +177,18 @@ export default function Privacidad() {
             servicios.
           </li>
           <li style={s.li}>
-            Registrar evidencia (fotografías, videos, ubicación y firmas) de los trabajos realizados.
+            Registrar evidencia (fotografías, videos y ubicación) de los trabajos realizados.
           </li>
           <li style={s.li}>Mostrar ubicaciones en mapas y coordinar al personal en campo.</li>
           <li style={s.li}>Enviar notificaciones sobre trabajos, asignaciones y alarmas.</li>
           <li style={s.li}>Procesar y registrar pagos.</li>
+          <li style={s.li}>
+            En el caso de técnicos de la red, encargados y técnicos de cuadrilla: verificar su identidad y
+            domicilio (INE y comprobante de domicilio), evaluar su idoneidad y la seguridad de los
+            clientes antes de aceptarlos en la red (antecedentes penales, diplomas y currículum), emitir o
+            recibir comprobantes fiscales (RFC y razón social) y pagarles por los trabajos realizados
+            (banco, titular y CLABE).
+          </li>
           <li style={s.li}>Comunicarnos con usted sobre su cuenta o sus servicios.</li>
           <li style={s.li}>Mantener la seguridad de la aplicación y prevenir usos indebidos.</li>
         </ul>
@@ -195,7 +225,12 @@ export default function Privacidad() {
             <strong>Google reCAPTCHA:</strong> protección contra registros y accesos automatizados.
           </li>
           <li style={s.li}>
-            <strong>Railway:</strong> hospedaje en la nube de la aplicación y su base de datos.
+            <strong>Cloudinary:</strong> almacenamiento de fotografías, videos y archivos de evidencia,
+            comprobantes y adjuntos de chat.
+          </li>
+          <li style={s.li}>
+            <strong>Railway:</strong> hospedaje en la nube de la aplicación, su base de datos y documentos
+            privados (como INE y comprobantes de los técnicos).
           </li>
         </ul>
         <p>
@@ -217,8 +252,16 @@ export default function Privacidad() {
         {/* 7 */}
         <h2 style={s.h2}>7. Conservación y seguridad</h2>
         <p>
-          Conservamos los datos mientras la cuenta esté activa y durante el tiempo necesario para cumplir
-          obligaciones legales, fiscales o contractuales; después se eliminan o anonimizan. Aplicamos
+          Conservamos los datos mientras la cuenta esté activa. Si usted solicita eliminar su cuenta, sus
+          datos se eliminan o anonimizan 30 días después de la solicitud. Se conservan, sin vincularse a su
+          nombre: los registros de pagos (monto, fecha, estado y folio), sin su correo ni datos de la
+          tarjeta, como registro contable de la empresa; los comprobantes de gastos, como documentos
+          fiscales de la empresa; y las fotografías y videos de evidencia de trabajos y de inmuebles, como
+          historial de los servicios (ver{" "}
+          <a style={s.a} href="/eliminar-cuenta">
+            Eliminar cuenta y datos
+          </a>
+          ). Aplicamos
           medidas de seguridad administrativas, técnicas y físicas, como conexión cifrada (HTTPS),
           contraseñas cifradas y control de acceso por roles.
         </p>
@@ -241,10 +284,14 @@ export default function Privacidad() {
         {/* 9 */}
         <h2 style={s.h2}>9. Eliminación de cuenta</h2>
         <p>
-          Puede solicitar la eliminación de su cuenta y de los datos asociados escribiendo a {mail} con el
-          asunto <strong>"Eliminar cuenta"</strong> desde el correo registrado. Eliminaremos sus datos,
-          salvo aquellos que debamos conservar por obligación legal o fiscal (por ejemplo, registros de
-          pagos), lo cual le informaremos al responder su solicitud.
+          Puede eliminar su cuenta desde la aplicación (Perfil → <strong>"Eliminar mi Cuenta"</strong>) o
+          escribiendo a {mail} con el asunto <strong>"Eliminar cuenta"</strong>. La cuenta se desactiva de
+          inmediato y sus datos se eliminan o anonimizan de forma definitiva 30 días después, salvo los
+          registros de pagos que debemos conservar por obligación fiscal. Consulte el detalle en{" "}
+          <a style={s.a} href="/eliminar-cuenta">
+            Eliminar cuenta y datos
+          </a>
+          .
         </p>
 
         {/* 10 */}
