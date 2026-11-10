@@ -130,7 +130,7 @@ const ModalCalificarCliente = ({ pendientes, onListo }) => {
           <div className="calif-comment-block">
             <label className="calif-comment-label" htmlFor="calif-cliente-comentario">
               <MessageSquare size={15} />
-              <span>Comentario (opcional, el cliente no ve quién lo escribió):</span>
+              <span>Comentario (opcional, solo lo ven los técnicos):</span>
             </label>
             <textarea
               id="calif-cliente-comentario"

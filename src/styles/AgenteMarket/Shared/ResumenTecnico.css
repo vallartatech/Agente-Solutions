@@ -102,8 +102,3 @@
 .jm-cliente-calif { align-items: center; padding-top: 10px; border-top: 1px dashed #e2e8f0; }
 .jm-cliente-calif .jm-kicker { margin-right: 2px; }
 
-/* Calificación propia del cliente en su perfil */
-.cal-mia { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 16px; background: #ffffff; border: 1px solid #e2e8f0; }
-.cal-mia h4 { display: flex; align-items: center; gap: 6px; margin: 0; color: #0f172a; font-size: 0.95rem; font-weight: 800; }
-.cal-mia h4 svg { color: #f26522; }
-.cal-mia p { margin: 0; color: #64748b; font-size: 0.82rem; line-height: 1.45; }
