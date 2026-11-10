@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
 import "../../styles/Auth/LoginAgente.css";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -187,6 +188,8 @@ const LoginAgente = () => {
   const [regConfirmPassword, setRegConfirmPassword] = useState("");
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regMessage, setRegMessage] = useState("");
+  const [regCaptchaToken, setRegCaptchaToken] = useState(null);
+  const esLocalhost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
   const [isRecoverModalOpen, setIsRecoverModalOpen] = useState(false);
   const [recoverStep, setRecoverStep] = useState(1);
@@ -600,6 +603,11 @@ const LoginAgente = () => {
       return;
     }
 
+    if (!esLocalhost && !regCaptchaToken) {
+      setRegMessage("Error: Por favor completa la verificación del reCAPTCHA.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -610,7 +618,7 @@ const LoginAgente = () => {
         phone_number: regPhone.trim(),
         password: regPassword,
         role_id: rolActual?.roleId || 3,
-        captcha_token: "from_admin_bypass"
+        captcha_token: regCaptchaToken,
       };
 
       await axios.post(`${import.meta.env.VITE_API_BASE_URL}/registro-usuario`, payload);
@@ -1326,6 +1334,19 @@ const LoginAgente = () => {
                         {showRegPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                       </button>
                     </div>
+
+                    {/* reCAPTCHA (obligatorio fuera de localhost) */}
+                    {!esLocalhost && (
+                      <div style={{ display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
+                        <ReCAPTCHA
+                          sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LccVsstAAAAAMDX_aSNIi1Hj93EpCr6-4p9Q9Yk"}
+                          onChange={setRegCaptchaToken}
+                          onExpired={() => setRegCaptchaToken(null)}
+                          theme="dark"
+                          size="compact"
+                        />
+                      </div>
+                    )}
 
                     {/* Submit Button */}
                     <button type="submit" className="aiw-btn-primary" disabled={isLoading}>

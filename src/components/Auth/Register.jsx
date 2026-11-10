@@ -95,13 +95,12 @@ const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/registro-usuario`,
+        // Alta desde el panel: endpoint con sesión y rol verificados (sin captcha ni tokens fijos)
+        `${import.meta.env.VITE_API_BASE_URL}/admin/usuarios`,
         {
           ...formData,
           role_id: 2,
-          tenant_id: user?.tenant_id || undefined,
-          from_admin: true,
-          captcha_token: 'from_admin_bypass'
+          tenant_id: user?.tenant_id || undefined
         },
         { headers }
       );

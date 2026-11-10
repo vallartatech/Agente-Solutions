@@ -329,7 +329,8 @@ const ClientRegister = () => {
           ? (companyName.trim() || `${firstName.trim()} ${lastName.trim()}`)
           : (roleId === 4 ? `${firstName.trim()} ${lastName.trim()}` : null),
         specialties: [2, 6, 7, 8].includes(roleId) ? selectedSpecialties : [],
-        captcha_token: captchaToken || (isLocalhost ? "localhost_dev_token" : "")
+        // En localhost el backend (APP_ENV local) no valida el captcha
+        captcha_token: captchaToken || null,
       };
 
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/registro-usuario`, payload);
