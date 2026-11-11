@@ -167,6 +167,7 @@
 
 .mdtp-ampm-btn {
   flex: 1;
+  padding: 0; /* anula el padding global de button (index.css) */
   border: none;
   background: transparent;
   font-size: 12.5px;
@@ -337,6 +338,7 @@
 .mdtp-nav-btn {
   width: 30px;
   height: 30px;
+  padding: 0; /* sin esto el padding global de button deja la flecha sin espacio */
   border-radius: 10px;
   border: 1px solid #e2e8f0;
   background: #ffffff;
@@ -372,6 +374,9 @@
 
 .mdtp-day-cell {
   aspect-ratio: 1;
+  /* sin esto el padding global de button ensancha la cuadrícula y sale scroll horizontal */
+  padding: 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;

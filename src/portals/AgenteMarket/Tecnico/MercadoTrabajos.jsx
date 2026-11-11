@@ -20,6 +20,7 @@ import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteMarket/Tecnico/TableroTecnico.css';
+import '../../../styles/AgenteMarket/Shared/SelectorFechaRed.css';
 import { useAuth } from '../../../context/AuthContext';
 import defaultLogo from '../../../assets/Logo4.png';
 import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
@@ -160,7 +161,12 @@ export const fechaDeseada = (desc) => {
   // "Por la tarde (12pm - 5pm)" → "Tarde"; "Cualquier hora" no se muestra
   const horario = String(m[2] || '').replace(/^por la\s+/i, '').replace(/\s*\(.*\)\s*$/, '').trim();
   const horarioTxt = horario && !/cualquier/i.test(horario) ? horario.charAt(0).toUpperCase() + horario.slice(1) : '';
-  return { fecha: m[1], texto: [dia, horarioTxt].filter(Boolean).join(' · '), vencida: dias < 0 };
+  // Hora exacta elegida con el reloj ("9:30 AM") → '09:30'; las franjas viejas ("Tarde") no traen hora
+  const mh = horario.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  const hora = mh
+    ? `${String((Number(mh[1]) % 12) + (/pm/i.test(mh[3]) ? 12 : 0)).padStart(2, '0')}:${mh[2]}`
+    : '';
+  return { fecha: m[1], hora, texto: [dia, horarioTxt].filter(Boolean).join(' · '), vencida: dias < 0 };
 };
 
 // Camino de progreso horizontal (celular): cada paso ocupa CAMINO_PASO_ANCHO px y sube/baja en zigzag
@@ -4187,6 +4193,10 @@ const MercadoTrabajos = () => {
                   // activeNavJob es una copia del momento en que se inició la ruta; el chat vivo está en acceptedJobs
                   const navVivo = acceptedJobs.find(j => j.id === activeNavJob.id) || activeNavJob;
                   const navHorario = estadoHorarioDe(navVivo);
+                  // Lo que pidió el cliente al publicar: referencia para acordar la hora de llegada
+                  const navDesc = navVivo.descripcion || activeNavJob.descripcion || '';
+                  const navUrgente = Boolean(navVivo.is_urgent || navDesc.includes('[URGENCIA]'));
+                  const navDeseada = !navUrgente && fechaDeseada(navDesc);
 
                   return (
                     <div className="nv-panel">
@@ -4232,6 +4242,16 @@ const MercadoTrabajos = () => {
                           )}
                         </div>
                       </div>
+
+                      {/* Fecha y hora que pidió el cliente */}
+                      {(navUrgente || navDeseada) && (
+                        <div className={`nv-deseada ${navUrgente ? 'urgente' : ''} ${navDeseada?.vencida ? 'vencida' : ''}`}>
+                          {navUrgente ? <Zap size={14} strokeWidth={2.6} /> : <Calendar size={14} strokeWidth={2.6} />}
+                          <span>{navUrgente ? 'El cliente lo pidió' : 'El cliente lo necesita'}</span>
+                          <strong>{navUrgente ? 'Urgente · Hoy mismo' : navDeseada.texto}</strong>
+                          {navDeseada?.vencida && <em>Ya pasó</em>}
+                        </div>
+                      )}
 
                       {/* Hora de la cita */}
                       <div className={`nv-cita ${navSched.hasSchedule ? '' : 'sin-hora'}`}>
@@ -5319,80 +5339,94 @@ const MercadoTrabajos = () => {
       )}
 
       {/* ─── MODAL PROGRAMAR / EDITAR HORARIO DE VISITA (TABLERO) ─── */}
-      {showBoardScheduleModal && selectedBoardJob && (
-        <div className="mercado-schedule-modal-overlay" onClick={() => setShowBoardScheduleModal(false)}>
-          <div className="mercado-schedule-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="mercado-schedule-modal-header">
-              <h3>
-                <Calendar size={18} color="#f26522" />
-                Programar Horario de Visita
-              </h3>
+      {showBoardScheduleModal && selectedBoardJob && createPortal(
+        <div className="phv-overlay" onClick={() => setShowBoardScheduleModal(false)}>
+          <div className="phv-modal" role="dialog" aria-modal="true" aria-labelledby="phv-titulo" onClick={(e) => e.stopPropagation()}>
+            <div className="phv-header">
+              <div className="phv-header-titulo">
+                <span className="tb-actions-icon orange"><Calendar size={18} strokeWidth={2.4} /></span>
+                <div>
+                  <h3 id="phv-titulo">Programar horario de visita</h3>
+                  <span>Propón cuándo llegas; el cliente lo confirma o pide otro.</span>
+                </div>
+              </div>
               <button
                 type="button"
-                className="mercado-modal-close-btn"
+                className="jm-cerrar"
                 onClick={() => setShowBoardScheduleModal(false)}
-                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer' }}
+                title="Cerrar"
+                aria-label="Cerrar"
               >
-                <X size={20} />
+                <X size={18} strokeWidth={2.6} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveBoardSchedule}>
-              <div className="mercado-schedule-modal-body">
-                <div style={{ background: 'rgba(242, 101, 34, 0.08)', border: '1px solid rgba(242, 101, 34, 0.25)', borderRadius: '12px', padding: '12px 14px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#f26522', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    Folio #{selectedBoardJob.id} - {selectedBoardJob.property?.property_code || 'Inmueble'}
-                  </div>
-                  <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#ffffff' }}>
-                    {selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente de la Red'}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
-                    📍 {selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.zona || 'Mérida'}
-                  </div>
+            <form onSubmit={handleSaveBoardSchedule} className="phv-form">
+              <div className="phv-body">
+                {/* Trabajo */}
+                <div className="phv-trabajo">
+                  <span className="phv-folio">
+                    Folio #{selectedBoardJob.id}{selectedBoardJob.property?.property_code ? ` · ${selectedBoardJob.property.property_code}` : ''}
+                  </span>
+                  <strong className="phv-cliente">
+                    <User size={14} /> {selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente de la Red'}
+                  </strong>
+                  <span className="phv-direccion">
+                    <MapPin size={13} /> <span>{selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.zona || 'Mérida'}</span>
+                  </span>
                 </div>
 
-                {/* Fecha que pidió el cliente al publicar, para que el técnico proponga algo cercano */}
+                {/* Fecha y hora que pidió el cliente al publicar, para acordar algo cercano */}
                 {(() => {
                   const desc = selectedBoardJob.descripcion || '';
                   const urgente = selectedBoardJob.is_urgent || desc.includes('[URGENCIA]');
                   const deseada = !urgente && fechaDeseada(desc);
                   if (!urgente && !deseada) return null;
+                  const fechaCorta = deseada
+                    ? new Date(`${deseada.fecha}T00:00:00`).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    : '';
+                  const propuestaCliente = deseada ? `${deseada.fecha}T${deseada.hora || '09:00'}` : '';
                   return (
-                    <div className={`mercado-schedule-deseada ${urgente ? 'urgente' : ''} ${deseada?.vencida ? 'vencida' : ''}`}>
-                      {urgente ? <Zap size={16} /> : <Calendar size={16} />}
-                      <div>
+                    <div className={`phv-deseada ${urgente ? 'urgente' : ''} ${deseada?.vencida ? 'vencida' : ''}`}>
+                      <span className="phv-deseada-icono">{urgente ? <Zap size={16} /> : <Clock size={16} />}</span>
+                      <div className="phv-deseada-txt">
                         <small>{urgente ? 'El cliente lo pidió' : 'El cliente lo necesita'}</small>
-                        <strong>
-                          {urgente
-                            ? 'Urgente · Hoy mismo'
-                            : `${deseada.texto} (${new Date(`${deseada.fecha}T00:00:00`).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' })})`}
-                        </strong>
+                        <strong>{urgente ? 'Urgente · Hoy mismo' : `${deseada.texto} (${fechaCorta})`}</strong>
                         {deseada?.vencida && <span>Esa fecha ya pasó; acuérdala con el cliente por chat.</span>}
                       </div>
+                      {deseada && !deseada.vencida && (
+                        <button
+                          type="button"
+                          className="phv-usar"
+                          onClick={() => setBoardScheduleDate(propuestaCliente)}
+                          disabled={boardScheduleDate === propuestaCliente}
+                          title={deseada.hora ? 'Usar la fecha y hora del cliente' : 'Usar la fecha del cliente (ajusta la hora)'}
+                        >
+                          <Check size={13} strokeWidth={2.8} /> {boardScheduleDate === propuestaCliente ? 'Usada' : 'Usar'}
+                        </button>
+                      )}
                     </div>
                   );
                 })()}
 
-                <div className="mercado-schedule-form-group">
-                  <label>
-                    Fecha y Hora de la Visita *
-                  </label>
+                <div className="phv-campo">
+                  <label>Fecha y hora de llegada <span className="phv-req">*</span></label>
                   <CampoFechaHora
                     type="datetime-local"
-                    className="mercado-schedule-datetime-input"
+                    className="campo-fecha-red"
+                    overlayClassName="mdtp-tema-red"
                     value={boardScheduleDate}
                     onChange={(e) => setBoardScheduleDate(e.target.value)}
+                    placeholder="Elige fecha y hora"
                     required
                   />
                 </div>
 
-                <div className="mercado-schedule-form-group">
-                  <label>
-                    Notas o Instrucciones para el Cliente (Opcional)
-                  </label>
+                <div className="phv-campo">
+                  <label>Notas para el cliente <span className="phv-opcional">(opcional)</span></label>
                   <textarea
                     placeholder="Ej. Llegaré con equipo de diagnóstico y herramientas necesarias..."
-                    className="mercado-schedule-textarea"
+                    className="phv-textarea"
                     value={boardScheduleNotes}
                     onChange={(e) => setBoardScheduleNotes(e.target.value)}
                     rows={3}
@@ -5400,31 +5434,32 @@ const MercadoTrabajos = () => {
                 </div>
               </div>
 
-              <div className="mercado-schedule-modal-footer">
+              <div className="phv-footer">
                 <button
                   type="button"
-                  className="mercado-schedule-btn-cancel"
+                  className="phv-btn-cancelar"
                   onClick={() => setShowBoardScheduleModal(false)}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="mercado-schedule-btn-save"
+                  className="phv-btn-confirmar"
                   disabled={submittingBoardSchedule}
                 >
                   {submittingBoardSchedule ? (
                     'Guardando...'
                   ) : (
                     <>
-                      <CheckCircle2 size={16} /> Confirmar Horario
+                      <CheckCircle2 size={16} /> Confirmar horario
                     </>
                   )}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─── MODAL ZOOM FOTO DE EVIDENCIA ─── */}

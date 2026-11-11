@@ -3503,37 +3503,309 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
 .mercado-container.mercado-usuarios-mode .mercado-user-card.is-bloqueado { opacity: 0.78; }
 .mercado-container.mercado-usuarios-mode .mercado-user-card.is-bloqueado .mercado-user-avatar { filter: grayscale(1); }
 
-/* Modal "Programar horario de visita": fecha que pidió el cliente */
-.mercado-schedule-deseada {
+/* ══════════════════════════════════════════════════════════════
+   MODAL "PROGRAMAR HORARIO DE VISITA" (phv): vidrio blanco y naranja,
+   igual que el modal del trabajo (jm) y el panel de ruta (nv)
+   ══════════════════════════════════════════════════════════════ */
+.phv-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000010;
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.35);
-  color: #93c5fd;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: phv-aparecer 0.2s ease;
 }
-.mercado-schedule-deseada > svg { flex-shrink: 0; margin-top: 2px; }
-.mercado-schedule-deseada div { display: flex; flex-direction: column; gap: 2px; }
-.mercado-schedule-deseada small {
-  font-size: 11px;
+
+.phv-modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 26px;
+  background: linear-gradient(160deg,
+      rgba(255, 255, 255, 0.97) 0%,
+      rgba(248, 250, 252, 0.94) 55%,
+      rgba(255, 255, 255, 0.97) 100%);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.38), inset 0 1px 2px #ffffff;
+  color: #334155;
+  font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif;
+  animation: phv-subir 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.phv-modal *, .phv-modal *::before, .phv-modal *::after { box-sizing: border-box; }
+
+@keyframes phv-aparecer { from { opacity: 0; } to { opacity: 1; } }
+@keyframes phv-subir { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+.phv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.phv-header-titulo { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.phv-header-titulo .tb-actions-icon { width: 40px; height: 40px; border-radius: 12px; }
+.phv-header-titulo div { display: flex; flex-direction: column; min-width: 0; }
+
+.phv-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.2rem;
   font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.phv-header-titulo span { color: #64748b; font-size: 0.78rem; font-weight: 600; }
+
+.phv-form { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+
+.phv-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 22px;
+  overflow-y: auto;
+}
+
+/* Tarjeta del trabajo */
+.phv-trabajo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-left: 4px solid #f26522;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.phv-folio {
+  color: #ea580c;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
-.mercado-schedule-deseada strong { font-size: 14px; color: #ffffff; }
-.mercado-schedule-deseada span { font-size: 12px; color: #cbd5e1; }
-.mercado-schedule-deseada.urgente {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.35);
-  color: #fca5a5;
+
+.phv-cliente {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 800;
 }
-.mercado-schedule-deseada.vencida {
-  background: rgba(234, 179, 8, 0.1);
-  border-color: rgba(234, 179, 8, 0.35);
-  color: #fde047;
+
+.phv-cliente svg, .phv-direccion svg { flex-shrink: 0; color: #f26522; }
+
+.phv-direccion {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
+
+.phv-direccion span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Lo que pidió el cliente */
+.phv-deseada {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.phv-deseada-icono {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.phv-deseada-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+
+.phv-deseada-txt small {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.phv-deseada-txt strong { color: #0f172a; font-size: 0.95rem; font-weight: 800; }
+.phv-deseada-txt span { color: #475569; font-size: 0.76rem; font-weight: 600; }
+
+.phv-usar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1d4ed8;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.phv-usar:hover:not(:disabled) { background: #dbeafe; }
+.phv-usar:disabled { opacity: 0.65; cursor: default; }
+.phv-usar:focus { outline: none; }
+.phv-usar:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
+
+.phv-deseada.urgente { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.phv-deseada.urgente .phv-deseada-icono { background: #fee2e2; color: #dc2626; }
+.phv-deseada.vencida { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+.phv-deseada.vencida .phv-deseada-icono { background: #fef3c7; color: #d97706; }
+
+/* Campos */
+.phv-campo { display: flex; flex-direction: column; gap: 7px; }
+
+.phv-campo label {
+  color: #0f172a;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.phv-req { color: #f26522; }
+.phv-opcional { color: #94a3b8; font-weight: 600; }
+
+.phv-textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: 11px 14px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 0.88rem;
+  resize: vertical;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.phv-textarea::placeholder { color: #94a3b8; }
+
+.phv-textarea:focus {
+  outline: none;
+  border-color: #f26522;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.15);
+}
+
+/* Pie */
+.phv-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.phv-btn-cancelar,
+.phv-btn-confirmar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 18px;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.phv-btn-cancelar {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(241, 245, 249, 0.9);
+  color: #334155;
+}
+
+.phv-btn-cancelar:hover { background: #e2e8f0; }
+
+.phv-btn-confirmar {
+  border: none;
+  background: #f26522;
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.35);
+}
+
+.phv-btn-confirmar:hover:not(:disabled) { background: #ea580c; }
+.phv-btn-confirmar:active:not(:disabled) { transform: scale(0.98); }
+.phv-btn-confirmar:disabled { opacity: 0.7; cursor: wait; }
+.phv-btn-cancelar:focus, .phv-btn-confirmar:focus { outline: none; }
+.phv-btn-cancelar:focus-visible, .phv-btn-confirmar:focus-visible { outline: 2px solid #f26522; outline-offset: 2px; }
+
+@media (max-width: 600px) {
+  .phv-overlay { align-items: flex-end; padding: 0; }
+  .phv-modal { max-width: none; max-height: 92dvh; border-radius: 26px 26px 0 0; }
+  .phv-header, .phv-body, .phv-footer { padding-left: 16px; padding-right: 16px; }
+  .phv-footer .phv-btn-cancelar, .phv-footer .phv-btn-confirmar { flex: 1; }
+}
+
+/* Panel de ruta: fecha y hora que pidió el cliente */
+.nv-deseada {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.nv-deseada svg { flex-shrink: 0; }
+.nv-deseada strong { color: #0f172a; font-size: 0.82rem; font-weight: 800; }
+
+.nv-deseada em {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #b45309;
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.nv-deseada.urgente { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.nv-deseada.vencida { background: #fffbeb; border-color: #fde68a; color: #b45309; }
 
 /* ══════════════════════════════════════════════════════════════
    TRABAJO ACEPTADO (modal): horario, cliente, acciones y chat

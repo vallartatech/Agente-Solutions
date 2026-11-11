@@ -1,0 +1,141 @@
+/* ==========================================================================
+   SELECTOR DE FECHA Y HORA — TEMA AGENTE MARKET (la red)
+   Viste el selector compartido (MaterialDateTimePicker / CampoFechaHora) con el
+   diseño actual de la red: vidrio blanco y naranja. Solo aplica cuando se pasa
+   overlayClassName="mdtp-tema-red" (modal) o className="campo-fecha-red" (campo),
+   así que Agente Solutions conserva su selector tal cual.
+   ========================================================================== */
+
+.mdtp-overlay.mdtp-tema-red {
+  --mdtp-accent: #f26522;
+  --mdtp-accent-soft: #fff1e8;
+  --mdtp-accent-shadow: rgba(242, 101, 34, 0.28);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.mdtp-tema-red .mdtp-modal {
+  max-width: 340px;
+  border-radius: 26px;
+  background: linear-gradient(160deg,
+      rgba(255, 255, 255, 0.97) 0%,
+      rgba(248, 250, 252, 0.94) 55%,
+      rgba(255, 255, 255, 0.97) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.38), inset 0 1px 2px #ffffff;
+  font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif;
+}
+
+/* Pestañas Fecha / Hora: segmentado gris con la activa en blanco (como las pestañas de la red) */
+.mdtp-tema-red .mdtp-header-tabs {
+  margin: 14px 14px 0;
+  padding: 4px;
+  gap: 4px;
+  background: rgba(226, 232, 240, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.mdtp-tema-red .mdtp-header-tab {
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.mdtp-tema-red .mdtp-header-tab:hover { color: #0f172a; }
+
+.mdtp-tema-red .mdtp-header-tab.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+}
+
+.mdtp-tema-red .mdtp-header-tab.active svg { color: #f26522; }
+
+.mdtp-tema-red .mdtp-body { background: transparent; padding: 14px 18px 16px; }
+
+/* Calendario */
+.mdtp-tema-red .mdtp-month-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+}
+
+.mdtp-tema-red .mdtp-nav-btn {
+  border-radius: 50%;
+  border-color: rgba(15, 23, 42, 0.08);
+  background: rgba(241, 245, 249, 0.9);
+  color: #475569;
+}
+
+.mdtp-tema-red .mdtp-day-cell { border-radius: 12px; }
+.mdtp-tema-red .mdtp-day-cell:hover:not(.empty):not(.selected):not(:disabled) { background: #fff7f2; color: #c2410c; }
+
+.mdtp-tema-red .mdtp-day-cell.selected {
+  background: #f26522;
+  box-shadow: 0 6px 14px rgba(242, 101, 34, 0.35);
+}
+
+/* Reloj */
+.mdtp-tema-red .mdtp-digit-box.active { box-shadow: 0 4px 14px rgba(242, 101, 34, 0.18); }
+.mdtp-tema-red .mdtp-clock-container {
+  background: #f1f5f9;
+  box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+.mdtp-tema-red .mdtp-clock-selection-bubble { box-shadow: 0 3px 8px rgba(242, 101, 34, 0.4); }
+
+/* Atajos (Hoy / Mañana / 9:00 AM…) */
+.mdtp-tema-red .mdtp-quick-chip {
+  border-radius: 999px;
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+/* Pie */
+.mdtp-tema-red .mdtp-footer {
+  background: transparent;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
+  padding: 12px 16px 14px;
+}
+
+.mdtp-tema-red .mdtp-cancel-btn {
+  background: rgba(241, 245, 249, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: #334155;
+  border-radius: 12px;
+}
+
+.mdtp-tema-red .mdtp-ok-btn {
+  background: #f26522;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.35);
+}
+
+.mdtp-tema-red .mdtp-ok-btn:hover {
+  background: #ea580c;
+  box-shadow: 0 8px 20px rgba(242, 101, 34, 0.45);
+}
+
+/* ── Campo que abre el selector ── */
+.mdtp-campo.campo-fecha-red {
+  min-height: 46px;
+  padding: 11px 14px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+  font-family: inherit;
+}
+
+.mdtp-campo.campo-fecha-red:hover:not(:disabled) { border-color: rgba(242, 101, 34, 0.45); background: #fffaf6; }
+
+.mdtp-campo.campo-fecha-red:focus-visible {
+  border-color: #f26522;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.15);
+}
+
+.mdtp-campo.campo-fecha-red .mdtp-campo-icono { color: #f26522; }

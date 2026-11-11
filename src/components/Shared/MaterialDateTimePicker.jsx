@@ -89,6 +89,7 @@ const MaterialDateTimePicker = ({
   mode = 'datetime',
   min,
   max,
+  overlayClassName = '', // tema opcional (p. ej. 'mdtp-tema-red' en Agente Market)
 }) => {
   const showDate = mode !== 'time';
   const showTime = mode !== 'date';
@@ -291,7 +292,7 @@ const MaterialDateTimePicker = ({
 
   // Portal al body: así el modal queda centrado aunque el padre tenga transform/overflow
   return createPortal(
-    <div className="mdtp-overlay" onClick={(e) => e.target === e.currentTarget && onClose?.()}>
+    <div className={`mdtp-overlay ${overlayClassName}`.trim()} onClick={(e) => e.target === e.currentTarget && onClose?.()}>
       <div className="mdtp-modal" role="dialog" aria-modal="true">
         {/* Encabezado: Fecha / Hora */}
         <div className="mdtp-header-tabs">

@@ -29,6 +29,7 @@ const CampoFechaHora = ({
   required = false,
   placeholder,
   className = '',
+  overlayClassName = '', // tema del selector (se aplica al modal, no al campo)
   style,
   title,
   'aria-label': ariaLabel,
@@ -91,6 +92,7 @@ const CampoFechaHora = ({
         value={actual}
         min={min}
         max={max}
+        overlayClassName={overlayClassName}
         onChange={emitir}
         onClose={() => setAbierto(false)}
       />

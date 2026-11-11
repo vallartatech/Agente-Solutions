@@ -5,6 +5,7 @@ import {
   X, FileText, Home, Wrench, MessageSquare, Camera, Trash2, PlusCircle, Globe, Users, Shield, AlertCircle, CheckCircle2, UserCheck, Clock, Calendar, Check
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Admin/ModalServicioAutonomo.css';
+import '../../../styles/AgenteMarket/Shared/SelectorFechaRed.css';
 import { mostrarAviso } from '../../../utils/dialogos';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 import { useAuth } from '../../../context/AuthContext';
@@ -27,12 +28,17 @@ const ATAJOS_FECHA = [
   { key: 'semana', label: 'Próxima semana', fecha: proximaSemana },
 ];
 
-const HORARIOS = [
-  { value: 'Por la mañana (8am - 12pm)', label: 'Mañana (8am - 12pm)' },
-  { value: 'Por la tarde (12pm - 5pm)', label: 'Tarde (12pm - 5pm)' },
-  { value: 'Por la noche (5pm - 8pm)', label: 'Noche (5pm - 8pm)' },
-  { value: 'Cualquier hora', label: 'Cualquier horario' },
-];
+// Hora preferida: 'HH:MM' elegida con el reloj, o 'Cualquier hora'
+const CUALQUIER_HORA = 'Cualquier hora';
+const HORA_POR_DEFECTO = '09:00';
+const esHoraExacta = (h) => /^\d{2}:\d{2}$/.test(String(h || ''));
+// '14:30' → '2:30 PM' (así lo guarda la nota y lo leen los técnicos)
+const hora12 = (hhmm) => {
+  if (!esHoraExacta(hhmm)) return '';
+  const [h, m] = hhmm.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+};
+const textoHorario = (h) => (esHoraExacta(h) ? hora12(h) : CUALQUIER_HORA);
 
 // "Sábado 8 de noviembre"
 const fechaLarga = (yyyyMmDd) => {
@@ -324,7 +330,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
           // Los técnicos la ven como etiqueta "Lo necesita: …" (se lee de esta nota).
           // La columna priority solo acepta Normal/Urgente; lo "programado" vive en la nota de fecha.
           formData.append('priority', 'Normal');
-          scheduleNote = `\n\n[FECHA / HORARIO DESEADO]: ${item.fechaProgramada} - ${item.horarioPreferido || 'Cualquier hora'}`;
+          scheduleNote = `\n\n[FECHA / HORARIO DESEADO]: ${item.fechaProgramada} - ${textoHorario(item.horarioPreferido)}`;
         } else {
           formData.append('priority', 'Urgente');
           scheduleNote = `\n\n[URGENCIA]: ⚡ Atención Urgente - Hoy Mismo`;
@@ -662,7 +668,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                         ...nuevoServicio,
                         urgencia: 'programado',
                         fechaProgramada: nuevoServicio.fechaProgramada || enDias(1),
-                        horarioPreferido: nuevoServicio.horarioPreferido || 'Cualquier hora'
+                        horarioPreferido: nuevoServicio.horarioPreferido || HORA_POR_DEFECTO
                       })}
                       className={`msa-urgencia-btn ${nuevoServicio.urgencia === 'programado' ? 'active-programado' : ''}`}
                     >
@@ -674,6 +680,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                   {nuevoServicio.urgencia === 'programado' && (() => {
                     const fecha = nuevoServicio.fechaProgramada;
                     const atajoActivo = ATAJOS_FECHA.find(a => a.fecha() === fecha)?.key;
+                    const horaFija = esHoraExacta(nuevoServicio.horarioPreferido);
                     return (
                       <div className="msa-programar-fields msa-programar-estimado">
                         <span className="msa-sublabel">¿Para cuándo lo necesitas? (fecha estimada)</span>
@@ -690,27 +697,42 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                           ))}
                         </div>
 
-                        <div className="msa-programar-fila">
-                          <label className="msa-programar-field">
-                            <span className="msa-sublabel">Otra fecha:</span>
-                            <CampoFechaHora
-                              type="date"
-                              value={fecha || ''}
-                              min={enDias(1)}
-                              onChange={(e) => setNuevoServicio({ ...nuevoServicio, fechaProgramada: e.target.value })}
-                              className="msa-input"
-                            />
-                          </label>
-                          <label className="msa-programar-field">
-                            <span className="msa-sublabel">Horario preferido:</span>
-                            <select
-                              value={nuevoServicio.horarioPreferido || 'Cualquier hora'}
-                              onChange={(e) => setNuevoServicio({ ...nuevoServicio, horarioPreferido: e.target.value })}
-                              className="msa-select"
+                        {/* Fecha y hora con el selector de reloj de la app (calendario + reloj) */}
+                        <div className="msa-programar-fecha-hora">
+                          <span className="msa-sublabel">{horaFija ? 'Fecha y hora:' : 'Fecha:'}</span>
+                          <CampoFechaHora
+                            type={horaFija ? 'datetime-local' : 'date'}
+                            value={fecha ? (horaFija ? `${fecha}T${nuevoServicio.horarioPreferido}` : fecha) : ''}
+                            min={enDias(1)}
+                            onChange={(e) => {
+                              const [f, h] = String(e.target.value || '').split('T');
+                              setNuevoServicio({
+                                ...nuevoServicio,
+                                fechaProgramada: f || '',
+                                ...(h ? { horarioPreferido: h.slice(0, 5) } : {}),
+                              });
+                            }}
+                            className="campo-fecha-red"
+                            overlayClassName="mdtp-tema-red"
+                            placeholder={horaFija ? 'Elige fecha y hora' : 'Elige la fecha'}
+                          />
+
+                          <div className="msa-hora-opciones" role="group" aria-label="Hora preferida">
+                            <button
+                              type="button"
+                              className={`msa-hora-opcion ${horaFija ? 'activo' : ''}`}
+                              onClick={() => !horaFija && setNuevoServicio({ ...nuevoServicio, horarioPreferido: HORA_POR_DEFECTO })}
                             >
-                              {HORARIOS.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
-                            </select>
-                          </label>
+                              <Clock size={13} /> Hora exacta
+                            </button>
+                            <button
+                              type="button"
+                              className={`msa-hora-opcion ${!horaFija ? 'activo' : ''}`}
+                              onClick={() => setNuevoServicio({ ...nuevoServicio, horarioPreferido: CUALQUIER_HORA })}
+                            >
+                              Cualquier hora
+                            </button>
+                          </div>
                         </div>
 
                         {fecha && (
@@ -718,8 +740,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                             <Calendar size={13} />
                             <span>
                               Lo necesitas para el <strong>{fechaLarga(fecha)}</strong>
-                              {nuevoServicio.horarioPreferido && nuevoServicio.horarioPreferido !== 'Cualquier hora'
-                                ? `, ${nuevoServicio.horarioPreferido.toLowerCase()}` : ''}.
+                              {horaFija ? <> a las <strong>{hora12(nuevoServicio.horarioPreferido)}</strong></> : ', a cualquier hora'}.
                               {' '}Los técnicos lo verán al cotizar y te propondrán la cita.
                             </span>
                           </p>
@@ -993,7 +1014,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                   </span>
                   <strong className="msa-ficha-item-val">
                     {solicitudExitosa.primerServicio?.urgencia === 'programado'
-                      ? `📅 Para el ${fechaLarga(solicitudExitosa.primerServicio.fechaProgramada)}`
+                      ? `📅 Para el ${fechaLarga(solicitudExitosa.primerServicio.fechaProgramada)}${esHoraExacta(solicitudExitosa.primerServicio.horarioPreferido) ? ` a las ${hora12(solicitudExitosa.primerServicio.horarioPreferido)}` : ''}`
                       : '⚡ Urgente (Hoy)'}
                   </strong>
                 </div>
