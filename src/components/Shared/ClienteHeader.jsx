@@ -193,15 +193,18 @@ const ClienteHeader = ({ activeModule }) => {
             </>
           )}
 
-          <button
-            type="button"
-            className={`vcp-nav-btn ${isServiciosActive ? 'active' : ''}`}
-            onClick={() => navigate('/tablero-servicios')}
-            title="Servicios"
-          >
-            <Wrench size={18} className="vcp-nav-icon" />
-            <span className="vcp-nav-text">SERVICIOS</span>
-          </button>
+          {/* El cliente de la red no organiza servicios: los sigue desde el Mercado */}
+          {!unificarVistas && (
+            <button
+              type="button"
+              className={`vcp-nav-btn ${isServiciosActive ? 'active' : ''}`}
+              onClick={() => navigate('/tablero-servicios')}
+              title="Servicios"
+            >
+              <Wrench size={18} className="vcp-nav-icon" />
+              <span className="vcp-nav-text">SERVICIOS</span>
+            </button>
+          )}
 
           <button
             type="button"

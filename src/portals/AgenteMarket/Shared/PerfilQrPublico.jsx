@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import FichaTecnicoQr from './FichaTecnicoQr';
 import ContratarTecnico from './ContratarTecnico';
-import logo from '../../../assets/logo.png';
 import '../../../styles/AgenteMarket/Shared/TecnicoQr.css';
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -35,13 +34,6 @@ const PerfilQrPublico = () => {
 
   return (
     <div className="tqr-pagina">
-      <header className="tqr-pagina-barra">
-        {user ? (
-          <button type="button" className="tqr-btn" onClick={() => navigate(-1)}><ArrowLeft size={16} /> Volver</button>
-        ) : <span />}
-        <img src={logo} alt="Agente Solutions" className="tqr-pagina-logo" />
-      </header>
-
       <main className="tqr-pagina-tarjeta">
         {cargando ? (
           <div className="tqr-cargando"><Loader2 size={26} className="tqr-girar" /> Cargando perfil…</div>

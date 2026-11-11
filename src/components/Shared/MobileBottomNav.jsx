@@ -505,22 +505,25 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         </button>
       )}
 
-      <button 
-        type="button" 
-        className={`vcp-mobile-nav-item ${isServiciosActive ? 'active' : ''}`} 
-        onClick={() => {
-          if (role === 6 || role === 8 || currentPath.includes('/mercado-trabajos')) {
-            navigate('/mercado-trabajos', { state: { view: 'tablero' } });
-          } else {
-            navigate('/tablero-servicios');
-          }
-        }} 
-        title="Servicios"
-        aria-label="Servicios"
-      >
-        <Wrench size={22} className="vcp-mobile-nav-icon" />
-          <span className="vcp-mobile-nav-text">Servicios</span>
-      </button>
+{/* El cliente de la red no organiza servicios: los sigue desde el Mercado */}
+      {!unificarVistas && (
+        <button 
+          type="button" 
+          className={`vcp-mobile-nav-item ${isServiciosActive ? 'active' : ''}`} 
+          onClick={() => {
+            if (role === 6 || role === 8 || currentPath.includes('/mercado-trabajos')) {
+              navigate('/mercado-trabajos', { state: { view: 'tablero' } });
+            } else {
+              navigate('/tablero-servicios');
+            }
+          }} 
+          title="Servicios"
+          aria-label="Servicios"
+        >
+          <Wrench size={22} className="vcp-mobile-nav-icon" />
+            <span className="vcp-mobile-nav-text">Servicios</span>
+        </button>
+      )}
 
       {/* Mercado / Red al final de la barra */}
       <button

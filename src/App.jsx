@@ -100,7 +100,7 @@ import VistaDetallePropiedadCliente from "./portals/AgenteSolutions/Cliente/Vist
 
 import VistaCotizacionPrint from "./portals/AgenteSolutions/Admin/VistaCotizacionPrint";
 import CasaLoader from "./components/Shared/CasaLoader";
-import { esRed } from "./utils/entorno";
+import { esRed, usaSelectorRed } from "./utils/entorno";
 
 /* ------PANTALLAS PROPIAS DE LA RED (AgenteMarket) ------*/
 // Copias de las pantallas internas que también usa la red: se editan sin afectar al uso interno.
@@ -171,6 +171,14 @@ const PorEntorno = ({ interno, red }) => {
   const { user } = useAuth();
   if (!esRed(user)) return interno;
   return <Suspense fallback={<CasaLoader />}>{red}</Suspense>;
+};
+
+// El tablero de servicios es para quien organiza el trabajo. El cliente de la red (roles 4, 5, 7)
+// solo crea la solicitud y pone fecha: sigue sus servicios desde el Mercado.
+const TableroServicios = () => {
+  const { user } = useAuth();
+  if (usaSelectorRed(user)) return <Navigate to="/red-autonomos" replace />;
+  return <PorEntorno interno={<VistaServiciosAdmin />} red={<RedServiciosAdmin />} />;
 };
 
 const CalendarioWrapper = () => {
@@ -307,7 +315,7 @@ const AppRoutes = () => {
       <Route path="/bodeguero" element={<PorEntorno interno={<VistaBodeguero />} red={<RedBodeguero />} />} />
       <Route path="/detalle-propiedad/:id" element={<DetallePropiedadWrapper />} />
       <Route path="/detalle-propiedad/:id/trabajo/:uid" element={<TrabajoPropiedadWrapper />} />
-      <Route path="/tablero-servicios" element={<PorEntorno interno={<VistaServiciosAdmin />} red={<RedServiciosAdmin />} />} />
+      <Route path="/tablero-servicios" element={<TableroServicios />} />
       <Route path="/detalle-tecnico" element={<PorEntorno interno={<VistaDetalleTecnico />} red={<RedDetalleTecnico />} />} />
       <Route path="/reportes-globales" element={<PorEntorno interno={<VistaReportesGlobal />} red={<RedReportesGlobal />} />} />
       <Route path="/reporte-trabajo-admin/:id?" element={<PorEntorno interno={<ReporteTrabajoAdmin />} red={<RedReporteTrabajoAdmin />} />} />

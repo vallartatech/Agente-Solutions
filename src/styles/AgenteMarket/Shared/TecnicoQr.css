@@ -337,18 +337,9 @@
   min-height: 100vh;
   min-height: 100dvh;
   background: url('../../../assets/geometric-poly-bg.png') center center / cover no-repeat fixed;
-  padding: 0 16px 40px;
+  padding: 32px 16px 40px;
   box-sizing: border-box;
 }
-.tqr-pagina-barra {
-  max-width: 600px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 0;
-}
-.tqr-pagina-logo { height: 46px; width: auto; filter: drop-shadow(0 4px 10px rgba(15, 23, 42, 0.25)); }
 .tqr-pagina-tarjeta {
   max-width: 600px;
   margin: 0 auto;
@@ -365,6 +356,7 @@
   .tqr-modal-scroll { padding: 16px; }
   .tqr-modal-pie { padding: 12px 16px 18px; }
   .tqr-cifras { grid-template-columns: repeat(2, 1fr); }
+  .tqr-pagina { padding-top: 16px; }
   .tqr-pagina-tarjeta { padding: 16px; }
   .tqr-foto { flex-basis: 60px; height: 60px; font-size: 1.5rem; }
 }
