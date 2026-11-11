@@ -790,6 +790,42 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
     }
   };
 
+  // El técnico marcó "Llegué al lugar": el dueño confirma que ya está aquí y autoriza que comience
+  const [confirmandoLlegada, setConfirmandoLlegada] = useState(false);
+  const handleConfirmarLlegada = async () => {
+    const job = selectedJobForQuotes;
+    if (!job?.id || confirmandoLlegada) return;
+    if (!await confirmarAccion('¿Confirmas que el técnico ya está en tu propiedad? Con esto podrá comenzar el trabajo.')) return;
+    setConfirmandoLlegada(true);
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/work-orders/work_order-${job.id}/client-confirm-arrival`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        const confirmada = res.data.arrival_confirmed_at;
+        setSelectedJobForQuotes(prev => (prev && prev.id === job.id ? { ...prev, arrival_confirmed_at: confirmada } : prev));
+        setNetworkJobs(prev => prev.map(j => (j.id === job.id ? { ...j, arrival_confirmed_at: confirmada } : j)));
+        mostrarAviso('✅ ' + res.data.message);
+        fetchJobs();
+      }
+    } catch (e) {
+      console.error('Error confirmando la llegada', e);
+      mostrarAviso(e.response?.data?.error || 'No se pudo confirmar la llegada. Inténtalo de nuevo.');
+    } finally {
+      setConfirmandoLlegada(false);
+    }
+  };
+
+  // "3:15 p.m." a partir de 'YYYY-MM-DD HH:MM:SS' (hora de Mérida)
+  const horaCorta = (valor) => {
+    if (!valor) return '';
+    const d = new Date(String(valor).replace(' ', 'T'));
+    return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
+
   const handleAcceptQuote = async (quote) => {
     const techName = quote.technicianName || 'este técnico';
     if (!await confirmarAccion(`¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
@@ -1979,18 +2015,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                         );
                       })()}
 
-                      {selectedJobForQuotes.arrived_at && (
-                        <div className="mercado-info-item full-width" style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
-                          <MapPin size={16} color="#16a34a" />
-                          <div>
-                            <strong style={{ color: '#166534', fontSize: '12px', display: 'block' }}>📍 Técnico Arribó al Domicilio</strong>
-                            <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>
-                              {new Date(selectedJobForQuotes.arrived_at).toLocaleString('es-MX', { timeStyle: 'short', dateStyle: 'medium' })}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
                       {/* Botón de Calificación Dual */}
                       {(selectedJobForQuotes.is_accepted || selectedJobForQuotes.status === 'Terminado' || selectedJobForQuotes.status === 'Completado' || selectedJobForQuotes.status === 'Listo' || selectedJobForQuotes.status === 'Asignado') && (
                         <button
@@ -2036,6 +2060,38 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                   {/* Vista 1: Lista de Cotizaciones */}
                   {!activeChatQuote && (
                     <div style={{ padding: '16px 20px', flex: 1, overflowY: 'auto' }}>
+                      {/* El técnico ya llegó: el dueño confirma para que comience */}
+                      {selectedJobForQuotes.arrived_at && (
+                        <div className={`cl-llegada ${selectedJobForQuotes.arrival_confirmed_at ? 'confirmada' : ''}`}>
+                          <span className="cl-llegada-icono">
+                            {selectedJobForQuotes.arrival_confirmed_at ? <CheckCircle size={18} /> : <MapPin size={18} />}
+                          </span>
+                          <div className="cl-llegada-txt">
+                            <strong>
+                              {selectedJobForQuotes.arrival_confirmed_at
+                                ? 'Confirmaste la llegada del técnico'
+                                : 'El técnico ya llegó a tu propiedad'}
+                            </strong>
+                            <span>
+                              Llegó a las {horaCorta(selectedJobForQuotes.arrived_at)}
+                              {selectedJobForQuotes.arrival_confirmed_at
+                                ? ` · confirmada a las ${horaCorta(selectedJobForQuotes.arrival_confirmed_at)}. Ya puede comenzar el trabajo.`
+                                : '. Confírmalo para que pueda comenzar el trabajo.'}
+                            </span>
+                          </div>
+                          {!selectedJobForQuotes.arrival_confirmed_at && (
+                            <button
+                              type="button"
+                              className="cl-llegada-btn"
+                              onClick={handleConfirmarLlegada}
+                              disabled={confirmandoLlegada}
+                            >
+                              <CheckCircle size={15} /> {confirmandoLlegada ? 'Confirmando…' : 'Confirmar llegada'}
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       <div style={{ marginBottom: '16px' }}>
                         <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
                           📋 Cotizaciones de Técnicos

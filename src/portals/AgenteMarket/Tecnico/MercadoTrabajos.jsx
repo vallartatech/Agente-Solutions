@@ -2659,7 +2659,21 @@ const MercadoTrabajos = () => {
                 const isJobCompleted = isJobDone(selectedBoardJob.status) || selectedBoardJob.status === 'Listo' || selectedBoardJob.status === 'Finalizado';
 
                 // Botones del flujo: se muestran abajo en escritorio y bajo el camino de progreso en celular
+                // Llegada al sitio: el dueño de la propiedad la confirma para que el técnico comience
+                const avisoLlegada = selectedBoardJob.arrived_at && !isJobCompleted ? (
+                  <div className={`rt-llegada ${selectedBoardJob.arrival_confirmed_at ? 'confirmada' : ''}`}>
+                    {selectedBoardJob.arrival_confirmed_at ? <CheckCircle2 size={16} /> : <Clock size={16} />}
+                    <span>
+                      {selectedBoardJob.arrival_confirmed_at
+                        ? <><strong>El cliente confirmó tu llegada.</strong> Ya puedes comenzar el trabajo.</>
+                        : <><strong>Llegaste a las {horaLlegada(selectedBoardJob.arrived_at)}.</strong> Esperando que el cliente confirme tu llegada.</>}
+                    </span>
+                  </div>
+                ) : null;
+
                 const botonesFlujo = (
+                  <>
+                  {avisoLlegada}
                   <div className="mercado-board-flow-buttons-grid">
                     {/* Botón 1: Comenzar trabajo (0 fotos) / Ver Reporte (1+ fotos o Finalizado) */}
                     {completedReportsCount === 0 && !isJobCompleted ? (
@@ -2706,6 +2720,7 @@ const MercadoTrabajos = () => {
                       {selectedBoardJob.has_second_visit ? '2DA VISITA AGENDADA' : '2DA VISITA'}
                     </button>
                   </div>
+                  </>
                 );
 
                 return (

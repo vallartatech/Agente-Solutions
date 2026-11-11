@@ -4520,3 +4520,22 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
 /* Tarjeta de trabajo aceptado: hora en que el técnico llegó al sitio */
 .rj-fecha.rj-llegada { color: #10b981; font-weight: 800; }
 .rj-fecha.rj-llegada svg { color: #10b981; }
+
+/* Tablero: estado de la llegada (el cliente la confirma para comenzar) */
+.rt-llegada {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.rt-llegada svg { flex-shrink: 0; margin-top: 1px; }
+.rt-llegada strong { color: #0f172a; font-weight: 800; }
+.rt-llegada.confirmada { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
