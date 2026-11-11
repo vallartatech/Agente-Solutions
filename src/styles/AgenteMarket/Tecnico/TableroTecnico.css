@@ -4516,3 +4516,7 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
 
   .mercado-container.mercado-tablero-mode .rd-fotos { gap: 8px; }
 }
+
+/* Tarjeta de trabajo aceptado: hora en que el técnico llegó al sitio */
+.rj-fecha.rj-llegada { color: #10b981; font-weight: 800; }
+.rj-fecha.rj-llegada svg { color: #10b981; }

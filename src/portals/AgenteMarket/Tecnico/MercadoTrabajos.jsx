@@ -861,23 +861,20 @@ const MercadoTrabajos = () => {
     }
   };
 
-  // Confirmar llegada al sitio (Validación GPS y registro arrived_at)
-  const handleConfirmArrival = async (job) => {
-    const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-
-    // Al llegar: se cierra la navegación y se abre el tablero de ESTE trabajo para comenzar
-    const irAlTablero = (titulo) => {
-      setActiveNavJob(null);
-      setNavDirections(null);
-      setNavStatus('idle');
-      setBoardJobStages(prev => {
-        const updated = { ...prev, [job.id]: Math.max(prev[job.id] || 0, 3) };
-        try { localStorage.setItem('agente_board_stages', JSON.stringify(updated)); } catch (e) {}
-        return updated;
-      });
-      setSelectedBoardJobId(job.id);
-      setActiveTab('aceptados');
-      setMainView('tablero');
+  // Abre el tablero de ESTE trabajo (cierra la navegación). Con título, muestra el aviso de llegada.
+  const abrirTableroDeTrabajo = (job, titulo = null) => {
+    setActiveNavJob(null);
+    setNavDirections(null);
+    setNavStatus('idle');
+    setBoardJobStages(prev => {
+      const updated = { ...prev, [job.id]: Math.max(prev[job.id] || 0, 3) };
+      try { localStorage.setItem('agente_board_stages', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+    setSelectedBoardJobId(job.id);
+    setActiveTab('aceptados');
+    setMainView('tablero');
+    if (titulo) {
       Swal.fire({
         title: titulo,
         text: 'Ya estás en el tablero de este trabajo. Presiona "Comenzar trabajo" cuando estés listo.',
@@ -885,11 +882,18 @@ const MercadoTrabajos = () => {
         confirmButtonColor: '#f26522',
         confirmButtonText: 'Entendido'
       });
-    };
+    }
+  };
+
+  // Confirmar llegada al sitio (Validación GPS y registro arrived_at)
+  const handleConfirmArrival = async (job) => {
+    const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
 
     try {
-      await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/work-orders/${job.id}/confirm-arrival`,
+      // Id compuesto: con el id simple el backend buscaba primero un Service con ese número
+      // y la llegada se guardaba en otro trabajo
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/work-orders/work_order-${job.id}/confirm-arrival`,
         {
           latitude: technicianLocation?.lat || job.lat,
           longitude: technicianLocation?.lng || job.lng
@@ -897,12 +901,26 @@ const MercadoTrabajos = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setAcceptedJobs(prev => prev.map(j => j.id === job.id ? { ...j, arrived_at: new Date().toISOString(), arrival_status: 'EN_SITIO' } : j));
-      irAlTablero('Llegada confirmada');
+      const llegada = res.data?.arrived_at || new Date().toISOString();
+      setAcceptedJobs(prev => prev.map(j => j.id === job.id ? { ...j, arrived_at: llegada, arrival_status: 'EN_SITIO' } : j));
+      abrirTableroDeTrabajo(job, 'Llegada confirmada');
     } catch (error) {
       console.error("Error confirmando llegada:", error);
-      irAlTablero('Llegada registrada');
+      Swal.fire({
+        title: 'No se registró tu llegada',
+        text: 'Revisa tu conexión e inténtalo de nuevo.',
+        icon: 'error',
+        confirmButtonColor: '#f26522',
+        confirmButtonText: 'Entendido'
+      });
     }
+  };
+
+  // "3:15 p.m." a partir de arrived_at ('YYYY-MM-DD HH:MM:SS', hora de Mérida)
+  const horaLlegada = (arrivedAt) => {
+    if (!arrivedAt) return '';
+    const d = new Date(String(arrivedAt).replace(' ', 'T'));
+    return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true });
   };
 
   // Restaurar trabajo seleccionado o pestaña al regresar de Galería o Nuevo Reporte
@@ -3830,7 +3848,9 @@ const MercadoTrabajos = () => {
                         className={`mercado-job-card red-job-card accepted-job ${selectedJob?.id === job.id ? 'active' : ''} ${scheduleInfo.isUrgentGlow ? 'is-urgent-glow' : ''}`}
                         onClick={() => {
                           setSelectedJob(job);
-                          handleStartRoute(job);
+                          // Si ya llegó, no tiene caso la ruta: se abre su tablero
+                          if (isArrived) abrirTableroDeTrabajo(job);
+                          else handleStartRoute(job);
                         }}
                       >
                         {/* Encabezado: ícono de categoría, título y estado */}
@@ -3879,7 +3899,11 @@ const MercadoTrabajos = () => {
                         {/* Pie: fecha a la izquierda, acciones a la derecha */}
                         <div className="rj-footer">
                           <div className="rj-footer-info">
-                            <span className="rj-fecha"><Clock size={11} /> {job.fecha}</span>
+                            {isArrived && horaLlegada(job.arrived_at) ? (
+                              <span className="rj-fecha rj-llegada"><MapPin size={11} /> Llegaste {horaLlegada(job.arrived_at)}</span>
+                            ) : (
+                              <span className="rj-fecha"><Clock size={11} /> {job.fecha}</span>
+                            )}
                           </div>
 
                           <div className="rj-footer-acciones">
@@ -3900,10 +3924,13 @@ const MercadoTrabajos = () => {
                               className="rj-btn-ver rj-btn-ruta"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleStartRoute(job);
+                                if (isArrived) abrirTableroDeTrabajo(job);
+                                else handleStartRoute(job);
                               }}
                             >
-                              <Navigation size={13} /> Iniciar ruta
+                              {isArrived
+                                ? <><ClipboardList size={13} /> Ir al tablero</>
+                                : <><Navigation size={13} /> Iniciar ruta</>}
                             </button>
                           </div>
                         </div>
@@ -4316,14 +4343,30 @@ const MercadoTrabajos = () => {
                         </div>
                       )}
 
-                      {/* Acciones */}
-                      <button
-                        type="button"
-                        className="nv-btn-principal"
-                        onClick={() => handleConfirmArrival(activeNavJob)}
-                      >
-                        <MapPin size={17} strokeWidth={2.4} /> Llegué al lugar
-                      </button>
+                      {/* Acciones: si la llegada ya quedó registrada, solo se va al tablero */}
+                      {navVivo.arrived_at ? (
+                        <>
+                          <div className="nv-aviso nv-aviso-ok">
+                            <span className="nv-aviso-icono"><MapPin size={16} strokeWidth={2.4} /></span>
+                            <div className="nv-aviso-txt"><strong>Llegaste a las {horaLlegada(navVivo.arrived_at)}</strong></div>
+                          </div>
+                          <button
+                            type="button"
+                            className="nv-btn-principal"
+                            onClick={() => abrirTableroDeTrabajo(navVivo)}
+                          >
+                            <ClipboardList size={17} strokeWidth={2.4} /> Ir al tablero
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className="nv-btn-principal"
+                          onClick={() => handleConfirmArrival(activeNavJob)}
+                        >
+                          <MapPin size={17} strokeWidth={2.4} /> Llegué al lugar
+                        </button>
+                      )}
 
                       <div className="nv-secundarias">
                         {activeNavJob.client_phone && (
