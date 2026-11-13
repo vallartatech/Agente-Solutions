@@ -1,0 +1,371 @@
+/* Red: ajuste de cotización (tablero del técnico, modal del técnico y vista del cliente) */
+
+.aj-panel,
+.aj-cliente,
+.aj-modal {
+  --aj-naranja: #f26522;
+  --aj-texto: #0f172a;
+  --aj-suave: #64748b;
+  --aj-borde: #e2e8f0;
+  --aj-fondo: #ffffff;
+  --aj-fondo-2: #f8fafc;
+  font-family: inherit;
+  color: var(--aj-texto);
+}
+
+.aj-panel { display: flex; flex-direction: column; gap: 10px; }
+.aj-cliente { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+
+/* Precio del tablero: el original tachado junto al vigente */
+.rd-precio-original {
+  margin-left: 8px;
+  color: #94a3b8;
+  font-size: 0.6em;
+  font-weight: 700;
+}
+
+/* ── Avisos (pendiente, rechazado, aceptado) ── */
+.aj-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+.aj-aviso > svg { flex-shrink: 0; margin-top: 2px; }
+.aj-aviso > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.aj-aviso strong { color: var(--aj-texto); font-weight: 800; }
+.aj-aviso.pendiente { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+.aj-aviso.rechazado { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.aj-aviso.aceptado { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+.aj-aviso-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+/* ── Botón principal del tablero ── */
+.aj-btn-ajustar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px dashed rgba(242, 101, 34, 0.55);
+  border-radius: 14px;
+  background: rgba(242, 101, 34, 0.06);
+  color: var(--aj-naranja);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.aj-btn-ajustar:hover { background: rgba(242, 101, 34, 0.12); border-color: var(--aj-naranja); }
+.aj-btn-ajustar:focus-visible { outline: 2px solid var(--aj-naranja); outline-offset: 2px; }
+.aj-btn-ajustar > svg { flex-shrink: 0; }
+.aj-btn-ajustar span { display: flex; flex-direction: column; gap: 2px; }
+.aj-btn-ajustar strong { font-size: 0.88rem; font-weight: 800; }
+.aj-btn-ajustar small { color: var(--aj-suave); font-size: 0.75rem; font-weight: 600; }
+
+/* ── Botones ── */
+.aj-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 0.2s ease, background 0.2s ease;
+}
+.aj-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.aj-btn:not(:disabled):hover { filter: brightness(0.95); }
+.aj-btn:focus-visible { outline: 2px solid var(--aj-naranja); outline-offset: 2px; }
+.aj-btn.primario { background: var(--aj-naranja); color: #ffffff; }
+.aj-btn.exito { background: #16a34a; color: #ffffff; }
+.aj-btn.peligro { background: #ffffff; border-color: #fecaca; color: #dc2626; }
+.aj-btn.secundario { background: var(--aj-fondo); border-color: var(--aj-borde); color: var(--aj-texto); }
+
+.aj-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: var(--aj-naranja);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.aj-link:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.aj-icono-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: 1px solid var(--aj-borde);
+  border-radius: 10px;
+  background: var(--aj-fondo);
+  color: var(--aj-suave);
+  cursor: pointer;
+}
+.aj-icono-btn:hover { color: var(--aj-texto); }
+
+/* ── Comparación de precios ── */
+.aj-comparacion {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--aj-fondo-2);
+  border: 1px solid var(--aj-borde);
+  color: var(--aj-suave);
+}
+.aj-comparacion > div { display: flex; flex-direction: column; gap: 2px; }
+.aj-comparacion span { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+.aj-comparacion strong { color: var(--aj-texto); font-size: 1.15rem; font-weight: 900; }
+.aj-comparacion strong.nuevo { color: var(--aj-naranja); }
+.aj-comparacion strong.tachado { text-decoration: line-through; color: var(--aj-suave); }
+.aj-diferencia { margin-left: auto; padding: 4px 10px; border-radius: 999px; font-size: 0.78rem !important; font-weight: 800 !important; }
+.aj-diferencia.sube { background: #fef3c7; color: #92400e; }
+.aj-diferencia.baja { background: #dcfce7; color: #166534; }
+
+/* ── Propuesta (vista del cliente) ── */
+.aj-propuesta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1.5px solid #fdba74;
+  background: #fff7ed;
+}
+.aj-propuesta-cab { display: flex; align-items: center; gap: 8px; color: var(--aj-naranja); }
+.aj-propuesta-cab strong { color: var(--aj-texto); font-size: 0.95rem; font-weight: 900; }
+.aj-propuesta .aj-comparacion { background: var(--aj-fondo); }
+.aj-propuesta-motivo { margin: 0; font-size: 0.85rem; line-height: 1.45; color: var(--aj-texto); overflow-wrap: anywhere; }
+.aj-propuesta-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.aj-propuesta-acciones .aj-btn { flex: 1 1 160px; }
+.aj-nota { color: var(--aj-suave); font-size: 0.74rem; font-weight: 600; }
+
+/* ── Cancelación del cliente y estado de cotizaciones de la red ── */
+.aj-propuesta.cancelado { border-color: #fecaca; background: #fef2f2; }
+.aj-propuesta.cancelado .aj-propuesta-cab { color: #dc2626; }
+.aj-btn-cancelar-servicio { width: 100%; margin-bottom: 12px; }
+
+.aj-estado-cot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.aj-estado-cot > svg { flex-shrink: 0; }
+.aj-estado-cot > span { flex: 1; min-width: 0; }
+.aj-estado-cot.retirada { background: #f1f5f9; color: #475569; }
+.aj-estado-cot.esperando { background: #fffbeb; color: #92400e; }
+.aj-estado-cot.anterior { background: #eff6ff; color: #1d4ed8; }
+
+/* Técnico: el cliente pide confirmar disponibilidad / retirar cotización */
+.aj-confirmar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1.5px solid #fdba74;
+  background: #fff7ed;
+  color: #0f172a;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.aj-confirmar strong { font-size: 0.92rem; font-weight: 900; }
+.aj-confirmar .aj-propuesta-acciones .aj-btn { flex: 1 1 140px; }
+
+/* ── Desglose ── */
+.aj-desglose { display: flex; flex-direction: column; gap: 8px; }
+.aj-desglose-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--aj-fondo);
+  border: 1px solid var(--aj-borde);
+}
+.aj-desglose-titulo { color: var(--aj-suave); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.aj-desglose-fila { display: flex; justify-content: space-between; gap: 10px; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.aj-desglose-desc { min-width: 0; overflow-wrap: anywhere; }
+.aj-desglose-fila.subtotal { padding-top: 4px; border-top: 1px dashed var(--aj-borde); font-weight: 800; }
+
+/* ── Fotos ── */
+.aj-fotos { display: flex; flex-wrap: wrap; gap: 8px; }
+.aj-foto {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--aj-borde);
+  background: var(--aj-fondo-2);
+  flex-shrink: 0;
+}
+.aj-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.aj-foto-quitar {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+  cursor: pointer;
+}
+.aj-foto-agregar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-style: dashed;
+  color: var(--aj-suave);
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.aj-foto-agregar:hover { color: var(--aj-naranja); border-color: var(--aj-naranja); }
+
+/* ── Historial ── */
+.aj-historial { display: flex; flex-direction: column; gap: 8px; }
+.aj-historial-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 0 0;
+  border: none;
+  border-top: 1px solid var(--aj-borde);
+  background: none;
+  color: var(--aj-suave);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.aj-historial-toggle:hover { color: var(--aj-texto); }
+.aj-historial-lista { list-style: none; margin: 0; padding: 0 0 0 12px; display: flex; flex-direction: column; gap: 10px; border-left: 2px solid var(--aj-borde); }
+.aj-version { display: flex; flex-direction: column; gap: 4px; }
+.aj-version-cab { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.aj-version-num { color: var(--aj-suave); font-size: 0.72rem; font-weight: 900; }
+.aj-version-precio { font-size: 0.92rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+.aj-version-motivo { margin: 0; font-size: 0.8rem; line-height: 1.4; overflow-wrap: anywhere; }
+.aj-version-fecha { color: var(--aj-suave); font-size: 0.72rem; font-weight: 600; }
+
+.aj-chip { padding: 2px 8px; border-radius: 999px; font-size: 0.68rem; font-weight: 800; }
+.aj-chip.pendiente { background: #fef3c7; color: #92400e; }
+.aj-chip.aceptado { background: #dcfce7; color: #166534; }
+.aj-chip.rechazado { background: #fee2e2; color: #991b1b; }
+.aj-chip.retirado { background: #f1f5f9; color: #475569; }
+
+/* ── Modal del técnico ── */
+.aj-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+}
+.aj-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100dvh - 32px);
+  border-radius: 20px;
+  background: var(--aj-fondo);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.3);
+  overflow: hidden;
+}
+.aj-modal-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px 12px; border-bottom: 1px solid var(--aj-borde); }
+.aj-modal-cab h3 { margin: 0; font-size: 1.1rem; font-weight: 900; }
+.aj-modal-cab p { margin: 4px 0 0; color: var(--aj-suave); font-size: 0.8rem; line-height: 1.4; }
+.aj-modal-cuerpo { display: flex; flex-direction: column; gap: 14px; padding: 16px 20px; overflow-y: auto; }
+.aj-modal-pie { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px 16px; border-top: 1px solid var(--aj-borde); }
+
+.aj-segmento { display: flex; padding: 4px; gap: 4px; border-radius: 12px; background: var(--aj-fondo-2); border: 1px solid var(--aj-borde); }
+.aj-segmento button {
+  flex: 1;
+  min-height: 36px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--aj-suave);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.aj-segmento button.activo { background: var(--aj-fondo); color: var(--aj-naranja); box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12); }
+
+.aj-campo { display: flex; flex-direction: column; gap: 6px; }
+.aj-campo > span { font-size: 0.78rem; font-weight: 800; }
+.aj-campo em { color: var(--aj-suave); font-style: normal; font-weight: 600; }
+
+.aj-input {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  border: 1px solid var(--aj-borde);
+  border-radius: 10px;
+  background: var(--aj-fondo);
+  color: var(--aj-texto);
+  font-family: inherit;
+  font-size: 16px; /* evita el zoom de iOS al enfocar */
+}
+.aj-input:focus { outline: none; border-color: var(--aj-naranja); box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.15); }
+textarea.aj-input { resize: vertical; line-height: 1.4; }
+.aj-input-grande { font-size: 1.4rem; font-weight: 900; }
+
+.aj-tabla { display: flex; flex-direction: column; gap: 6px; }
+.aj-tabla-cab { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 800; }
+.aj-tabla-total { color: var(--aj-naranja); font-variant-numeric: tabular-nums; }
+.aj-fila { display: grid; grid-template-columns: minmax(0, 1fr) 64px 92px 34px; gap: 6px; align-items: center; }
+
+.aj-error { margin: 0; padding: 8px 12px; border-radius: 10px; background: #fef2f2; color: #b91c1c; font-size: 0.8rem; font-weight: 700; }
+
+@media (max-width: 520px) {
+  .aj-overlay { align-items: flex-end; padding: 0; }
+  .aj-modal { max-width: none; max-height: 92dvh; border-radius: 20px 20px 0 0; }
+  .aj-modal-cab, .aj-modal-cuerpo, .aj-modal-pie { padding-left: 16px; padding-right: 16px; }
+  .aj-modal-pie .aj-btn { flex: 1; }
+  .aj-fila { grid-template-columns: minmax(0, 1fr) 52px 76px 34px; }
+}

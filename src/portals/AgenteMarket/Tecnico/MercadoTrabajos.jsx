@@ -31,6 +31,10 @@ import { mostrarAviso } from '../../../utils/dialogos';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 import ModalCalificarCliente from './ModalCalificarCliente';
 import Calificacion from '../Shared/Calificacion';
+import AjusteCotizacionTecnico from './AjusteCotizacionTecnico';
+import AccesoPropiedadTecnico from './AccesoPropiedadTecnico';
+import { retirarCotizacion, confirmarDisponibilidad, errorDeRed } from '../Shared/redCancelacionApi';
+import '../../../styles/AgenteMarket/Shared/AjusteCotizacion.css';
 
 const mapContainerStyle = {
   width: '100%',
@@ -678,7 +682,11 @@ const MercadoTrabajos = () => {
     }
   };
   useEffect(() => {
-    if ([6, 7, 8].includes(Number(authUser?.role_id))) cargarPendientesCalifCliente();
+    if (![6, 7, 8].includes(Number(authUser?.role_id))) return undefined;
+    cargarPendientesCalifCliente();
+    // Si un cliente cancela un trabajo asignado, la ventana para calificarlo aparece sola
+    const intervalo = setInterval(cargarPendientesCalifCliente, 60000);
+    return () => clearInterval(intervalo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser?.id]);
 
@@ -1500,15 +1508,17 @@ const MercadoTrabajos = () => {
   }, [location.search]);
   useEffect(() => {
     const id = trabajoDeEnlaceRef.current;
-    if (!id || !acceptedJobs.length) return;
-    const job = acceptedJobs.find(j => String(j.id) === String(id));
+    if (!id || (!acceptedJobs.length && !networkJobs.length)) return;
+    // Aceptado (tablero) o todavía en el mercado (p. ej. el cliente pide confirmar disponibilidad)
+    const aceptado = acceptedJobs.find(j => String(j.id) === String(id));
+    const job = aceptado || networkJobs.find(j => String(j.id) === String(id));
     if (!job) return;
     trabajoDeEnlaceRef.current = null;
     setMainView('mercado');
-    setActiveTab('aceptados');
+    setActiveTab(aceptado ? 'aceptados' : 'disponibles');
     openQuoteModalForJob(job);
     navigate(location.pathname, { replace: true });
-  }, [acceptedJobs, location.search]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [acceptedJobs, networkJobs, location.search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getStatusLabel = (status) => {
     if (status === 'rejected') return 'Rechazada';
@@ -1733,6 +1743,83 @@ const MercadoTrabajos = () => {
     return acceptedJobs[0] || null;
   }, [acceptedJobs, selectedBoardJobId, filteredBoardJobs]);
 
+  // Cotizaciones de la red: retirar la mía o confirmar que sigo disponible (el cliente reenvió el trabajo)
+  const [accionCotizacion, setAccionCotizacion] = useState(false);
+
+  const handleRetirarCotizacion = async () => {
+    const quoteId = selectedJob?.myQuote?.id;
+    if (!quoteId) return;
+    const { isConfirmed } = await Swal.fire({
+      title: '¿Retirar tu cotización?',
+      text: 'El cliente ya no la verá ni podrá aceptarla. Puedes volver a cotizar después.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Retirar',
+      cancelButtonText: 'Volver',
+      confirmButtonColor: '#f26522',
+      cancelButtonColor: '#64748b',
+    });
+    if (!isConfirmed) return;
+    setAccionCotizacion(true);
+    try {
+      const res = await retirarCotizacion(quoteId);
+      setShowQuoteModal(false);
+      Swal.fire({ icon: 'success', title: 'Cotización retirada', text: res.message, confirmButtonColor: '#f26522' });
+      fetchJobs();
+    } catch (e) {
+      Swal.fire('No se pudo retirar', errorDeRed(e), 'error');
+    } finally {
+      setAccionCotizacion(false);
+    }
+  };
+
+  const handleConfirmarDisponibilidad = async (accion) => {
+    const quoteId = selectedJob?.myQuote?.id;
+    if (!quoteId) return;
+    if (accion === 'declinar') {
+      const { isConfirmed } = await Swal.fire({
+        title: '¿No puedes tomar el trabajo?',
+        text: 'Le avisaremos al cliente y tu cotización quedará retirada.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, ya no puedo',
+        cancelButtonText: 'Volver',
+        confirmButtonColor: '#f26522',
+        cancelButtonColor: '#64748b',
+      });
+      if (!isConfirmed) return;
+    }
+    setAccionCotizacion(true);
+    try {
+      const res = await confirmarDisponibilidad(quoteId, accion);
+      setShowQuoteModal(false);
+      await Swal.fire({ icon: 'success', title: accion === 'confirmar' ? '¡Trabajo asignado!' : 'Listo', text: res.message, confirmButtonColor: '#f26522' });
+      await fetchJobs();
+      if (accion === 'confirmar') {
+        setSelectedBoardJobId(selectedJob.id);
+        setActiveTab('aceptados');
+        setMainView('tablero');
+      }
+    } catch (e) {
+      Swal.fire('No se pudo completar', errorDeRed(e), 'error');
+      fetchJobs();
+    } finally {
+      setAccionCotizacion(false);
+    }
+  };
+
+  // Ajuste de cotización: el precio vigente y si hay un ajuste esperando al cliente
+  const actualizarAjusteEnTablero = (jobId, res) => {
+    if (!res || res.precio_vigente === null || res.precio_vigente === undefined) return;
+    setAcceptedJobs(prev => prev.map(j => (j.id === jobId ? {
+      ...j,
+      agreed_price: Number(res.precio_vigente),
+      precio_original: Number(res.precio_original),
+      ajuste_pendiente: Boolean(res.ajuste_pendiente),
+      ajuste_por_decidir: Boolean(res.ajuste_por_decidir),
+    } : j)));
+  };
+
   // Fotos de la falla / problema reportadas por el cliente
   const clientPhotos = useMemo(() => {
     if (!selectedBoardJob) return [];
@@ -1929,6 +2016,19 @@ const MercadoTrabajos = () => {
   // 1. INICIAR REPORTE / CONTINUAR REPORTE (Abre vista NuevoReporte o GaleriaReportes)
   const handleStartBoardJob = async () => {
     if (!selectedBoardJob) return;
+
+    // Con un ajuste de cotización sin resolver no se comienza: primero responde el cliente (o decide el técnico)
+    if (selectedBoardJob.ajuste_pendiente || selectedBoardJob.ajuste_por_decidir) {
+      Swal.fire({
+        icon: 'info',
+        title: selectedBoardJob.ajuste_pendiente ? 'Esperando al cliente' : 'Decide sobre el ajuste',
+        text: selectedBoardJob.ajuste_pendiente
+          ? 'Enviaste un ajuste de cotización. Podrás comenzar cuando el cliente lo acepte o lo rechace.'
+          : 'El cliente rechazó tu ajuste. Elige si continúas con el precio vigente o cancelas el servicio.',
+        confirmButtonColor: '#f26522',
+      });
+      return;
+    }
 
     // Validación de horario de llegada obligatorio
     if (!selectedBoardJob.scheduled_at) {
@@ -2872,6 +2972,11 @@ const MercadoTrabajos = () => {
                               {selectedBoardJob.agreed_price > 0 && (
                                 <strong className="rd-precio">
                                   ${Number(selectedBoardJob.agreed_price).toLocaleString('es-MX', { maximumFractionDigits: 2 })}
+                                  {selectedBoardJob.precio_original > 0 && Math.abs(selectedBoardJob.precio_original - selectedBoardJob.agreed_price) >= 0.01 && (
+                                    <s className="rd-precio-original" title="Precio de la cotización original">
+                                      ${Number(selectedBoardJob.precio_original).toLocaleString('es-MX', { maximumFractionDigits: 2 })}
+                                    </s>
+                                  )}
                                 </strong>
                               )}
                               <span className="rd-direccion" title={selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.property_name}>
@@ -2938,6 +3043,19 @@ const MercadoTrabajos = () => {
                               </button>
                             </div>
                           </div>
+
+                          {/* Acceso a la propiedad que dejó el cliente: se ve al marcar "Llegué" */}
+                          {!isJobCompleted && <AccesoPropiedadTecnico key={`acceso-${selectedBoardJob.id}`} job={selectedBoardJob} />}
+
+                          {/* Ajuste de cotización: nuevo precio si el problema resultó más grande */}
+                          <AjusteCotizacionTecnico
+                            key={selectedBoardJob.id}
+                            job={selectedBoardJob}
+                            completado={isJobCompleted}
+                            iniciado={completedReportsCount > 0}
+                            onCambio={(res) => actualizarAjusteEnTablero(selectedBoardJob.id, res)}
+                            onCancelado={() => { setSelectedBoardJobId(null); fetchJobs(); }}
+                          />
 
                           {/* Evidencias del cliente */}
                           <div className="rd-panel rd-evidencias">
@@ -3800,7 +3918,9 @@ const MercadoTrabajos = () => {
 
                           <span className={`rj-estado ${job.myQuote?.status === 'accepted' ? 'asignado' : ''}`}>
                             {job.myQuote
-                              ? (job.myQuote.status === 'rejected' ? 'Rechazada' : (job.myQuote.price > 0 ? `$${parseFloat(job.myQuote.price).toLocaleString('es-MX')}` : 'Chat'))
+                              ? (job.myQuote.status === 'rejected'
+                                  ? (job.myQuote.retirada_at ? 'Retirada' : 'Rechazada')
+                                  : (job.myQuote.confirmacion_pedida_at ? '¿Disponible?' : (job.myQuote.price > 0 ? `$${parseFloat(job.myQuote.price).toLocaleString('es-MX')}` : 'Chat')))
                               : 'Disponible'}
                           </span>
                         </div>
@@ -5242,14 +5362,45 @@ const MercadoTrabajos = () => {
                         <h3 className="jm-titulo">¿Cuánto cobrarás por este trabajo?</h3>
                         <p className="jm-texto-suave">El cliente verá tu precio y tu mensaje para decidir con quién trabajar.</p>
 
+                        {/* El cliente reenvió el trabajo a la red y eligió esta cotización: confirmar disponibilidad */}
+                        {selectedJob.myQuote?.confirmacion_pedida_at && selectedJob.myQuote.status === 'pending' && (
+                          <div className="aj-confirmar">
+                            <strong>El cliente quiere contratarte con tu cotización de ${parseFloat(selectedJob.myQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>
+                            <span>¿Sigues disponible para este trabajo? Si confirmas, quedará asignado a ti.</span>
+                            <div className="aj-propuesta-acciones">
+                              <button type="button" className="aj-btn exito" onClick={() => handleConfirmarDisponibilidad('confirmar')} disabled={accionCotizacion}>
+                                <CheckCircle2 size={15} /> Sí, sigo disponible
+                              </button>
+                              <button type="button" className="aj-btn secundario" onClick={() => handleConfirmarDisponibilidad('declinar')} disabled={accionCotizacion}>
+                                Ya no puedo
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
                         {selectedJob.myQuote && selectedJob.myQuote.status === 'rejected' && (
                           <div className="jm-rechazo">
                             <span className="jm-rechazo-icono"><AlertTriangle size={16} strokeWidth={2.4} /></span>
                             <div>
-                              <strong>Tu oferta anterior de ${selectedJob.myQuote.price} fue rechazada</strong>
-                              <span>Puedes ajustar el precio o explicarle al cliente qué incluye.</span>
+                              {selectedJob.myQuote.retirada_at ? (
+                                <>
+                                  <strong>Retiraste tu cotización de ${selectedJob.myQuote.price}</strong>
+                                  <span>El cliente ya no la ve. Puedes enviar una nueva si te interesa el trabajo.</span>
+                                </>
+                              ) : (
+                                <>
+                                  <strong>Tu oferta anterior de ${selectedJob.myQuote.price} fue rechazada</strong>
+                                  <span>Puedes ajustar el precio o explicarle al cliente qué incluye.</span>
+                                </>
+                              )}
                             </div>
                           </div>
+                        )}
+
+                        {yaCotizado && selectedJob.myQuote.status === 'pending' && !selectedJob.myQuote.confirmacion_pedida_at && (
+                          <button type="button" className="aj-link" style={{ alignSelf: 'flex-start', marginBottom: '8px' }} onClick={handleRetirarCotizacion} disabled={accionCotizacion}>
+                            <Undo2 size={14} /> Retirar mi cotización
+                          </button>
                         )}
 
                         <label className="jm-label" htmlFor="jm-precio-input">Precio del servicio</label>

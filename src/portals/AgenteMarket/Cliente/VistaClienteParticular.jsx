@@ -5,10 +5,10 @@ import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 import ModalCompraEspacios from '../../../components/Shared/ModalCompraEspacios';
 import ModalCalendarioCliente from './ModalCalendarioCliente';
+import AvisoCancelacionTecnico from './AvisoCancelacionTecnico';
 import ModalRegistroInmueble from './ModalRegistroInmueble';
 import ModalEditarPropiedadCliente from './ModalEditarPropiedadCliente';
 import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
-import ModalCalificarTecnico from '../../../components/Shared/ModalCalificarTecnico';
 import NotificationBell from '../../../components/Shared/NotificationBell';
 import Header from '../../../components/Shared/Header';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
@@ -107,8 +107,6 @@ const VistaClienteParticular = () => {
   const [showModalRegistroPropiedad, setShowModalRegistroPropiedad] = useState(false);
   const [showModalEditarPropiedad, setShowModalEditarPropiedad] = useState(false);
   const [showModalSolicitarServicio, setShowModalSolicitarServicio] = useState(false);
-  const [pendingCancellation, setPendingCancellation] = useState(null);
-  const [showCancellationRatingModal, setShowCancellationRatingModal] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [isPlanExpanded, setIsPlanExpanded] = useState(false); // Oculto por defecto
   const [isMobilePropProfileOpen, setIsMobilePropProfileOpen] = useState(false); // Pestaña colapsable en móvil
@@ -190,63 +188,8 @@ const VistaClienteParticular = () => {
     }
   };
 
-  const checkPendingCancellations = async () => {
-    try {
-      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-      if (!token) return;
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/client/pending-cancellations`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.data?.success && res.data?.cancellations?.length > 0) {
-        const unhandled = res.data.cancellations.filter(c => {
-          const cKey = 'dismissed_cancellation_' + c.cancellation_id;
-          const woKey = 'dismissed_cancellation_wo_' + c.work_order_id;
-          return !localStorage.getItem(cKey) && !sessionStorage.getItem(cKey) && !localStorage.getItem(woKey) && !sessionStorage.getItem(woKey);
-        });
-        if (unhandled.length > 0) {
-          const first = unhandled[0];
-          // Marcar de inmediato para que nunca se abra más de una vez por trabajo cancelado
-          localStorage.setItem('dismissed_cancellation_' + first.cancellation_id, '1');
-          if (first.work_order_id) localStorage.setItem('dismissed_cancellation_wo_' + first.work_order_id, '1');
-          sessionStorage.setItem('dismissed_cancellation_' + first.cancellation_id, '1');
-          if (first.work_order_id) sessionStorage.setItem('dismissed_cancellation_wo_' + first.work_order_id, '1');
-
-          setPendingCancellation(first);
-          setShowCancellationRatingModal(true);
-        }
-      }
-    } catch (e) {
-      console.warn("Error checking pending cancellations:", e);
-    }
-  };
-
-  const handleCloseCancellationRating = async () => {
-    if (pendingCancellation) {
-      const cId = pendingCancellation.cancellation_id;
-      const woId = pendingCancellation.work_order_id;
-      if (cId) localStorage.setItem('dismissed_cancellation_' + cId, '1');
-      if (woId) localStorage.setItem('dismissed_cancellation_wo_' + woId, '1');
-      if (cId) sessionStorage.setItem('dismissed_cancellation_' + cId, '1');
-      if (woId) sessionStorage.setItem('dismissed_cancellation_wo_' + woId, '1');
-
-      try {
-        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-        if (token && cId) {
-          await axios.post(`${import.meta.env.VITE_API_BASE_URL}/client/dismiss-cancellation/${cId}`, {}, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-        }
-      } catch {}
-    }
-    setShowCancellationRatingModal(false);
-    setPendingCancellation(null);
-  };
-
   useEffect(() => {
     fetchData();
-    checkPendingCancellations();
-    const pollInterval = setInterval(checkPendingCancellations, 6000);
-    return () => clearInterval(pollInterval);
   }, []);
 
   const handlePropertyCreated = async (newProp) => {
@@ -1075,22 +1018,8 @@ const VistaClienteParticular = () => {
         />
       )}
 
-      {/* Modal de Calificación por Cancelación de Técnico (Encuesta 5 Relojes) */}
-      {showCancellationRatingModal && pendingCancellation && (
-        <ModalCalificarTecnico
-          isOpen={showCancellationRatingModal}
-          onClose={handleCloseCancellationRating}
-          technician={pendingCancellation.technician}
-          workOrderId={pendingCancellation.work_order_id}
-          onlyTime={true}
-          isCancellation={true}
-          cancellationReason={pendingCancellation.reason}
-          onSuccess={() => {
-            handleCloseCancellationRating();
-            fetchData();
-          }}
-        />
-      )}
+      {/* El técnico canceló: calificarlo es obligatorio y después se elige reenviar o cancelar */}
+      <AvisoCancelacionTecnico onResuelto={() => fetchData()} />
     </div>
   );
 };

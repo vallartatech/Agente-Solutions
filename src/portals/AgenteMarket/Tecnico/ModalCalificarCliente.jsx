@@ -12,6 +12,8 @@ const API = import.meta.env.VITE_API_BASE_URL;
 
 const TEXTOS_TRATO = ['', 'Muy difícil', 'Complicado', 'Normal', 'Buen trato', '¡Excelente cliente!'];
 const TEXTOS_PAGO = ['', 'No pagó / no estuvo', 'Pagó tarde', 'Con retraso menor', 'Puntual', '¡Pagó y atendió a tiempo!'];
+// Cuando el cliente canceló el servicio: la seriedad se guarda en el mismo promedio de "pago y disponibilidad"
+const TEXTOS_SERIEDAD = ['', 'Canceló sin razón y ya iba en camino', 'Avisó muy tarde', 'Avisó con poco tiempo', 'Avisó con tiempo', 'Canceló con tiempo y razón válida'];
 
 const Escala = ({ valor, setValor, Icono, clase, etiquetas, titulo }) => {
   const [hover, setHover] = useState(0);
@@ -60,11 +62,13 @@ const ModalCalificarCliente = ({ pendientes, onListo }) => {
   const [error, setError] = useState('');
 
   if (!actual) return null;
+  // El cliente canceló el trabajo asignado: ★ trato y ⏱ seriedad
+  const esCancelacion = Boolean(actual.cancelacion);
 
   const enviar = async (e) => {
     e.preventDefault();
     if (!trato || !pago) {
-      setError('Elige las estrellas del trato y los relojes del pago.');
+      setError(esCancelacion ? 'Elige las estrellas del trato y los relojes de la seriedad.' : 'Elige las estrellas del trato y los relojes del pago.');
       return;
     }
     setEnviando(true);
@@ -96,11 +100,13 @@ const ModalCalificarCliente = ({ pendientes, onListo }) => {
           <div className="calif-header-title-box">
             <Sparkles size={22} className="calif-sparkle-icon" />
             <div>
-              <h3>Califica a tu cliente</h3>
+              <h3>{esCancelacion ? 'El cliente canceló el servicio' : 'Califica a tu cliente'}</h3>
               <p className="calif-header-sub">
                 {pendientes.length > 1
-                  ? `Tienes ${pendientes.length} trabajos terminados por calificar. Es necesario para seguir cotizando.`
-                  : 'Es necesario para seguir cotizando. Ayuda a otros técnicos a saber con quién trabajan.'}
+                  ? `Tienes ${pendientes.length} calificaciones pendientes. Es necesario para seguir cotizando.`
+                  : esCancelacion
+                    ? 'Califícalo para que otros técnicos sepan si es un cliente serio. Es necesario para seguir cotizando.'
+                    : 'Es necesario para seguir cotizando. Ayuda a otros técnicos a saber con quién trabajan.'}
               </p>
             </div>
           </div>
@@ -116,6 +122,12 @@ const ModalCalificarCliente = ({ pendientes, onListo }) => {
           </div>
         </div>
 
+        {esCancelacion && actual.motivo && (
+          <p className="calif-factor-desc" style={{ margin: '0 0 12px', padding: '10px 12px', borderRadius: 12, background: 'rgba(239, 68, 68, 0.12)', color: '#fecaca' }}>
+            <b>Motivo del cliente:</b> {actual.motivo}
+          </p>
+        )}
+
         <form onSubmit={enviar} className="calif-form-body">
           <div className="calif-factor-block">
             <Escala valor={trato} setValor={setTrato} Icono={Star} clase="star" etiquetas={TEXTOS_TRATO} titulo="1. Trato del cliente" />
@@ -123,8 +135,17 @@ const ModalCalificarCliente = ({ pendientes, onListo }) => {
           </div>
 
           <div className="calif-factor-block">
-            <Escala valor={pago} setValor={setPago} Icono={Clock} clase="time" etiquetas={TEXTOS_PAGO} titulo="2. Pago y disponibilidad" />
-            <p className="calif-factor-desc">¿Pagó lo acordado a tiempo y estuvo en la cita a la hora pactada?</p>
+            {esCancelacion ? (
+              <>
+                <Escala valor={pago} setValor={setPago} Icono={Clock} clase="time" etiquetas={TEXTOS_SERIEDAD} titulo="2. Seriedad" />
+                <p className="calif-factor-desc">¿Avisó con tiempo y tuvo una razón válida para cancelar?</p>
+              </>
+            ) : (
+              <>
+                <Escala valor={pago} setValor={setPago} Icono={Clock} clase="time" etiquetas={TEXTOS_PAGO} titulo="2. Pago y disponibilidad" />
+                <p className="calif-factor-desc">¿Pagó lo acordado a tiempo y estuvo en la cita a la hora pactada?</p>
+              </>
+            )}
           </div>
 
           <div className="calif-comment-block">
@@ -137,7 +158,7 @@ const ModalCalificarCliente = ({ pendientes, onListo }) => {
               className="calif-textarea"
               rows="3"
               maxLength={1000}
-              placeholder="Ej. Pagó puntual y explicó bien la falla."
+              placeholder={esCancelacion ? 'Ej. Canceló cuando ya estaba en camino.' : 'Ej. Pagó puntual y explicó bien la falla.'}
               value={comentario}
               onChange={(e) => setComentario(e.target.value)}
             />

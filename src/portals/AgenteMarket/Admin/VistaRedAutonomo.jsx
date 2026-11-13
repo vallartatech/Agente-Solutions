@@ -14,6 +14,13 @@ import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialog
 
 import CurriculumTecnico from '../Shared/CurriculumTecnico';
 import ResumenTecnico, { FotoTecnico, InsigniaTecnico } from '../Shared/ResumenTecnico';
+import AjusteCotizacionCliente from '../Cliente/AjusteCotizacionCliente';
+import CancelacionServicioCliente from '../Cliente/CancelacionServicioCliente';
+import AvisoCancelacionTecnico from '../Cliente/AvisoCancelacionTecnico';
+import AccesoPropiedadCliente from '../Cliente/AccesoPropiedadCliente';
+import { usaSelectorRed } from '../../../utils/entorno';
+import EstadoCotizacionRed, { cotizacionAceptable } from '../Cliente/EstadoCotizacionRed';
+import { pideConfirmacion } from '../Shared/redCancelacionApi';
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
@@ -411,6 +418,11 @@ const VistaRedAutonomo = () => {
             lng: rawLng,
             presupuesto: "A convenir",
             estado: isAccepted ? (order.status === 'Terminado' ? 'Terminado' : 'Asignado') : (order.status || 'Por Hacer'),
+            // Estado real y datos de cancelación / reenvío a la red
+            status: order.status,
+            tecnico_id: order.tecnico_id,
+            cancellation_reason: order.cancellation_reason,
+            reabierta_at: order.reabierta_at,
             is_accepted: isAccepted,
             assigned_tech_name: assignedTechName,
             agreed_price: agreedPrice,
@@ -607,7 +619,11 @@ const VistaRedAutonomo = () => {
 
   const handleAcceptQuote = async (quote) => {
     const techName = quote.technicianName || (quote.technician ? `${quote.technician.first_name} ${quote.technician.last_name}` : 'este técnico');
-    if (!await confirmarAccion(`¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
+    // Cotización de antes de reenviar a la red: el técnico confirma primero que sigue disponible
+    const conConfirmacion = pideConfirmacion(quote, selectedJobForQuotes);
+    if (!await confirmarAccion(conConfirmacion
+      ? `Le pediremos a ${techName} que confirme que sigue disponible con su cotización de $${parseFloat(quote.price).toFixed(2)}. Cuando confirme, el trabajo quedará asignado. ¿Continuar?`
+      : `¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
       return;
     }
 
@@ -616,6 +632,11 @@ const VistaRedAutonomo = () => {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quote.id}/accept`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (res.data.success && res.data.requiere_confirmacion) {
+        mostrarAviso("⏳ " + res.data.message);
+        fetchJobs();
+        return;
+      }
       if (res.data.success) {
         mostrarAviso("🎉 " + res.data.message);
         setActiveTab('aceptados');
@@ -625,7 +646,7 @@ const VistaRedAutonomo = () => {
       }
     } catch (e) {
       console.error(e);
-      mostrarAviso("Hubo un error al aceptar la cotización. Intenta de nuevo.");
+      mostrarAviso(e.response?.data?.message || "Hubo un error al aceptar la cotización. Intenta de nuevo.");
     }
   };
 
@@ -665,6 +686,18 @@ const VistaRedAutonomo = () => {
     setChatAbierto(false);
     setShowQuotesModal(true);
   };
+
+  // Desde una notificación (/red-autonomos?trabajo=ID): abrir ese trabajo en cuanto carguen
+  const trabajoDelEnlaceRef = useRef(new URLSearchParams(window.location.search).get('trabajo'));
+  useEffect(() => {
+    const id = trabajoDelEnlaceRef.current;
+    if (!id || !networkJobs.length) return;
+    const job = networkJobs.find(j => String(j.id) === String(id));
+    if (!job) return;
+    trabajoDelEnlaceRef.current = null;
+    window.history.replaceState(null, '', window.location.pathname);
+    openQuotesModal(job);
+  }, [networkJobs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const closeQuotesModal = () => {
     setShowQuotesModal(false);
@@ -1275,6 +1308,14 @@ const VistaRedAutonomo = () => {
                 
                 {/* ─── LISTA DE COTIZACIONES DE TÉCNICOS ─── */}
                   <div className="red-lista-cotizaciones" style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
+                    {/* El técnico propone un nuevo precio para la cotización aceptada */}
+                    {selectedJobForQuotes.is_accepted && (
+                      <AjusteCotizacionCliente key={selectedJobForQuotes.id} workOrderId={selectedJobForQuotes.id} onCambio={() => fetchJobs()} />
+                    )}
+                    {/* Cancelar el servicio asignado, o elegir qué sigue después de cancelarlo */}
+                    <CancelacionServicioCliente job={selectedJobForQuotes} onCambio={() => fetchJobs()} onCerrar={closeQuotesModal} />
+                    {/* QR o código para entrar a la propiedad (vence en máx. 7 días) */}
+                    <AccesoPropiedadCliente key={`acceso-${selectedJobForQuotes.id}`} job={selectedJobForQuotes} />
                     <div style={{ marginBottom: '16px' }}>
                       <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <ClipboardList size={17} color="#f26522" /> Cotizaciones de Técnicos
@@ -1409,12 +1450,13 @@ const VistaRedAutonomo = () => {
                                 {isAcceptedQuote && (
                                   <div className="red-quote-estado aceptada"><CheckCircle size={14} /> Oferta aceptada</div>
                                 )}
-                                {!isAcceptedQuote && quote.status === 'rejected' && (
+                                {!isAcceptedQuote && quote.status === 'rejected' && !quote.retirada_at && (
                                   <div className="red-quote-estado rechazada"><X size={14} /> Oferta rechazada</div>
                                 )}
 
                                 <div className="red-quote-acciones">
-                                  {!isAcceptedQuote && !selectedJobForQuotes.is_accepted && quote.status !== 'rejected' && quote.price > 0 && (
+                                  {!isAcceptedQuote && !selectedJobForQuotes.is_accepted && quote.status !== 'rejected' && quote.price > 0
+                                    && cotizacionAceptable(quote) && !String(selectedJobForQuotes.status || '').startsWith('Cancelado') && (
                                     <button type="button" className="red-btn-accept" onClick={() => handleAcceptQuote(quote)}>
                                       <Check size={15} /> Aceptar oferta
                                     </button>
@@ -1433,6 +1475,7 @@ const VistaRedAutonomo = () => {
                                   )}
                                 </div>
                               </div>
+                              {!isAcceptedQuote && <EstadoCotizacionRed quote={quote} job={selectedJobForQuotes} onCambio={() => fetchJobs()} />}
                             </div>
                           );
                         })}
@@ -1444,7 +1487,7 @@ const VistaRedAutonomo = () => {
             </div>
 
             <div className="mercado-premium-footer" style={{ display: 'flex', justifyContent: selectedJobForQuotes?.is_mine ? 'space-between' : 'flex-end', alignItems: 'center', width: '100%', gap: '12px', flexWrap: 'wrap' }}>
-              {selectedJobForQuotes?.is_mine && (
+              {selectedJobForQuotes?.is_mine && !['Asignado', 'En Progreso', 'Cancelado_Cliente'].includes(selectedJobForQuotes.status) && (
                 <button 
                   type="button"
                   className="mercado-btn-delete-publication" 
@@ -1640,6 +1683,9 @@ const VistaRedAutonomo = () => {
           </div>
         </div>
       )}
+
+      {/* El técnico canceló: calificarlo es obligatorio y después se elige reenviar o cancelar */}
+      {usaSelectorRed(user) && <AvisoCancelacionTecnico onResuelto={() => fetchJobs()} />}
     </div>
   );
 };

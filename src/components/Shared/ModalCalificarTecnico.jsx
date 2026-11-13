@@ -103,7 +103,8 @@ const ModalCalificarTecnico = ({
           { headers }
         );
       } catch (reviewErr) {
-        console.warn('Advertencia al registrar review (continuando resolución):', reviewErr);
+        console.warn('No se pudo registrar la calificación:', reviewErr);
+        if (isCancellation) throw reviewErr;
       }
 
       // 2. Ejecutar la acción sobre la orden de trabajo
@@ -128,7 +129,7 @@ const ModalCalificarTecnico = ({
         title: '¡Evaluación Registrada!',
         text: actionType === 'reopen'
           ? 'La calificación de puntualidad fue guardada y tu solicitud ha sido enviada nuevamente a la red para recibir nuevas cotizaciones.'
-          : 'La calificación de puntualidad fue guardada y la solicitud de servicio ha sido eliminada.',
+          : 'La calificación de puntualidad fue guardada y el servicio quedó cancelado.',
         confirmButtonColor: '#f26522',
         background: '#191e2b',
         color: '#fff'
@@ -227,7 +228,7 @@ const ModalCalificarTecnico = ({
   };
 
   return (
-    <div className="calif-modal-backdrop" onClick={onClose}>
+    <div className="calif-modal-backdrop" onClick={isCancellation ? undefined : onClose}>
       <div className="calif-modal-card" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="calif-modal-header">
@@ -241,14 +242,16 @@ const ModalCalificarTecnico = ({
               </h3>
               <p className="calif-header-sub">
                 {isCancellation
-                  ? 'El técnico canceló su asistencia. Califica su puntualidad para el registro de la red.'
+                  ? 'El técnico canceló su asistencia. Califícalo para continuar: después eliges si reenvías tu solicitud a la red o cancelas el servicio.'
                   : 'Tu evaluación ayuda a reconocer el buen trabajo y la puntualidad'}
               </p>
             </div>
           </div>
-          <button className="calif-close-btn" onClick={onClose}>
-            <X size={20} />
-          </button>
+          {!isCancellation && (
+            <button className="calif-close-btn" onClick={onClose}>
+              <X size={20} />
+            </button>
+          )}
         </div>
 
         {/* Notice if cancelled */}
@@ -441,22 +444,13 @@ const ModalCalificarTecnico = ({
                     transition: 'all 0.2s ease',
                     opacity: isSubmitting ? 0.7 : 1
                   }}
-                  title="Eliminar esta solicitud definitivamente"
+                  title="Cerrar esta solicitud; queda en tu historial"
                 >
                   <Trash2 size={15} />
-                  <span>{isSubmitting ? 'Borrando...' : '🗑️ Borrar servicio'}</span>
+                  <span>{isSubmitting ? 'Cancelando...' : 'Cancelar servicio'}</span>
                 </button>
               </div>
-
-              <button
-                type="button"
-                className="calif-btn-cancel"
-                onClick={onClose}
-                disabled={isSubmitting}
-                style={{ width: '100%', marginTop: '10px', textAlign: 'center' }}
-              >
-                Cerrar sin calificar
-              </button>
+              {/* Calificar al técnico que canceló es obligatorio: no hay "cerrar sin calificar" */}
             </div>
           ) : (
             <div className="calif-footer-actions">

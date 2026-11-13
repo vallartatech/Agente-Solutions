@@ -49,6 +49,12 @@ import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialog
 
 import CurriculumTecnico from '../Shared/CurriculumTecnico';
 import ResumenTecnico, { FotoTecnico, InsigniaTecnico } from '../Shared/ResumenTecnico';
+import AjusteCotizacionCliente from './AjusteCotizacionCliente';
+import CancelacionServicioCliente from './CancelacionServicioCliente';
+import AvisoCancelacionTecnico from './AvisoCancelacionTecnico';
+import AccesoPropiedadCliente from './AccesoPropiedadCliente';
+import EstadoCotizacionRed, { cotizacionAceptable } from './EstadoCotizacionRed';
+import { pideConfirmacion } from '../Shared/redCancelacionApi';
 // ── Agenda de Agente Market ──
 // Misma interfaz que el calendario de Agente Solutions (ModalCalendarioSolutions), con los datos de la red:
 // trabajos de /mercado-trabajos, cotizaciones y chat de /network-quotes, publicar servicio y calificar técnicos.
@@ -611,43 +617,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
     }
   };
 
-  const checkPendingCancellations = async () => {
-    try {
-      if (isTechnician) return;
-      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-      if (!token) return;
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/client/pending-cancellations`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.data?.success && res.data?.cancellations?.length > 0) {
-        const unhandled = res.data.cancellations.filter(c => {
-          const cKey = 'dismissed_cancellation_' + c.cancellation_id;
-          const woKey = 'dismissed_cancellation_wo_' + c.work_order_id;
-          return !localStorage.getItem(cKey) && !sessionStorage.getItem(cKey) && !localStorage.getItem(woKey) && !sessionStorage.getItem(woKey);
-        });
-        if (unhandled.length > 0) {
-          const first = unhandled[0];
-          localStorage.setItem('dismissed_cancellation_' + first.cancellation_id, '1');
-          if (first.work_order_id) localStorage.setItem('dismissed_cancellation_wo_' + first.work_order_id, '1');
-          sessionStorage.setItem('dismissed_cancellation_' + first.cancellation_id, '1');
-          if (first.work_order_id) sessionStorage.setItem('dismissed_cancellation_wo_' + first.work_order_id, '1');
-
-          setRatingTargetTech(first.technician);
-          setRatingTargetJob({
-            id: first.work_order_id,
-            cancellation_id: first.cancellation_id,
-            titulo: first.work_order_title,
-            cancelled_by_tech: true,
-            cancellation_reason: first.reason
-          });
-          setShowRatingModal(true);
-        }
-      }
-    } catch (e) {
-      console.warn("Error checking pending cancellations in calendar:", e);
-    }
-  };
-
   const handleCloseRatingModal = async () => {
     if (ratingTargetJob) {
       const cId = ratingTargetJob.cancellation_id;
@@ -674,10 +643,8 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
   useEffect(() => {
     if (isOpen) {
       fetchJobs();
-      checkPendingCancellations();
       const interval = setInterval(() => {
         fetchJobs();
-        checkPendingCancellations();
       }, 5000);
       return () => clearInterval(interval);
     }
@@ -828,7 +795,11 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
 
   const handleAcceptQuote = async (quote) => {
     const techName = quote.technicianName || 'este técnico';
-    if (!await confirmarAccion(`¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
+    // Cotización de antes de reenviar a la red: el técnico confirma primero que sigue disponible
+    const conConfirmacion = pideConfirmacion(quote, selectedJobForQuotes);
+    if (!await confirmarAccion(conConfirmacion
+      ? `Le pediremos a ${techName} que confirme que sigue disponible con su cotización de $${parseFloat(quote.price).toFixed(2)}. Cuando confirme, el trabajo quedará asignado. ¿Continuar?`
+      : `¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
       return;
     }
     try {
@@ -836,6 +807,11 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quote.id}/accept`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (res.data.success && res.data.requiere_confirmacion) {
+        mostrarAviso("⏳ " + res.data.message);
+        fetchJobs();
+        return;
+      }
       if (res.data.success) {
         mostrarAviso("🎉 " + res.data.message);
         setShowQuotesModal(false);
@@ -844,7 +820,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
       }
     } catch (e) {
       console.error(e);
-      mostrarAviso("Hubo un error al aceptar la cotización.");
+      mostrarAviso(e.response?.data?.message || "Hubo un error al aceptar la cotización.");
     }
   };
 
@@ -1213,7 +1189,11 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
   );
 
 
-  return createPortal(
+  return (
+    <>
+      {/* El técnico canceló: calificarlo es obligatorio (fuera del fondo del calendario para no cerrarlo) */}
+      {!isTechnician && <AvisoCancelacionTecnico onResuelto={() => fetchJobs()} />}
+      {createPortal(
     <div className={`cal-modal-backdrop ${calCerrando ? 'is-cerrando' : ''}`} onClick={onClose}>
       <div
         ref={calVentanaRef}
@@ -2092,6 +2072,19 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                         </div>
                       )}
 
+                      {/* El técnico propone un nuevo precio para la cotización aceptada */}
+                      {selectedJobForQuotes.is_accepted && (
+                        <AjusteCotizacionCliente key={selectedJobForQuotes.id} workOrderId={selectedJobForQuotes.id} onCambio={() => fetchJobs()} />
+                      )}
+                      {/* Cancelar el servicio asignado, o elegir qué sigue después de cancelarlo */}
+                      <CancelacionServicioCliente
+                        job={selectedJobForQuotes}
+                        onCambio={() => fetchJobs()}
+                        onCerrar={() => { setShowQuotesModal(false); setActiveChatQuote(null); }}
+                      />
+                      {/* QR o código para entrar a la propiedad (vence en máx. 7 días) */}
+                      <AccesoPropiedadCliente key={`acceso-${selectedJobForQuotes.id}`} job={selectedJobForQuotes} />
+
                       <div style={{ marginBottom: '16px' }}>
                         <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
                           📋 Cotizaciones de Técnicos
@@ -2104,128 +2097,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                         </p>
                       </div>
 
-                      {/* Banner de Cancelación por el Técnico con 5 Relojes + Borrar / Reenviar a la Red */}
-                      {(selectedJobForQuotes.cancelled_by_tech || selectedJobForQuotes.status === 'Cancelado_Tecnico') && (
-                        <div style={{
-                          marginBottom: '18px',
-                          padding: '16px',
-                          background: 'linear-gradient(145deg, #fef2f2, #fff1f2)',
-                          borderRadius: '16px',
-                          border: '2px solid #fecaca',
-                          boxShadow: '0 4px 16px rgba(239, 68, 68, 0.08)'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
-                            <div style={{
-                              width: '40px',
-                              height: '40px',
-                              borderRadius: '12px',
-                              background: '#fee2e2',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#ef4444',
-                              flexShrink: 0
-                            }}>
-                              <AlertTriangle size={22} />
-                            </div>
-                            <div>
-                              <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: '800', color: '#991b1b' }}>
-                                ⚠️ El técnico canceló este servicio
-                              </h4>
-                              <p style={{ margin: 0, fontSize: '13px', color: '#7f1d1d', lineHeight: '1.4' }}>
-                                {selectedJobForQuotes.cancellation_reason 
-                                  ? `Motivo: "${selectedJobForQuotes.cancellation_reason}"` 
-                                  : 'El técnico notificó que no asistirá a la visita acordada.'}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* 1. Paso 1: Encuesta de 5 Relojes para calcular puntualidad */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const tech = selectedJobForQuotes.cancelled_technician || selectedJobForQuotes.tecnico || {
-                                id: selectedJobForQuotes.cancelled_technician_id || selectedJobForQuotes.tecnico_id,
-                                name: selectedJobForQuotes.assigned_tech_name || 'Técnico Asignado'
-                              };
-                              setRatingTargetTech(tech);
-                              setRatingTargetJob(selectedJobForQuotes);
-                              setShowRatingModal(true);
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '12px 16px',
-                              background: 'linear-gradient(135deg, #0284c7, #0369a1)',
-                              color: '#ffffff',
-                              border: 'none',
-                              borderRadius: '12px',
-                              fontWeight: '800',
-                              fontSize: '13.5px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '8px',
-                              cursor: 'pointer',
-                              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)',
-                              marginBottom: '12px',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            <Clock size={18} />
-                            <span>⏱️ Calificar Puntualidad del Técnico (5 Relojes)</span>
-                          </button>
-
-                          {/* 2. Paso 2: Opciones de Resolución (Borrar Solicitud O Enviar a la Red Nuevamente) */}
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteJob(selectedJobForQuotes.id)}
-                              style={{
-                                padding: '10px 14px',
-                                background: '#ffffff',
-                                color: '#dc2626',
-                                border: '1.5px solid #fca5a5',
-                                borderRadius: '10px',
-                                fontWeight: '800',
-                                fontSize: '12.5px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                              }}
-                            >
-                              <Trash2 size={15} />
-                              <span>Borrar Servicio</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleReopenJobInNetwork(selectedJobForQuotes)}
-                              style={{
-                                padding: '10px 14px',
-                                background: 'linear-gradient(135deg, #f26522, #ea580c)',
-                                color: '#ffffff',
-                                border: 'none',
-                                borderRadius: '10px',
-                                fontWeight: '800',
-                                fontSize: '12.5px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 12px rgba(242, 101, 34, 0.35)',
-                                transition: 'all 0.2s'
-                              }}
-                            >
-                              <Send size={15} />
-                              <span>🌐 Enviar a la Red nuevamente</span>
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      {/* Si el técnico canceló: la calificación obligatoria sale sola (AvisoCancelacionTecnico) y las opciones están arriba (CancelacionServicioCliente) */}
 
                       {/* Banner de Horario Propuesto */}
                       {selectedJobForQuotes.scheduled_at && (() => {
@@ -2426,9 +2298,11 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                                       <CheckCircle size={14} /> Oferta Aceptada
                                     </div>
                                   ) : quote.status === 'rejected' ? (
-                                    <div style={{ color: '#dc2626', fontWeight: '800', fontSize: '13px', padding: '6px 0' }}>
-                                      ❌ Oferta Rechazada
-                                    </div>
+                                    quote.retirada_at ? null : (
+                                      <div style={{ color: '#dc2626', fontWeight: '800', fontSize: '13px', padding: '6px 0' }}>
+                                        ❌ Oferta Rechazada
+                                      </div>
+                                    )
                                   ) : !selectedJobForQuotes.is_accepted ? (
                                     <button 
                                       className="red-btn-reject" 
@@ -2457,10 +2331,11 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                                       <span>Chat ({quote.chat_history?.length || 0})</span>
                                     </button>
 
-                                    {!isAcceptedQuote && !selectedJobForQuotes.is_accepted && quote.status !== 'rejected' && quote.price > 0 && (
-                                      <button 
+                                    {!isAcceptedQuote && !selectedJobForQuotes.is_accepted && quote.status !== 'rejected' && quote.price > 0
+                                      && cotizacionAceptable(quote) && !String(selectedJobForQuotes.status || '').startsWith('Cancelado') && (
+                                      <button
                                         type="button"
-                                        className="red-btn-accept" 
+                                        className="red-btn-accept"
                                         onClick={() => handleAcceptQuote(quote)}
                                       >
                                         ✓ Aceptar Oferta
@@ -2468,6 +2343,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                                     )}
                                   </div>
                                 </div>
+                                {!isAcceptedQuote && <EstadoCotizacionRed quote={quote} job={selectedJobForQuotes} onCambio={() => fetchJobs()} />}
                               </div>
                             );
                           })}
@@ -2635,7 +2511,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
 
               {/* Footer del Modal */}
               <div className="mercado-premium-footer" style={{ display: 'flex', justifyContent: selectedJobForQuotes?.is_mine ? 'space-between' : 'flex-end', alignItems: 'center', width: '100%', gap: '12px', flexWrap: 'wrap' }}>
-                {selectedJobForQuotes?.is_mine && (
+                {selectedJobForQuotes?.is_mine && !['Asignado', 'En Progreso', 'Cancelado_Cliente'].includes(selectedJobForQuotes.status) && (
                   <button 
                     type="button"
                     className="mercado-btn-delete-publication" 
@@ -2732,6 +2608,8 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
       </div>
     </div>,
     document.body
+      )}
+    </>
   );
 };
 
