@@ -1014,8 +1014,8 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                   </span>
                   <strong className="msa-ficha-item-val">
                     {solicitudExitosa.primerServicio?.urgencia === 'programado'
-                      ? `📅 Para el ${fechaLarga(solicitudExitosa.primerServicio.fechaProgramada)}${esHoraExacta(solicitudExitosa.primerServicio.horarioPreferido) ? ` a las ${hora12(solicitudExitosa.primerServicio.horarioPreferido)}` : ''}`
-                      : '⚡ Urgente (Hoy)'}
+                      ? `Para el ${fechaLarga(solicitudExitosa.primerServicio.fechaProgramada)}${esHoraExacta(solicitudExitosa.primerServicio.horarioPreferido) ? ` a las ${hora12(solicitudExitosa.primerServicio.horarioPreferido)}` : ''}`
+                      : 'Urgente (hoy)'}
                   </strong>
                 </div>
               </div>
