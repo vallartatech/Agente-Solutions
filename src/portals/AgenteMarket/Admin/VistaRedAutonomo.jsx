@@ -1235,71 +1235,8 @@ const VistaRedAutonomo = () => {
                       </div>
                     </div>
 
-                    {selectedJobForQuotes.scheduled_at && (() => {
-                      const sched = getJobScheduleStatus(selectedJobForQuotes, activeChatQuote);
-                      if (sched.isRescheduleRequested) {
-                        return (
-                          <div className="mercado-info-item full-width" style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <Clock size={16} color="#ea580c" />
-                              <strong style={{ color: '#c2410c', fontSize: '13px' }}>⚠️ Solicitud de Re-coordinación Enviada</strong>
-                            </div>
-                            <div style={{ fontSize: '12.5px', color: '#7c2d12' }}>
-                              Has solicitado acordar otro horario. Esperando que el técnico proponga una nueva fecha y hora.
-                            </div>
-                          </div>
-                        );
-                      }
-                      // Visita confirmada: se muestra solo a la derecha ("Visita confirmada"), no se repite aquí
-                      if (sched.isScheduleConfirmed) return null;
-                      return (
-                        <div className="mercado-info-item full-width" style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Clock size={16} color="#2563eb" />
-                            <strong style={{ color: '#1e40af', fontSize: '13px' }}>📅 Horario Propuesto por el Técnico</strong>
-                          </div>
-                          <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
-                            {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
-                          </div>
-                          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleResponderVisita('confirm')}
-                              style={{
-                                flex: 1,
-                                padding: '8px 12px',
-                                background: '#16a34a',
-                                color: '#ffffff',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontWeight: '800',
-                                fontSize: '12px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              ✓ Confirmar Horario
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleResponderVisita('reschedule')}
-                              style={{
-                                flex: 1,
-                                padding: '8px 12px',
-                                background: '#ffffff',
-                                color: '#ea580c',
-                                border: '1.5px solid #fed7aa',
-                                borderRadius: '8px',
-                                fontWeight: '800',
-                                fontSize: '12px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              💬 Re-coordinar
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })()}
+                    {/* El horario de la visita (propuesto, re-coordinación o confirmado) se atiende solo a la
+                        derecha, en la oferta aceptada, para no repetir la fecha ni los botones */}
                   </div>
                 </div>
               </div>
@@ -1557,16 +1494,6 @@ const VistaRedAutonomo = () => {
                       </div>
                     </div>
 
-                    {/* Alerta si el técnico envió un mensaje */}
-                    {activeChatQuote.hasNewTechMessage && (
-                      <div className="mercado-chat-alert-banner">
-                        <div className="mercado-chat-alert-icon">🔔</div>
-                        <div className="mercado-chat-alert-text">
-                          <strong>El Técnico te envió un mensaje:</strong>
-                          <span>"{activeChatQuote.displayAlertMsg || activeChatQuote.lastMsg?.message || activeChatQuote.message}"</span>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Stream de Mensajes */}
                     <div className="mercado-chat-messages-container">

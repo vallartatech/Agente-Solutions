@@ -1197,7 +1197,8 @@
 
 .msa-ficha-details-grid {
   display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
+  /* minmax(0, 1fr): sin esto un texto largo (la fecha) ensancha la columna y se sale de la tarjeta */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
   gap: 10px !important;
   background: #ffffff !important;
   padding: 12px 14px !important;
@@ -1209,6 +1210,7 @@
   display: flex !important;
   flex-direction: column !important;
   gap: 3px !important;
+  min-width: 0 !important;
 }
 
 .msa-ficha-item-label {
@@ -1226,9 +1228,9 @@
   font-size: 0.82rem !important;
   font-weight: 800 !important;
   color: #0f172a !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+  line-height: 1.35 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
 }
 
 .msa-ficha-desc-box {

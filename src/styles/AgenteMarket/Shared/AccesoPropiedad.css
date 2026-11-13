@@ -91,10 +91,15 @@
 .acr-icono-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; flex-shrink: 0;
+  padding: 0; /* index.css da padding a todos los <button> y aplasta el ícono */
   border: 1px solid var(--acr-borde); border-radius: 10px;
   background: var(--acr-fondo); color: var(--acr-suave); cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
 }
+.acr-icono-btn svg { flex-shrink: 0; }
+.acr-icono-btn:hover { background: var(--acr-fondo-2); color: var(--acr-texto); }
 .acr-icono-btn.peligro { color: #dc2626; border-color: #fecaca; }
+.acr-icono-btn.peligro:hover { background: #fef2f2; color: #b91c1c; }
 
 .acr-agregar {
   display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -128,7 +133,12 @@ textarea.acr-input { resize: vertical; line-height: 1.4; }
 .acr-subir:hover { color: var(--acr-naranja); border-color: var(--acr-naranja); }
 .acr-vista { position: relative; align-self: flex-start; }
 .acr-vista img { display: block; width: 120px; height: 120px; object-fit: contain; border-radius: 10px; border: 1px solid var(--acr-borde); background: #ffffff; }
-.acr-vista .acr-icono-btn { position: absolute; top: -8px; right: -8px; width: 26px; height: 26px; border-radius: 50%; }
+.acr-vista .acr-icono-btn {
+  position: absolute; top: -8px; right: -8px; width: 26px; height: 26px; border-radius: 50%;
+  background: #dc2626; border-color: #ffffff; color: #ffffff;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+}
+.acr-vista .acr-icono-btn:hover { background: #b91c1c; color: #ffffff; }
 
 .acr-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .acr-chips button {
@@ -144,7 +154,8 @@ textarea.acr-input { resize: vertical; line-height: 1.4; }
 
 /* Visor a pantalla completa (fondo blanco para escanear mejor) */
 .acr-visor {
-  position: fixed; inset: 0; z-index: 10060;
+  position: fixed; inset: 0;
+  z-index: 2147483647; /* encima del detalle de la publicación (1000000000); antes quedaba detrás */
   display: flex; align-items: center; justify-content: center;
   padding: 16px; background: #ffffff; color: var(--acr-texto);
 }
@@ -155,7 +166,7 @@ textarea.acr-input { resize: vertical; line-height: 1.4; }
 .acr-visor-cerrar {
   position: absolute; top: 16px; right: 16px;
   display: flex; align-items: center; justify-content: center;
-  width: 44px; height: 44px; border: none; border-radius: 50%;
+  width: 44px; height: 44px; padding: 0; border: none; border-radius: 50%;
   background: #f1f5f9; color: var(--acr-texto); cursor: pointer;
 }
 

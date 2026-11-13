@@ -2369,16 +2369,6 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                         </div>
                       </div>
 
-                      {/* Alerta de Mensaje */}
-                      {activeChatQuote.hasNewTechMessage && (
-                        <div className="mercado-chat-alert-banner">
-                          <div className="mercado-chat-alert-icon">🔔</div>
-                          <div className="mercado-chat-alert-text">
-                            <strong>El Técnico te envió un mensaje:</strong>
-                            <span>"{activeChatQuote.displayAlertMsg || activeChatQuote.lastMsg?.message || activeChatQuote.message}"</span>
-                          </div>
-                        </div>
-                      )}
 
                       {/* Banner de Horario en el Chat */}
                       {selectedJobForQuotes.scheduled_at && (() => {
