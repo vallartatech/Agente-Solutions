@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { ArrowRight, Check, X, FilePenLine, CheckCircle2, Hourglass } from 'lucide-react';
 import { obtenerAjustes, responderAjuste, errorDeAjuste, dinero } from '../Shared/ajusteCotizacionApi';
-import HistorialAjustes, { DesgloseAjuste, FotosAjuste } from '../Shared/HistorialAjustes';
+import HistorialAjustes, { ArchivoAjuste, DesgloseAjuste, FotosAjuste } from '../Shared/HistorialAjustes';
 import '../../../styles/AgenteMarket/Shared/AjusteCotizacion.css';
 
 const AjusteCotizacionCliente = ({ workOrderId, onCambio }) => {
@@ -81,7 +81,8 @@ const AjusteCotizacionCliente = ({ workOrderId, onCambio }) => {
           </div>
 
           <p className="aj-propuesta-motivo"><b>Motivo:</b> {pendiente.motivo}</p>
-          <DesgloseAjuste desglose={pendiente.desglose} />
+          <ArchivoAjuste ajuste={pendiente} />
+          <DesgloseAjuste desglose={pendiente.desglose} conIva={pendiente.con_iva} />
           <FotosAjuste fotos={pendiente.fotos} />
 
           <div className="aj-propuesta-acciones">

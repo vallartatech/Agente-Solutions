@@ -12,12 +12,14 @@ const headers = () => {
 export const obtenerAjustes = async (workOrderId) =>
   (await axios.get(`${API}/mercado-trabajos/${workOrderId}/ajustes`, { headers: headers() })).data;
 
-// datos: { precio, motivo, desglose: {servicios, materiales} | null, fotos: File[] }
-export const proponerAjuste = async (workOrderId, { precio, motivo, desglose, fotos }) => {
+// datos: { precio, motivo, desglose: {servicios, materiales} | null, fotos: File[], archivo: File | null, conIva }
+export const proponerAjuste = async (workOrderId, { precio, motivo, desglose, fotos, archivo, conIva }) => {
   const form = new FormData();
   form.append('precio', String(precio));
   form.append('motivo', motivo);
   if (desglose) form.append('desglose', JSON.stringify(desglose));
+  if (archivo) form.append('archivo', archivo);
+  form.append('con_iva', conIva ? '1' : '0');
   (fotos || []).forEach((f) => form.append('fotos[]', f));
   return (await axios.post(`${API}/mercado-trabajos/${workOrderId}/ajustes`, form, { headers: headers() })).data;
 };
@@ -40,6 +42,8 @@ export const errorDeAjuste = (e, porDefecto = 'No se pudo completar. Inténtalo 
 
 export const dinero = (valor) =>
   `$${Number(valor || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+export const IVA = 0.16;
 
 export const totalFilas = (filas) =>
   (filas || []).reduce((acc, f) => acc + (Number(f.cantidad) || 0) * (Number(f.precio) || 0), 0);

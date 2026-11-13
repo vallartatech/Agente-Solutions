@@ -1,15 +1,26 @@
 // Historial de la cotización: la original (v1) y cada ajuste con su estado, desglose y fotos
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, ImageIcon } from 'lucide-react';
-import { dinero, ESTADO_AJUSTE, fechaCorta, totalFilas } from './ajusteCotizacionApi';
+import { ChevronDown, ChevronUp, ImageIcon, FileText } from 'lucide-react';
+import { dinero, ESTADO_AJUSTE, fechaCorta, totalFilas, IVA } from './ajusteCotizacionApi';
 
-export const DesgloseAjuste = ({ desglose }) => {
+// La cotización que el técnico cargó como archivo (PDF o imagen)
+export const ArchivoAjuste = ({ ajuste }) => {
+  if (!ajuste?.archivo_url) return null;
+  return (
+    <a className="aj-archivo" href={ajuste.archivo_url} target="_blank" rel="noreferrer">
+      <FileText size={16} /> Ver cotización del técnico{ajuste.archivo_nombre ? ` (${ajuste.archivo_nombre})` : ''}
+    </a>
+  );
+};
+
+export const DesgloseAjuste = ({ desglose, conIva = false }) => {
   if (!desglose) return null;
   const grupos = [
     ['Servicios / mano de obra', desglose.servicios],
     ['Materiales', desglose.materiales],
   ].filter(([, filas]) => filas?.length);
   if (!grupos.length) return null;
+  const subtotal = totalFilas(desglose.servicios) + totalFilas(desglose.materiales);
 
   return (
     <div className="aj-desglose">
@@ -28,6 +39,13 @@ export const DesgloseAjuste = ({ desglose }) => {
           </div>
         </div>
       ))}
+      {conIva && (
+        <div className="aj-desglose-grupo">
+          <div className="aj-desglose-fila"><span>Subtotal (servicios + materiales)</span><span>{dinero(subtotal)}</span></div>
+          <div className="aj-desglose-fila"><span>IVA (16%)</span><span>{dinero(subtotal * IVA)}</span></div>
+          <div className="aj-desglose-fila subtotal"><span>Total</span><span>{dinero(subtotal * (1 + IVA))}</span></div>
+        </div>
+      )}
     </div>
   );
 };
@@ -68,7 +86,7 @@ const HistorialAjustes = ({ ajustes = [], precioOriginal }) => {
           </li>
           {ajustes.map((a) => {
             const estado = ESTADO_AJUSTE[a.status] || ESTADO_AJUSTE.pending;
-            const tieneMas = a.desglose || a.fotos?.length;
+            const tieneMas = a.desglose || a.fotos?.length || a.archivo_url;
             return (
               <li key={a.id} className="aj-version">
                 <div className="aj-version-cab">
@@ -89,7 +107,8 @@ const HistorialAjustes = ({ ajustes = [], precioOriginal }) => {
                 )}
                 {detalle === a.id && (
                   <>
-                    <DesgloseAjuste desglose={a.desglose} />
+                    <ArchivoAjuste ajuste={a} />
+                    <DesgloseAjuste desglose={a.desglose} conIva={a.con_iva} />
                     <FotosAjuste fotos={a.fotos} />
                   </>
                 )}
