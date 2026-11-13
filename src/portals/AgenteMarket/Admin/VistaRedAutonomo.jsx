@@ -1,26 +1,19 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow } from '@react-google-maps/api';
 import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig";
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
 import ModalServicioAutonomo from './ModalServicioAutonomo';
-import PanelChatLateral from '../../../components/Shared/PanelChatLateral';
+import DetallePublicacionRed, { getJobScheduleStatus } from '../Cliente/DetallePublicacionRed';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
-import { Plus, MapPin, Clock, CheckCircle, User, Mail, Phone, Calendar, Award, List, Map as MapIcon, MessageCircle, Maximize2, Image as ImageIcon, FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, Check, ClipboardList, ChevronDown, ChevronUp, Zap, Wrench } from 'lucide-react';
+import { Plus, MapPin, Clock, CheckCircle, User, Calendar, List, Map as MapIcon, MessageCircle, Trash2, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, Check, ChevronDown, ChevronUp, Zap, Wrench } from 'lucide-react';
 import { DARK_MAP_STYLES, getCategoryIcon, ICONOS_CATEGORIA, descripcionTarjeta, fechaDeseada } from '../Tecnico/MercadoTrabajos';
-import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
+import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
-import CurriculumTecnico from '../Shared/CurriculumTecnico';
-import ResumenTecnico, { FotoTecnico, InsigniaTecnico } from '../Shared/ResumenTecnico';
-import AjusteCotizacionCliente from '../Cliente/AjusteCotizacionCliente';
-import CancelacionServicioCliente from '../Cliente/CancelacionServicioCliente';
 import AvisoCancelacionTecnico from '../Cliente/AvisoCancelacionTecnico';
-import AccesoPropiedadCliente from '../Cliente/AccesoPropiedadCliente';
 import { usaSelectorRed } from '../../../utils/entorno';
-import EstadoCotizacionRed, { cotizacionAceptable } from '../Cliente/EstadoCotizacionRed';
-import { pideConfirmacion } from '../Shared/redCancelacionApi';
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
@@ -37,30 +30,12 @@ const limpiarDescripcion = (rawDesc) => {
   return clean.trim() || rawDesc;
 };
 
-const formatTime = (dateStr) => {
-  if (!dateStr) return '';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '';
-    return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-  } catch {
-    return '';
-  }
-};
-
 const VistaRedAutonomo = () => {
   const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [showQuotesModal, setShowQuotesModal] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [selectedJobForQuotes, setSelectedJobForQuotes] = useState(null);
-  const [selectedTechnicianProfile, setSelectedTechnicianProfile] = useState(null);
-  const [showTechModal, setShowTechModal] = useState(false);
-  const cerrarCurriculum = useCallback(() => setShowTechModal(false), []);
-  const [activeChatQuote, setActiveChatQuote] = useState(null);
-  const [chatAbierto, setChatAbierto] = useState(false);
-  const [activePhoto, setActivePhoto] = useState(null);
-  const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [networkJobs, setNetworkJobs] = useState([]);
   // En celular la lista empieza abierta debajo del mapa (como Mapa en vivo); la barrita la oculta
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(true);
@@ -203,50 +178,6 @@ const VistaRedAutonomo = () => {
     setTimeout(() => {
       didDragRef.current = false;
     }, 120);
-  };
-
-  // Client Chat Input State
-  const [clientChatInput, setClientChatInput] = useState('');
-  const [sendingClientChat, setSendingClientChat] = useState(false);
-  const chatEndRef = useRef(null);
-
-  // Helper para determinar el estado de la visita y re-coordinación
-  const getJobScheduleStatus = (job, activeQuote) => {
-    const quotes = job?.cotizaciones_list || [];
-    const targetQuote = activeQuote || quotes.find(q => q.status === 'accepted' || q.is_assigned) || quotes[0];
-    const msgs = targetQuote?.chat_history || [];
-
-    const scheduleResponses = msgs.filter(m => m.is_schedule_response);
-    const lastScheduleResponse = scheduleResponses.length > 0 ? scheduleResponses[scheduleResponses.length - 1] : null;
-
-    const scheduleProposals = msgs.filter(m => m.is_schedule);
-    const lastScheduleProposal = scheduleProposals.length > 0 ? scheduleProposals[scheduleProposals.length - 1] : null;
-
-    const isRescheduleRequested = Boolean(
-      lastScheduleResponse &&
-      lastScheduleResponse.schedule_confirmed === false &&
-      (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
-    );
-
-    const isScheduleConfirmed = Boolean(
-      lastScheduleResponse &&
-      lastScheduleResponse.schedule_confirmed === true &&
-      (!lastScheduleProposal || new Date(lastScheduleResponse.created_at) >= new Date(lastScheduleProposal.created_at))
-    );
-
-    const isPendingClientConfirm = Boolean(
-      job?.scheduled_at &&
-      !isScheduleConfirmed &&
-      !isRescheduleRequested
-    );
-
-    return {
-      isRescheduleRequested,
-      isScheduleConfirmed,
-      isPendingClientConfirm,
-      lastScheduleResponse,
-      lastScheduleProposal
-    };
   };
 
   // Agrupar cotizaciones por técnico para consolidar el chat y ofertas
@@ -441,6 +372,12 @@ const VistaRedAutonomo = () => {
             priority: order.priority || 'Normal',
             is_urgent: Boolean(order.is_urgent || order.priority === 'Urgente' || order.type === 'SOS'),
             scheduled_at: order.scheduled_at,
+            // Llegada del técnico (el cliente la confirma) y solicitud dirigida a un favorito
+            arrived_at: order.arrived_at || null,
+            arrival_confirmed_at: order.arrival_confirmed_at || null,
+            tecnico_dirigido_id: order.tecnico_dirigido_id || null,
+            tecnico_dirigido_nombre: order.tecnico_dirigido_nombre || null,
+            service_id: order.service_id,
             hasNewTechMessage,
             lastTechMsg,
           };
@@ -448,25 +385,8 @@ const VistaRedAutonomo = () => {
 
         setNetworkJobs(jobs);
 
-        // Si tenemos un trabajo seleccionado, actualizar en vivo.
-        // Con setters funcionales: fetchJobs corre desde intervalos creados en renders viejos,
-        // y leer selectedJobForQuotes directo daba null y el panel nunca recibía la fecha propuesta.
-        setSelectedJobForQuotes(prevSel => {
-          if (!prevSel) return prevSel;
-          const updated = jobs.find(j => j.id === prevSel.id);
-          if (!updated) return prevSel;
-          setActiveChatQuote(prevQ => {
-            if (!prevQ) return prevQ;
-            const techDe = q => q.technician_id || q.technician?.id;
-            const updatedActiveQuote = updated.cotizaciones_list.find(q => techDe(q) === techDe(prevQ));
-            if (!updatedActiveQuote) return prevQ;
-            // Conserva el historial más largo (el sondeo del chat puede ir adelante)
-            const prevLen = prevQ.chat_history?.length || 0;
-            const newLen = updatedActiveQuote.chat_history?.length || 0;
-            return newLen >= prevLen ? updatedActiveQuote : { ...updatedActiveQuote, chat_history: prevQ.chat_history };
-          });
-          return updated;
-        });
+        // El detalle abierto recibe el trabajo actualizado
+        setSelectedJobForQuotes(prevSel => (prevSel ? (jobs.find(j => j.id === prevSel.id) || prevSel) : prevSel));
       }
     } catch (e) {
       console.error("Error fetching network jobs", e);
@@ -478,177 +398,6 @@ const VistaRedAutonomo = () => {
     const interval = setInterval(fetchJobs, 5000);
     return () => clearInterval(interval);
   }, [user]);
-
-  // Polling de alta frecuencia (1.5s) para el modal de cotizaciones y chat en vivo
-  useEffect(() => {
-    if (!showQuotesModal) return;
-
-    const pollLiveQuotesAndChat = async () => {
-      // 1. Si está viendo el chat directo con un técnico, sincronizar su chat en tiempo real
-      if (activeChatQuote?.id) {
-        try {
-          const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-          const headers = token ? { Authorization: `Bearer ${token}` } : {};
-          const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${activeChatQuote.id}/chat`, { headers });
-          if (res.data?.success && res.data.chat_history) {
-            setActiveChatQuote(prev => {
-              if (!prev) return prev;
-              const currentLen = prev.chat_history?.length || 0;
-              const newLen = res.data.chat_history.length;
-              if (currentLen !== newLen || JSON.stringify(prev.chat_history) !== JSON.stringify(res.data.chat_history)) {
-                return {
-                  ...prev,
-                  chat_history: res.data.chat_history
-                };
-              }
-              return prev;
-            });
-          }
-        } catch (e) {
-          // silent polling
-        }
-      } else {
-        // 2. Si está en la lista de cotizaciones, refrescar cada 2.5s para detectar nuevas ofertas o mensajes
-        fetchJobs();
-      }
-    };
-
-    const liveInterval = setInterval(pollLiveQuotesAndChat, 1500);
-    return () => clearInterval(liveInterval);
-  }, [showQuotesModal, activeChatQuote?.id]);
-
-  useEffect(() => {
-    if (activeChatQuote && chatAbierto) {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [activeChatQuote?.chat_history, chatAbierto]);
-
-  const handleSendClientChat = async (e) => {
-    if (e) e.preventDefault();
-    if (!clientChatInput.trim() || sendingClientChat || !activeChatQuote) return;
-
-    const textToSend = clientChatInput.trim();
-    setClientChatInput('');
-    setSendingClientChat(true);
-
-    // Actualización optimista instantánea (0ms)
-    const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user.name || 'Tú (Cliente)')) : 'Tú (Cliente)';
-    const optimisticMessage = {
-      sender_id: user?.id,
-      sender_name: userFullName,
-      sender_role: 'Cliente',
-      message: textToSend,
-      created_at: new Date().toISOString()
-    };
-
-    setActiveChatQuote(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        chat_history: [...(prev.chat_history || []), optimisticMessage]
-      };
-    });
-
-    const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-    try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/network-quotes/${activeChatQuote.id}/chat`,
-        { message: textToSend },
-        { headers }
-      );
-      if (res.data?.chat_history) {
-        setActiveChatQuote(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            chat_history: res.data.chat_history
-          };
-        });
-      }
-    } catch (err) {
-      console.error("Error al enviar mensaje:", err);
-      mostrarAviso("No se pudo enviar el mensaje. Intenta de nuevo.");
-    } finally {
-      setSendingClientChat(false);
-    }
-  };
-
-  const handleRejectQuote = async (quoteId) => {
-    if (!await confirmarAccion("¿Estás seguro de que deseas rechazar esta cotización?")) return;
-    
-    try {
-      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quoteId}/reject`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.data.success) {
-        mostrarAviso("Cotización rechazada. El técnico ha sido notificado para mejorar su oferta.");
-        fetchJobs();
-      }
-    } catch (e) {
-      console.error(e);
-      mostrarAviso("Hubo un error al rechazar la cotización.");
-    }
-  };
-
-  const handleResponderVisita = async (action) => {
-    if (!selectedJobForQuotes?.id) return;
-    let msg = '';
-    if (action === 'reschedule') {
-      msg = await pedirTexto("Escribe una breve nota sobre qué horario te queda mejor:");
-      if (msg === null) return;
-    }
-    try {
-      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${selectedJobForQuotes.id}/responder-visita-cliente`,
-        { action, message: msg },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.data.success) {
-        mostrarAviso("✅ " + res.data.message);
-        fetchJobs();
-      }
-    } catch (e) {
-      console.error("Error respondiendo visita", e);
-      mostrarAviso("Hubo un error al responder. Intenta de nuevo.");
-    }
-  };
-
-  const handleAcceptQuote = async (quote) => {
-    const techName = quote.technicianName || (quote.technician ? `${quote.technician.first_name} ${quote.technician.last_name}` : 'este técnico');
-    // Cotización de antes de reenviar a la red: el técnico confirma primero que sigue disponible
-    const conConfirmacion = pideConfirmacion(quote, selectedJobForQuotes);
-    if (!await confirmarAccion(conConfirmacion
-      ? `Le pediremos a ${techName} que confirme que sigue disponible con su cotización de $${parseFloat(quote.price).toFixed(2)}. Cuando confirme, el trabajo quedará asignado. ¿Continuar?`
-      : `¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quote.id}/accept`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.data.success && res.data.requiere_confirmacion) {
-        mostrarAviso("⏳ " + res.data.message);
-        fetchJobs();
-        return;
-      }
-      if (res.data.success) {
-        mostrarAviso("🎉 " + res.data.message);
-        setActiveTab('aceptados');
-        setShowQuotesModal(false);
-        setActiveChatQuote(null);
-        fetchJobs();
-      }
-    } catch (e) {
-      console.error(e);
-      mostrarAviso(e.response?.data?.message || "Hubo un error al aceptar la cotización. Intenta de nuevo.");
-    }
-  };
 
   const handleDeleteJob = async (jobId) => {
     if (!await confirmarAccion("¿Estás seguro de que deseas eliminar y cancelar esta publicación de la Red? Ya no será visible para los técnicos ni recibirá más cotizaciones.")) {
@@ -664,7 +413,6 @@ const VistaRedAutonomo = () => {
         mostrarAviso("✅ Publicación eliminada y cancelada con éxito.");
         setShowQuotesModal(false);
         setSelectedJob(null);
-        setActiveChatQuote(null);
         fetchJobs();
       } else {
         mostrarAviso(res.data?.message || "Hubo un error al eliminar.");
@@ -681,9 +429,6 @@ const VistaRedAutonomo = () => {
     // El modal vive fuera del mapa: en pantalla completa no se vería
     salirPantallaCompleta();
     setSelectedJobForQuotes(job);
-    setActivePhoto(job.fotos?.[0] || job.foto || null);
-    setActiveChatQuote(null);
-    setChatAbierto(false);
     setShowQuotesModal(true);
   };
 
@@ -696,14 +441,13 @@ const VistaRedAutonomo = () => {
     if (!job) return;
     trabajoDelEnlaceRef.current = null;
     window.history.replaceState(null, '', window.location.pathname);
+    if (job.is_accepted) setActiveTab('aceptados');
     openQuotesModal(job);
   }, [networkJobs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const closeQuotesModal = () => {
     setShowQuotesModal(false);
     setSelectedJobForQuotes(null);
-    setActiveChatQuote(null);
-    setChatAbierto(false);
   };
 
   const enRedJobs = networkJobs.filter(j => !j.is_accepted);
@@ -1145,478 +889,16 @@ const VistaRedAutonomo = () => {
         />
       )}
 
-      {/* ─── MODAL DE DETALLE DE PUBLICACIÓN Y COTIZACIONES (DISEÑO PREMIUM UNIFICADO) ─── */}
+      {/* ─── DETALLE DE PUBLICACIÓN Y COTIZACIONES (mismo componente que el calendario) ─── */}
       {showQuotesModal && selectedJobForQuotes && (
-        <div className="mercado-modal-overlay" onClick={(e) => e.target === e.currentTarget && closeQuotesModal()}>
-          <div className="mercado-premium-modal red-detalle-publicacion" style={{ maxWidth: '1080px' }}>
-            <div className="mercado-premium-header">
-              <h2><ClipboardList size={20} color="#f26522" /> Detalle de Publicación y Cotizaciones</h2>
-              <span className="mercado-modal-close" onClick={closeQuotesModal}>×</span>
-            </div>
-
-            <div className="mercado-premium-body">
-              {/* Left panel: Info & Photo Gallery */}
-              <div className="mercado-premium-details" style={{ flex: '1.05' }}>
-                {activePhoto ? (
-                  <div className="mercado-photo-gallery">
-                    <div
-                      className="mercado-premium-image-wrapper"
-                      onClick={() => setIsPhotoZoomed(true)}
-                      title="Clic para ampliar imagen"
-                    >
-                      <img src={activePhoto} alt="Evidencia" className="mercado-premium-image" />
-                      <div className="mercado-image-zoom-badge">
-                        <Maximize2 size={12} /> Clic para ampliar foto
-                      </div>
-                    </div>
-
-                    {selectedJobForQuotes.fotos && selectedJobForQuotes.fotos.length > 1 && (
-                      <div className="mercado-thumbnails-row">
-                        {selectedJobForQuotes.fotos.map((f, idx) => (
-                          <div
-                            key={idx}
-                            className={`mercado-thumb-item ${activePhoto === f ? 'active' : ''}`}
-                            onClick={() => setActivePhoto(f)}
-                          >
-                            <img src={f} alt={`Evidencia ${idx + 1}`} />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="mercado-no-photo-placeholder">
-                    <ImageIcon size={36} color="#94a3b8" />
-                    <span>Sin fotografías de evidencia</span>
-                  </div>
-                )}
-
-                <div className="mercado-premium-text">
-                  <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '10px 0' }}>{selectedJobForQuotes.titulo}</h3>
-                  <div className="mercado-premium-info-grid">
-                    <div className="red-dato red-dato-ancho">
-                      <span className="red-dato-icono"><MapPin size={15} /></span>
-                      <div>
-                        <small>Zona / Área de cobertura</small>
-                        <strong>{selectedJobForQuotes.zona}</strong>
-                        {selectedJobForQuotes.calle && <span>{selectedJobForQuotes.calle}</span>}
-                      </div>
-                    </div>
-                    <div className="red-dato">
-                      <span className="red-dato-icono"><User size={15} /></span>
-                      <div>
-                        <small>Publicado por</small>
-                        <strong>{selectedJobForQuotes.cliente}</strong>
-                      </div>
-                    </div>
-                    <div className="red-dato">
-                      <span className="red-dato-icono"><Clock size={15} /></span>
-                      <div>
-                        <small>Fecha</small>
-                        <strong>{selectedJobForQuotes.fecha}</strong>
-                      </div>
-                    </div>
-                    <div className="red-dato red-dato-ancho">
-                      <span className="red-dato-icono"><FileText size={15} /></span>
-                      <div>
-                        <small>Problema</small>
-                        <strong className="red-dato-normal">
-                          {(() => {
-                            // Con la visita ya confirmada, la fecha solo se muestra una vez (a la derecha, "Visita confirmada")
-                            const desc = selectedJobForQuotes.descripcion || '';
-                            const confirmada = selectedJobForQuotes.scheduled_at
-                              && getJobScheduleStatus(selectedJobForQuotes, activeChatQuote).isScheduleConfirmed;
-                            const limpia = confirmada
-                              ? desc.replace(/\n*\s*\[FECHA \/ HORARIO DESEADO\]:[^\n]*/g, '').trim()
-                              : desc;
-                            return limpia || 'Sin descripción adicional';
-                          })()}
-                        </strong>
-                      </div>
-                    </div>
-
-                    {/* El horario de la visita (propuesto, re-coordinación o confirmado) se atiende solo a la
-                        derecha, en la oferta aceptada, para no repetir la fecha ni los botones */}
-                  </div>
-                </div>
-              </div>
-
-              {/* Right panel: Quotes list OR Embedded Live Chat */}
-              <div className="mercado-premium-form" style={{ background: '#ffffff', overflowY: 'auto', padding: 0, display: 'flex', flexDirection: 'column' }}>
-                
-                {/* ─── LISTA DE COTIZACIONES DE TÉCNICOS ─── */}
-                  <div className="red-lista-cotizaciones" style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
-                    {/* El técnico propone un nuevo precio para la cotización aceptada */}
-                    {selectedJobForQuotes.is_accepted && (
-                      <AjusteCotizacionCliente key={selectedJobForQuotes.id} workOrderId={selectedJobForQuotes.id} onCambio={() => fetchJobs()} />
-                    )}
-                    {/* Después de cancelar: elegir si se reenvía a la red o se cancela por completo.
-                        El botón "Cancelar servicio" va en la oferta aceptada, debajo del chat */}
-                    {String(selectedJobForQuotes.status || '').startsWith('Cancelado') && (
-                      <CancelacionServicioCliente job={selectedJobForQuotes} onCambio={() => fetchJobs()} onCerrar={closeQuotesModal} />
-                    )}
-                    {/* QR o código para entrar a la propiedad (vence en máx. 7 días) */}
-                    <AccesoPropiedadCliente key={`acceso-${selectedJobForQuotes.id}`} job={selectedJobForQuotes} />
-                    <div style={{ marginBottom: '16px' }}>
-                      <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <ClipboardList size={17} color="#f26522" /> Cotizaciones de Técnicos
-                        <span style={{ fontSize: '12px', background: '#ff6600', color: '#ffffff', padding: '2px 8px', borderRadius: '12px' }}>
-                          {selectedJobForQuotes.cotizaciones_list?.length || 0}
-                        </span>
-                      </h4>
-                      <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
-                        Revisa las propuestas de los técnicos. Puedes chatear con ellos o coordinar los detalles del servicio.
-                      </p>
-                    </div>
-
-                    {(!selectedJobForQuotes.cotizaciones_list || selectedJobForQuotes.cotizaciones_list.length === 0) ? (
-                      <div style={{ textAlign: 'center', color: '#64748b', padding: '40px 20px', background: '#fffaf5', borderRadius: '16px', border: '2px dashed #fed7aa', margin: '20px 0' }}>
-                        <div style={{ fontSize: '36px', marginBottom: '10px' }}>⏳</div>
-                        <p style={{ margin: '0 0 6px 0', fontWeight: '700', fontSize: '15px', color: '#0f172a' }}>Aún no hay cotizaciones</p>
-                        <span style={{ fontSize: '13px', color: '#94a3b8' }}>Los técnicos de la red te notificarán en cuanto envíen su propuesta.</span>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        {selectedJobForQuotes.cotizaciones_list.map((quote) => {
-                          const isAcceptedQuote = Boolean(
-                            quote.status === 'accepted' || 
-                            quote.is_assigned || 
-                            (selectedJobForQuotes.is_accepted && Number(selectedJobForQuotes.tecnico_id) === Number(quote.technician_id || quote.technician?.id))
-                          );
-                          return (
-                            <div 
-                              key={quote.id} 
-                              className="red-quote-card"
-                              style={isAcceptedQuote ? { border: '2px solid #86efac', background: '#f0fdf4' } : {}}
-                            >
-                              <div className="red-quote-header">
-                                <div className="red-quote-tech">
-                                  <div 
-                                    className="red-quote-avatar" 
-                                    onClick={() => {
-                                      setSelectedTechnicianProfile(quote.technician);
-                                      setShowTechModal(true);
-                                    }}
-                                    style={isAcceptedQuote ? { background: 'linear-gradient(135deg, #16a34a, #15803d)' } : {}}
-                                    title="Ver perfil completo y especialidades del técnico"
-                                  >
-                                    <FotoTecnico tecnicoId={(quote.technician_id || quote.technician?.id)} inicial={quote.technician?.first_name?.charAt(0) || 'T'} />
-                                  </div>
-                                  <div>
-                                    <h4 
-                                      style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#0f172a', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                                      onClick={() => {
-                                        setSelectedTechnicianProfile(quote.technician);
-                                        setShowTechModal(true);
-                                      }}
-                                    >
-                                      {quote.technicianName}
-                                      {isAcceptedQuote && (
-                                        <span style={{ fontSize: '11px', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '10px', border: '1px solid #86efac' }}>
-                                          ✓ Asignado
-                                        </span>
-                                      )}
-                                    </h4>
-                                    <InsigniaTecnico tecnicoId={(quote.technician_id || quote.technician?.id)} />
-                                  </div>
-                                </div>
-                                <div className="red-quote-price" style={{ color: isAcceptedQuote ? '#16a34a' : '#ea580c' }}>
-                                  {quote.price > 0 ? `$${parseFloat(quote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Iniciado'}
-                                </div>
-                              </div>
-
-                              {/* Currículum simplificado: calificación, experiencia y especialidades */}
-                              <ResumenTecnico
-                                tecnicoId={(quote.technician_id || quote.technician?.id)}
-                                onVerCompleto={() => { setSelectedTechnicianProfile(quote.technician); setShowTechModal(true); }}
-                              />
-
-                              {quote.message && (
-                                <div className="red-quote-bloque">
-                                  <small>Propuesta del técnico</small>
-                                  <p>{quote.message}</p>
-                                </div>
-                              )}
-
-                              {/* Último mensaje del técnico, si no es la misma propuesta */}
-                              {quote.hasNewTechMessage && quote.chat_history?.length > 0 && quote.displayAlertMsg !== quote.message && (
-                                <div className="red-quote-bloque red-quote-bloque-mensaje">
-                                  <small><span className="red-msg-dot-pulse" /> Último mensaje</small>
-                                  <p>{quote.displayAlertMsg}</p>
-                                </div>
-                              )}
-
-                              {/* Horario de visita propuesto por el técnico asignado: confirmar o re-coordinar aquí mismo */}
-                              {isAcceptedQuote && selectedJobForQuotes.scheduled_at && (() => {
-                                const sched = getJobScheduleStatus(selectedJobForQuotes, quote);
-                                const fechaTxt = new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' });
-                                if (sched.isScheduleConfirmed) {
-                                  return (
-                                    <div className="red-visita red-visita-ok">
-                                      <small><CheckCircle size={13} /> Visita confirmada</small>
-                                      <strong>{fechaTxt}</strong>
-                                    </div>
-                                  );
-                                }
-                                if (sched.isRescheduleRequested) {
-                                  return (
-                                    <div className="red-visita red-visita-espera">
-                                      <small><Clock size={13} /> Pediste otro horario</small>
-                                      <span>Esperando que el técnico proponga una nueva fecha. Puedes platicarlo en el chat.</span>
-                                    </div>
-                                  );
-                                }
-                                return (
-                                  <div className="red-visita red-visita-pendiente">
-                                    <small><Calendar size={13} /> El técnico propone visitarte</small>
-                                    <strong>{fechaTxt}</strong>
-                                    <div className="red-visita-acciones">
-                                      <button type="button" className="red-visita-btn confirmar" onClick={() => handleResponderVisita('confirm')}>
-                                        <Check size={14} /> Confirmar horario
-                                      </button>
-                                      <button type="button" className="red-visita-btn otro" onClick={() => handleResponderVisita('reschedule')}>
-                                        <MessageCircle size={14} /> Proponer otro
-                                      </button>
-                                    </div>
-                                  </div>
-                                );
-                              })()}
-
-                              {/* Estado y acciones de esta oferta */}
-                              <div className="red-quote-pie">
-                                <span className="red-quote-fecha">
-                                  <Clock size={12} /> {new Date(quote.created_at).toLocaleString('es-MX')}
-                                </span>
-
-                                {isAcceptedQuote && (
-                                  <div className="red-quote-estado aceptada"><CheckCircle size={14} /> Oferta aceptada</div>
-                                )}
-                                {!isAcceptedQuote && quote.status === 'rejected' && !quote.retirada_at && (
-                                  <div className="red-quote-estado rechazada"><X size={14} /> Oferta rechazada</div>
-                                )}
-
-                                <div className="red-quote-acciones">
-                                  {!isAcceptedQuote && !selectedJobForQuotes.is_accepted && quote.status !== 'rejected' && quote.price > 0
-                                    && cotizacionAceptable(quote) && !String(selectedJobForQuotes.status || '').startsWith('Cancelado') && (
-                                    <button type="button" className="red-btn-accept" onClick={() => handleAcceptQuote(quote)}>
-                                      <Check size={15} /> Aceptar oferta
-                                    </button>
-                                  )}
-                                  <button
-                                    type="button"
-                                    className="red-btn-contact"
-                                    onClick={() => { setActiveChatQuote(quote); setChatAbierto(true); }}
-                                  >
-                                    <MessageCircle size={15} /> Chat ({quote.chat_history?.length || 0})
-                                  </button>
-                                  {!isAcceptedQuote && quote.status !== 'rejected' && !selectedJobForQuotes.is_accepted && (
-                                    <button type="button" className="red-btn-reject" onClick={() => handleRejectQuote(quote.id)}>
-                                      Rechazar
-                                    </button>
-                                  )}
-                                </div>
-                                {/* Cancelar el servicio asignado (antes de que comience), debajo del chat */}
-                                {isAcceptedQuote && selectedJobForQuotes.status === 'Asignado' && (
-                                  <CancelacionServicioCliente job={selectedJobForQuotes} onCambio={() => fetchJobs()} onCerrar={closeQuotesModal} />
-                                )}
-                              </div>
-                              {!isAcceptedQuote && <EstadoCotizacionRed quote={quote} job={selectedJobForQuotes} onCambio={() => fetchJobs()} />}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-              </div>
-            </div>
-
-            <div className="mercado-premium-footer" style={{ display: 'flex', justifyContent: selectedJobForQuotes?.is_mine ? 'space-between' : 'flex-end', alignItems: 'center', width: '100%', gap: '12px', flexWrap: 'wrap' }}>
-              {selectedJobForQuotes?.is_mine && !['Asignado', 'En Progreso', 'Cancelado_Cliente'].includes(selectedJobForQuotes.status) && (
-                <button 
-                  type="button"
-                  className="mercado-btn-delete-publication" 
-                  onClick={() => handleDeleteJob(selectedJobForQuotes.id)}
-                  style={{
-                    background: 'rgba(239, 68, 68, 0.08)',
-                    color: '#dc2626',
-                    border: '1.5px solid #fca5a5',
-                    padding: '10px 18px',
-                    borderRadius: '10px',
-                    fontWeight: '800',
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 2px 6px rgba(220, 38, 38, 0.1)'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#dc2626';
-                    e.currentTarget.style.color = '#ffffff';
-                    e.currentTarget.style.borderColor = '#dc2626';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
-                    e.currentTarget.style.color = '#dc2626';
-                    e.currentTarget.style.borderColor = '#fca5a5';
-                  }}
-                >
-                  <Trash2 size={16} /> Cancelar / Eliminar Publicación
-                </button>
-              )}
-
-              <button className="mercado-btn-cancel" onClick={closeQuotesModal}>Cerrar</button>
-            </div>
-
-            {/* Conversaciones: panel lateral izquierdo que se muestra y oculta con su pestaña */}
-            {!showTechModal && !isPhotoZoomed && (
-            <PanelChatLateral
-              abierto={chatAbierto}
-              onToggle={() => setChatAbierto(v => !v)}
-              contador={(selectedJobForQuotes.cotizaciones_list || []).filter(q => q.hasNewTechMessage).length}
-            >
-              {activeChatQuote ? (
-                  <div className="red-embedded-chat-wrap">
-                    {/* Header del Chat */}
-                    <div className="red-chat-top-header">
-                      <button className="back-btn" onClick={() => setActiveChatQuote(null)}>
-                        <ChevronLeft size={16} /> Conversaciones
-                      </button>
-                      <div style={{ textAlign: 'right' }}>
-                        <strong style={{ fontSize: '13px', color: '#0f172a', display: 'block' }}>
-                          {activeChatQuote.technicianName}
-                        </strong>
-                        <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: '800' }}>
-                          {activeChatQuote.price > 0 ? `Oferta: $${parseFloat(activeChatQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : 'Chat Activo'}
-                        </span>
-                      </div>
-                    </div>
-
-
-                    {/* Stream de Mensajes */}
-                    <div className="mercado-chat-messages-container">
-                      {(!activeChatQuote.chat_history || activeChatQuote.chat_history.length === 0) ? (
-                        <div className="mercado-chat-empty-state">
-                          <div className="icon-wrap">
-                            <MessageCircle size={26} />
-                          </div>
-                          <p>Inicia la conversación</p>
-                          <span>Escribe a {activeChatQuote.technicianName} para acordar precio, horarios o dudas sobre el servicio.</span>
-                        </div>
-                      ) : (
-                        activeChatQuote.chat_history.map((msg, idx) => {
-                          const isClient = Number(msg.sender_id) === Number(user?.id) || msg.sender_role === 'Cliente' || msg.sender_role === 'Usuario';
-                          return (
-                            <div
-                              key={idx}
-                              className={`mercado-chat-bubble-row ${isClient ? 'sent' : 'received'}`}
-                            >
-                              <span className="mercado-chat-bubble-sender">
-                                {isClient ? 'Tú (Cliente)' : (msg.sender_name || 'Técnico')}
-                              </span>
-                              <div className="mercado-chat-bubble">
-                                {msg.message}
-                              </div>
-                              <span className="mercado-chat-bubble-time">
-                                {formatTime(msg.created_at)}
-                              </span>
-                            </div>
-                          );
-                        })
-                      )}
-                      <div ref={chatEndRef} />
-                    </div>
-
-                    {/* Quick Action Banner inside Chat */}
-                    {(activeChatQuote.status === 'accepted' || activeChatQuote.is_assigned || selectedJobForQuotes.is_accepted) ? (
-                      <div className="red-chat-oferta">
-                        <span className="red-chat-oferta-texto">
-                          <CheckCircle size={14} /> Cotización aceptada: ${parseFloat(activeChatQuote.price || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                        </span>
-                        <span className="red-chat-oferta-chip">Técnico asignado</span>
-                      </div>
-                    ) : (activeChatQuote.price > 0 && activeChatQuote.status !== 'rejected' && (
-                      <div className="red-chat-oferta">
-                        <span className="red-chat-oferta-texto">
-                          Propuesta de {activeChatQuote.technicianName}: ${parseFloat(activeChatQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                        </span>
-                        <button type="button" className="red-chat-oferta-aceptar" onClick={() => handleAcceptQuote(activeChatQuote)}>
-                          <Check size={14} /> Aceptar oferta
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* Input Bar integrado */}
-                    <form onSubmit={handleSendClientChat} className="mercado-chat-input-bar">
-                      <input
-                        type="text"
-                        placeholder={`Escribe un mensaje a ${activeChatQuote.technicianName}...`}
-                        value={clientChatInput}
-                        onChange={(e) => setClientChatInput(e.target.value)}
-                        disabled={sendingClientChat}
-                      />
-                      <button
-                        type="submit"
-                        className="mercado-chat-send-btn"
-                        disabled={sendingClientChat || !clientChatInput.trim()}
-                      >
-                        <Send size={15} />
-                        <span>{sendingClientChat ? 'Enviando...' : 'Enviar'}</span>
-                      </button>
-                    </form>
-                  </div>
-              ) : (
-                <>
-                  <div className="red-conv-head"><MessageCircle size={16} /> Conversaciones</div>
-                  <div className="red-conv-lista">
-                    {(selectedJobForQuotes.cotizaciones_list || []).length === 0 ? (
-                      <p className="red-conv-vacio">Aún no hay técnicos con quienes conversar en esta publicación.</p>
-                    ) : (
-                      selectedJobForQuotes.cotizaciones_list.map((quote) => {
-                        const ultimo = quote.chat_history?.[quote.chat_history.length - 1];
-                        return (
-                          <button key={quote.id} type="button" className="red-conv-item" onClick={() => setActiveChatQuote(quote)}>
-                            <span className="red-conv-avatar">{quote.technician?.first_name?.charAt(0) || 'T'}</span>
-                            <span className="red-conv-texto">
-                              <strong>{quote.technicianName}</strong>
-                              <small>{ultimo?.message || 'Sin mensajes todavía'}</small>
-                            </span>
-                            {quote.hasNewTechMessage && <span className="red-msg-dot-pulse" />}
-                            <ChevronRight size={16} className="red-conv-flecha" />
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </>
-              )}
-            </PanelChatLateral>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ─── CURRÍCULUM DEL TÉCNICO ─── */}
-      {showTechModal && selectedTechnicianProfile?.id && (
-        <CurriculumTecnico
-          tecnicoId={selectedTechnicianProfile.id}
-          respaldo={selectedTechnicianProfile}
-          onCerrar={cerrarCurriculum}
+        <DetallePublicacionRed
+          key={selectedJobForQuotes.id}
+          job={selectedJobForQuotes}
+          user={user}
+          onClose={closeQuotesModal}
+          onRefresh={fetchJobs}
+          onAceptada={() => setActiveTab('aceptados')}
         />
-      )}
-
-      {/* ─── Lightbox Fullscreen Zoom Modal ─── */}
-      {isPhotoZoomed && activePhoto && (
-        <div className="mercado-lightbox-overlay" onClick={() => setIsPhotoZoomed(false)}>
-          <div className="mercado-lightbox-content" onClick={(e) => e.stopPropagation()}>
-            <button className="mercado-lightbox-close" onClick={() => setIsPhotoZoomed(false)} title="Cerrar imagen">
-              <X size={26} />
-            </button>
-            <img src={activePhoto} alt="Evidencia en tamaño completo" className="mercado-lightbox-img" />
-          </div>
-        </div>
       )}
 
       {/* El técnico canceló: calificarlo es obligatorio y después se elige reenviar o cancelar */}

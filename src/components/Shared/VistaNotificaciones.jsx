@@ -234,6 +234,10 @@ const VistaNotificaciones = () => {
       url = [2, 6, 8].includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
     } else if (type === 'work_order_scheduled' || titleLower.includes('visita de técnico') || titleLower.includes('visita programada')) {
       url = [2, 6, 8].includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
+    } else if (type === 'technician_arrived' && [4, 5, 7].includes(Number(user?.role_id))) {
+      // Cliente de la Red: solo ve el aviso y abre el detalle del trabajo de su propiedad
+      const woId = n.data?.work_order_id || n.work_order_id;
+      url = woId ? `/red-autonomos?trabajo=${woId}` : '/red-autonomos';
     } else if (isCliente) {
       if (type === 'recotizacion_lista' || type?.includes('quote') || type === 'new_quote' || type === 'quote_approved' || type === 'quote_rejected' || type === 'payment_received' || type === 'payment_validated') {
         const qId = n.data?.quote_id || n.data?.cotizacion_id || n.quote_id;

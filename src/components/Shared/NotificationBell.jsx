@@ -406,6 +406,10 @@ const NotificationBell = ({ triggerClassName = '' }) => {
         url = [2, 6, 8].includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
       } else if (type === 'work_order_scheduled' || titleLower.includes('visita de técnico') || titleLower.includes('visita programada')) {
         url = [2, 6, 8].includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
+      } else if (type === 'technician_arrived' && [4, 5, 7].includes(Number(user?.role_id))) {
+        // Cliente de la Red: solo ve el aviso y abre el detalle del trabajo de su propiedad
+        const woId = notification.data?.work_order_id || notification.work_order_id;
+        url = woId ? `/red-autonomos?trabajo=${woId}` : '/red-autonomos';
       } else if (type === 'technician_arrived') {
         url = (user?.role_id === 0 || user?.role_id === 1) ? (workOrderId ? `/tablero-servicios?jobId=${workOrderId}` : '/map') : (workOrderId ? `/trabajo-propiedad/work_order-${workOrderId}` : '/trabajos-tecnico');
       } else if (type === 'work_order_finished' || type === 'new_report') {
