@@ -24,6 +24,7 @@ import {
   Wrench,
   ChevronRight,
   ChevronUp,
+  ChevronDown,
   Eye,
   Folder,
   ArrowLeft
@@ -88,6 +89,8 @@ const VistaInicioAdmin = () => {
   const [mostrarModalRegistro, setMostrarModalRegistro] = useState(false);
   const [mostrarModalSolicitud, setMostrarModalSolicitud] = useState(false);
   const [statsVersion, setStatsVersion] = useState(0);
+  // Datos de la propiedad (titular, código, dirección, GPS): plegados por defecto; la flecha los muestra
+  const [datosAbiertos, setDatosAbiertos] = useState(false);
   const [isMobilePropProfileOpen, setIsMobilePropProfileOpen] = useState(false); // Pestaña colapsable en móvil
   // Al cerrar se deja montado un momento para que se vea la animación de bajada
   const [cerrandoPerfil, setCerrandoPerfil] = useState(false);
@@ -286,9 +289,21 @@ const VistaInicioAdmin = () => {
           <span>VER TODO</span>
           <ChevronRight size={13} />
         </button>
+        {/* Flecha: oculta o muestra los datos (titular, código, dirección, GPS) */}
+        <button
+          type="button"
+          className={`via-datos-toggle ${datosAbiertos ? 'is-open' : ''}`}
+          onClick={() => setDatosAbiertos(v => !v)}
+          aria-expanded={datosAbiertos}
+          aria-label={datosAbiertos ? 'Ocultar datos de la propiedad' : 'Ver datos de la propiedad'}
+          title={datosAbiertos ? 'Ocultar datos' : 'Ver datos'}
+        >
+          <ChevronDown size={16} />
+        </button>
       </div>
 
-      {/* Lista de Campos Técnicos */}
+      {/* Lista de Campos Técnicos (desplegable con la flecha del encabezado) */}
+      <div className={`via-datos-collapse ${datosAbiertos ? 'is-open' : ''}`}>
       <div className="vcp-fields-list">
         {/* Empresa o Titular */}
         <div className="vcp-field-item">
@@ -347,6 +362,8 @@ const VistaInicioAdmin = () => {
             </div>
           </div>
         </div>
+      </div>
+
       </div>
 
       {/* Widget del Tablero de Control de la Propiedad */}

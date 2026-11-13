@@ -2686,11 +2686,17 @@ const MercadoTrabajos = () => {
                       const cat = getCategoryIcon(job.tipo, job.titulo, job.equipo);
                       const IconoCategoria = ICONOS_CATEGORIA[cat.label] || Wrench;
                       const tiempo = getTimeRemainingInfo(job);
+                      // Franja de color de la tarjeta según su estado
+                      const tonoEstado = isDone ? 'listo'
+                        : isUrgent ? 'sos'
+                        : isInProgress ? 'curso'
+                        : (!job.scheduled_at || tiempo.minutesDiff < 0) ? 'aviso'
+                        : 'agendado';
 
                       return (
                         <div
                           key={job.id}
-                          className={`mercado-board-job-card ${isSelected ? 'selected' : ''}`}
+                          className={`mercado-board-job-card rt-tono-${tonoEstado} ${isSelected ? 'selected' : ''}`}
                           onClick={() => {
                             setSelectedBoardJobId(job.id);
                             setMobileBoardTab('detalle');

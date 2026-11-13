@@ -4539,3 +4539,73 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
 .rt-llegada svg { flex-shrink: 0; margin-top: 1px; }
 .rt-llegada strong { color: #0f172a; font-weight: 800; }
 .rt-llegada.confirmada { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+
+/* ══════════════════════════════════════════════════════════
+   MIS TRABAJOS: cada trabajo en su propia tarjeta, con una franja
+   de color según su estado, para distinguirlos de un vistazo.
+   (Al final del archivo para ganar a las capas anteriores.)
+   ══════════════════════════════════════════════════════════ */
+.mercado-container.mercado-tablero-mode .mercado-board-job-cards-list {
+  gap: 10px;
+  padding: 2px 2px 8px;
+}
+
+.mercado-container.mercado-tablero-mode .mercado-board-job-card {
+  --rt-tono: #94a3b8;
+  position: relative;
+  overflow: hidden;
+  padding: 12px 12px 12px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.mercado-container.mercado-tablero-mode .mercado-board-job-card:last-child {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+/* Franja de estado a la izquierda */
+.mercado-container.mercado-tablero-mode .mercado-board-job-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--rt-tono);
+}
+
+.mercado-container.mercado-tablero-mode .mercado-board-job-card.rt-tono-sos { --rt-tono: #dc2626; }
+.mercado-container.mercado-tablero-mode .mercado-board-job-card.rt-tono-aviso { --rt-tono: #f59e0b; }
+.mercado-container.mercado-tablero-mode .mercado-board-job-card.rt-tono-curso { --rt-tono: #f26522; }
+.mercado-container.mercado-tablero-mode .mercado-board-job-card.rt-tono-agendado { --rt-tono: #0ea5e9; }
+.mercado-container.mercado-tablero-mode .mercado-board-job-card.rt-tono-listo { --rt-tono: #10b981; }
+
+/* Los terminados, un poco más discretos */
+.mercado-container.mercado-tablero-mode .mercado-board-job-card.rt-tono-listo:not(.selected) {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.mercado-container.mercado-tablero-mode .mercado-board-job-card:hover {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(15, 23, 42, 0.14);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
+}
+
+/* El seleccionado: blanco sólido con contorno naranja */
+.mercado-container.mercado-tablero-mode .mercado-board-job-card.selected {
+  background: #ffffff;
+  border: 1px solid #f26522;
+  border-radius: 14px;
+  box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.18), 0 8px 20px rgba(15, 23, 42, 0.1);
+}
+
+.mercado-container.mercado-tablero-mode .mercado-board-job-card:focus-visible {
+  outline: 2px solid #f26522;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mercado-container.mercado-tablero-mode .mercado-board-job-card { transition: none; }
+}

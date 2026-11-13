@@ -733,8 +733,17 @@
 .rdh-mant-nota { font-size: 0.78rem; font-weight: 600; color: #475569; }
 
 /* Chip en la tabla: el elemento tiene mantenimiento agendado */
+/* En su propio renglón debajo del tipo y sin salirse de la celda (en celular la celda es angosta) */
 .rdh-mant-chip {
-  display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 2px 8px;
-  border-radius: 999px; background: #dcfce7; color: #166534; font-size: 0.7rem; font-weight: 700; white-space: nowrap;
+  display: flex; align-items: center; gap: 4px; width: fit-content; max-width: 100%; box-sizing: border-box;
+  margin-top: 4px; padding: 3px 8px;
+  border-radius: 999px; background: #dcfce7; color: #166534; font-size: 0.7rem; font-weight: 700; line-height: 1.3;
+  white-space: normal; overflow-wrap: anywhere;
 }
+.rdh-mant-chip > svg { flex-shrink: 0; }
 .rdh-mant-chip.vencido { background: #fee2e2; color: #b91c1c; }
+
+/* Celular: la tarjeta va en 2 columnas; si el tipo lleva chip, la celda ocupa todo el ancho */
+@media (max-width: 768px) {
+  .lz-tabla-fila > span:has(> .rdh-mant-chip) { grid-column: 1 / -1; }
+}

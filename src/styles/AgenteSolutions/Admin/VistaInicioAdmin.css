@@ -1194,3 +1194,53 @@
     padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px) + 16px) !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+   PERFIL DE LA PROPIEDAD: FLECHA PARA OCULTAR / VER LOS DATOS
+   (copia propia de lo interno; la red tiene su versión en VistaClienteParticular.css)
+   ══════════════════════════════════════════════════════════ */
+.via-datos-toggle {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.via-datos-toggle:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.65);
+}
+.via-datos-toggle:focus-visible { outline: 2px solid #f26522; outline-offset: 2px; }
+.via-datos-toggle svg { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+/* Abierto: flecha hacia arriba (para ocultar). Cerrado: hacia abajo (para ver) */
+.via-datos-toggle.is-open svg { transform: rotate(180deg); }
+
+.via-datos-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+.via-datos-collapse.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.via-datos-collapse > .vcp-fields-list {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .via-datos-toggle svg,
+  .via-datos-collapse { transition: none; }
+}
