@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.agentesolutions.app",
+      "package_name": "mx.com.agentesolutions.app",
       "sha256_cert_fingerprints": [
-        "REEMPLAZAR_CON_SHA256_DE_PLAY_APP_SIGNING"
+        "E9:50:63:D5:4B:E1:0F:56:82:86:24:14:C0:B8:A7:C5:2F:BD:5E:4E:C3:CC:22:05:C3:2C:76:16:AE:EA:F6:5D"
       ]
     }
   }
