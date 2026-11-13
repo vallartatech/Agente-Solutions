@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, X, Save, Loader2, ArrowLeft, LayoutGrid, CheckCircle, Building2, Home, ClipboardList, ChevronRight, Tag } from 'lucide-react';
+import { Plus, X, Save, Loader2, LayoutGrid, CheckCircle, Building2, Home, ClipboardList, ChevronRight, Tag } from 'lucide-react';
 import DetalleZona from './DetalleZona';
 import RutaLevantamiento from './RutaLevantamiento';
 import Header from '../../../components/Shared/Header';
@@ -288,9 +288,6 @@ const RegistroZonas = () => {
           </div>
 
           <div className="lz-acciones">
-            <button type="button" className="lz-btn lz-btn-glass" onClick={() => navigate(-1)}>
-              <ArrowLeft size={18} /> <span className="lz-btn-txt">Volver</span>
-            </button>
             {puedeAgregar && (
               <button type="button" className="lz-btn lz-btn-primary" onClick={() => setModalAbierto(true)}>
                 <Plus size={18} strokeWidth={2.8} /> Agregar zona

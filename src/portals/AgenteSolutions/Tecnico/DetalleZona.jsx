@@ -10,7 +10,8 @@ import Header from '../../../components/Shared/Header';
 import logoAgente from '../../../assets/Logo3.png';
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
 
-const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId, ruta }) => {
+// soloLectura: casa de la Red vista por el Root (consulta, sin agregar, editar ni borrar)
+const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId, ruta, soloLectura = false }) => {
   // Estados para las SUB-HABITACIONES
   const [habitaciones, setHabitaciones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -219,6 +220,7 @@ const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId, ruta }) => {
           fetchHabitaciones();
         }} 
         servicioId={servicioId}
+        soloLectura={soloLectura}
         ruta={[
           ...(ruta || [{ label: 'Levantamiento', onClick: alVolver }]),
           { label: zona?.name || 'Zona', Icon: LayoutGrid, onClick: () => { setHabitacionActiva(null); fetchHabitaciones(); } },
@@ -249,12 +251,14 @@ const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId, ruta }) => {
         <section className="lz-card lz-zona-detalle">
           <div className="lz-foto">
             <img src={previewImg || logoAgente} alt="Foto zona" className={previewImg ? '' : 'logo'} />
-            <label className="lz-foto-cambiar">
-              <Camera size={13} /> {selectedFile ? 'Foto seleccionada' : 'Cambiar foto'}
-              <input type="file" accept="image/*" onChange={manejarCambioFoto} style={{ display: 'none' }} />
-            </label>
+            {!soloLectura && (
+              <label className="lz-foto-cambiar">
+                <Camera size={13} /> {selectedFile ? 'Foto seleccionada' : 'Cambiar foto'}
+                <input type="file" accept="image/*" onChange={manejarCambioFoto} style={{ display: 'none' }} />
+              </label>
+            )}
 
-            {selectedFile && (
+            {selectedFile && !soloLectura && (
               <div className="lz-foto-acciones">
                 <button type="button" className="ok" onClick={guardarNuevaFoto} disabled={subiendoFoto} title="Guardar foto seleccionada">
                   {subiendoFoto ? <Loader2 size={16} className="animate-spin" /> : <Check size={17} strokeWidth={3} />}
@@ -292,12 +296,16 @@ const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId, ruta }) => {
               ) : (
                 <>
                   <h1>{zona?.name || "SIN NOMBRE"}</h1>
-                  <button type="button" className="lz-icon-btn" onClick={() => setEditandoZonaNombre(true)} title="Editar nombre de la zona">
-                    <Edit3 size={16} />
-                  </button>
-                  <button type="button" className="lz-icon-btn peligro" onClick={eliminarZona} title="Eliminar zona">
-                    <Trash2 size={16} />
-                  </button>
+                  {!soloLectura && (
+                    <>
+                      <button type="button" className="lz-icon-btn" onClick={() => setEditandoZonaNombre(true)} title="Editar nombre de la zona">
+                        <Edit3 size={16} />
+                      </button>
+                      <button type="button" className="lz-icon-btn peligro" onClick={eliminarZona} title="Eliminar zona">
+                        <Trash2 size={16} />
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -313,15 +321,19 @@ const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId, ruta }) => {
               <button type="button" className="lz-btn lz-btn-glass" onClick={alVolver}>
                 <ArrowLeft size={18} /> <span className="lz-btn-txt">Volver a zonas</span>
               </button>
-              <button type="button" className="lz-btn lz-btn-primary" onClick={() => setIsModalOpen(true)}>
-                <Plus size={18} strokeWidth={2.8} /> Agregar área
-              </button>
-              <button type="button" className="lz-btn lz-btn-glass" onClick={() => {
-                mostrarAviso("✅ Datos de la zona guardados correctamente.");
-                if (alVolver) alVolver();
-              }}>
-                <SaveIcon size={18} /> Guardar
-              </button>
+              {!soloLectura && (
+                <>
+                  <button type="button" className="lz-btn lz-btn-primary" onClick={() => setIsModalOpen(true)}>
+                    <Plus size={18} strokeWidth={2.8} /> Agregar área
+                  </button>
+                  <button type="button" className="lz-btn lz-btn-glass" onClick={() => {
+                    mostrarAviso("✅ Datos de la zona guardados correctamente.");
+                    if (alVolver) alVolver();
+                  }}>
+                    <SaveIcon size={18} /> Guardar
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -341,12 +353,16 @@ const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId, ruta }) => {
                   <span className="lz-fila-icono"><DoorOpen size={22} /></span>
                   <span className="lz-fila-nombre">{item.name}</span>
                   <div className="lz-fila-acciones">
-                    <button type="button" className="lz-icon-btn" onClick={() => editarSubHabitacion(item.id, item.name)} title="Editar nombre">
-                      <Edit3 size={16} />
-                    </button>
-                    <button type="button" className="lz-icon-btn peligro" onClick={() => eliminarSubHabitacion(item.id, item.name)} title="Eliminar área">
-                      <Trash2 size={16} />
-                    </button>
+                    {!soloLectura && (
+                      <>
+                        <button type="button" className="lz-icon-btn" onClick={() => editarSubHabitacion(item.id, item.name)} title="Editar nombre">
+                          <Edit3 size={16} />
+                        </button>
+                        <button type="button" className="lz-icon-btn peligro" onClick={() => eliminarSubHabitacion(item.id, item.name)} title="Eliminar área">
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    )}
                     {/* Botón clave para entrar a ver los electrodomésticos */}
                     <button type="button" className="lz-btn lz-btn-primary lz-btn-sm" onClick={() => setHabitacionActiva(item)}>
                       <LayoutGrid size={15} /> Ver activos
@@ -359,7 +375,9 @@ const DetalleZona = ({ zona, propertyCurp, alVolver, servicioId, ruta }) => {
             <div className="lz-vacio">
               <DoorOpen size={42} />
               <p>No hay áreas registradas en esta zona.</p>
-              <p style={{ fontSize: '0.88rem' }}>Presiona <strong>Agregar área</strong> (Ej. Medio baño, Cuarto de estar).</p>
+              {!soloLectura && (
+                <p style={{ fontSize: '0.88rem' }}>Presiona <strong>Agregar área</strong> (Ej. Medio baño, Cuarto de estar).</p>
+              )}
             </div>
           )}
         </section>

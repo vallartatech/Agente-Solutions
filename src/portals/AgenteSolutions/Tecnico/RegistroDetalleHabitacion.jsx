@@ -86,7 +86,8 @@ const obtenerColorHex = (val) => {
   return null;
 };
 
-const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, alVolver, ruta }) => {
+// soloLectura: casa de la Red vista por el Root (consulta, sin agregar, editar ni borrar)
+const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, alVolver, ruta, soloLectura = false }) => {
   const [componentes, setComponentes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -402,9 +403,11 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
             <button type="button" className="lz-btn lz-btn-glass" onClick={alVolver}>
               <ArrowLeft size={18} /> <span className="lz-btn-txt">Volver</span>
             </button>
-            <button type="button" className="lz-btn lz-btn-primary" onClick={abrirModalCreacion}>
-              <Plus size={18} strokeWidth={2.8} /> {esPintura ? 'Agregar color' : 'Agregar elemento'}
-            </button>
+            {!soloLectura && (
+              <button type="button" className="lz-btn lz-btn-primary" onClick={abrirModalCreacion}>
+                <Plus size={18} strokeWidth={2.8} /> {esPintura ? 'Agregar color' : 'Agregar elemento'}
+              </button>
+            )}
           </div>
         </section>
 
@@ -468,12 +471,16 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
                     <button type="button" className="lz-icon-btn" onClick={() => setItemDetalle(reg)} title="Ver detalles">
                       <Eye size={16} />
                     </button>
-                    <button type="button" className="lz-icon-btn" onClick={() => abrirModalEdicion(reg)} title="Editar">
-                      <Edit3 size={16} />
-                    </button>
-                    <button type="button" className="lz-icon-btn peligro" onClick={() => eliminarComponente(reg.id)} title="Eliminar">
-                      <Trash2 size={16} />
-                    </button>
+                    {!soloLectura && (
+                      <>
+                        <button type="button" className="lz-icon-btn" onClick={() => abrirModalEdicion(reg)} title="Editar">
+                          <Edit3 size={16} />
+                        </button>
+                        <button type="button" className="lz-icon-btn peligro" onClick={() => eliminarComponente(reg.id)} title="Eliminar">
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
@@ -482,9 +489,11 @@ const RegistroDetalleHabitacion = ({ habitacion, categoriaActiva, propertyCurp, 
             <div className="lz-vacio">
               <Wrench size={40} />
               <p>No hay elementos registrados en {categoriaActiva?.name}.</p>
-              <button type="button" className="lz-btn lz-btn-primary" onClick={abrirModalCreacion}>
-                <Plus size={18} strokeWidth={2.8} /> {esPintura ? 'Agregar color' : 'Agregar elemento'}
-              </button>
+              {!soloLectura && (
+                <button type="button" className="lz-btn lz-btn-primary" onClick={abrirModalCreacion}>
+                  <Plus size={18} strokeWidth={2.8} /> {esPintura ? 'Agregar color' : 'Agregar elemento'}
+                </button>
+              )}
             </div>
           )}
         </section>

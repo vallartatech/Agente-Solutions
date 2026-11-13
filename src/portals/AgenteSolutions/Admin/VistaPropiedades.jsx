@@ -21,7 +21,7 @@ import {
   LayoutDashboard, PlusCircle, Plus, Globe, FileText, Home, Wrench, 
   MessageSquare, Camera, UserCheck, ImageIcon, Loader2,
   MoreVertical, Eye, ClipboardCheck, ClipboardList, Pencil, Trash2, Users,
-  Folder, FolderPlus, FolderInput, FolderOpen, ArrowLeft, FolderX, Check, MapPinned
+  Folder, FolderPlus, FolderInput, FolderOpen, ArrowLeft, FolderX, Check, MapPinned, AlertCircle
 } from "lucide-react";
 import { mostrarAviso } from '../../../utils/dialogos';
 import { esRed, usaSelectorRed } from '../../../utils/entorno';
@@ -308,7 +308,8 @@ const VistaPropiedades = () => {
     setPasoModal(1); 
     setNombreResponsable("");
     setTecnicoSeleccionado("");
-    obtenerTecnicosRol2();
+    // En la Red no se muestran técnicos internos: no hace falta cargarlos
+    if (!enRed) obtenerTecnicosRol2();
     setMostrarModalServicio(true);
   };
 
@@ -332,7 +333,8 @@ const VistaPropiedades = () => {
   };
 
   // Botón superior "SOLICITAR SERVICIO" -> Abre Modal "Reportar Problema" (Imagen 2)
-  const handleAbrirReportarProblema = () => {
+  // Con `propiedad` (menú ⋮ de una tarjeta) el reporte arranca con esa propiedad ya elegida
+  const handleAbrirReportarProblema = (propiedad) => {
     if (!listaPropiedades || listaPropiedades.length === 0) {
       Swal.fire({
         icon: 'info',
@@ -342,7 +344,7 @@ const VistaPropiedades = () => {
       });
       return;
     }
-    const targetId = propiedadSeleccionada?.id || listaPropiedades[0]?.id;
+    const targetId = propiedad?.id || propiedadSeleccionada?.id || listaPropiedades[0]?.id;
     setPropiedadReporteId(targetId);
     setNuevoProblema({ tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', fotos: [] });
     setEquiposDisponibles({});
@@ -507,7 +509,8 @@ const VistaPropiedades = () => {
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
 
-      const rawCleanId = tecnicoSeleccionado ? String(tecnicoSeleccionado).replace(/^u_/, '') : null;
+      // En la Red nunca se manda técnico: lo asigna el admin de Agente Solutions
+      const rawCleanId = (!enRed && tecnicoSeleccionado) ? String(tecnicoSeleccionado).replace(/^u_/, '') : null;
       const cleanTechId = rawCleanId ? Number(rawCleanId) : null;
       const techSelectedObj = tecnicosRol2.find(t => String(t.id).replace(/^u_/, '') === String(rawCleanId));
       const techName = techSelectedObj ? `${techSelectedObj.first_name} ${techSelectedObj.last_name}`.trim() : null;
@@ -1202,6 +1205,12 @@ const VistaPropiedades = () => {
                 <span className="tb-actions-icon blue"><Eye size={16} strokeWidth={2.4} /></span> Detalles de propiedad
               </button>
 
+              {enRed && (
+                <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => handleAbrirReportarProblema(p))}>
+                  <span className="tb-actions-icon orange"><PlusCircle size={16} strokeWidth={2.6} /></span> Solicitar servicio
+                </button>
+              )}
+
               {p.levantamiento_realizado ? (
                 <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => irAVerLevantamiento(p))}>
                   <span className="tb-actions-icon green"><ClipboardCheck size={16} strokeWidth={2.4} /></span> Ver levantamiento
@@ -1286,7 +1295,9 @@ const VistaPropiedades = () => {
                   {propiedadSeleccionada?.nombre_propiedad || propiedadSeleccionada?.direccion || "Sin especificar"}
                 </p>
 
-                {/* TÉCNICOS ROL 2 LIGADOS AL ADMIN: se elige tocando su tarjeta */}
+                {/* TÉCNICOS ROL 2 LIGADOS AL ADMIN: se elige tocando su tarjeta.
+                    En la Red el cliente no elige técnico: la solicitud la atiende el admin de Agente Solutions */}
+                {!enRed && (
                 <div className="xp-equipo">
                   <label className="rp-label">
                     <UserCheck size={16} color="#ff8c42" /> Técnico asignado <span className="xp-equipo-hint">(Selecciona uno)</span>
@@ -1331,6 +1342,7 @@ const VistaPropiedades = () => {
                     <small className="xp-equipo-nota">Sin asignar por ahora: puedes asignarlo después desde Servicios.</small>
                   )}
                 </div>
+                )}
 
                 <div className="rp-group">
                   <label className="rp-label"><User size={16} color="#ff8c42" /> Supervisor en sitio (Opcional)</label>
@@ -1343,6 +1355,13 @@ const VistaPropiedades = () => {
                   />
                   <small>Si el dueño no estará en la propiedad, asigna a alguien responsable de atender la visita.</small>
                 </div>
+
+                {enRed && (
+                  <p className="sl-aviso-costo">
+                    <AlertCircle size={16} />
+                    <span>La valoración tiene un costo que se te informará al confirmar la visita.</span>
+                  </p>
+                )}
 
                 <div className="rp-footer">
                   <button type="submit" className="xp-btn-primary" disabled={enviandoServicio}>

@@ -770,16 +770,6 @@ const VistaClienteParticular = () => {
             <span className="vcp-stat-label">LISTOS</span>
           </div>
         </div>
-
-        <div className="vcp-tablero-btn-wrap">
-          <button 
-            className="vcp-btn-tablero-detail"
-            onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
-            title="Ver Tablero Detallado de la Propiedad"
-          >
-            VER TABLERO DETALLADO
-          </button>
-        </div>
       </div>
 
       {/* ── 3. BOTTOM: ACTION BUTTONS ── */}

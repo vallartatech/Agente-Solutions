@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, X, Save, Loader2, ArrowLeft, LayoutGrid, CheckCircle, Building2, Home, ClipboardList, ChevronRight, Tag } from 'lucide-react';
+import { Plus, X, Save, Loader2, ArrowLeft, LayoutGrid, CheckCircle, Building2, Home, ClipboardList, ChevronRight, Tag, Eye } from 'lucide-react';
 import DetalleZona from './DetalleZona';
 import RutaLevantamiento from './RutaLevantamiento';
 import Header from '../../../components/Shared/Header';
@@ -41,6 +41,8 @@ const RegistroZonas = () => {
 
   const [idPropiedadReal, setIdPropiedadReal] = useState(propertyId);
   const [nombrePropiedad, setNombrePropiedad] = useState(location.state?.nombre || '');
+  // Casa de la Red vista por el Root: solo consulta (el levantamiento lo captura el técnico asignado)
+  const [soloLectura, setSoloLectura] = useState(false);
 
   // Por CURP se obtiene el nombre (para la ruta) y, si no llegó por estado, el id
   useEffect(() => {
@@ -52,6 +54,7 @@ const RegistroZonas = () => {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         setNombrePropiedad(res.data.property_name || res.data.nombre_propiedad || res.data.name || '');
+        setSoloLectura(Boolean(res.data.solo_lectura));
         if (!propertyId) {
           setIdPropiedadReal(res.data.id);
           // El backend usa 'levantamiento_realizado'
@@ -210,7 +213,7 @@ const RegistroZonas = () => {
   const isClient = user?.role_id === 3;
   // Solo los administradores finalizan; técnicos y admins pueden editar aunque ya esté finalizado
   const isAdmin = [0, 1].includes(Number(user?.role_id));
-  const puedeAgregar = !isFinalizado || editMode || !isClient;
+  const puedeAgregar = !soloLectura && (!isFinalizado || editMode || !isClient);
 
   // Ruta "dónde estoy": depende de quién entra al levantamiento
   const rol = Number(user?.role_id);
@@ -246,6 +249,7 @@ const RegistroZonas = () => {
         propertyCurp={propertyCurp}
         alVolver={() => { setZonaSeleccionada(null); fetchZonas(); }}
         servicioId={servicioId}
+        soloLectura={soloLectura}
         ruta={[
           ...ruta,
           { label: 'Levantamiento', Icon: ClipboardList, onClick: () => { setZonaSeleccionada(null); fetchZonas(); } },
@@ -271,6 +275,7 @@ const RegistroZonas = () => {
                 <span className="lz-chip"><Tag size={12} /> Folio <strong>{propertyCurp}</strong></span>
                 <span className="lz-chip naranja">{zonas.length} {zonas.length === 1 ? 'zona' : 'zonas'}</span>
                 {isFinalizado && !editMode && <span className="lz-chip verde"><CheckCircle size={12} /> Registro finalizado</span>}
+                {soloLectura && <span className="lz-chip"><Eye size={12} /> Casa de la Red · solo lectura</span>}
               </div>
             </div>
           </div>
@@ -320,7 +325,7 @@ const RegistroZonas = () => {
                   />
                 </div>
                 {/* BOTÓN ELIMINAR EN MODO EDICIÓN */}
-                {editMode && (
+                {editMode && !soloLectura && (
                   <button
                     type="button"
                     className="lz-zona-borrar"
@@ -342,7 +347,11 @@ const RegistroZonas = () => {
         ) : (
           <div className="lz-card lz-vacio">
             <LayoutGrid size={42} />
-            <p>No hay zonas registradas. Comienza agregando una nueva área de levantamiento.</p>
+            <p>
+              {soloLectura
+                ? 'Aún no hay zonas registradas. El técnico asignado las capturará durante el levantamiento.'
+                : 'No hay zonas registradas. Comienza agregando una nueva área de levantamiento.'}
+            </p>
             {puedeAgregar && (
               <button type="button" className="lz-btn lz-btn-primary" onClick={() => setModalAbierto(true)}>
                 <Plus size={18} strokeWidth={2.8} /> Agregar zona

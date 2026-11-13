@@ -25,7 +25,8 @@ const ICONOS_CATEGORIAS = {
   "ACABADOS": "🧱"
 };
 
-const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId, ruta }) => {
+// soloLectura: casa de la Red vista por el Root (consulta, sin agregar, editar ni borrar)
+const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId, ruta, soloLectura = false }) => {
   const navigate = useNavigate();
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -270,6 +271,7 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId, rut
         habitacion={habitacion}
         categoriaActiva={categoriaActiva}
         propertyCurp={propertyCurp}
+        soloLectura={soloLectura}
         alVolver={() => setCategoriaActiva(null)} // Al darle "VOLVER" allá, regresa aquí
         ruta={[
           ...rutaBase,
@@ -295,14 +297,21 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId, rut
               <>
                 <img src={previewImg} alt="Área" />
                 <div className="lz-foto-botones">
-                  <button type="button" className="lz-foto-cambiar" onClick={openPhotoMenu}>
-                    <Camera size={13} /> Cambiar
-                  </button>
+                  {!soloLectura && (
+                    <button type="button" className="lz-foto-cambiar" onClick={openPhotoMenu}>
+                      <Camera size={13} /> Cambiar
+                    </button>
+                  )}
                   <button type="button" className="lz-foto-cambiar" onClick={() => setImagenAmpliada(previewImg)}>
                     <Eye size={13} /> Ver
                   </button>
                 </div>
               </>
+            ) : soloLectura ? (
+              <div className="lz-foto-vacia" style={{ cursor: 'default' }}>
+                <span className="lz-foto-vacia-icono"><ImageIcon size={22} /></span>
+                <strong>Sin foto</strong>
+              </div>
             ) : (
               <button type="button" className="lz-foto-vacia" onClick={openPhotoMenu}>
                 <span className="lz-foto-vacia-icono"><Camera size={22} /></span>
@@ -331,6 +340,7 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId, rut
                 placeholder="Escribe aquí los detalles generales de la habitación..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                readOnly={soloLectura}
               />
             </label>
 
@@ -338,9 +348,11 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId, rut
               <button type="button" className="lz-btn lz-btn-glass" onClick={alVolver}>
                 <ArrowLeft size={18} /> <span className="lz-btn-txt">Volver</span>
               </button>
-              <button type="button" className="lz-btn lz-btn-primary" onClick={actualizarZona} disabled={actualizando}>
-                {actualizando ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Guardar zona
-              </button>
+              {!soloLectura && (
+                <button type="button" className="lz-btn lz-btn-primary" onClick={actualizarZona} disabled={actualizando}>
+                  {actualizando ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Guardar zona
+                </button>
+              )}
               {servicioId && isAdmin ? (
                 <button type="button" className="lz-btn lz-btn-success" onClick={finalizarLevantamiento} disabled={actualizando}>
                   <CheckCircle size={18} /> Finalizar levantamiento
@@ -358,9 +370,11 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId, rut
         <section className="lz-card lz-panel">
           <div className="lz-panel-titulo">
             <h2><Wrench size={18} /> Lista de mantenimiento</h2>
-            <button type="button" className="lz-btn lz-btn-primary lz-btn-sm" onClick={() => setIsModalOpen(true)}>
-              <Plus size={16} strokeWidth={2.8} /> Agregar categoría
-            </button>
+            {!soloLectura && (
+              <button type="button" className="lz-btn lz-btn-primary lz-btn-sm" onClick={() => setIsModalOpen(true)}>
+                <Plus size={16} strokeWidth={2.8} /> Agregar categoría
+              </button>
+            )}
           </div>
 
           {loading ? (
@@ -371,12 +385,16 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId, rut
                 <div key={cat.id} className="lz-cat" onClick={() => setCategoriaActiva(cat)}>
                   <span className="lz-cat-emoji">{ICONOS_CATEGORIAS[cat.name] || '🛠️'}</span>
                   <span className="lz-cat-nombre">{cat.name}</span>
-                  <button type="button" className="lz-icon-btn" onClick={(e) => { e.stopPropagation(); editarCategoria(cat.id, cat.name); }} title="Editar nombre">
-                    <Edit3 size={15} />
-                  </button>
-                  <button type="button" className="lz-icon-btn peligro" onClick={(e) => { e.stopPropagation(); eliminarCategoria(cat.id, cat.name); }} title="Eliminar categoría">
-                    <Trash2 size={15} />
-                  </button>
+                  {!soloLectura && (
+                    <>
+                      <button type="button" className="lz-icon-btn" onClick={(e) => { e.stopPropagation(); editarCategoria(cat.id, cat.name); }} title="Editar nombre">
+                        <Edit3 size={15} />
+                      </button>
+                      <button type="button" className="lz-icon-btn peligro" onClick={(e) => { e.stopPropagation(); eliminarCategoria(cat.id, cat.name); }} title="Eliminar categoría">
+                        <Trash2 size={15} />
+                      </button>
+                    </>
+                  )}
                   <ChevronRight size={18} />
                 </div>
               ))}
@@ -384,7 +402,7 @@ const DetalleHabitacion = ({ habitacion, propertyCurp, alVolver, servicioId, rut
           ) : (
             <div className="lz-vacio">
               <Wrench size={40} />
-              <p>No hay categorías. Agrega &quot;ELÉCTRICO&quot;, &quot;PLOMERÍA&quot;, etc.</p>
+              <p>{soloLectura ? 'No hay categorías registradas en esta área.' : <>No hay categorías. Agrega &quot;ELÉCTRICO&quot;, &quot;PLOMERÍA&quot;, etc.</>}</p>
             </div>
           )}
         </section>
