@@ -200,6 +200,15 @@
 .aj-confirmar strong { font-size: 0.92rem; font-weight: 900; }
 .aj-confirmar .aj-propuesta-acciones .aj-btn { flex: 1 1 140px; }
 
+/* Cotización cargada como archivo */
+.aj-archivo {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  padding: 8px 12px; border-radius: 10px;
+  background: #fff; border: 1px solid #fdba74; color: #ea580c;
+  font-size: 0.8rem; font-weight: 800; text-decoration: none; overflow-wrap: anywhere;
+}
+.aj-archivo:hover { background: #fff7ed; }
+
 /* ── Desglose ── */
 .aj-desglose { display: flex; flex-direction: column; gap: 8px; }
 .aj-desglose-grupo {

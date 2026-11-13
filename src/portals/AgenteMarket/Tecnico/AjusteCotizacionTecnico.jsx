@@ -150,6 +150,7 @@ const AjusteCotizacionTecnico = ({ job, completado, iniciado, onCambio, onCancel
         <ModalAjusteCotizacion
           workOrderId={job.id}
           precioVigente={datos.precio_vigente}
+          version={Math.max(1, ...(datos.ajustes || []).map((a) => a.version)) + 1}
           onClose={() => setAbrirModal(false)}
           onEnviado={(res) => {
             setAbrirModal(false);
