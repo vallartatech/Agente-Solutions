@@ -9,6 +9,8 @@ import SelectorVistas from "../../../components/Shared/SelectorVistas";
 import ModalCompraEspacios from "../../../components/Shared/ModalCompraEspacios";
 import ModalRegistroInmueble from "../../../components/Shared/ModalRegistroInmueble";
 import ModalNuevaSolicitud from "./Expediente/ModalNuevaSolicitud";
+import ModalServicioAutonomo from "../../AgenteMarket/Admin/ModalServicioAutonomo";
+import ModalSolicitarLevantamientoRed from "../../../components/Shared/ModalSolicitarLevantamientoRed";
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import ModalEquipoLevantamiento from "../../../components/Modals/ModalEquipoLevantamiento";
 import "../../../styles/AgenteSolutions/Admin/VistaPropiedades.css";
@@ -17,11 +19,11 @@ import "../../../styles/AgenteSolutions/Cliente/DetallePropiedad.css";
 import "../../../styles/Shared/LiquidGlass.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 import { 
-  X, CheckCircle, User, CheckCircle2, 
+  X, User, CheckCircle2,
   LayoutDashboard, PlusCircle, Plus, Globe, FileText, Home, Wrench, 
   MessageSquare, Camera, UserCheck, ImageIcon, Loader2,
   MoreVertical, Eye, ClipboardCheck, ClipboardList, Pencil, Trash2, Users,
-  Folder, FolderPlus, FolderInput, FolderOpen, ArrowLeft, FolderX, Check, MapPinned, AlertCircle
+  Folder, FolderPlus, FolderInput, FolderOpen, ArrowLeft, FolderX, Check, MapPinned
 } from "lucide-react";
 import { mostrarAviso } from '../../../utils/dialogos';
 import { esRed, usaSelectorRed } from '../../../utils/entorno';
@@ -53,6 +55,10 @@ const VistaPropiedades = () => {
   // MODAL REPORTAR PROBLEMA (BOTÓN SUPERIOR "SOLICITAR SERVICIO")
   const [mostrarModalReportarProblema, setMostrarModalReportarProblema] = useState(false);
   const [mostrarModalSolicitud, setMostrarModalSolicitud] = useState(false);
+  // Red: "Solicitar servicio" del menú ⋮ de una tarjeta (A la red / A mis técnicos) con esa propiedad elegida
+  const [servicioRedPropId, setServicioRedPropId] = useState(null);
+  // Red: "Solicitar levantamiento" (sin técnicos internos; lo asigna el Root)
+  const [levantamientoRedProp, setLevantamientoRedProp] = useState(null);
   const [propiedadReporteId, setPropiedadReporteId] = useState("");
   const [zonasDisponibles, setZonasDisponibles] = useState([]);
   const [loadingZonas, setLoadingZonas] = useState(false);
@@ -304,12 +310,15 @@ const VistaPropiedades = () => {
   };
 
   const abrirModalParaPropiedad = (propiedad) => {
+    if (enRed) {
+      setLevantamientoRedProp(propiedad);
+      return;
+    }
     setPropiedadSeleccionada(propiedad);
-    setPasoModal(1); 
+    setPasoModal(1);
     setNombreResponsable("");
     setTecnicoSeleccionado("");
-    // En la Red no se muestran técnicos internos: no hace falta cargarlos
-    if (!enRed) obtenerTecnicosRol2();
+    obtenerTecnicosRol2();
     setMostrarModalServicio(true);
   };
 
@@ -333,8 +342,7 @@ const VistaPropiedades = () => {
   };
 
   // Botón superior "SOLICITAR SERVICIO" -> Abre Modal "Reportar Problema" (Imagen 2)
-  // Con `propiedad` (menú ⋮ de una tarjeta) el reporte arranca con esa propiedad ya elegida
-  const handleAbrirReportarProblema = (propiedad) => {
+  const handleAbrirReportarProblema = () => {
     if (!listaPropiedades || listaPropiedades.length === 0) {
       Swal.fire({
         icon: 'info',
@@ -344,7 +352,7 @@ const VistaPropiedades = () => {
       });
       return;
     }
-    const targetId = propiedad?.id || propiedadSeleccionada?.id || listaPropiedades[0]?.id;
+    const targetId = propiedadSeleccionada?.id || listaPropiedades[0]?.id;
     setPropiedadReporteId(targetId);
     setNuevoProblema({ tipo: '', zona: '', area_id: '', equipo: '', descripcion: '', fotos: [] });
     setEquiposDisponibles({});
@@ -509,8 +517,7 @@ const VistaPropiedades = () => {
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
 
-      // En la Red nunca se manda técnico: lo asigna el admin de Agente Solutions
-      const rawCleanId = (!enRed && tecnicoSeleccionado) ? String(tecnicoSeleccionado).replace(/^u_/, '') : null;
+      const rawCleanId = tecnicoSeleccionado ? String(tecnicoSeleccionado).replace(/^u_/, '') : null;
       const cleanTechId = rawCleanId ? Number(rawCleanId) : null;
       const techSelectedObj = tecnicosRol2.find(t => String(t.id).replace(/^u_/, '') === String(rawCleanId));
       const techName = techSelectedObj ? `${techSelectedObj.first_name} ${techSelectedObj.last_name}`.trim() : null;
@@ -1206,7 +1213,7 @@ const VistaPropiedades = () => {
               </button>
 
               {enRed && (
-                <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => handleAbrirReportarProblema(p))}>
+                <button type="button" className="card-menu-item" onClick={() => ejecutarAccionMenu(() => setServicioRedPropId(p.id))}>
                   <span className="tb-actions-icon orange"><PlusCircle size={16} strokeWidth={2.6} /></span> Solicitar servicio
                 </button>
               )}
@@ -1254,6 +1261,28 @@ const VistaPropiedades = () => {
         );
       })()}
 
+      {levantamientoRedProp && (
+        <ModalSolicitarLevantamientoRed
+          propiedad={levantamientoRedProp}
+          onClose={() => setLevantamientoRedProp(null)}
+          onSuccess={() => {
+            setLevantamientoRedProp(null);
+            navigate("/levantamientos");
+          }}
+        />
+      )}
+
+      {servicioRedPropId && (
+        <ModalServicioAutonomo
+          propertyId={servicioRedPropId}
+          onClose={() => setServicioRedPropId(null)}
+          onSuccess={() => {
+            setServicioRedPropId(null);
+            obtenerPropiedades();
+          }}
+        />
+      )}
+
       {equipoPropiedad && (
         <ModalEquipoLevantamiento
           propiedad={equipoPropiedad}
@@ -1295,9 +1324,8 @@ const VistaPropiedades = () => {
                   {propiedadSeleccionada?.nombre_propiedad || propiedadSeleccionada?.direccion || "Sin especificar"}
                 </p>
 
-                {/* TÉCNICOS ROL 2 LIGADOS AL ADMIN: se elige tocando su tarjeta.
-                    En la Red el cliente no elige técnico: la solicitud la atiende el admin de Agente Solutions */}
-                {!enRed && (
+                {/* TÉCNICOS ROL 2 LIGADOS AL ADMIN: se elige tocando su tarjeta
+                    (la Red usa ModalSolicitarLevantamientoRed, sin técnicos) */}
                 <div className="xp-equipo">
                   <label className="rp-label">
                     <UserCheck size={16} color="#ff8c42" /> Técnico asignado <span className="xp-equipo-hint">(Selecciona uno)</span>
@@ -1342,7 +1370,6 @@ const VistaPropiedades = () => {
                     <small className="xp-equipo-nota">Sin asignar por ahora: puedes asignarlo después desde Servicios.</small>
                   )}
                 </div>
-                )}
 
                 <div className="rp-group">
                   <label className="rp-label"><User size={16} color="#ff8c42" /> Supervisor en sitio (Opcional)</label>
@@ -1356,13 +1383,6 @@ const VistaPropiedades = () => {
                   <small>Si el dueño no estará en la propiedad, asigna a alguien responsable de atender la visita.</small>
                 </div>
 
-                {enRed && (
-                  <p className="sl-aviso-costo">
-                    <AlertCircle size={16} />
-                    <span>La valoración tiene un costo que se te informará al confirmar la visita.</span>
-                  </p>
-                )}
-
                 <div className="rp-footer">
                   <button type="submit" className="xp-btn-primary" disabled={enviandoServicio}>
                     {enviandoServicio ? "Solicitando..." : "Solicitar levantamiento"}
@@ -1373,10 +1393,44 @@ const VistaPropiedades = () => {
 
             {pasoModal === 2 && (
               <div className="rp-form sl-success">
-                <span className="sl-success-icon"><CheckCircle size={40} /></span>
-                <h2>¡Levantamiento solicitado!</h2>
-                <p>Ha solicitado un levantamiento para esta propiedad. Se le notificará la fecha y hora de visita pronto.</p>
-                <div className="rp-footer">
+                {/* Palomita animada: el círculo se dibuja, luego la palomita y un destello alrededor */}
+                <div className="sl-check" aria-hidden="true">
+                  <span className="sl-check-halo" />
+                  <svg viewBox="0 0 52 52">
+                    <circle className="sl-check-ring" cx="26" cy="26" r="24" />
+                    <path className="sl-check-mark" d="M15 27.5l7.2 7.2L37.5 19" />
+                  </svg>
+                </div>
+
+                <h2 className="sl-anim" style={{ '--d': '0.55s' }}>¡Levantamiento solicitado!</h2>
+                <p className="sl-anim" style={{ '--d': '0.65s' }}>
+                  La solicitud quedó registrada para esta propiedad.
+                </p>
+
+                <span className="sl-prop-chip sl-anim" style={{ '--d': '0.75s' }}>
+                  <Home size={14} />
+                  {propiedadSeleccionada?.nombre_propiedad || propiedadSeleccionada?.direccion || 'Propiedad'}
+                </span>
+
+                <ol className="sl-pasos">
+                  {[
+                    tecnicoSeleccionado
+                      ? `Técnico asignado: ${(() => {
+                          const t = tecnicosRol2.find(x => String(x.id) === String(tecnicoSeleccionado));
+                          return t ? `${t.first_name || ''} ${t.last_name || ''}`.trim() : 'seleccionado';
+                        })()}.`
+                      : 'Asigna un técnico desde Servicios.',
+                    'Se notificará la fecha y hora de la visita.',
+                    'El levantamiento quedará en el expediente de la propiedad.',
+                  ].map((paso, i) => (
+                    <li key={i} className="sl-anim" style={{ '--d': `${0.85 + i * 0.1}s` }}>
+                      <span className="sl-paso-num">{i + 1}</span>
+                      {paso}
+                    </li>
+                  ))}
+                </ol>
+
+                <div className="rp-footer sl-anim" style={{ '--d': '1.2s' }}>
                   <button type="button" className="xp-btn-primary" onClick={cerrarModalYRecargar}>
                     Entendido
                   </button>

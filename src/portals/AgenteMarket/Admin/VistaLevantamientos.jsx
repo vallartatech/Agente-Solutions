@@ -31,6 +31,7 @@ import Header from "../../../components/Shared/Header";
 import SelectorVistas from "../../../components/Shared/SelectorVistas";
 import { usaSelectorRed } from "../../../utils/entorno";
 import CasaLoader from "../../../components/Shared/CasaLoader";
+import ModalSolicitarLevantamientoRed from "../../../components/Shared/ModalSolicitarLevantamientoRed";
 import "../../../styles/AgenteMarket/Admin/VistaLevantamientos.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 import { mostrarAviso } from '../../../utils/dialogos';
@@ -41,6 +42,9 @@ const VistaLevantamientos = () => {
   const location = useLocation();
   const { user, logout, logoutGlobal } = useAuth();
   const isClient = user?.role_id === 3;
+  // Dueños de la Red (autónomos y gestor): no programan visitas; el Root asigna al técnico.
+  // Ven los botones de cliente ("En revisión" / "Ver cita")
+  const vistaCliente = isClient || [4, 5, 7].includes(Number(user?.role_id));
 
   const [tabActual, setTabActual] = useState("PENDIENTES");
   const [serviciosFiltrados, setServiciosFiltrados] = useState([]);
@@ -51,15 +55,8 @@ const VistaLevantamientos = () => {
 
 
 
-  // ESTADOS PARA MODAL: SOLICITAR LEVANTAMIENTO
+  // MODAL: SOLICITAR LEVANTAMIENTO (mismo de Propiedades en la Red: sin técnicos, aviso de costo)
   const [mostrarModalSolicitar, setMostrarModalSolicitar] = useState(false);
-  const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
-  const [formSolicitud, setFormSolicitud] = useState({
-    property_id: location.state?.selectedPropId || "",
-    supervisor_name: "",
-    priority: "Media",
-    description: "Solicitud de visita técnica para levantamiento de la propiedad."
-  });
 
   // ESTADOS PARA MODAL: ASIGNACIÓN (ADMIN)
   const [mostrarAsignar, setMostrarAsignar] = useState(false);
@@ -156,15 +153,7 @@ const VistaLevantamientos = () => {
     };
   }, [accionesAbiertas]);
 
-  // Si se envió una propiedad seleccionada en la navegación, asignarla al formulario
-  useEffect(() => {
-    if (location.state?.selectedPropId) {
-      setFormSolicitud(prev => ({
-        ...prev,
-        property_id: location.state.selectedPropId
-      }));
-    }
-  }, [location.state]);
+  // Una propiedad enviada en la navegación (selectedPropId) llega preseleccionada al modal de solicitud
 
   // Conteo de servicios
   const pendientesCount = useMemo(() => {
@@ -176,14 +165,6 @@ const VistaLevantamientos = () => {
   }, [servicios]);
 
   // Nombres y roles de usuario para el header
-  const userFullName = useMemo(() => {
-    const parts = [user?.first_name, user?.last_name].filter(Boolean);
-    if (parts.length > 0) return parts.join(' ').toUpperCase();
-    if (user?.name) return user.name.toUpperCase();
-    if (user?.nombre) return user.nombre.toUpperCase();
-    return 'USUARIO';
-  }, [user]);
-
   const userRoleLabel = useMemo(() => {
     if (user?.role_id === 0) return "ROOT_MASTER";
     if (user?.role_id === 1) return "ADMIN_GLOBAL";
@@ -214,54 +195,6 @@ const VistaLevantamientos = () => {
     else if (role === 2) navigate('/VistaTecnico');
     else if (role === 6 || role === 8) navigate('/mercado-trabajos');
     else navigate('/');
-  };
-
-  // --- SOLICITAR LEVANTAMIENTO ---
-  const handleEnviarSolicitudLevantamiento = async (e) => {
-    e.preventDefault();
-    if (!formSolicitud.property_id) {
-      mostrarAviso("Por favor selecciona una propiedad para solicitar el levantamiento.");
-      return;
-    }
-
-    setEnviandoSolicitud(true);
-    try {
-      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-      const payload = {
-        property_id: formSolicitud.property_id,
-        title: "Levantamiento Inicial",
-        description: formSolicitud.description || "Solicitud de visita técnica para registro inicial de la propiedad.",
-        priority: formSolicitud.priority || "Media",
-        supervisor_name: formSolicitud.supervisor_name.trim() !== "" ? formSolicitud.supervisor_name : (userFullName || "El propietario"),
-      };
-
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/servicios`,
-        payload,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (res.data?.success || res.status === 200 || res.status === 201) {
-        mostrarAviso("¡Levantamiento solicitado con éxito!");
-        setMostrarModalSolicitar(false);
-        setFormSolicitud({
-          property_id: "",
-          supervisor_name: "",
-          priority: "Media",
-          description: "Solicitud de visita técnica para levantamiento de la propiedad."
-        });
-        cargarDatos();
-      }
-    } catch (error) {
-      console.error("Error al solicitar levantamiento:", error);
-      mostrarAviso(error.response?.data?.message || "Hubo un error al solicitar el levantamiento.");
-    } finally {
-      setEnviandoSolicitud(false);
-    }
   };
 
   // --- ASIGNACIÓN (ADMIN) ---
@@ -506,7 +439,7 @@ const VistaLevantamientos = () => {
                               <FileText size={14} />
                               <span>Ver Reporte</span>
                             </button>
-                          ) : isClient ? (
+                          ) : vistaCliente ? (
                             <button 
                               type="button"
                               className="lev-btn-table-action view-details"
@@ -539,7 +472,7 @@ const VistaLevantamientos = () => {
                       <td colSpan="5" className="lev-empty-state">
                         <ClipboardList size={36} className="lev-empty-icon" />
                         <p className="lev-empty-title">
-                          {isClient ? "Aún no has solicitado ningún levantamiento" : "No hay servicios en esta sección"}
+                          {vistaCliente ? "Aún no has solicitado ningún levantamiento" : "No hay servicios en esta sección"}
                         </p>
                         <p className="lev-empty-desc">
                           Haz clic en "SOLICITAR LEVANTAMIENTO" para crear una nueva visita técnica.
@@ -634,7 +567,7 @@ const VistaLevantamientos = () => {
                       <FileText size={16} />
                       <span>Ver Reporte</span>
                     </button>
-                  ) : isClient ? (
+                  ) : vistaCliente ? (
                     <button 
                       type="button"
                       className="lev-btn-table-action view-details lev-btn-mobile-full"
@@ -666,7 +599,7 @@ const VistaLevantamientos = () => {
             <div className="lev-mobile-card lev-mobile-empty-card">
               <ClipboardList size={36} className="lev-empty-icon" />
               <p className="lev-empty-title">
-                {isClient ? "Aún no has solicitado ningún levantamiento" : "No hay servicios en esta sección"}
+                {vistaCliente ? "Aún no has solicitado ningún levantamiento" : "No hay servicios en esta sección"}
               </p>
               <p className="lev-empty-desc">
                 Haz clic en "SOLICITAR LEVANTAMIENTO" para crear una nueva visita técnica.
@@ -678,92 +611,20 @@ const VistaLevantamientos = () => {
       </main>
 
       {/* ── MODAL: SOLICITAR LEVANTAMIENTO ── */}
-      {mostrarModalSolicitar && createPortal(
-        <div className="lev-modal-overlay" onClick={() => setMostrarModalSolicitar(false)}>
-          <div className="lev-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="lev-modal-header">
-              <div className="lev-modal-title">
-                <span className="lev-modal-icon"><PlusCircle size={18} strokeWidth={2.4} /></span>
-                <span>SOLICITAR LEVANTAMIENTO TÉCNICO</span>
-              </div>
-              <button 
-                type="button" 
-                className="lev-modal-close" 
-                onClick={() => setMostrarModalSolicitar(false)}
-                title="Cerrar"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleEnviarSolicitudLevantamiento}>
-              <div className="lev-form-group">
-                <label className="lev-form-label">SELECCIONAR PROPIEDAD *</label>
-                <select
-                  className="lev-form-select"
-                  required
-                  value={formSolicitud.property_id}
-                  onChange={(e) => setFormSolicitud({ ...formSolicitud, property_id: e.target.value })}
-                >
-                  <option value="">-- Selecciona un inmueble --</option>
-                  {propiedades.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombre_propiedad || p.property_name || `Propiedad #${p.id}`} {p.direccion ? `- ${p.direccion}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="lev-form-group">
-                <label className="lev-form-label">SUPERVISOR / CONTACTO EN SITIO (OPCIONAL)</label>
-                <input
-                  type="text"
-                  className="lev-form-input"
-                  placeholder="Ej. Ing. Juan Pérez / Propietario"
-                  value={formSolicitud.supervisor_name}
-                  onChange={(e) => setFormSolicitud({ ...formSolicitud, supervisor_name: e.target.value })}
-                />
-              </div>
-
-              <div className="lev-form-group">
-                <label className="lev-form-label">PRIORIDAD DEL SERVICIO</label>
-                <select
-                  className="lev-form-select"
-                  value={formSolicitud.priority}
-                  onChange={(e) => setFormSolicitud({ ...formSolicitud, priority: e.target.value })}
-                >
-                  <option value="Baja">Baja</option>
-                  <option value="Media">Media (Estándar)</option>
-                  <option value="Alta">Alta (Urgente)</option>
-                </select>
-              </div>
-
-              <div className="lev-form-group">
-                <label className="lev-form-label">NOTAS / INSTRUCCIONES ADICIONALES</label>
-                <textarea
-                  className="lev-form-textarea"
-                  rows={3}
-                  placeholder="Detalles sobre acceso, horarios preferidos o requerimientos..."
-                  value={formSolicitud.description}
-                  onChange={(e) => setFormSolicitud({ ...formSolicitud, description: e.target.value })}
-                />
-              </div>
-
-              <button 
-                type="submit" 
-                className="lev-btn-submit-modal" 
-                disabled={enviandoSolicitud || propiedades.length === 0}
-              >
-                {enviandoSolicitud ? "ENVIANDO SOLICITUD..." : "CONFIRMAR Y SOLICITAR LEVANTAMIENTO"}
-              </button>
-            </form>
-          </div>
-        </div>,
-        document.body
+      {mostrarModalSolicitar && (
+        <ModalSolicitarLevantamientoRed
+          propiedades={propiedades}
+          propiedadIdInicial={location.state?.selectedPropId || ''}
+          onClose={() => setMostrarModalSolicitar(false)}
+          onSuccess={() => {
+            setMostrarModalSolicitar(false);
+            cargarDatos();
+          }}
+        />
       )}
 
       {/* ── MODAL: AGENDAR VISITA TÉCNICA (ADMIN) ── */}
-      {mostrarAsignar && !isClient && createPortal(
+      {mostrarAsignar && !vistaCliente && createPortal(
         <div className="lev-modal-overlay" onClick={() => setMostrarAsignar(false)}>
           <div className="lev-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="lev-modal-header">

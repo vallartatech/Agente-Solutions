@@ -239,6 +239,10 @@ const TrabajoPropiedad = () => {
     }
   };
 
+  // Servicio de levantamiento (no orden de trabajo): solo se captura, sin cotizar, material ni reporte
+  const esLevantamiento = data?.tipo_registro === 'servicio'
+    && /levantamiento/i.test(String(data?.titulo || data?.title || ''));
+
   // Lleva al listado de levantamientos y abre directamente el de esta propiedad
   const irALevantamiento = () => {
     if (!data?.property_id) return mostrarAviso("Esta orden no tiene propiedad asociada.");
@@ -555,13 +559,29 @@ const TrabajoPropiedad = () => {
               <div className="tp-flow-cabecera">
                 <span className="tp-flow-icono"><Wrench size={20} /></span>
                 <div>
-                  <h3>Acciones del trabajo</h3>
-                  <p className="tp-flow-instruction">¿Listo para comenzar o terminar?</p>
+                  <h3>{esLevantamiento ? 'Levantamiento' : 'Acciones del trabajo'}</h3>
+                  <p className="tp-flow-instruction">
+                    {esLevantamiento ? 'Registra las zonas, áreas y equipos de la propiedad.' : '¿Listo para comenzar o terminar?'}
+                  </p>
                 </div>
               </div>
-              
+
               <div className="tp-flow-buttons">
 
+                {esLevantamiento ? (
+                  // Un levantamiento no se cotiza ni lleva material o reporte: solo se captura
+                  <button
+                    className="tp-btn-primary"
+                    onClick={() => navigate(`/RegistroZonas/${data.identificador_curp || data.custom_curp || 'S-N'}`, {
+                      state: { id: data.property_id, servicioId: getRealId(id) }
+                    })}
+                  >
+                    <Layout size={18} />
+                    <span>REALIZAR LEVANTAMIENTO</span>
+                    <ArrowRight size={18} />
+                  </button>
+                ) : (
+                <>
                 <button className="tp-btn-consult variant-dark" onClick={irALevantamiento}>
                   <Layout size={18} />
                   <span>CONSULTAR LEVANTAMIENTO</span>
@@ -757,6 +777,8 @@ const TrabajoPropiedad = () => {
                     );
                   })()}
                 </div>
+                </>
+                )}
               </div>
             </motion.div>
           </div>

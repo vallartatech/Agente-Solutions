@@ -385,9 +385,18 @@ const TrabajosTecnico = () => {
     const compuesto = String(item.composite_id || item.id);
     // Trabajo enviado a aprobación o ya validado: el técnico va directo a su reporte (solo lectura)
     const verReporte = compuesto.startsWith('work_order-') && trabajoEnviadoOValidado(item.status);
-    const bloqueada = !isTecnicoRed && !materialRecibido && !verReporte;
+    // Un levantamiento no es un trabajo: no cotiza, no lleva material ni reporte. Se abre directo
+    // su registro de zonas (p. ej. el que el Root asigna desde una solicitud de la Red)
+    const esLevantamiento = Boolean(item.es_levantamiento) && !compuesto.startsWith('work_order-');
+    const bloqueada = !isTecnicoRed && !materialRecibido && !verReporte && !esLevantamiento;
     const abrir = () => {
       if (bloqueada) return;
+      if (esLevantamiento) {
+        navigate(`/RegistroZonas/${item.custom_curp || 'S-N'}`, {
+          state: { id: item.property_id, servicioId: item.id }
+        });
+        return;
+      }
       if (verReporte) {
         navigate(`/galeria-reportes/${compuesto}`, { state: { trabajoId: compuesto, servicio: item, from: '/trabajos-tecnico' } });
         return;
@@ -471,7 +480,11 @@ const TrabajosTecnico = () => {
                 )
               )}
               <span className="ttc-abrir">
-                {bloqueada ? <><Lock size={14} /> Confirma tu material</> : <>{verReporte ? 'Ver reporte' : 'Ver trabajo'} <ChevronRight size={16} /></>}
+                {bloqueada
+                  ? <><Lock size={14} /> Confirma tu material</>
+                  : <>{esLevantamiento
+                      ? (item.tiene_levantamiento ? 'Continuar levantamiento' : 'Iniciar levantamiento')
+                      : verReporte ? 'Ver reporte' : 'Ver trabajo'} <ChevronRight size={16} /></>}
               </span>
             </div>
           </div>
