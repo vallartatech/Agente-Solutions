@@ -223,10 +223,15 @@ const VistaDetallePropiedad = () => {
                         {f.label} {filtroTipo === f.key && <Check size={15} className="xp-filtro-check" />}
                       </button>
                     ))}
-                    <span className="xp-filtro-titulo">Más</span>
-                    <button type="button" className="tb-actions-item" onClick={() => navigate(`/propiedad/${id}/tablero`)}>
-                      <span className="tb-actions-icon dark"><LayoutDashboard size={16} /></span> Tablero detallado
-                    </button>
+                    {/* La Red no usa el tablero detallado */}
+                    {!enRed && (
+                      <>
+                        <span className="xp-filtro-titulo">Más</span>
+                        <button type="button" className="tb-actions-item" onClick={() => navigate(`/propiedad/${id}/tablero`)}>
+                          <span className="tb-actions-icon dark"><LayoutDashboard size={16} /></span> Tablero detallado
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

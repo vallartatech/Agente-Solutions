@@ -1,26 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import {
-  X, Download, Loader2, ShieldCheck, GraduationCap, Briefcase, Award, Star, Clock, CheckCircle2,
-  Mail, Phone, Receipt, Banknote, CreditCard, Landmark, Hourglass, CalendarDays, Wrench, Quote,
+  X, Loader2, ShieldCheck, GraduationCap, Briefcase, Award, Star, Clock, CheckCircle2,
+  Receipt, Banknote, CreditCard, Landmark, Hourglass, CalendarDays, Wrench, Quote,
 } from 'lucide-react';
 import { IconoEspecialidad } from './iconoEspecialidad';
 import '../../../styles/AgenteMarket/Shared/CurriculumTecnico.css';
 
 // Currículum profesional de un técnico de la red (roles 6 y 8), para clientes de la red.
-// Los datos vienen de GET /tecnicos/{id}/perfil-profesional: el backend decide qué se ve
-// según quién mira (RFC y CLABE solo si ya lo contrató).
+// Los datos vienen de GET /tecnicos/{id}/perfil-profesional. No se muestran teléfono, correo ni
+// datos bancarios: el contacto y el pago van por la app.
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
 const anio = (iso) => (iso ? new Date(iso).getFullYear() : null);
 const hoy = () => new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
-const formatoClabe = (c) => {
-  const d = String(c || '').replace(/\D/g, '');
-  return d ? [d.slice(0, 3), d.slice(3, 6), d.slice(6, 17), d.slice(17)].filter(Boolean).join(' ') : null;
-};
-const archivoPdf = (nombre) => `CV_${String(nombre || 'tecnico').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '_')}.pdf`;
 
 /** Perfil mínimo con lo que ya trae la pantalla (cotización), por si el técnico no es de la red. */
 const desdeRespaldo = (r = {}) => ({
@@ -47,14 +42,12 @@ const Dato = ({ Icono, valor, etiqueta }) => (
 /**
  * Ventana con el currículum del técnico.
  *  tecnicoId: id del usuario técnico
- *  respaldo:  objeto técnico que ya tiene la pantalla (nombre, correo, teléfono, especialidades)
+ *  respaldo:  objeto técnico que ya tiene la pantalla (nombre, foto, especialidades)
  *  onCerrar:  cierra la ventana
  */
 const CurriculumTecnico = ({ tecnicoId, respaldo = null, onCerrar }) => {
   const [perfil, setPerfil] = useState(null);
   const [cargando, setCargando] = useState(true);
-  const [descargando, setDescargando] = useState(false);
-  const hojaRef = useRef(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -78,38 +71,13 @@ const CurriculumTecnico = ({ tecnicoId, respaldo = null, onCerrar }) => {
     };
   }, [onCerrar]);
 
-  const descargarPdf = async () => {
-    if (!hojaRef.current || !perfil) return;
-    setDescargando(true);
-    try {
-      const { default: html2pdf } = await import('html2pdf.js');
-      await html2pdf().set({
-        margin: [0.3, 0.3, 0.3, 0.3],
-        filename: archivoPdf(perfil.nombre),
-        image: { type: 'jpeg', quality: 0.96 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 900 },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'], avoid: ['.cvt-evitar-corte'] },
-      }).from(hojaRef.current).save();
-    } catch {
-      // Si falla, la vista sigue disponible; no interrumpimos al usuario con un error técnico
-    } finally {
-      setDescargando(false);
-    }
-  };
-
   const p = perfil;
-  const contacto = {
-    email: p?.email || respaldo?.email || null,
-    telefono: p?.telefono || respaldo?.phone_number || null,
-  };
   const formasPago = p ? [
     p.acepta_efectivo && { Icono: Banknote, texto: 'Efectivo' },
     p.acepta_transferencia && { Icono: Landmark, texto: 'Transferencia' },
     p.tiene_terminal && { Icono: CreditCard, texto: 'Tarjeta (terminal)' },
     p.emite_factura && { Icono: Receipt, texto: 'Emite factura' },
   ].filter(Boolean) : [];
-  const clabe = formatoClabe(p?.clabe);
   const verificado = p?.insignias?.identidad_verificada;
   const foto = String(p?.foto || '').startsWith('http') ? p.foto : null;
 
@@ -119,10 +87,6 @@ const CurriculumTecnico = ({ tecnicoId, respaldo = null, onCerrar }) => {
         <div className="cvt-barra">
           <span>Currículum profesional</span>
           <div className="cvt-barra-acciones">
-            <button type="button" className="cvt-btn" onClick={descargarPdf} disabled={cargando || descargando}>
-              {descargando ? <Loader2 size={16} className="cvt-girar" /> : <Download size={16} />}
-              <span>{descargando ? 'Generando…' : 'Descargar PDF'}</span>
-            </button>
             <button type="button" className="cvt-cerrar" onClick={onCerrar} aria-label="Cerrar"><X size={20} /></button>
           </div>
         </div>
@@ -131,7 +95,7 @@ const CurriculumTecnico = ({ tecnicoId, respaldo = null, onCerrar }) => {
           {cargando ? (
             <div className="cvt-cargando"><Loader2 size={26} className="cvt-girar" /> Cargando currículum…</div>
           ) : (
-            <article className="cvt-hoja" ref={hojaRef}>
+            <article className="cvt-hoja">
               {/* ── Encabezado ── */}
               <header className="cvt-cabeza">
                 <div className="cvt-foto">
@@ -160,16 +124,6 @@ const CurriculumTecnico = ({ tecnicoId, respaldo = null, onCerrar }) => {
               <div className="cvt-cuerpo">
                 {/* ── Columna lateral ── */}
                 <aside className="cvt-lateral">
-                  {(contacto.email || contacto.telefono) && (
-                    <section className="cvt-evitar-corte">
-                      <h3>Contacto</h3>
-                      <ul className="cvt-lista-simple">
-                        {contacto.telefono && <li><Phone size={14} /> {contacto.telefono}</li>}
-                        {contacto.email && <li><Mail size={14} /> <span className="cvt-cortar">{contacto.email}</span></li>}
-                      </ul>
-                    </section>
-                  )}
-
                   <section className="cvt-evitar-corte">
                     <h3>Especialidades</h3>
                     {p.especialidades?.length ? (
@@ -187,19 +141,6 @@ const CurriculumTecnico = ({ tecnicoId, respaldo = null, onCerrar }) => {
                       <ul className="cvt-lista-simple">
                         {formasPago.map(({ Icono, texto }) => <li key={texto}><Icono size={14} /> {texto}</li>)}
                       </ul>
-                    </section>
-                  )}
-
-                  {(p.rfc || clabe) && (
-                    <section className="cvt-evitar-corte">
-                      <h3>Datos de pago</h3>
-                      <dl className="cvt-dl">
-                        {p.rfc && <><dt>RFC</dt><dd>{p.rfc}</dd></>}
-                        {p.razon_social && <><dt>Razón social</dt><dd>{p.razon_social}</dd></>}
-                        {p.banco && <><dt>Banco</dt><dd>{p.banco}</dd></>}
-                        {p.titular_cuenta && <><dt>Titular</dt><dd>{p.titular_cuenta}</dd></>}
-                        {clabe && <><dt>CLABE</dt><dd className="mono">{clabe}</dd></>}
-                      </dl>
                     </section>
                   )}
                 </aside>

@@ -2267,3 +2267,6 @@
   background: rgba(16, 185, 129, 0.18);
   border: 1px solid rgba(52, 211, 153, 0.45);
 }
+
+/* "Cancelar servicio" va en la oferta aceptada, debajo del chat */
+.red-quote-pie .aj-btn-cancelar-servicio { margin-bottom: 0; }

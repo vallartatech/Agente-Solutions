@@ -1,11 +1,11 @@
-import { ShieldCheck, Hourglass, CheckCircle2, FileText, Clock3 } from 'lucide-react';
+import { ShieldCheck, Hourglass, FileText, Clock3 } from 'lucide-react';
 import { useResumenTecnico } from './resumenTecnicos';
 import { IconoEspecialidad } from './iconoEspecialidad';
 import Calificacion from './Calificacion';
 import '../../../styles/AgenteMarket/Shared/ResumenTecnico.css';
 
 // Currículum simplificado del técnico dentro de cada cotización que recibe el cliente.
-// El completo (con PDF) se abre con "Ver currículum completo".
+// El completo se abre con "Ver currículum completo" (solo consulta, sin descarga).
 
 /** Foto del técnico para el círculo de la tarjeta (o su inicial mientras carga / sin foto). */
 export const FotoTecnico = ({ tecnicoId, inicial = 'T' }) => {
@@ -50,10 +50,11 @@ const ResumenTecnico = ({ tecnicoId, onVerCompleto }) => {
         />
       </div>
 
-      <div className="rt-fila rt-datos">
-        {anios != null && <span><Hourglass size={13} /> {anios} {Number(anios) === 1 ? 'año' : 'años'} de experiencia</span>}
-        <span><CheckCircle2 size={13} /> {resumen.trabajos_terminados} {resumen.trabajos_terminados === 1 ? 'trabajo terminado' : 'trabajos terminados'}</span>
-      </div>
+      {anios != null && (
+        <div className="rt-fila rt-datos">
+          <span><Hourglass size={13} /> {anios} {Number(anios) === 1 ? 'año' : 'años'} de experiencia</span>
+        </div>
+      )}
 
       {resumen.especialidades?.length > 0 && (
         <div className="rt-fila rt-chips">

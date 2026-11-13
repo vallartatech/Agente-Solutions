@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
-import { X, Home, User, AlertCircle } from 'lucide-react';
+import { X, Home, User, AlertCircle, CalendarClock } from 'lucide-react';
 import { mostrarAviso } from '../../utils/dialogos';
+import CampoFechaHora from './CampoFechaHora';
+import { fechaPreferidaLegible } from '../../utils/fechaPreferida';
 import '../../styles/AgenteSolutions/Admin/VistaPropiedades.css';
 import '../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
+import '../../styles/AgenteMarket/Shared/SelectorFechaRed.css';
 
 /**
  * Solicitar levantamiento desde la Red.
@@ -17,9 +20,17 @@ import '../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
  */
 const nombreDe = (p) => p?.nombre_propiedad || p?.property_name || p?.direccion || (p?.id ? `Propiedad #${p.id}` : 'Propiedad');
 
+// 'YYYY-MM-DD' de hoy en hora local (la visita no puede pedirse para un día pasado)
+const hoyLocal = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 const ModalSolicitarLevantamientoRed = ({ propiedad = null, propiedades = [], propiedadIdInicial = '', onClose, onSuccess }) => {
   const [propiedadId, setPropiedadId] = useState(String(propiedad?.id || propiedadIdInicial || ''));
   const [supervisor, setSupervisor] = useState('');
+  // Fecha y hora en que el cliente quiere la visita ('YYYY-MM-DDTHH:MM'); el Root la ajusta con el técnico
+  const [fechaPreferida, setFechaPreferida] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [exito, setExito] = useState(false);
 
@@ -30,6 +41,14 @@ const ModalSolicitarLevantamientoRed = ({ propiedad = null, propiedades = [], pr
     if (enviando) return;
     if (!propiedadId) {
       mostrarAviso('Selecciona la propiedad para la que quieres el levantamiento.');
+      return;
+    }
+    if (!fechaPreferida) {
+      mostrarAviso('Selecciona la fecha y hora en que quieres la visita.');
+      return;
+    }
+    if (new Date(fechaPreferida) < new Date()) {
+      mostrarAviso('Selecciona una fecha y hora que aún no haya pasado.');
       return;
     }
 
@@ -47,6 +66,7 @@ const ModalSolicitarLevantamientoRed = ({ propiedad = null, propiedades = [], pr
           description: 'Solicitud de visita técnica para registro inicial de la propiedad.',
           priority: 'Media',
           supervisor_name: supervisor.trim() || nombreUsuario || 'El propietario',
+          preferred_start: `${fechaPreferida.replace('T', ' ')}:00`,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -75,7 +95,7 @@ const ModalSolicitarLevantamientoRed = ({ propiedad = null, propiedades = [], pr
 
   const pasos = [
     'Asignamos a un técnico de Agente Solutions.',
-    'Te notificamos la fecha y hora de la visita.',
+    'Confirmamos la cita con el técnico según tu preferencia.',
     'Al terminar, verás el levantamiento en tu propiedad.',
   ];
 
@@ -117,6 +137,21 @@ const ModalSolicitarLevantamientoRed = ({ propiedad = null, propiedades = [], pr
             )}
 
             <div className="rp-group">
+              <label className="rp-label"><CalendarClock size={16} color="#ff8c42" /> ¿Cuándo quieres la visita? *</label>
+              <CampoFechaHora
+                type="datetime-local"
+                value={fechaPreferida}
+                min={hoyLocal()}
+                onChange={(e) => setFechaPreferida(e.target.value)}
+                className="campo-fecha-red"
+                overlayClassName="mdtp-tema-red"
+                placeholder="Elige fecha y hora"
+                required
+              />
+              <small>Agente Solutions confirmará la cita con el técnico según tu preferencia.</small>
+            </div>
+
+            <div className="rp-group">
               <label className="rp-label"><User size={16} color="#ff8c42" /> Supervisor en sitio (Opcional)</label>
               <input
                 type="text"
@@ -155,10 +190,18 @@ const ModalSolicitarLevantamientoRed = ({ propiedad = null, propiedades = [], pr
               Recibimos tu solicitud. El equipo de Agente Solutions asignará a un técnico para la visita.
             </p>
 
-            <span className="sl-prop-chip sl-anim" style={{ '--d': '0.75s' }}>
-              <Home size={14} />
-              {nombreDe(elegida)}
-            </span>
+            <div className="sl-anim" style={{ '--d': '0.75s', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px' }}>
+              <span className="sl-prop-chip">
+                <Home size={14} />
+                {nombreDe(elegida)}
+              </span>
+              {fechaPreferida && (
+                <span className="sl-prop-chip">
+                  <CalendarClock size={14} />
+                  {fechaPreferidaLegible(fechaPreferida)}
+                </span>
+              )}
+            </div>
 
             <ol className="sl-pasos">
               {pasos.map((paso, i) => (

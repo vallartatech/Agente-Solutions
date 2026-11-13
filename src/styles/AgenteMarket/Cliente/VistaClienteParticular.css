@@ -2871,3 +2871,6 @@
   background: rgba(255, 255, 255, 0.10);
   border-color: rgba(255, 255, 255, 0.28);
 }
+
+/* Red: contadores informativos (no navegan); conservan la animación al pasar el mouse */
+.vcp-stat-box.solo-info { cursor: default; }

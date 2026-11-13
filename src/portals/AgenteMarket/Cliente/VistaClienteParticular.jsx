@@ -661,11 +661,10 @@ const VistaClienteParticular = () => {
         </div>
 
         <div className="vcp-tablero-grid">
+          {/* Red: los contadores solo informan (sin navegación); conservan la animación al pasar el mouse */}
           {/* SOS */}
           <div 
-            className="vcp-stat-box vcp-stat-sos"
-            onClick={() => navigate('/SOSView', { state: { propiedad: activeProperty } })}
-            title="Ver o Solicitar SOS"
+            className="vcp-stat-box vcp-stat-sos solo-info"
           >
             <div className="vcp-stat-icon-wrapper">
               <AlertCircle size={20} className="vcp-stat-icon" />
@@ -676,9 +675,7 @@ const VistaClienteParticular = () => {
 
           {/* POR HACER */}
           <div 
-            className="vcp-stat-box vcp-stat-todo"
-            onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
-            title="Servicios Por Hacer"
+            className="vcp-stat-box vcp-stat-todo solo-info"
           >
             <div className="vcp-stat-icon-wrapper">
               <ClipboardList size={20} className="vcp-stat-icon" />
@@ -689,9 +686,7 @@ const VistaClienteParticular = () => {
 
           {/* PROCESO */}
           <div 
-            className="vcp-stat-box vcp-stat-process"
-            onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
-            title="Servicios en Proceso"
+            className="vcp-stat-box vcp-stat-process solo-info"
           >
             <div className="vcp-stat-icon-wrapper">
               <Clock size={20} className="vcp-stat-icon" />
@@ -702,9 +697,7 @@ const VistaClienteParticular = () => {
 
           {/* LISTOS */}
           <div 
-            className="vcp-stat-box vcp-stat-done"
-            onClick={() => navigate(`/propiedad/${activeProperty?.id}/tablero`, { state: { propiedad: activeProperty } })}
-            title="Servicios Concluidos / Listos"
+            className="vcp-stat-box vcp-stat-done solo-info"
           >
             <div className="vcp-stat-icon-wrapper">
               <CheckCircle2 size={20} className="vcp-stat-icon" />

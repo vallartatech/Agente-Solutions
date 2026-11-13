@@ -32,10 +32,34 @@ import SelectorVistas from "../../../components/Shared/SelectorVistas";
 import { usaSelectorRed } from "../../../utils/entorno";
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import ModalSolicitarLevantamientoRed from "../../../components/Shared/ModalSolicitarLevantamientoRed";
+import { fechaPreferidaLegible } from "../../../utils/fechaPreferida";
 import "../../../styles/AgenteMarket/Admin/VistaLevantamientos.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 import { mostrarAviso } from '../../../utils/dialogos';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
+
+// Dueño de la Red: no agenda ni confirma la cita (lo coordina el Root con el técnico).
+// Solo ve la visita ya programada o, mientras tanto, la fecha que pidió.
+const InfoVisitaCliente = ({ s }) => {
+  if (s.assigned_to && s.fecha_programada) {
+    return (
+      <span className="lev-visita-info programada">
+        <CalendarDays size={14} />
+        <span>Visita: <strong>{fechaPreferidaLegible(s.fecha_programada)}</strong></span>
+      </span>
+    );
+  }
+  return (
+    <span className="lev-visita-info">
+      <Clock size={14} />
+      <span>
+        {s.fecha_preferida
+          ? <>Pediste: <strong>{fechaPreferidaLegible(s.fecha_preferida)}</strong></>
+          : 'En revisión'}
+      </span>
+    </span>
+  );
+};
 
 const VistaLevantamientos = () => {
   const navigate = useNavigate();
@@ -440,20 +464,7 @@ const VistaLevantamientos = () => {
                               <span>Ver Reporte</span>
                             </button>
                           ) : vistaCliente ? (
-                            <button 
-                              type="button"
-                              className="lev-btn-table-action view-details"
-                              onClick={() => {
-                                if (s.assigned_to && s.status !== 'Reprogramación Solicitada' && s.status !== 'Visita Confirmada') {
-                                  abrirDetallesCliente(s);
-                                }
-                              }}
-                              disabled={!s.assigned_to || s.status === 'Reprogramación Solicitada' || s.status === 'Visita Confirmada'}
-                            >
-                              {s.status === 'Reprogramación Solicitada' ? 'Reprogramando' :
-                               s.status === 'Visita Confirmada' ? 'Cita Confirmada' :
-                               s.assigned_to ? 'Ver Cita' : 'En Revisión'}
-                            </button>
+                            <InfoVisitaCliente s={s} />
                           ) : (
                             <button
                               type="button"
@@ -568,20 +579,7 @@ const VistaLevantamientos = () => {
                       <span>Ver Reporte</span>
                     </button>
                   ) : vistaCliente ? (
-                    <button 
-                      type="button"
-                      className="lev-btn-table-action view-details lev-btn-mobile-full"
-                      onClick={() => {
-                        if (s.assigned_to && s.status !== 'Reprogramación Solicitada' && s.status !== 'Visita Confirmada') {
-                          abrirDetallesCliente(s);
-                        }
-                      }}
-                      disabled={!s.assigned_to || s.status === 'Reprogramación Solicitada' || s.status === 'Visita Confirmada'}
-                    >
-                      {s.status === 'Reprogramación Solicitada' ? 'Reprogramando' :
-                       s.status === 'Visita Confirmada' ? 'Cita Confirmada' :
-                       s.assigned_to ? 'Ver Cita' : 'En Revisión'}
-                    </button>
+                    <InfoVisitaCliente s={s} />
                   ) : (
                     <button
                       type="button"

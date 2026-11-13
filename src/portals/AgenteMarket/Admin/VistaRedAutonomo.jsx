@@ -1029,9 +1029,10 @@ const VistaRedAutonomo = () => {
                           <MapPin size={12} />
                           {job.zona}
                         </span>
+                        {/* Con la visita confirmada la fecha solo se muestra una vez (aviso verde "Visita confirmada") */}
                         {job.is_urgent ? (
                           <span className="rj-chip urgente"><Zap size={11} /> Urgente</span>
-                        ) : fechaDeseada(job.descripcion) ? (
+                        ) : sched?.isScheduleConfirmed ? null : fechaDeseada(job.descripcion) ? (
                           <span className="rj-chip programado" title="Fecha estimada en que necesitas el trabajo">
                             <Calendar size={11} /> Para: {fechaDeseada(job.descripcion).texto}
                           </span>
@@ -1219,7 +1220,18 @@ const VistaRedAutonomo = () => {
                       <span className="red-dato-icono"><FileText size={15} /></span>
                       <div>
                         <small>Problema</small>
-                        <strong className="red-dato-normal">{selectedJobForQuotes.descripcion || 'Sin descripción adicional'}</strong>
+                        <strong className="red-dato-normal">
+                          {(() => {
+                            // Con la visita ya confirmada, la fecha solo se muestra una vez (a la derecha, "Visita confirmada")
+                            const desc = selectedJobForQuotes.descripcion || '';
+                            const confirmada = selectedJobForQuotes.scheduled_at
+                              && getJobScheduleStatus(selectedJobForQuotes, activeChatQuote).isScheduleConfirmed;
+                            const limpia = confirmada
+                              ? desc.replace(/\n*\s*\[FECHA \/ HORARIO DESEADO\]:[^\n]*/g, '').trim()
+                              : desc;
+                            return limpia || 'Sin descripción adicional';
+                          })()}
+                        </strong>
                       </div>
                     </div>
 
@@ -1238,19 +1250,8 @@ const VistaRedAutonomo = () => {
                           </div>
                         );
                       }
-                      if (sched.isScheduleConfirmed) {
-                        return (
-                          <div className="mercado-info-item full-width" style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <CheckCircle size={16} color="#16a34a" />
-                              <strong style={{ color: '#166534', fontSize: '13px' }}>✅ Horario de Visita Confirmado</strong>
-                            </div>
-                            <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
-                              {new Date(selectedJobForQuotes.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}
-                            </div>
-                          </div>
-                        );
-                      }
+                      // Visita confirmada: se muestra solo a la derecha ("Visita confirmada"), no se repite aquí
+                      if (sched.isScheduleConfirmed) return null;
                       return (
                         <div className="mercado-info-item full-width" style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1312,8 +1313,11 @@ const VistaRedAutonomo = () => {
                     {selectedJobForQuotes.is_accepted && (
                       <AjusteCotizacionCliente key={selectedJobForQuotes.id} workOrderId={selectedJobForQuotes.id} onCambio={() => fetchJobs()} />
                     )}
-                    {/* Cancelar el servicio asignado, o elegir qué sigue después de cancelarlo */}
-                    <CancelacionServicioCliente job={selectedJobForQuotes} onCambio={() => fetchJobs()} onCerrar={closeQuotesModal} />
+                    {/* Después de cancelar: elegir si se reenvía a la red o se cancela por completo.
+                        El botón "Cancelar servicio" va en la oferta aceptada, debajo del chat */}
+                    {String(selectedJobForQuotes.status || '').startsWith('Cancelado') && (
+                      <CancelacionServicioCliente job={selectedJobForQuotes} onCambio={() => fetchJobs()} onCerrar={closeQuotesModal} />
+                    )}
                     {/* QR o código para entrar a la propiedad (vence en máx. 7 días) */}
                     <AccesoPropiedadCliente key={`acceso-${selectedJobForQuotes.id}`} job={selectedJobForQuotes} />
                     <div style={{ marginBottom: '16px' }}>
@@ -1474,6 +1478,10 @@ const VistaRedAutonomo = () => {
                                     </button>
                                   )}
                                 </div>
+                                {/* Cancelar el servicio asignado (antes de que comience), debajo del chat */}
+                                {isAcceptedQuote && selectedJobForQuotes.status === 'Asignado' && (
+                                  <CancelacionServicioCliente job={selectedJobForQuotes} onCambio={() => fetchJobs()} onCerrar={closeQuotesModal} />
+                                )}
                               </div>
                               {!isAcceptedQuote && <EstadoCotizacionRed quote={quote} job={selectedJobForQuotes} onCambio={() => fetchJobs()} />}
                             </div>

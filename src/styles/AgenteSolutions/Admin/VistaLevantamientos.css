@@ -780,3 +780,29 @@
   }
 }
 
+
+/* Solicitudes de la Red: fecha y hora que pidió el cliente (la ve el Root al asignar) */
+.lev-preferencia-mini {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  color: #c2410c;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.lev-preferencia-cliente {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(242, 101, 34, 0.08);
+  border: 1px solid rgba(242, 101, 34, 0.28);
+  color: #9a3412;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+.lev-preferencia-cliente svg { flex-shrink: 0; margin-top: 2px; color: #ea580c; }

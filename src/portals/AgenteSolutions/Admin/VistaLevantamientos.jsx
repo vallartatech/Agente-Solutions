@@ -23,6 +23,7 @@ import "../../../styles/AgenteSolutions/Admin/VistaLevantamientos.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
 import { mostrarAviso } from '../../../utils/dialogos';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
+import { fechaPreferidaLegible, fechaPreferidaParaCampo } from '../../../utils/fechaPreferida';
 
 const VistaLevantamientos = () => {
   const navigate = useNavigate();
@@ -226,6 +227,12 @@ const VistaLevantamientos = () => {
   // --- ASIGNACIÓN (ADMIN) ---
   const abrirAsignacion = (servicio) => {
     setServicioSeleccionado(servicio);
+    // Solicitud de la Red: la cita arranca con la fecha y hora que pidió el cliente
+    const preferida = fechaPreferidaParaCampo(servicio?.fecha_preferida);
+    if (preferida) {
+      const [fecha, hora] = preferida.split('T');
+      setDatosAsignacion(prev => ({ ...prev, fecha, hora: hora || prev.hora }));
+    }
     setMostrarAsignar(true);
   };
 
@@ -438,6 +445,7 @@ const VistaLevantamientos = () => {
                         {/* Estado / Técnico */}
                         <td>
                           {tabActual === "PENDIENTES" ? (
+                            <>
                             <span className={`lev-status-chip ${
                               s.status === 'Reprogramación Solicitada' ? 'reschedule' :
                               s.status === 'Visita Confirmada' ? 'confirmed' :
@@ -447,6 +455,13 @@ const VistaLevantamientos = () => {
                                s.status === 'Visita Confirmada' ? 'Confirmada' :
                                s.assigned_to ? 'Programado' : 'Por Asignar'}
                             </span>
+                            {/* Solicitud de la Red: fecha y hora que pidió el cliente */}
+                            {s.fecha_preferida && (
+                              <small className="lev-preferencia-mini" title="Fecha y hora que pidió el cliente">
+                                <Clock size={12} /> Pide: {fechaPreferidaLegible(s.fecha_preferida)}
+                              </small>
+                            )}
+                            </>
                           ) : (
                             <span style={{ fontWeight: '700', color: '#334155' }}>
                               {s.tecnico_nombre || "Técnico Agente"}
@@ -742,6 +757,16 @@ const VistaLevantamientos = () => {
             <p style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '16px' }}>
               Servicio: <strong style={{ color: '#0f172a' }}>{servicioSeleccionado?.title}</strong>
             </p>
+
+            {servicioSeleccionado?.fecha_preferida && (
+              <p className="lev-preferencia-cliente">
+                <Clock size={16} />
+                <span>
+                  El cliente pidió la visita para <strong>{fechaPreferidaLegible(servicioSeleccionado.fecha_preferida)}</strong>.
+                  Ajústala con el técnico si hace falta.
+                </span>
+              </p>
+            )}
 
             <form onSubmit={manejarConfirmarAgenda}>
               <div className="lev-form-group">
