@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Header from '../../../components/Shared/Header';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { UserCheck, Clock, Phone, Mail, RefreshCw, CheckCircle, AlertCircle, Eye, X, MessageSquare, Building2, Calendar, User, ShieldCheck } from 'lucide-react';
+import { UserCheck, Clock, Phone, Mail, RefreshCw, CheckCircle, AlertCircle, Eye, X, MessageSquare, Building2, Calendar, User, ShieldCheck, Lightbulb } from 'lucide-react';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 import { useAuth } from '../../../context/AuthContext';
 import PerfilesPorValidar from './PerfilesPorValidar/PerfilesPorValidar';
+import HabilidadesSugeridas from './PerfilesPorValidar/HabilidadesSugeridas';
 
 // Solo los 10 dígitos del número; el enlace de WhatsApp ya antepone 521
 const cleanPhone = (tel) => String(tel || '').replace(/\D/g, '').slice(-10);
@@ -23,14 +24,22 @@ const VistaSalaEsperaTecnicos = () => {
   const validarId = searchParams.get('validar');
   // ?validar=ID (desde la notificación) o ?pestana=perfiles (desde Usuarios): abre la validación
   const abrirPerfiles = Boolean(validarId) || searchParams.get('pestana') === 'perfiles';
-  const [pestana, setPestana] = useState(abrirPerfiles && puedeValidar ? 'perfiles' : 'ingreso');
+  // ?pestana=habilidades (desde la notificación de una habilidad sugerida)
+  const abrirHabilidades = searchParams.get('pestana') === 'habilidades';
+  const pestanaInicial = !puedeValidar ? 'ingreso' : abrirHabilidades ? 'habilidades' : abrirPerfiles ? 'perfiles' : 'ingreso';
+  const [pestana, setPestana] = useState(pestanaInicial);
   const [porValidar, setPorValidar] = useState(null);
+  const [habilidadesPendientes, setHabilidadesPendientes] = useState(null);
   useEffect(() => { if (abrirPerfiles && puedeValidar) setPestana('perfiles'); }, [abrirPerfiles, puedeValidar]);
+  useEffect(() => { if (abrirHabilidades && puedeValidar) setPestana('habilidades'); }, [abrirHabilidades, puedeValidar]);
   // Cuántos perfiles esperan validación (para el número de la pestaña)
   useEffect(() => {
     if (!puedeValidar) return;
     axios.get(`${import.meta.env.VITE_API_BASE_URL}/admin/perfiles-profesionales`, { params: { estado: 'en_revision' } })
       .then(res => setPorValidar((res.data.data || []).length))
+      .catch(() => {});
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/admin/especialidades/sugerencias`, { params: { estado: 'pendiente' } })
+      .then(res => setHabilidadesPendientes((res.data.data || []).length))
       .catch(() => {});
   }, [puedeValidar]);
 
@@ -127,6 +136,7 @@ const VistaSalaEsperaTecnicos = () => {
             {[
               { clave: 'ingreso', texto: 'Solicitudes de ingreso', Icono: UserCheck, cuenta: loading ? null : pendingTechs.length },
               { clave: 'perfiles', texto: 'Perfiles por validar', Icono: ShieldCheck, cuenta: porValidar },
+              { clave: 'habilidades', texto: 'Habilidades sugeridas', Icono: Lightbulb, cuenta: habilidadesPendientes },
             ].map(({ clave, texto, Icono, cuenta }) => (
               <button
                 key={clave}
@@ -151,7 +161,9 @@ const VistaSalaEsperaTecnicos = () => {
           </div>
         )}
 
-        {pestana === 'perfiles' && puedeValidar ? (
+        {pestana === 'habilidades' && puedeValidar ? (
+          <HabilidadesSugeridas onConteo={setHabilidadesPendientes} />
+        ) : pestana === 'perfiles' && puedeValidar ? (
           <PerfilesPorValidar abrirId={validarId ? Number(validarId) : null} onConteo={setPorValidar} />
         ) : (<>
         <div style={{ backgroundColor: '#FFF3E0', borderRadius: '12px', padding: '20px', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '15px', borderLeft: '5px solid #FF9800' }}>

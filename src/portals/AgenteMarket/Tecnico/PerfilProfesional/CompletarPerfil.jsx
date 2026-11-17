@@ -125,7 +125,7 @@ const CompletarPerfil = () => {
     try {
       const data = await guardarPerfil(payload);
       aplicarPerfil(data);
-      // Las habilidades nuevas ya tienen id del catálogo
+      // Las habilidades guardadas vienen del catálogo (las que faltan se sugieren aparte)
       if (paso === 1) setHabilidades(formHabilidades(data));
       return true;
     } catch (err) {

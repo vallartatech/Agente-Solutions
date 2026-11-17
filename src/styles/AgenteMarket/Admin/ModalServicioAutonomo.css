@@ -1953,3 +1953,142 @@
     font-size: 0.92rem !important;
   }
 }
+
+/* Acceso a la propiedad (QR y/o código) dentro de Reportar Problema: reutiliza los estilos acr-* */
+.msa-content .msa-acceso-box { margin: 0 !important; }
+.msa-acceso-desc {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+.msa-acceso-box .acr-agregar:disabled { opacity: 0.55; cursor: not-allowed; }
+.msa-ficha-batch-banner.msa-ficha-aviso-acceso {
+  background: #fef2f2 !important;
+  border-color: #fecaca !important;
+  color: #b91c1c !important;
+}
+
+/* Pregunta amigable: ¿tiene código o QR de acceso? */
+.msa-acceso-pregunta {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+.msa-acceso-opciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.msa-acceso-opcion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.msa-acceso-opcion.si { border-color: #f26522; background: #fff7ed; color: #ea580c; }
+.msa-acceso-opcion:hover:not(:disabled) { border-color: #f26522; }
+.msa-acceso-opcion:disabled { opacity: 0.55; cursor: not-allowed; }
+.msa-acceso-no {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.msa-acceso-cambiar {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 4px 2px;
+  color: #ea580c;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Recordatorio flotante antes de enviar */
+.msa-pregunta-acceso-overlay { z-index: 1000010 !important; }
+.msa-ficha-icon-circle.acceso { background: #fff7ed !important; }
+.msa-pregunta-acceso-acciones {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+.msa-pregunta-acceso-no {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 14px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.msa-pregunta-acceso-no:hover { border-color: #cbd5e1; background: #f8fafc; }
+.msa-pregunta-acceso .msa-ficha-btn-ok {
+  background: linear-gradient(135deg, #f26522 0%, #ea580c 100%) !important;
+  box-shadow: 0 6px 16px rgba(234, 88, 12, 0.28) !important;
+}
+
+/* ¿Qué técnico necesitas? (habilidad del trabajo) */
+.msa-hab-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.msa-hab-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.msa-hab-chip > svg { color: #ea580c; flex-shrink: 0; }
+.msa-hab-chip:hover:not(:disabled):not(.activo) { border-color: #fdba74; }
+.msa-hab-chip.activo { border-color: #f26522; background: #fff7ed; color: #ea580c; }
+.msa-hab-chip.mas { border-style: dashed; color: #64748b; }
+.msa-hab-chip.nose > svg { color: #64748b; }
+.msa-hab-chip.nose.activo { border-color: #64748b; background: #f1f5f9; color: #334155; }
+.msa-hab-chip:disabled { opacity: 0.55; cursor: not-allowed; }
+.msa-hab-nota {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+.msa-hab-nota > svg { color: #ea580c; }

@@ -999,6 +999,8 @@ const MercadoTrabajos = () => {
             titulo: tituloProblema,
             tipo: order.type || 'Problema',
             equipo: order.equipment || '',
+            // Habilidad que necesita el trabajo: { id, name, icon } o null ("No estoy seguro")
+            specialty: order.specialty || null,
             lat: rawLat,
             lng: rawLng,
             coordinates: coordsObj ? coordsObj.formatted : (order.coordinates || order.coordenadas || order.property?.coordinates || null),

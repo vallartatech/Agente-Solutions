@@ -957,3 +957,41 @@
 .pp-personales-datos > strong { color: var(--pp-tinta); font-size: 1.1rem; }
 .pp-personales-datos .pp-campo { width: 100%; margin-top: 4px; }
 .pp-personales-datos .pp-campo > span { display: inline-flex; align-items: center; gap: 5px; }
+
+/* Sugerir una habilidad que no está en el catálogo (Root/Admin la revisan) */
+.pp-sugerir {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--pp-borde);
+}
+.pp-sugerir-titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--pp-tinta);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+.pp-sugerir-titulo > svg { color: var(--pp-naranja); flex-shrink: 0; }
+.pp-en-revision { margin-top: 2px; }
+.pp-chip.pendiente {
+  cursor: default;
+  border-style: dashed;
+  color: var(--pp-suave);
+  background: var(--pp-fondo-campo);
+}
+.pp-chip.pendiente > svg:first-child { color: var(--pp-suave); }
+.pp-chip.pendiente small { background: var(--pp-suave); }
+.pp-enlace {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--pp-naranja-hover);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}

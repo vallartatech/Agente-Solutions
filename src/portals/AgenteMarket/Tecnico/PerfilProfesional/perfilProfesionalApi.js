@@ -37,6 +37,14 @@ export const enviarARevision = () => axios.post(`${API}/tecnico/perfil-profesion
 export const catalogoEspecialidades = () =>
   axios.get(`${API}/specialties`).then((res) => (Array.isArray(res.data) ? res.data : []));
 
+/** Sugerir una habilidad que no está en el catálogo. Responde { ya_existe, specialty?, sugerencia?, message }. */
+export const sugerirEspecialidad = (nombre) =>
+  axios.post(`${API}/especialidades/sugerencias`, { nombre }).then((res) => res.data);
+
+/** Sugerencias del técnico que siguen en revisión. */
+export const misSugerencias = () =>
+  axios.get(`${API}/especialidades/sugerencias/mias`).then((res) => res.data?.data || []);
+
 /**
  * INE o diploma (privados): se piden con la sesión y se muestran como blob.
  * Devuelve una URL local (blob:) que hay que liberar con URL.revokeObjectURL.
