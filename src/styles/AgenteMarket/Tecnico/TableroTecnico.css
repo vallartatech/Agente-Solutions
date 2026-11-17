@@ -2668,6 +2668,42 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
 
 .nv-panel *, .nv-panel *::before, .nv-panel *::after { box-sizing: border-box; }
 
+/* Línea de arriba: oculta / muestra el panel para ver la ruta sin cerrarla */
+.nv-asa {
+  align-self: center;
+  width: 100%;
+  height: 18px;
+  margin: -8px 0 -6px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+}
+
+.nv-asa span {
+  width: 44px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.18);
+  transition: background-color 0.2s ease, width 0.2s ease;
+}
+
+.nv-asa:hover span { background: #f26522; width: 56px; }
+.nv-asa:focus { outline: none; }
+.nv-asa:focus-visible span { background: #f26522; }
+
+/* Plegado: solo estado, trabajo y tiempo de llegada */
+.nv-panel.plegado { gap: 8px; padding-bottom: 12px; }
+.nv-panel.plegado > :not(.nv-asa):not(.nv-top):not(.nv-destino) { display: none; }
+.nv-panel.plegado .nv-linea { display: none; }
+.nv-panel.plegado .nv-destino { align-items: center; }
+.nv-panel.plegado .nv-destino .tb-actions-icon { width: 36px; height: 36px; border-radius: 11px; }
+.nv-panel.plegado .nv-titulo { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* Estado y cerrar */
 .nv-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 

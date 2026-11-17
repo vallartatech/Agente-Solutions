@@ -13,6 +13,7 @@ import { DARK_MAP_STYLES, getCategoryIcon, ICONOS_CATEGORIA, descripcionTarjeta,
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 import AvisoCancelacionTecnico from '../Cliente/AvisoCancelacionTecnico';
+import AvisoCambioHorario from '../Cliente/AvisoCambioHorario';
 import { usaSelectorRed } from '../../../utils/entorno';
 const mapContainerStyle = {
   width: '100%',
@@ -903,6 +904,7 @@ const VistaRedAutonomo = () => {
 
       {/* El técnico canceló: calificarlo es obligatorio y después se elige reenviar o cancelar */}
       {usaSelectorRed(user) && <AvisoCancelacionTecnico onResuelto={() => fetchJobs()} />}
+      {usaSelectorRed(user) && <AvisoCambioHorario onResuelto={() => fetchJobs()} />}
     </div>
   );
 };

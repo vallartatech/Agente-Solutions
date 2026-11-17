@@ -226,6 +226,24 @@ const estadoHorarioDe = (job) => {
   };
 };
 
+// Máximo 2 oportunidades de agendar la visita (agendar + 1 cambio) para no "pelotear" al cliente.
+// Si el cliente pidió otro horario, la nueva propuesta no gasta oportunidad. Misma regla que el backend.
+export const MAX_AGENDADOS = 2;
+export const oportunidadesHorario = (job) => {
+  let usadas = 0;
+  let clientePidioOtro = false;
+  (job?.myQuote?.chat_history || []).forEach((m) => {
+    if (m.is_schedule) {
+      if (!clientePidioOtro) usadas += 1;
+      clientePidioOtro = false;
+    } else if (m.is_schedule_response) {
+      clientePidioOtro = m.schedule_confirmed === false;
+    }
+  });
+  const restantes = Math.max(0, MAX_AGENDADOS - usadas);
+  return { usadas, restantes, clientePidioOtro, puedeAgendar: clientePidioOtro || restantes > 0 };
+};
+
 // Quita emojis de textos guardados (ej. "[URGENCIA]: ⚡ Atención Urgente")
 const sinEmojis = (texto) => String(texto || '').replace(/[\p{Extended_Pictographic}️]\s*/gu, '');
 
@@ -549,6 +567,10 @@ const MercadoTrabajos = () => {
   const [technicianLocation, setTechnicianLocation] = useState({ lat: 21.0181, lng: -89.6242 });
   const [hasTechnicianGps, setHasTechnicianGps] = useState(false);
   const [activeNavJob, setActiveNavJob] = useState(null);
+  // Panel "En camino" plegable (la línea de arriba lo oculta para ver la ruta sin cerrarla)
+  const [navPlegado, setNavPlegado] = useState(false);
+  const navArrastreRef = useRef(null);
+  useEffect(() => { setNavPlegado(false); }, [activeNavJob?.id]);
   const [navDirections, setNavDirections] = useState(null);
   const [navDistance, setNavDistance] = useState('');
   const [navDuration, setNavDuration] = useState('');
@@ -1321,7 +1343,7 @@ const MercadoTrabajos = () => {
       }
     } catch (e) {
       console.error("Error programando visita", e);
-      mostrarAviso("Hubo un error al programar la visita. Intenta de nuevo.");
+      mostrarAviso(e?.response?.data?.message || "Hubo un error al programar la visita. Intenta de nuevo.");
     } finally {
       setSavingSchedule(false);
     }
@@ -1367,31 +1389,37 @@ const MercadoTrabajos = () => {
   const handleCancelServiceByTech = async (job) => {
     if (!job) return;
     const { value: reason, isConfirmed } = await Swal.fire({
+      icon: 'warning',
       title: '¿Cancelar este servicio?',
       html: `
-        <div style="text-align: left; font-size: 13.5px; color: #cbd5e1; line-height: 1.5;">
-          <p style="margin-bottom: 10px;">
-            Al cancelar tu asistencia, se notificará de inmediato al cliente para que pueda evaluar tu puntualidad con el sistema de <strong>5 relojes</strong> y reenviar su solicitud a la red.
+        <div style="text-align: left; font-size: 0.9rem; color: #475569; line-height: 1.55;">
+          <p style="margin: 0 0 12px;">
+            Se avisará de inmediato al cliente para que califique tu puntualidad con el sistema de <strong style="color:#0f172a;">5 relojes</strong> y pueda reenviar su solicitud a la red.
           </p>
-          <div style="background: rgba(239, 68, 68, 0.15); border-left: 3px solid #ef4444; padding: 9px 12px; border-radius: 6px; margin-bottom: 8px; color: #fca5a5; font-size: 13px;">
-            ⚠️ <strong>Penalizaciones aplicadas:</strong>
-            <ul style="margin: 4px 0 0 16px; padding: 0;">
-              <li>Bloqueo de <strong>24 horas</strong> para ver o cotizar solicitudes de este usuario.</li>
-              <li>Calificación de puntualidad de 5 relojes por parte del cliente.</li>
-            </ul>
+          <div style="display:flex; gap:10px; padding: 12px 14px; border-radius: 16px; background: rgba(254, 242, 242, 0.85); border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 2px 10px rgba(220, 38, 38, 0.08);">
+            <span style="flex-shrink:0; width:30px; height:30px; border-radius:10px; background:#dc2626; display:inline-flex; align-items:center; justify-content:center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            </span>
+            <div style="font-size: 0.84rem; color: #7f1d1d;">
+              <strong style="color:#b91c1c;">Penalizaciones</strong>
+              <ul style="margin: 4px 0 0 16px; padding: 0;">
+                <li>Bloqueo de <strong>24 horas</strong> para ver o cotizar solicitudes de este cliente.</li>
+                <li>El cliente califica tu puntualidad (5 relojes).</li>
+              </ul>
+            </div>
           </div>
         </div>
       `,
       input: 'textarea',
-      inputLabel: 'Motivo de la cancelación (opcional):',
-      inputPlaceholder: 'Ej. Imprevisto de fuerza mayor, descompostura de vehículo, emergencia...',
+      inputLabel: 'Motivo de la cancelación (opcional)',
+      inputPlaceholder: 'Ej. Imprevisto de fuerza mayor, descompostura del vehículo, emergencia…',
       showCancelButton: true,
-      confirmButtonText: 'Sí, Cancelar Servicio',
-      cancelButtonText: 'Volver atrás',
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#475569',
-      background: '#191e2b',
-      color: '#ffffff'
+      confirmButtonText: 'Sí, cancelar servicio',
+      cancelButtonText: 'Volver',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#94a3b8',
+      reverseButtons: true,
+      focusCancel: true
     });
 
     if (!isConfirmed) return;
@@ -1407,11 +1435,10 @@ const MercadoTrabajos = () => {
       if (res.data.success) {
         await Swal.fire({
           icon: 'info',
-          title: 'Servicio Cancelado',
-          text: 'Has cancelado tu asistencia para este servicio. Se ha notificado al cliente.',
-          confirmButtonColor: '#f26522',
-          background: '#191e2b',
-          color: '#ffffff'
+          title: 'Servicio cancelado',
+          text: 'Cancelaste tu asistencia a este servicio. Ya le avisamos al cliente.',
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#f26522'
         });
 
         if (activeNavJob && activeNavJob.id === job.id) {
@@ -1430,8 +1457,8 @@ const MercadoTrabajos = () => {
         icon: 'error',
         title: 'Error al cancelar',
         text: err.response?.data?.message || 'No fue posible cancelar el servicio.',
-        background: '#191e2b',
-        color: '#ffffff'
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#f26522'
       });
     }
   };
@@ -2200,6 +2227,13 @@ const MercadoTrabajos = () => {
     const targetJob = job || selectedBoardJob || activeNavJob;
     if (!targetJob) return;
 
+    // Límite de oportunidades para agendar (con el chat vivo del trabajo)
+    const vivo = acceptedJobs.find(j => j.id === targetJob.id) || targetJob;
+    if (!oportunidadesHorario(vivo).puedeAgendar) {
+      mostrarAviso(`Ya usaste tus ${MAX_AGENDADOS} oportunidades para agendar esta visita. Solo podrás proponer otro horario si el cliente lo solicita.`, 'warning');
+      return;
+    }
+
     let initialDate = '';
     const rawDate = targetJob.scheduled_at || targetJob.scheduled_date || targetJob.fecha_cita;
     if (rawDate) {
@@ -2285,6 +2319,13 @@ const MercadoTrabajos = () => {
       fetchJobs();
     } catch (err) {
       console.error('Error al programar visita:', err);
+      // El servidor rechazó (p. ej. límite de oportunidades): no simular que se guardó
+      if (err?.response) {
+        mostrarAviso(err.response.data?.message || 'No se pudo programar la visita. Intenta de nuevo.', 'warning');
+        setShowBoardScheduleModal(false);
+        fetchJobs();
+        return;
+      }
       // Actualización optimista local en caso de desconexión
       setAcceptedJobs(prev => prev.map(j => {
         if (j.id === targetJob.id) {
@@ -3027,12 +3068,21 @@ const MercadoTrabajos = () => {
                                 )}
                               </div>
 
-                              {!isJobCompleted && (
-                                <button type="button" className="rd-herramienta" onClick={() => handleOpenBoardScheduler(selectedBoardJob)} title="Programar o cambiar fecha y hora de la visita">
-                                  <span><Calendar size={16} /></span>
-                                  {selectedBoardJob.scheduled_at ? 'Cambiar horario' : 'Agendar llegada'}
-                                </button>
-                              )}
+                              {!isJobCompleted && (() => {
+                                const op = oportunidadesHorario(selectedBoardJob);
+                                return (
+                                  <button
+                                    type="button"
+                                    className="rd-herramienta"
+                                    onClick={() => handleOpenBoardScheduler(selectedBoardJob)}
+                                    disabled={!op.puedeAgendar}
+                                    title={op.puedeAgendar ? `Te quedan ${op.clientePidioOtro ? 'cambios por petición del cliente' : `${op.restantes} de ${MAX_AGENDADOS} oportunidades`}` : 'Ya usaste tus oportunidades para agendar'}
+                                  >
+                                    <span><Calendar size={16} /></span>
+                                    {!op.puedeAgendar ? 'Sin cambios disponibles' : (selectedBoardJob.scheduled_at ? `Cambiar horario (${op.clientePidioOtro ? 'el cliente lo pidió' : `${op.restantes} restante${op.restantes === 1 ? '' : 's'}`})` : 'Agendar llegada')}
+                                  </button>
+                                );
+                              })()}
                               <button type="button" className="rd-herramienta" onClick={() => setShowPdfReportModal(true)} title="Visualizar reporte detallado oficial en PDF">
                                 <span><FileText size={16} /></span> Ver PDF
                               </button>
@@ -4369,7 +4419,33 @@ const MercadoTrabajos = () => {
                   const navDeseada = !navUrgente && fechaDeseada(navDesc);
 
                   return (
-                    <div className="nv-panel">
+                    <div className={`nv-panel ${navPlegado ? 'plegado' : ''}`}>
+                      {/* Línea para ocultar / mostrar el panel (toque o deslizar) sin perder la ruta */}
+                      <button
+                        type="button"
+                        className="nv-asa"
+                        onClick={() => {
+                          // Si fue un deslizamiento, ya se aplicó en onPointerUp
+                          if (navArrastreRef.current === 'deslizo') { navArrastreRef.current = null; return; }
+                          navArrastreRef.current = null;
+                          setNavPlegado(p => !p);
+                        }}
+                        onPointerDown={(e) => { navArrastreRef.current = e.clientY; }}
+                        onPointerUp={(e) => {
+                          const inicio = navArrastreRef.current;
+                          if (typeof inicio !== 'number') return;
+                          const delta = e.clientY - inicio;
+                          if (Math.abs(delta) > 25) {
+                            setNavPlegado(delta > 0);
+                            navArrastreRef.current = 'deslizo';
+                          }
+                        }}
+                        title={navPlegado ? 'Mostrar detalles' : 'Ocultar para ver la ruta'}
+                        aria-label={navPlegado ? 'Mostrar detalles del servicio' : 'Ocultar detalles para ver la ruta'}
+                        aria-expanded={!navPlegado}
+                      >
+                        <span />
+                      </button>
                       {/* Estado y cerrar */}
                       <div className="nv-top">
                         <span className={`nv-estado ${navStatus === 'en_sitio' ? 'en-sitio' : ''}`}>
@@ -4439,14 +4515,23 @@ const MercadoTrabajos = () => {
                             </>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          className="nv-btn-blanco"
-                          onClick={() => handleOpenBoardScheduler(activeNavJob)}
-                          title="Definir o cambiar hora de llegada"
-                        >
-                          <Calendar size={14} strokeWidth={2.4} /> {navSched.hasSchedule ? 'Modificar' : 'Agendar'}
-                        </button>
+                        {(() => {
+                          const op = oportunidadesHorario(navVivo);
+                          return (
+                            <button
+                              type="button"
+                              className="nv-btn-blanco"
+                              onClick={() => handleOpenBoardScheduler(activeNavJob)}
+                              disabled={!op.puedeAgendar}
+                              title={op.puedeAgendar
+                                ? (op.clientePidioOtro ? 'El cliente pidió otro horario' : `Te quedan ${op.restantes} de ${MAX_AGENDADOS} oportunidades para agendar`)
+                                : 'Ya usaste tus oportunidades para agendar'}
+                            >
+                              <Calendar size={14} strokeWidth={2.4} />
+                              {!op.puedeAgendar ? 'Sin cambios' : (navSched.hasSchedule ? `Modificar (${op.clientePidioOtro ? 1 : op.restantes})` : `Agendar (${op.restantes})`)}
+                            </button>
+                          );
+                        })()}
                       </div>
 
                       {/* Respuesta del cliente al horario propuesto */}
@@ -4720,12 +4805,23 @@ const MercadoTrabajos = () => {
                                 type="button"
                                 className="jm-btn-principal"
                                 onClick={() => handleProgramarVisita(selectedJob.id)}
-                                disabled={savingSchedule}
+                                disabled={savingSchedule || !oportunidadesHorario(selectedJob).puedeAgendar}
                               >
                                 <Send size={16} strokeWidth={2.4} />
-                                {savingSchedule ? 'Enviando…' : (isRescheduleRequested ? 'Proponer nuevo horario' : (fechaCita ? 'Cambiar horario' : 'Proponer horario'))}
+                                {savingSchedule ? 'Enviando…' : (!oportunidadesHorario(selectedJob).puedeAgendar ? 'Sin cambios disponibles' : (isRescheduleRequested ? 'Proponer nuevo horario' : (fechaCita ? 'Cambiar horario' : 'Proponer horario')))}
                               </button>
                             </div>
+                            {(() => {
+                              const op = oportunidadesHorario(selectedJob);
+                              if (op.clientePidioOtro) return <p className="jm-texto-suave">Este cambio lo pidió el cliente, no gasta oportunidad.</p>;
+                              return (
+                                <p className="jm-texto-suave">
+                                  {op.restantes > 0
+                                    ? `Te quedan ${op.restantes} de ${MAX_AGENDADOS} oportunidades para agendar. Acuerda bien la hora con el cliente.`
+                                    : 'Ya usaste tus oportunidades para agendar. Solo podrás cambiar el horario si el cliente lo pide.'}
+                                </p>
+                              );
+                            })()}
 
                             <MaterialDateTimePicker
                               isOpen={showDatePickerModal}

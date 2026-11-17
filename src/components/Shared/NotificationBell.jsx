@@ -10,7 +10,9 @@ import {
   CheckCircle2, 
   BellRing,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  CalendarClock,
+  MessageCircle
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
@@ -63,6 +65,22 @@ const getNotificationMeta = (notif) => {
       category: 'Perfil Profesional',
       icon: <ShieldCheck size={18} strokeWidth={2.2} color="#0f172a" />,
       tab: 'alertas'
+    };
+  }
+  // El técnico cambió el horario: es una modificación del trabajo, no un mensaje ni un costo
+  if (type === 'red_horario_modificado' || title.includes('modificación del trabajo')) {
+    return {
+      category: 'Modificación del trabajo',
+      icon: <CalendarClock size={18} strokeWidth={2.2} color="#0f172a" />,
+      tab: 'servicios'
+    };
+  }
+  // Mensajes del chat de la Red (su tipo contiene "quote", pero no son de costo)
+  if (type === 'new_quote_message') {
+    return {
+      category: 'Mensaje en la Red',
+      icon: <MessageCircle size={18} strokeWidth={2.2} color="#0f172a" />,
+      tab: 'servicios'
     };
   }
   if (type.includes('quote') || type.includes('pago') || type.includes('payment') || title.includes('cotiza') || title.includes('pago') || title.includes('costo') || msg.includes('cotiza')) {

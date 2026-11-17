@@ -6,6 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 import ModalCompraEspacios from '../../../components/Shared/ModalCompraEspacios';
 import ModalCalendarioCliente from './ModalCalendarioCliente';
 import AvisoCancelacionTecnico from './AvisoCancelacionTecnico';
+import AvisoCambioHorario from './AvisoCambioHorario';
 import ModalRegistroInmueble from './ModalRegistroInmueble';
 import ModalEditarPropiedadCliente from './ModalEditarPropiedadCliente';
 import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
@@ -1013,6 +1014,7 @@ const VistaClienteParticular = () => {
 
       {/* El técnico canceló: calificarlo es obligatorio y después se elige reenviar o cancelar */}
       <AvisoCancelacionTecnico onResuelto={() => fetchData()} />
+      <AvisoCambioHorario onResuelto={() => fetchData()} />
     </div>
   );
 };

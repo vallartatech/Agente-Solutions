@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 
 import AvisoCancelacionTecnico from './AvisoCancelacionTecnico';
+import AvisoCambioHorario from './AvisoCambioHorario';
 import DetallePublicacionRed from './DetallePublicacionRed';
 // ── Agenda de Agente Market ──
 // Misma interfaz que el calendario de Agente Solutions (ModalCalendarioSolutions), con los datos de la red:
@@ -905,6 +906,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
     <>
       {/* El técnico canceló: calificarlo es obligatorio (fuera del fondo del calendario para no cerrarlo) */}
       {!isTechnician && <AvisoCancelacionTecnico onResuelto={() => fetchJobs()} />}
+      {!isTechnician && <AvisoCambioHorario onResuelto={() => fetchJobs()} />}
       {createPortal(
     <div className={`cal-modal-backdrop ${calCerrando ? 'is-cerrando' : ''}`} onClick={onClose}>
       <div

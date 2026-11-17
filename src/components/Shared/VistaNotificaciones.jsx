@@ -108,6 +108,16 @@ const VistaNotificaciones = () => {
         Icon: ShieldCheck
       };
     }
+    // El técnico cambió el horario: modificación del trabajo (antes salía como "mensaje")
+    if (type === 'red_horario_modificado' || title.includes('modificación del trabajo')) {
+      return {
+        key: 'trabajos',
+        category: 'Modificación del trabajo',
+        categoryClass: 'job',
+        avatarClass: 'type-job',
+        Icon: Clock
+      };
+    }
     if (type.includes('message') || title.includes('mensaje') || msg.includes('mensaje')) {
       return {
         key: 'mensajes',
