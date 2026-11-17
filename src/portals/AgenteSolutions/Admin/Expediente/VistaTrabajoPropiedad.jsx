@@ -2,13 +2,13 @@ import { useMemo, useState, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   LayoutGrid, FileText, History, MapPin, Tag, Phone, Mail, UserRound, HardHat,
-  CalendarClock, CalendarCheck, AlertTriangle, ExternalLink, ImageOff, Building2
+  CalendarClock, CalendarCheck, AlertTriangle, ExternalLink, ImageOff, Building2, Wrench
 } from 'lucide-react';
 import Header from '../../../../components/Shared/Header';
 import CasaLoader from '../../../../components/Shared/CasaLoader';
 import useExpediente from './useExpediente';
 import { Chip, FlujoBarra, ListaCotizaciones, LineaTiempo, VisorFotos } from './ExpedienteUI';
-import { etiquetaEstado, etiquetaTipo, fechaHora, construirHistorial } from './flujoTrabajo';
+import { etiquetaEstado, etiquetaTipo, fechaHora, visitaLocal, construirHistorial } from './flujoTrabajo';
 import { AccesoQRAdmin } from '../../Shared/AccesoQR';
 import ModalCotizacion from './ModalCotizacion';
 import { useAuth } from '../../../../context/AuthContext';
@@ -105,7 +105,17 @@ const VistaTrabajoPropiedad = () => {
             </div>
             <div className="xp-trabajo-fechas">
               <span><CalendarClock size={14} /> Solicitado: <strong>{fechaHora(trabajo.created_at) || '—'}</strong></span>
-              <span><CalendarCheck size={14} /> Visita: <strong>{fechaHora(trabajo.scheduled_at) || 'Sin programar'}</strong></span>
+              <span><CalendarCheck size={14} /> Visita: <strong>{fechaHora(visitaLocal(trabajo.scheduled_at)) || 'Sin programar'}</strong></span>
+              {/* Lleva al tablero de Servicios con la orden de trabajo ya abierta */}
+              {!enRed && trabajo.kind === 'trabajo' && trabajo.id && (
+                <button
+                  type="button"
+                  className="xp-btn-glass xp-btn-servicio"
+                  onClick={() => navigate(`/tablero-servicios?jobId=${trabajo.id}`)}
+                >
+                  <Wrench size={16} /> Ver en Servicios
+                </button>
+              )}
             </div>
           </div>
           <FlujoBarra trabajo={trabajo} />

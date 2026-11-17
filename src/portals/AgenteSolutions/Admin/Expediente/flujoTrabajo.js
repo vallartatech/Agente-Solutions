@@ -101,6 +101,13 @@ export const fechaHora = (v) => {
   return d.toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
 };
 
+// La BD guarda la visita con la hora de Mérida tal cual, pero la API la manda marcada como UTC ("...Z").
+// Se toma la fecha y hora escritas, sin zona, para que coincida con el tablero de Servicios.
+export const visitaLocal = (v) => {
+  const m = String(v || '').match(/(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+  return m ? `${m[1]}T${m[2]}` : null;
+};
+
 export const dinero = (n) =>
   n === null || n === undefined || n === '' || Number.isNaN(Number(n))
     ? null
@@ -118,7 +125,7 @@ export const construirHistorial = (t) => {
 
   add(t.created_at, `${etiquetaTipo(t.kind)} solicitado`, t.descripcion, { fotos: t.fotos, tono: 'orange' });
   if ((t.tecnicos || []).length) add(t.created_at, 'Técnico asignado', nombreTecnicos(t), { tono: 'violet', sinHora: true });
-  add(t.scheduled_at, 'Visita programada', 'Fecha acordada para la visita.', { tono: 'amber' });
+  add(visitaLocal(t.scheduled_at), 'Visita programada', 'Fecha acordada para la visita.', { tono: 'amber' });
   add(t.arrived_at, 'Técnico en sitio', 'El técnico confirmó su llegada con GPS.', { tono: 'blue' });
   if (t.second_visit_proposed_date) {
     add(t.updated_at, 'Segunda visita', t.second_visit_reason || `Propuesta para ${t.second_visit_proposed_date}`, { tono: 'amber' });
