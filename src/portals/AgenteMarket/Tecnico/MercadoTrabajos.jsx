@@ -2046,6 +2046,33 @@ const MercadoTrabajos = () => {
   const handleStartBoardJob = async () => {
     if (!selectedBoardJob) return;
 
+    // Solo se comienza cuando el técnico marcó su llegada y el cliente la confirmó
+    if (!selectedBoardJob.arrived_at) {
+      const r = await Swal.fire({
+        icon: 'info',
+        title: 'Marca tu llegada primero',
+        text: 'Cuando estés en el lugar, marca tu llegada. El cliente debe confirmarla para que puedas comenzar el trabajo.',
+        showCancelButton: true,
+        confirmButtonText: 'Llegué al lugar',
+        cancelButtonText: 'Aún no',
+        confirmButtonColor: '#f26522',
+        cancelButtonColor: '#94a3b8',
+        reverseButtons: true,
+      });
+      if (r.isConfirmed) handleConfirmArrival(selectedBoardJob);
+      return;
+    }
+    if (!selectedBoardJob.arrival_confirmed_at) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Esperando al cliente',
+        text: 'El cliente aún no confirma tu llegada. Podrás comenzar el trabajo en cuanto lo haga.',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#f26522',
+      });
+      return;
+    }
+
     // Con un ajuste de cotización sin resolver no se comienza: primero responde el cliente (o decide el técnico)
     if (selectedBoardJob.ajuste_pendiente || selectedBoardJob.ajuste_por_decidir) {
       Swal.fire({
@@ -2826,14 +2853,34 @@ const MercadoTrabajos = () => {
                   <div className="mercado-board-flow-buttons-grid">
                     {/* Botón 1: Comenzar trabajo (0 fotos) / Ver Reporte (1+ fotos o Finalizado) */}
                     {completedReportsCount === 0 && !isJobCompleted ? (
-                      <button
-                        type="button"
-                        className="mercado-board-flow-btn btn-start"
-                        onClick={handleStartBoardJob}
-                        title="Comenzar el trabajo y registrar la primera foto de evidencia"
-                      >
-                        <Play size={15} /> COMENZAR TRABAJO
-                      </button>
+                      !selectedBoardJob.arrived_at ? (
+                        <button
+                          type="button"
+                          className="mercado-board-flow-btn btn-start"
+                          onClick={() => handleConfirmArrival(selectedBoardJob)}
+                          title="Marca tu llegada para que el cliente la confirme"
+                        >
+                          <MapPin size={15} /> LLEGUÉ AL LUGAR
+                        </button>
+                      ) : !selectedBoardJob.arrival_confirmed_at ? (
+                        <button
+                          type="button"
+                          className="mercado-board-flow-btn btn-start"
+                          disabled
+                          title="Podrás comenzar cuando el cliente confirme tu llegada"
+                        >
+                          <Lock size={14} /> COMENZAR (ESPERA AL CLIENTE)
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="mercado-board-flow-btn btn-start"
+                          onClick={handleStartBoardJob}
+                          title="Comenzar el trabajo y registrar la primera foto de evidencia"
+                        >
+                          <Play size={15} /> COMENZAR TRABAJO
+                        </button>
+                      )
                     ) : (
                       <button
                         type="button"

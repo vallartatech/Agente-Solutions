@@ -4,6 +4,7 @@ import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig"
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ModalServicioAutonomo from './ModalServicioAutonomo';
 import DetallePublicacionRed, { getJobScheduleStatus } from '../Cliente/DetallePublicacionRed';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
@@ -434,17 +435,27 @@ const VistaRedAutonomo = () => {
   };
 
   // Desde una notificación (/red-autonomos?trabajo=ID): abrir ese trabajo en cuanto carguen
-  const trabajoDelEnlaceRef = useRef(new URLSearchParams(window.location.search).get('trabajo'));
+  // (también si el cliente ya estaba en esta pantalla y toca la notificación desde la campana)
+  const location = useLocation();
+  const navigate = useNavigate();
+  const trabajoDelEnlaceRef = useRef(null);
+  const [enlacePendiente, setEnlacePendiente] = useState(0);
+  useEffect(() => {
+    const id = new URLSearchParams(location.search).get('trabajo');
+    if (!id) return;
+    trabajoDelEnlaceRef.current = id;
+    setEnlacePendiente(n => n + 1);
+  }, [location.search]);
   useEffect(() => {
     const id = trabajoDelEnlaceRef.current;
     if (!id || !networkJobs.length) return;
     const job = networkJobs.find(j => String(j.id) === String(id));
     if (!job) return;
     trabajoDelEnlaceRef.current = null;
-    window.history.replaceState(null, '', window.location.pathname);
+    navigate(location.pathname, { replace: true });
     if (job.is_accepted) setActiveTab('aceptados');
     openQuotesModal(job);
-  }, [networkJobs]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [networkJobs, enlacePendiente]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const closeQuotesModal = () => {
     setShowQuotesModal(false);
