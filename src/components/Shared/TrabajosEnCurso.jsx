@@ -6,13 +6,32 @@ import { API, authHeaders, esActivo, calcularFlujo, etiquetaEstado, nombreTecnic
 import '../../styles/Shared/TrabajosEnCurso.css';
 
 // Cada vez que se vuelve al inicio se monta de nuevo: se guarda lo último cargado para mostrarlo al instante
-let cache = { usuario: null, grupos: [] };
+// (la clave incluye si es la Red o la interna, para no mezclar)
+let cache = { clave: null, grupos: [] };
+
+// Pide los expedientes de pocos en pocos: en la interna puede haber muchas propiedades
+const enLotes = async (items, fn, simultaneos = 6) => {
+  const res = new Array(items.length);
+  let i = 0;
+  const trabajador = async () => {
+    while (i < items.length) {
+      const k = i++;
+      try { res[k] = { status: 'fulfilled', value: await fn(items[k]) }; }
+      catch (e) { res[k] = { status: 'rejected', reason: e }; }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(simultaneos, items.length) }, trabajador));
+  return res;
+};
 
 const enCurso = (t) => esActivo(t) && !String(t.status || '').trim().toLowerCase().startsWith('cancel');
 
-// Trabajos sin terminar de todas las propiedades del cliente, agrupados por propiedad
-export const useTrabajosEnCurso = (activo, usuarioId) => {
-  const [grupos, setGrupos] = useState(cache.usuario === usuarioId ? cache.grupos : []);
+// Trabajos sin terminar de todas las propiedades, agrupados por propiedad.
+// conRed: marca los trabajos publicados en la Red (solo clientes de la Red).
+// cadaMinuto: refresca solo cada 60 s (la interna solo al abrir o con el botón).
+export const useTrabajosEnCurso = (activo, usuarioId, { conRed = true, cadaMinuto = true } = {}) => {
+  const clave = `${usuarioId}|${conRed ? 'red' : 'interna'}`;
+  const [grupos, setGrupos] = useState(cache.clave === clave ? cache.grupos : []);
   const [cargando, setCargando] = useState(false);
 
   const recargar = useCallback(async () => {
@@ -22,27 +41,25 @@ export const useTrabajosEnCurso = (activo, usuarioId) => {
       const headers = authHeaders();
       const [propsRes, redRes] = await Promise.allSettled([
         axios.get(`${API}/propiedades`, { headers }),
-        axios.get(`${API}/mercado-trabajos?only_mine=1`, { headers }),
+        conRed ? axios.get(`${API}/mercado-trabajos?only_mine=1`, { headers }) : Promise.resolve(null),
       ]);
       if (propsRes.status !== 'fulfilled') return;
       const propiedades = Array.isArray(propsRes.value.data) ? propsRes.value.data : (propsRes.value.data?.data || []);
       // Órdenes publicadas en la Red (su id es el de la orden de trabajo de la propiedad)
       const enRed = new Set(
-        redRes.status === 'fulfilled' && redRes.value.data?.success
+        redRes.status === 'fulfilled' && redRes.value?.data?.success
           ? (redRes.value.data.data || []).map((o) => String(o.id))
           : []
       );
 
-      const expedientes = await Promise.allSettled(
-        propiedades.map((p) => axios.get(`${API}/propiedades/${p.id}/expediente`, { headers }))
-      );
+      const expedientes = await enLotes(propiedades, (p) => axios.get(`${API}/propiedades/${p.id}/expediente`, { headers }));
 
       const nuevos = propiedades.map((p, i) => {
         const r = expedientes[i];
         const trabajos = r.status === 'fulfilled' ? (r.value.data?.trabajos || []) : [];
         return {
           id: p.id,
-          nombre: p.property_name || p.nombre_propiedad || `Propiedad ${p.id}`,
+          nombre: p.property_name || p.nombre_propiedad || p.nombre || `Propiedad ${p.id}`,
           trabajos: trabajos.filter(enCurso).map((t) => ({
             ...t,
             enRed: t.kind === 'trabajo' && enRed.has(String(t.id)),
@@ -50,21 +67,21 @@ export const useTrabajosEnCurso = (activo, usuarioId) => {
         };
       }).filter((g) => g.trabajos.length);
 
-      cache = { usuario: usuarioId, grupos: nuevos };
+      cache = { clave, grupos: nuevos };
       setGrupos(nuevos);
     } catch (e) {
       console.error('No se pudieron cargar los trabajos en curso', e);
     } finally {
       setCargando(false);
     }
-  }, [activo, usuarioId]);
+  }, [activo, clave, conRed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     recargar();
-    if (!activo) return undefined;
+    if (!activo || !cadaMinuto) return undefined;
     const intervalo = setInterval(recargar, 60000);
     return () => clearInterval(intervalo);
-  }, [recargar, activo]);
+  }, [recargar, activo, cadaMinuto]);
 
   const total = useMemo(() => grupos.reduce((n, g) => n + g.trabajos.length, 0), [grupos]);
   return { grupos, total, cargando, recargar };
@@ -114,12 +131,13 @@ const FilaTrabajo = ({ trabajo, propiedadId, onIr }) => {
 };
 
 // Píldora desplegable (igual que la del plan): al abrirla muestra los trabajos sin terminar
-export const PildoraTrabajosEnCurso = ({ usuarioId }) => {
+// interna: solo el flujo del trabajo, sin nada de la Red
+export const PildoraTrabajosEnCurso = ({ usuarioId, interna = false }) => {
   const navigate = useNavigate();
   const [abierto, setAbierto] = useState(false);
   const [filtro, setFiltro] = useState('todas');
   const [plegados, setPlegados] = useState({});
-  const { grupos, total, cargando, recargar } = useTrabajosEnCurso(true, usuarioId);
+  const { grupos, total, cargando, recargar } = useTrabajosEnCurso(true, usuarioId, { conRed: !interna, cadaMinuto: !interna });
 
   // Si la propiedad filtrada ya no tiene trabajos en curso, volver a "Todas"
   useEffect(() => {

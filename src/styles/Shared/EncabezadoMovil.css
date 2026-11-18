@@ -137,3 +137,13 @@
     min-width: 40px !important;
   }
 }
+
+/* Logo más grande en móvil sin mover nada: se escala desde la izquierda
+   (transform no cambia el espacio que ocupa, así que botones y barra quedan igual) */
+@media (max-width: 900px) {
+  .vcp-header:not(#vcp-unico) .vcp-brand-logo,
+  .vcp-header:not(#vcp-unico) .vcp-brand-logo:hover {
+    transform: scale(1.45) !important;
+    transform-origin: left center !important;
+  }
+}

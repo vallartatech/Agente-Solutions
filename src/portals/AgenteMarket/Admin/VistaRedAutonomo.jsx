@@ -9,7 +9,7 @@ import ModalServicioAutonomo from './ModalServicioAutonomo';
 import DetallePublicacionRed, { getJobScheduleStatus } from '../Cliente/DetallePublicacionRed';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
-import { Plus, MapPin, Clock, CheckCircle, User, Calendar, List, Map as MapIcon, MessageCircle, Trash2, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, Check, ChevronDown, ChevronUp, Zap, Wrench } from 'lucide-react';
+import { Plus, MapPin, Clock, User, Calendar, List, Map as MapIcon, MessageCircle, Trash2, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, ChevronDown, ChevronUp, Zap, Wrench, X, SearchX, BadgeCheck, Wallet } from 'lucide-react';
 import { DARK_MAP_STYLES, getCategoryIcon, ICONOS_CATEGORIA, descripcionTarjeta, fechaDeseada } from '../Tecnico/MercadoTrabajos';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
@@ -22,6 +22,9 @@ const mapContainerStyle = {
 };
 
 const defaultCenter = { lat: 21.0181, lng: -89.6242 }; // Mérida, Yucatán
+
+// Los mensajes automáticos traen emojis (✅...); en la tarjeta se muestran sin ellos
+const sinEmojis = (texto) => String(texto || '').replace(/[\p{Extended_Pictographic}\uFE0F]/gu, '').replace(/\s{2,}/g, ' ').trim();
 
 const limpiarDescripcion = (rawDesc) => {
   if (!rawDesc) return 'Sin descripción adicional';
@@ -41,11 +44,21 @@ const VistaRedAutonomo = () => {
   const [networkJobs, setNetworkJobs] = useState([]);
   // En celular la lista empieza abierta debajo del mapa (como Mapa en vivo); la barrita la oculta
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(true);
+  // Abierta tiene dos niveles en celular: a la mitad (normal) y hasta arriba (hojaCompleta)
+  const [hojaCompleta, setHojaCompleta] = useState(false);
+  useEffect(() => { if (!mobileDrawerOpen) setHojaCompleta(false); }, [mobileDrawerOpen]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('en_red'); // 'en_red' | 'aceptados'
 
   // Buscador y menú de filtro de la tarjeta lateral (mismo diseño que Mapa en vivo)
   const [busqueda, setBusqueda] = useState('');
+  // Filtro por fecha y hora: de publicación o de la visita
+  const [campoFecha, setCampoFecha] = useState('publicacion'); // 'publicacion' | 'visita'
+  const [filtroFecha, setFiltroFecha] = useState('');
+  const [horaDesde, setHoraDesde] = useState('');
+  const [horaHasta, setHoraHasta] = useState('');
+  const filtroFechaActivo = Boolean(filtroFecha || horaDesde || horaHasta);
+  const limpiarFiltroFecha = () => { setFiltroFecha(''); setHoraDesde(''); setHoraHasta(''); };
   const [filtroAbierto, setFiltroAbierto] = useState(false);
   const filtroRef = useRef(null);
   useEffect(() => {
@@ -152,13 +165,17 @@ const VistaRedAutonomo = () => {
     const deltaY = currentDragYRef.current;
 
     if (!didDragRef.current) {
-      // Toque simple (sin arrastre): alternar abrir / cerrar
-      setMobileDrawerOpen(prev => !prev);
+      // Toque simple (sin arrastre): plegada → mitad, mitad → plegada, arriba → mitad
+      if (hojaCompleta) setHojaCompleta(false);
+      else setMobileDrawerOpen(prev => !prev);
+    } else if (mobileDrawerOpen && hojaCompleta) {
+      // Hasta arriba: bajar regresa a la mitad (un jalón largo la pliega)
+      if (deltaY > 220) setMobileDrawerOpen(false);
+      else if (deltaY > 45) setHojaCompleta(false);
     } else if (mobileDrawerOpen) {
-      // Si se arrastró hacia abajo más de 45px, cerrar
-      if (deltaY > 45) {
-        setMobileDrawerOpen(false);
-      }
+      // A la mitad: hacia arriba sube al segundo nivel; hacia abajo se pliega
+      if (deltaY < -40) setHojaCompleta(true);
+      else if (deltaY > 45) setMobileDrawerOpen(false);
     } else {
       // Si se arrastró hacia arriba más de 40px, abrir
       if (deltaY < -40) {
@@ -360,6 +377,7 @@ const VistaRedAutonomo = () => {
             assigned_tech_name: assignedTechName,
             agreed_price: agreedPrice,
             fecha: new Date(order.created_at).toLocaleDateString('es-MX'),
+            created_at: order.created_at,
             lugar: order.property?.property_name || 'Lugar no especificado',
             zona: coloniaTexto,
             colonia: coloniaTexto,
@@ -465,9 +483,24 @@ const VistaRedAutonomo = () => {
   const enRedJobs = networkJobs.filter(j => !j.is_accepted);
   const aceptadosJobs = networkJobs.filter(j => j.is_accepted);
   const textoBusqueda = busqueda.trim().toLowerCase();
+  const dosDigitos = (n) => String(n).padStart(2, '0');
+  const coincideFechaHora = (j) => {
+    if (!filtroFechaActivo) return true;
+    const valor = campoFecha === 'visita' ? j.scheduled_at : j.created_at;
+    if (!valor) return false;
+    const d = new Date(valor);
+    if (Number.isNaN(d.getTime())) return false;
+    const dia = `${d.getFullYear()}-${dosDigitos(d.getMonth() + 1)}-${dosDigitos(d.getDate())}`;
+    const hora = `${dosDigitos(d.getHours())}:${dosDigitos(d.getMinutes())}`;
+    if (filtroFecha && dia !== filtroFecha) return false;
+    if (horaDesde && hora < horaDesde) return false;
+    if (horaHasta && hora > horaHasta) return false;
+    return true;
+  };
   const displayedJobs = (activeTab === 'en_red' ? enRedJobs : aceptadosJobs).filter(j =>
-    !textoBusqueda ||
-    [j.titulo, j.zona, j.descripcion, j.assigned_tech_name].some(v => String(v || '').toLowerCase().includes(textoBusqueda))
+    (!textoBusqueda ||
+      [j.titulo, j.zona, j.descripcion, j.assigned_tech_name].some(v => String(v || '').toLowerCase().includes(textoBusqueda)))
+    && coincideFechaHora(j)
   );
 
   const sidebarDragTransform = isDraggingSheet
@@ -617,7 +650,7 @@ const VistaRedAutonomo = () => {
 
         {/* ─── Sidebar (Tipo Uber) con soporte de arrastre táctil ─── */}
         <div 
-          className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} ${isDraggingSheet ? 'is-dragging' : ''}`}
+          className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''} ${mobileDrawerOpen && hojaCompleta ? 'hoja-completa' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} ${isDraggingSheet ? 'is-dragging' : ''}`}
           style={
             isDraggingSheet && sidebarDragTransform
               ? { '--sidebar-drag-transform': sidebarDragTransform }
@@ -649,26 +682,30 @@ const VistaRedAutonomo = () => {
           >
             <div
               className="mercado-mobile-drag-handle"
-              title={mobileDrawerOpen ? "Desliza hacia abajo o toca para plegar" : "Desliza hacia arriba o toca para abrir"}
+              title={hojaCompleta ? "Desliza hacia abajo o toca para bajar" : mobileDrawerOpen ? "Desliza hacia arriba para ver más, o hacia abajo para plegar" : "Desliza hacia arriba o toca para abrir"}
             />
             {/* Solo celular: texto de la barrita (como "Ver mapa completo" de Mapa en vivo) */}
             <span className="red-grabber-txt">
-              {mobileDrawerOpen
+              {hojaCompleta
+                ? <><ChevronDown size={15} /> Ver mapa</>
+                : mobileDrawerOpen
                 ? <><ChevronDown size={15} /> Ver mapa completo</>
                 : <><ChevronUp size={15} /> Mostrar lista ({displayedJobs.length})</>}
             </span>
-            <div className="red-sidebar-head">
-              <h2><Globe size={18} /> Trabajos en Red</h2>
-              <p>
-                <span className="mercado-map-live-dot" />
-                {activeTab === 'en_red'
-                  ? `${enRedJobs.length} ${enRedJobs.length === 1 ? 'publicación' : 'publicaciones'} en red`
-                  : `${aceptadosJobs.length} ${aceptadosJobs.length === 1 ? 'trabajo asignado' : 'trabajos asignados'}`}
-              </p>
-            </div>
           </div>
 
-          {/* Buscador + filtro: el filtro elige qué ver (En red / Asignados) y trae "Publicar problema" */}
+          {/* Título: fuera del encabezado para que en celular se desplace con la lista */}
+          <div className="red-sidebar-head">
+            <h2><Globe size={18} /> Trabajos en Red</h2>
+            <p>
+              <span className="mercado-map-live-dot" />
+              {activeTab === 'en_red'
+                ? `${enRedJobs.length} ${enRedJobs.length === 1 ? 'publicación' : 'publicaciones'} en red`
+                : `${aceptadosJobs.length} ${aceptadosJobs.length === 1 ? 'trabajo asignado' : 'trabajos asignados'}`}
+            </p>
+          </div>
+
+          {/* Buscador + filtro de fecha y hora */}
           <div className="red-buscador">
             <label className="red-search">
               <Search size={15} />
@@ -683,40 +720,79 @@ const VistaRedAutonomo = () => {
             <div className="red-filtro" ref={filtroRef}>
               <button
                 type="button"
-                className={`red-filtro-btn ${filtroAbierto ? 'abierto' : ''}`}
+                className={`red-filtro-btn ${filtroAbierto ? 'abierto' : ''} ${filtroFechaActivo ? 'con-filtro' : ''}`}
                 onClick={() => setFiltroAbierto(v => !v)}
                 aria-haspopup="true"
                 aria-expanded={filtroAbierto}
-                title="Filtros"
-                aria-label="Filtros"
+                title="Buscar por fecha y hora"
+                aria-label="Buscar por fecha y hora"
               >
                 <SlidersHorizontal size={16} />
               </button>
 
               {filtroAbierto && (
-                <div className="red-filtro-panel">
-                  <span className="red-filtro-titulo">Ver</span>
-                  <button
-                    type="button"
-                    className={`red-filtro-opcion ${activeTab === 'en_red' ? 'activa' : ''}`}
-                    onClick={() => { setActiveTab('en_red'); setFiltroAbierto(false); }}
-                  >
-                    <Globe size={15} />
-                    <span className="red-filtro-opcion-txt">Publicaciones en red <small>{enRedJobs.length}</small></span>
-                    {activeTab === 'en_red' && <Check size={15} />}
-                  </button>
-                  <button
-                    type="button"
-                    className={`red-filtro-opcion ${activeTab === 'aceptados' ? 'activa' : ''}`}
-                    onClick={() => { setActiveTab('aceptados'); setFiltroAbierto(false); }}
-                  >
-                    <Briefcase size={15} />
-                    <span className="red-filtro-opcion-txt">Trabajos asignados <small>{aceptadosJobs.length}</small></span>
-                    {activeTab === 'aceptados' && <Check size={15} />}
-                  </button>
+                <div className="red-filtro-panel red-filtro-fecha">
+                  <span className="red-filtro-titulo">Buscar por fecha y hora</span>
+                  <div className="red-filtro-segmento">
+                    <button
+                      type="button"
+                      className={campoFecha === 'publicacion' ? 'activo' : ''}
+                      onClick={() => setCampoFecha('publicacion')}
+                    >
+                      Publicación
+                    </button>
+                    <button
+                      type="button"
+                      className={campoFecha === 'visita' ? 'activo' : ''}
+                      onClick={() => setCampoFecha('visita')}
+                    >
+                      Visita
+                    </button>
+                  </div>
+                  <label className="red-filtro-campo">
+                    <span><Calendar size={13} /> Fecha</span>
+                    <input type="date" value={filtroFecha} onChange={(e) => setFiltroFecha(e.target.value)} />
+                  </label>
+                  <div className="red-filtro-horas">
+                    <label className="red-filtro-campo">
+                      <span><Clock size={13} /> Desde</span>
+                      <input type="time" value={horaDesde} onChange={(e) => setHoraDesde(e.target.value)} />
+                    </label>
+                    <label className="red-filtro-campo">
+                      <span><Clock size={13} /> Hasta</span>
+                      <input type="time" value={horaHasta} onChange={(e) => setHoraHasta(e.target.value)} />
+                    </label>
+                  </div>
+                  {filtroFechaActivo && (
+                    <button type="button" className="red-filtro-limpiar" onClick={limpiarFiltroFecha}>
+                      <X size={14} /> Quitar filtro
+                    </button>
+                  )}
                 </div>
               )}
             </div>
+          </div>
+
+          {/* En red / Aceptados: botones a la vista (antes estaban dentro del filtro) */}
+          <div className="red-vista-botones" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'en_red'}
+              className={activeTab === 'en_red' ? 'activo' : ''}
+              onClick={() => setActiveTab('en_red')}
+            >
+              <Globe size={15} /> En red <span>{enRedJobs.length}</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'aceptados'}
+              className={activeTab === 'aceptados' ? 'activo' : ''}
+              onClick={() => setActiveTab('aceptados')}
+            >
+              <Briefcase size={15} /> Aceptados <span>{aceptadosJobs.length}</span>
+            </button>
           </div>
 
           {/* Acción principal a la vista (antes estaba escondida dentro del filtro) */}
@@ -733,20 +809,20 @@ const VistaRedAutonomo = () => {
           <div className="mercado-job-list">
             {displayedJobs.length === 0 && (
               <div style={{ color: '#64748b', textAlign: 'center', padding: '40px 20px', fontSize: '14px' }}>
-                {textoBusqueda ? (
+                {textoBusqueda || filtroFechaActivo ? (
                   <>
-                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</div>
-                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#ffffff' }}>Ningún trabajo coincide con la búsqueda</p>
+                    <div className="red-vacio-icono"><SearchX size={24} /></div>
+                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#ffffff' }}>Ningún trabajo coincide con la búsqueda o el filtro</p>
                   </>
                 ) : activeTab === 'en_red' ? (
                   <>
-                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>🌐</div>
+                    <div className="red-vacio-icono"><Globe size={24} /></div>
                     <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#ffffff' }}>No tienes publicaciones abiertas en la red</p>
                     <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>Toca "Publicar problema" para solicitar cotizaciones de técnicos.</span>
                   </>
                 ) : (
                   <>
-                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>✅</div>
+                    <div className="red-vacio-icono"><BadgeCheck size={24} /></div>
                     <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#ffffff' }}>No tienes trabajos asignados</p>
                     <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>Cuando aceptes la cotización de un técnico, tu servicio aparecerá aquí para coordinar visita y chatear directamente.</span>
                   </>
@@ -759,9 +835,20 @@ const VistaRedAutonomo = () => {
               const IconoCategoria = ICONOS_CATEGORIA[cat.label] || Wrench;
               const sched = job.scheduled_at ? getJobScheduleStatus(job) : null;
               const desc = descripcionTarjeta(job.descripcion);
-              const fechaVisita = job.scheduled_at
-                ? new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })
+              // Fechas legibles: "sáb 22 nov, 2:05 a.m." y "17 nov 2026"
+              const visitaBonita = job.scheduled_at
+                ? new Date(job.scheduled_at).toLocaleString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
                 : '';
+              const publicadoBonito = job.created_at
+                ? new Date(job.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
+                : '';
+              const estadoVisita = !sched
+                ? { texto: 'Por coordinar', tono: 'gris' }
+                : sched.isRescheduleRequested
+                  ? { texto: 'Cambio solicitado', tono: 'naranja' }
+                  : sched.isScheduleConfirmed
+                    ? { texto: 'Confirmada', tono: 'verde' }
+                    : { texto: 'Por confirmar', tono: 'azul' };
               return (
                 <div
                   key={job.id}
@@ -805,37 +892,54 @@ const VistaRedAutonomo = () => {
 
                   {desc && <p className="rj-desc">{desc}</p>}
 
-                  {/* Técnico asignado si aplica */}
-                  {job.is_accepted && job.assigned_tech_name && (
-                    <div className="rj-tecnico">
-                      <User size={13} />
-                      <span className="rj-tecnico-nombre">{job.assigned_tech_name}</span>
+                  {/* Aceptado: ficha con etiquetas (quién, cuánto, cuándo) */}
+                  {job.is_accepted ? (
+                    <div className="rj-ficha">
+                      <div className="rj-ficha-fila">
+                        <span className="rj-ficha-etq"><User size={13} /> Técnico</span>
+                        <span className="rj-ficha-val">{job.assigned_tech_name || 'Asignado'}</span>
+                      </div>
                       {job.agreed_price > 0 && (
-                        <span className="rj-tecnico-precio">
-                          ${job.agreed_price.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        <div className="rj-ficha-fila">
+                          <span className="rj-ficha-etq"><Wallet size={13} /> Precio acordado</span>
+                          <span className="rj-ficha-val precio">
+                            ${job.agreed_price.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      )}
+                      <div className="rj-ficha-fila">
+                        <span className="rj-ficha-etq"><Calendar size={13} /> Visita</span>
+                        <span className="rj-ficha-val">
+                          {visitaBonita || 'Sin fecha'}
+                          <span className={`rj-ficha-chip ${estadoVisita.tono}`}>{estadoVisita.texto}</span>
                         </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rj-ficha">
+                      <div className="rj-ficha-fila">
+                        <span className="rj-ficha-etq"><MessageCircle size={13} /> Ofertas recibidas</span>
+                        <span className="rj-ficha-val">
+                          {job.cotizaciones}
+                          <span className={`rj-ficha-chip ${job.cotizaciones > 0 ? 'naranja' : 'gris'}`}>
+                            {job.cotizaciones > 0 ? 'Por revisar' : 'Esperando técnicos'}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="rj-ficha-fila">
+                        <span className="rj-ficha-etq"><Clock size={13} /> Publicado</span>
+                        <span className="rj-ficha-val">{publicadoBonito || job.fecha}</span>
+                      </div>
+                      {sched && (
+                        <div className="rj-ficha-fila">
+                          <span className="rj-ficha-etq"><Calendar size={13} /> Visita</span>
+                          <span className="rj-ficha-val">
+                            {visitaBonita}
+                            <span className={`rj-ficha-chip ${estadoVisita.tono}`}>{estadoVisita.texto}</span>
+                          </span>
+                        </div>
                       )}
                     </div>
-                  )}
-
-                  {/* Horario de visita */}
-                  {sched && (
-                    sched.isRescheduleRequested ? (
-                      <div className="rj-aviso naranja">
-                        <Clock size={13} />
-                        <span><strong>Re-coordinación:</strong> solicitaste cambio de horario</span>
-                      </div>
-                    ) : sched.isScheduleConfirmed ? (
-                      <div className="rj-aviso verde">
-                        <CheckCircle size={13} />
-                        <span><strong>Visita confirmada:</strong> {fechaVisita}</span>
-                      </div>
-                    ) : (
-                      <div className="rj-aviso azul">
-                        <Calendar size={13} />
-                        <span><strong>Visita propuesta:</strong> {fechaVisita} (por confirmar)</span>
-                      </div>
-                    )
                   )}
 
                   {/* Mensaje de técnico */}
@@ -843,8 +947,8 @@ const VistaRedAutonomo = () => {
                     <div className="rj-mensaje">
                       <MessageCircle size={15} className="rj-mensaje-icono" />
                       <div className="rj-mensaje-texto">
-                        <strong>Mensaje del técnico <span className="red-msg-dot-pulse" /></strong>
-                        <span>&ldquo;{job.lastTechMsg?.message}&rdquo;</span>
+                        <strong>Último mensaje del técnico <span className="red-msg-dot-pulse" /></strong>
+                        <span>&ldquo;{sinEmojis(job.lastTechMsg?.message)}&rdquo;</span>
                       </div>
                     </div>
                   )}
@@ -852,14 +956,11 @@ const VistaRedAutonomo = () => {
                   {/* Pie: ofertas y fecha a la izquierda, acciones a la derecha */}
                   <div className="rj-footer">
                     <div className="rj-footer-info">
-                      {job.is_accepted ? (
-                        <span className="rj-ofertas activa"><Check size={12} /> Asignación activa</span>
-                      ) : (
-                        <span className="rj-ofertas">
-                          <b>{job.cotizaciones}</b> {job.cotizaciones === 1 ? 'oferta' : 'ofertas'}
+                      {job.is_accepted && (
+                        <span className="rj-fecha" title="Fecha en que publicaste el trabajo">
+                          <Clock size={11} /> Publicado {publicadoBonito || job.fecha}
                         </span>
                       )}
-                      <span className="rj-fecha"><Clock size={11} /> {job.fecha}</span>
                     </div>
 
                     <div className="rj-footer-acciones">

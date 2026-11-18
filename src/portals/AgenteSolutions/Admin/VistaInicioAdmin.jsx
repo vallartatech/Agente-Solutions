@@ -5,6 +5,7 @@ import AdminHeader from '../../../components/Shared/AdminHeader';
 import ModalRegistroInmueble from '../../../components/Shared/ModalRegistroInmueble';
 import ModalNuevaSolicitud from './Expediente/ModalNuevaSolicitud';
 import { useAuth } from '../../../context/AuthContext';
+import { PildoraTrabajosEnCurso } from '../../../components/Shared/TrabajosEnCurso';
 import defaultPropImg from '../../../assets/propiedad_ejemplo.jpg';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
 import '../../../styles/AgenteSolutions/Admin/VistaInicioAdmin.css';
@@ -489,14 +490,17 @@ const VistaInicioAdmin = () => {
       <main className="vcp-body-layout">
         {/* ── COLUMNA IZQUIERDA: HERO DEL INMUEBLE Y CARRUSEL INFERIOR DE MINIATURAS ── */}
         <section className="vcp-hero-side">
-          {/* Badge Superior Flotante */}
-          <div className="vcp-plan-floating-badge is-collapsed" style={{ marginTop: '16px', marginBottom: '12px' }}>
+          {/* Píldoras superiores: catálogo y trabajos en curso (solo flujo, sin la Red) */}
+          <div className="vcp-pildoras-row" style={{ marginTop: '16px', marginBottom: '12px' }}>
+          <div className="vcp-plan-floating-badge is-collapsed">
             <div className="vcp-plan-pill-toggle-btn" style={{ cursor: 'default' }}>
               <Building2 size={15} style={{ color: '#ffffff' }} />
               <span className="vcp-plan-pill-text">
                 CATÁLOGO DE INMUEBLES ({propiedades.length} ACTIVOS)
               </span>
             </div>
+          </div>
+          <PildoraTrabajosEnCurso usuarioId={user?.id} interna />
           </div>
 
           {/* Sección Inferior Izquierda: Título y Carrusel de Miniaturas */}

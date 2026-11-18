@@ -690,7 +690,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                             <span className="red-conv-avatar">{quote.technician?.first_name?.charAt(0) || 'T'}</span>
                             <span className="red-conv-texto">
                               <strong>{quote.technicianName}</strong>
-                              <small>{ultimo?.message || 'Sin mensajes todavía'}</small>
+                              <small>{String(ultimo?.message || '').replace(/[\p{Extended_Pictographic}\uFE0F]/gu, '').replace(/\s{2,}/g, ' ').trim() || 'Sin mensajes todavía'}</small>
                             </span>
                             {quote.hasNewTechMessage && <span className="red-msg-dot-pulse" />}
                             <ChevronRight size={16} className="red-conv-flecha" />

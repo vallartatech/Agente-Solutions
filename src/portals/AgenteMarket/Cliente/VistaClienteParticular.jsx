@@ -42,7 +42,8 @@ import {
   Edit3,
   Bell,
   Shield,
-  Hourglass
+  Hourglass,
+  Eye
 } from 'lucide-react';
 
 import defaultPropImg from '../../../assets/propiedad_ejemplo.jpg';
@@ -724,6 +725,18 @@ const VistaClienteParticular = () => {
           <Plus size={17} /> SOLICITAR SERVICIO
         </button>
       </div>
+
+      {/* Móvil: acceso directo al detalle de la propiedad (datos, trabajos, cotizaciones) */}
+      {isMobile && hasProperties && (
+        <button
+          type="button"
+          className="vcp-btn-ver-propiedad"
+          onClick={() => navigate(`/detalle-propiedad/${activeProperty.id}`)}
+          title="Ver el detalle de la propiedad"
+        >
+          <Eye size={17} /> VER PROPIEDAD
+        </button>
+      )}
     </div>
   );
 
@@ -869,7 +882,7 @@ const VistaClienteParticular = () => {
               >
                 <div className="vcp-drawer-tab-main">
                   <div className="vcp-drawer-tab-badge">
-                    <Building2 size={14} color="#ffffff" />
+                    <Building2 size={22} color="#ffffff" className="vcp-drawer-tab-icono" />
                     <span>PERFIL DE LA PROPIEDAD</span>
                   </div>
                 </div>

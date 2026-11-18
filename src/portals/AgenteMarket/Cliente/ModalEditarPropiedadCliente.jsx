@@ -1,19 +1,58 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Type, Camera, MapPin, Loader2 } from 'lucide-react';
+import {
+  X, Type, Camera, MapPin, Loader2, Map, Building, Hash, Crosshair, MapPinned, CheckCircle2, AlertTriangle
+} from 'lucide-react';
 import axios from 'axios';
+import SelectorUbicacionMapa from '../../../components/Shared/SelectorUbicacionMapa';
+import { confirmarAccion } from '../../../utils/dialogos';
 import '../../../styles/AgenteMarket/Cliente/ModalRegistroInmueble.css';
 
-// Mismo diseño que ModalRegistroInmueble (clases mri-*), pero solo edita nombre, dirección y fachada.
+// Mismo diseño que ModalRegistroInmueble (clases mri-*): nombre, fachada y ubicación por partes con el mapa de Google.
+
+const sinAcentos = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+// Campos que se pueden llenar con la ubicación del mapa (los cruzamientos Google no los da)
+const CAMPOS_DIRECCION = [
+  ['estado', 'Estado'],
+  ['municipio', 'Ciudad / Municipio'],
+  ['colonia', 'Colonia'],
+  ['calle', 'Calle'],
+  ['numero', 'Número'],
+];
+
+// El backend solo rearma la dirección si llegan estas partes
+const OBLIGATORIOS = [['municipio', 'ciudad / municipio'], ['colonia', 'colonia'], ['calle', 'calle'], ['numero', 'número']];
+
+const AVISOS_MAPA = {
+  sin_api: 'No se pudo obtener la dirección automáticamente: falta activar la Geocoding API de Google. Llénala a mano.',
+  sin_resultados: 'Google no tiene la dirección de ese punto. Llénala a mano.',
+  fallo: 'No se pudo obtener la dirección en este momento. Llénala a mano.',
+};
+
+const direccionDe = (p) => ({
+  estado: p.estado || p.state || 'Yucatán',
+  municipio: p.municipio || '',
+  colonia: p.colonia || '',
+  calle: p.calle || '',
+  numero: p.numero || '',
+  cruzamientos: p.cruzamientos || '',
+  coordinates: p.coordenadas || p.coordinates || '',
+});
+
 const ModalEditarPropiedadCliente = ({ isOpen, onClose, propiedad, onSuccess }) => {
   const fileInputRef = useRef(null);
 
   const [nombre, setNombre] = useState('');
-  const [direccion, setDireccion] = useState('');
+  const [dir, setDir] = useState(direccionDe({}));
   const [foto, setFoto] = useState(null);
   const [fotoPreview, setFotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [mapaAbierto, setMapaAbierto] = useState(false);
+  // Llenado con el mapa: lo que ya tiene valor no se pisa sin preguntar; lo que llenó el mapa se marca en verde
+  const [autollenados, setAutollenados] = useState(() => new Set());
+  const [notaMapa, setNotaMapa] = useState(null); // { tipo: 'ok' | 'aviso', texto }
 
   // Gesto táctil: Arrastrar hacia abajo para cerrar (Swipe down to dismiss)
   const [dragY, setDragY] = useState(0);
@@ -22,8 +61,8 @@ const ModalEditarPropiedadCliente = ({ isOpen, onClose, propiedad, onSuccess }) 
 
   useEffect(() => {
     if (propiedad) {
-      setNombre(propiedad.nombre_propiedad || propiedad.nombre || propiedad.alias || '');
-      setDireccion(propiedad.address || propiedad.direccion || propiedad.calle || '');
+      setNombre(propiedad.nombre_propiedad || propiedad.property_name || propiedad.nombre || propiedad.alias || '');
+      setDir(direccionDe(propiedad));
       setFoto(null);
       setFotoPreview(
         propiedad.foto_url ||
@@ -34,6 +73,8 @@ const ModalEditarPropiedadCliente = ({ isOpen, onClose, propiedad, onSuccess }) 
         null
       );
       setErrorMsg('');
+      setAutollenados(new Set());
+      setNotaMapa(null);
     }
   }, [propiedad, isOpen]);
 
@@ -68,6 +109,63 @@ const ModalEditarPropiedadCliente = ({ isOpen, onClose, propiedad, onSuccess }) 
 
   if (!isOpen || !propiedad) return null;
 
+  const handleDirChange = (e) => {
+    const { name, value } = e.target;
+    setDir((prev) => ({ ...prev, [name]: value }));
+    if (autollenados.has(name)) {
+      setAutollenados((prev) => { const s = new Set(prev); s.delete(name); return s; });
+    }
+  };
+
+  // Al confirmar el punto en el mapa: guarda las coordenadas y llena la dirección con lo que detecta Google.
+  // Llena los campos vacíos; si ya había algo distinto, pregunta antes de reemplazarlo.
+  const aplicarUbicacion = async (coords, resultado) => {
+    setDir((prev) => ({ ...prev, coordinates: coords }));
+    if (!resultado) return;
+    const { direccion, error } = resultado;
+    if (!direccion) {
+      setNotaMapa({ tipo: 'aviso', texto: AVISOS_MAPA[error] || AVISOS_MAPA.fallo });
+      return;
+    }
+
+    const libres = {};
+    const distintos = [];
+    CAMPOS_DIRECCION.forEach(([campo, etiqueta]) => {
+      const sugerido = direccion[campo];
+      const actual = String(dir[campo] || '').trim();
+      if (!sugerido || sinAcentos(sugerido) === sinAcentos(actual)) return;
+      if (!actual) libres[campo] = sugerido;
+      else distintos.push({ campo, etiqueta, actual, sugerido });
+    });
+
+    let cambios = libres;
+    if (distintos.length) {
+      const lista = distintos.map((d) => `• ${d.etiqueta}: "${d.actual}" → "${d.sugerido}"`).join('\n');
+      const reemplazar = await confirmarAccion(
+        `El mapa sugiere una dirección distinta a la que tienes:\n\n${lista}\n\n¿Quieres reemplazarla?`,
+        { titulo: 'Dirección distinta', confirmar: 'Reemplazar', cancelar: 'Conservar la mía', peligro: false }
+      );
+      if (reemplazar) cambios = { ...libres, ...Object.fromEntries(distintos.map((d) => [d.campo, d.sugerido])) };
+    }
+
+    const llenados = Object.keys(cambios);
+    if (llenados.length) {
+      setDir((prev) => ({ ...prev, ...cambios }));
+      setAutollenados((prev) => new Set([...prev, ...llenados]));
+    }
+    const faltan = CAMPOS_DIRECCION.filter(([campo]) => !direccion[campo]).map(([, etiqueta]) => etiqueta.toLowerCase());
+    setNotaMapa({
+      tipo: 'ok',
+      texto: (llenados.length
+        ? `Completamos ${llenados.length} ${llenados.length === 1 ? 'campo' : 'campos'} con el mapa (marcados en verde). Verifica que estén bien.`
+        : 'La dirección del mapa coincide con la que tienes.')
+        + (faltan.length ? ` Google no dio: ${faltan.join(', ')}.` : '')
+        + ' Los cruzamientos van a mano.',
+    });
+  };
+
+  const claseInput = (campo) => `mri-input${autollenados.has(campo) ? ' mri-input-auto' : ''}`;
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -88,6 +186,16 @@ const ModalEditarPropiedadCliente = ({ isOpen, onClose, propiedad, onSuccess }) 
       return;
     }
 
+    // Si se tocó la dirección, deben ir completas las partes que el backend necesita para guardarla
+    const original = direccionDe(propiedad);
+    const dirCambio = ['estado', 'municipio', 'colonia', 'calle', 'numero', 'cruzamientos']
+      .some((k) => String(dir[k] || '').trim() !== String(original[k] || '').trim());
+    const faltan = OBLIGATORIOS.filter(([k]) => !String(dir[k] || '').trim()).map(([, etiqueta]) => etiqueta);
+    if (dirCambio && faltan.length) {
+      setErrorMsg(`Para guardar la dirección completa: ${faltan.join(', ')}.`);
+      return;
+    }
+
     setLoading(true);
     setErrorMsg('');
 
@@ -95,8 +203,13 @@ const ModalEditarPropiedadCliente = ({ isOpen, onClose, propiedad, onSuccess }) 
       const token = localStorage.getItem('agente_token');
       const formData = new FormData();
       formData.append('property_name', nombre.trim());
-      if (direccion.trim()) {
-        formData.append('address', direccion.trim());
+      if (!faltan.length) {
+        ['estado', 'municipio', 'colonia', 'calle', 'numero', 'cruzamientos'].forEach((k) => {
+          formData.append(k, String(dir[k] || '').trim());
+        });
+      }
+      if (dir.coordinates) {
+        formData.append('coordinates', dir.coordinates);
       }
       if (foto) {
         formData.append('facade_photo', foto);
@@ -113,13 +226,13 @@ const ModalEditarPropiedadCliente = ({ isOpen, onClose, propiedad, onSuccess }) 
         }
       );
 
+      const guardada = data?.property || {};
       const updatedData = {
         ...propiedad,
+        ...guardada,
         nombre_propiedad: nombre.trim(),
         property_name: nombre.trim(),
         nombre: nombre.trim(),
-        address: direccion.trim() || propiedad.address,
-        direccion: direccion.trim() || propiedad.direccion,
         foto_url: data.foto_url || (foto ? fotoPreview : propiedad.foto_url),
         facade_photo_path: data.foto_url || (foto ? fotoPreview : propiedad.facade_photo_path),
       };
@@ -139,6 +252,22 @@ const ModalEditarPropiedadCliente = ({ isOpen, onClose, propiedad, onSuccess }) 
       setLoading(false);
     }
   };
+
+  const campo = (name, etiqueta, Icono, placeholder, conMapa = true) => (
+    <div className="mri-field-one-third">
+      <label className="mri-label">
+        <Icono size={16} /> {etiqueta}:
+      </label>
+      <input
+        type="text"
+        name={name}
+        className={conMapa ? claseInput(name) : 'mri-input'}
+        placeholder={placeholder}
+        value={dir[name]}
+        onChange={handleDirChange}
+      />
+    </div>
+  );
 
   return createPortal(
     <div className="mri-overlay" onClick={onClose}>
@@ -226,19 +355,44 @@ const ModalEditarPropiedadCliente = ({ isOpen, onClose, propiedad, onSuccess }) 
               </div>
             </div>
 
-            {/* Dirección */}
+            {/* Ubicación: llena la dirección con el mapa (igual que al registrar) */}
             <div className="mri-field-full">
-              <label className="mri-label">
-                <MapPin size={16} /> Dirección:
-              </label>
-              <input
-                type="text"
-                className="mri-input"
-                placeholder="Ej. Calle 37 #120 x 4 y 6, Col. Centro"
-                value={direccion}
-                onChange={(e) => setDireccion(e.target.value)}
-              />
+              <div className="mri-gps-widget">
+                <div className="mri-gps-left">
+                  <div className="mri-gps-icon">
+                    <MapPinned size={20} />
+                  </div>
+                  <div className="mri-gps-info">
+                    <span className="mri-gps-label">UBICACIÓN GPS</span>
+                    <span className={`mri-gps-val ${!dir.coordinates ? 'empty' : ''}`}>
+                      {dir.coordinates || 'Llena la dirección con tu ubicación'}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="mri-gps-btn"
+                  onClick={() => setMapaAbierto(true)}
+                >
+                  <MapPin size={15} /> {dir.coordinates ? 'MODIFICAR' : 'USAR MI UBICACIÓN'}
+                </button>
+              </div>
             </div>
+
+            {notaMapa && (
+              <div className={`mri-field-full mri-mapa-nota ${notaMapa.tipo}`}>
+                {notaMapa.tipo === 'ok' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                <span>{notaMapa.texto}</span>
+              </div>
+            )}
+
+            {campo('estado', 'Estado', Map, 'Ej. Yucatán')}
+            {campo('municipio', 'Ciudad / Municipio', Building, 'Ingresa tu Ciudad')}
+            {campo('colonia', 'Colonia', Map, 'Ej. San Francisco')}
+            {campo('calle', 'Calle', MapPin, 'Ej. 11 o Calle 11')}
+            {campo('numero', '# Número', Hash, 'Ej. 108F')}
+            {campo('cruzamientos', 'Cruzamientos', Crosshair, 'Ej. x 24 y 26', false)}
 
           </div>
 
@@ -265,6 +419,14 @@ const ModalEditarPropiedadCliente = ({ isOpen, onClose, propiedad, onSuccess }) 
           </div>
         </form>
       </div>
+
+      <SelectorUbicacionMapa
+        isOpen={mapaAbierto}
+        onClose={() => setMapaAbierto(false)}
+        onConfirm={aplicarUbicacion}
+        coordenadasIniciales={dir.coordinates}
+        pedirDireccion
+      />
     </div>,
     document.body
   );

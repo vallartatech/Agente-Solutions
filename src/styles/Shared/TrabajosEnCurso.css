@@ -301,3 +301,15 @@
 }
 
 .tec-btn-red:hover { background: rgba(14, 165, 233, 0.26); }
+
+/* Scroll invisible en la lista de trabajos */
+.tec-lista {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tec-lista::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
