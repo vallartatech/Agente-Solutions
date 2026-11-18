@@ -37,6 +37,26 @@ const tomarVolverA = () => {
   }
 };
 
+// Carga una sola vez el script de Google Identity Services y devuelve window.google
+let promesaGoogleIdentity = null;
+const cargarGoogleIdentity = () => {
+  if (window.google?.accounts?.oauth2) return Promise.resolve(window.google);
+  if (!promesaGoogleIdentity) {
+    promesaGoogleIdentity = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.onload = () => (window.google?.accounts?.oauth2 ? resolve(window.google) : reject(new Error("GIS no disponible")));
+      script.onerror = () => {
+        promesaGoogleIdentity = null; // permitir reintentar
+        reject(new Error("No se pudo cargar Google Identity Services"));
+      };
+      document.head.appendChild(script);
+    });
+  }
+  return promesaGoogleIdentity;
+};
+
 // Catálogo de roles públicos clasificados en 2 categorías
 const ROLES_PUBLICOS = [
   // ── CATEGORÍA 1: CLIENTES (1) ──
@@ -386,7 +406,58 @@ const LoginAgente = () => {
         email: email,
         password: password
       });
+      entrarConSesion(res);
+    } catch (error) {
+      manejarErrorLogin(error);
+    }
+  };
 
+  // Inicio de sesión con Google (Google Identity Services, ventana emergente de Google)
+  const handleGoogleLogin = async () => {
+    setMensaje("");
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      setMensaje("Error: El inicio de sesión con Google aún no está configurado.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const google = await cargarGoogleIdentity();
+      const tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: "openid email profile",
+        callback: async (resp) => {
+          if (resp.error || !resp.access_token) {
+            setIsLoading(false);
+            setMensaje("Error: No se completó el inicio de sesión con Google.");
+            return;
+          }
+          try {
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/login/google`, {
+              access_token: resp.access_token
+            });
+            entrarConSesion(res);
+          } catch (error) {
+            manejarErrorLogin(error);
+          }
+        },
+        // El usuario cerró la ventana de Google o el navegador la bloqueó
+        error_callback: (err) => {
+          setIsLoading(false);
+          setMensaje(err?.type === "popup_failed_to_open"
+            ? "Error: Tu navegador bloqueó la ventana de Google. Permite las ventanas emergentes e intenta de nuevo."
+            : "Error: No se completó el inicio de sesión con Google.");
+        },
+      });
+      tokenClient.requestAccessToken({ prompt: "select_account" });
+    } catch {
+      setIsLoading(false);
+      setMensaje("Error: No se pudo cargar Google. Revisa tu conexión e intenta de nuevo.");
+    }
+  };
+
+  const entrarConSesion = (res) => {
       const { token, user } = res.data;
 
       localStorage.setItem('agente_token', token);
@@ -460,13 +531,17 @@ const LoginAgente = () => {
       } else {
         setMensaje(`Error: Tu usuario (Rol ${roleNum}) no tiene permisos válidos.`);
       }
+  };
 
-    } catch (error) {
+  const manejarErrorLogin = (error) => {
       setIsLoading(false);
       console.log("Error en el login:", error);
 
       if (error.response) {
-        if (error.response.status === 403) {
+        if (error.response.status === 404 && error.response.data?.status === 'not_registered') {
+          // Entró con Google pero ese correo no tiene cuenta: primero debe registrarse (elegir rol)
+          setMensaje(error.response.data.message);
+        } else if (error.response.status === 403) {
           if (error.response.data?.status === 'pending') {
             setIsPendingApproval(true);
             setRequiresLink(false);
@@ -494,7 +569,6 @@ const LoginAgente = () => {
       } else {
         setMensaje("Error: Servidor no disponible. Revisa tu conexión.");
       }
-    }
   };
 
   const handleLinkCompany = async (e) => {
@@ -1153,7 +1227,8 @@ const LoginAgente = () => {
                         type="button"
                         className="aiw-social-btn-google"
                         title="Continuar con Google"
-                        onClick={() => setMensaje("Autenticación con Google disponible próximamente.")}
+                        onClick={handleGoogleLogin}
+                        disabled={isLoading}
                       >
                         <svg className="aiw-google-icon" viewBox="0 0 24 24" width="18" height="18">
                           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -1344,14 +1419,16 @@ const LoginAgente = () => {
 
                     {/* reCAPTCHA (obligatorio fuera de localhost) */}
                     {!esLocalhost && (
-                      <div style={{ display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
-                        <ReCAPTCHA
-                          sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LccVsstAAAAAMDX_aSNIi1Hj93EpCr6-4p9Q9Yk"}
-                          onChange={setRegCaptchaToken}
-                          onExpired={() => setRegCaptchaToken(null)}
-                          theme="dark"
-                          size="compact"
-                        />
+                      <div className="aiw-captcha">
+                        <div className="aiw-captcha-marco">
+                          <ReCAPTCHA
+                            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LccVsstAAAAAMDX_aSNIi1Hj93EpCr6-4p9Q9Yk"}
+                            onChange={setRegCaptchaToken}
+                            onExpired={() => setRegCaptchaToken(null)}
+                            theme="dark"
+                            size="normal"
+                          />
+                        </div>
                       </div>
                     )}
 
