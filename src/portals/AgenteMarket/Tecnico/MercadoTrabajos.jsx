@@ -35,6 +35,7 @@ import AjusteCotizacionTecnico from './AjusteCotizacionTecnico';
 import AccesoPropiedadTecnico from './AccesoPropiedadTecnico';
 import { retirarCotizacion, confirmarDisponibilidad, errorDeRed } from '../Shared/redCancelacionApi';
 import '../../../styles/AgenteMarket/Shared/AjusteCotizacion.css';
+import { mensajeCotizacionActualizada } from '../Shared/versionesCotizacionChat';
 
 const mapContainerStyle = {
   width: '100%',
@@ -1306,6 +1307,25 @@ const MercadoTrabajos = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
+        // Oferta modificada: dejar la versión anterior en el chat para que el cliente vea el historial
+        const anterior = selectedJob.myQuote;
+        const precioAnterior = Number(anterior?.price) || 0;
+        const mensajeAnterior = String(anterior?.message || '').trim();
+        const cambio = precioAnterior > 0 && (
+          Math.abs(precioAnterior - Number(quotePrice)) >= 0.01 || mensajeAnterior !== String(quoteMessage || '').trim()
+        );
+        const quoteIdChat = res.data.quote?.id || res.data.data?.id || anterior?.id;
+        if (cambio && quoteIdChat) {
+          try {
+            await axios.post(
+              `${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quoteIdChat}/chat`,
+              { message: mensajeCotizacionActualizada(precioAnterior, Number(quotePrice), mensajeAnterior) },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          } catch (errChat) {
+            console.error('No se pudo registrar la versión anterior en el chat', errChat);
+          }
+        }
         mostrarAviso("✅ " + res.data.message);
         setQuoteStep(1);
         setQuotePrice('');
