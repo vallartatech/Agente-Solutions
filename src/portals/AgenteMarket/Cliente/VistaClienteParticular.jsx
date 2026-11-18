@@ -12,6 +12,7 @@ import ModalEditarPropiedadCliente from './ModalEditarPropiedadCliente';
 import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
 import NotificationBell from '../../../components/Shared/NotificationBell';
 import Header from '../../../components/Shared/Header';
+import { PildoraTrabajosEnCurso } from '../../../components/Shared/TrabajosEnCurso';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
 
 import {
@@ -741,6 +742,8 @@ const VistaClienteParticular = () => {
       <main className="vcp-body-layout">
         {/* ── LEFT HERO PROPERTY SHOWCASE ── */}
         <section className="vcp-hero-side">
+          {/* Píldoras desplegables: plan y trabajos en curso */}
+          <div className="vcp-pildoras-row">
           {/* Top Floating Subscription Plan Card (Oculto por defecto / Desplegable) */}
           <div className={`vcp-plan-floating-badge ${isPlanExpanded ? 'is-expanded' : 'is-collapsed'}`}>
             {!isPlanExpanded ? (
@@ -805,6 +808,9 @@ const VistaClienteParticular = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          {hasProperties && <PildoraTrabajosEnCurso usuarioId={user?.id} />}
           </div>
 
           {/* Estado vacío: invita a registrar la primera propiedad */}

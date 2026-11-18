@@ -1,0 +1,303 @@
+/* Trabajos en curso: panel desplegable del menú del cliente de la Red.
+   Flota sobre fotos, así que usa vidrio gris oscuro con borde blanco. */
+
+/* Fila de píldoras sobre la foto (plan + en curso) */
+.vcp-pildoras-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+  align-self: flex-start;
+  position: relative;
+  z-index: 10;
+  max-width: 100%;
+}
+
+.vcp-plan-pill-toggle-btn.tec-pill svg { color: #fff; flex-shrink: 0; }
+
+/* Caja desplegada: mismo vidrio oscuro que la del plan */
+.vcp-plan-floating-badge.is-expanded.tec-caja {
+  width: min(460px, calc(100vw - 32px));
+  max-width: 100%;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: min(60vh, 560px);
+  overflow: hidden;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  box-sizing: border-box;
+}
+
+.tec-caja .tec-head { cursor: pointer; }
+
+.tec-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.tec-head-icono {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #f26522;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tec-head-texto {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tec-head-texto strong { font-size: 1rem; font-weight: 800; }
+.tec-head-texto small { font-size: 0.75rem; color: rgba(255, 255, 255, 0.65); font-weight: 600; }
+
+.tec-icon-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.tec-icon-btn:hover { background: rgba(255, 255, 255, 0.16); }
+.tec-icon-btn svg { color: #fff; }
+.tec-icon-btn .girando { animation: tecGirar 0.9s linear infinite; }
+@keyframes tecGirar { to { transform: rotate(360deg); } }
+
+.tec-filtros {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.tec-filtros::-webkit-scrollbar { display: none; }
+
+.tec-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.tec-filtro span {
+  font-size: 0.7rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.tec-filtro:hover { background: rgba(255, 255, 255, 0.12); }
+.tec-filtro.activo { background: #f26522; border-color: #f26522; color: #fff; }
+.tec-filtro.activo span { background: rgba(255, 255, 255, 0.25); }
+
+.tec-lista {
+  overflow-y: auto;
+  padding: 8px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tec-vacio {
+  margin: 18px 6px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.88rem;
+}
+
+.tec-grupo { display: flex; flex-direction: column; gap: 6px; }
+
+.tec-grupo-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.tec-grupo-head > span:first-of-type {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tec-grupo-n {
+  font-size: 0.7rem;
+  padding: 1px 7px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.tec-grupo-flecha { transition: transform 0.2s ease; }
+.tec-grupo-flecha.plegado { transform: rotate(-90deg); }
+
+.tec-trabajo {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.tec-trabajo-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 10px 10px 12px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.tec-trabajo-main:hover { background: rgba(255, 255, 255, 0.08); }
+
+.tec-trabajo-icono {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(242, 101, 34, 0.9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tec-trabajo-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tec-trabajo-arriba { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.tec-trabajo-texto strong {
+  font-size: 0.9rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tec-trabajo-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.tec-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.tec-chip.orange { background: rgba(242, 101, 34, 0.28); color: #ffc29f; }
+.tec-chip.amber { background: rgba(245, 158, 11, 0.24); color: #fde68a; }
+.tec-chip.blue { background: rgba(59, 130, 246, 0.26); color: #bfdbfe; }
+.tec-chip.violet { background: rgba(139, 92, 246, 0.28); color: #ddd6fe; }
+.tec-chip.red { background: rgba(239, 68, 68, 0.28); color: #fecaca; }
+.tec-chip.green { background: rgba(34, 197, 94, 0.25); color: #bbf7d0; }
+.tec-chip.red-net { background: rgba(14, 165, 233, 0.25); color: #bae6fd; }
+
+.tec-barra {
+  display: flex;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.tec-barra .seg {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.tec-barra .seg.hecho { background: #f26522; }
+.tec-barra .seg.actual { background: rgba(242, 101, 34, 0.45); }
+.tec-barra .seg.error { background: #ef4444; }
+
+.tec-paso {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+
+.tec-flecha { color: rgba(255, 255, 255, 0.5); flex-shrink: 0; margin-top: 8px; }
+
+.tec-btn-red {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(14, 165, 233, 0.14);
+  color: #bae6fd;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.tec-btn-red:hover { background: rgba(14, 165, 233, 0.26); }
