@@ -1,9 +1,9 @@
 // Red: el dueño ve el ajuste de precio que propone el técnico y lo acepta o lo rechaza
 import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
-import { ArrowRight, Check, X, FilePenLine, CheckCircle2, Hourglass } from 'lucide-react';
+import { ArrowRight, Check, X, FilePenLine, Hourglass } from 'lucide-react';
 import { obtenerAjustes, responderAjuste, errorDeAjuste, dinero } from '../Shared/ajusteCotizacionApi';
-import HistorialAjustes, { ArchivoAjuste, DesgloseAjuste, FotosAjuste } from '../Shared/HistorialAjustes';
+import { ArchivoAjuste, DesgloseAjuste, FotosAjuste } from '../Shared/HistorialAjustes';
 import '../../../styles/AgenteMarket/Shared/AjusteCotizacion.css';
 
 const AjusteCotizacionCliente = ({ workOrderId, onCambio }) => {
@@ -28,7 +28,7 @@ const AjusteCotizacionCliente = ({ workOrderId, onCambio }) => {
 
   const pendiente = datos.ajuste_pendiente;
   const porDecidir = datos.ajuste_por_decidir;
-  const ajustado = Math.abs(Number(datos.precio_vigente) - Number(datos.precio_original)) >= 0.01;
+  if (!pendiente && !porDecidir) return null;
 
   const responder = async (accion) => {
     const acepta = accion === 'aceptar';
@@ -103,17 +103,8 @@ const AjusteCotizacionCliente = ({ workOrderId, onCambio }) => {
             <span>El técnico decidirá si continúa con {dinero(datos.precio_vigente)} o cancela el servicio. Te avisaremos.</span>
           </div>
         </div>
-      ) : ajustado ? (
-        <div className="aj-aviso aceptado">
-          <CheckCircle2 size={17} />
-          <div>
-            <strong>Precio vigente: {dinero(datos.precio_vigente)}</strong>
-            <span>La cotización original era de {dinero(datos.precio_original)}.</span>
-          </div>
-        </div>
       ) : null}
-
-      <HistorialAjustes ajustes={datos.ajustes} precioOriginal={datos.precio_original} />
+      {/* La cotización nueva y las anteriores se ven en la tarjeta de la oferta (VersionesCotizacionRed) */}
     </div>
   );
 };

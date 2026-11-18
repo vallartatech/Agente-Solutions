@@ -1,0 +1,67 @@
+/* ==========================================================================
+   Red (cliente): Propiedades, Reportes, Cotizaciones y Levantamientos con
+   el mismo marco. Las pestañas y el buscador quedan en el mismo lugar y con
+   el mismo ancho al cambiar de vista.
+   ========================================================================== */
+
+main.red-vista {
+    flex: 1;
+    width: 100% !important;
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+    padding: 24px 28px 60px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    box-sizing: border-box;
+}
+
+/* Barra de pestañas: siempre alineada a la izquierda */
+main.red-vista > .vu-action-bar,
+main.red-vista > .rg-action-bar,
+main.red-vista > .cotiz-action-bar,
+main.red-vista > .lev-action-bar {
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center;
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Buscador: ancho completo, sin centrar ni limitar */
+main.red-vista .tb-toolbar {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Propiedades envuelve su buscador en contenedores centrados */
+main.red-vista .content-area { margin-top: 0 !important; }
+main.red-vista .search-header-flex {
+    margin: 0 0 16px !important;
+    padding: 0 !important;
+    justify-content: flex-start !important;
+}
+main.red-vista .search-container-center {
+    max-width: none !important;
+    margin: 0 !important;
+}
+
+@media (max-width: 640px) {
+    main.red-vista {
+        padding: 12px 16px 85px !important;
+        gap: 12px !important;
+    }
+}
+
+/* Logo del encabezado: Propiedades (vu-root) lo agrandaba a 70px; en la Red
+   queda del mismo tamaño que en Reportes, Cotizaciones y Levantamientos */
+@media (min-width: 901px) {
+    .vu-root:has(main.red-vista) .vcp-brand-logo {
+        height: 54px !important;
+        max-width: 250px !important;
+    }
+}

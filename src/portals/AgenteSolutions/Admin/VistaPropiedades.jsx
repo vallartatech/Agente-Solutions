@@ -18,6 +18,7 @@ import "../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css";
 import "../../../styles/AgenteSolutions/Cliente/DetallePropiedad.css";
 import "../../../styles/Shared/LiquidGlass.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
+import "../../../styles/Shared/VistaRedUnificada.css";
 import { 
   X, User, CheckCircle2,
   LayoutDashboard, PlusCircle, Plus, Globe, FileText, Home, Wrench, 
@@ -826,7 +827,7 @@ const VistaPropiedades = () => {
     <div className="vu-root">
       {!isClient && <Header activeModule="propiedades" titulo="PROPIEDADES" />}
 
-      <main className="vu-main-container">
+      <main className={`vu-main-container ${usaSelectorRed(user) ? 'red-vista' : ''}`}>
         {!isClient && (
           <div className="vu-action-bar">
             {/* Root y admin: Propiedades comparte botón con Levantamientos */}

@@ -11,6 +11,7 @@ import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2
 import Swal from 'sweetalert2';
 import '../../../styles/Shared/UniversalSearch.css';
 import '../../../styles/Shared/ToolbarAcciones.css';
+import '../../../styles/Shared/VistaRedUnificada.css';
 import '../../../styles/AgenteMarket/Admin/VistaReportesGlobal.css';
 
 const STAGES = [
@@ -394,7 +395,7 @@ const VistaReportesGlobal = () => {
     <div className="rg-root">
       <Header activeModule="reportes" />
 
-      <main className="rg-main-container">
+      <main className={`rg-main-container ${usaSelectorRed(user) ? 'red-vista' : ''}`}>
         {/* TÍTULO */}
         <div className="rg-action-bar">
           {usaSelectorRed(user) ? (
@@ -413,7 +414,6 @@ const VistaReportesGlobal = () => {
           <div className="tb-toolbar-search">
             <div className="search-wrapper-full">
               <div className="search-input-container">
-                <Search size={18} className="search-icon-inside" />
                 <input
                   type="text"
                   className="search-input-large"
@@ -421,6 +421,8 @@ const VistaReportesGlobal = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                {/* Igual que UniversalSearch (Propiedades, Cotizaciones y Levantamientos) */}
+                {searchTerm === '' && <Search size={18} className="search-icon-inside" />}
               </div>
             </div>
           </div>

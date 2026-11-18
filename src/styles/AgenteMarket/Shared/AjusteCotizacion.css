@@ -378,3 +378,72 @@ textarea.aj-input { resize: vertical; line-height: 1.4; }
   .aj-modal-pie .aj-btn { flex: 1; }
   .aj-fila { grid-template-columns: minmax(0, 1fr) 52px 76px 34px; }
 }
+
+/* Cliente de la Red: cotización actual y anteriores dentro de la tarjeta de la oferta */
+.red-cot-versiones {
+  --aj-naranja: #f26522;
+  --aj-texto: #0f172a;
+  --aj-suave: #64748b;
+  --aj-borde: #e2e8f0;
+  --aj-fondo: #ffffff;
+  --aj-fondo-2: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 16px 10px;
+  color: var(--aj-texto);
+}
+.red-cot-nueva {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #fed7aa;
+}
+.red-cot-nueva-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.red-cot-nueva-cab small {
+  color: var(--aj-naranja);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.red-cot-precio { font-size: 1.1rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+.red-cot-motivo { margin: 0; font-size: 0.84rem; line-height: 1.4; overflow-wrap: anywhere; }
+.red-cot-fecha { color: var(--aj-suave); font-size: 0.72rem; font-weight: 600; }
+.red-cot-toggle {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--aj-borde);
+  border-radius: 999px;
+  background: var(--aj-fondo);
+  color: var(--aj-suave);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.red-cot-toggle:hover { color: var(--aj-texto); border-color: #cbd5e1; }
+.red-cot-toggle:focus-visible { outline: 2px solid var(--aj-naranja); outline-offset: 2px; }
+.red-cot-anteriores {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-left: 2px solid var(--aj-borde);
+}
+.red-cot-anterior { display: flex; flex-direction: column; gap: 6px; opacity: 0.85; }
+.red-cot-precio-viejo {
+  color: var(--aj-suave);
+  font-size: 0.92rem;
+  font-weight: 900;
+  text-decoration: line-through;
+  font-variant-numeric: tabular-nums;
+}

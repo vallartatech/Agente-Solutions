@@ -8,6 +8,7 @@ import PanelChatLateral from '../../../components/Shared/PanelChatLateral';
 import CurriculumTecnico from '../Shared/CurriculumTecnico';
 import ResumenTecnico, { FotoTecnico, InsigniaTecnico } from '../Shared/ResumenTecnico';
 import AjusteCotizacionCliente from './AjusteCotizacionCliente';
+import VersionesCotizacionRed from './VersionesCotizacionRed';
 import CancelacionServicioCliente from './CancelacionServicioCliente';
 import AccesoPropiedadCliente from './AccesoPropiedadCliente';
 import EstadoCotizacionRed, { cotizacionAceptable } from './EstadoCotizacionRed';
@@ -497,12 +498,13 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                           {/* Currículum simplificado: calificación, experiencia y especialidades */}
                           <ResumenTecnico tecnicoId={techDe(quote)} onVerCompleto={() => verPerfil(quote)} />
 
-                          {quote.message && (
-                            <div className="red-quote-bloque">
-                              <small>Propuesta del técnico</small>
-                              <p>{quote.message}</p>
-                            </div>
-                          )}
+                          {/* Propuesta del técnico; si reajustó la cotización: la nueva y, desplegables, las anteriores */}
+                          <VersionesCotizacionRed
+                            quote={quote}
+                            workOrderId={job.id}
+                            aceptada={isAcceptedQuote}
+                            recarga={`${quote.price}-${quote.chat_history?.length || 0}`}
+                          />
 
                           {/* Último mensaje del técnico, si no es la misma propuesta */}
                           {quote.hasNewTechMessage && quote.chat_history?.length > 0 && quote.displayAlertMsg !== quote.message && (

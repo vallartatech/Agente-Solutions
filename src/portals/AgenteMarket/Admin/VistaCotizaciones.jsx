@@ -5,6 +5,7 @@ import axios from 'axios';
 import "../../../styles/AgenteMarket/Admin/VistaCotizaciones.css";
 import "../../../styles/AgenteMarket/Tecnico/MercadoTrabajosBase.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
+import "../../../styles/Shared/VistaRedUnificada.css";
 import Header from "../../../components/Shared/Header";
 import SelectorVistas from "../../../components/Shared/SelectorVistas";
 import PanelChatLateral from "../../../components/Shared/PanelChatLateral";
@@ -1011,7 +1012,7 @@ const VistaCotizaciones = () => {
 
       {/* 👆 Se eliminaron los div de las barras manuales y el tag <header> 👆 */}
 
-      <main className="cotiz-main-content" style={esCliente ? { padding: '20px 0', width: '100%', maxWidth: '1000px', margin: '0 auto' } : {}}>
+      <main className={`cotiz-main-content ${usaSelectorRed(user) ? 'red-vista' : ''}`} style={esCliente ? { padding: '20px 0', width: '100%', maxWidth: '1000px', margin: '0 auto' } : {}}>
         
         {/* ── BARRA DE TÍTULO ── */}
         <div className="cotiz-action-bar">

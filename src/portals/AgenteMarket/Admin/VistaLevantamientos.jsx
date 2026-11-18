@@ -35,6 +35,7 @@ import ModalSolicitarLevantamientoRed from "../../../components/Shared/ModalSoli
 import { fechaPreferidaLegible } from "../../../utils/fechaPreferida";
 import "../../../styles/AgenteMarket/Admin/VistaLevantamientos.css";
 import "../../../styles/Shared/ToolbarAcciones.css";
+import "../../../styles/Shared/VistaRedUnificada.css";
 import { mostrarAviso } from '../../../utils/dialogos';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 
@@ -313,7 +314,7 @@ const VistaLevantamientos = () => {
       <Header activeModule="levantamientos" />
 
       {/* ── MAIN CONTENT AREA ── */}
-      <main className="lev-main-container">
+      <main className={`lev-main-container ${usaSelectorRed(user) ? 'red-vista' : ''}`}>
         
         {/* Top Action Bar */}
         <div className="lev-action-bar">
