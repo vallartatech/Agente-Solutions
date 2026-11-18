@@ -2,9 +2,10 @@
 // El QR solo guarda una URL: {app}/t/{codigo}. El código es aleatorio y permanente (lo crea el servidor
 // la primera vez y nunca cambia), así un QR impreso sirve para siempre. Dibujarlo es local y gratis.
 import QRCode from 'qrcode';
+import { URL_PUBLICA } from '../../../plataforma';
 
-// Dominio público de la app. VITE_APP_URL permite fijarlo para que el QR no dependa de dónde se abra la app.
-const BASE = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/+$/, '');
+// Dominio público de la app, para que el QR no dependa de dónde se abra la app (web o iOS).
+const BASE = URL_PUBLICA;
 
 const PATRON_CODIGO = /^[A-Za-z0-9]{6,20}$/;
 

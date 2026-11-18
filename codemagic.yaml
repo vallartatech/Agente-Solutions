@@ -1,0 +1,39 @@
+# Compila la app de iOS (Capacitor) en Codemagic y la sube a TestFlight.
+# Se lanza a mano desde codemagic.io (no se dispara con cada push).
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      # Nombre de la llave de App Store Connect API dada de alta en Codemagic
+      app_store_connect: Agente Solutions ASC
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: mx.com.agentesolutions.app
+      vars:
+        APP_STORE_APPLE_ID: 6836529158
+      node: 20
+      xcode: latest
+    scripts:
+      - name: Instalar dependencias
+        script: npm ci
+      - name: Compilar la web y copiarla al proyecto iOS
+        script: npm run ios:sync
+      - name: Firmar con los perfiles de App Store
+        script: xcode-project use-profiles --project ios/App/App.xcodeproj
+      - name: Subir el número de compilación
+        script: |
+          ULTIMO=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          cd ios/App
+          agvtool new-version -all $((ULTIMO + 1))
+      - name: Generar el .ipa
+        script: xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
