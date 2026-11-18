@@ -559,7 +559,8 @@ const VistaClienteParticular = () => {
             REGISTRO: {hasProperties ? `#${activeProperty.id}` : '—'}
           </span>
         </div>
-        {hasProperties && (
+        {/* Una propiedad compartida la usa como dueño, pero solo el dueño real la edita */}
+        {hasProperties && !activeProperty?.is_shared_with_me && (
           <button
             type="button"
             className="vcp-panel-edit-text-btn"
@@ -838,15 +839,17 @@ const VistaClienteParticular = () => {
                   <h1 className="vcp-prop-main-title">
                     {activeProperty.nombre_propiedad || activeProperty.nombre || activeProperty.alias || activeProperty.titulo || 'MI PROPIEDAD'}
                   </h1>
-                  <button
-                    type="button"
-                    className="vcp-title-edit-btn"
-                    onClick={() => setShowModalEditarPropiedad(true)}
-                    title="Editar nombre y fachada de esta propiedad"
-                  >
-                    <Edit3 size={16} />
-                    <span>EDITAR</span>
-                  </button>
+                  {!activeProperty?.is_shared_with_me && (
+                    <button
+                      type="button"
+                      className="vcp-title-edit-btn"
+                      onClick={() => setShowModalEditarPropiedad(true)}
+                      title="Editar nombre y fachada de esta propiedad"
+                    >
+                      <Edit3 size={16} />
+                      <span>EDITAR</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
