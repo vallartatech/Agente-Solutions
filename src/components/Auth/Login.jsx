@@ -1344,14 +1344,16 @@ const LoginAgente = () => {
 
                     {/* reCAPTCHA (obligatorio fuera de localhost) */}
                     {!esLocalhost && (
-                      <div style={{ display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
-                        <ReCAPTCHA
-                          sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LccVsstAAAAAMDX_aSNIi1Hj93EpCr6-4p9Q9Yk"}
-                          onChange={setRegCaptchaToken}
-                          onExpired={() => setRegCaptchaToken(null)}
-                          theme="dark"
-                          size="compact"
-                        />
+                      <div className="aiw-captcha">
+                        <div className="aiw-captcha-marco">
+                          <ReCAPTCHA
+                            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LccVsstAAAAAMDX_aSNIi1Hj93EpCr6-4p9Q9Yk"}
+                            onChange={setRegCaptchaToken}
+                            onExpired={() => setRegCaptchaToken(null)}
+                            theme="dark"
+                            size="normal"
+                          />
+                        </div>
                       </div>
                     )}
 

@@ -2668,3 +2668,34 @@
   .aiw-welcome-drag { transition: none; }
   .aiw-welcome-slide > * { animation: none; }
 }
+
+/* reCAPTCHA del registro: tamaño normal (304x78) recortado a sus bordes para que no asome el fondo blanco del iframe */
+.aiw-captcha {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.aiw-captcha-marco {
+  width: 302px;
+  height: 76px;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid rgba(242, 101, 34, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  background: #222;
+  transform-origin: center top;
+}
+
+/* En pantallas angostas el widget no cabe a 302px: se escala para no desbordar */
+@media (max-width: 380px) {
+  .aiw-captcha-marco {
+    transform: scale(0.88);
+    margin-bottom: -9px;
+  }
+}
+
+/* Recorta 1px por lado para que el borde propio del widget no se vea doble */
+.aiw-captcha-marco > div {
+  margin: -1px;
+}
