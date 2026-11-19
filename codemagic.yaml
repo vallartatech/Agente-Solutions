@@ -9,12 +9,10 @@ workflows:
       # Nombre de la llave de App Store Connect API dada de alta en Codemagic
       app_store_connect: Agente Solutions ASC
     environment:
-      # Nombres de referencia en Settings → codemagic.yaml settings → Code signing identities
-      ios_signing:
-        provisioning_profiles:
-          - agente_appstore
-        certificates:
-          - agente_dist
+      # Grupo de variables de la app (Environment variables) con CERTIFICATE_PRIVATE_KEY:
+      # la llave privada (PEM) del certificado Apple Distribution.
+      groups:
+        - apple_signing
       vars:
         APP_STORE_APPLE_ID: 6836529158
       node: 20
@@ -25,7 +23,15 @@ workflows:
       - name: Compilar la web y copiarla al proyecto iOS
         script: npm run ios:sync
       - name: Firmar con los perfiles de App Store
-        script: xcode-project use-profiles --project ios/App/App.xcodeproj
+        script: |
+          keychain initialize
+          # Baja de Apple el certificado de esa llave y su perfil App Store (los crea si faltan)
+          app-store-connect fetch-signing-files "mx.com.agentesolutions.app" \
+            --type IOS_APP_STORE \
+            --certificate-key=@env:CERTIFICATE_PRIVATE_KEY \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles --project ios/App/App.xcodeproj
       - name: Subir el número de compilación
         script: |
           ULTIMO=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
