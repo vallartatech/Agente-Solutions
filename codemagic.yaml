@@ -9,8 +9,8 @@ workflows:
       # Nombre de la llave de App Store Connect API dada de alta en Codemagic
       app_store_connect: Agente Solutions ASC
     environment:
-      # Grupo de variables de la app (Environment variables) con CERTIFICATE_PRIVATE_KEY:
-      # la llave privada (PEM) del certificado Apple Distribution.
+      # Grupo de variables de la app (Environment variables) con CERTIFICATE_PRIVATE_KEY_BASE64:
+      # la llave privada (PEM, RSA) del certificado Apple Distribution, en base64 de una sola línea.
       groups:
         - apple_signing
       vars:
@@ -24,11 +24,14 @@ workflows:
         script: npm run ios:sync
       - name: Firmar con los perfiles de App Store
         script: |
+          set -euo pipefail
           keychain initialize
+          # La llave viene en base64 (una sola línea) para que no se pierdan los saltos de línea
+          echo "$CERTIFICATE_PRIVATE_KEY_BASE64" | base64 --decode > /tmp/certificado_llave.pem
           # Baja de Apple el certificado de esa llave y su perfil App Store (los crea si faltan)
           app-store-connect fetch-signing-files "mx.com.agentesolutions.app" \
             --type IOS_APP_STORE \
-            --certificate-key=@env:CERTIFICATE_PRIVATE_KEY \
+            --certificate-key=@file:/tmp/certificado_llave.pem \
             --create
           keychain add-certificates
           xcode-project use-profiles --project ios/App/App.xcodeproj
