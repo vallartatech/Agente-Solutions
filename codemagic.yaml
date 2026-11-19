@@ -9,9 +9,12 @@ workflows:
       # Nombre de la llave de App Store Connect API dada de alta en Codemagic
       app_store_connect: Agente Solutions ASC
     environment:
+      # Nombres de referencia en Settings → codemagic.yaml settings → Code signing identities
       ios_signing:
-        distribution_type: app_store
-        bundle_identifier: mx.com.agentesolutions.app
+        provisioning_profiles:
+          - agente_appstore
+        certificates:
+          - agente_dist
       vars:
         APP_STORE_APPLE_ID: 6836529158
       node: 20
