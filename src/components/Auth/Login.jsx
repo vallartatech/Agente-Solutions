@@ -24,6 +24,23 @@ import {
 } from "lucide-react";
 import Logo4 from "../../assets/Logo4.png";
 import LoginArtwork from "../../assets/Atardecer.png";
+import { esNativo, esIOS } from "../../plataforma";
+import { googleNativoConfigurado, tokenGoogleNativo, tokenAppleNativo, fueCancelado } from "./loginNativo";
+
+const IconoGoogle = () => (
+  <svg className="aiw-google-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+  </svg>
+);
+
+const IconoApple = () => (
+  <svg className="aiw-google-icon" viewBox="0 0 384 512" width="16" height="16" aria-hidden="true">
+    <path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+  </svg>
+);
 
 // Cliente de la red que llegó desde el QR de un técnico (/t/:codigo): al entrar regresa a ese perfil.
 // Lo guarda ContratarTecnico en sessionStorage; se usa una sola vez.
@@ -87,7 +104,7 @@ const ROLES_PUBLICOS = [
     key: "market_tech_independent",
     roleId: 6,
     category: "autonomo",
-    categoryLabel: "Proveedores (2)",
+    categoryLabel: "Proveedores (3)",
     label: "TÉCNICO INDEPENDIENTE",
     shortLabel: "Técnico Freelance",
     badge: "MARKETPLACE ABIERTO",
@@ -107,7 +124,7 @@ const ROLES_PUBLICOS = [
     key: "market_contractor",
     roleId: 7,
     category: "autonomo",
-    categoryLabel: "Proveedores (2)",
+    categoryLabel: "Proveedores (3)",
     label: "CONTRATISTA / LÍDER",
     shortLabel: "Contratista",
     badge: "LÍDER DE CUADRILLA",
@@ -122,6 +139,26 @@ const ROLES_PUBLICOS = [
     ],
     cta: "REGISTRARME COMO CONTRATISTA",
     trialInfo: "6 Meses Gratis de Prueba ($935/mes posterior)"
+  },
+  {
+    key: "market_crew_tech",
+    roleId: 8,
+    category: "autonomo",
+    categoryLabel: "Proveedores (3)",
+    label: "TÉCNICO DE CUADRILLA",
+    shortLabel: "Técnico de cuadrilla",
+    badge: "EQUIPO DE CONTRATISTA",
+    icon: "👷",
+    color: "#f59e0b",
+    tagline: "Trabaja en el equipo de un contratista",
+    description: "Técnicos que forman parte de la cuadrilla de un contratista y realizan los trabajos que él les asigna.",
+    features: [
+      "Te unes con el código que te da tu contratista",
+      "Recibe y realiza los trabajos que te asigna",
+      "Reporta avances, fotos y llegada al trabajo"
+    ],
+    cta: "REGISTRARME COMO TÉCNICO DE CUADRILLA",
+    trialInfo: "Necesitas el código de tu contratista; él aprueba tu cuenta"
   }
 ];
 
@@ -210,6 +247,12 @@ const LoginAgente = () => {
   const [regMessage, setRegMessage] = useState("");
   const [regAceptaPrivacidad, setRegAceptaPrivacidad] = useState(false);
   const [regCaptchaToken, setRegCaptchaToken] = useState(null);
+  // Registro con Google o Apple: { proveedor, token } (sustituye contraseña y reCAPTCHA)
+  const [regSocial, setRegSocial] = useState(null);
+  // Código del contratista (solo técnico de cuadrilla)
+  const [regCodigoContratista, setRegCodigoContratista] = useState("");
+  // Entró con Google o Apple sin tener cuenta: datos para ofrecerle crearla
+  const [registroSugerido, setRegistroSugerido] = useState(null);
   const esLocalhost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
   const [isRecoverModalOpen, setIsRecoverModalOpen] = useState(false);
@@ -412,48 +455,153 @@ const LoginAgente = () => {
     }
   };
 
-  // Inicio de sesión con Google (Google Identity Services, ventana emergente de Google)
-  const handleGoogleLogin = async () => {
-    setMensaje("");
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      setMensaje("Error: El inicio de sesión con Google aún no está configurado.");
-      return;
+  // Pide a Google o Apple el token de la cuenta. En la app nativa usa el SDK del sistema (id_token);
+  // en la web, Google Identity Services con ventana emergente (access_token).
+  // Devuelve { token, nombre, apellido }; si falla lanza un Error con code NO_CONFIG, POPUP, CARGA o CANCELADO.
+  const pedirTokenSocial = async (proveedor) => {
+    const fallo = (code) => Object.assign(new Error(code), { code });
+    if (esNativo) {
+      if (proveedor === "google" && !googleNativoConfigurado) throw fallo("NO_CONFIG");
+      try {
+        return proveedor === "apple" ? await tokenAppleNativo() : await tokenGoogleNativo();
+      } catch (error) {
+        if (fueCancelado(error)) throw fallo("CANCELADO");
+        throw error;
+      }
     }
 
-    setIsLoading(true);
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (proveedor !== "google" || !clientId) throw fallo("NO_CONFIG");
+    let google;
     try {
-      const google = await cargarGoogleIdentity();
+      google = await cargarGoogleIdentity();
+    } catch {
+      throw fallo("CARGA");
+    }
+    return new Promise((resolve, reject) => {
       const tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: "openid email profile",
-        callback: async (resp) => {
-          if (resp.error || !resp.access_token) {
-            setIsLoading(false);
-            setMensaje("Error: No se completó el inicio de sesión con Google.");
-            return;
-          }
-          try {
-            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/login/google`, {
-              access_token: resp.access_token
-            });
-            entrarConSesion(res);
-          } catch (error) {
-            manejarErrorLogin(error);
-          }
-        },
+        callback: (resp) => (resp.error || !resp.access_token
+          ? reject(fallo("FALLO"))
+          : resolve({ token: resp.access_token, nombre: "", apellido: "" })),
         // El usuario cerró la ventana de Google o el navegador la bloqueó
-        error_callback: (err) => {
-          setIsLoading(false);
-          setMensaje(err?.type === "popup_failed_to_open"
-            ? "Error: Tu navegador bloqueó la ventana de Google. Permite las ventanas emergentes e intenta de nuevo."
-            : "Error: No se completó el inicio de sesión con Google.");
-        },
+        error_callback: (err) => reject(fallo(err?.type === "popup_failed_to_open" ? "POPUP" : "CANCELADO")),
       });
       tokenClient.requestAccessToken({ prompt: "select_account" });
-    } catch {
+    });
+  };
+
+  // Mensaje para el usuario según el error de pedirTokenSocial (null si solo cerró la ventana)
+  const mensajeErrorSocial = (error, proveedor) => {
+    const nombre = proveedor === "apple" ? "Apple" : "Google";
+    switch (error?.code) {
+      case "CANCELADO": return null;
+      case "NO_CONFIG": return `Error: El inicio de sesión con ${nombre} aún no está configurado.`;
+      case "POPUP": return "Error: Tu navegador bloqueó la ventana de Google. Permite las ventanas emergentes e intenta de nuevo.";
+      case "CARGA": return "Error: No se pudo cargar Google. Revisa tu conexión e intenta de nuevo.";
+      default:
+        console.log(`Error con ${nombre}:`, error);
+        return `Error: No se completó el inicio de sesión con ${nombre}.`;
+    }
+  };
+
+  // El backend recibe id_token (app nativa) o access_token (Google en la web)
+  const cuerpoTokenSocial = (token) => (esNativo ? { id_token: token } : { access_token: token });
+
+  // Iniciar sesión con Google o Apple. Si el correo no tiene cuenta, se ofrece crearla con esos datos.
+  const loginSocial = async (proveedor) => {
+    setMensaje("");
+    setRegistroSugerido(null);
+    setIsLoading(true);
+
+    let datos;
+    try {
+      datos = await pedirTokenSocial(proveedor);
+    } catch (error) {
       setIsLoading(false);
-      setMensaje("Error: No se pudo cargar Google. Revisa tu conexión e intenta de nuevo.");
+      const msg = mensajeErrorSocial(error, proveedor);
+      if (msg) setMensaje(msg);
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/login/${proveedor}`, cuerpoTokenSocial(datos.token));
+      entrarConSesion(res);
+    } catch (error) {
+      const d = error.response?.data;
+      if (error.response?.status === 404 && d?.status === "not_registered") {
+        setIsLoading(false);
+        setRegistroSugerido({
+          proveedor,
+          token: datos.token,
+          email: d.email,
+          nombre: d.first_name || datos.nombre,
+          apellido: d.last_name || datos.apellido,
+        });
+        setMensaje(`No hay una cuenta con ${d.email}.`);
+        return;
+      }
+      manejarErrorLogin(error);
+    }
+  };
+
+  const handleGoogleLogin = () => loginSocial("google");
+
+  // Prellena el registro con la cuenta de Google o Apple: sin contraseña ni reCAPTCHA
+  const aplicarRegistroSocial = ({ proveedor, token, email: correo, nombre, apellido }) => {
+    setRegSocial({ proveedor, token });
+    setRegEmail(correo);
+    if (nombre) setRegFirstName(nombre);
+    if (apellido) setRegLastName(apellido);
+    setRegMessage("");
+  };
+
+  // Desde el login: "Crear cuenta con este correo" lleva al registro ya prellenado
+  const irARegistroSugerido = () => {
+    if (!registroSugerido) return;
+    aplicarRegistroSocial(registroSugerido);
+    setRegistroSugerido(null);
+    setMensaje("");
+    setIsSignUp(true);
+  };
+
+  // Botón "Registrarme con Google / Apple" del formulario de registro
+  const registroSocial = async (proveedor) => {
+    const nombre = proveedor === "apple" ? "Apple" : "Google";
+    setRegMessage("");
+    setIsLoading(true);
+
+    let datos;
+    try {
+      datos = await pedirTokenSocial(proveedor);
+    } catch (error) {
+      setIsLoading(false);
+      const msg = mensajeErrorSocial(error, proveedor);
+      if (msg) setRegMessage(msg);
+      return;
+    }
+
+    try {
+      const { data } = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/registro/identidad-social`, {
+        proveedor,
+        token: datos.token,
+      });
+      setIsLoading(false);
+      if (data.registrado) {
+        setRegMessage(`Error: Ya existe una cuenta con ${data.email}. Inicia sesión con ${nombre}.`);
+        return;
+      }
+      aplicarRegistroSocial({
+        proveedor,
+        token: datos.token,
+        email: data.email,
+        nombre: data.first_name || datos.nombre,
+        apellido: data.last_name || datos.apellido,
+      });
+    } catch (error) {
+      setIsLoading(false);
+      setRegMessage(`Error: ${error.response?.data?.message || `No se pudo verificar tu cuenta de ${nombre}.`}`);
     }
   };
 
@@ -667,14 +815,23 @@ const LoginAgente = () => {
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setRegMessage("");
+    const esCuadrilla = rolActual?.roleId === 8;
 
-    if (regPassword.length < 6) {
-      setRegMessage("Error: La contraseña debe tener al menos 6 caracteres.");
-      return;
+    // Con Google o Apple no hay contraseña ni reCAPTCHA
+    if (!regSocial) {
+      if (regPassword.length < 6) {
+        setRegMessage("Error: La contraseña debe tener al menos 6 caracteres.");
+        return;
+      }
+
+      if (regPassword !== regConfirmPassword) {
+        setRegMessage("Error: Las contraseñas no coinciden.");
+        return;
+      }
     }
 
-    if (regPassword !== regConfirmPassword) {
-      setRegMessage("Error: Las contraseñas no coinciden.");
+    if (esCuadrilla && !regCodigoContratista.trim()) {
+      setRegMessage("Error: Escribe el código que te dio tu contratista.");
       return;
     }
 
@@ -683,7 +840,7 @@ const LoginAgente = () => {
       return;
     }
 
-    if (!esLocalhost && !regCaptchaToken) {
+    if (!regSocial && !esLocalhost && !regCaptchaToken) {
       setRegMessage("Error: Por favor completa la verificación del reCAPTCHA.");
       return;
     }
@@ -696,16 +853,40 @@ const LoginAgente = () => {
         last_name: regLastName.trim(),
         email: regEmail.trim().toLowerCase(),
         phone_number: regPhone.trim(),
-        password: regPassword,
         role_id: rolActual?.roleId || 3,
-        captcha_token: regCaptchaToken,
         acepta_privacidad: regAceptaPrivacidad
       };
+      if (regSocial) {
+        payload.social_proveedor = regSocial.proveedor;
+        payload.social_token = regSocial.token;
+      } else {
+        payload.password = regPassword;
+        payload.captcha_token = regCaptchaToken;
+      }
+      if (esCuadrilla) payload.company_code = regCodigoContratista.trim();
 
       await axios.post(`${import.meta.env.VITE_API_BASE_URL}/registro-usuario`, payload);
+
+      // Con Google o Apple entra directo con el mismo token (el técnico de cuadrilla verá que espera aprobación)
+      if (regSocial) {
+        const social = regSocial;
+        setRegSocial(null);
+        setIsSignUp(false);
+        setRegMessage("");
+        try {
+          const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/login/${social.proveedor}`, cuerpoTokenSocial(social.token));
+          entrarConSesion(res);
+        } catch (error) {
+          manejarErrorLogin(error);
+        }
+        return;
+      }
+
       setIsLoading(false);
 
-      setRegMessage("¡Cuenta creada con éxito! Transfiriendo al inicio de sesión...");
+      setRegMessage(esCuadrilla
+        ? "¡Cuenta creada! Tu contratista debe aprobarte antes de que puedas entrar."
+        : "¡Cuenta creada con éxito! Transfiriendo al inicio de sesión...");
 
       setTimeout(() => {
         setEmail(regEmail);
@@ -1222,6 +1403,20 @@ const LoginAgente = () => {
                         </div>
                       </button>
 
+                      {/* Sign in with Apple: solo en la app de iPhone (Apple lo exige si hay login con Google) */}
+                      {esIOS && (
+                        <button
+                          type="button"
+                          className="aiw-social-btn-apple"
+                          title="Continuar con Apple"
+                          onClick={() => loginSocial("apple")}
+                          disabled={isLoading}
+                        >
+                          <IconoApple />
+                          <span>CONTINUAR CON APPLE</span>
+                        </button>
+                      )}
+
                       {/* Social / Google Button */}
                       <button
                         type="button"
@@ -1230,12 +1425,7 @@ const LoginAgente = () => {
                         onClick={handleGoogleLogin}
                         disabled={isLoading}
                       >
-                        <svg className="aiw-google-icon" viewBox="0 0 24 24" width="18" height="18">
-                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                        </svg>
+                        <IconoGoogle />
                         <span>CONTINUAR CON GOOGLE</span>
                       </button>
 
@@ -1256,9 +1446,19 @@ const LoginAgente = () => {
                       </button>
 
                       {mensaje && (
-                        <div className={`aiw-feedback-msg ${mensaje.includes("Error") ? "error" : "success"}`}>
+                        <div className={`aiw-feedback-msg ${mensaje.includes("Error") || registroSugerido ? "error" : "success"}`}>
                           {mensaje}
                         </div>
+                      )}
+
+                      {/* Entró con Google o Apple sin tener cuenta: crearla con esos datos */}
+                      {registroSugerido && (
+                        <button type="button" className="aiw-btn-primary" onClick={irARegistroSugerido}>
+                          <span>CREAR CUENTA CON {registroSugerido.email.toUpperCase()}</span>
+                          <div className="aiw-btn-arrow">
+                            <ArrowRight size={18} />
+                          </div>
+                        </button>
                       )}
                     </form>
                   )}
@@ -1318,6 +1518,65 @@ const LoginAgente = () => {
 
                   <form className="aiw-login-form" onSubmit={handleRegisterSubmit}>
 
+                    {/* Registro con Google o Apple: prellena nombre y correo, sin contraseña ni reCAPTCHA */}
+                    {regSocial ? (
+                      <div className="aiw-social-registro-chip">
+                        <span>
+                          Registrándote con <strong>{regSocial.proveedor === "apple" ? "Apple" : "Google"}</strong>
+                        </span>
+                        <button
+                          type="button"
+                          className="aiw-footer-link"
+                          onClick={() => { setRegSocial(null); setRegEmail(""); }}
+                        >
+                          Usar contraseña
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        {esIOS && (
+                          <button
+                            type="button"
+                            className="aiw-social-btn-apple"
+                            onClick={() => registroSocial("apple")}
+                            disabled={isLoading}
+                          >
+                            <IconoApple />
+                            <span>REGISTRARME CON APPLE</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="aiw-social-btn-google"
+                          onClick={() => registroSocial("google")}
+                          disabled={isLoading}
+                        >
+                          <IconoGoogle />
+                          <span>REGISTRARME CON GOOGLE</span>
+                        </button>
+                        <div className="aiw-divider">
+                          <span className="aiw-divider-line"></span>
+                          <span className="aiw-divider-text">O CON TU CORREO</span>
+                          <span className="aiw-divider-line"></span>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Técnico de cuadrilla: código del contratista que lo aprobará */}
+                    {rolActual.roleId === 8 && (
+                      <div className="aiw-input-field">
+                        <KeyRound size={15} className="aiw-field-icon" />
+                        <input
+                          type="text"
+                          placeholder="Código de tu contratista"
+                          className="aiw-input"
+                          value={regCodigoContratista}
+                          onChange={(e) => setRegCodigoContratista(e.target.value)}
+                          required
+                        />
+                      </div>
+                    )}
+
                     {/* Nombre */}
                     <div className="aiw-input-field">
                       <User size={15} className="aiw-field-icon" />
@@ -1355,6 +1614,8 @@ const LoginAgente = () => {
                         onChange={(e) => setRegEmail(e.target.value)}
                         required
                         autoComplete="email"
+                        readOnly={Boolean(regSocial)}
+                        title={regSocial ? "Es el correo de tu cuenta de Google o Apple" : undefined}
                       />
                     </div>
 
@@ -1371,6 +1632,8 @@ const LoginAgente = () => {
                       />
                     </div>
 
+                    {/* Contraseña y reCAPTCHA: solo sin Google ni Apple */}
+                    {!regSocial && (<>
                     {/* Password Field */}
                     <div className="aiw-input-field">
                       <Lock size={15} className="aiw-field-icon" />
@@ -1431,6 +1694,7 @@ const LoginAgente = () => {
                         </div>
                       </div>
                     )}
+                    </>)}
 
                     {/* Aviso de privacidad (obligatorio) */}
                     <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem', color: '#ccc', lineHeight: 1.4, cursor: 'pointer', textAlign: 'left' }}>

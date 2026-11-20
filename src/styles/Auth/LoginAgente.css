@@ -570,6 +570,48 @@
   flex-shrink: 0;
 }
 
+/* Sign in with Apple: estilo blanco de Apple sobre el fondo oscuro, mismo tamaño que el de Google */
+.aiw-social-btn-apple {
+  width: 100%;
+  height: 38px;
+  background-color: #ffffff;
+  border: 1px solid #ffffff;
+  border-radius: 10px;
+  color: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.6px;
+  margin-top: 3px;
+}
+
+.aiw-social-btn-apple:disabled {
+  opacity: 0.6;
+}
+
+/* Registro con Google o Apple en curso */
+.aiw-social-registro-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #282a33;
+  border-radius: 10px;
+  background-color: #1a1b20;
+  color: #d1d5db;
+  font-size: 0.8rem;
+}
+
+.aiw-social-registro-chip strong {
+  color: #ffffff;
+}
+
 /* Divider OR */
 .aiw-divider {
   display: flex;
