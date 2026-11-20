@@ -13,6 +13,7 @@
   "dependencies": {
     "@capacitor/core": "^7.6.10",
     "@capacitor/ios": "^7.6.10",
+    "@capacitor/push-notifications": "7.0.7",
     "@capgo/capacitor-social-login": "7.20.0",
     "@react-google-maps/api": "^2.20.8",
     "axios": "^1.13.5",

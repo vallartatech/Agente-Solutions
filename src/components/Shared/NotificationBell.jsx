@@ -18,6 +18,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import Swal from 'sweetalert2';
 import { suscribirPushOneSignal, estaSuscritoOneSignal } from './oneSignalPush';
+import { esNativo } from '../../plataforma';
 import "../../styles/Shared/NotificationBell.css";
 
 const timeAgo = (dateString) => {
@@ -553,7 +554,8 @@ const NotificationBell = ({ triggerClassName = '' }) => {
             </div>
 
             {/* Banner de Notificaciones Push para celular / escritorio */}
-            {(pushPermission !== 'granted' || !pushSubscribed) && (
+            {/* En la app nativa el permiso se pide al iniciar sesión (push nativo), no aquí */}
+            {!esNativo && (pushPermission !== 'granted' || !pushSubscribed) && (
               <div className="nb-push-banner">
                 <div className="nb-push-banner-body">
                   <div className="nb-push-banner-icon">

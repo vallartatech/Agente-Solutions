@@ -714,8 +714,12 @@ const LoginAgente = () => {
           const serverMsg = error.response.data?.message || error.response.data?.error || (typeof error.response.data === 'string' ? error.response.data : null);
           setMensaje(`Error: ${serverMsg || 'Credenciales incorrectas o error en el servidor.'}`);
         }
+      } else if (error?.request) {
+        // La petición salió pero no hubo respuesta: red caída, servidor apagado o bloqueo del navegador
+        setMensaje(`Error: Servidor no disponible. Revisa tu conexión. (${error.code || error.message || "sin respuesta"})`);
       } else {
-        setMensaje("Error: Servidor no disponible. Revisa tu conexión.");
+        // El servidor sí respondió, pero falló algo al abrir la sesión en la app
+        setMensaje(`Error: No se pudo abrir tu sesión. (${error?.message || "error desconocido"})`);
       }
   };
 
