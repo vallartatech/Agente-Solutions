@@ -548,3 +548,7 @@ span.mt-item-fecha { cursor: default; }
   .mt-et-head { padding: 14px 16px; }
   .mt-et-cuerpo { padding: 14px 14px 18px; }
 }
+
+/* Cargando la recotizacion desde el carrito */
+.mt-girando { animation: mtGirar 0.9s linear infinite; }
+@keyframes mtGirar { to { transform: rotate(360deg); } }
