@@ -93,7 +93,7 @@ const CotizacionesPendientes = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-      const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://agentesolutionsback-production.up.railway.app/api';
+      const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://agente-solutions-back-production.up.railway.app/api';
       
       const guardadasLocales = JSON.parse(localStorage.getItem('carrito_cotizaciones') || '[]');
 
@@ -301,7 +301,7 @@ const CotizacionesPendientes = () => {
     // 2. Enviar petición al backend
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-      const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://agentesolutionsback-production.up.railway.app/api';
+      const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://agente-solutions-back-production.up.railway.app/api';
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       axios.post(`${API_URL}/cotizaciones/${cot.id}/recotizar`, {
@@ -375,7 +375,7 @@ const CotizacionesPendientes = () => {
     setProcesandoPago(true);
 
     const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-    const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://agentesolutionsback-production.up.railway.app/api';
+    const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://agente-solutions-back-production.up.railway.app/api';
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     const selectedQuoteIds = cotizacionesSeleccionadas.map(c => c.quote_id || c.id);
 
