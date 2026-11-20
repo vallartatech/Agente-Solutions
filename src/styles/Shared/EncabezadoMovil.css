@@ -15,10 +15,13 @@
 
 @media (max-width: 900px) {
   /* ── Encabezado ── */
+  /* En iPhone con notch o Dynamic Island (app nativa o web a pantalla completa) el encabezado
+     crece por arriba lo que mide esa zona, así el logo y los botones quedan debajo.
+     En la web normal y en Android env(safe-area-inset-top) vale 0 y no cambia nada. */
   .vcp-header:not(#vcp-unico) {
-    height: 66px !important;
-    min-height: 66px !important;
-    padding: 0 16px !important;
+    height: calc(66px + env(safe-area-inset-top, 0px)) !important;
+    min-height: calc(66px + env(safe-area-inset-top, 0px)) !important;
+    padding: env(safe-area-inset-top, 0px) 16px 0 !important;
     align-items: center !important;
     justify-content: space-between !important;
     box-sizing: border-box !important;
@@ -33,6 +36,14 @@
       0 8px 32px rgba(0, 0, 0, 0.55),
       inset 0 -1px 1.5px rgba(255, 255, 255, 0.10),
       inset 0 1px 1.5px rgba(255, 255, 255, 0.25) !important;
+  }
+
+  /* Menús del perfil que se abren justo debajo del encabezado (position: fixed; top: ~64px en
+     cada vista): bajan lo mismo que creció el encabezado por el notch */
+  .vcp-profile-dropdown:not(#vcp-unico),
+  .tecnico-profile-dropdown:not(#vcp-unico),
+  .profile-header-dropdown:not(#vcp-unico) {
+    margin-top: env(safe-area-inset-top, 0px) !important;
   }
 
   .vcp-header:not(#vcp-unico) .vcp-header-left {

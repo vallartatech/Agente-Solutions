@@ -57,8 +57,11 @@
 	<string>Agente Solutions guarda en tus fotos los códigos QR y documentos que descargas.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Agente Solutions usa tu ubicación para ubicar propiedades en el mapa y compartir tu llegada al trabajo.</string>
+	<!-- Barra de estado (hora, batería) con texto blanco: los encabezados de la app son oscuros -->
 	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<true/>
+	<false/>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
 	<!-- Inicio de sesión con Google: el SDK regresa a la app con el Client ID de iOS al revés -->
 	<key>CFBundleURLTypes</key>
 	<array>
