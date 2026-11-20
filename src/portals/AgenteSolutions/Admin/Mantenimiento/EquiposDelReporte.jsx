@@ -13,7 +13,7 @@ const partidas = (concept) => {
   return [...(c?.servicios || c?.conceptos || []), ...(c?.materiales || [])];
 };
 
-const Cotizacion = ({ cotizacion }) => {
+export const Cotizacion = ({ cotizacion }) => {
   const filas = partidas(cotizacion.concept).filter((p) => p.descripcion || p.desc || p.concepto);
   return (
     <details className="mt-rep-cot">
@@ -56,9 +56,12 @@ const EquiposDelReporte = ({ elementos }) => (
               {el.area && <small><MapPin size={12} /> {el.area}</small>}
               {el.detalle && <small>{el.detalle}</small>}
             </div>
-            <span className={`mt-carrito-cot-estado ${noContratado ? 'no' : 'si'}`}>
-              {noContratado ? 'No contratado' : 'Contratado'}
-            </span>
+            {/* Antes de finalizar el carrito todavía no se sabe si se contrata */}
+            {['aceptado', 'no_aceptado'].includes(el.estado) && (
+              <span className={`mt-carrito-cot-estado ${noContratado ? 'no' : 'si'}`}>
+                {noContratado ? 'No contratado' : 'Contratado'}
+              </span>
+            )}
           </header>
 
           {el.cotizacion

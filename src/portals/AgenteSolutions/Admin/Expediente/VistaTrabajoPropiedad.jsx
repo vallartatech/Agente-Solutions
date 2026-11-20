@@ -156,7 +156,8 @@ const VistaTrabajoPropiedad = () => {
               </dl>
               {equipos.length > 0 && <EquiposDelTrabajo equipos={equipos} />}
               <h4 className="xp-subtitulo">Descripción</h4>
-              <p className="xp-descripcion">{trabajo.descripcion || 'Sin descripción.'}</p>
+              {/* Solo el texto que se escribió: el equipo ya se ve arriba y en el título */}
+              <p className="xp-descripcion">{String(trabajo.descripcion || '').split('[EQUIPO AFECTADO]:')[0].trim() || 'Sin descripción.'}</p>
               <h4 className="xp-subtitulo">Imágenes de la solicitud</h4>
               {trabajo.fotos.length ? (
                 <div className="xp-galeria">
