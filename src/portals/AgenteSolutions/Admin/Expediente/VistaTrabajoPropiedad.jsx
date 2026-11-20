@@ -1,14 +1,17 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import axios from 'axios';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   LayoutGrid, FileText, History, MapPin, Tag, Phone, Mail, UserRound, HardHat,
-  CalendarClock, CalendarCheck, AlertTriangle, ExternalLink, ImageOff, Building2, Wrench
+  CalendarClock, CalendarCheck, AlertTriangle, ExternalLink, ImageOff, Building2, Wrench, ShoppingCart
 } from 'lucide-react';
 import Header from '../../../../components/Shared/Header';
 import CasaLoader from '../../../../components/Shared/CasaLoader';
 import useExpediente from './useExpediente';
 import { Chip, FlujoBarra, ListaCotizaciones, LineaTiempo, VisorFotos } from './ExpedienteUI';
-import { etiquetaEstado, etiquetaTipo, fechaHora, visitaLocal, construirHistorial } from './flujoTrabajo';
+import { API, authHeaders, etiquetaEstado, etiquetaTipo, fechaHora, visitaLocal, construirHistorial } from './flujoTrabajo';
+import EquiposDelTrabajo from '../Mantenimiento/EquiposDelTrabajo';
+import CarritoCotizaciones from '../Mantenimiento/CarritoCotizaciones';
 import { AccesoQRAdmin } from '../../Shared/AccesoQR';
 import ModalCotizacion from './ModalCotizacion';
 import { useAuth } from '../../../../context/AuthContext';
@@ -45,7 +48,7 @@ const VistaTrabajoPropiedad = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = TABS.some((t) => t.key === searchParams.get('tab')) ? searchParams.get('tab') : 'datos';
-  const { data, cargando, error } = useExpediente(id);
+  const { data, cargando, error, recargar } = useExpediente(id);
 
   const trabajo = data?.trabajos?.find((t) => t.uid === uid);
   const historial = useMemo(() => (trabajo ? construirHistorial(trabajo).reverse() : []), [trabajo]);
@@ -54,6 +57,25 @@ const VistaTrabajoPropiedad = () => {
   const cerrarVisor = useCallback(() => setFotoAbierta(null), []);
   const [cotAbierta, setCotAbierta] = useState(null);
   const cerrarCotizacion = useCallback(() => setCotAbierta(null), []);
+
+  // Equipos elegidos en la solicitud (mantenimiento de varios equipos en una sola orden)
+  const ordenId = trabajo?.kind === 'trabajo' ? trabajo.id : null;
+  const [equipos, setEquipos] = useState([]);
+  const [versionEquipos, setVersionEquipos] = useState(0);
+  useEffect(() => {
+    if (!ordenId) { setEquipos([]); return undefined; }
+    let vigente = true;
+    axios.get(`${API}/work-orders/${ordenId}/elementos`, { headers: authHeaders() })
+      .then(({ data }) => { if (vigente) setEquipos(Array.isArray(data) ? data : []); })
+      .catch(() => { if (vigente) setEquipos([]); });
+    return () => { vigente = false; };
+  }, [ordenId, versionEquipos]);
+
+  // Tras finalizar el carrito cambian los estados de las cotizaciones y de los equipos
+  const alCambiarCarrito = useCallback(() => {
+    recargar(true);
+    setVersionEquipos((v) => v + 1);
+  }, [recargar]);
 
   const headerTabs = TABS.map((t) => ({
     ...t,
@@ -132,6 +154,7 @@ const VistaTrabajoPropiedad = () => {
                 <div><dt>Estado en sistema</dt><dd>{trabajo.status || '—'}</dd></div>
                 <div><dt>Folio interno</dt><dd>{trabajo.uid.toUpperCase()}</dd></div>
               </dl>
+              {equipos.length > 0 && <EquiposDelTrabajo equipos={equipos} />}
               <h4 className="xp-subtitulo">Descripción</h4>
               <p className="xp-descripcion">{trabajo.descripcion || 'Sin descripción.'}</p>
               <h4 className="xp-subtitulo">Imágenes de la solicitud</h4>
@@ -205,9 +228,20 @@ const VistaTrabajoPropiedad = () => {
 
         {tab === 'cotizaciones' && (
           <section className="xp-card xp-panel">
+            {equipos.length >= 2 && (
+              <>
+                <h3 className="xp-panel-titulo"><ShoppingCart size={18} /> Carrito por equipo</h3>
+                <CarritoCotizaciones
+                  ordenId={trabajo.id}
+                  onVer={(cotId) => setCotAbierta(trabajo.cotizaciones.find((c) => String(c.id) === String(cotId)) || null)}
+                  onCambio={alCambiarCarrito}
+                />
+              </>
+            )}
             <h3 className="xp-panel-titulo"><FileText size={18} /> Cotizaciones de este trabajo</h3>
             <ListaCotizaciones
               cotizaciones={trabajo.cotizaciones}
+              equipos={equipos}
               onAbrir={setCotAbierta}
               vacio="Este trabajo todavía no tiene cotizaciones."
             />

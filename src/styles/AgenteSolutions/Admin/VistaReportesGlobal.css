@@ -1109,3 +1109,11 @@ button.rg-upload-btn { font-family: inherit; }
 
   .rg-btn-validar { justify-content: center; }
 }
+
+/* Orden con varios equipos: cuáles lleva el servicio */
+.rg-service-equipos {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  overflow-wrap: anywhere;
+}

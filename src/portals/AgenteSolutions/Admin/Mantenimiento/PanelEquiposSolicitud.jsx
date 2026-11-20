@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { CalendarClock, CheckCircle2, ChevronLeft, MapPin, ShoppingCart, Wrench } from 'lucide-react';
+import { CalendarClock, CheckCircle2, ChevronLeft, ImageOff, MapPin, ShoppingCart, Wrench } from 'lucide-react';
 import { API, authHeaders } from '../Expediente/flujoTrabajo';
 import { nombreEquipo, proximaFecha, textoFecha, tiempoRestante } from './CamposMantenimiento';
 import '../../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 
-// Equipos de la propiedad para una solicitud de mantenimiento: lo agendado (con su cuenta regresiva)
-// y lo del levantamiento. Se eligen como en un carrito; `carrito` son los renglones elegidos.
+const SIN_AREA = 'Sin área';
+
+// Equipos de la propiedad para una solicitud de mantenimiento, agrupados por área, con su foto
+// y la fecha en que les toca mantenimiento (o "Sin fecha"). Se eligen como en un carrito;
+// `carrito` son los renglones elegidos.
 // En responsivo es un panel lateral que se abre con la flecha (`abierto`, `onCerrar`).
 const PanelEquiposSolicitud = ({ propiedad, carrito, onChange, abierto = false, onCerrar, ocultos = [] }) => {
   const [equipos, setEquipos] = useState([]);
@@ -29,31 +32,54 @@ const PanelEquiposSolicitud = ({ propiedad, carrito, onChange, abierto = false, 
       .finally(() => setCargando(false));
   }, [propiedad.id]);
 
-  // Primero lo que vence antes; lo que no tiene fecha, al final
-  const renglones = useMemo(() => [
-    ...equipos.map((e) => ({
-      clave: `equipo-${e.id}`,
-      tipo: 'equipo',
-      id: e.id,
-      label: nombreEquipo(e),
-      lugar: e.detalle || null,
-      foto: e.foto_equipo_url,
-      fecha: proximaFecha(e),
-    })),
-    ...elementos.map((c) => ({
-      clave: `elemento-${c.id}`,
-      tipo: 'elemento',
-      id: c.id,
-      label: c.label,
-      lugar: c.area,
-      area: c.area,
-      foto: null,
-      fecha: null,
-    })),
-  ].sort((a, b) => (a.fecha || '9999').localeCompare(b.fecha || '9999')), [equipos, elementos]);
+  // Equipos en mantenimiento primero (con su fecha); luego los del levantamiento que aún no están en mantenimiento.
+  // Un equipo en mantenimiento que viene del levantamiento toma el área y la foto de ese elemento.
+  const renglones = useMemo(() => {
+    const porComponente = new Map(elementos.map((c) => [String(c.id), c]));
+    const yaEnMantenimiento = new Set(equipos.map((e) => String(e.property_component_id || '')).filter(Boolean));
+    return [
+      ...equipos.map((e) => {
+        const origen = porComponente.get(String(e.property_component_id || ''));
+        return {
+          clave: `equipo-${e.id}`,
+          tipo: 'equipo',
+          id: e.id,
+          label: nombreEquipo(e),
+          detalle: e.detalle || null,
+          area: origen?.area || SIN_AREA,
+          foto: e.foto_equipo_url || origen?.image_path || null,
+          fecha: proximaFecha(e),
+        };
+      }),
+      ...elementos
+        .filter((c) => !yaEnMantenimiento.has(String(c.id)))
+        .map((c) => ({
+          clave: `elemento-${c.id}`,
+          tipo: 'elemento',
+          id: c.id,
+          label: c.label,
+          detalle: [c.brand, c.model_or_color].filter(Boolean).join(' · ') || null,
+          area: c.area || SIN_AREA,
+          foto: c.image_path || null,
+          fecha: null,
+        })),
+    ];
+  }, [equipos, elementos]);
 
   // Los que ya van en otro trabajo del lote no se ofrecen de nuevo
   const disponibles = renglones.filter((r) => !ocultos.includes(r.clave));
+
+  // Por área (alfabético, "Sin área" al final); dentro, primero lo que vence antes y lo sin fecha al final
+  const areas = useMemo(() => {
+    const grupos = new Map();
+    disponibles.forEach((r) => {
+      if (!grupos.has(r.area)) grupos.set(r.area, []);
+      grupos.get(r.area).push(r);
+    });
+    return [...grupos.entries()]
+      .sort(([a], [b]) => (a === SIN_AREA) - (b === SIN_AREA) || a.localeCompare(b, 'es'))
+      .map(([area, lista]) => [area, lista.sort((a, b) => (a.fecha || '9999').localeCompare(b.fecha || '9999'))]);
+  }, [disponibles]);
 
   const alternar = (renglon) => onChange(
     carrito.some((r) => r.clave === renglon.clave)
@@ -82,28 +108,35 @@ const PanelEquiposSolicitud = ({ propiedad, carrito, onChange, abierto = false, 
           <p className="mt-vacio">No se pudieron cargar los equipos. Cierra y vuelve a abrir la solicitud.</p>
         ) : !disponibles.length ? (
           <p className="mt-vacio">{renglones.length ? 'Todos los equipos ya van en otro trabajo de este lote.' : 'Esta propiedad no tiene equipos registrados. Puedes describir el trabajo en el formulario.'}</p>
-        ) : disponibles.map((r) => {
-          const on = carrito.some((c) => c.clave === r.clave);
-          const restante = r.fecha ? tiempoRestante(r.fecha) : null;
-          return (
-            <button key={r.clave} type="button" className={`mt-renglon ${on ? 'on' : ''}`} onClick={() => alternar(r)} aria-pressed={on}>
-              <span className="mt-casilla">{on && <CheckCircle2 size={18} />}</span>
-              {r.foto && <img src={r.foto} alt="" />}
-              <span className="mt-renglon-texto">
-                <strong>{r.label}</strong>
-                {r.lugar && <small>{r.lugar}</small>}
-                {restante ? (
-                  <span className={`mt-restante ${restante.tono}`}>
-                    <CalendarClock size={14} /> {restante.texto}
-                    <em>{textoFecha(r.fecha)}</em>
+        ) : areas.map(([area, lista]) => (
+          <section key={area} className="mt-area-grupo">
+            <h4 className="mt-area-titulo"><MapPin size={13} /> {area} <span>{lista.length}</span></h4>
+            {lista.map((r) => {
+              const on = carrito.some((c) => c.clave === r.clave);
+              const restante = r.fecha ? tiempoRestante(r.fecha) : null;
+              return (
+                <button key={r.clave} type="button" className={`mt-renglon ${on ? 'on' : ''}`} onClick={() => alternar(r)} aria-pressed={on}>
+                  <span className="mt-casilla">{on && <CheckCircle2 size={18} />}</span>
+                  {r.foto
+                    ? <img src={r.foto} alt="" loading="lazy" />
+                    : <span className="mt-renglon-sinfoto" aria-hidden="true"><ImageOff size={18} /></span>}
+                  <span className="mt-renglon-texto">
+                    <strong>{r.label}</strong>
+                    {r.detalle && <small>{r.detalle}</small>}
+                    {restante ? (
+                      <span className={`mt-restante ${restante.tono}`}>
+                        <CalendarClock size={14} /> {restante.texto}
+                        <em>{textoFecha(r.fecha)}</em>
+                      </span>
+                    ) : (
+                      <span className="mt-restante sin-fecha"><CalendarClock size={14} /> Sin fecha</span>
+                    )}
                   </span>
-                ) : (
-                  <span className="mt-restante sin-fecha">Sin fecha agendada</span>
-                )}
-              </span>
-            </button>
-          );
-        })}
+                </button>
+              );
+            })}
+          </section>
+        ))}
       </div>
 
       {error && disponibles.length > 0 && <p className="mt-aviso-parcial">Algunos equipos no se pudieron cargar. Cierra y vuelve a abrir la solicitud.</p>}
@@ -112,7 +145,7 @@ const PanelEquiposSolicitud = ({ propiedad, carrito, onChange, abierto = false, 
         <ShoppingCart size={16} />
         {carrito.length
           ? `${carrito.length} ${carrito.length === 1 ? 'equipo elegido: se piden las 4 evidencias normales' : 'equipos elegidos: antes y después de cada uno'}`
-          : 'Elige los equipos para este servicio'}
+          : 'Elige los equipos para este mantenimiento'}
       </p>
     </aside>
   );

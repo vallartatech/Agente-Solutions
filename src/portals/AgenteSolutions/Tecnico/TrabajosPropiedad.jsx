@@ -53,6 +53,11 @@ const TrabajoPropiedad = () => {
   // --- ESTADOS PARA COTIZACIÓN ---
   const [showModalCotizacion, setShowModalCotizacion] = useState(false);
   const [cotizacionExistente, setCotizacionExistente] = useState(null);
+  // Orden con varios equipos: una cotización por equipo
+  const [equiposOrden, setEquiposOrden] = useState([]);
+  const [cotizacionesOrden, setCotizacionesOrden] = useState([]);
+  const [equipoCotizando, setEquipoCotizando] = useState(null);
+  const porEquipo = !isTecnicoRed && equiposOrden.length >= 2;
 
   // --- ESTADOS PARA SEGUNDA VISITA ---
   const [showModalSegundaVisita, setShowModalSegundaVisita] = useState(false);
@@ -135,6 +140,27 @@ const TrabajoPropiedad = () => {
     checkExistingQuote();
   }, [id]);
 
+  // Equipos de la orden (mantenimiento de varios equipos en una solicitud)
+  useEffect(() => {
+    setEquiposOrden([]);
+    if (!/work[_\s-]*order/i.test(decodeURIComponent(String(id)))) return undefined;
+    let vigente = true;
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/${getRealId(id)}/elementos`)
+      .then((res) => { if (vigente) setEquiposOrden(Array.isArray(res.data) ? res.data : []); })
+      .catch(() => {});
+    return () => { vigente = false; };
+  }, [id]);
+
+  // La cotización que cuenta para un equipo: la más reciente que no se descartó
+  const cotizacionDeEquipo = (equipoId) => cotizacionesOrden
+    .filter((q) => Number(q.work_order_component_id) === Number(equipoId) && !['Recotizada', 'Rechazado', 'Rechazada'].includes(q.status))
+    .sort((a, b) => Number(b.id) - Number(a.id))[0] || null;
+
+  const abrirCotizacionDeEquipo = (equipo) => {
+    setEquipoCotizando(equipo);
+    setShowModalCotizacion(true);
+  };
+
   const getRealId = (rawId) => {
     if (!rawId) return '';
     const str = decodeURIComponent(String(rawId)).trim();
@@ -156,6 +182,7 @@ const TrabajoPropiedad = () => {
       if (found) {
         setCotizacionExistente(found);
       }
+      setCotizacionesOrden(isWorkOrder ? allQuotes.filter(q => parseInt(q.work_order_id) === parseInt(realId)) : []);
     } catch (error) {
       console.error("Error al buscar cotización previa:", error);
     }
@@ -587,6 +614,32 @@ const TrabajoPropiedad = () => {
                   <span>CONSULTAR LEVANTAMIENTO</span>
                 </button>
 
+                {porEquipo ? (
+                  <div className="tp-cot-equipos">
+                    <p className="tp-cot-equipos-titulo"><Calculator size={16} /> Una cotización por equipo</p>
+                    {equiposOrden.map((eq) => {
+                      const cot = cotizacionDeEquipo(eq.id);
+                      const noContratado = eq.estado === 'no_aceptado';
+                      return (
+                        <div key={eq.id} className={`tp-cot-equipo ${noContratado ? 'no-contratado' : ''}`}>
+                          <div className="tp-cot-equipo-texto">
+                            <strong>{eq.label}</strong>
+                            <small>
+                              {noContratado ? 'El cliente no contrató este equipo'
+                                : cot ? `$${parseFloat(cot.estimated_amount || cot.total || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })} · ${cot.status}`
+                                : 'Sin cotizar'}
+                            </small>
+                          </div>
+                          {!noContratado && (
+                            <button type="button" className={`tp-cot-equipo-btn ${cot ? 'hecha' : ''}`} onClick={() => abrirCotizacionDeEquipo(eq)}>
+                              {cot ? 'Ver / editar' : 'Cotizar'}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
                 <button className="tp-btn-consult variant-quote" onClick={handleAbrirCotizacion}>
                   <Calculator size={18} />
                   <span>
@@ -596,6 +649,7 @@ const TrabajoPropiedad = () => {
                     }
                   </span>
                 </button>
+                )}
 
                 <div className="tp-divider-mini"></div>
 
@@ -932,10 +986,11 @@ const TrabajoPropiedad = () => {
         <ModalCrearCotizacion
           workOrderId={data?.tipo_registro === 'work_order' || id.includes('work_order') ? getRealId(id) : null}
           serviceId={data?.tipo_registro !== 'work_order' && !id.includes('work_order') ? getRealId(id) : null}
-          cotizacionExistente={cotizacionExistente}
-          onClose={() => setShowModalCotizacion(false)}
+          cotizacionExistente={equipoCotizando ? cotizacionDeEquipo(equipoCotizando.id) : cotizacionExistente}
+          equipo={equipoCotizando}
+          onClose={() => { setShowModalCotizacion(false); setEquipoCotizando(null); }}
           onSuccess={(resData) => {
-            setCotizacionExistente(resData.cotizacion || resData);
+            if (!equipoCotizando) setCotizacionExistente(resData.cotizacion || resData);
             checkExistingQuote();
           }}
         />

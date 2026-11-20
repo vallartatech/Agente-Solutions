@@ -15,6 +15,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { esVideoUrl, miniaturaVideo } from '../../../utils/evidencia';
 import { esPorElemento } from '../Shared/etapasEvidencia';
 import CasaLoader from "../../../components/Shared/CasaLoader";
+import EquiposDelReporte from './Mantenimiento/EquiposDelReporte';
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -615,6 +616,8 @@ const ReporteTrabajo = () => {
   // Con 2 o más elementos el reporte se separa por elemento
   const elementosReporte = reportData.elementos || [];
   const porElemento = esPorElemento(elementosReporte);
+  // Materiales y evidencias solo de lo que el cliente contrató
+  const elementosContratados = elementosReporte.filter(el => el.estado !== 'no_aceptado');
   const idsElementos = new Set(elementosReporte.map(el => Number(el.id)));
   const materialesConIndice = reportData.materiales.map((material, idx) => ({ material, idx }));
   const materialesDe = (elementoId) => materialesConIndice.filter(({ material }) => Number(material.elemento_id) === Number(elementoId));
@@ -898,6 +901,14 @@ const ReporteTrabajo = () => {
               </div>
             </div>
 
+            {/* Equipos del servicio: cada uno con su cotización y su historial */}
+            {porElemento && (
+              <div className="info-section">
+                <h3>EQUIPOS DEL SERVICIO</h3>
+                <EquiposDelReporte elementos={elementosReporte} />
+              </div>
+            )}
+
             {/* Materiales */}
             <div className="info-section">
               <h3>MATERIALES UTILIZADOS
@@ -905,7 +916,7 @@ const ReporteTrabajo = () => {
               </h3>
               {porElemento ? (
                 <>
-                  {elementosReporte.map((el) => (
+                  {elementosContratados.map((el) => (
                     <div key={el.id} className="rt-elemento">
                       <h4 className="rt-elemento-titulo">
                         {el.label}
@@ -930,7 +941,7 @@ const ReporteTrabajo = () => {
               <h3>EVIDENCIA FOTOGRÁFICA</h3>
               {porElemento && reportData.imagenes.length > 0 ? (
                 <>
-                  {elementosReporte.map((el) => (
+                  {elementosContratados.map((el) => (
                     <div key={el.id} className="rt-elemento">
                       <h4 className="rt-elemento-titulo">{el.label}</h4>
                       <div className="galeria-imagenes">

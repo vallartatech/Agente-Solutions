@@ -11,6 +11,8 @@ const ModalCrearCotizacion = ({
   workOrderId, 
   serviceId, 
   cotizacionExistente, 
+  // Orden con varios equipos: la cotización es de este equipo (id de work_order_components)
+  equipo = null,
   onClose, 
   onSuccess,
   isAdmin = false
@@ -121,6 +123,8 @@ const ModalCrearCotizacion = ({
 
       if (targetWorkOrderId) {
         formData.append('work_order_id', targetWorkOrderId);
+        const equipoId = equipo?.id || cotizacionExistente?.work_order_component_id;
+        if (equipoId) formData.append('work_order_component_id', equipoId);
       } else if (targetServiceId) {
         formData.append('service_id', targetServiceId);
       } else {
@@ -202,6 +206,7 @@ const ModalCrearCotizacion = ({
           <div className="tp-modal-q-header">
             <div>
               <span className="mcc-tag">COTIZACIÓN</span>
+              {equipo?.label && <span className="mcc-tag mcc-tag-equipo">EQUIPO: {equipo.label}</span>}
               <h2>
                 {cotizacionExistente && isAdmin ? 'EDITAR COTIZACIÓN' : 
                  modoConsulta ? 'COTIZACIÓN REGISTRADA' : 'GENERAR COTIZACIÓN'}

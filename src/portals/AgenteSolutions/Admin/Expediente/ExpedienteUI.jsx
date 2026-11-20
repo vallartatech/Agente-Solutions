@@ -72,13 +72,15 @@ const tonoCotizacion = (c) => {
   return 'amber';
 };
 
-export const ListaCotizaciones = ({ cotizaciones, onAbrir, vacio = 'No hay cotizaciones.' }) => {
+// `equipos`: en órdenes con varios equipos, cada cotización muestra de qué equipo es
+export const ListaCotizaciones = ({ cotizaciones, onAbrir, vacio = 'No hay cotizaciones.', equipos = [] }) => {
   if (!cotizaciones.length) return <p className="xp-vacio">{vacio}</p>;
   return (
     <div className="xp-lista">
       {cadenasCotizaciones(cotizaciones).map(({ cotizacion: c, nivel }) => {
         const origen = origenCotizacion(c, cotizaciones);
         const monto = dinero(totalCotizacion(c));
+        const equipo = c.work_order_component_id ? equipos.find((e) => String(e.id) === String(c.work_order_component_id)) : null;
         return (
           <button
             type="button"
@@ -95,6 +97,7 @@ export const ListaCotizaciones = ({ cotizaciones, onAbrir, vacio = 'No hay cotiz
               <strong>{nombreCotizacion(c)}</strong>
               <span className="xp-cot-meta">
                 <Chip tono={origen.tono}>{origen.texto}</Chip>
+                {equipo && <Chip tono="slate">{equipo.label}</Chip>}
                 <small>
                   {[origen.padre && `Basada en la ${nombreCotizacion(origen.padre).toLowerCase()}`, fechaHora(c.created_at)].filter(Boolean).join(' · ')}
                 </small>

@@ -933,6 +933,32 @@
   border-color: var(--tp-primary);
 }
 
+/* Orden con varios equipos: una cotización por equipo */
+.tp-cot-equipos {
+  display: flex; flex-direction: column; gap: 8px; margin-bottom: 5px; padding: 12px;
+  border-radius: 16px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #ffffff;
+}
+.tp-cot-equipos-titulo {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 2px;
+  font-size: 0.8rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+}
+.tp-cot-equipos-titulo svg { color: var(--tp-primary); }
+.tp-cot-equipo {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.tp-cot-equipo.no-contratado { opacity: 0.6; }
+.tp-cot-equipo-texto { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+.tp-cot-equipo-texto strong { font-size: 0.86rem; overflow-wrap: anywhere; }
+.tp-cot-equipo-texto small { font-size: 0.74rem; color: rgba(255, 255, 255, 0.7); }
+.tp-cot-equipo-btn {
+  flex-shrink: 0; min-height: 36px; padding: 6px 14px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--tp-primary); background: var(--tp-primary); color: #ffffff;
+  font-family: inherit; font-size: 0.78rem; font-weight: 800;
+}
+.tp-cot-equipo-btn.hecha { background: transparent; color: #ffffff; border-color: rgba(255, 255, 255, 0.35); }
+.tp-cot-equipo-btn:focus-visible { outline: 2px solid var(--tp-primary); outline-offset: 2px; }
+
 .tp-modal-quotation-card {
   position: relative;
   background: #ffffff;

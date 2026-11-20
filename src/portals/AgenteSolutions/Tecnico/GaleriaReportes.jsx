@@ -59,11 +59,14 @@ const GaleriaReportes = () => {
   const [datosAbiertos, setDatosAbiertos] = useState(false);
 
   // Elementos del trabajo: con 2 o más, cada uno lleva su ANTES y su DESPUÉS
+  // `elementos` son solo los que el cliente contrató (los demás no llevan evidencia);
+  // el modo "por elemento" se decide con todos, para que no cambie si se descarta alguno
+  const [todosElementos, setTodosElementos] = useState([]);
   const [elementos, setElementos] = useState([]);
   const [elementoActivo, setElementoActivo] = useState(null);
   const [cargandoElementos, setCargandoElementos] = useState(true);
-  const porElemento = esPorElemento(elementos);
-  const etapas = etapasDelTrabajo(STAGES, elementos);
+  const porElemento = esPorElemento(todosElementos);
+  const etapas = etapasDelTrabajo(STAGES, todosElementos);
 
   // Estado local para los formularios de cada etapa (por elemento cuando aplica)
   const [slotData, setSlotData] = useState({});
@@ -131,8 +134,11 @@ const GaleriaReportes = () => {
     }
     axios.get(`${import.meta.env.VITE_API_BASE_URL}/work-orders/${String(trabajoId).match(/\d+/)?.[0]}/elementos`)
       .then(({ data }) => {
-        setElementos(data || []);
-        setElementoActivo(data?.[0]?.id ?? null);
+        const todos = data || [];
+        const contratados = todos.filter((el) => el.estado !== 'no_aceptado');
+        setTodosElementos(todos);
+        setElementos(contratados);
+        setElementoActivo(contratados[0]?.id ?? null);
       })
       .catch((error) => console.error('Error fetching work order elements:', error))
       .finally(() => setCargandoElementos(false));

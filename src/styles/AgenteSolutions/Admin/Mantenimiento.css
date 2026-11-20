@@ -200,7 +200,97 @@ span.mt-item-fecha { cursor: default; }
   border: 1.5px solid #e2e8f0; border-radius: 14px; background: #ffffff; color: #0f172a; font-family: inherit;
 }
 .mt-renglon.on { border-color: #f26522; background: #fff7f1; }
-.mt-renglon > img { flex: 0 0 44px; width: 44px; height: 44px; object-fit: cover; border-radius: 10px; }
+.mt-renglon > img { flex: 0 0 52px; width: 52px; height: 52px; object-fit: cover; border-radius: 10px; }
+.mt-renglon-sinfoto {
+  display: flex; flex: 0 0 52px; align-items: center; justify-content: center; height: 52px;
+  border-radius: 10px; background: #f1f5f9; color: #94a3b8;
+}
+/* Detalle del trabajo: equipos elegidos en la solicitud */
+.mt-equipos-trabajo-titulo { display: flex; align-items: center; gap: 6px; }
+.mt-equipos-trabajo-titulo svg { color: #f26522; }
+.mt-equipos-trabajo-titulo span { padding: 1px 8px; border-radius: 999px; background: #fff1e8; color: #c2410c; font-size: 0.72rem; }
+.mt-equipos-trabajo { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; margin: 0 0 14px; padding: 0; list-style: none; }
+.mt-equipo-trabajo {
+  display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; min-width: 0;
+  border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff; color: #0f172a;
+}
+.mt-equipo-trabajo > img { flex: 0 0 52px; width: 52px; height: 52px; object-fit: cover; border-radius: 10px; }
+.mt-equipo-trabajo .mt-renglon-texto small { display: inline-flex; align-items: center; gap: 4px; }
+
+/* Carrito de cotizaciones por equipo (admin) */
+.mt-carrito-cot { display: flex; flex-direction: column; gap: 10px; }
+.mt-carrito-cot-ayuda { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 0.84rem; font-weight: 600; color: #475569; }
+.mt-carrito-cot-lista { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.mt-carrito-cot-item {
+  display: flex; align-items: stretch; gap: 8px; padding: 6px; min-width: 0;
+  border: 1.5px solid #e2e8f0; border-radius: 14px; background: #ffffff;
+}
+.mt-carrito-cot-item.on { border-color: #f26522; background: #fff7f1; }
+.mt-carrito-cot-item.fuera { opacity: 0.65; }
+.mt-carrito-cot-elegir {
+  display: flex; flex: 1; align-items: center; gap: 10px; min-width: 0; padding: 6px 8px; text-align: left;
+  border: 0; border-radius: 10px; background: transparent; color: #0f172a; font-family: inherit; cursor: pointer;
+}
+.mt-carrito-cot-elegir:disabled { cursor: default; }
+.mt-carrito-cot-elegir:focus-visible, .mt-carrito-cot-ver:focus-visible, .mt-carrito-cot-btn:focus-visible { outline: 2px solid #f26522; outline-offset: 2px; }
+.mt-carrito-cot-elegir .mt-casilla {
+  display: flex; align-items: center; justify-content: center; flex: 0 0 22px; height: 22px;
+  border: 1.5px solid #94a3b8; border-radius: 7px; color: #f26522;
+}
+.mt-carrito-cot-item.on .mt-casilla { border-color: #f26522; }
+.mt-carrito-cot-estado { flex-shrink: 0; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 800; }
+.mt-carrito-cot-estado.si { background: #dcfce7; color: #15803d; }
+.mt-carrito-cot-estado.no { background: #f1f5f9; color: #475569; }
+.mt-carrito-cot-ver {
+  display: inline-flex; flex-shrink: 0; align-items: center; gap: 5px; min-height: 40px; padding: 0 12px;
+  border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; color: #0f172a;
+  font-family: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+}
+.mt-carrito-cot-ver:hover { border-color: #f26522; color: #c2410c; }
+.mt-carrito-cot-pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.mt-carrito-cot-total { display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem; color: #334155; }
+.mt-carrito-cot-total svg { color: #f26522; }
+.mt-carrito-cot-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.mt-carrito-cot-btn {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 42px; padding: 0 16px;
+  border: 1.5px solid #cbd5e1; border-radius: 12px; background: #ffffff; color: #0f172a;
+  font-family: inherit; font-size: 0.85rem; font-weight: 800; cursor: pointer;
+}
+.mt-carrito-cot-btn.primario { border-color: #f26522; background: #f26522; color: #ffffff; }
+.mt-carrito-cot-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (max-width: 600px) {
+  .mt-carrito-cot-acciones, .mt-carrito-cot-btn { width: 100%; justify-content: center; }
+  .mt-carrito-cot-acciones { flex-direction: column; }
+}
+
+/* Reporte: un bloque por equipo con su cotización e historial */
+.mt-rep-equipos { display: flex; flex-direction: column; gap: 10px; }
+.mt-rep-equipo { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff; color: #0f172a; break-inside: avoid; }
+.mt-rep-equipo.no-contratado { background: #f8fafc; }
+.mt-rep-equipo > header { display: flex; align-items: flex-start; gap: 10px; }
+.mt-rep-equipo > header > img { flex: 0 0 52px; width: 52px; height: 52px; object-fit: cover; border-radius: 10px; }
+.mt-rep-equipo .mt-renglon-texto small { display: inline-flex; align-items: center; gap: 4px; }
+.mt-rep-cot { border-radius: 10px; background: #f8fafc; padding: 8px 10px; font-size: 0.82rem; }
+.mt-rep-cot summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; color: #334155; }
+.mt-rep-cot summary svg { color: #f26522; }
+.mt-rep-cot ul { margin: 8px 0 0; padding: 0; list-style: none; }
+.mt-rep-cot li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px dashed #e2e8f0; }
+.mt-rep-cot a { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; color: #c2410c; font-weight: 700; }
+.mt-rep-historial h5 { display: flex; align-items: center; gap: 5px; margin: 0 0 4px; font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #475569; }
+.mt-rep-historial ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.mt-rep-historial li { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #334155; }
+.mt-rep-historial li svg { flex-shrink: 0; color: #64748b; }
+.mt-rep-nota { margin: 0; font-size: 0.8rem; color: #64748b; }
+
+/* Equipos agrupados por área */
+.mt-area-grupo { display: flex; flex-shrink: 0; flex-direction: column; gap: 8px; }
+.mt-area-grupo + .mt-area-grupo { margin-top: 6px; }
+.mt-area-titulo {
+  display: flex; align-items: center; gap: 6px; margin: 0; padding: 0 2px;
+  font-size: 0.74rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #475569;
+}
+.mt-area-titulo svg { color: #f26522; }
+.mt-area-titulo span { margin-left: auto; padding: 1px 8px; border-radius: 999px; background: #f1f5f9; font-size: 0.7rem; color: #64748b; }
 .mt-renglon .mt-casilla {
   display: flex; align-items: center; justify-content: center; flex: 0 0 22px; height: 22px;
   border: 1.5px solid #94a3b8; border-radius: 7px; color: #f26522;

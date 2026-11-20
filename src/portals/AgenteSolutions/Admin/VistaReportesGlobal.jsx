@@ -333,9 +333,11 @@ const VistaReportesGlobal = () => {
     const [nombre, curp, dueno, trabajoId, tipo, tituloTrabajo] = groupKey.split('|');
     const first = reports[0];
     const prop = first.service?.property || first.work_order?.property || first.workOrder?.property;
-    const elementos = first.work_order?.elementos || first.workOrder?.elementos || [];
-    const etapasGrupo = etapasDelTrabajo(STAGES, elementos);
-    const porElemento = esPorElemento(elementos);
+    // Todos los equipos de la orden; las evidencias solo se cuentan de los que el cliente contrató
+    const todosElementos = first.work_order?.elementos || first.workOrder?.elementos || [];
+    const elementos = todosElementos.filter(el => el.estado !== 'no_aceptado');
+    const etapasGrupo = etapasDelTrabajo(STAGES, todosElementos);
+    const porElemento = esPorElemento(todosElementos);
     // Con varios elementos cuentan el antes y después de cada uno, más el ticket
     const etapasRegistradas = porElemento
       ? elementos.reduce((suma, el) => suma + avanceDelElemento(reports, el.id), 0) + (getReportForStage(reports, ETAPA_TICKET) ? 1 : 0)
@@ -357,7 +359,7 @@ const VistaReportesGlobal = () => {
 
     return {
       groupKey, nombre, curp, dueno, trabajoId, tipo, tituloTrabajo, reports, foto, etapasRegistradas, etapasTotal,
-      elementos, etapasGrupo, porElemento,
+      elementos, todosElementos, etapasGrupo, porElemento,
       porValidar: orden?.status === 'Por Aprobar',
       ticketStatus: orden?.status === 'Listo' ? orden?.ticket_status : null,
       cerradoPor: cerrador ? `${cerrador.first_name || ''} ${cerrador.last_name || ''}`.trim() : '',
@@ -636,6 +638,11 @@ const VistaReportesGlobal = () => {
                           {servicio.ticketStatus === 'sin_ticket' && <span className="rg-estado-chip sin-ticket">Finalizado sin ticket</span>}
                         </span>
                         <span className="rg-service-title">{servicio.tituloTrabajo}</span>
+                        {servicio.porElemento && (
+                          <span className="rg-service-equipos">
+                            {servicio.todosElementos.length} equipos: {servicio.todosElementos.map(el => `${el.label}${el.estado === 'no_aceptado' ? ' (no contratado)' : ''}`).join(', ')}
+                          </span>
+                        )}
                         <span className="rg-service-meta">
                           <Calendar size={13} /> {servicio.fechaTexto}
                           <span className="rg-service-dot">•</span>
