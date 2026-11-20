@@ -70,26 +70,31 @@ const EquiposDelReporte = ({ elementos }) => (
 
           <div className="mt-rep-historial">
             <h5><History size={13} /> Historial del equipo</h5>
-            {historial.length || realizados.length ? (
-              <ul>
-                {realizados.map((v, i) => (
-                  <li key={`m-${i}`}><CalendarCheck size={13} /> Mantenimiento realizado · {textoFecha(v.fecha)}</li>
-                ))}
-                {historial.map((o) => (
-                  <li key={`o-${o.work_order_id}`}>
-                    <FileText size={13} /> {o.tipo || 'Trabajo'} #{o.work_order_id} · {fechaHora(o.fecha)} · {o.status}
-                    {!o.contratado && ' (no contratado)'}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-rep-nota">Este es el primer servicio registrado de este equipo.</p>
-            )}
+            <ListaHistorial historial={historial} realizados={realizados} />
           </div>
         </article>
       );
     })}
   </div>
+);
+
+// Mantenimientos realizados y otras órdenes donde estuvo el equipo
+export const ListaHistorial = ({ historial = [], realizados = [] }) => (
+  historial.length || realizados.length ? (
+    <ul className="mt-historial-lista">
+      {realizados.map((v, i) => (
+        <li key={`m-${i}`}><CalendarCheck size={13} /> Mantenimiento realizado · {textoFecha(v.fecha)}</li>
+      ))}
+      {historial.map((o) => (
+        <li key={`o-${o.work_order_id}`}>
+          <FileText size={13} /> {o.tipo || 'Trabajo'} #{o.work_order_id} · {fechaHora(o.fecha)} · {o.status}
+          {!o.contratado && ' (no contratado)'}
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p className="mt-rep-nota">Este es el primer servicio registrado de este equipo.</p>
+  )
 );
 
 export default EquiposDelReporte;

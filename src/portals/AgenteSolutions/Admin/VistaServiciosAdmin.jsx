@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Circle, X, UserCircle, Calendar, 
+import { CheckCircle2, X, UserCircle, Calendar,
   ArrowLeft, Camera, Layout, FileText, Maximize2, AlertTriangle, Timer, Settings, Filter,
-  MapPin, Navigation, Users, Package, Zap, Banknote, ListChecks, Hash, ClipboardList, ShieldCheck,
+  MapPin, Navigation, Users, Package, Zap, Banknote, Hash, ClipboardList, ShieldCheck,
   Search, ChevronDown, ChevronLeft, CalendarCheck
 } from 'lucide-react';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
@@ -12,7 +12,7 @@ import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 const ROL_EQUIPO = { 0: 'Root', 1: 'Admin', 2: 'Técnico', 8: 'Cuadrilla' };
 import Header from '../../../components/Shared/Header';
 import CasaLoader from '../../../components/Shared/CasaLoader';
-import ModalAsignarChecklist from '../../../components/Modals/ModalAsignarChecklist';
+import ModalEquiposTrabajo from './Mantenimiento/ModalEquiposTrabajo';
 import ModalCrearCotizacion from '../../../components/Shared/ModalCrearCotizacion';
 import ModalConfirmarPagoEfectivo from '../../../components/Modals/ModalConfirmarPagoEfectivo';
 import UniversalSearch from '../../../components/Shared/UniversalSearch';
@@ -102,7 +102,6 @@ const VistaServiciosAdmin = () => {
   const [imagenExpandida, setImagenExpandida] = useState(null);
   const [procesandoAccion, setProcesandoAccion] = useState(false);
   const [tecnicos, setTecnicos] = useState([]);
-  const [modalChecklistVisible, setModalChecklistVisible] = useState(false);
   const [tecnicosEquipo, setTecnicosEquipo] = useState([]);
   const [editandoCita, setEditandoCita] = useState(false);
   const [tabActiva, setTabActiva] = useState('sos'); // Estado para pestañas en móvil
@@ -133,9 +132,7 @@ const VistaServiciosAdmin = () => {
   
   // --- ESTADOS PARA INVENTARIO ---
   const [modalSurveyVisible, setModalSurveyVisible] = useState(false);
-  const [surveyData, setSurveyData] = useState([]);
-  const [cargandoSurvey, setCargandoSurvey] = useState(false);
-  const [areaActivaSurvey, setAreaActivaSurvey] = useState(null);
+  const cerrarEquiposTrabajo = useCallback(() => setModalSurveyVisible(false), []);
 
   // --- MAPEO DE DATOS ---
   const transformarTareas = useCallback((data, cotiList = [], techsList = []) => {
@@ -564,25 +561,10 @@ const VistaServiciosAdmin = () => {
     }
   };
 
-  const abrirSurvey = async () => {
+  // Solo los equipos de esta orden (antes era el inventario completo de la propiedad)
+  const abrirSurvey = () => {
     if (!tareaSeleccionada.propertyId) return mostrarAviso("Esta orden no tiene propiedad asociada.");
-    
-    setCargandoSurvey(true);
     setModalSurveyVisible(true);
-    try {
-      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/propiedades/${tareaSeleccionada.propertyId}/survey`);
-      setSurveyData(response.data);
-      if (response.data.length > 0) {
-        // Intentar activar el área que coincida con la zona de la tarea
-        const matchingArea = response.data.find(a => a.name.toLowerCase().includes(tareaSeleccionada.titulo.split(' - ')[0].toLowerCase()));
-        setAreaActivaSurvey(matchingArea ? matchingArea.id : response.data[0].id);
-      }
-    } catch (error) {
-      console.error("Error cargando inventario:", error);
-      mostrarAviso("No se pudo cargar el inventario de la propiedad.");
-    } finally {
-      setCargandoSurvey(false);
-    }
   };
 
   const tareasAgrupadas = useMemo(() => {
@@ -1425,30 +1407,6 @@ const VistaServiciosAdmin = () => {
                               </button>
                             )}
                           </div>
-
-                          <div className="svm-section">
-                            <div className="svm-section-head">
-                              <label className="svm-section-label">
-                                <ListChecks size={16} /> Lista de tareas / materiales
-                              </label>
-                              <button type="button" className="svm-mini-btn" onClick={() => setModalChecklistVisible(true)}>
-                                {activeTask.custom_checklist ? 'Editar' : 'Asignar'}
-                              </button>
-                            </div>
-
-                            {activeTask.custom_checklist && activeTask.custom_checklist.length > 0 ? (
-                              <div className="svm-checklist">
-                                {activeTask.custom_checklist.map((item, idx) => (
-                                  <div key={idx} className={`svm-check-item ${item.is_completed ? 'is-done' : ''}`}>
-                                    {item.is_completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-                                    <span>{item.text}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="svm-empty">Aún no se ha añadido ninguna lista de tareas.</div>
-                            )}
-                          </div>
                         </>
                       );
                     })()}
@@ -1775,171 +1733,16 @@ const VistaServiciosAdmin = () => {
         })()
       )}
 
-      {modalSurveyVisible && createPortal(
-        <div 
-          className="modal-survey-overlay" 
-          onClick={() => setModalSurveyVisible(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            width: '100vw',
-            height: '100vh',
-            zIndex: 9999999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-            background: 'rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(8px)'
-          }}
-        >
-          <div className="modal-survey-card" onClick={e => e.stopPropagation()} style={{ zIndex: 10000000, margin: 'auto' }}>
-            <div className="survey-header">
-              <div className="survey-header-info">
-                <FileText size={24} color="#F26522" />
-                <div>
-                  <h3>INVENTARIO TÉCNICO</h3>
-                  <p>{tareaSeleccionada?.propiedad}</p>
-                </div>
-              </div>
-              <button className="close-survey-btn" onClick={() => setModalSurveyVisible(false)}>✕</button>
-            </div>
-
-            <div className="survey-body">
-              {cargandoSurvey ? (
-                <div className="survey-loading"><div className="spinner"></div> Cargando inventario detallado...</div>
-              ) : (
-                <div className="survey-content-layout">
-                  <aside className="survey-sidebar-areas">
-                    <h6 className="sidebar-label">ÁREAS / HABITACIONES</h6>
-                    {surveyData.map(area => (
-                      <button 
-                        key={area.id} 
-                        className={`area-nav-item ${areaActivaSurvey === area.id ? 'active' : ''}`}
-                        onClick={() => setAreaActivaSurvey(area.id)}
-                      >
-                        <div className="area-nav-dot"></div>
-                        <span>{area.name}</span>
-                        <div className="area-nav-count">{Object.values(area.categories).reduce((acc, cat) => acc + cat.length, 0)}</div>
-                      </button>
-                    ))}
-                  </aside>
-
-                  <main className="survey-main-view">
-                    {surveyData.find(a => a.id === areaActivaSurvey) ? (
-                      (() => {
-                        const area = surveyData.find(a => a.id === areaActivaSurvey);
-                        return (
-                          <div className="area-details-container">
-                            <div className="area-header-banner">
-                              <img src={area.photo || '/placeholder-area.jpg'} alt={area.name} className="area-banner-img" />
-                              <div className="area-banner-overlay">
-                                <h2>{area.name}</h2>
-                              </div>
-                            </div>
-
-                            <div className="categories-stack">
-                              {area.subareas && area.subareas.length > 0 ? (
-                                area.subareas.map(sub => (
-                                  <div key={sub.id} className="subarea-section-admin" style={{ marginBottom: '30px', borderBottom: '1px solid #ddd', paddingBottom: '20px' }}>
-                                    <h3 style={{ color: '#F26522', fontWeight: '800', fontSize: '1.25rem', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase' }}>
-                                      <span style={{ width: '4px', height: '20px', background: '#F26522', borderRadius: '2px', display: 'inline-block' }}></span>
-                                      {sub.name}
-                                    </h3>
-                                    {Object.entries(sub.categories || {}).length === 0 ? (
-                                      <p style={{ color: '#777', fontSize: '0.85rem', fontStyle: 'italic', paddingLeft: '12px' }}>No hay elementos registrados en esta zona.</p>
-                                    ) : (
-                                      Object.entries(sub.categories || {}).map(([catName, items]) => (
-                                        <div key={catName} className="category-group" style={{ paddingLeft: '12px', marginTop: '10px' }}>
-                                          <h4 className="category-heading" style={{ fontSize: '0.95rem', color: '#555', fontWeight: 'bold', marginBottom: '10px', textTransform: 'uppercase' }}>{catName}</h4>
-                                          <div className="items-grid-detailed">
-                                            {items.map(item => (
-                                              <div key={item.id} className="tech-item-card">
-                                                <div className="item-photo-box" onClick={() => setImagenExpandida(item.image_path)}>
-                                                  <img src={item.image_path || '/placeholder-item.jpg'} alt={item.sub_category} />
-                                                  <div className="photo-zoom-hint"><Maximize2 size={14}/></div>
-                                                </div>
-                                                <div className="item-tech-info">
-                                                  <div className="item-row-main">
-                                                    <span className="item-subcat">{item.sub_category}</span>
-                                                    <span className={`item-status-tag ${item.status.toLowerCase()}`}>{item.status}</span>
-                                                  </div>
-                                                  <div className="item-specs-grid">
-                                                    <div className="spec"><label>MARCA:</label> <span>{item.brand || '---'}</span></div>
-                                                    <div className="spec"><label>MODELO:</label> <span>{item.model_or_color || '---'}</span></div>
-                                                    <div className="spec"><label>S/N:</label> <span className="serial-num">{item.serial_number || '---'}</span></div>
-                                                  </div>
-                                                  {item.observations && <p className="item-obs">"{item.observations}"</p>}
-                                                  {item.galleries && item.galleries.length > 0 && (
-                                                    <div className="mini-gallery">
-                                                      {item.galleries.map((img, idx) => (
-                                                        <img key={idx} src={img.image_path || img} onClick={() => setImagenExpandida(img.image_path || img)} alt="Gallery" />
-                                                      ))}
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      ))
-                                    )}
-                                  </div>
-                                ))
-                              ) : (
-                                Object.entries(area.categories).length === 0 ? (
-                                  <p className="no-items-msg">No hay elementos registrados en esta área.</p>
-                                ) : (
-                                  Object.entries(area.categories).map(([catName, items]) => (
-                                    <div key={catName} className="category-group">
-                                      <h4 className="category-heading">{catName.toUpperCase()}</h4>
-                                      <div className="items-grid-detailed">
-                                        {items.map(item => (
-                                          <div key={item.id} className="tech-item-card">
-                                            <div className="item-photo-box" onClick={() => setImagenExpandida(item.image_path)}>
-                                              <img src={item.image_path || '/placeholder-item.jpg'} alt={item.sub_category} />
-                                              <div className="photo-zoom-hint"><Maximize2 size={14}/></div>
-                                            </div>
-                                            <div className="item-tech-info">
-                                              <div className="item-row-main">
-                                                <span className="item-subcat">{item.sub_category}</span>
-                                                <span className={`item-status-tag ${item.status.toLowerCase()}`}>{item.status}</span>
-                                              </div>
-                                              <div className="item-specs-grid">
-                                                <div className="spec"><label>MARCA:</label> <span>{item.brand || '---'}</span></div>
-                                                <div className="spec"><label>MODELO:</label> <span>{item.model_or_color || '---'}</span></div>
-                                                <div className="spec"><label>S/N:</label> <span className="serial-num">{item.serial_number || '---'}</span></div>
-                                              </div>
-                                              {item.observations && <p className="item-obs">"{item.observations}"</p>}
-                                              {item.galleries && item.galleries.length > 0 && (
-                                                <div className="mini-gallery">
-                                                  {item.galleries.map((img, idx) => (
-                                                    <img key={idx} src={img.image_path || img} onClick={() => setImagenExpandida(img.image_path || img)} alt="Gallery" />
-                                                  ))}
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  ))
-                                )
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      <div className="select-area-msg">Selecciona un área para ver sus componentes técnicos.</div>
-                    )}
-                  </main>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>,
-        document.body
+      {/* Equipos con los que se trabaja en esta orden (solo lectura, con su historial) */}
+      {modalSurveyVisible && tareaSeleccionada && (
+        <ModalEquiposTrabajo
+          ordenId={tareaSeleccionada.dbId}
+          propiedadId={tareaSeleccionada.propertyId}
+          zona={tareaSeleccionada.zonaHabitacion}
+          equipoTexto={tareaSeleccionada.titulo}
+          direccion={tareaSeleccionada.direccionPropiedad}
+          onClose={cerrarEquiposTrabajo}
+        />
       )}
 
       {imagenExpandida && createPortal(
@@ -1965,21 +1768,6 @@ const VistaServiciosAdmin = () => {
         document.body
       )}
 
-      {modalChecklistVisible && tareaSeleccionada && (
-        <ModalAsignarChecklist 
-          workOrder={tareaSeleccionada}
-          onClose={() => setModalChecklistVisible(false)}
-          onAssign={() => {
-            setModalChecklistVisible(false);
-            fetchOrders();
-            // Actualizar la tarea seleccionada para reflejar el nuevo técnico
-            setTimeout(() => {
-               const updated = tareasData.find(t => t.dbId === tareaSeleccionada.dbId);
-               if (updated) setTareaSeleccionada(updated);
-            }, 500);
-          }}
-        />
-      )}
       
       <style>{`
         .main-tabs-container {

@@ -1521,3 +1521,6 @@ html:has(.tp-page-wrapper) body::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
+
+/* Sin segunda visita en curso no queda la línea divisoria vacía */
+.tp-segunda-visita:empty { display: none; }

@@ -12,7 +12,7 @@ import "../../../styles/AgenteSolutions/Tecnico/TrabajoPropiedadGlass.css";
 import { 
   MapPin, Phone, User, Wrench, Clock, 
   ChevronLeft, Navigation, CheckCircle2, AlertCircle,
-  FileText, ArrowRight, Package, Lock, Camera, Layout,
+  FileText, ArrowRight, Lock, Camera, Layout,
   X, Maximize2, AlertTriangle, Zap, Calculator, Calendar, MessageCircle, Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
@@ -29,9 +29,6 @@ const TrabajoPropiedad = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModalFinalizar, setShowModalFinalizar] = useState(false);
-  const [showModalMateriales, setShowModalMateriales] = useState(false);
-  const [materialesConfirmados, setMaterialesConfirmados] = useState(false);
-  const [itemsCheck, setItemsCheck] = useState({ materiales: [], equipo: [], herramientas: [] });
   const [hasReports, setHasReports] = useState(false);
   const [activeChatQuote, setActiveChatQuote] = useState(null);
 
@@ -44,7 +41,9 @@ const TrabajoPropiedad = () => {
   })();
   const effectiveRole = Number(user?.role_id ?? storedUser?.role_id ?? 0);
   const isTecnicoRed = effectiveRole === 8 || user?.role_id === 8 || user?.role_id === '8' || storedUser?.role_id === 8;
-  const puedeIniciarReporte = isTecnicoRed || materialesConfirmados;
+  // Ya no hay lista de materiales del admin que confirmar (los materiales van en la cotización):
+  // el reporte no se bloquea por eso
+  const puedeIniciarReporte = true;
 
   // --- ESTADOS PARA CONSULTA DE LEVANTAMIENTO ---
   const [verEvidencias, setVerEvidencias] = useState(false);
@@ -188,27 +187,6 @@ const TrabajoPropiedad = () => {
     }
   };
 
-  useEffect(() => {
-    if (data) {
-      const realId = getRealId(id);
-      const confirmado = localStorage.getItem(`materiales_confirmados_${realId}`) === 'true';
-      setMaterialesConfirmados(confirmado);
-
-      const cl = data.custom_checklist 
-        ? (typeof data.custom_checklist === 'string' ? JSON.parse(data.custom_checklist) : data.custom_checklist)
-        : { materiales: [], equipo: [], herramientas: [] };
-      
-      const mats = cl.materiales || cl.material || [];
-      const eqs = cl.equipo || [];
-      const hers = cl.herramientas || [];
-
-      setItemsCheck({
-        materiales: new Array(mats.length).fill(confirmado),
-        equipo: new Array(eqs.length).fill(confirmado),
-        herramientas: new Array(hers.length).fill(confirmado)
-      });
-    }
-  }, [data, id]);
 
   const fetchJobDetails = async () => {
     try {
@@ -282,23 +260,6 @@ const TrabajoPropiedad = () => {
     });
   };
 
-  const toggleItem = (tipo, index) => {
-    const nuevos = { ...itemsCheck };
-    nuevos[tipo][index] = !nuevos[tipo][index];
-    setItemsCheck(nuevos);
-  };
-
-  const todoMarcado = () => {
-    return [...itemsCheck.materiales, ...itemsCheck.equipo, ...itemsCheck.herramientas].every(v => v === true);
-  };
-
-  const confirmarMateriales = () => {
-    const realId = id.includes('-') ? id.split('-')[1] : id;
-    localStorage.setItem(`materiales_confirmados_${realId}`, 'true');
-    setMaterialesConfirmados(true);
-    setShowModalMateriales(false);
-  };
-
   const openInGoogleMaps = () => {
     // 1. Detección profunda de coordenadas
     const strCoords = data?.coordinates || data?.coordenadas || data?.property_coordinates || data?.property?.coordinates || data?.property?.coordenadas;
@@ -325,10 +286,6 @@ const TrabajoPropiedad = () => {
     }
     mostrarAviso("Esta propiedad no tiene coordenadas ni dirección registradas.");
   };
-
-  const checklistObj = data?.custom_checklist 
-    ? (typeof data.custom_checklist === 'string' ? JSON.parse(data.custom_checklist) : data.custom_checklist)
-    : null;
 
   if (loading) {
     return (
@@ -471,25 +428,6 @@ const TrabajoPropiedad = () => {
                 </div>
               </div>
             </motion.div>
-
-            {checklistObj && (
-              <motion.div 
-                className="tp-card tp-materials-preview-card"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <div className="tp-card-header">
-                  <Package size={20} />
-                  <h3>MATERIALES Y EQUIPO</h3>
-                </div>
-                <div className="tp-materials-summary">
-                  <div className="tp-mat-tag">{(checklistObj.materiales || checklistObj.material || []).length} Materiales</div>
-                  <div className="tp-mat-tag">{(checklistObj.equipo || []).length} Equipos</div>
-                  <div className="tp-mat-tag">{(checklistObj.herramientas || []).length} Herramientas</div>
-                </div>
-              </motion.div>
-            )}
 
             <motion.div 
               className="tp-card tp-client-card"
@@ -653,15 +591,6 @@ const TrabajoPropiedad = () => {
 
                 <div className="tp-divider-mini"></div>
 
-                {!isTecnicoRed && (
-                  <button 
-                    className={`tp-btn-checklist-trigger ${materialesConfirmados ? 'confirmed' : 'pending'}`}
-                    onClick={() => setShowModalMateriales(true)}
-                  >
-                    <Package size={20} />
-                    <span>{materialesConfirmados ? "MATERIALES LISTOS" : "CONFIRMAR MATERIALES"}</span>
-                  </button>
-                )}
 
                 <button 
                   className={`tp-btn-primary ${!puedeIniciarReporte ? 'locked' : ''}`} 
@@ -677,12 +606,6 @@ const TrabajoPropiedad = () => {
                   <span>{hasReports ? 'VER REPORTE' : 'INICIAR REPORTE'}</span>
                   <ArrowRight size={18} />
                 </button>
-
-                {!isTecnicoRed && !materialesConfirmados && (
-                  <p className="tp-lock-msg" style={{ marginTop: '4px', textAlign: 'center', fontSize: '0.8rem', color: '#ea580c' }}>
-                    Debe confirmar materiales para iniciar
-                  </p>
-                )}
 
                 {data.estado === 'Por Aprobar' && (
                   <p className="tp-lock-msg" style={{ marginTop: '10px', textAlign: 'center', fontSize: '0.85rem', color: '#0369a1' }}>
@@ -717,7 +640,7 @@ const TrabajoPropiedad = () => {
                 )}
 
                 {/* BOTÓN / BANNER SEGUNDA VISITA CON ESTADOS DINÁMICOS Y NEGOCIACIÓN */}
-                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e2e8f0', width: '100%' }}>
+                <div className="tp-segunda-visita" style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e2e8f0', width: '100%' }}>
                   {(() => {
                     const fullDesc = data?.description || data?.descripcion || '';
 
@@ -804,31 +727,8 @@ const TrabajoPropiedad = () => {
                       );
                     }
 
-                    return (
-                      <button 
-                        onClick={() => setShowModalSegundaVisita(true)}
-                        style={{ 
-                          width: '100%',
-                          background: '#ea580c', 
-                          color: '#ffffff', 
-                          border: 'none',
-                          padding: '12px 16px',
-                          borderRadius: '16px',
-                          fontWeight: '800',
-                          fontSize: '0.82rem',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '8px',
-                          boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)',
-                          textTransform: 'uppercase'
-                        }}
-                      >
-                        <Calendar size={18} />
-                        <span>¿NO SE TERMINÓ? SOLICITAR 2DA VISITA</span>
-                      </button>
-                    );
+                    // El técnico ya no solicita la segunda visita: solo ve la que esté en curso
+                    return null;
                   })()}
                 </div>
                 </>
@@ -838,79 +738,6 @@ const TrabajoPropiedad = () => {
           </div>
         </div>
       </div>
-
-      <AnimatePresence>
-        {showModalMateriales && (
-          <div className="tp-modal-overlay">
-            <motion.div 
-              className="tp-modal-content-checklist"
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-            >
-              <div className="tp-modal-header-check">
-                <Package size={24} color="#f26624" />
-                <h2>Lista de Ruta / Materiales</h2>
-                <button className="tp-close-modal-btn" onClick={() => setShowModalMateriales(false)}>×</button>
-              </div>
-
-              <div className="tp-modal-scroll-body">
-                {(checklistObj?.materiales || checklistObj?.material || []).length > 0 && (
-                  <div className="tp-check-section">
-                    <h4>Materiales</h4>
-                    <div className="tp-check-grid">
-                      {(checklistObj.materiales || checklistObj.material).map((m, i) => (
-                        <label key={i} className={`tp-check-label ${itemsCheck.materiales[i] ? 'checked' : ''}`}>
-                          <input type="checkbox" checked={itemsCheck.materiales[i]} onChange={() => toggleItem('materiales', i)} />
-                          <span>{typeof m === 'string' ? m : m.nombre || m.task || m.concepto}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {(checklistObj?.equipo || []).length > 0 && (
-                  <div className="tp-check-section">
-                    <h4>Equipo</h4>
-                    <div className="tp-check-grid">
-                      {checklistObj.equipo.map((e, i) => (
-                        <label key={i} className={`tp-check-label ${itemsCheck.equipo[i] ? 'checked' : ''}`}>
-                          <input type="checkbox" checked={itemsCheck.equipo[i]} onChange={() => toggleItem('equipo', i)} />
-                          <span>{typeof e === 'string' ? e : e.nombre || e.task || e.concepto}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {(checklistObj?.herramientas || []).length > 0 && (
-                  <div className="tp-check-section">
-                    <h4>Herramientas</h4>
-                    <div className="tp-check-grid">
-                      {checklistObj.herramientas.map((h, i) => (
-                        <label key={i} className={`tp-check-label ${itemsCheck.herramientas[i] ? 'checked' : ''}`}>
-                          <input type="checkbox" checked={itemsCheck.herramientas[i]} onChange={() => toggleItem('herramientas', i)} />
-                          <span>{typeof h === 'string' ? h : h.nombre || h.task || h.concepto}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="tp-modal-footer-check">
-                <button 
-                  className={`tp-btn-confirm-check ${todoMarcado() ? 'ready' : 'disabled'}`}
-                  disabled={!todoMarcado() && (checklistObj?.materiales || checklistObj?.material || checklistObj?.equipo || checklistObj?.herramientas)}
-                  onClick={confirmarMateriales}
-                >
-                  {todoMarcado() ? "CONFIRMAR Y DESBLOQUEAR" : "FALTA MARCAR ITEMS"}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {verEvidencias && (
