@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import Logo4 from "../../assets/Logo4.png";
 import LoginArtwork from "../../assets/Atardecer.png";
+import { esNativo, esIOS } from "../../plataforma";
+import { googleNativoConfigurado, tokenGoogleNativo, tokenAppleNativo, fueCancelado } from "./loginNativo";
 
 // Cliente de la red que llegó desde el QR de un técnico (/t/:codigo): al entrar regresa a ese perfil.
 // Lo guarda ContratarTecnico en sessionStorage; se usa una sola vez.
@@ -412,8 +414,42 @@ const LoginAgente = () => {
     }
   };
 
+  // Google o Apple dentro de la app nativa: el SDK del sistema da un id_token y el backend lo valida
+  const loginNativo = async (proveedor) => {
+    setMensaje("");
+    const nombre = proveedor === "apple" ? "Apple" : "Google";
+    if (proveedor === "google" && !googleNativoConfigurado) {
+      setMensaje("Error: El inicio de sesión con Google aún no está configurado.");
+      return;
+    }
+
+    setIsLoading(true);
+    let idToken;
+    try {
+      idToken = proveedor === "apple" ? await tokenAppleNativo() : await tokenGoogleNativo();
+    } catch (error) {
+      setIsLoading(false);
+      if (!fueCancelado(error)) {
+        console.log(`Error en el login con ${nombre}:`, error);
+        setMensaje(`Error: No se completó el inicio de sesión con ${nombre}.`);
+      }
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/login/${proveedor}`, { id_token: idToken });
+      entrarConSesion(res);
+    } catch (error) {
+      manejarErrorLogin(error);
+    }
+  };
+
   // Inicio de sesión con Google (Google Identity Services, ventana emergente de Google)
   const handleGoogleLogin = async () => {
+    if (esNativo) {
+      loginNativo("google");
+      return;
+    }
     setMensaje("");
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!clientId) {
@@ -1221,6 +1257,22 @@ const LoginAgente = () => {
                           <ArrowRight size={18} />
                         </div>
                       </button>
+
+                      {/* Sign in with Apple: solo en la app de iPhone (Apple lo exige si hay login con Google) */}
+                      {esIOS && (
+                        <button
+                          type="button"
+                          className="aiw-social-btn-apple"
+                          title="Continuar con Apple"
+                          onClick={() => loginNativo("apple")}
+                          disabled={isLoading}
+                        >
+                          <svg className="aiw-google-icon" viewBox="0 0 384 512" width="16" height="16" aria-hidden="true">
+                            <path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+                          </svg>
+                          <span>CONTINUAR CON APPLE</span>
+                        </button>
+                      )}
 
                       {/* Social / Google Button */}
                       <button

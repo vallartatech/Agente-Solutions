@@ -59,5 +59,15 @@
 	<string>Agente Solutions usa tu ubicación para ubicar propiedades en el mapa y compartir tu llegada al trabajo.</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- Inicio de sesión con Google: el SDK regresa a la app con el Client ID de iOS al revés -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.785649185292-6d0ld3o0h6vpfdcvu30p55un0fnub638</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
