@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { mostrarAviso } from '../../../utils/dialogos';
 import { esRed, usaSelectorRed } from '../../../utils/entorno';
+import { sinVentasDigitales } from '../../../plataforma';
 
 const COLORES_CARPETA = ["#F26522", "#2563eb", "#10b981", "#8b5cf6", "#e11d48", "#0f172a"];
 
@@ -883,7 +884,7 @@ const VistaPropiedades = () => {
                   onClick={() => setMostrarModalCompraEspacios(true)}
                   style={{ background: 'linear-gradient(135deg, #FF6600 0%, #d94e00 100%)', border: '2px solid #FF6600', boxShadow: '0 4px 15px rgba(255,102,0,0.5)' }}
                 >
-                  <span>🔒</span> COMPRAR ESPACIO PROPIEDAD ($79.99)
+                  <span>🔒</span> {sinVentasDigitales ? "LÍMITE DE PROPIEDADES" : "COMPRAR ESPACIO PROPIEDAD ($79.99)"}
                 </button>
               ) : (
                 <button className="pc-add-btn" onClick={() => setMostrarModalRegistroPropiedad(true)}>
@@ -954,7 +955,7 @@ const VistaPropiedades = () => {
                           onClick={() => { setAccionesAbiertas(false); setMostrarModalCompraEspacios(true); }}
                         >
                           <span className="tb-actions-icon orange"><Plus size={16} strokeWidth={3} /></span>
-                          <span>Comprar espacio</span>
+                          <span>{sinVentasDigitales ? "Límite de propiedades" : "Comprar espacio"}</span>
                         </button>
                       ) : (
                         <button
