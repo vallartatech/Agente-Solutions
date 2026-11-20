@@ -253,7 +253,9 @@ const LoginAgente = () => {
   const [regCodigoContratista, setRegCodigoContratista] = useState("");
   // Entró con Google o Apple sin tener cuenta: datos para ofrecerle crearla
   const [registroSugerido, setRegistroSugerido] = useState(null);
-  const esLocalhost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  // Solo la PC de desarrollo se salta el reCAPTCHA. La app de iPhone también corre en "localhost"
+  // (capacitor://localhost, el propio teléfono), pero ahí sí se pide.
+  const esLocalhost = !esNativo && typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
   const [isRecoverModalOpen, setIsRecoverModalOpen] = useState(false);
   const [recoverStep, setRecoverStep] = useState(1);

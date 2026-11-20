@@ -19,6 +19,8 @@ import {
 import axios from "axios";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
+// En la app de iPhone el dominio también es localhost (el teléfono): ahí el reCAPTCHA sí se pide
+import { esNativo } from "../../plataforma";
 import Logo4 from "../../assets/Logo4.png";
 import "../../styles/Auth/LoginAgente.css";
 
@@ -311,7 +313,7 @@ const ClientRegister = () => {
       return;
     }
 
-    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const isLocalhost = !esNativo && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
     if (!isLocalhost && !isCaptchaValid && !captchaToken) {
       setMessage("Error: Por favor completa la verificación del reCAPTCHA.");
@@ -378,7 +380,7 @@ const ClientRegister = () => {
 
   const currentIndex = rolesFiltrados.findIndex(r => r.key === selectedRoleKey);
   const activeRoleIndex = currentIndex !== -1 ? currentIndex : 0;
-  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const isLocalhost = !esNativo && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   return (
     <div
