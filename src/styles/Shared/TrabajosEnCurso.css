@@ -92,6 +92,9 @@
 }
 
 .tec-filtros::-webkit-scrollbar { display: none; }
+.tec-filtros { cursor: grab; user-select: none; -webkit-user-select: none; }
+.tec-filtros.arrastrando { cursor: grabbing; }
+.tec-filtros.arrastrando .tec-filtro { pointer-events: none; }
 
 .tec-filtro {
   display: inline-flex;

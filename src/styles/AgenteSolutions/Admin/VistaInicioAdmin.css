@@ -1202,6 +1202,9 @@
 .via-datos-toggle {
   width: 30px;
   height: 30px;
+  min-width: 30px;
+  padding: 0;
+  box-sizing: border-box;
   flex-shrink: 0;
   border-radius: 50%;
   display: inline-flex;
@@ -1221,7 +1224,7 @@
   border-color: rgba(255, 255, 255, 0.65);
 }
 .via-datos-toggle:focus-visible { outline: 2px solid #f26522; outline-offset: 2px; }
-.via-datos-toggle svg { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.via-datos-toggle svg { flex-shrink: 0; display: block; color: #ffffff; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 /* Abierto: flecha hacia arriba (para ocultar). Cerrado: hacia abajo (para ver) */
 .via-datos-toggle.is-open svg { transform: rotate(180deg); }
 

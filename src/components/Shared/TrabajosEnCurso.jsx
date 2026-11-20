@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Activity, Building2, ChevronDown, ChevronRight, Globe, Hammer, ClipboardList, UserRound, RefreshCw, ChevronUp } from 'lucide-react';
@@ -22,6 +22,57 @@ const enLotes = async (items, fn, simultaneos = 6) => {
   };
   await Promise.all(Array.from({ length: Math.min(simultaneos, items.length) }, trabajador));
   return res;
+};
+
+// Fila de filtros deslizable con el mouse: arrastrar a los lados o usar la rueda
+// (en táctil ya se desliza sola con el dedo)
+const useArrastreHorizontal = () => {
+  const arrastre = useRef(null);
+  const movido = useRef(false);
+  const quitarRueda = useRef(null);
+
+  // Ref por callback: la fila solo existe con la caja abierta
+  const ref = useCallback((el) => {
+    if (quitarRueda.current) { quitarRueda.current(); quitarRueda.current = null; }
+    if (!el) return;
+    const alRodar = (e) => {
+      if (el.scrollWidth <= el.clientWidth) return;
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (!delta) return;
+      e.preventDefault();
+      el.scrollLeft += delta;
+    };
+    el.addEventListener('wheel', alRodar, { passive: false });
+    quitarRueda.current = () => el.removeEventListener('wheel', alRodar);
+  }, []);
+
+  const onPointerDown = (e) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    arrastre.current = { x: e.clientX, inicio: e.currentTarget.scrollLeft };
+    movido.current = false;
+  };
+  const onPointerMove = (e) => {
+    if (!arrastre.current) return;
+    const dx = e.clientX - arrastre.current.x;
+    if (!movido.current && Math.abs(dx) < 5) return;
+    if (!movido.current) {
+      movido.current = true;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      e.currentTarget.classList.add('arrastrando');
+    }
+    e.currentTarget.scrollLeft = arrastre.current.inicio - dx;
+  };
+  const soltar = (e) => {
+    if (!arrastre.current) return;
+    arrastre.current = null;
+    e.currentTarget.classList.remove('arrastrando');
+  };
+  // Si se arrastró, no cuenta como clic en el filtro
+  const onClickCapture = (e) => {
+    if (movido.current) { e.stopPropagation(); e.preventDefault(); movido.current = false; }
+  };
+
+  return { ref, onPointerDown, onPointerMove, onPointerUp: soltar, onPointerCancel: soltar, onClickCapture };
 };
 
 const enCurso = (t) => esActivo(t) && !String(t.status || '').trim().toLowerCase().startsWith('cancel');
@@ -138,6 +189,7 @@ export const PildoraTrabajosEnCurso = ({ usuarioId, interna = false }) => {
   const [filtro, setFiltro] = useState('todas');
   const [plegados, setPlegados] = useState({});
   const { grupos, total, cargando, recargar } = useTrabajosEnCurso(true, usuarioId, { conRed: !interna, cadaMinuto: !interna });
+  const arrastreFiltros = useArrastreHorizontal();
 
   // Si la propiedad filtrada ya no tiene trabajos en curso, volver a "Todas"
   useEffect(() => {
@@ -195,7 +247,7 @@ export const PildoraTrabajosEnCurso = ({ usuarioId, interna = false }) => {
       </div>
 
       {grupos.length > 1 && (
-        <div className="tec-filtros">
+        <div className="tec-filtros" {...arrastreFiltros}>
           <button type="button" className={`tec-filtro ${filtro === 'todas' ? 'activo' : ''}`} onClick={() => setFiltro('todas')}>
             Todas <span>{total}</span>
           </button>

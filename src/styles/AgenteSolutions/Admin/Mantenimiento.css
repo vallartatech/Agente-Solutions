@@ -155,7 +155,11 @@ span.mt-item-fecha { cursor: default; }
 .mt-columnas { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 18px; align-items: stretch; }
 .mt-columna { display: flex; flex-direction: column; gap: 12px; height: 640px; max-height: 80vh; min-height: 0; }
 .mt-columna .xp-panel-titulo { flex-shrink: 0; margin: 0; }
-.mt-buscador-columna { flex: 0 0 auto; }
+/* Más específico que el .mt-buscador de Mis Técnicos (mismo nombre), que lo estiraba a lo alto */
+.mt-columna .mt-buscador.mt-buscador-columna {
+  flex: 0 0 auto; height: 42px; min-height: 42px; margin: 0 0 10px;
+  box-sizing: border-box;
+}
 .mt-columna-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
 .mt-columna-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .mt-lista-trabajos { display: flex; flex-direction: column; gap: 10px; }
@@ -167,6 +171,8 @@ span.mt-item-fecha { cursor: default; }
 @media (max-width: 900px) {
   .mt-columnas { grid-template-columns: minmax(0, 1fr); }
   .mt-columna { height: 70vh; max-height: none; }
+  /* Aire al final para que la última tarjeta no quede cortada por el borde */
+  .mt-columna-scroll { padding-bottom: 14px; }
 }
 
 /* Solicitud de mantenimiento: formulario y panel de equipos, centrados juntos */

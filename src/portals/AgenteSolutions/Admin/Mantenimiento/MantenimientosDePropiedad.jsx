@@ -35,13 +35,14 @@ const MantenimientosDePropiedad = ({ propiedadId }) => {
   return (
     <section className="xp-card xp-panel mt-columna">
       <h3 className="xp-panel-titulo"><Wrench size={18} /> Equipos en mantenimiento ({equipos.length})</h3>
+      {/* El buscador va dentro del scroll: al bajar se va junto con la lista */}
+      <div className="mt-columna-scroll">
       {equipos.length > 0 && (
         <label className="mt-buscador mt-buscador-columna">
           <Search size={16} />
           <input type="search" placeholder="Buscar equipo..." aria-label="Buscar equipo" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
         </label>
       )}
-      <div className="mt-columna-scroll">
       {cargando ? (
         <p className="mt-vacio">Cargando equipos...</p>
       ) : error ? (

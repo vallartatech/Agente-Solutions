@@ -748,26 +748,13 @@
   max-height: 640px;
   overflow-x: auto;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(242, 101, 34, 0.6) rgba(0, 0, 0, 0.04);
+  /* Se sigue deslizando, pero sin la barra naranja visible */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .vu-table-responsive-wrapper::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.vu-table-responsive-wrapper::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.03);
-}
-
-.vu-table-responsive-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(242, 101, 34, 0.4);
-  border-radius: 4px;
-}
-
-.vu-table-responsive-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #f26522;
+  display: none;
 }
 
 .vu-modern-table {
@@ -2039,6 +2026,21 @@
   }
   .vu-modern-table .vu-actions-head { z-index: 11; }
   .vu-modern-table tbody tr.vu-row-selected .vu-actions-cell { background: rgba(255, 237, 226, 0.9); }
+}
+
+/* Celular: los botones de acciones van en cuadrícula de 2×2 y más chicos,
+   para que la columna fija no tape casi toda la tabla */
+@media (max-width: 640px) {
+  .vu-modern-table .vu-actions-head,
+  .vu-modern-table .vu-actions-cell { padding-left: 8px; padding-right: 8px; }
+  .vu-mockup-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 30px);
+    gap: 5px;
+    justify-content: center;
+  }
+  .vu-mockup-btn { width: 30px; height: 30px; border-radius: 9px; }
+  .vu-mockup-btn svg { width: 14px; height: 14px; }
 }
 
 /* Acceso a "Validar técnicos" (perfiles profesionales de la red): Root y Admin */
