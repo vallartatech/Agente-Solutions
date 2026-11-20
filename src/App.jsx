@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { iniciarOneSignal, vincularUsuarioOneSignal } from "./components/Shared/oneSignalPush";
+import { registrarPushNativo, escucharToquesPush } from "./components/Shared/pushNativo";
 import { useEffect, lazy, Suspense } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./context/ProtectedRoute";
@@ -209,11 +210,19 @@ const AppRoutes = () => {
 
   const { user, initialized } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Vincular el dispositivo al usuario en OneSignal (espera a que termine init)
+  // Vincular el dispositivo al usuario en OneSignal (espera a que termine init).
+  // En la app de iPhone además se registra el push nativo (el web no funciona ahí).
   useEffect(() => {
-    if (user?.id) vincularUsuarioOneSignal(user.id);
+    if (user?.id) {
+      vincularUsuarioOneSignal(user.id);
+      registrarPushNativo(user.id);
+    }
   }, [user?.id]);
+
+  // App de iPhone: al tocar un aviso se abre su pantalla
+  useEffect(() => escucharToquesPush(navigate), [navigate]);
 
   if (!initialized) return null;
 

@@ -6,5 +6,10 @@
     "contentInset": "never",
     "backgroundColor": "#ffffff",
     "limitsNavigationsToAppBoundDomains": false
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
   }
 }

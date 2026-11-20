@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from "axios";
 import { desvincularUsuarioOneSignal } from '../components/Shared/oneSignalPush';
+import { darDeBajaPushNativo } from '../components/Shared/pushNativo';
 import { mostrarAviso } from '../utils/dialogos';
 
 const AuthContext = createContext();
@@ -51,6 +52,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logoutGlobal = () => {
+    // App de iPhone: quitar este dispositivo de los avisos de la cuenta (necesita el token, va primero)
+    darDeBajaPushNativo();
     setUser(null);
     localStorage.removeItem('agente_session');
     localStorage.removeItem('agente_token'); // Limpiar también el token
