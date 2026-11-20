@@ -2713,7 +2713,7 @@ const DetallePropiedad = () => {
                           }}
                           style={{ flex: 1, background: '#3b82f6', color: 'white', padding: '14px', borderRadius: '12px', border: 'none', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)' }}
                         >
-                          👁️ VER COTIZACIÓN NUEVA O ACTUALIZADA
+                          <Eye size={20} aria-hidden="true" /> VER COTIZACIÓN NUEVA O ACTUALIZADA
                         </button>
                       );
                     } else {

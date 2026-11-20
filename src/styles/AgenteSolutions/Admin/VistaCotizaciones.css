@@ -2452,3 +2452,38 @@
     .cd-btn-row > .cd-btn:only-child { grid-column: 1 / -1; }
     .cotiz-detail-sheet .cd-btn { font-size: 0.82rem; padding: 10px 12px; }
 }
+
+/* Detalle de cotización: todo se desliza junto y los botones quedan al final del contenido
+   (no fijos abajo). El encabezado con la X se queda arriba. */
+.modal-box-card.cotiz-detail-sheet {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+}
+.modal-box-card.cotiz-detail-sheet::-webkit-scrollbar { display: none; }
+.cotiz-detail-sheet .cotiz-detail-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+.cotiz-detail-sheet .cotiz-detail-body {
+    flex: none;
+    overflow: visible;
+}
+.cotiz-detail-sheet .cotiz-detail-footer {
+    background: transparent;
+    border-top: none;
+    padding-top: 4px;
+}
+
+/* Propuesta del técnico de un equipo: espera la elección del carrito antes de generar la del cliente */
+.cotiz-detail-sheet .cd-aviso-carrito {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid #fed7aa;
+    border-radius: 14px;
+    background: #fff7ed;
+}
+.cotiz-detail-sheet .cd-aviso-carrito p { margin: 0; font-size: 0.85rem; font-weight: 600; color: #9a3412; }

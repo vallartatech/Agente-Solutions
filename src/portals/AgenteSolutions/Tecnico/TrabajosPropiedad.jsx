@@ -41,9 +41,6 @@ const TrabajoPropiedad = () => {
   })();
   const effectiveRole = Number(user?.role_id ?? storedUser?.role_id ?? 0);
   const isTecnicoRed = effectiveRole === 8 || user?.role_id === 8 || user?.role_id === '8' || storedUser?.role_id === 8;
-  // Ya no hay lista de materiales del admin que confirmar (los materiales van en la cotización):
-  // el reporte no se bloquea por eso
-  const puedeIniciarReporte = true;
 
   // --- ESTADOS PARA CONSULTA DE LEVANTAMIENTO ---
   const [verEvidencias, setVerEvidencias] = useState(false);
@@ -159,6 +156,21 @@ const TrabajoPropiedad = () => {
     setEquipoCotizando(equipo);
     setShowModalCotizacion(true);
   };
+
+  // Con varios equipos el trabajo no empieza hasta que cada uno tenga su cotización
+  // y el admin cierre el carrito (así se sabe qué equipos se contrataron).
+  // Los materiales ya van en la cotización: no hay lista que confirmar.
+  const faltanCotizar = porEquipo
+    ? equiposOrden.filter((eq) => eq.estado !== 'no_aceptado' && !cotizacionDeEquipo(eq.id))
+    : [];
+  const esperandoCarrito = porEquipo && !faltanCotizar.length && !equiposOrden.some((eq) => eq.carrito_finalizado);
+  // Si ya subió evidencias se deja entrar a verlas
+  const puedeIniciarReporte = hasReports || (!faltanCotizar.length && !esperandoCarrito);
+  const motivoBloqueo = faltanCotizar.length
+    ? `Falta cotizar: ${faltanCotizar.map((eq) => eq.label).join(', ')}`
+    : esperandoCarrito
+      ? 'Esperando que el administrador confirme qué equipos se contratan'
+      : null;
 
   const getRealId = (rawId) => {
     if (!rawId) return '';
@@ -606,6 +618,12 @@ const TrabajoPropiedad = () => {
                   <span>{hasReports ? 'VER REPORTE' : 'INICIAR REPORTE'}</span>
                   <ArrowRight size={18} />
                 </button>
+
+                {!puedeIniciarReporte && motivoBloqueo && (
+                  <p className="tp-lock-msg" style={{ marginTop: '4px', textAlign: 'center', fontSize: '0.8rem', color: '#ea580c' }}>
+                    {motivoBloqueo}
+                  </p>
+                )}
 
                 {data.estado === 'Por Aprobar' && (
                   <p className="tp-lock-msg" style={{ marginTop: '10px', textAlign: 'center', fontSize: '0.85rem', color: '#0369a1' }}>

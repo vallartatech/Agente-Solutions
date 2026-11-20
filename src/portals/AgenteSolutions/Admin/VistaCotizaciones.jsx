@@ -18,7 +18,7 @@ import {
   X, Eye, Pencil, Forward, Globe, FilePlus,
   Receipt, CalendarClock, Upload, Loader2,
   Landmark,
-  Folder, FolderOpen, CornerDownRight, ChevronDown
+  Folder, FolderOpen, CornerDownRight, ChevronDown, ShoppingCart
 } from 'lucide-react';
 import CreateQuotationModal from "../../../components/Modals/CreateQuotationModal";
 import ModalCrearCotizacion from "../../../components/Shared/ModalCrearCotizacion";
@@ -1014,9 +1014,11 @@ const VistaCotizaciones = () => {
           display: 'inline-flex',
           alignItems: 'center',
           gap: '4px'
-        } : { fontSize: 'clamp(0.7rem, 2vw, 0.9rem)' }}
+        } : { fontSize: 'clamp(0.7rem, 2vw, 0.9rem)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
       >
-        {isCotizacionEnCarrito(c) ? '🛒 EN CARRITO' : '👁️ VER'}
+        {isCotizacionEnCarrito(c)
+          ? <><ShoppingCart size={16} aria-hidden="true" /> EN CARRITO</>
+          : <><Eye size={16} aria-hidden="true" /> VER</>}
       </button>
       {/* Botón para recotizar si fue solicitada recotización */}
       {!esCliente && (c.status?.toLowerCase().includes('recotiza') || c.estado?.toLowerCase().includes('recotiza') || c.recotizacionSolicitada) && (
@@ -2414,6 +2416,32 @@ const VistaCotizaciones = () => {
                         : null;
                       const esPropuestaTecnico = cotizacionSeleccionada.created_by_role === 'Técnico';
                       if (!esPropuestaTecnico && !cotHija && !cotPadreTecnico) return null;
+                      // Trabajo con varios equipos: primero se elige en el carrito qué equipos se contratan;
+                      // solo de esos se genera la cotización para el cliente
+                      const cs = cotizacionSeleccionada;
+                      const esperaCarrito = esPropuestaTecnico && !cotHija && cs.work_order_component_id
+                        && (!cs.carrito_finalizado || cs.equipo_estado !== 'aceptado');
+                      if (esperaCarrito) {
+                        const noContratado = cs.carrito_finalizado && cs.equipo_estado === 'no_aceptado';
+                        return (
+                          <div className="cd-aviso-carrito">
+                            <p>
+                              {noContratado
+                                ? 'El cliente no contrató este equipo: esta propuesta queda solo como evidencia.'
+                                : 'Primero elige en el carrito del trabajo qué equipos se contratan y finalízalo. Después genera aquí la cotización para el cliente.'}
+                            </p>
+                            {!noContratado && cs.property_id && cs.work_order_id && (
+                              <button
+                                type="button"
+                                className="cd-btn cd-btn--primary"
+                                onClick={() => navigate(`/detalle-propiedad/${cs.property_id}/trabajo/wo-${cs.work_order_id}?tab=cotizaciones`)}
+                              >
+                                <ShoppingCart size={17} /> Ir al carrito
+                              </button>
+                            )}
+                          </div>
+                        );
+                      }
                       return (
                         <div className="cd-btn-row">
                           {esPropuestaTecnico && !cotHija && (
@@ -2583,7 +2611,9 @@ const VistaCotizaciones = () => {
                     (cotizacionSeleccionada.status === 'Pendiente' || cotizacionSeleccionada.status === 'En proceso' || cotizacionSeleccionada.status?.includes('Admin') || cotizacionSeleccionada.status === 'Rechazado') && 
                     !rechazando && (
                       <div className="cd-btn-row">
-                        {(cotizacionSeleccionada.status !== 'Rechazado' || esCliente) && (
+                        {(cotizacionSeleccionada.status !== 'Rechazado' || esCliente)
+                          // La propuesta del técnico de un equipo no se acepta directo: con ella se genera la del cliente
+                          && !(!esCliente && cotizacionSeleccionada.created_by_role === 'Técnico' && cotizacionSeleccionada.work_order_component_id) && (
                           <button
                             type="button"
                             className="cd-btn cd-btn--success"

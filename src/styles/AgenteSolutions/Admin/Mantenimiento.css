@@ -257,12 +257,33 @@ span.mt-item-fecha { cursor: default; }
 .mt-equipo-trabajo .mt-renglon-texto small { display: inline-flex; align-items: center; gap: 4px; }
 
 /* Carrito de cotizaciones por equipo (admin) */
-.mt-carrito-cot { display: flex; flex-direction: column; gap: 10px; }
+.mt-carrito-cot { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; }
+/* Al tocar con mouse no se dibuja el contorno negro del navegador; con teclado queda el naranja */
+.mt-carrito-cot-elegir:focus:not(:focus-visible),
+.mt-carrito-cot-ver:focus:not(:focus-visible),
+.mt-carrito-cot-btn:focus:not(:focus-visible) { outline: none; }
 .mt-carrito-cot-ayuda { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 0.84rem; font-weight: 600; color: #475569; }
 .mt-carrito-cot-lista { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .mt-carrito-cot-item {
-  display: flex; align-items: stretch; gap: 8px; padding: 6px; min-width: 0;
+  display: flex; flex-direction: column; gap: 6px; padding: 6px; min-width: 0;
   border: 1.5px solid #e2e8f0; border-radius: 14px; background: #ffffff;
+}
+.mt-carrito-cot-fila { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
+.mt-carrito-cot-elegir .mt-renglon-texto small { display: inline-flex; align-items: center; gap: 4px; }
+/* Cotización para el cliente de un equipo contratado */
+.mt-carrito-cot-cliente {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  margin: 0 2px 2px 40px; padding: 8px 10px; border-radius: 10px;
+  background: #fff7ed; border: 1px dashed #fdba74; font-size: 0.8rem; font-weight: 700; color: #9a3412;
+}
+.mt-carrito-cot-cliente.lista { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+.mt-carrito-cot-cliente > span { display: inline-flex; align-items: center; gap: 5px; min-width: 0; overflow-wrap: anywhere; }
+.mt-carrito-cot-cliente .mt-carrito-cot-btn { min-height: 38px; font-size: 0.8rem; }
+.mt-carrito-cot-cliente .mt-carrito-cot-ver { min-height: 36px; }
+.mt-carrito-cot-total small { font-size: 0.74rem; color: #64748b; }
+@media (max-width: 600px) {
+  .mt-carrito-cot-cliente { margin-left: 2px; }
+  .mt-carrito-cot-cliente .mt-carrito-cot-btn { width: 100%; justify-content: center; }
 }
 .mt-carrito-cot-item.on { border-color: #f26522; background: #fff7f1; }
 .mt-carrito-cot-item.fuera { opacity: 0.65; }
