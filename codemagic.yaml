@@ -48,4 +48,6 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
+        # Solo sube el build: el grupo interno de TestFlight lo recibe sin revisión de Apple.
+        # true lo manda además a la revisión beta (testers externos) y falla si ya hay otro en revisión.
+        submit_to_testflight: false
