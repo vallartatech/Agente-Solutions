@@ -594,6 +594,24 @@
   opacity: 0.6;
 }
 
+/* Registro con Google o Apple en curso */
+.aiw-social-registro-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #282a33;
+  border-radius: 10px;
+  background-color: #1a1b20;
+  color: #d1d5db;
+  font-size: 0.8rem;
+}
+
+.aiw-social-registro-chip strong {
+  color: #ffffff;
+}
+
 /* Divider OR */
 .aiw-divider {
   display: flex;

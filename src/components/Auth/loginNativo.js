@@ -29,6 +29,7 @@ export const fueCancelado = (error) => {
   return texto.includes('cancel') || texto.includes('1001') || texto.includes('-5');
 };
 
+// Devuelven { token, nombre, apellido }. Apple da el nombre solo la primera vez que el usuario autoriza la app.
 export const tokenGoogleNativo = async () => {
   await inicializar();
   const { result } = await SocialLogin.login({
@@ -36,7 +37,7 @@ export const tokenGoogleNativo = async () => {
     options: { scopes: ['email', 'profile'], forcePrompt: true },
   });
   if (!result?.idToken) throw new Error('Google no devolvió el token');
-  return result.idToken;
+  return { token: result.idToken, nombre: result.profile?.givenName || '', apellido: result.profile?.familyName || '' };
 };
 
 export const tokenAppleNativo = async () => {
@@ -46,5 +47,5 @@ export const tokenAppleNativo = async () => {
     options: { scopes: ['email', 'name'] },
   });
   if (!result?.idToken) throw new Error('Apple no devolvió el token');
-  return result.idToken;
+  return { token: result.idToken, nombre: result.profile?.givenName || '', apellido: result.profile?.familyName || '' };
 };
