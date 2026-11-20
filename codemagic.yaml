@@ -1,0 +1,51 @@
+# Compila la app de iOS (Capacitor) en Codemagic y la sube a TestFlight.
+# Se lanza a mano desde codemagic.io (no se dispara con cada push).
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      # Nombre de la llave de App Store Connect API dada de alta en Codemagic
+      app_store_connect: Agente Solutions ASC
+    environment:
+      # Grupo de variables de la app (Environment variables) con CERTIFICATE_PRIVATE_KEY_BASE64:
+      # la llave privada (PEM, RSA) del certificado Apple Distribution, en base64 de una sola línea.
+      groups:
+        - apple_signing
+      vars:
+        APP_STORE_APPLE_ID: 6836529158
+      node: 20
+      xcode: latest
+    scripts:
+      - name: Instalar dependencias
+        script: npm ci
+      - name: Compilar la web y copiarla al proyecto iOS
+        script: npm run ios:sync
+      - name: Firmar con los perfiles de App Store
+        script: |
+          set -euo pipefail
+          keychain initialize
+          # La llave viene en base64 (una sola línea) para que no se pierdan los saltos de línea
+          echo "$CERTIFICATE_PRIVATE_KEY_BASE64" | base64 --decode > /tmp/certificado_llave.pem
+          # Baja de Apple el certificado de esa llave y su perfil App Store (los crea si faltan)
+          app-store-connect fetch-signing-files "mx.com.agentesolutions.app" \
+            --type IOS_APP_STORE \
+            --certificate-key=@file:/tmp/certificado_llave.pem \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles --project ios/App/App.xcodeproj
+      - name: Subir el número de compilación
+        script: |
+          ULTIMO=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          cd ios/App
+          agvtool new-version -all $((ULTIMO + 1))
+      - name: Generar el .ipa
+        script: xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

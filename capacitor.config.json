@@ -1,0 +1,10 @@
+{
+  "appId": "mx.com.agentesolutions.app",
+  "appName": "Agente Solutions",
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#ffffff",
+    "limitsNavigationsToAppBoundDomains": false
+  }
+}

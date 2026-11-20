@@ -14,6 +14,7 @@ import CustomizeLogin from "./components/Auth/CustomizeLogin";
 import AssignServiceForm from "./components/AssignServiceForm";
 import VistaNotificaciones from "./components/Shared/VistaNotificaciones";
 import UpdateModal from "./components/Shared/UpdateModal";
+import { esNativo } from "./plataforma";
 import InstallPrompt from "./components/Shared/InstallPrompt";
 import LocationSharing from "./components/Shared/LocationSharing";
 import IndicadorSubida from "./components/Shared/IndicadorSubida";
@@ -358,8 +359,9 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <AppRoutes />
-        <UpdateModal />
-        <InstallPrompt />
+        {/* En la app nativa no hay service worker ni PWA que instalar */}
+        {!esNativo && <UpdateModal />}
+        {!esNativo && <InstallPrompt />}
         <LocationSharing />
         <IndicadorSubida />
         {esTemporadaHalloween() && (

@@ -3,6 +3,7 @@ import axios from 'axios';
 import Header from '../../../components/Shared/Header';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { URL_PUBLICA } from '../../../plataforma';
 import { QrCode, Copy, Check, Share2, Building2, Users, Briefcase, ExternalLink, ShieldCheck } from 'lucide-react';
 
 const VistaCodigoAutonomo = () => {
@@ -51,7 +52,7 @@ const VistaCodigoAutonomo = () => {
   const isRoot = user?.role_id === 0;
   const companyCode = tenant?.code || (isRoot ? 'ROOT_GENERAL' : `AUT_${user?.tenant_id ? String(user.tenant_id).padStart(2, '0') : '01'}`);
   const companyName = tenant?.name || (isRoot ? 'Agente Solutions Root' : 'Mi Empresa Autónoma');
-  const registerUrl = `${window.location.origin}/registro?code=${companyCode}`;
+  const registerUrl = `${URL_PUBLICA}/registro?code=${companyCode}`;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(companyCode);

@@ -1,4 +1,5 @@
 import OneSignal from 'react-onesignal';
+import { esNativo } from '../../plataforma';
 
 const TIMEOUT_MS = 10000;
 
@@ -15,6 +16,11 @@ let initPromise = null;
 let initError = null;
 
 export const iniciarOneSignal = () => {
+  // El web push de OneSignal no funciona dentro de la app nativa (WKWebView); ahí irá el push nativo.
+  if (esNativo) {
+    initError = 'El push web no está disponible en la app nativa';
+    return Promise.resolve(false);
+  }
   if (!initPromise) {
     initPromise = OneSignal.init({
       appId: "67944b3a-0f59-4080-a682-48dd6bee81ce",
