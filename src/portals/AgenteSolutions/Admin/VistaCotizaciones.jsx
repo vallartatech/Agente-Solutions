@@ -2416,11 +2416,11 @@ const VistaCotizaciones = () => {
                         : null;
                       const esPropuestaTecnico = cotizacionSeleccionada.created_by_role === 'Técnico';
                       if (!esPropuestaTecnico && !cotHija && !cotPadreTecnico) return null;
-                      // Trabajo con varios equipos: primero se elige en el carrito qué equipos se contratan;
-                      // solo de esos se genera la cotización para el cliente
+                      // Trabajo con varios equipos: la cotización para el cliente solo se genera
+                      // de los equipos marcados en el carrito del trabajo
                       const cs = cotizacionSeleccionada;
                       const esperaCarrito = esPropuestaTecnico && !cotHija && cs.work_order_component_id
-                        && (!cs.carrito_finalizado || cs.equipo_estado !== 'aceptado');
+                        && cs.equipo_estado !== 'aceptado';
                       if (esperaCarrito) {
                         const noContratado = cs.carrito_finalizado && cs.equipo_estado === 'no_aceptado';
                         return (
@@ -2428,7 +2428,7 @@ const VistaCotizaciones = () => {
                             <p>
                               {noContratado
                                 ? 'El cliente no contrató este equipo: esta propuesta queda solo como evidencia.'
-                                : 'Primero elige en el carrito del trabajo qué equipos se contratan y finalízalo. Después genera aquí la cotización para el cliente.'}
+                                : 'Primero marca este equipo en el carrito del trabajo: ahí mismo se abre su recotización para el cliente.'}
                             </p>
                             {!noContratado && cs.property_id && cs.work_order_id && (
                               <button

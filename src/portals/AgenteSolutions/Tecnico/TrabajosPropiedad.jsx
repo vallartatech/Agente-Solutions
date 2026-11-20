@@ -147,10 +147,14 @@ const TrabajoPropiedad = () => {
     return () => { vigente = false; };
   }, [id]);
 
-  // La cotización que cuenta para un equipo: la más reciente que no se descartó
+  // La propuesta del técnico para un equipo. La recotización del admin (para el cliente) no se le muestra;
+  // al recotizarla queda "Recotizada", pero sigue siendo su propuesta.
   const cotizacionDeEquipo = (equipoId) => cotizacionesOrden
-    .filter((q) => Number(q.work_order_component_id) === Number(equipoId) && !['Recotizada', 'Rechazado', 'Rechazada'].includes(q.status))
+    .filter((q) => Number(q.work_order_component_id) === Number(equipoId)
+      && q.created_by_role === 'Técnico'
+      && !['Rechazado', 'Rechazada'].includes(q.status))
     .sort((a, b) => Number(b.id) - Number(a.id))[0] || null;
+  const estadoPropuesta = (status) => (status === 'Recotizada' ? 'Revisada por el admin' : status);
 
   const abrirCotizacionDeEquipo = (equipo) => {
     setEquipoCotizando(equipo);
@@ -576,7 +580,7 @@ const TrabajoPropiedad = () => {
                             <strong>{eq.label}</strong>
                             <small>
                               {noContratado ? 'El cliente no contrató este equipo'
-                                : cot ? `$${parseFloat(cot.estimated_amount || cot.total || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })} · ${cot.status}`
+                                : cot ? `$${parseFloat(cot.estimated_amount || cot.total || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })} · ${estadoPropuesta(cot.status)}`
                                 : 'Sin cotizar'}
                             </small>
                           </div>
