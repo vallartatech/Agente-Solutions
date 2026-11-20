@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import Swal from "sweetalert2";
 import ModalCompraEspacios from "./Shared/ModalCompraEspacios";
+import { sinVentasDigitales } from "../plataforma";
 import {
   Home,
   MapPin,
@@ -56,7 +57,16 @@ const RegisterProperties = () => {
           const sub = r.data;
           setSubInfo(sub);
           const maxAllowed = (sub.max_properties ?? 3) + (sub.extra_properties_count ?? 0);
-          if (sub.properties_count >= maxAllowed) {
+          if (sub.properties_count >= maxAllowed && sinVentasDigitales) {
+            // App de iPhone: no se venden espacios, solo se avisa del límite
+            Swal.fire({
+              title: '🔒 LÍMITE ALCANZADO',
+              text: `Has registrado ${sub.properties_count} de ${maxAllowed} propiedades permitidas en tu plan.`,
+              icon: 'warning',
+              confirmButtonColor: '#FF6600',
+              confirmButtonText: 'Regresar a Propiedades'
+            }).then(() => navigate('/propiedades'));
+          } else if (sub.properties_count >= maxAllowed) {
             Swal.fire({
               title: '🔒 LÍMITE ALCANZADO',
               text: `Has registrado ${sub.properties_count} de ${maxAllowed} propiedades permitidas en tu plan. Para agregar una nueva propiedad, adquiere un espacio extra por $79.99 MXN c/u.`,

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 import ModalCompraEspacios from '../../../components/Shared/ModalCompraEspacios';
+import { sinVentasDigitales, sinPrecio } from '../../../plataforma';
 import ModalCalendarioCliente from './ModalCalendarioCliente';
 import AvisoCancelacionTecnico from './AvisoCancelacionTecnico';
 import AvisoCambioHorario from './AvisoCambioHorario';
@@ -779,7 +780,7 @@ const VistaClienteParticular = () => {
                   title="Ocultar información del plan"
                 >
                   <div className="vcp-plan-title">
-                    PLAN PARTICULAR | 6 MESES GRATIS ($299 MXN/MES TRAS PRUEBA)
+                    {sinPrecio('PLAN PARTICULAR | 6 MESES GRATIS ($299 MXN/MES TRAS PRUEBA)')}
                   </div>
                   <button 
                     type="button" 
@@ -811,7 +812,8 @@ const VistaClienteParticular = () => {
                 <div className="vcp-plan-action-row">
                   <SubscriptionCountdown targetDate={subInfo?.subscription_expires_at} />
                   
-                  <button 
+                  {!sinVentasDigitales && (
+                  <button
                     type="button"
                     className="vcp-plan-buy-btn"
                     onClick={() => setShowModalCompra(true)}
@@ -819,6 +821,7 @@ const VistaClienteParticular = () => {
                   >
                     <Lock size={14} /> REQUIERE NUEVA PROPIEDAD: COMPRAR ESPACIO ($79.99 c/u)
                   </button>
+                  )}
                 </div>
               </div>
             )}
@@ -965,7 +968,7 @@ const VistaClienteParticular = () => {
                 {/* Plus Add Property Tile */}
                 <div
                   className={`vcp-thumb-add-tile ${currentPropsCount >= maxAllowed ? 'is-limit-reached' : ''}`}
-                  title={currentPropsCount >= maxAllowed ? "Límite de propiedades alcanzado - Comprar espacio ($79.99 c/u)" : "Registrar / Agregar Propiedad"}
+                  title={currentPropsCount >= maxAllowed ? (sinVentasDigitales ? "Límite de propiedades alcanzado" : "Límite de propiedades alcanzado - Comprar espacio ($79.99 c/u)") : "Registrar / Agregar Propiedad"}
                   onClick={handleAgregarPropiedad}
                 >
                   {currentPropsCount >= maxAllowed ? (

@@ -5,6 +5,7 @@ import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
 import ModalCompraEspacios from '../../../components/Shared/ModalCompraEspacios';
+import { sinVentasDigitales, sinPrecio } from '../../../plataforma';
 import VistaClienteParticular from '../Cliente/VistaClienteParticular';
 
 const LiveCountdown = ({ targetDate, fallbackDays }) => {
@@ -149,7 +150,7 @@ const VistaInicioAdmin = () => {
         }}>
           <div>
             <span style={{ color: '#FF6600', fontWeight: 900, fontStyle: 'italic', fontSize: '1.08rem', display: 'block', marginBottom: '8px', letterSpacing: '0.6px' }}>
-              {isClienteParticular
+              {sinPrecio(isClienteParticular
                 ? '🏡 PLAN PARTICULAR | 6 MESES GRATIS ($299 MXN/mes tras prueba)'
                 : isGestorInmobiliario
                   ? '🏢 PLAN GESTOR INMOBILIARIO | 6 MESES GRATIS ($935 MXN/mes tras prueba)'
@@ -157,7 +158,7 @@ const VistaInicioAdmin = () => {
                     ? '🏗️ PLAN CONTRATISTA | 6 MESES GRATIS ($935 MXN/mes tras prueba)'
                     : isTecnicoIndependiente
                       ? '🧑‍🔧 PLAN TÉCNICO INDEPENDIENTE | 1 AÑO GRATIS ($99 MXN/mes tras prueba)'
-                      : '🌟 PERIODO DE PRUEBA ACTIVO'}
+                      : '🌟 PERIODO DE PRUEBA ACTIVO')}
             </span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', color: '#F3F4F6', fontSize: '0.9rem', alignItems: 'center' }}>
               <span style={{ background: 'rgba(255,255,255,0.08)', padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.18)' }}>
@@ -181,8 +182,8 @@ const VistaInicioAdmin = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-            {(isClienteParticular || isGestorInmobiliario) && (
-              <button 
+            {(isClienteParticular || isGestorInmobiliario) && !sinVentasDigitales && (
+              <button
                 onClick={() => setMostrarModalCompraEspacios(true)}
                 title="Adquiere cupo para propiedades extras por $79.99 MXN c/u"
                 style={{ 
@@ -205,7 +206,7 @@ const VistaInicioAdmin = () => {
               </button>
             )}
 
-            {subInfo.days_remaining <= 45 && (
+            {subInfo.days_remaining <= 45 && !sinVentasDigitales && (
               <button onClick={() => navigate(`/activacion-cuenta?tenant_id=${subInfo.tenant?.id}`)}
                 style={{ padding: '10px 20px', borderRadius: '50px', border: 'none', background: '#3B82F6', color: '#FFFFFF', fontWeight: 900, cursor: 'pointer', fontSize: '0.86rem', boxShadow: '0 4px 15px rgba(59,130,246,0.5)' }}>
                 🔄 RENOVAR / ACTIVAR

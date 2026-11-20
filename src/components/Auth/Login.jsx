@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import Logo4 from "../../assets/Logo4.png";
 import LoginArtwork from "../../assets/Atardecer.png";
-import { esNativo, esIOS } from "../../plataforma";
+import { esNativo, esIOS, sinPrecio } from "../../plataforma";
 import { googleNativoConfigurado, tokenGoogleNativo, tokenAppleNativo, fueCancelado } from "./loginNativo";
 
 const IconoGoogle = () => (
@@ -1174,7 +1174,7 @@ const LoginAgente = () => {
                             ))}
                           </div>
 
-                          <span className="aiw-cf-trial-info">{r.trialInfo}</span>
+                          <span className="aiw-cf-trial-info">{sinPrecio(r.trialInfo)}</span>
                         </div>
 
                         {/* Bottom CTA Action Button */}
@@ -2003,7 +2003,7 @@ const LoginAgente = () => {
                             <ArrowRight size={17} />
                           </button>
 
-                          <span className="aiw-rcard-trial-info">{r.trialInfo}</span>
+                          <span className="aiw-rcard-trial-info">{sinPrecio(r.trialInfo)}</span>
                         </div>
                       );
                     })}

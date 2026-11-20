@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { CreditCard, ShieldCheck } from "lucide-react";
+import { sinVentasDigitales } from "../../plataforma";
 
 const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) => {
   const [extraQuantity, setExtraQuantity] = useState(1);
@@ -8,6 +9,30 @@ const ModalCompraEspacios = ({ isOpen, onClose, tenantId, userId, planName }) =>
   const [error, setError] = useState("");
 
   if (!isOpen) return null;
+
+  // App de iPhone: no se venden espacios; solo se avisa del límite
+  if (sinVentasDigitales) {
+    return (
+      <div
+        style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.45)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 16px" }}
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        <div style={{ background: "#12161f", border: "1px solid rgba(255,255,255,0.25)", borderRadius: "20px", width: "100%", maxWidth: "420px", padding: "28px 24px", color: "#ffffff", textAlign: "center", boxSizing: "border-box" }}>
+          <h3 style={{ margin: "0 0 10px", fontSize: "1.1rem", fontWeight: 900 }}>🔒 LÍMITE DE PROPIEDADES</h3>
+          <p style={{ margin: "0 0 20px", fontSize: "0.92rem", color: "#d1d5db", lineHeight: 1.5 }}>
+            Ya usaste todos los espacios de propiedades de tu plan.
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ width: "100%", padding: "12px", borderRadius: "50px", border: "none", backgroundColor: "#f26522", color: "#fff", fontWeight: 900, cursor: "pointer" }}
+          >
+            ENTENDIDO
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Determinar el nombre del plan para el subtítulo
   const resolvedPlanName = planName || (() => {

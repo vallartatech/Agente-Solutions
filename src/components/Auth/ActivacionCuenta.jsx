@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Logo4 from '../../assets/Logo4.png';
 import { CheckCircle, AlertCircle, Clock, CreditCard, RefreshCw } from 'lucide-react';
+import { sinVentasDigitales } from '../../plataforma';
 
 const ActivacionCuenta = () => {
   const [searchParams] = useSearchParams();
@@ -72,8 +73,25 @@ const ActivacionCuenta = () => {
         boxShadow: '0 20px 60px rgba(242,101,34,0.2)',
       }}>
 
-        {/* ─── ÉXITO: pago aprobado ─── */}
-        {status === 'success' ? (
+        {/* ─── APP DE IPHONE: no se venden suscripciones ni espacios; solo se informa ─── */}
+        {sinVentasDigitales ? (
+          <>
+            <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(242,101,34,0.15)', border: '2px solid #f26522', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' }}>
+              <Clock size={38} color="#f26522" />
+            </div>
+            <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 900, fontStyle: 'italic', margin: '0 0 12px 0' }}>
+              {isExtraProperty ? 'LÍMITE DE PROPIEDADES' : 'CUENTA SIN SUSCRIPCIÓN ACTIVA'}
+            </h2>
+            <p style={{ color: '#aaa', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 24 }}>
+              {isExtraProperty
+                ? 'Ya usaste todos los espacios de propiedades de tu plan.'
+                : 'Tu periodo de prueba o tu suscripción terminó, así que por ahora no puedes usar el panel.'}
+            </p>
+            <button onClick={() => navigate('/')} style={{ width: '100%', padding: '15px', borderRadius: '50px', border: 'none', backgroundColor: '#f26522', color: '#fff', fontWeight: 900, fontSize: '1.05rem', cursor: 'pointer', letterSpacing: 1 }}>
+              VOLVER AL INICIO
+            </button>
+          </>
+        ) : status === 'success' ? (
           <>
             <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(34,197,94,0.15)', border: '2px solid #22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' }}>
               <CheckCircle size={38} color="#22c55e" />
