@@ -31,7 +31,8 @@ import {
   HardHat,
   Crown,
   Clock,
-  RotateCcw
+  RotateCcw,
+  UserMinus
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 import UniversalSearch from "../../../components/Shared/UniversalSearch";
@@ -44,23 +45,23 @@ const MAPA_ROLES = {
   1: "ADMINISTRADOR GLOBAL",
   2: "TÉCNICO AGENTE",
   3: "CLIENTE",
-  4: "AUTÓNOMO EMPRESARIAL",
-  5: "AUTÓNOMO PERSONAL",
-  6: "CONTRATISTA",
-  7: "ADMIN. PROPIEDADES",
-  8: "TÉCNICO DE LA RED"
+  4: "CLIENTE PARTICULAR",
+  5: "GESTOR INMOBILIARIO",
+  6: "TÉCNICO INDEPENDIENTE",
+  7: "CONTRATISTA / LÍDER",
+  8: "TÉCNICO DE CUADRILLA"
 };
 
 // Opciones de rol asignables (ROOT no es asignable desde la interfaz por seguridad)
 const OPCIONES_ROLES = [
   { id: 1, label: "ADMINISTRADOR (AGENTE)" },
   { id: 2, label: "TÉCNICO AGENTE" },
-  { id: 7, label: "ADMIN. PROPIEDADES (AGENTE)" },
   { id: 3, label: "CLIENTE" },
-  { id: 8, label: "TÉCNICO DE LA RED" },
-  { id: 6, label: "CONTRATISTA" },
-  { id: 4, label: "AUTÓNOMO EMPRESARIAL" },
-  { id: 5, label: "AUTÓNOMO PERSONAL" }
+  { id: 4, label: "CLIENTE PARTICULAR" },
+  { id: 5, label: "GESTOR INMOBILIARIO" },
+  { id: 6, label: "TÉCNICO INDEPENDIENTE" },
+  { id: 7, label: "CONTRATISTA / LÍDER" },
+  { id: 8, label: "TÉCNICO DE CUADRILLA" }
 ];
 
 const getRoleStyle = (roleId) => {
@@ -101,6 +102,9 @@ const VistaUsuarios = () => {
 
   const filterDropdownRef = useRef(null);
   const isRoot = Number(user?.role_id) === 0;
+  // El contratista (rol 7) solo administra a los técnicos de su cuadrilla (rol 8): bloquear o quitar
+  const esContratista = Number(user?.role_id) === 7;
+  const esDeMiCuadrilla = (u) => Number(u?.role_id) === 8 && u?.approval_status !== 'sin_cuadrilla';
 
   // Auto-seleccionar el primer usuario si no hay ninguno seleccionado o se filtró la lista
   useEffect(() => {
@@ -265,7 +269,37 @@ const VistaUsuarios = () => {
       });
     } catch (error) {
       console.error("Error al procesar el cambio de estatus:", error);
-      Swal.fire('Error', 'No se pudo actualizar el estatus.', 'error');
+      Swal.fire('Error', error.response?.data?.error || 'No se pudo actualizar el estatus.', 'error');
+    }
+  };
+
+  // Contratista: saca al técnico de su cuadrilla. Su cuenta se desactiva y su historial se conserva
+  const quitarDeCuadrilla = async (id, nombre) => {
+    const confirmacion = await Swal.fire({
+      title: '¿Quitar de tu cuadrilla?',
+      html: `<b>${nombre}</b> dejará de trabajar contigo y su cuenta se desactivará.<br/><br/>`
+        + 'Los trabajos que ya hizo se conservan en tu historial. Después podrá unirse a otra cuadrilla o trabajar como independiente.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, quitar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirmacion.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const { data } = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cuadrilla/${id}/quitar`, {}, { headers });
+      setListaUsuarios(prev => prev.map(u => u.id === id ? {
+        ...u, approval_status: 'sin_cuadrilla', bloqueado: true, estado: 'Inactivo'
+      } : u));
+      Swal.fire('Listo', data?.message || 'Técnico quitado de tu cuadrilla.', 'success');
+    } catch (error) {
+      console.error(error);
+      Swal.fire('No se pudo quitar', error.response?.data?.error || 'Hubo un problema al quitar al técnico.', 'error');
     }
   };
 
@@ -348,9 +382,9 @@ const VistaUsuarios = () => {
   const userRoleLabel = useMemo(() => {
     if (user?.role_id === 0) return "ROOT_MASTER";
     if (user?.role_id === 1) return "ADMIN_GLOBAL";
-    if (user?.role_id === 4) return "AUT_EMPRESARIAL";
-    if (user?.role_id === 5) return "AUT_PERSONAL";
-    if (user?.role_id === 7) return "GESTOR_INMUEBLES";
+    if (user?.role_id === 4) return "CLIENTE_PARTICULAR";
+    if (user?.role_id === 5) return "GESTOR_INMOBILIARIO";
+    if (user?.role_id === 7) return "CONTRATISTA";
     if (user?.role_id === 2) return "TECNICO_OFICIAL";
     if (user?.role_id === 3) return "MARKET_CLIENT_PERSONAL";
     return MAPA_ROLES[user?.role_id] || "USUARIO";
@@ -766,7 +800,28 @@ const VistaUsuarios = () => {
                                   <Eye size={15} />
                                 </button>
 
-                                {!isClientPortalUser && u.role_id !== 0 && (isRoot || u.id !== user?.id) && (
+                                {esContratista && esDeMiCuadrilla(u) && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className={`vu-mockup-btn ${u.bloqueado ? "unblock" : "lock"}`}
+                                      onClick={() => toggleBloqueo(u.id, u.role_id, u.bloqueado)}
+                                      title={u.bloqueado ? "Desbloquear cuenta" : "Bloquear cuenta"}
+                                    >
+                                      {u.bloqueado ? <Unlock size={15} /> : <Lock size={15} />}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="vu-mockup-btn delete"
+                                      onClick={() => quitarDeCuadrilla(u.id, u.nombre)}
+                                      title="Quitar de mi cuadrilla (se conserva su historial)"
+                                    >
+                                      <UserMinus size={15} />
+                                    </button>
+                                  </>
+                                )}
+
+                                {!esContratista && !isClientPortalUser && u.role_id !== 0 && (isRoot || u.id !== user?.id) && (
                                   <>
                                     <button
                                       type="button"
@@ -1087,7 +1142,20 @@ const VistaUsuarios = () => {
                     <span>{selectedTecnico.isCliente ? "EXPEDIENTE DEL CLIENTE" : "EXPEDIENTE COMPLETO"}</span>
                   </button>
 
-                  {!isClientPortalUser && selectedTecnico.role_id !== 0 && (isRoot || selectedTecnico.id !== user?.id) && (
+                  {esContratista && esDeMiCuadrilla(selectedTecnico) && (
+                    <div className="vu-sidebar-secondary-actions">
+                      <button
+                        type="button"
+                        className="vu-sidebar-btn-sub delete"
+                        onClick={() => quitarDeCuadrilla(selectedTecnico.id, selectedTecnico.nombre)}
+                      >
+                        <UserMinus size={14} />
+                        <span>Quitar de mi cuadrilla</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {!esContratista && !isClientPortalUser && selectedTecnico.role_id !== 0 && (isRoot || selectedTecnico.id !== user?.id) && (
                     <div className="vu-sidebar-secondary-actions">
                       <button
                         type="button"

@@ -10,7 +10,10 @@ const VistaSalaEsperaTecnicos = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [selectedTechDetails, setSelectedTechDetails] = useState(null);
+  // Solo llega para el contratista: { ocupados, limite } de su cuadrilla
+  const [cupo, setCupo] = useState(null);
   const navigate = useNavigate();
+  const cuadrillaLlena = cupo ? cupo.ocupados >= cupo.limite : false;
 
   const fetchPendingTechs = async () => {
     setLoading(true);
@@ -19,6 +22,7 @@ const VistaSalaEsperaTecnicos = () => {
       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/tenants/pending-technicians`);
       if (res.data.success) {
         setPendingTechs(res.data.pending_technicians);
+        setCupo(res.data.cupo || null);
       }
     } catch (error) {
       console.error('Error al cargar técnicos en espera:', error);
@@ -50,27 +54,48 @@ const VistaSalaEsperaTecnicos = () => {
     }
   };
 
+  const handleRejectTech = async (userId) => {
+    if (!await confirmarAccion('¿Rechazar esta solicitud? La persona no podrá entrar a tu equipo. Podrá volver a pedirlo más adelante.')) {
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/tenants/reject-technician/${userId}`);
+      if (res.data.success) {
+        mostrarAviso(res.data.message);
+        setSelectedTechDetails(null);
+        fetchPendingTechs();
+      }
+    } catch (error) {
+      console.error('Error al rechazar técnico:', error);
+      mostrarAviso('Error: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
   const getRolLabel = (roleId) => {
     const r = parseInt(roleId, 10);
     switch (r) {
       case 8:
-        return '🌐 Técnico de la Red';
+        return '👷 Técnico de cuadrilla';
       case 2:
         return '🧑‍🔧 Técnico Especialista';
       case 7:
-        return '🏢 Administrador de Propiedades';
+        return '🏗️ Contratista / Líder';
       case 6:
-        return '🏗️ Contratista';
+        return '🌐 Técnico independiente';
       case 4:
-        return '🏬 Autónomo Empresarial';
+        return '🏡 Cliente particular';
       case 5:
-        return '🏢 Autónomo Personal';
+        return '🏢 Gestor inmobiliario';
       case 3:
         return '👤 Cliente';
       default:
         return '🛠️ Especialista Técnico';
     }
   };
+
+  // Solo dígitos y los últimos 10 (sin lada) para armar el enlace de WhatsApp
+  const cleanPhone = (telefono) => String(telefono || '').replace(/\D/g, '').slice(-10);
 
   const isTechnicianRole = (roleId) => {
     const r = parseInt(roleId, 10);
@@ -87,7 +112,7 @@ const VistaSalaEsperaTecnicos = () => {
       <div style={{ maxWidth: '1100px', margin: '30px auto', padding: '0 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
           <button
-            onClick={() => navigate('/VistaRoot')}
+            onClick={() => navigate('/VistaMarket')}
             style={{ padding: '10px 18px', backgroundColor: '#333', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
           >
             ← Volver al Panel Principal
@@ -109,6 +134,17 @@ const VistaSalaEsperaTecnicos = () => {
             </p>
           </div>
         </div>
+
+        {cupo && (
+          <div style={{ backgroundColor: cuadrillaLlena ? '#ffebee' : '#E8F5E9', borderRadius: '12px', padding: '14px 20px', marginBottom: '25px', borderLeft: `5px solid ${cuadrillaLlena ? '#c62828' : '#4CAF50'}`, color: '#333' }}>
+            <strong>Tu cuadrilla: {cupo.ocupados} de {cupo.limite} técnicos.</strong>
+            {cuadrillaLlena && (
+              <span style={{ display: 'block', marginTop: '4px', color: '#c62828', fontSize: '0.95rem' }}>
+                Está llena: para aceptar a alguien más, quita a un técnico o pide ampliar tu equipo.
+              </span>
+            )}
+          </div>
+        )}
 
         {message && (
           <div style={{ padding: '15px', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -202,8 +238,32 @@ const VistaSalaEsperaTecnicos = () => {
                   </button>
 
                   <button
-                    onClick={() => handleApproveTech(tech.id)}
+                    onClick={() => handleRejectTech(tech.id)}
                     style={{
+                      flex: '1 1 120px',
+                      padding: '12px 10px',
+                      backgroundColor: '#fff',
+                      color: '#c62828',
+                      border: '1px solid #ef9a9a',
+                      borderRadius: '10px',
+                      fontWeight: 'bold',
+                      fontSize: '0.95rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <X size={18} /> Rechazar
+                  </button>
+
+                  <button
+                    onClick={() => handleApproveTech(tech.id)}
+                    disabled={cuadrillaLlena}
+                    title={cuadrillaLlena ? 'Tu cuadrilla está llena' : undefined}
+                    style={{
+                      opacity: cuadrillaLlena ? 0.5 : 1,
                       flex: '1.5 1 170px',
                       padding: '12px 10px',
                       backgroundColor: '#4CAF50',
@@ -339,7 +399,7 @@ const VistaSalaEsperaTecnicos = () => {
                     <Building2 size={18} color="#FF6600" />
                     {selectedTechDetails.tenant
                       ? `${selectedTechDetails.tenant.name} (${selectedTechDetails.tenant.code})`
-                      : (parseInt(selectedTechDetails.role_id, 10) === 8 ? 'Técnico Independiente (Red Abierta)' : 'Agente Solutions (Empresa Oficial)')}
+                      : 'Sin empresa ligada'}
                   </p>
                 </div>
 
@@ -471,8 +531,27 @@ const VistaSalaEsperaTecnicos = () => {
               </button>
 
               <button
-                onClick={() => handleApproveTech(selectedTechDetails.id)}
+                onClick={() => handleRejectTech(selectedTechDetails.id)}
                 style={{
+                  flex: '1',
+                  padding: '14px',
+                  backgroundColor: '#fff',
+                  color: '#c62828',
+                  border: '1px solid #ef9a9a',
+                  borderRadius: '12px',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Rechazar
+              </button>
+
+              <button
+                onClick={() => handleApproveTech(selectedTechDetails.id)}
+                disabled={cuadrillaLlena}
+                style={{
+                  opacity: cuadrillaLlena ? 0.5 : 1,
                   flex: '2',
                   padding: '14px',
                   backgroundColor: '#4CAF50',

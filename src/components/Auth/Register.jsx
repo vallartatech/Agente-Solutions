@@ -62,10 +62,13 @@ const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
 
   // Rol permitido según requerimiento: Técnico asignado
   const isRoot = user?.role_id === 0 || user?.role_id === 1;
+  // El contratista (rol 7) solo agrega técnicos de cuadrilla (rol 8) a su equipo
+  const esContratista = Number(user?.role_id) === 7;
+  const rolAlta = esContratista ? 8 : 2;
   const rolTecnico = {
-    id: 2,
-    label: isRoot ? 'TÉCNICO AGENTE' : 'TÉCNICO DE MI EQUIPO',
-    desc: isRoot ? 'Técnico directo de Agente Solutions' : 'Técnico vinculado a tu cuenta y servicios directos',
+    id: rolAlta,
+    label: isRoot ? 'TÉCNICO AGENTE' : (esContratista ? 'TÉCNICO DE MI CUADRILLA' : 'TÉCNICO DE MI EQUIPO'),
+    desc: isRoot ? 'Técnico directo de Agente Solutions' : (esContratista ? 'Técnico que trabaja para ti en tu cuadrilla' : 'Técnico vinculado a tu cuenta y servicios directos'),
     color: '#F26522'
   };
 
@@ -99,7 +102,7 @@ const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
         `${import.meta.env.VITE_API_BASE_URL}/admin/usuarios`,
         {
           ...formData,
-          role_id: 2,
+          role_id: rolAlta,
           tenant_id: user?.tenant_id || undefined
         },
         { headers }
@@ -130,6 +133,9 @@ const RegisterModal = ({ isOpen = true, onClose, onSuccess }) => {
         const errs = error.response.data.errors;
         const msg = Object.values(errs).flat().join(' ');
         setMensaje(msg || 'Error: Datos inválidos o correo/teléfono ya registrado.');
+      } else if (error.response?.data?.message) {
+        // Permisos o cupo (p. ej. "Tu cuadrilla está llena")
+        setMensaje(error.response.data.message);
       } else {
         setMensaje('Error al conectar con el servidor.');
       }
