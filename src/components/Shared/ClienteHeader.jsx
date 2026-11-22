@@ -21,7 +21,7 @@ import NotificationBell from './NotificationBell';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
 import ModalCalendarioSolutions from '../../portals/AgenteSolutions/Shared/ModalCalendarioSolutions';
 import MobileBottomNav from './MobileBottomNav';
-import { usaSelectorRed } from '../../utils/entorno';
+import { usaSelectorRed, esTecnicoRed } from '../../utils/entorno';
 import axios from 'axios';
 import { NOMBRES_ROLES } from '../../utils/roles';
 import '../../styles/Shared/Header.css';
@@ -84,9 +84,9 @@ const ClienteHeader = ({ activeModule }) => {
     if (!user) return navigate('/');
     const role = Number(user.role_id);
     if (role === 0 || role === 1) navigate('/VistaRoot');
-    else if (role === 4 || role === 5 || role === 7 || role === 3) navigate('/VistaMarket');
+    else if (role === 4 || role === 5 || role === 3) navigate('/VistaMarket');
     else if (role === 2) navigate('/VistaTecnico');
-    else if (role === 6 || role === 8) navigate('/mercado-trabajos');
+    else if (esTecnicoRed(user)) navigate('/mercado-trabajos');
     else navigate('/');
   };
 

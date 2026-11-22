@@ -12,6 +12,7 @@ import '../../../styles/AgenteMarket/Shared/SelectorFechaRed.css';
 import { mostrarAviso } from '../../../utils/dialogos';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 import { useAuth } from '../../../context/AuthContext';
+import { esTecnicoRed } from '../../../utils/entorno';
 
 // ── Fecha estimada ("Programar") ──
 // Es la fecha en que el cliente necesita el trabajo, no una cita confirmada: el técnico propone la cita después.
@@ -211,7 +212,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
       }
 
       // La red solo asigna técnicos de la red: los Técnicos Agente (rol 2) son de uso interno
-      const soloTecnicosRed = (lista) => lista.filter(u => [6, 8].includes(Number(u.role_id)));
+      const soloTecnicosRed = (lista) => lista.filter(u => esTecnicoRed(u));
 
       // Intentar primero endpoint de técnicos vinculados
       let techs = [];
@@ -1057,7 +1058,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                               const fullName = `${t.first_name || t.name || ''} ${t.last_name || ''}`.trim() || `Técnico #${t.id}`;
                               const rol = t.rolTexto
                                 ? [t.rolTexto, t.especialidades?.[0]].filter(Boolean).join(' · ')
-                                : t.role_id === 2 ? 'Técnico Agente' : (t.role_id === 6 ? 'Contratista' : (t.role_id === 8 ? 'Técnico de la Red' : 'Técnico'));
+                                : t.role_id === 2 ? 'Técnico Agente' : ({ 6: 'Técnico independiente', 7: 'Contratista', 8: 'Técnico de cuadrilla' }[Number(t.role_id)] || 'Técnico');
                               const iniciales = fullName.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
                               const elegido = String(selectedTechId) === String(t.id);
                               return (

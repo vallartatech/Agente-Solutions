@@ -172,15 +172,15 @@ const ROLES_PUBLICOS = [
     categoryLabel: "Agente Market (Red)",
     label: "TÉCNICO DE CUADRILLA",
     shortLabel: "Técnico Cuadrilla",
-    badge: "Equipo & Modo Dual",
+    badge: "Equipo de trabajo",
     icon: "👷",
     color: "#F59E0B",
-    tagline: "Trabaja en equipo y por tu cuenta",
-    description: "Técnicos que forman parte del equipo de un contratista y cuentan con Modo Dual para realizar trabajos independientes.",
+    tagline: "Trabaja con tu contratista",
+    description: "Técnicos que forman parte del equipo de un contratista y reciben los trabajos que él les asigna.",
     features: [
       "Vinculación directa a la cuadrilla de tu contratista",
       "Recepción de órdenes asignadas por tu líder de equipo",
-      "Modo Dual: Habilita tu acceso para cotizar por tu cuenta"
+      "Opción de acceso a la red para cotizar también por tu cuenta (con costo extra)"
     ],
     cta: "REGISTRARME",
     trialInfo: "Sujeto a vinculación y aprobación del contratista"

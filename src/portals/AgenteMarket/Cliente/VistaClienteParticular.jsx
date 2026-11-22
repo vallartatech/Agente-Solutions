@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
+import { esTecnicoRed } from '../../../utils/entorno';
 import ModalCompraEspacios from '../../../components/Shared/ModalCompraEspacios';
 import { sinVentasDigitales, sinPrecio } from '../../../plataforma';
 import ModalCalendarioCliente from './ModalCalendarioCliente';
@@ -542,9 +543,9 @@ const VistaClienteParticular = () => {
     if (!user) return navigate('/');
     const role = Number(user.role_id);
     if (role === 0 || role === 1) navigate('/VistaRoot');
-    else if (role === 4 || role === 5 || role === 7 || role === 3) navigate('/VistaMarket');
+    else if (role === 4 || role === 5 || role === 3) navigate('/VistaMarket');
     else if (role === 2) navigate('/VistaTecnico');
-    else if (role === 6 || role === 8) navigate('/mercado-trabajos');
+    else if (esTecnicoRed(user)) navigate('/mercado-trabajos');
     else navigate('/');
   };
 

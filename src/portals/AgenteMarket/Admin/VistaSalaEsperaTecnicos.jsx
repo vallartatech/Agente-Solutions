@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Header from '../../../components/Shared/Header';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import { UserCheck, Clock, Phone, Mail, RefreshCw, CheckCircle, AlertCircle, Eye, X, MessageSquare, Building2, Calendar, User } from 'lucide-react';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
@@ -13,6 +14,9 @@ const VistaSalaEsperaTecnicos = () => {
   // Solo llega para el contratista: { ocupados, limite } de su cuadrilla
   const [cupo, setCupo] = useState(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  // El contratista regresa a "Mi cuadrilla"; los demás, a su panel
+  const esContratista = Number(user?.role_id) === 7;
   const cuadrillaLlena = cupo ? cupo.ocupados >= cupo.limite : false;
 
   const fetchPendingTechs = async () => {
@@ -75,6 +79,8 @@ const VistaSalaEsperaTecnicos = () => {
   const getRolLabel = (roleId) => {
     const r = parseInt(roleId, 10);
     switch (r) {
+      case 9:
+        return '👷 Técnico de cuadrilla + red';
       case 8:
         return '👷 Técnico de cuadrilla';
       case 2:
@@ -107,15 +113,15 @@ const VistaSalaEsperaTecnicos = () => {
       <div className="top-bar-orange"></div>
       <div className="top-bar-black"></div>
 
-      <Header rolTexto="SALA DE ESPERA DE TÉCNICOS" />
+      <Header rolTexto="SALA DE ESPERA DE TÉCNICOS" activeModule="cuadrilla" />
 
       <div style={{ maxWidth: '1100px', margin: '30px auto', padding: '0 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
           <button
-            onClick={() => navigate('/VistaMarket')}
+            onClick={() => navigate(esContratista ? '/mi-cuadrilla' : '/VistaMarket')}
             style={{ padding: '10px 18px', backgroundColor: '#333', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
           >
-            ← Volver al Panel Principal
+            {esContratista ? '← Volver a Mi cuadrilla' : '← Volver al Panel Principal'}
           </button>
           <button
             onClick={fetchPendingTechs}
@@ -175,7 +181,7 @@ const VistaSalaEsperaTecnicos = () => {
                       </h4>
                     </div>
                     <span style={{ backgroundColor: '#FFF5EC', color: '#FF6600', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', flexShrink: 0 }}>
-                      ⏳ En Espera
+                      {tech.solicitud_cuadrilla ? '👤 Ya tiene cuenta' : '⏳ En Espera'}
                     </span>
                   </div>
 

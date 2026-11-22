@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import '../../../styles/AgenteMarket/Admin/VistaInicioMarket.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import Header from '../../../components/Shared/Header'; 
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
@@ -62,6 +62,11 @@ const VistaInicioAdmin = () => {
   // Si es Cliente Particular (rol 4), renderizamos la vista de vitrina de lujo
   if (isClienteParticular) {
     return <VistaClienteParticular />;
+  }
+
+  // El contratista trabaja como técnico: su inicio es el Mercado de trabajos y su equipo está en "Mi cuadrilla"
+  if (isContratista) {
+    return <Navigate to="/mercado-trabajos" replace />;
   }
 
   let rolTexto = "CLIENTE PARTICULAR";

@@ -28,7 +28,7 @@ const ESTADOS = {
   rechazado: { texto: 'Rechazado', clase: 'rojo' },
 };
 
-const ROLES = { 6: 'Técnico independiente', 8: 'Técnico de cuadrilla' };
+const ROLES = { 6: 'Técnico independiente', 7: 'Contratista', 8: 'Técnico de cuadrilla' };
 
 // Motivos frecuentes: se pueden tocar y editar antes de enviar
 const MOTIVOS_RAPIDOS = [

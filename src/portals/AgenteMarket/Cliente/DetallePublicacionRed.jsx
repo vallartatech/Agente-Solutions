@@ -5,6 +5,7 @@ import {
   FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Check, ClipboardList, Star, Sparkles
 } from 'lucide-react';
 import PanelChatLateral from '../../../components/Shared/PanelChatLateral';
+import ModalCalificarTecnico from '../../../components/Shared/ModalCalificarTecnico';
 import CurriculumTecnico from '../Shared/CurriculumTecnico';
 import ResumenTecnico, { FotoTecnico, InsigniaTecnico } from '../Shared/ResumenTecnico';
 import AjusteCotizacionCliente from './AjusteCotizacionCliente';
@@ -83,6 +84,8 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
   const [sendingClientChat, setSendingClientChat] = useState(false);
   const [confirmandoLlegada, setConfirmandoLlegada] = useState(false);
   const [llegadaConfirmadaAt, setLlegadaConfirmadaAt] = useState(null);
+  // Técnico de la cuadrilla que el cliente está calificando (el contratista se califica con el botón de siempre)
+  const [calificando, setCalificando] = useState(null);
   const chatEndRef = useRef(null);
 
   const refrescar = useCallback(() => onRefresh?.(), [onRefresh]);
@@ -376,9 +379,35 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                   </div>
                 </div>
 
+                {/* Quién va a la casa: el contratista y/o los técnicos de su cuadrilla (sin teléfonos) */}
+                {job.equipo_en_sitio?.length > 0 && (
+                  <div style={{ margin: '14px 0 4px', padding: '12px 14px', borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <small style={{ display: 'block', marginBottom: 8, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.04em' }}>
+                      Quién va a tu casa
+                    </small>
+                    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {job.equipo_en_sitio.map(p => (
+                        <li key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                          {p.foto
+                            ? <img src={p.foto} alt="" style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                            : <span style={{ width: 34, height: 34, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#fff1e8', color: '#f26522', fontWeight: 800, flexShrink: 0 }}>{(p.nombre || 'T').charAt(0).toUpperCase()}</span>}
+                          <span style={{ flex: '1 1 140px', minWidth: 0, color: '#0f172a', fontWeight: 600, overflowWrap: 'anywhere' }}>
+                            {p.nombre}{p.es_titular && <em style={{ fontStyle: 'normal', color: '#64748b', fontWeight: 500 }}> · Responsable</em>}
+                          </span>
+                          {puedeCalificar && !p.es_titular && (
+                            <button type="button" className="red-btn-calificar" style={{ margin: 0, width: 'auto', padding: '6px 12px' }} onClick={() => setCalificando(p)}>
+                              <Star size={14} /> Calificar
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 {puedeCalificar && (
                   <button type="button" className="red-btn-calificar" onClick={() => onCalificar(job)}>
-                    <Sparkles size={16} /> Calificar servicio y puntualidad
+                    <Sparkles size={16} /> {job.equipo_en_sitio?.some(p => !p.es_titular) ? 'Calificar al responsable' : 'Calificar servicio y puntualidad'}
                   </button>
                 )}
               </div>
@@ -707,6 +736,19 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
           )}
         </div>
       </div>
+
+      {/* Calificación de cada técnico de la cuadrilla que fue (una para cada uno) */}
+      {calificando && (
+        <ModalCalificarTecnico
+          isOpen
+          onClose={() => setCalificando(null)}
+          technician={{ id: calificando.id, name: calificando.nombre, picture: calificando.foto }}
+          workOrderId={job.id}
+          scheduledAt={job.scheduled_at}
+          arrivedAt={job.arrived_at}
+          onSuccess={() => { setCalificando(null); refrescar(); }}
+        />
+      )}
 
       {/* Currículum del técnico */}
       {showTechModal && perfilTecnico?.id && (

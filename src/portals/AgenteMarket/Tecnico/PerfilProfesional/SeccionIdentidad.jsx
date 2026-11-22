@@ -122,7 +122,7 @@ const LADOS = [
 const DOCUMENTOS = [
   {
     clave: 'comprobante_domicilio', tipo: 'comprobante_domicilio', tiene: 'tiene_comprobante_domicilio',
-    titulo: 'Comprobante de domicilio', ayuda: 'Luz, agua, teléfono o predial; no mayor a 3 meses',
+    titulo: 'Comprobante de domicilio', ayuda: 'Luz, agua, teléfono o predial; no mayor a 3 meses. Puede estar a nombre de otra persona (un familiar o tu casero)',
     subir: (archivo) => subirDocumento('comprobante_domicilio', archivo),
   },
   {
@@ -217,10 +217,20 @@ const SeccionIdentidad = ({ perfil, onPerfil }) => (
     <div className="pp-bloque">
       <h3 className="pp-bloque-titulo"><FolderCheck size={18} /> Documentos</h3>
       <p className="pp-nota">
-        Sube tu comprobante de domicilio y tu constancia de antecedentes no penales. Pueden ser fotos claras o PDF.
+        {perfil?.sin_cobro
+          ? 'Sube tu constancia de antecedentes no penales. El comprobante de domicilio es opcional. Pueden ser fotos claras o PDF.'
+          : 'Sube tu comprobante de domicilio y tu constancia de antecedentes no penales. Pueden ser fotos claras o PDF.'}
       </p>
       <div className="pp-grid-2">
-        {DOCUMENTOS.map(doc => <LadoIne key={doc.clave} lado={doc} perfil={perfil} onPerfil={onPerfil} />)}
+        {DOCUMENTOS.map(doc => (
+          <LadoIne
+            key={doc.clave}
+            // Técnico de cuadrilla (8): su comprobante de domicilio es opcional
+            lado={perfil?.sin_cobro && doc.clave === 'comprobante_domicilio' ? { ...doc, titulo: `${doc.titulo} (opcional)` } : doc}
+            perfil={perfil}
+            onPerfil={onPerfil}
+          />
+        ))}
       </div>
       <p className="pp-privado"><Lock size={14} /> Tus documentos son privados: solo los ve el equipo de Agente Solutions. Los clientes no los ven.</p>
     </div>

@@ -151,7 +151,8 @@ const PanelPerfilProfesional = ({ onCambio }) => {
   const puedeEnviar = faltantes.length === 0 && ['incompleto', 'rechazado'].includes(perfil.estado);
   // Avance: datos obligatorios completos (RFC y razón social solo cuentan si factura)
   // Datos obligatorios de PerfilProfesional::faltantes() en el backend (17, + RFC y razón social si factura)
-  const totalObligatorios = 17 + (perfil.emite_factura ? 2 : 0);
+  // El técnico de cuadrilla (8) no llena cobro y para él son opcionales el comprobante y la presentación (9 datos)
+  const totalObligatorios = perfil.sin_cobro ? 9 : 17 + (perfil.emite_factura ? 2 : 0);
   const completos = Math.max(totalObligatorios - faltantes.length, 0);
   const porcentaje = Math.round((completos / totalObligatorios) * 100);
   const { identidad_verificada: idOk, estudios_verificados: estOk } = perfil.insignias || {};
@@ -192,7 +193,7 @@ const PanelPerfilProfesional = ({ onCambio }) => {
         ['Antecedentes no penales', perfil.tiene_antecedentes_penales ? 'Subidos' : 'Falta'],
       ],
     },
-  ];
+  ].filter(t => !(perfil.sin_cobro && t.clave === 'cobro'));
 
   return (
     <section className="ppp-panel">
@@ -214,7 +215,7 @@ const PanelPerfilProfesional = ({ onCambio }) => {
           <div className="ppp-faltan">
             <span className="ppp-faltan-titulo">Te falta:</span>
             {Object.entries(faltantesMapa).map(([clave, texto]) => (
-              <button key={clave} type="button" className="ppp-falta" onClick={() => abrir(SECCION_DE[clave] || 'cobro')}>
+              <button key={clave} type="button" className="ppp-falta" onClick={() => abrir(perfil.sin_cobro && clave === 'consentimiento_datos' ? 'ine' : (SECCION_DE[clave] || 'cobro'))}>
                 {texto.replace(/\s*\(.*\)$/, '').replace(/^¿|\?$/g, '')}
               </button>
             ))}

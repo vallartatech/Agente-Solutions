@@ -1,0 +1,295 @@
+/* ==========================================================================
+   MI CUADRILLA (Agente Market, contratista rol 7)
+   Su equipo, el cupo, el código para invitar y la Sala de espera. Prefijo .mc-
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+.mc-pagina {
+  --mc-naranja: #f26522;
+  --mc-naranja-hover: #ea580c;
+  --mc-tinta: #0f172a;
+  --mc-texto: #334155;
+  --mc-suave: #64748b;
+  --mc-borde: #e2e8f0;
+  --mc-fondo: #f4f5f7;
+  --mc-tarjeta: #ffffff;
+  --mc-verde: #059669;
+  --mc-verde-fondo: #ecfdf5;
+  --mc-ambar: #b45309;
+  --mc-ambar-fondo: #fffbeb;
+  --mc-rojo: #dc2626;
+  --mc-rojo-fondo: #fef2f2;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--mc-fondo);
+  font-family: 'Outfit', system-ui, sans-serif;
+  color: var(--mc-texto);
+}
+
+.mc-pagina *, .mc-pagina *::before, .mc-pagina *::after { box-sizing: border-box; }
+
+.mc-contenido {
+  max-width: 1100px;
+  margin: 0 auto;
+  /* abajo deja espacio para la barra de navegación del celular */
+  padding: 24px 16px 110px;
+}
+
+/* ── Título ── */
+.mc-titulo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: var(--mc-naranja);
+}
+.mc-titulo h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--mc-tinta);
+  line-height: 1.1;
+}
+.mc-titulo p { margin: 2px 0 0; color: var(--mc-suave); font-size: 0.95rem; overflow-wrap: anywhere; }
+
+/* ── Avisos y carga ── */
+.mc-aviso {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.mc-aviso span { flex: 1 1 200px; }
+.mc-aviso-error { background: var(--mc-rojo-fondo); color: var(--mc-rojo); }
+
+.mc-cargando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 60px 0;
+  color: var(--mc-suave);
+}
+.mc-girar { animation: mc-girar 0.9s linear infinite; }
+@keyframes mc-girar { to { transform: rotate(360deg); } }
+
+/* ── Resumen: técnicos, código y Sala de espera ── */
+.mc-resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.mc-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  background: var(--mc-tarjeta);
+  border: 1px solid var(--mc-borde);
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+.mc-etiqueta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mc-suave);
+}
+
+.mc-numero { font-size: 2rem; font-weight: 800; color: var(--mc-tinta); line-height: 1; }
+.mc-numero small { font-size: 1rem; font-weight: 600; color: var(--mc-suave); }
+
+.mc-codigo {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--mc-tinta);
+  overflow-wrap: anywhere;
+}
+
+.mc-barra {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--mc-borde);
+  overflow: hidden;
+}
+.mc-barra span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--mc-naranja);
+  transition: width 0.3s ease;
+}
+
+.mc-nota { color: var(--mc-suave); font-size: 0.85rem; line-height: 1.35; }
+
+.mc-fila-botones { display: flex; flex-wrap: wrap; gap: 8px; }
+.mc-fila-botones .mc-btn { flex: 1 1 120px; }
+
+/* ── Botones ── */
+.mc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.mc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.mc-btn-principal { background: var(--mc-naranja); color: #fff; }
+.mc-btn-principal:hover:not(:disabled) { background: var(--mc-naranja-hover); }
+
+.mc-btn-suave { background: #fff; color: var(--mc-tinta); border-color: var(--mc-borde); }
+.mc-btn-suave:hover:not(:disabled) { background: var(--mc-fondo); }
+
+.mc-btn-peligro { background: #fff; color: var(--mc-rojo); border-color: #fecaca; }
+.mc-btn-peligro:hover:not(:disabled) { background: var(--mc-rojo-fondo); }
+
+/* ── Equipo ── */
+.mc-seccion { margin-bottom: 28px; }
+.mc-seccion h2 { margin: 0 0 6px; font-size: 1.2rem; font-weight: 800; color: var(--mc-tinta); }
+
+.mc-privacidad {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 14px;
+  color: var(--mc-suave);
+  font-size: 0.85rem;
+}
+.mc-privacidad svg { flex-shrink: 0; margin-top: 2px; }
+
+.mc-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.mc-tecnico {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--mc-tarjeta);
+  border: 1px solid var(--mc-borde);
+  border-radius: 16px;
+}
+.mc-tecnico-fuera { opacity: 0.75; }
+
+.mc-tecnico-cabeza { display: flex; align-items: flex-start; gap: 12px; }
+
+.mc-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.mc-avatar-letras {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff1e8;
+  color: var(--mc-naranja);
+  font-weight: 800;
+}
+
+.mc-tecnico-datos { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.mc-tecnico-datos strong { color: var(--mc-tinta); font-size: 1.02rem; overflow-wrap: anywhere; }
+.mc-dato { display: flex; align-items: center; gap: 5px; color: var(--mc-suave); font-size: 0.85rem; }
+
+.mc-estado {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.mc-estado-activo { background: var(--mc-verde-fondo); color: var(--mc-verde); }
+.mc-estado-bloqueado { background: var(--mc-rojo-fondo); color: var(--mc-rojo); }
+.mc-estado-fuera { background: var(--mc-fondo); color: var(--mc-suave); }
+
+.mc-chips, .mc-perfil { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.mc-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.mc-insignia {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.mc-insignia-ok { background: var(--mc-verde-fondo); color: var(--mc-verde); }
+.mc-insignia-espera { background: var(--mc-ambar-fondo); color: var(--mc-ambar); }
+.mc-insignia-alerta { background: var(--mc-rojo-fondo); color: var(--mc-rojo); }
+
+.mc-acciones { display: flex; gap: 8px; }
+.mc-acciones .mc-btn { flex: 1; }
+
+.mc-vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 20px;
+  text-align: center;
+  background: var(--mc-tarjeta);
+  border: 1px dashed var(--mc-borde);
+  border-radius: 16px;
+  color: var(--mc-suave);
+}
+.mc-vacio strong { color: var(--mc-tinta); }
+
+.mc-plegable {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--mc-tinta);
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .mc-titulo h1 { font-size: 1.35rem; }
+  .mc-lista { grid-template-columns: 1fr; }
+  .mc-numero { font-size: 1.7rem; }
+}

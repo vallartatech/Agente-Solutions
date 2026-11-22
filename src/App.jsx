@@ -102,7 +102,7 @@ import VistaDetallePropiedadCliente from "./portals/AgenteSolutions/Cliente/Vist
 
 import VistaCotizacionPrint from "./portals/AgenteSolutions/Admin/VistaCotizacionPrint";
 import CasaLoader from "./components/Shared/CasaLoader";
-import { esRed, usaSelectorRed } from "./utils/entorno";
+import { esRed, usaSelectorRed, estaSinCuadrilla } from "./utils/entorno";
 
 /* ------PANTALLAS PROPIAS DE LA RED (AgenteMarket) ------*/
 // Copias de las pantallas internas que también usa la red: se editan sin afectar al uso interno.
@@ -135,6 +135,11 @@ const RedRegistroZonas = lazy(() => import("./portals/AgenteMarket/Tecnico/Regis
 const RedLevantamientoPropiedad = lazy(() => import("./portals/AgenteMarket/Tecnico/LevantamientoPropiedad"));
 // Técnico nuevo de la red: "Completa tu perfil" hasta que Admin/Root lo valide
 const CompletarPerfil = lazy(() => import("./portals/AgenteMarket/Tecnico/PerfilProfesional/CompletarPerfil"));
+// Contratista (rol 7): su equipo, el cupo, el código para invitar y la Sala de espera
+const MiCuadrilla = lazy(() => import("./portals/AgenteMarket/Tecnico/MiCuadrilla"));
+// Técnico que quedó sin cuadrilla: unirse a otra o pedir ser independiente
+const SinCuadrilla = lazy(() => import("./portals/AgenteMarket/Tecnico/SinCuadrilla"));
+const RUTAS_SIN_CUADRILLA = ['/', '/sin-cuadrilla', '/privacidad', '/eliminar-cuenta'];
 // Perfil público al que lleva el QR del técnico (se abre sin sesión)
 const PerfilQrPublico = lazy(() => import("./portals/AgenteMarket/Shared/PerfilQrPublico"));
 
@@ -230,11 +235,18 @@ const AppRoutes = () => {
   if (esRed(user) && user?.perfil_profesional?.bloqueado && !RUTAS_SIN_CANDADO.includes(location.pathname)) {
     return <Navigate to="/completar-perfil" replace />;
   }
+  // Sin cuadrilla: solo su pantalla de opciones (el backend también le cierra lo demás)
+  if (estaSinCuadrilla(user) && !RUTAS_SIN_CUADRILLA.includes(location.pathname)) {
+    return <Navigate to="/sin-cuadrilla" replace />;
+  }
 
   return (
     <Routes>
       <Route path="/completar-perfil" element={
         user ? <Suspense fallback={<CasaLoader />}><CompletarPerfil /></Suspense> : <Navigate to="/" replace />
+      } />
+      <Route path="/sin-cuadrilla" element={
+        user ? <Suspense fallback={<CasaLoader />}><SinCuadrilla /></Suspense> : <Navigate to="/" replace />
       } />
       <Route path="/" element={<LoginAgente />} />
       <Route path="/t/:codigo" element={<Suspense fallback={<CasaLoader />}><PerfilQrPublico /></Suspense>} />
@@ -307,6 +319,7 @@ const AppRoutes = () => {
       <Route path="/usuarios" element={<PorEntorno interno={<VistaUsuarios />} red={<RedUsuarios />} />} />
       <Route path="/gestion-autonomos" element={<VistaGestionAutonomos />} />
       <Route path="/sala-espera-tecnicos" element={<PorEntorno interno={<VistaSalaEsperaTecnicos />} red={<RedSalaEsperaTecnicos />} />} />
+      <Route path="/mi-cuadrilla" element={<ProtectedRoute><Suspense fallback={<CasaLoader />}><MiCuadrilla /></Suspense></ProtectedRoute>} />
       <Route path="/mi-codigo-autonomo" element={<VistaCodigoAutonomo />} />
       <Route path="/apoyo-autonomo" element={<VistaApoyoAutonomo />} />
       <Route path="/red-autonomos" element={<VistaRedAutonomo />} />

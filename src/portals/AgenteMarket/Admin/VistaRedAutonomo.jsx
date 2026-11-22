@@ -398,6 +398,8 @@ const VistaRedAutonomo = () => {
             tecnico_dirigido_id: order.tecnico_dirigido_id || null,
             tecnico_dirigido_nombre: order.tecnico_dirigido_nombre || null,
             service_id: order.service_id,
+            // Quién va a la casa (el contratista y/o los técnicos de su cuadrilla)
+            equipo_en_sitio: order.equipo_en_sitio || [],
             hasNewTechMessage,
             lastTechMsg,
           };

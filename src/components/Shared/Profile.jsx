@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { esTecnicoRed } from '../../utils/entorno';
 import CasaLoader from './CasaLoader';
 
 // Cada entorno tiene su propio perfil; se cargan solo cuando se usan
@@ -16,11 +17,11 @@ const Profile = () => {
   if (roleId === 2) {
     // Técnico Agente (interno)
     perfil = <PerfilTecnicoSolutions />;
-  } else if ([6, 8].includes(roleId)) {
-    // Técnicos de la red: 6 Técnico independiente, 8 Técnico de cuadrilla
+  } else if (esTecnicoRed(user)) {
+    // Técnicos de la red: 6 Técnico independiente, 7 Contratista, 8 Técnico de cuadrilla
     perfil = <PerfilTecnicoRed />;
   } else {
-    // Clientes, propietarios y administradores (0, 1, 3, 4, 5, 7)
+    // Clientes, propietarios y administradores (0, 1, 3, 4, 5)
     perfil = <PerfilCliente />;
   }
 

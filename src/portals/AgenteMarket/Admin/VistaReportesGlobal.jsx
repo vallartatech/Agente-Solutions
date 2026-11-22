@@ -56,7 +56,7 @@ const resolverFotoPropiedad = (prop) => {
 
 const VistaReportesGlobal = () => {
   const { user } = useAuth();
-  const isTech = Boolean(user?.role_id === 6 || user?.role_id === 8 || user?.role_id === 2);
+  const isTech = Boolean(esTecnicoRed(user) || user?.role_id === 2);
   const navigate = useNavigate();
 
   const [reportes, setReportes] = useState([]);

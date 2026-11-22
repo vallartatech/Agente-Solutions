@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
+import { esTecnicoRed } from '../../../utils/entorno';
 import ModalCalendarioCliente from './ModalCalendarioCliente';
 
 // Página /calendario de Agente Market (a la que llevan las notificaciones): solo muestra el calendario.
@@ -16,8 +17,7 @@ const CalendarioCliente = () => {
       navigate(-1);
       return;
     }
-    const role = Number(user?.role_id);
-    navigate(role === 6 || role === 8 ? '/mercado-trabajos' : '/VistaMarket', { replace: true });
+    navigate(esTecnicoRed(user) ? '/mercado-trabajos' : '/VistaMarket', { replace: true });
   };
 
   return (

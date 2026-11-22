@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { esTecnicoRed } from '../../utils/entorno';
 import TecnicoHeader from './TecnicoHeader';
 import AdminHeader from './AdminHeader';
 import ClienteHeader from './ClienteHeader';
@@ -16,8 +17,7 @@ const Header = ({ activeModule, titulo, rolTexto, ...restProps }) => {
   }
 
   const isTechnician = Boolean(
-    roleId === 6 || 
-    roleId === 8 || 
+    esTecnicoRed(user) || 
     roleId === 2 || 
     location.pathname.includes('/galeria-reportes') || 
     location.pathname.includes('/nuevo-reporte') ||
@@ -29,7 +29,7 @@ const Header = ({ activeModule, titulo, rolTexto, ...restProps }) => {
     return <TecnicoHeader activeTab={activeModule || (isVistaTecnico ? 'inicio' : 'tablero')} />;
   }
 
-  // Clientes y Autónomos (3, 4, 5, 7) usan ClienteHeader
+  // Clientes y Autónomos (3, 4, 5) usan ClienteHeader
   return <ClienteHeader activeModule={activeModule} titulo={titulo} rolTexto={rolTexto} {...restProps} />;
 };
 

@@ -17,11 +17,17 @@ import '../../../../styles/AgenteMarket/Tecnico/PerfilProfesional.css';
 
 // Qué datos pide cada paso (claves de "faltantes" del backend)
 const PASOS = [
-  { titulo: 'Cobro y facturación', corto: 'Cobro', Icono: Receipt, claves: ['consentimiento_datos', 'emite_factura', 'rfc', 'razon_social', 'banco', 'titular_cuenta', 'clabe', 'acepta_efectivo', 'tiene_terminal'] },
-  { titulo: 'Habilidades y experiencia', corto: 'Habilidades', Icono: Wrench, claves: ['especialidades', 'anios_experiencia'] },
-  { titulo: 'Currículum', corto: 'Currículum', Icono: GraduationCap, claves: ['nivel_estudios', 'presentacion'] },
-  { titulo: 'Identidad y documentos', corto: 'Identidad', Icono: IdCard, claves: ['foto', 'fecha_nacimiento', 'ine_frente', 'ine_reverso', 'comprobante_domicilio', 'antecedentes_penales'] },
+  { clave: 'cobro', titulo: 'Cobro y facturación', corto: 'Cobro', Icono: Receipt, claves: ['consentimiento_datos', 'emite_factura', 'rfc', 'razon_social', 'banco', 'titular_cuenta', 'clabe', 'acepta_efectivo', 'tiene_terminal'] },
+  { clave: 'habilidades', titulo: 'Habilidades y experiencia', corto: 'Habilidades', Icono: Wrench, claves: ['especialidades', 'anios_experiencia'] },
+  { clave: 'curriculum', titulo: 'Currículum', corto: 'Currículum', Icono: GraduationCap, claves: ['nivel_estudios', 'presentacion'] },
+  { clave: 'identidad', titulo: 'Identidad y documentos', corto: 'Identidad', Icono: IdCard, claves: ['foto', 'fecha_nacimiento', 'ine_frente', 'ine_reverso', 'comprobante_domicilio', 'antecedentes_penales'] },
 ];
+
+// Técnico de cuadrilla (rol 8): le paga su contratista, así que no llena cobro.
+// El consentimiento (para su INE) pasa al paso de identidad.
+const pasosPara = (sinCobro) => (sinCobro
+  ? PASOS.filter(p => p.clave !== 'cobro').map(p => (p.clave === 'identidad' ? { ...p, claves: ['consentimiento_datos', ...p.claves] } : p))
+  : PASOS);
 
 const pasoCompleto = (paso, faltantes = {}) => !paso.claves.some(c => c in faltantes);
 
@@ -30,7 +36,7 @@ const fechaHora = (iso) => (iso
   : '');
 
 /**
- * "Completa tu perfil": el técnico nuevo de la red (roles 6 y 8) solo ve esta pantalla
+ * "Completa tu perfil": el técnico nuevo de la red (roles 6 a 9) solo ve esta pantalla
  * hasta que Admin/Root aprueba su perfil (como al solicitar una tarjeta de crédito).
  */
 const CompletarPerfil = () => {
@@ -80,8 +86,9 @@ const CompletarPerfil = () => {
         setVista('revision');
       } else if (!silencioso) {
         // Empieza en el primer paso con datos pendientes
-        const primero = PASOS.findIndex(p => !pasoCompleto(p, data.faltantes));
-        setPaso(primero === -1 ? PASOS.length - 1 : primero);
+        const pasosDelTecnico = pasosPara(data.sin_cobro);
+        const primero = pasosDelTecnico.findIndex(p => !pasoCompleto(p, data.faltantes));
+        setPaso(primero === -1 ? pasosDelTecnico.length - 1 : primero);
       }
       return data;
     } catch (err) {
@@ -101,18 +108,21 @@ const CompletarPerfil = () => {
     return () => clearInterval(t);
   }, [vista, cargar]);
 
+  const sinCobro = Boolean(perfil?.sin_cobro);
+  const pasos = useMemo(() => pasosPara(sinCobro), [sinCobro]);
+  const clavePaso = pasos[paso]?.clave;
   const faltantes = useMemo(() => perfil?.faltantes || {}, [perfil]);
   const totalFaltan = Object.keys(faltantes).length;
-  const completos = useMemo(() => PASOS.filter(p => pasoCompleto(p, faltantes)).length, [faltantes]);
+  const completos = useMemo(() => pasos.filter(p => pasoCompleto(p, faltantes)).length, [pasos, faltantes]);
 
   const guardarPaso = async () => {
     let erroresPaso = {};
     let payload = null;
     // Sin consentimiento esos pasos solo muestran la casilla: no hay nada que guardar
-    if (!perfil?.consentimiento_datos_at && (paso === 0 || paso === 3)) return true;
-    if (paso === 0) { erroresPaso = erroresCobro(cobro); payload = payloadCobro(cobro); }
-    if (paso === 1) { payload = payloadHabilidades(habilidades); }
-    if (paso === 2) { erroresPaso = erroresCurriculum(curriculum); payload = payloadCurriculum(curriculum); }
+    if (!perfil?.consentimiento_datos_at && (clavePaso === 'cobro' || clavePaso === 'identidad')) return true;
+    if (clavePaso === 'cobro') { erroresPaso = erroresCobro(cobro); payload = payloadCobro(cobro); }
+    if (clavePaso === 'habilidades') { payload = payloadHabilidades(habilidades); }
+    if (clavePaso === 'curriculum') { erroresPaso = erroresCurriculum(curriculum); payload = payloadCurriculum(curriculum); }
     setErrores(erroresPaso);
     if (Object.keys(erroresPaso).length) {
       setAviso({ tipo: 'error', texto: 'Revisa los campos marcados en rojo.' });
@@ -126,7 +136,7 @@ const CompletarPerfil = () => {
       const data = await guardarPerfil(payload);
       aplicarPerfil(data);
       // Las habilidades guardadas vienen del catálogo (las que faltan se sugieren aparte)
-      if (paso === 1) setHabilidades(formHabilidades(data));
+      if (clavePaso === 'habilidades') setHabilidades(formHabilidades(data));
       return true;
     } catch (err) {
       const campos = err?.response?.data?.errors;
@@ -140,7 +150,7 @@ const CompletarPerfil = () => {
 
   const siguiente = async () => {
     if (await guardarPaso()) {
-      setPaso(p => Math.min(p + 1, PASOS.length - 1));
+      setPaso(p => Math.min(p + 1, pasos.length - 1));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -248,8 +258,8 @@ const CompletarPerfil = () => {
     );
   }
 
-  const { Icono } = PASOS[paso];
-  const esUltimo = paso === PASOS.length - 1;
+  const { Icono } = pasos[paso] || pasos[0];
+  const esUltimo = paso >= pasos.length - 1;
 
   return (
     <div className="pp-pagina">
@@ -259,8 +269,8 @@ const CompletarPerfil = () => {
         <div className="pp-intro">
           <h1>Completa tu perfil para empezar</h1>
           <p>Antes de trabajar en la red necesitamos conocerte. Tus datos se guardan en cada paso; puedes salir y continuar después.</p>
-          <div className="pp-progreso" aria-label={`${completos} de ${PASOS.length} pasos completos`}>
-            <span style={{ width: `${(completos / PASOS.length) * 100}%` }} />
+          <div className="pp-progreso" aria-label={`${completos} de ${pasos.length} pasos completos`}>
+            <span style={{ width: `${(completos / pasos.length) * 100}%` }} />
           </div>
         </div>
 
@@ -280,7 +290,7 @@ const CompletarPerfil = () => {
         )}
 
         <nav className="pp-pasos" aria-label="Pasos">
-          {PASOS.map((p, i) => {
+          {pasos.map((p, i) => {
             const ok = pasoCompleto(p, faltantes);
             return (
               <button
@@ -298,18 +308,18 @@ const CompletarPerfil = () => {
           })}
         </nav>
 
-        <h2 className="pp-titulo-paso"><Icono size={20} /> {PASOS[paso].titulo}</h2>
+        <h2 className="pp-titulo-paso"><Icono size={20} /> {pasos[paso]?.titulo}</h2>
 
-        {(paso === 0 || paso === 3) && !perfil?.consentimiento_datos_at ? (
+        {(clavePaso === 'cobro' || clavePaso === 'identidad') && !perfil?.consentimiento_datos_at ? (
           <ConsentimientoDatos onAceptado={(data) => { aplicarPerfil(data); setAviso(null); }} />
         ) : (
           <>
-            {paso === 0 && <SeccionCobro form={cobro} setForm={setCobro} errores={errores} />}
-            {paso === 3 && <SeccionIdentidad perfil={perfil} onPerfil={aplicarPerfil} />}
+            {clavePaso === 'cobro' && <SeccionCobro form={cobro} setForm={setCobro} errores={errores} />}
+            {clavePaso === 'identidad' && <SeccionIdentidad perfil={perfil} onPerfil={aplicarPerfil} />}
           </>
         )}
-        {paso === 1 && <SeccionHabilidades form={habilidades} setForm={setHabilidades} />}
-        {paso === 2 && <SeccionCurriculum form={curriculum} setForm={setCurriculum} perfil={perfil} onPerfil={aplicarPerfil} errores={errores} />}
+        {clavePaso === 'habilidades' && <SeccionHabilidades form={habilidades} setForm={setHabilidades} />}
+        {clavePaso === 'curriculum' && <SeccionCurriculum form={curriculum} setForm={setCurriculum} perfil={perfil} onPerfil={aplicarPerfil} errores={errores} />}
 
         {esUltimo && (
           <div className="pp-resumen">
@@ -320,11 +330,11 @@ const CompletarPerfil = () => {
                 <p><strong>Antes de enviar, te falta:</strong></p>
                 <ul>
                   {Object.entries(faltantes).map(([clave, texto]) => {
-                    const i = PASOS.findIndex(p => p.claves.includes(clave));
+                    const i = pasos.findIndex(p => p.claves.includes(clave));
                     return (
                       <li key={clave}>
-                        <button type="button" className="pp-btn-link" onClick={() => setPaso(i)}>{texto}</button>
-                        <small> · {PASOS[i]?.corto}</small>
+                        <button type="button" className="pp-btn-link" onClick={() => setPaso(Math.max(i, 0))}>{texto}</button>
+                        <small> · {pasos[i]?.corto}</small>
                       </li>
                     );
                   })}

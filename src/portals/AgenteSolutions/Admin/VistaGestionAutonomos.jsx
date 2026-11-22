@@ -37,7 +37,9 @@ const VistaGestionAutonomos = () => {
       max_properties: t.max_properties ?? 30,
       extra_properties_count: t.extra_properties_count ?? 0,
       max_clients: t.max_clients ?? 30,
-      subscription_expires_at: t.subscription_expires_at ? t.subscription_expires_at.split(' ')[0] : ''
+      subscription_expires_at: t.subscription_expires_at ? t.subscription_expires_at.split(' ')[0] : '',
+      // Solo los contratistas tienen cuadrilla
+      ...(t.membership_type === 'market_contractor' ? { max_cuadrilla: t.max_cuadrilla ?? 7 } : {})
     });
   };
 
@@ -330,8 +332,11 @@ const VistaGestionAutonomos = () => {
                         </p>
                         <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#fff3e0', borderRadius: '8px', fontSize: '0.86rem', borderLeft: '4px solid #FF6600' }}>
                           <div style={{ fontWeight: 'bold', color: '#d84a00', marginBottom: '4px', textTransform: 'uppercase' }}>
-                            👑 {t.membership_type === 'autonomo_fundador' ? 'Plan Fundador ($659/m)' : t.membership_type === 'autonomo_personal' ? 'Plan Personal ($299/m)' : 'Plan Empresarial ($935/m)'}
+                            👑 {t.membership_type === 'market_contractor' ? 'Contratista / Cuadrilla' : t.membership_type === 'autonomo_fundador' ? 'Plan Fundador ($659/m)' : t.membership_type === 'autonomo_personal' ? 'Plan Personal ($299/m)' : 'Plan Empresarial ($935/m)'}
                           </div>
+                          {t.membership_type === 'market_contractor' && (
+                            <div style={{ color: '#555' }}>👷 Cupo de cuadrilla: <strong>{t.max_cuadrilla ?? 7}</strong> técnicos</div>
+                          )}
                           <div style={{ color: '#555' }}>🏠 Propiedades: <strong>{t.max_properties ?? 3}</strong> (+{t.extra_properties_count ?? 0} extras)</div>
                           <div style={{ color: '#555' }}>👥 Clientes: <strong>{t.max_clients ?? 30}</strong></div>
                           <div style={{ color: '#555' }}>📅 Vence: <strong>{t.subscription_expires_at ? new Date(t.subscription_expires_at).toLocaleDateString('es-ES') : 'Indefinido'}</strong></div>
@@ -450,6 +455,8 @@ const VistaGestionAutonomos = () => {
                   <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.88rem', color: '#555', marginBottom: '6px' }}>Tipo de Membresía / Plan:</label>
                   <select
                     value={planForm.membership_type}
+                    // El plan del contratista no se cambia aquí (los planes están en pausa); solo su cupo de cuadrilla
+                    disabled={planForm.membership_type === 'market_contractor'}
                     onChange={e => {
                       const type = e.target.value;
                       let amount = 935.00;
@@ -464,8 +471,20 @@ const VistaGestionAutonomos = () => {
                     <option value="autonomo_personal">👑 Plan Personal ($299/m | 3 propiedades)</option>
                     <option value="autonomo_empresarial">🏢 Plan Empresarial ($935/m | 30 clientes)</option>
                     <option value="autonomo_fundador">🌟 Plan Fundador ($659/m | Ilimitado | $3,600 complet. año)</option>
+                    {planForm.membership_type === 'market_contractor' && (
+                      <option value="market_contractor">🏗️ Contratista / Cuadrilla</option>
+                    )}
                   </select>
                 </div>
+
+                {planForm.membership_type === 'market_contractor' && (
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.88rem', color: '#555', marginBottom: '6px' }}>👷 Cupo de la cuadrilla (técnicos):</label>
+                    <input type="number" min="0" value={planForm.max_cuadrilla} onChange={e => setPlanForm({ ...planForm, max_cuadrilla: parseInt(e.target.value) || 0 })}
+                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontWeight: 'bold' }} />
+                    <span style={{ fontSize: '0.78rem', color: '#888' }}>* Empieza en 7. Súbelo para que el contratista pueda tener más técnicos en su cuadrilla.</span>
+                  </div>
+                )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                   <div>

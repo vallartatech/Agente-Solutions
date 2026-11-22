@@ -1,0 +1,136 @@
+/* ==========================================================================
+   CUADRILLA EN EL DETALLE DEL TRABAJO (tablero del técnico de la red). Prefijo .pct-
+   ========================================================================== */
+.pct-panel {
+  --pct-naranja: #f26522;
+  --pct-tinta: #0f172a;
+  --pct-suave: #64748b;
+  --pct-borde: #e2e8f0;
+  --pct-rojo: #dc2626;
+}
+
+.pct-cuadrilla { border-left: 4px solid var(--pct-naranja); }
+
+.pct-persona {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+.pct-persona > div { display: flex; flex-direction: column; gap: 2px; flex: 1 1 160px; min-width: 0; }
+.pct-persona strong { color: var(--pct-tinta); overflow-wrap: anywhere; }
+.pct-persona small { color: var(--pct-suave); font-size: 0.82rem; line-height: 1.35; }
+
+.pct-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff1e8;
+  color: var(--pct-naranja);
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.pct-nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 8px 0 0;
+  color: var(--pct-suave);
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+.pct-btn-asignar { margin-top: 10px; width: 100%; justify-content: center; }
+
+/* ── Ventana para elegir quién va ── */
+.pct-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.pct-modal {
+  --pct-naranja: #f26522;
+  --pct-tinta: #0f172a;
+  --pct-suave: #64748b;
+  --pct-borde: #e2e8f0;
+  --pct-rojo: #dc2626;
+  width: 100%;
+  max-width: 460px;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 18px;
+  border-radius: 16px;
+  background: #fff;
+  color: var(--pct-tinta);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+}
+.pct-modal *, .pct-modal *::before, .pct-modal *::after { box-sizing: border-box; }
+
+.pct-modal-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.pct-modal-cabeza h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.1rem; }
+
+.pct-cerrar {
+  display: inline-flex;
+  padding: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: var(--pct-tinta);
+  cursor: pointer;
+}
+
+.pct-visita { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; color: var(--pct-suave); font-size: 0.9rem; }
+
+.pct-cargando { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 30px 0; color: var(--pct-suave); }
+.pct-girar { animation: pct-girar 0.9s linear infinite; }
+@keyframes pct-girar { to { transform: rotate(360deg); } }
+
+.pct-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+
+.pct-opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--pct-borde);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.pct-opcion input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--pct-naranja); flex-shrink: 0; }
+.pct-opcion > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pct-opcion strong { overflow-wrap: anywhere; }
+.pct-opcion small { color: var(--pct-suave); font-size: 0.8rem; line-height: 1.35; }
+.pct-opcion.elegido { border-color: var(--pct-naranja); background: #fff7ed; }
+.pct-opcion.bloqueado { opacity: 0.6; cursor: not-allowed; }
+.pct-opcion small.pct-alerta, .pct-alerta { color: var(--pct-rojo); }
+
+.pct-pie { display: flex; gap: 10px; margin-top: 16px; }
+.pct-pie button { flex: 1; }
+
+.pct-btn, .pct-btn-sec {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pct-btn { border: 0; background: var(--pct-naranja); color: #fff; }
+.pct-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pct-btn-sec { border: 1px solid var(--pct-borde); background: #fff; color: var(--pct-tinta); }

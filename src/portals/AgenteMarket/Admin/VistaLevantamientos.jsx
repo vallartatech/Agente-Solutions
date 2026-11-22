@@ -29,7 +29,7 @@ import ModalCalendarioCliente from "../../AgenteMarket/Cliente/ModalCalendarioCl
 import NotificationBell from "../../../components/Shared/NotificationBell";
 import Header from "../../../components/Shared/Header";
 import SelectorVistas from "../../../components/Shared/SelectorVistas";
-import { usaSelectorRed } from "../../../utils/entorno";
+import { usaSelectorRed, esTecnicoRed } from "../../../utils/entorno";
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import ModalSolicitarLevantamientoRed from "../../../components/Shared/ModalSolicitarLevantamientoRed";
 import { fechaPreferidaLegible } from "../../../utils/fechaPreferida";
@@ -69,7 +69,7 @@ const VistaLevantamientos = () => {
   const isClient = user?.role_id === 3;
   // Dueños de la Red (autónomos y gestor): no programan visitas; el Root asigna al técnico.
   // Ven los botones de cliente ("En revisión" / "Ver cita")
-  const vistaCliente = isClient || [4, 5, 7].includes(Number(user?.role_id));
+  const vistaCliente = isClient || usaSelectorRed(user);
 
   const [tabActual, setTabActual] = useState("PENDIENTES");
   const [serviciosFiltrados, setServiciosFiltrados] = useState([]);
@@ -195,7 +195,7 @@ const VistaLevantamientos = () => {
     if (user?.role_id === 1) return "ADMIN_GLOBAL";
     if (user?.role_id === 4) return "AUT_EMPRESARIAL";
     if (user?.role_id === 5) return "AUT_PERSONAL";
-    if (user?.role_id === 7) return "GESTOR_INMUEBLES";
+    if (user?.role_id === 7) return "CONTRATISTA";
     if (user?.role_id === 2) return "TECNICO_OFICIAL";
     if (user?.role_id === 3) return "MARKET_CLIENT_PERSONAL";
     return "USUARIO";
@@ -216,9 +216,9 @@ const VistaLevantamientos = () => {
     if (!user) return navigate('/');
     const role = Number(user.role_id);
     if (role === 0 || role === 1) navigate('/VistaRoot');
-    else if (role === 4 || role === 5 || role === 7 || role === 3) navigate('/VistaMarket');
+    else if (role === 4 || role === 5 || role === 3) navigate('/VistaMarket');
     else if (role === 2) navigate('/VistaTecnico');
-    else if (role === 6 || role === 8) navigate('/mercado-trabajos');
+    else if (esTecnicoRed(user)) navigate('/mercado-trabajos');
     else navigate('/');
   };
 

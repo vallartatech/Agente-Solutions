@@ -1,11 +1,12 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { usaSelectorRed } from '../../utils/entorno';
+import { usaSelectorRed, esTecnicoRed, esContratista, cotizaEnRed } from '../../utils/entorno';
 import { useAuth } from '../../context/AuthContext';
 import {
   Home,
   Users,
+  HardHat,
   Briefcase,
   Building2,
   ClipboardList,
@@ -114,11 +115,13 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
   const irAlInicio = () => {
     if (!user) return navigate('/');
     if (role === 0 || role === 1) navigate('/VistaRoot');
-    else if (role === 4 || role === 5 || role === 7 || role === 3) navigate('/VistaMarket');
+    else if (role === 4 || role === 5 || role === 3) navigate('/VistaMarket');
     else if (role === 2) navigate('/VistaTecnico');
-    else if (role === 6 || role === 8) {
-      if (onTabChange) onTabChange('mercado');
-      else navigate('/mercado-trabajos', { state: { view: 'mercado' } });
+    else if (esTecnicoRed(user)) {
+      // El técnico de cuadrilla (8) no ve la red: su inicio es el tablero
+      const vista = cotizaEnRed(user) ? 'mercado' : 'tablero';
+      if (onTabChange) onTabChange(vista);
+      else navigate('/mercado-trabajos', { state: { view: vista } });
     } else {
       navigate('/VistaMarket');
     }
@@ -197,21 +200,19 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
     currentPath.includes('/trabajos-tecnico')
   );
 
-  // Determinar si es técnico (Rol 2 Oficial, 6, 8 o pantallas de técnico)
+  // Determinar si es técnico (Rol 2 Oficial, técnicos de la red 6, 7 y 8, o pantallas de técnico)
   const isTechnician = Boolean(
     role === 2 || 
-    role === 6 || 
-    role === 8 ||
+    esTecnicoRed(user) ||
     currentPath.includes('/mercado-trabajos') ||
     currentPath.includes('/trabajos-tecnico') ||
     currentPath === '/vistatecnico'
   );
 
-  // Ocultar casita solo para técnicos independientes sin portal de inicio propio (ID 5 / Roles 6 y 8)
+  // Ocultar casita para los técnicos de la red, que no tienen portal de inicio propio (ID 5 / Roles 6, 7 y 8)
   const ocultarInicioCasita = Boolean(
     userId === 5 || 
-    role === 6 || 
-    role === 8
+    esTecnicoRed(user)
   );
 
   // 1. CASO TÉCNICO OFICIAL AGENTE (ROL 2):
@@ -287,7 +288,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
     );
   }
 
-  // CASO TÉCNICOS DE LA RED (ROLES 6 Y 8):
+  // CASO TÉCNICOS DE LA RED (ROLES 6, 7 Y 8); el contratista (7) además ve su cuadrilla:
   if (isTechnician) {
     return (
       <nav ref={navRef} className="vcp-mobile-bottom-nav" aria-label="Navegación Móvil Técnico Red">
@@ -305,16 +306,19 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           </button>
         )}
 
-        <button 
-          type="button" 
-          className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`} 
-          onClick={() => handleSelectTab('mercado')} 
-          title="Mercado (Solicitudes)"
-          aria-label="Mercado (Solicitudes)"
-        >
-          <Globe size={22} className="vcp-mobile-nav-icon" />
-          <span className="vcp-mobile-nav-text">Mercado</span>
-        </button>
+        {/* El técnico de cuadrilla (8) no ve la red */}
+        {cotizaEnRed(user) && (
+          <button 
+            type="button" 
+            className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`} 
+            onClick={() => handleSelectTab('mercado')} 
+            title="Mercado (Solicitudes)"
+            aria-label="Mercado (Solicitudes)"
+          >
+            <Globe size={22} className="vcp-mobile-nav-icon" />
+            <span className="vcp-mobile-nav-text">Mercado</span>
+          </button>
+        )}
 
         <button 
           type="button" 
@@ -326,6 +330,19 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           <Briefcase size={22} className="vcp-mobile-nav-icon" />
           <span className="vcp-mobile-nav-text">Trabajos</span>
         </button>
+
+        {esContratista(user) && (
+          <button
+            type="button"
+            className={`vcp-mobile-nav-item ${currentPath === '/mi-cuadrilla' ? 'active' : ''}`}
+            onClick={() => navigate('/mi-cuadrilla')}
+            title="Mi cuadrilla"
+            aria-label="Mi cuadrilla"
+          >
+            <HardHat size={22} className="vcp-mobile-nav-icon" />
+            <span className="vcp-mobile-nav-text">Cuadrilla</span>
+          </button>
+        )}
         {/* "Mis clientes" vive en el menú del perfil (avatar) */}
       </nav>
     );
@@ -467,7 +484,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         type="button"
         className={`vcp-mobile-nav-item ${isUsuariosActive ? 'active' : ''}`}
         onClick={() => {
-          if (role === 6 || role === 8 || currentPath.includes('/mercado-trabajos')) {
+          if (esTecnicoRed(user) || currentPath.includes('/mercado-trabajos')) {
             navigate('/mercado-trabajos', { state: { view: 'usuarios' } });
           } else {
             navigate('/usuarios');
@@ -511,7 +528,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
           type="button" 
           className={`vcp-mobile-nav-item ${isServiciosActive ? 'active' : ''}`} 
           onClick={() => {
-            if (role === 6 || role === 8 || currentPath.includes('/mercado-trabajos')) {
+            if (esTecnicoRed(user) || currentPath.includes('/mercado-trabajos')) {
               navigate('/mercado-trabajos', { state: { view: 'tablero' } });
             } else {
               navigate('/tablero-servicios');
@@ -530,7 +547,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         type="button"
         className={`vcp-mobile-nav-item ${isMercadoActive ? 'active' : ''}`}
         onClick={() => {
-          if (role === 6 || role === 8 || currentPath.includes('/mercado-trabajos')) {
+          if (esTecnicoRed(user) || currentPath.includes('/mercado-trabajos')) {
             navigate('/mercado-trabajos', { state: { view: 'mercado' } });
           } else {
             navigate('/red-autonomos');

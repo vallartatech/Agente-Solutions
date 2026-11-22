@@ -3,7 +3,7 @@ import { GraduationCap, FileText, Award, Briefcase, Plus, Trash2, Paperclip, Loa
 import { agregarCurso, borrarCurso, mensajeError, urlArchivoPrivado } from './perfilProfesionalApi';
 
 const ANIO_ACTUAL = new Date().getFullYear();
-const PRESENTACION_MIN = 20;
+const PRESENTACION_MIN = 10;
 const PRESENTACION_MAX = 1500;
 
 const NIVELES_POR_DEFECTO = {
@@ -138,7 +138,7 @@ const SeccionCurriculum = ({ form, setForm, perfil, onPerfil, errores = {} }) =>
       </div>
 
       <div className="pp-bloque">
-        <h3 className="pp-bloque-titulo"><FileText size={18} /> Preséntate</h3>
+        <h3 className="pp-bloque-titulo"><FileText size={18} /> Preséntate{perfil?.sin_cobro && <em> opcional</em>}</h3>
         <label className="pp-campo">
           <span>Cuéntale a los clientes quién eres y en qué eres bueno</span>
           <textarea
@@ -148,8 +148,8 @@ const SeccionCurriculum = ({ form, setForm, perfil, onPerfil, errores = {} }) =>
             placeholder="Ej. Soy electricista con 8 años de experiencia en casas y locales. Hago instalaciones, tableros y reparación de cortos. Trabajo limpio y a tiempo."
             onChange={(e) => set('presentacion', e.target.value)}
           />
-          <small className={largo > 0 && largo < PRESENTACION_MIN ? 'pp-error' : 'pp-ayuda'}>
-            {largo < PRESENTACION_MIN ? `Mínimo ${PRESENTACION_MIN} caracteres (llevas ${largo})` : `${largo} / ${PRESENTACION_MAX}`}
+          <small className={!perfil?.sin_cobro && largo > 0 && largo < PRESENTACION_MIN ? 'pp-error' : 'pp-ayuda'}>
+            {largo < PRESENTACION_MIN ? `Mínimo ${PRESENTACION_MIN} letras (llevas ${largo}). Ej.: "Plomero con 10 años de experiencia en Mérida"` : `${largo} / ${PRESENTACION_MAX}`}
           </small>
         </label>
       </div>

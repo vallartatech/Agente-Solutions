@@ -36,7 +36,7 @@ import { NOMBRES_ROLES, nombreRol } from "../../../utils/roles";
 // Roles asignables agrupados por entorno (ROOT no es asignable desde la interfaz por seguridad)
 const GRUPOS_ROLES = [
   { label: "Agente Solutions", ids: [1, 2, 3] },
-  { label: "Agente Market", ids: [4, 5, 6, 7, 8] }
+  { label: "Agente Market", ids: [4, 5, 6, 7, 8, 9] }
 ];
 
 // Filtros por rol del menú; UniversalSearch interpreta el valor "ROL:<ids>"
@@ -50,12 +50,12 @@ const FILTROS_ROL_RED = [
   { ids: [5], label: "Gestores inmobiliarios", icon: Briefcase, color: "orange" },
   { ids: [6], label: "Técnicos independientes", icon: Wrench, color: "teal" },
   { ids: [7], label: "Contratistas / Líderes", icon: HardHat, color: "amber" },
-  { ids: [8], label: "Técnicos de cuadrilla", icon: HardHat, color: "cyan" }
+  { ids: [8, 9], label: "Técnicos de cuadrilla", icon: HardHat, color: "cyan" }
 ];
 // El portal del cliente solo filtra técnicos
 const FILTROS_ROL_CLIENTE = [
   { ids: [2], label: "Mis Técnicos", icon: Wrench, color: "blue" },
-  { ids: [8], label: "Técnicos de cuadrilla", icon: HardHat, color: "cyan" }
+  { ids: [8, 9], label: "Técnicos de cuadrilla", icon: HardHat, color: "cyan" }
 ];
 const valorFiltroRol = (f) => `ROL:${f.ids.join(",")}`;
 
@@ -78,6 +78,7 @@ const getRoleStyle = (roleId) => {
     case 6:
       return { background: 'linear-gradient(135deg, #0d9488, #0f766e)', color: '#ffffff', border: '1px solid rgba(13, 148, 136, 0.4)' };
     case 8:
+    case 9:
       return { background: 'linear-gradient(135deg, #06b6d4, #0891b2)', color: '#ffffff', border: '1px solid rgba(6, 182, 212, 0.4)' };
     default:
       return { background: 'linear-gradient(135deg, #64748b, #475569)', color: '#ffffff', border: '1px solid rgba(100, 116, 139, 0.4)' };

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CalendarDays, ShieldCheck, User, Users, Calendar, LogOut } from 'lucide-react';
+import { CalendarDays, ShieldCheck, User, Users, Calendar, LogOut, HardHat, UserPlus, Globe } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import defaultLogo from '../../assets/Logo4.png';
 import ModalCalendarioCliente from '../../portals/AgenteMarket/Cliente/ModalCalendarioCliente';
@@ -11,6 +11,8 @@ import BotonChats from './BotonChats';
 import MobileBottomNav from './MobileBottomNav';
 import axios from 'axios';
 import { NOMBRES_ROLES } from '../../utils/roles';
+import { esTecnicoRed, esContratista, cotizaEnRed } from '../../utils/entorno';
+import { mostrarAviso, confirmarAccion, pedirTexto } from '../../utils/dialogos';
 import '../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import '../../styles/Shared/EncabezadoMovil.css';
 
@@ -80,11 +82,13 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
     const role = Number(authUser.role_id);
     if (role === 2) {
       navigate('/VistaTecnico');
-    } else if (role === 6 || role === 8) {
+    } else if (esTecnicoRed(authUser)) {
+      // El técnico de cuadrilla (8) no ve la red: su inicio es el tablero
+      const vista = cotizaEnRed(authUser) ? 'mercado' : 'tablero';
       if (onTabChange) {
-        onTabChange('mercado');
+        onTabChange(vista);
       } else {
-        navigate('/mercado-trabajos', { state: { view: 'mercado' } });
+        navigate('/mercado-trabajos', { state: { view: vista } });
       }
     } else {
       navigate('/');
@@ -92,6 +96,34 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
   };
 
   const isRol2 = Number(authUser?.role_id) === 2;
+  const rolTecnico = Number(authUser?.role_id);
+
+  // Técnico independiente (6): pide unirse a una cuadrilla con el código del contratista
+  const unirmeACuadrilla = async () => {
+    const codigo = await pedirTexto('Escribe el código de la cuadrilla. Si el contratista te acepta, recibirás los trabajos que te asigne y dejarás de cotizar por tu cuenta. Tus calificaciones se conservan.');
+    if (!codigo?.trim()) return;
+    try {
+      const { data } = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cuadrilla/unirme`, { codigo: codigo.trim() });
+      mostrarAviso(data.message, 'success');
+    } catch (e) {
+      mostrarAviso(e.response?.data?.error || 'No se pudo enviar tu solicitud.', 'error');
+    }
+  };
+
+  // Técnico de cuadrilla (8): pide acceso a la red (rol 9) para trabajar también por su cuenta
+  const pedirAccesoRed = async () => {
+    const ok = await confirmarAccion(
+      'Con el acceso a la red, además de los trabajos de tu contratista, podrás ver el Mercado y cotizar por tu cuenta. Tiene un costo extra. ¿Quieres solicitarlo?',
+      { titulo: 'Acceso a la red', confirmar: 'Sí, solicitarlo', peligro: false }
+    );
+    if (!ok) return;
+    try {
+      const { data } = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cuadrilla/solicitar-red`);
+      mostrarAviso(data.message, 'success');
+    } catch (e) {
+      mostrarAviso(e.response?.status === 429 ? 'Ya enviaste esta solicitud. Te contactaremos pronto.' : (e.response?.data?.error || 'No se pudo enviar tu solicitud.'), 'error');
+    }
+  };
 
   const isPerfilActive = currentPath === '/mi-perfil' || currentPath === '/profile';
   const isInicioActive = !isPerfilActive && (activeTab === 'inicio' || currentPath === '/vistatecnico');
@@ -179,17 +211,20 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
               </button>
             </>
           ) : (
-            /* Menú para Técnicos Independientes de la Red (Roles 6 y 8): no tienen pantalla de inicio */
+            /* Menú para los Técnicos de la Red (Roles 6, 7 y 8): no tienen pantalla de inicio */
             <>
-              <button 
-                type="button" 
-                className={`vcp-nav-btn ${isMercadoActive ? 'active' : ''}`}
-                onClick={() => handleSelectTab('mercado')}
-                title="Mercado de solicitudes"
-              >
-                <span className="vcp-tab-full">MERCADO (SOLICITUDES)</span>
-                <span className="vcp-tab-short">MERCADO</span>
-              </button>
+              {/* El técnico de cuadrilla (8) no ve la red */}
+              {cotizaEnRed(authUser) && (
+                <button 
+                  type="button" 
+                  className={`vcp-nav-btn ${isMercadoActive ? 'active' : ''}`}
+                  onClick={() => handleSelectTab('mercado')}
+                  title="Mercado de solicitudes"
+                >
+                  <span className="vcp-tab-full">MERCADO (SOLICITUDES)</span>
+                  <span className="vcp-tab-short">MERCADO</span>
+                </button>
+              )}
 
               <button 
                 type="button" 
@@ -200,6 +235,17 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
                 <span className="vcp-tab-full">TABLERO DE TRABAJOS{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
                 <span className="vcp-tab-short">TABLERO{liveAcceptedCount > 0 ? ` (${liveAcceptedCount})` : ''}</span>
               </button>
+              {esContratista(authUser) && (
+                <button
+                  type="button"
+                  className={`vcp-nav-btn ${currentPath === '/mi-cuadrilla' ? 'active' : ''}`}
+                  onClick={() => navigate('/mi-cuadrilla')}
+                  title="Mi cuadrilla"
+                >
+                  <span className="vcp-tab-full">MI CUADRILLA</span>
+                  <span className="vcp-tab-short">CUADRILLA</span>
+                </button>
+              )}
               {/* "Mis clientes" vive en el menú del perfil */}
             </>
           )}
@@ -288,7 +334,8 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
             >
               <User size={16} /> Mi Perfil
             </button>
-            {!isRol2 && (
+            {/* El técnico de cuadrilla (8) no tiene clientes propios: son de su contratista */}
+            {!isRol2 && rolTecnico !== 8 && (
               <button
                 type="button"
                 className={`tecnico-dropdown-item ${isUsuariosActive ? 'active' : ''}`}
@@ -298,6 +345,54 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
                 }}
               >
                 <Users size={16} /> Mis clientes{liveUsersCount > 0 ? ` (${liveUsersCount})` : ''}
+              </button>
+            )}
+            {esContratista(authUser) && (
+              <>
+                <button
+                  type="button"
+                  className={`tecnico-dropdown-item ${currentPath === '/mi-cuadrilla' ? 'active' : ''}`}
+                  onClick={() => {
+                    setProfileDropdownOpen(false);
+                    navigate('/mi-cuadrilla');
+                  }}
+                >
+                  <HardHat size={16} /> Mi cuadrilla
+                </button>
+                <button
+                  type="button"
+                  className={`tecnico-dropdown-item ${currentPath === '/sala-espera-tecnicos' ? 'active' : ''}`}
+                  onClick={() => {
+                    setProfileDropdownOpen(false);
+                    navigate('/sala-espera-tecnicos');
+                  }}
+                >
+                  <UserPlus size={16} /> Sala de espera
+                </button>
+              </>
+            )}
+            {rolTecnico === 6 && (
+              <button
+                type="button"
+                className="tecnico-dropdown-item"
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  unirmeACuadrilla();
+                }}
+              >
+                <HardHat size={16} /> Unirme a una cuadrilla
+              </button>
+            )}
+            {rolTecnico === 8 && (
+              <button
+                type="button"
+                className="tecnico-dropdown-item"
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  pedirAccesoRed();
+                }}
+              >
+                <Globe size={16} /> Quiero acceso a la red
               </button>
             )}
             {isRol2 && (

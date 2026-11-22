@@ -22,6 +22,8 @@ import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/AgenteMarket/Tecnico/TableroTecnico.css';
 import '../../../styles/AgenteMarket/Shared/SelectorFechaRed.css';
 import { useAuth } from '../../../context/AuthContext';
+import { cotizaEnRed } from '../../../utils/entorno';
+import PanelCuadrillaTrabajo from './PanelCuadrillaTrabajo';
 import defaultLogo from '../../../assets/Logo4.png';
 import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
 import RegisterModal from '../../../components/Auth/Register';
@@ -694,6 +696,15 @@ const MercadoTrabajos = () => {
   const { user, logoutGlobal } = useAuth();
   const authUser = user;
 
+  // Técnico de cuadrilla (8): no ve la red; su pantalla es el tablero con lo que le asigna su contratista
+  const veMercado = cotizaEnRed(authUser);
+  useEffect(() => {
+    if (!veMercado && mainView === 'mercado') {
+      setMainView('tablero');
+      setActiveTab('aceptados');
+    }
+  }, [veMercado, mainView]);
+
   // Calificar al cliente de cada trabajo terminado es obligatorio para seguir cotizando
   const [pendientesCalifCliente, setPendientesCalifCliente] = useState([]);
   const cargarPendientesCalifCliente = async () => {
@@ -1024,6 +1035,8 @@ const MercadoTrabajos = () => {
             equipo: order.equipment || '',
             // Habilidad que necesita el trabajo: { id, name, icon } o null ("No estoy seguro")
             specialty: order.specialty || null,
+            // Para el contratista: quién de su cuadrilla ya cotizó este trabajo por su cuenta
+            cotizado_por_cuadrilla: order.cotizado_por_cuadrilla || [],
             lat: rawLat,
             lng: rawLng,
             coordinates: coordsObj ? coordsObj.formatted : (order.coordinates || order.coordenadas || order.property?.coordinates || null),
@@ -1408,6 +1421,11 @@ const MercadoTrabajos = () => {
 
   const handleCancelServiceByTech = async (job) => {
     if (!job) return;
+    // Va por su contratista: él es quien cancela o manda a otro técnico
+    if (job.es_cuadrilla) {
+      Swal.fire({ icon: 'info', title: 'Trabajo de tu contratista', text: 'Si no puedes ir, avísale a tu contratista: él cancela o manda a otro técnico.', confirmButtonColor: '#f26522' });
+      return;
+    }
     const { value: reason, isConfirmed } = await Swal.fire({
       icon: 'warning',
       title: '¿Cancelar este servicio?',
@@ -2541,7 +2559,7 @@ const MercadoTrabajos = () => {
 
   const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : 'T';
   const userFullName = authUser?.name || 'TÉCNICO DE LA RED';
-  const userRole = authUser?.role_id === 6 ? 'TÉCNICO INDEPENDIENTE' : (authUser?.role_id === 8 ? 'TÉCNICO ENLACE' : 'TÉCNICO DE LA RED');
+  const userRole = ({ 6: 'TÉCNICO INDEPENDIENTE', 7: 'CONTRATISTA', 8: 'TÉCNICO DE CUADRILLA' })[Number(authUser?.role_id)] || 'TÉCNICO DE LA RED';
   const userAvatar = authUser?.avatar_url || authUser?.avatar || null;
 
   // Renderizador de Tarjetas Kanban para Trabajos Aceptados (Estilo Imagen 3)
@@ -3135,7 +3153,8 @@ const MercadoTrabajos = () => {
                                 )}
                               </div>
 
-                              {!isJobCompleted && (() => {
+                              {/* El horario lo coordina el contratista con el cliente */}
+                              {!isJobCompleted && !selectedBoardJob.es_cuadrilla && (() => {
                                 const op = oportunidadesHorario(selectedBoardJob);
                                 return (
                                   <button
@@ -3173,14 +3192,17 @@ const MercadoTrabajos = () => {
                           {!isJobCompleted && <AccesoPropiedadTecnico key={`acceso-${selectedBoardJob.id}`} job={selectedBoardJob} />}
 
                           {/* Ajuste de cotización: nuevo precio si el problema resultó más grande */}
-                          <AjusteCotizacionTecnico
-                            key={selectedBoardJob.id}
-                            job={selectedBoardJob}
-                            completado={isJobCompleted}
-                            iniciado={completedReportsCount > 0}
-                            onCambio={(res) => actualizarAjusteEnTablero(selectedBoardJob.id, res)}
-                            onCancelado={() => { setSelectedBoardJobId(null); fetchJobs(); }}
-                          />
+                          {/* El precio lo maneja el contratista: el técnico de cuadrilla no propone ajustes */}
+                          {!selectedBoardJob.es_cuadrilla && (
+                            <AjusteCotizacionTecnico
+                              key={selectedBoardJob.id}
+                              job={selectedBoardJob}
+                              completado={isJobCompleted}
+                              iniciado={completedReportsCount > 0}
+                              onCambio={(res) => actualizarAjusteEnTablero(selectedBoardJob.id, res)}
+                              onCancelado={() => { setSelectedBoardJobId(null); fetchJobs(); }}
+                            />
+                          )}
 
                           {/* Evidencias del cliente */}
                           <div className="rd-panel rd-evidencias">
@@ -3206,6 +3228,9 @@ const MercadoTrabajos = () => {
                         </div>
 
                         <div className="rd-columna">
+                          {/* Cuadrilla: quién va (el contratista asigna) o de qué contratista es el trabajo */}
+                          <PanelCuadrillaTrabajo job={selectedBoardJob} onCambio={fetchJobs} />
+
                           {/* Cliente y datos del servicio */}
                           <div className="rd-panel rd-cliente">
                             <div className="rd-cliente-persona">
@@ -4674,14 +4699,16 @@ const MercadoTrabajos = () => {
                             <Phone size={15} strokeWidth={2.4} /> Llamar
                           </button>
                         )}
-                        <button
-                          type="button"
-                          className="nv-btn-blanco nv-btn-cancelar"
-                          onClick={() => handleCancelServiceByTech(activeNavJob)}
-                          title="Cancelar asistencia a este servicio"
-                        >
-                          <X size={15} strokeWidth={2.4} /> Cancelar servicio
-                        </button>
+                        {!activeNavJob.es_cuadrilla && (
+                          <button
+                            type="button"
+                            className="nv-btn-blanco nv-btn-cancelar"
+                            onClick={() => handleCancelServiceByTech(activeNavJob)}
+                            title="Cancelar asistencia a este servicio"
+                          >
+                            <X size={15} strokeWidth={2.4} /> Cancelar servicio
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -4732,14 +4759,17 @@ const MercadoTrabajos = () => {
                       {selectedJob.is_accepted ? <Clock size={14} /> : <FileText size={14} />}
                       {selectedJob.is_accepted ? 'Coordinación & Horario' : 'Detalle & Cotización'}
                     </button>
-                    <button
-                      type="button"
-                      className={`mercado-modal-header-tab ${activeModalTab === 'chat' ? 'active' : ''}`}
-                      onClick={() => setActiveModalTab('chat')}
-                    >
-                      <MessageCircle size={14} /> Chat con el Cliente ({chatMessages.length})
-                      {lastClientMsg && <span className="mercado-tab-alert-dot" />}
-                    </button>
+                    {/* El técnico de cuadrilla no chatea con el cliente: de eso se encarga su contratista */}
+                    {!selectedJob.es_cuadrilla && (
+                      <button
+                        type="button"
+                        className={`mercado-modal-header-tab ${activeModalTab === 'chat' ? 'active' : ''}`}
+                        onClick={() => setActiveModalTab('chat')}
+                      >
+                        <MessageCircle size={14} /> Chat con el Cliente ({chatMessages.length})
+                        {lastClientMsg && <span className="mercado-tab-alert-dot" />}
+                      </button>
+                    )}
                   </div>
 
                   <button type="button" className="jm-cerrar" onClick={() => setShowQuoteModal(false)} title="Cerrar" aria-label="Cerrar">
@@ -4976,14 +5006,16 @@ const MercadoTrabajos = () => {
                                 ? 'Enviando aviso…'
                                 : (arrivalAlertSent[selectedJob.id] ? `Aviso enviado (${arrivalAlertSent[selectedJob.id]})` : 'Avisar que llegué')}
                             </button>
-                            <button
-                              type="button"
-                              className="jm-btn-suave rojo"
-                              onClick={() => handleCancelServiceByTech(selectedJob)}
-                              title="Cancelar tu asistencia y liberar la solicitud"
-                            >
-                              <X size={14} /> Cancelar servicio
-                            </button>
+                            {!selectedJob.es_cuadrilla && (
+                              <button
+                                type="button"
+                                className="jm-btn-suave rojo"
+                                onClick={() => handleCancelServiceByTech(selectedJob)}
+                                title="Cancelar tu asistencia y liberar la solicitud"
+                              >
+                                <X size={14} /> Cancelar servicio
+                              </button>
+                            )}
                           </div>
 
                           {arrivalAlertToast && (
@@ -5148,6 +5180,11 @@ const MercadoTrabajos = () => {
                   {/* ─────────────────────────────────────────────────────────────
                       CASO C: TRABAJO DISPONIBLE - VISTA DE DETALLE & COTIZACIÓN
                   ───────────────────────────────────────────────────────────── */}
+                  {!selectedJob.is_accepted && activeModalTab === 'detalle' && selectedJob.cotizado_por_cuadrilla?.length > 0 && (
+                    <div role="status" style={{ margin: '0 0 12px', padding: '10px 14px', borderRadius: 10, background: '#fff7ed', border: '1px solid #fed7aa', color: '#9a3412', fontSize: '0.9rem', fontWeight: 600 }}>
+                      👷 {selectedJob.cotizado_por_cuadrilla.join(', ')} de tu cuadrilla ya cotizó este trabajo por su cuenta.
+                    </div>
+                  )}
                   {!selectedJob.is_accepted && activeModalTab === 'detalle' && (() => {
                     // La descripción trae "[URGENCIA]: ⚡ Atención Urgente…": se muestra como etiqueta
                     const textoDesc = selectedJob.descripcion || '';

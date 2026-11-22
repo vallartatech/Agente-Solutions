@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'; 
 import axios from 'axios';
 import { useAuth } from "../../../context/AuthContext";
+import { ROLES_TECNICO_RED } from "../../../utils/entorno";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import "../../../styles/AgenteMarket/Tecnico/TrabajosTecnico.css";
@@ -44,7 +45,7 @@ const TrabajosTecnico = () => {
     }
   })();
   const effectiveRole = Number(user?.role_id ?? storedUser?.role_id ?? 0);
-  const isTecnicoRed = effectiveRole === 8 || user?.role_id === 8 || user?.role_id === '8' || storedUser?.role_id === 8;
+  const isTecnicoRed = ROLES_TECNICO_RED.includes(effectiveRole);
 
   useEffect(() => {
     // Si es técnico de la red (role 8), NO requiere materiales y se desbloquea automáticamente

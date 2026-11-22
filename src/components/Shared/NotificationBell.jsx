@@ -15,6 +15,7 @@ import {
   MessageCircle
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { ROLES_TECNICO, ROLES_CLIENTE_RED } from "../../utils/entorno";
 
 import Swal from 'sweetalert2';
 import { suscribirPushOneSignal, estaSuscritoOneSignal } from './oneSignalPush';
@@ -412,9 +413,9 @@ const NotificationBell = ({ triggerClassName = '' }) => {
       const titleLower = (notification.data?.title || notification.title || notification.titulo || notification.data?.titulo || '').toLowerCase();
 
       if (type === 'new_quote_message' || titleLower.includes('nuevo mensaje') || titleLower.includes('mensaje en la red')) {
-        if ([2, 6, 8].includes(Number(user?.role_id))) {
+        if (ROLES_TECNICO.includes(Number(user?.role_id))) {
           url = notification.data?.network_quote_id ? `/mercado-trabajos` : `/vista-cotizaciones`;
-        } else if ([3, 4, 5, 7].includes(Number(user?.role_id))) {
+        } else if ([3, ...ROLES_CLIENTE_RED].includes(Number(user?.role_id))) {
           url = '/red-autonomos';
         } else {
           url = notification.data?.url || '/vista-cotizaciones';
@@ -422,10 +423,10 @@ const NotificationBell = ({ triggerClassName = '' }) => {
       } else if (type === 'network_quote_received' || titleLower.includes('nueva cotización en la red') || titleLower.includes('cotización en la red')) {
         url = '/red-autonomos';
       } else if (type === 'network_quote_rejected' || type === 'network_quote_accepted') {
-        url = [2, 6, 8].includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
+        url = ROLES_TECNICO.includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
       } else if (type === 'work_order_scheduled' || titleLower.includes('visita de técnico') || titleLower.includes('visita programada')) {
-        url = [2, 6, 8].includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
-      } else if (type === 'technician_arrived' && (notification.data?.es_red || [4, 5, 7].includes(Number(user?.role_id)))) {
+        url = ROLES_TECNICO.includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
+      } else if (type === 'technician_arrived' && (notification.data?.es_red || ROLES_CLIENTE_RED.includes(Number(user?.role_id)))) {
         // Cliente de la Red: solo ve el aviso y abre el detalle del trabajo de su propiedad
         const woId = notification.data?.work_order_id || notification.work_order_id;
         url = woId ? `/red-autonomos?trabajo=${woId}` : '/red-autonomos';

@@ -10,7 +10,7 @@ import Header from "../../../components/Shared/Header";
 import SelectorVistas from "../../../components/Shared/SelectorVistas";
 import PanelChatLateral from "../../../components/Shared/PanelChatLateral";
 import { useAuth } from "../../../context/AuthContext";
-import { usaSelectorRed } from "../../../utils/entorno";
+import { usaSelectorRed, ROLES_TECNICO } from "../../../utils/entorno";
 import CasaLoader from "../../../components/Shared/CasaLoader";
 import AssignWorkModal from "../../../components/Modals/AssignWorkModal";
 import { 
@@ -221,7 +221,7 @@ const VistaCotizaciones = () => {
         if (session.userData.role_id === 3) {
           setEsCliente(true);
         }
-        if (session.userData.role_id === 2 || session.userData.role_id === 8) {
+        if (ROLES_TECNICO.includes(Number(session.userData.role_id))) {
           setEsTecnico(true);
         }
       }
@@ -365,7 +365,7 @@ const VistaCotizaciones = () => {
       let listaCombinada = Array.from(mapa.values());
 
       // FILTRO PARA TÉCNICOS: Solo ver sus propuestas al Admin, cotizaciones de la Red y solicitudes de recotización
-      if (roleId === 2 || roleId === 8) {
+      if (ROLES_TECNICO.includes(Number(roleId))) {
         listaCombinada = listaCombinada.filter(c => 
           c.is_network_quote ||
           c.created_by_role === 'Técnico de la Red' ||

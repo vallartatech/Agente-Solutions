@@ -9,7 +9,8 @@ export const NOMBRES_ROLES = {
   5: "GESTOR INMOBILIARIO",
   6: "TÉCNICO INDEPENDIENTE",
   7: "CONTRATISTA / LÍDER",
-  8: "TÉCNICO DE CUADRILLA"
+  8: "TÉCNICO DE CUADRILLA",
+  9: "TÉCNICO DE CUADRILLA + RED"
 };
 
 export const nombreRol = (roleId) => NOMBRES_ROLES[Number(roleId)] || "USUARIO";

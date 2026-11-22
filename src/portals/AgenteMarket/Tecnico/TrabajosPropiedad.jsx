@@ -16,6 +16,7 @@ import {
   Plus, Trash2, Upload, Calculator, Calendar, MessageCircle, Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
+import { ROLES_TECNICO_RED } from "../../../utils/entorno";
 import { reportarUbicacion } from "../../../components/Shared/ubicacionService";
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
@@ -41,7 +42,7 @@ const TrabajoPropiedad = () => {
     }
   })();
   const effectiveRole = Number(user?.role_id ?? storedUser?.role_id ?? 0);
-  const isTecnicoRed = effectiveRole === 8 || user?.role_id === 8 || user?.role_id === '8' || storedUser?.role_id === 8;
+  const isTecnicoRed = ROLES_TECNICO_RED.includes(effectiveRole);
   const puedeIniciarReporte = isTecnicoRed || materialesConfirmados;
 
   // --- ESTADOS PARA CONSULTA DE LEVANTAMIENTO ---

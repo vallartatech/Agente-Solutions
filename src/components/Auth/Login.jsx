@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import "../../styles/Auth/LoginAgente.css";
 import { useAuth } from "../../context/AuthContext";
+import { esTecnicoRed, cotizaEnRed, estaSinCuadrilla } from "../../utils/entorno";
 import {
   Mail,
   Lock,
@@ -416,12 +417,14 @@ const LoginAgente = () => {
     if (user) {
       const role = Number(user.role_id);
       const volverA = role === 4 ? tomarVolverA() : null;
-      if (volverA) navigate(volverA, { replace: true });
+      if (estaSinCuadrilla(user)) navigate("/sin-cuadrilla", { replace: true });
+      else if (volverA) navigate(volverA, { replace: true });
       else if (user.perfil_profesional?.bloqueado) navigate("/completar-perfil");
       else if (role === 0 || role === 1) navigate("/VistaRoot");
-      else if (role === 4 || role === 5 || role === 7) navigate("/VistaMarket");
+      else if (role === 4 || role === 5) navigate("/VistaMarket");
       else if (role === 2) navigate("/VistaTecnico");
-      else if (role === 6 || role === 8) navigate("/mercado-trabajos");
+      // El técnico de cuadrilla (8) no ve la red: entra a su tablero
+      else if (esTecnicoRed(user)) navigate("/mercado-trabajos", cotizaEnRed(user) ? undefined : { state: { view: "tablero" } });
       else if (role === 3) navigate("/propiedades");
     }
   }, [user, navigate]);
@@ -646,7 +649,11 @@ const LoginAgente = () => {
       setIsLoading(false);
       // Redirecciones y mensajes personalizados según el rol
       const roleNum = Number(role_id);
-      if (res.data.perfil_profesional?.bloqueado) {
+      if (res.data.sin_cuadrilla) {
+        // Ya no está en una cuadrilla: se une a otra o pide ser independiente
+        setMensaje(res.data.message || 'Ya no perteneces a una cuadrilla.');
+        setTimeout(() => navigate("/sin-cuadrilla"), 1000);
+      } else if (res.data.perfil_profesional?.bloqueado) {
         // Técnico nuevo de la red: primero completa su perfil y espera la validación
         setMensaje(`¡Hola ${first_name}! Antes de empezar, completa tu perfil profesional...`);
         setTimeout(() => navigate("/completar-perfil"), 1000);
@@ -673,10 +680,13 @@ const LoginAgente = () => {
         setMensaje(`¡Bienvenido TÉCNICO INDEPENDIENTE ${first_name}! Abriendo el Mercado de Trabajos...`);
         setTimeout(() => navigate("/mercado-trabajos"), 1000);
       } else if (roleNum === 7) {
-        setMensaje(`¡Bienvenido CONTRATISTA ${first_name}! Entrando al panel de cuadrillas...`);
-        setTimeout(() => navigate("/VistaMarket"), 1000);
+        setMensaje(`¡Bienvenido CONTRATISTA ${first_name}! Abriendo el Mercado de Trabajos...`);
+        setTimeout(() => navigate("/mercado-trabajos"), 1000);
       } else if (roleNum === 8) {
-        setMensaje(`¡Bienvenido TÉCNICO DE CUADRILLA ${first_name}! Abriendo el Mercado de Trabajos...`);
+        setMensaje(`¡Bienvenido TÉCNICO DE CUADRILLA ${first_name}! Abriendo tus trabajos...`);
+        setTimeout(() => navigate("/mercado-trabajos", { state: { view: "tablero" } }), 1000);
+      } else if (roleNum === 9) {
+        setMensaje(`¡Bienvenido ${first_name}! Abriendo el Mercado de Trabajos...`);
         setTimeout(() => navigate("/mercado-trabajos"), 1000);
       } else {
         setMensaje(`Error: Tu usuario (Rol ${roleNum}) no tiene permisos válidos.`);
