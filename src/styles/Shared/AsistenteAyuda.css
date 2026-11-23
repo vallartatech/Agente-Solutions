@@ -152,6 +152,58 @@
 }
 .asis-entrada button:disabled { opacity: 0.45; cursor: default; }
 
+.asis-mostrar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 7px 12px;
+  border: none;
+  border-radius: 16px;
+  background: #f26522;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.asis-mostrar:hover { background: #ea580c; }
+
+/* Marco que ilumina el botón señalado (se dibuja encima de la pantalla, sin bloquear toques) */
+.asis-senal {
+  position: fixed;
+  z-index: 1000005;
+  pointer-events: none;
+  border: 3px solid #f26522;
+  border-radius: 12px;
+  animation: asis-latido 1.1s ease-in-out infinite;
+}
+.asis-senal-etiqueta {
+  position: fixed;
+  z-index: 1000005;
+  pointer-events: none;
+  transform: translateX(-50%);
+  background: #f26522;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 14px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  animation: asis-brinco 1.1s ease-in-out infinite;
+}
+@keyframes asis-latido {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(242, 101, 34, 0.55); }
+  50% { box-shadow: 0 0 0 10px rgba(242, 101, 34, 0); }
+}
+@keyframes asis-brinco {
+  0%, 100% { margin-top: 0; }
+  50% { margin-top: -4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .asis-senal, .asis-senal-etiqueta { animation: none; }
+}
+
 .asis-aviso { font-size: 11px; color: var(--asis-tenue); text-align: center; padding: 0 12px 8px; }
 
 /* Celular: arriba de la barra de navegación de abajo (62px) */

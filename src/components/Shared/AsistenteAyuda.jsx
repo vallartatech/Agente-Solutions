@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Sparkles, X, Send, RotateCcw } from 'lucide-react';
+import { Sparkles, X, Send, RotateCcw, MousePointerClick } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { BOTONES_AYUDA, senalarBoton } from './senalarBoton';
 import '../../styles/Shared/AsistenteAyuda.css';
 
 // Asistente de ayuda con IA: explica cómo usar la app. Solo el Cliente particular (rol 4) por ahora.
@@ -31,6 +32,13 @@ const leerConversacion = () => {
   }
 };
 
+// La IA marca el botón a señalar con [[señalar:id]]: se quita del texto y se vuelve un botón "Muéstrame"
+const ETIQUETA = /\[\[\s*se[ñn]alar\s*:\s*([a-z-]+)\s*\]\]/gi;
+const separarSenales = (texto) => {
+  const ids = [...texto.matchAll(ETIQUETA)].map((m) => m[1].toLowerCase()).filter((id) => BOTONES_AYUDA[id]);
+  return { limpio: texto.replace(ETIQUETA, '').trim(), ids: [...new Set(ids)].slice(0, 2) };
+};
+
 // Negritas (**texto**), listas y saltos de línea, sin meter HTML
 const conNegritas = (linea) =>
   linea.split(/(\*\*[^*]+\*\*)/g).map((parte, i) =>
@@ -51,6 +59,7 @@ const TextoFormateado = ({ texto }) => (
 const AsistenteAyuda = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [abierto, setAbierto] = useState(false);
   const [mensajes, setMensajes] = useState(leerConversacion);
   const [texto, setTexto] = useState('');
@@ -78,7 +87,8 @@ const AsistenteAyuda = () => {
     setEnviando(true);
     try {
       // El saludo es local: al backend va desde la primera pregunta del usuario
-      const conversacion = nuevos.filter((m) => !m.error);
+      // Los avisos de error y los de "no encontré el botón" son locales: no van a la IA
+      const conversacion = nuevos.filter((m) => !m.error && !m.local);
       const inicio = conversacion.findIndex((m) => m.rol === 'user');
       let historial = conversacion.slice(inicio).slice(-MAX_MENSAJES);
       if (historial[0]?.rol !== 'user') historial = historial.slice(1);
@@ -94,6 +104,21 @@ const AsistenteAyuda = () => {
       setTexto(limpia);
     } finally {
       setEnviando(false);
+    }
+  };
+
+  // Cierra el chat para que se vea la pantalla, lleva al botón y lo ilumina
+  const mostrar = async (id) => {
+    setAbierto(false);
+    const encontrado = await senalarBoton(id, navigate, location.pathname);
+    if (!encontrado) {
+      const { texto: nombre } = BOTONES_AYUDA[id];
+      setMensajes((prev) => [...prev, {
+        rol: 'assistant',
+        texto: `No encontré el botón **${nombre}** en esta pantalla. Puede que todavía no aparezca (por ejemplo, si aún no tienes publicaciones o técnicos). Revisa los pasos de arriba o pregúntame de otra forma.`,
+        local: true,
+      }]);
+      setAbierto(true);
     }
   };
 
@@ -120,11 +145,22 @@ const AsistenteAyuda = () => {
           </div>
 
           <div className="asis-mensajes">
-            {mensajes.map((m, i) => (
-              <div key={i} className={`asis-burbuja ${m.rol === 'user' ? 'asis-usuario' : 'asis-ia'} ${m.error ? 'asis-error' : ''}`}>
-                {m.rol === 'user' ? m.texto : <TextoFormateado texto={m.texto} />}
-              </div>
-            ))}
+            {mensajes.map((m, i) => {
+              if (m.rol === 'user') {
+                return <div key={i} className="asis-burbuja asis-usuario">{m.texto}</div>;
+              }
+              const { limpio, ids } = separarSenales(m.texto);
+              return (
+                <div key={i} className={`asis-burbuja asis-ia ${m.error ? 'asis-error' : ''}`}>
+                  <TextoFormateado texto={limpio} />
+                  {ids.map((id) => (
+                    <button type="button" key={id} className="asis-mostrar" onClick={() => mostrar(id)}>
+                      <MousePointerClick size={15} /> Muéstrame: {BOTONES_AYUDA[id].texto}
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
             {soloSaludo && (
               <div className="asis-sugerencias">
                 {SUGERENCIAS.map((s) => (

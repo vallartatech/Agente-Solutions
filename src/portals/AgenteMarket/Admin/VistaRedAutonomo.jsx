@@ -783,6 +783,7 @@ const VistaRedAutonomo = () => {
               aria-selected={activeTab === 'en_red'}
               className={activeTab === 'en_red' ? 'activo' : ''}
               onClick={() => setActiveTab('en_red')}
+              data-ayuda="pestana-en-red"
             >
               <Globe size={15} /> En red <span>{enRedJobs.length}</span>
             </button>
@@ -792,6 +793,7 @@ const VistaRedAutonomo = () => {
               aria-selected={activeTab === 'aceptados'}
               className={activeTab === 'aceptados' ? 'activo' : ''}
               onClick={() => setActiveTab('aceptados')}
+              data-ayuda="pestana-aceptados"
             >
               <Briefcase size={15} /> Aceptados <span>{aceptadosJobs.length}</span>
             </button>
@@ -802,6 +804,7 @@ const VistaRedAutonomo = () => {
             <button
               type="button"
               className="red-publicar-btn"
+              data-ayuda="publicar-problema"
               onClick={() => { setFiltroAbierto(false); setShowModal(true); }}
             >
               <Plus size={17} strokeWidth={2.8} /> Publicar problema
@@ -980,7 +983,7 @@ const VistaRedAutonomo = () => {
                           <Trash2 size={14} />
                         </button>
                       )}
-                      <span className={`rj-btn-ver ${job.is_accepted ? 'verde' : ''}`}>
+                      <span className={`rj-btn-ver ${job.is_accepted ? 'verde' : ''}`} data-ayuda="ver-ofertas">
                         {job.is_accepted ? 'Coordinar' : 'Ver ofertas'}
                         <ChevronRight size={14} />
                       </span>

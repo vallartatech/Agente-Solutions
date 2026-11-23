@@ -570,6 +570,7 @@ const VistaClienteParticular = () => {
             className="vcp-panel-edit-text-btn"
             onClick={() => setShowModalEditarPropiedad(true)}
             title="Editar información y fachada de esta propiedad"
+            data-ayuda="editar-propiedad"
           >
             <Edit3 size={13} />
             <span>EDITAR</span>
@@ -581,6 +582,7 @@ const VistaClienteParticular = () => {
           className={`vcp-info-toggle ${isInfoOpen ? 'is-open' : ''}`}
           onClick={() => setIsInfoOpen(v => !v)}
           aria-expanded={isInfoOpen}
+          data-ayuda="info-propiedad"
           aria-label={isInfoOpen ? 'Ocultar información de la propiedad' : 'Ver información de la propiedad'}
           title={isInfoOpen ? 'Ocultar información' : 'Ver información'}
         >
@@ -658,7 +660,7 @@ const VistaClienteParticular = () => {
       </div>
 
       {/* ── 2. MIDDLE: TABLERO DE CONTROL WIDGET ── */}
-      <div className="vcp-tablero-card">
+      <div className="vcp-tablero-card" data-ayuda="tablero-control">
         <div className="vcp-tablero-header">
           <div className="vcp-tablero-icon-wrap">
             <LayoutDashboard size={18} />
@@ -723,6 +725,7 @@ const VistaClienteParticular = () => {
           onClick={() => setShowModalSolicitarServicio(true)}
           disabled={!hasProperties}
           title="Crear o Solicitar un Nuevo Servicio"
+          data-ayuda="solicitar-servicio"
         >
           <Plus size={17} /> SOLICITAR SERVICIO
         </button>
@@ -842,7 +845,7 @@ const VistaClienteParticular = () => {
                 <p className="vcp-empty-text">
                   Registra tu casa, departamento o local para solicitar servicios, ver sus levantamientos y llevar el control de todo en un solo lugar.
                 </p>
-                <button type="button" className="vcp-empty-btn" onClick={handleAgregarPropiedad}>
+                <button type="button" className="vcp-empty-btn" onClick={handleAgregarPropiedad} data-ayuda="agregar-propiedad">
                   <Plus size={18} /> AGREGAR PROPIEDAD
                 </button>
               </div>
@@ -868,6 +871,7 @@ const VistaClienteParticular = () => {
                       className="vcp-title-edit-btn"
                       onClick={() => setShowModalEditarPropiedad(true)}
                       title="Editar nombre y fachada de esta propiedad"
+                      data-ayuda="editar-propiedad"
                     >
                       <Edit3 size={16} />
                       <span>EDITAR</span>
@@ -902,6 +906,7 @@ const VistaClienteParticular = () => {
                     else handleAgregarPropiedad();
                   }}
                   title={hasProperties ? 'Crear o Solicitar un Nuevo Servicio' : 'Primero agrega una propiedad para solicitar servicios'}
+                  data-ayuda="solicitar-servicio"
                 >
                   <Plus size={14} />
                   <span>SERVICIO</span>
@@ -971,6 +976,7 @@ const VistaClienteParticular = () => {
                   className={`vcp-thumb-add-tile ${currentPropsCount >= maxAllowed ? 'is-limit-reached' : ''}`}
                   title={currentPropsCount >= maxAllowed ? (sinVentasDigitales ? "Límite de propiedades alcanzado" : "Límite de propiedades alcanzado - Comprar espacio ($79.99 c/u)") : "Registrar / Agregar Propiedad"}
                   onClick={handleAgregarPropiedad}
+                  data-ayuda="agregar-propiedad"
                 >
                   {currentPropsCount >= maxAllowed ? (
                     <div className="vcp-thumb-lock-wrap">

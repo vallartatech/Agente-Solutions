@@ -165,6 +165,7 @@ const ClienteHeader = ({ activeModule }) => {
               className={`vcp-nav-btn ${isReportesActive || isCotizacionesActive || isLevantamientoActive || currentPath.startsWith('/propiedades') ? 'active' : ''}`}
               onClick={() => navigate('/propiedades')}
               title="Detalles de propiedad: propiedades, reportes, cotizaciones y levantamientos"
+              data-ayuda="menu-propiedades"
             >
               <ClipboardList size={18} className="vcp-nav-icon" />
               <span className="vcp-nav-text">DETALLES DE PROPIEDAD</span>
@@ -211,6 +212,7 @@ const ClienteHeader = ({ activeModule }) => {
             className={`vcp-nav-btn ${isMercadoActive ? 'active' : ''}`}
             onClick={() => navigate('/red-autonomos')}
             title="Mercado"
+            data-ayuda="menu-mercado"
           >
             <Globe size={18} className="vcp-nav-icon" />
             <span className="vcp-nav-text">MERCADO</span>
@@ -224,6 +226,7 @@ const ClienteHeader = ({ activeModule }) => {
               type="button"
               className="vcp-nav-icon-btn"
               title="Abrir Calendario y Citas"
+              data-ayuda="calendario"
               onClick={() => setMostrarCalendario(true)}
             >
               <CalendarDays size={18} strokeWidth={2.2} />
@@ -241,6 +244,7 @@ const ClienteHeader = ({ activeModule }) => {
             }}
             title="Opciones de sesión"
             aria-label="Perfil"
+            data-ayuda="menu-perfil"
           >
             {userAvatar ? (
               <img src={userAvatar} alt="Avatar" className="vcp-avatar-img" />

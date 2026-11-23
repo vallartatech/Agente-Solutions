@@ -123,6 +123,7 @@ const MisTecnicos = () => {
           className={`mt-btn ${esFav ? 'mt-btn-fav-activo' : ''} ${conDetalles ? '' : 'mt-btn-primario'}`}
           disabled={ocupado || (!esFav && lleno)}
           onClick={() => cambiarEstado(t, esFav ? null : 'favorito')}
+          data-ayuda="agregar-favorito"
           title={!esFav && lleno ? `Ya tienes ${limite} favoritos: quita uno para agregar a otro` : undefined}
         >
           <Star size={16} fill={esFav ? 'currentColor' : 'none'} />

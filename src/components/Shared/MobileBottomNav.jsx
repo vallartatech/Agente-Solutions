@@ -504,6 +504,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         onClick={() => navigate(unificarVistas ? '/propiedades' : '/reportes-globales')}
         title={unificarVistas ? 'Detalles de propiedad' : 'Reportes'}
         aria-label={unificarVistas ? 'Detalles de propiedad' : 'Reportes'}
+        data-ayuda={unificarVistas ? 'menu-propiedades' : undefined}
       >
         <FileText size={22} className="vcp-mobile-nav-icon" />
           <span className="vcp-mobile-nav-text">{unificarVistas ? 'Detalles' : 'Reportes'}</span>
@@ -555,6 +556,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         }}
         title="Mercado / Red"
         aria-label="Mercado / Red"
+        data-ayuda="menu-mercado"
       >
         <Globe size={22} className="vcp-mobile-nav-icon" />
           <span className="vcp-mobile-nav-text">Mercado</span>
