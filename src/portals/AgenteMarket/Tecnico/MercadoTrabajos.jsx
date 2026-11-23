@@ -9,7 +9,7 @@ import Swal from 'sweetalert2';
 import { 
   MapPin, DollarSign, Clock, Send, User, FileText, Maximize2, Image as ImageIcon, 
   X, List, Map as MapIcon, MessageCircle, AlertCircle, CheckCircle2, Phone, Calendar, 
-  ChevronLeft, ChevronRight, ExternalLink, CalendarDays, Search, LogOut, Briefcase, Layers, ShieldCheck,
+  ChevronLeft, ChevronRight, ExternalLink, CalendarDays, Search, LogOut, Briefcase, ShieldCheck,
   RotateCw, AlertTriangle, Users, UserPlus, PhoneCall, Mail, Star, Award, History,
   Home, Car, Navigation, Wrench, Camera, Plus, Trash2, Check, ArrowRight, Play, Eye, Sparkles, Lock, Zap,
   Sun, Moon, Globe, SlidersHorizontal, ChevronDown, ChevronUp, Maximize, Minimize,
@@ -3844,7 +3844,7 @@ const MercadoTrabajos = () => {
               </div>
             </div>
 
-            {/* Buscador + filtro: el filtro elige qué ver y filtra por fecha, hora y trabajo */}
+            {/* Buscador + filtro: el filtro solo filtra por fecha, hora y trabajo */}
             <div className="red-buscador" ref={filtroRef}>
               <label className="red-search">
                 <Search size={15} />
@@ -3902,33 +3902,6 @@ const MercadoTrabajos = () => {
                         Limpiar todo
                       </button>
                     )}
-                  </div>
-
-                  {/* Qué ver: solicitudes o trabajos aceptados */}
-                  <div className="mercado-filter-group">
-                    <label className="mercado-filter-group-label">
-                      <Layers size={12} /> Ver
-                    </label>
-                    <div className="mercado-filter-chips">
-                      <button
-                        type="button"
-                        className={`mercado-filter-chip ${activeTab === 'disponibles' ? 'active' : ''}`}
-                        onClick={() => {
-                          setActiveTab('disponibles');
-                          setActiveNavJob(null);
-                          setNavDirections(null);
-                        }}
-                      >
-                        Solicitudes ({filteredNetworkJobs.length})
-                      </button>
-                      <button
-                        type="button"
-                        className={`mercado-filter-chip ${activeTab === 'aceptados' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('aceptados')}
-                      >
-                        Aceptados ({filteredAcceptedJobs.length})
-                      </button>
-                    </div>
                   </div>
 
                   {/* 1. FILTRO FECHA */}
@@ -4029,6 +4002,32 @@ const MercadoTrabajos = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* En red / Aceptados: botones a la vista, como en el cliente (antes estaban dentro del filtro) */}
+            <div className="red-vista-botones" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'disponibles'}
+                className={activeTab === 'disponibles' ? 'activo' : ''}
+                onClick={() => {
+                  setActiveTab('disponibles');
+                  setActiveNavJob(null);
+                  setNavDirections(null);
+                }}
+              >
+                <Globe size={15} /> En red <span>{filteredNetworkJobs.length}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'aceptados'}
+                className={activeTab === 'aceptados' ? 'activo' : ''}
+                onClick={() => setActiveTab('aceptados')}
+              >
+                <Briefcase size={15} /> Aceptados <span>{filteredAcceptedJobs.length}</span>
+              </button>
             </div>
 
             {/* Lista de Trabajos con Scroll */}
