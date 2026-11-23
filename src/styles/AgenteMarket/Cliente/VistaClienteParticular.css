@@ -3553,8 +3553,30 @@
   border-radius: 999px;
 }
 .vcp-ts-fila-flecha { color: #94a3b8; flex-shrink: 0; }
-.vcp-ts-fila.is-agregar { border-style: dashed; }
-.vcp-ts-fila.is-limite { opacity: 0.75; }
+/* "Agregar propiedad" va suelto sobre la foto: mismo vidrio gris oscuro que "Tablero global" */
+.vcp-ts-fila.is-agregar {
+  padding: 12px 14px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.82) 0%, rgba(10, 15, 28, 0.72) 50%, rgba(15, 23, 42, 0.80) 100%);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1.5px dashed rgba(255, 255, 255, 0.35);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+}
+.vcp-ts-fila.is-agregar:hover {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(10, 15, 28, 0.82) 50%, rgba(15, 23, 42, 0.88) 100%);
+}
+.vcp-ts-fila.is-agregar .vcp-ts-fila-foto.is-icono {
+  width: 40px;
+  height: 40px;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+.vcp-ts-fila.is-agregar .vcp-ts-nota { color: #cbd5e1; }
+/* En el límite del plan se nota, pero sigue legible (no se desvanece sobre la foto) */
+.vcp-ts-fila.is-limite .vcp-ts-fila-foto.is-icono { color: #fbbf24; }
 
 .vcp-subir-btn {
   display: flex;

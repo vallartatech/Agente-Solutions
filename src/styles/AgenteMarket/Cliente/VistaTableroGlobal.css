@@ -199,6 +199,112 @@
   font-size: 0.9rem;
   color: #0f172a;
 }
+/* Buscador + botón Filtros */
+.tg-barra-busqueda {
+  display: flex;
+  gap: 8px;
+}
+.tg-barra-busqueda .tg-buscador { flex: 1; min-width: 0; }
+.tg-borrar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.08);
+  color: #475569;
+  cursor: pointer;
+}
+.tg-btn-filtros {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.tg-btn-filtros:hover { background: #fff; }
+.tg-btn-filtros.abierto,
+.tg-btn-filtros.con-activos { color: #f26522; border-color: rgba(242, 101, 34, 0.35); }
+.tg-btn-filtros.abierto { background: #fff1e8; }
+.tg-btn-filtros-n {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #f26522;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  box-sizing: border-box;
+}
+
+/* Filtros activos (con el panel cerrado) */
+.tg-activos { display: flex; flex-wrap: wrap; gap: 6px; }
+.tg-activo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #c2410c;
+  background: #fff1e8;
+  border: 1px solid rgba(242, 101, 34, 0.25);
+}
+.tg-activo:hover { background: #ffe4d1; }
+
+/* Panel de opciones */
+.tg-opciones {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  animation: tgAbre 0.22s ease-out;
+}
+@keyframes tgAbre {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+.tg-opciones-pie {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tg-opciones-pie .tg-limpiar { margin-right: auto; }
+.tg-aplicar {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #fff;
+  background: #f26522;
+}
+.tg-aplicar:hover { background: #ea580c; }
+
 .tg-filtro-fila { display: flex; flex-direction: column; gap: 6px; }
 .tg-filtro-label {
   display: flex;
@@ -396,6 +502,48 @@
   border: 1.5px solid transparent;
 }
 .tg-prop.activo { border-color: #f26522; background: rgba(255, 255, 255, 0.95); }
+/* Las tarjetas solo informan: sin cursor de mano ni efecto al pasar el mouse */
+div.tg-prop { cursor: default; box-sizing: border-box; }
+/* Chips y botones del panel: sin el contorno negro del navegador al tocarlos */
+.tg-chip:focus, .tg-activo:focus, .tg-btn-filtros:focus, .tg-estado:focus { outline: none; }
+.tg-chip:focus-visible, .tg-activo:focus-visible, .tg-btn-filtros:focus-visible, .tg-estado:focus-visible {
+  outline: 2px solid rgba(242, 101, 34, 0.5);
+  outline-offset: 2px;
+}
+.tg-prop-check { flex-shrink: 0; color: #f26522; }
+/* Sin el contorno negro del navegador al tocar; con teclado sí se marca */
+.tg-prop:focus { outline: none; }
+.tg-prop:focus-visible { outline: 2px solid rgba(242, 101, 34, 0.5); outline-offset: 2px; }
+
+/* Panel único de filtros (búsqueda + fecha/tipo + propiedades) */
+.tg-panel-filtros {
+  padding: 14px;
+  gap: 10px;
+}
+.tg-separador {
+  height: 1px;
+  margin: 4px 0 2px;
+  background: rgba(15, 23, 42, 0.08);
+}
+@media (min-width: 1101px) {
+  /* Barra lateral fija: si los filtros abiertos no caben, se desplaza por dentro */
+  .tg-panel-filtros {
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+}
+.tg-pista { font-size: 0.74rem; font-weight: 600; color: #64748b; }
+.tg-prop-todas-ico {
+  display: grid;
+  place-items: center;
+  flex: 0 0 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #fff;
+}
+.tg-prop.tg-prop-todas.activo .tg-prop-todas-ico { background: #f26522; }
 .tg-prop img {
   width: 52px;
   height: 52px;
@@ -433,7 +581,8 @@
 /* ── Tablet / celular ── */
 @media (max-width: 1100px) {
   .tg-columnas { grid-template-columns: 1fr; }
-  .tg-resumen { position: static; }
+  /* Una columna: el filtro por propiedad va antes de la lista de trabajos */
+  .tg-resumen { position: static; order: -1; }
   .tg-estados { grid-template-columns: repeat(3, 1fr); }
 }
 
@@ -454,6 +603,12 @@
   .tg-trabajo { padding: 10px; gap: 10px; }
 }
 
+@media (max-width: 420px) {
+  /* En pantallas angostas el botón queda solo con ícono y número */
+  .tg-btn-filtros span:not(.tg-btn-filtros-n) { display: none; }
+  .tg-btn-filtros { padding: 0 12px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .tg-girando { animation: none; }
+  .tg-girando, .tg-opciones { animation: none; }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Sparkles, X, Send, RotateCcw, MousePointerClick } from 'lucide-react';
+import { Sparkles, X, ArrowUp, RotateCcw, MousePointerClick, Home, Wrench, FileCheck2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BOTONES_AYUDA, senalarBoton } from './senalarBoton';
 import '../../styles/Shared/AsistenteAyuda.css';
@@ -18,10 +18,12 @@ const SALUDO = {
   texto: '¡Hola! Soy tu asistente. Te ayudo a usar la app: registrar tu propiedad, pedir un servicio, elegir una cotización y más. ¿Qué necesitas?',
 };
 const SUGERENCIAS = [
-  '¿Cómo registro mi propiedad?',
-  '¿Cómo pido un servicio?',
-  '¿Cómo acepto una cotización?',
+  { texto: '¿Cómo registro mi propiedad?', icono: Home },
+  { texto: '¿Cómo pido un servicio?', icono: Wrench },
+  { texto: '¿Cómo acepto una cotización?', icono: FileCheck2 },
 ];
+const MAX_CARACTERES = 1000;
+const ALTO_MAX_ENTRADA = 132; // ~5 renglones; después la caja se desplaza por dentro
 
 const leerConversacion = () => {
   try {
@@ -65,6 +67,16 @@ const AsistenteAyuda = () => {
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const finRef = useRef(null);
+  const entradaRef = useRef(null);
+
+  // La caja crece hacia arriba conforme se escribe, hasta ALTO_MAX_ENTRADA
+  useEffect(() => {
+    const el = entradaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, ALTO_MAX_ENTRADA)}px`;
+    el.style.overflowY = el.scrollHeight > ALTO_MAX_ENTRADA ? 'auto' : 'hidden';
+  }, [texto, abierto]);
 
   useEffect(() => {
     try { sessionStorage.setItem(CLAVE, JSON.stringify(mensajes)); } catch { /* sin almacenamiento: no pasa nada */ }
@@ -79,7 +91,7 @@ const AsistenteAyuda = () => {
   if (!visible) return null;
 
   const preguntar = async (pregunta) => {
-    const limpia = pregunta.trim().slice(0, 1000);
+    const limpia = pregunta.trim().slice(0, MAX_CARACTERES);
     if (!limpia || enviando) return;
     const nuevos = [...mensajes, { rol: 'user', texto: limpia }];
     setMensajes(nuevos);
@@ -130,18 +142,22 @@ const AsistenteAyuda = () => {
       {!abierto && (
         <button type="button" className="asis-boton" onClick={() => setAbierto(true)} aria-label="Abrir asistente de ayuda" title="¿Necesitas ayuda?">
           <Sparkles size={24} />
+          <span className="asis-boton-txt">Ayuda</span>
         </button>
       )}
 
       {abierto && (
         <div className="asis-panel" role="dialog" aria-label="Asistente de ayuda">
           <div className="asis-encabezado">
-            <Sparkles size={18} />
-            <span className="asis-titulo">Asistente de ayuda</span>
+            <span className="asis-avatar is-grande"><Sparkles size={18} /></span>
+            <div className="asis-titulos">
+              <span className="asis-titulo">Asistente de ayuda</span>
+              <span className="asis-subtitulo">Te explico cómo usar la app</span>
+            </div>
             {!soloSaludo && (
-              <button type="button" onClick={reiniciar} aria-label="Nueva conversación" title="Nueva conversación"><RotateCcw size={17} /></button>
+              <button type="button" className="asis-icono-btn" onClick={reiniciar} aria-label="Nueva conversación" title="Nueva conversación"><RotateCcw size={16} /></button>
             )}
-            <button type="button" onClick={() => setAbierto(false)} aria-label="Cerrar asistente" title="Cerrar"><X size={19} /></button>
+            <button type="button" className="asis-icono-btn" onClick={() => setAbierto(false)} aria-label="Cerrar asistente" title="Cerrar"><X size={18} /></button>
           </div>
 
           <div className="asis-mensajes">
@@ -151,36 +167,65 @@ const AsistenteAyuda = () => {
               }
               const { limpio, ids } = separarSenales(m.texto);
               return (
-                <div key={i} className={`asis-burbuja asis-ia ${m.error ? 'asis-error' : ''}`}>
-                  <TextoFormateado texto={limpio} />
-                  {ids.map((id) => (
-                    <button type="button" key={id} className="asis-mostrar" onClick={() => mostrar(id)}>
-                      <MousePointerClick size={15} /> Muéstrame: {BOTONES_AYUDA[id].texto}
-                    </button>
-                  ))}
+                <div key={i} className="asis-fila-ia">
+                  <span className="asis-avatar"><Sparkles size={13} /></span>
+                  <div className={`asis-burbuja asis-ia ${m.error ? 'asis-error' : ''}`}>
+                    <TextoFormateado texto={limpio} />
+                    {ids.map((id) => (
+                      <button type="button" key={id} className="asis-mostrar" onClick={() => mostrar(id)}>
+                        <MousePointerClick size={15} /> Muéstrame: {BOTONES_AYUDA[id].texto}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               );
             })}
             {soloSaludo && (
               <div className="asis-sugerencias">
-                {SUGERENCIAS.map((s) => (
-                  <button type="button" key={s} onClick={() => preguntar(s)}>{s}</button>
+                {SUGERENCIAS.map(({ texto: s, icono: Icono }) => (
+                  <button type="button" key={s} onClick={() => preguntar(s)}>
+                    <span className="asis-sug-ico"><Icono size={14} /></span>
+                    {s}
+                  </button>
                 ))}
               </div>
             )}
-            {enviando && <div className="asis-burbuja asis-ia asis-escribiendo"><span /><span /><span /></div>}
+            {enviando && (
+              <div className="asis-fila-ia">
+                <span className="asis-avatar"><Sparkles size={13} /></span>
+                <div className="asis-burbuja asis-ia asis-escribiendo"><span /><span /><span /></div>
+              </div>
+            )}
             <div ref={finRef} />
           </div>
 
           <form className="asis-entrada" onSubmit={(e) => { e.preventDefault(); preguntar(texto); }}>
-            <input
-              value={texto}
-              onChange={(e) => setTexto(e.target.value)}
-              placeholder="Escribe tu duda..."
-              maxLength={1000}
-              aria-label="Escribe tu duda"
-            />
-            <button type="submit" disabled={enviando || !texto.trim()} aria-label="Enviar"><Send size={18} /></button>
+            <div className="asis-caja">
+              {/* Crece hacia arriba hasta ~5 renglones; Enter envía y Shift+Enter hace un salto de línea */}
+              <textarea
+                ref={entradaRef}
+                rows={1}
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    preguntar(texto);
+                  }
+                }}
+                placeholder="Escribe tu duda..."
+                maxLength={MAX_CARACTERES}
+                aria-label="Escribe tu duda"
+              />
+              <button type="submit" className="asis-enviar" disabled={enviando || !texto.trim()} aria-label="Enviar">
+                <ArrowUp size={18} />
+              </button>
+            </div>
+            {texto.length > MAX_CARACTERES * 0.8 && (
+              <span className={`asis-contador ${texto.length >= MAX_CARACTERES ? 'al-limite' : ''}`}>
+                {texto.length}/{MAX_CARACTERES}
+              </span>
+            )}
           </form>
           <div className="asis-aviso">Respuestas generadas con IA; pueden tener errores.</div>
         </div>
