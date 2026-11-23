@@ -13,6 +13,7 @@ import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
 import { useAuth } from "../../../context/AuthContext";
 import { esVideoUrl, validarVideoEvidencia, VIDEO_MAX_SEGUNDOS } from '../../../utils/evidencia';
 import GrabadorVideo, { puedeGrabarEnApp } from '../../../components/Shared/GrabadorVideo';
+import AjusteCotizacionTecnico from './AjusteCotizacionTecnico';
 import { ETAPAS_EVIDENCIA, evidenciaDeEtapa, limpiarEtiqueta, esPorElemento, etapasDelTrabajo, evidenciasDelElemento, avanceDelElemento, trabajoEnviadoOValidado } from '../Shared/etapasEvidencia';
 import '../../../styles/AgenteSolutions/Admin/Mantenimiento.css';
 import CarruselEtapas from '../../AgenteSolutions/Shared/CarruselEtapas';
@@ -375,6 +376,9 @@ const GaleriaReportes = () => {
   const esOrdenDeTrabajo = !String(trabajoId || '').toLowerCase().includes('servicio');
   const puedeEnviar = countRequiredDone === totalRequeridas && !cargandoElementos && !ordenCerrada && esOrdenDeTrabajo;
   const soloLectura = esOrdenDeTrabajo && trabajoEnviadoOValidado(estadoOrden);
+  // Entró desde "Ajustar cotización" antes de comenzar: solo la cotización; las evidencias se
+  // suben después de "Comenzar trabajo" en el tablero (ahí se valida la llegada y el horario)
+  const soloAjuste = location.state?.modo === 'ajuste' && reportes.length === 0;
 
   const enviarAprobacion = async () => {
     const result = await Swal.fire({
@@ -453,6 +457,7 @@ const GaleriaReportes = () => {
           </section>
 
           {/* Progreso y acciones (sin botón de regreso: se navega con el encabezado) */}
+          {!soloAjuste && (
           <div className="ge-barra">
             <div className={`ge-progreso ${countRequiredDone === totalRequeridas ? 'completo' : ''}`}>
               <span>Evidencias obligatorias <strong>{countRequiredDone} de {totalRequeridas}</strong></span>
@@ -495,8 +500,29 @@ const GaleriaReportes = () => {
               )}
             </div>
           </div>
+          )}
 
-          {/* Etapas: una fila en computadora, carrusel en tablet y celular */}
+          {/* Segunda cotización: nuevo precio si el problema resultó más grande, con su historial.
+              El precio lo maneja el contratista: el técnico de cuadrilla no propone ajustes. */}
+          {esOrdenDeTrabajo && !servicio?.es_cuadrilla && (
+            <AjusteCotizacionTecnico
+              key={trabajoId}
+              job={{ id: String(trabajoId).match(/\d+/)?.[0] }}
+              completado={ordenCerrada}
+              iniciado={reportes.length > 0 || /progreso/i.test(estadoOrden)}
+              onCancelado={() => navigate('/mercado-trabajos')}
+            />
+          )}
+
+          {soloAjuste ? (
+            <div className="aj-nota-reporte">
+              <Lock size={16} />
+              <span>
+                El trabajo aún no comienza. Las evidencias se suben después de <strong>Comenzar trabajo</strong> en el tablero.
+              </span>
+            </div>
+          ) : (
+          /* Etapas: una fila en computadora, carrusel en tablet y celular */
           <div>
             {porElemento && !loading && (
               <div className="ev-elementos" role="tablist" aria-label="Elementos del trabajo">
@@ -677,6 +703,7 @@ const GaleriaReportes = () => {
               </CarruselEtapas>
             )}
           </div>
+          )}
         </div>
 
         {grabadorEtapa && (

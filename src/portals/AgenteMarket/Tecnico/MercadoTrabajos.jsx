@@ -14,7 +14,7 @@ import {
   Home, Car, Navigation, Wrench, Camera, Plus, Trash2, Check, ArrowRight, Play, Eye, Sparkles, Lock, Zap,
   Sun, Moon, Globe, SlidersHorizontal, ChevronDown, ChevronUp, Maximize, Minimize,
   Snowflake, Droplets, Paintbrush, KeyRound, Hammer, Leaf, Siren, ClipboardList, FolderOpen, BarChart3, Bell,
-  Ban, Undo2, Building2
+  Ban, Undo2, Building2, FilePenLine
 } from 'lucide-react';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
@@ -33,7 +33,7 @@ import { mostrarAviso } from '../../../utils/dialogos';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 import ModalCalificarCliente from './ModalCalificarCliente';
 import Calificacion from '../Shared/Calificacion';
-import AjusteCotizacionTecnico from './AjusteCotizacionTecnico';
+import { obtenerAjustes } from '../Shared/ajusteCotizacionApi';
 import AccesoPropiedadTecnico from './AccesoPropiedadTecnico';
 import { retirarCotizacion, confirmarDisponibilidad, errorDeRed } from '../Shared/redCancelacionApi';
 import '../../../styles/AgenteMarket/Shared/AjusteCotizacion.css';
@@ -1886,8 +1886,20 @@ const MercadoTrabajos = () => {
       precio_original: Number(res.precio_original),
       ajuste_pendiente: Boolean(res.ajuste_pendiente),
       ajuste_por_decidir: Boolean(res.ajuste_por_decidir),
+      puede_ajustar: Boolean(res.puede_ajustar),
     } : j)));
   };
+
+  // El panel del ajuste vive en el reporte; el tablero solo lee el precio vigente y si hay uno sin resolver
+  useEffect(() => {
+    const jobId = selectedBoardJob?.id;
+    if (!jobId || selectedBoardJob.es_cuadrilla) return;
+    let vigente = true;
+    obtenerAjustes(jobId)
+      .then((res) => { if (vigente) actualizarAjusteEnTablero(jobId, res); })
+      .catch(() => {});
+    return () => { vigente = false; };
+  }, [selectedBoardJob?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fotos de la falla / problema reportadas por el cliente
   const clientPhotos = useMemo(() => {
@@ -1985,13 +1997,15 @@ const MercadoTrabajos = () => {
 
   // Navegación al flujo de reportes (NuevoReporte si 0, GaleriaReportes si 1+)
   // Siempre abre la vista de etapas (Antes / Durante / Después / Extra / Ticket), igual que la app interna
-  const handleOpenReportFlow = () => {
+  // modo 'ajuste': se abre antes de comenzar, solo para la segunda cotización
+  const handleOpenReportFlow = (modo) => {
     if (!selectedBoardJob) return;
     navigate(`/galeria-reportes/work_order-${selectedBoardJob.id}`, {
       state: {
         trabajoId: `work_order-${selectedBoardJob.id}`,
         servicio: selectedBoardJob,
-        from: '/mercado-trabajos'
+        from: '/mercado-trabajos',
+        ...(modo === 'ajuste' ? { modo } : {}),
       }
     });
   };
@@ -2933,6 +2947,21 @@ const MercadoTrabajos = () => {
                       </button>
                     )}
 
+                    {/* Segunda cotización antes de comenzar: abre el reporte solo con el ajuste.
+                        También con un ajuste sin resolver, para retirarlo o decidir tras el rechazo. */}
+                    {completedReportsCount === 0 && !isJobCompleted && !selectedBoardJob.es_cuadrilla
+                      && (selectedBoardJob.puede_ajustar || selectedBoardJob.ajuste_pendiente || selectedBoardJob.ajuste_por_decidir) && (
+                      <button
+                        type="button"
+                        className="mercado-board-flow-btn btn-continue"
+                        onClick={() => handleOpenReportFlow('ajuste')}
+                        title="¿El problema es más grande? Propón un nuevo precio al cliente"
+                      >
+                        <FilePenLine size={15} />
+                        {selectedBoardJob.ajuste_pendiente || selectedBoardJob.ajuste_por_decidir ? 'VER AJUSTE DE COTIZACIÓN' : 'AJUSTAR COTIZACIÓN'}
+                      </button>
+                    )}
+
                     {/* Botón 2: Finalizar Trabajo (Habilitado solo si >= 3 evidencias) */}
                     <button
                       type="button"
@@ -3193,19 +3222,6 @@ const MercadoTrabajos = () => {
 
                           {/* Acceso a la propiedad que dejó el cliente: se ve al marcar "Llegué" */}
                           {!isJobCompleted && <AccesoPropiedadTecnico key={`acceso-${selectedBoardJob.id}`} job={selectedBoardJob} />}
-
-                          {/* Ajuste de cotización: nuevo precio si el problema resultó más grande */}
-                          {/* El precio lo maneja el contratista: el técnico de cuadrilla no propone ajustes */}
-                          {!selectedBoardJob.es_cuadrilla && (
-                            <AjusteCotizacionTecnico
-                              key={selectedBoardJob.id}
-                              job={selectedBoardJob}
-                              completado={isJobCompleted}
-                              iniciado={completedReportsCount > 0}
-                              onCambio={(res) => actualizarAjusteEnTablero(selectedBoardJob.id, res)}
-                              onCancelado={() => { setSelectedBoardJobId(null); fetchJobs(); }}
-                            />
-                          )}
 
                           {/* Evidencias del cliente */}
                           <div className="rd-panel rd-evidencias">
