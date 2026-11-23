@@ -4661,3 +4661,64 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
 @media (prefers-reduced-motion: reduce) {
   .mercado-container.mercado-tablero-mode .mercado-board-job-card { transition: none; }
 }
+
+/* ==========================================================================
+   DETALLE DEL TRABAJO EN COMPUTADORA: aprovechar el espacio de la columna central
+   - "Consiste en" ya no se estira: descripción arriba y estado + herramientas en una fila
+   - "Evidencias del cliente" toma el espacio que sobra, con fotos más grandes
+   ========================================================================== */
+@media (min-width: 1025px) {
+  .mercado-container.mercado-tablero-mode .rd-trabajo {
+    flex: 0 0 auto;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .mercado-container.mercado-tablero-mode .rd-trabajo-lado {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 12px 0 0;
+    border-left: none;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
+  .mercado-container.mercado-tablero-mode .rd-estado {
+    padding: 0;
+    margin-right: auto;
+  }
+
+  .mercado-container.mercado-tablero-mode .rd-herramienta {
+    width: auto;
+    padding: 5px 14px 5px 5px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .mercado-container.mercado-tablero-mode .rd-herramienta:hover:not(:disabled) { background: #ffffff; }
+  .mercado-container.mercado-tablero-mode .rd-herramienta:disabled { opacity: 0.55; cursor: not-allowed; }
+  .mercado-container.mercado-tablero-mode .rd-herramienta > span { width: 28px; height: 28px; }
+
+  .mercado-container.mercado-tablero-mode .rd-evidencias {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mercado-container.mercado-tablero-mode .rd-fotos {
+    flex-wrap: wrap;
+    overflow: visible;
+    gap: 10px;
+  }
+
+  .mercado-container.mercado-tablero-mode .rd-foto {
+    width: 150px;
+    height: 110px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  }
+}

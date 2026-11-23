@@ -2246,17 +2246,7 @@ const MercadoTrabajos = () => {
     }
   };
 
-  // 3. PROGRAMAR SEGUNDA VISITA
-  const handleOpenSecondVisitModal = () => {
-    if (!selectedBoardJob) return;
-    const nextDay = new Date(Date.now() + 86400000);
-    nextDay.setHours(10, 0, 0, 0);
-    const localIso = new Date(nextDay.getTime() - nextDay.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    setSecondVisitDate(localIso);
-    setSecondVisitReason('');
-    setShowSecondVisitModal(true);
-  };
-
+  // 3. SEGUNDA VISITA: el botón se quitó del tablero; el modal se conserva por si se retoma
   const handleSaveSecondVisit = async (e) => {
     e.preventDefault();
     if (!secondVisitDate) {
@@ -2973,17 +2963,6 @@ const MercadoTrabajos = () => {
                       {completedReportsCount < 3
                         ? <><Lock size={14} /> FINALIZAR (MÍN. 3 FOTOS)</>
                         : <><CheckCircle2 size={15} /> FINALIZAR TRABAJO</>}
-                    </button>
-
-                    {/* Botón 3: Programar Segunda Visita */}
-                    <button
-                      type="button"
-                      className={`mercado-board-flow-btn btn-second-visit ${selectedBoardJob.has_second_visit ? 'has-visit' : ''}`}
-                      onClick={handleOpenSecondVisitModal}
-                      title="Programar una segunda visita técnica"
-                    >
-                      <Calendar size={15} />
-                      {selectedBoardJob.has_second_visit ? '2DA VISITA AGENDADA' : '2DA VISITA'}
                     </button>
                   </div>
                   </>
