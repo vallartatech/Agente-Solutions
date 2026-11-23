@@ -21,6 +21,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 // En la app de iPhone el dominio también es localhost (el teléfono): ahí el reCAPTCHA sí se pide
 import { esNativo } from "../../plataforma";
+import CampoCodigoCuadrilla from "./CampoCodigoCuadrilla";
 import Logo4 from "../../assets/Logo4.png";
 import "../../styles/Auth/LoginAgente.css";
 
@@ -200,6 +201,8 @@ const ClientRegister = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [companyCode, setCompanyCode] = useState("");
+  // Técnico de cuadrilla: estado de la verificación del código (lo informa CampoCodigoCuadrilla)
+  const [estadoCodigoCuadrilla, setEstadoCodigoCuadrilla] = useState("vacio");
   const [selectedSpecialties, setSelectedSpecialties] = useState(["Electricidad"]);
 
   // Estado de categorías (SOLO 2: 'agente' | 'autonomo')
@@ -311,6 +314,21 @@ const ClientRegister = () => {
     if (!aceptaPrivacidad) {
       setMessage("Error: Debes aceptar el Aviso de Privacidad para crear tu cuenta.");
       return;
+    }
+
+    if (rolActual.roleId === 8) {
+      if (!companyCode.trim()) {
+        setMessage("Error: Escribe el código que te dio tu contratista o escanea su QR.");
+        return;
+      }
+      if (estadoCodigoCuadrilla === "invalido") {
+        setMessage("Error: Ese código no es de ninguna cuadrilla. Revísalo o pídeselo de nuevo a tu contratista.");
+        return;
+      }
+      if (estadoCodigoCuadrilla === "verificando") {
+        setMessage("Error: Espera un momento, estamos verificando el código de tu contratista.");
+        return;
+      }
     }
 
     const isLocalhost = !esNativo && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -1080,22 +1098,13 @@ const ClientRegister = () => {
 
               {/* CONDICIONAL: CÓDIGO DE CUADRILLA PARA TÉCNICO DE CUADRILLA (ROL 8) */}
               {rolActual.roleId === 8 && (
-                <div style={{ width: '100%' }}>
-                  <div className="input-group">
-                    <Key size={20} strokeWidth={2.5} className="input-icon" />
-                    <input
-                      type="text"
-                      placeholder="CÓDIGO DE CUADRILLA DE TU CONTRATISTA"
-                      className="custom-input"
-                      value={companyCode}
-                      onChange={(e) => setCompanyCode(e.target.value.toUpperCase())}
-                      style={{ paddingLeft: "55px" }}
-                    />
-                  </div>
-                  <p style={{ margin: '4px 0 0 10px', fontSize: '0.75rem', color: '#f59e0b', fontStyle: 'italic', fontFamily: 'system-ui, sans-serif' }}>
-                    * Ingresa el código proporcionado por tu contratista para unirte a su cuadrilla.
-                  </p>
-                </div>
+                <CampoCodigoCuadrilla
+                  valor={companyCode}
+                  onCambio={(codigo) => setCompanyCode(codigo.toUpperCase())}
+                  onEstado={setEstadoCodigoCuadrilla}
+                  clases={{ campo: "input-group ccc-campo-registro", input: "custom-input", icono: "input-icon" }}
+                  placeholder="CÓDIGO DE TU CONTRATISTA"
+                />
               )}
 
               {/* CONDICIONAL: CÓDIGO DE EMPRESA OPCIONAL (CLIENTE 3, TÉCNICO AGENTE 2, GESTOR 5, CONTRATISTA 7) */}

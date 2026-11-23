@@ -293,3 +293,21 @@
   .mc-lista { grid-template-columns: 1fr; }
   .mc-numero { font-size: 1.7rem; }
 }
+
+/* QR para invitar a la cuadrilla */
+.mc-qr { align-items: stretch; }
+.mc-qr-imagen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, 280px);
+  aspect-ratio: 1;
+  margin: 4px auto 0;
+  border: 1px solid var(--mc-borde, #e2e8f0);
+  border-radius: 16px;
+  background: #fff;
+  color: #64748b;
+}
+.mc-qr-imagen img { width: 100%; height: 100%; border-radius: 16px; }
+.mc-qr-codigo { text-align: center; font-size: 1.05rem; }
+.mc-desactivado { opacity: 0.6; pointer-events: none; }

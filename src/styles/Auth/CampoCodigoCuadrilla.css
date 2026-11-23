@@ -1,0 +1,98 @@
+/* Código del contratista en el registro del técnico de cuadrilla (fondo oscuro del login) */
+.ccc {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ccc-guia {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.ccc-fila {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+.ccc-campo {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ccc-campo input { text-transform: uppercase; }
+
+/* Pantalla /registro-cliente (enlace o QR del contratista): ícono dentro del campo */
+.ccc-campo-registro { position: relative; display: flex; align-items: center; }
+.ccc-campo-registro > svg {
+  position: absolute;
+  left: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+}
+.ccc-campo-registro input { padding-left: 42px; }
+.ccc-campo input::placeholder { text-transform: none; }
+
+/* El borde del campo cuenta si el código sirve */
+.ccc-valido input { border-color: rgba(52, 211, 153, 0.75) !important; }
+.ccc-invalido input { border-color: rgba(248, 113, 113, 0.8) !important; }
+
+.ccc-btn-qr {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(242, 101, 34, 0.7);
+  background: rgba(242, 101, 34, 0.14);
+  color: #fdba74;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ccc-btn-qr:hover { background: #f26522; color: #fff; }
+.ccc-btn-qr:focus-visible { outline: 2px solid #fdba74; outline-offset: 2px; }
+
+.ccc-estado {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 18px;
+}
+
+.ccc-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.ccc-msg svg { flex: 0 0 auto; margin-top: 1px; }
+.ccc-msg-neutro { color: rgba(255, 255, 255, 0.7); }
+.ccc-msg-ok { color: #6ee7b7; }
+.ccc-msg-ok strong { color: #fff; }
+.ccc-msg-error { color: #fca5a5; }
+.ccc-msg-aviso { color: #fcd34d; }
+
+.ccc-girar { animation: ccc-giro 0.9s linear infinite; }
+@keyframes ccc-giro { to { transform: rotate(360deg); } }
+
+/* En pantallas angostas solo queda el ícono del QR */
+@media (max-width: 360px) {
+  .ccc-btn-qr span { display: none; }
+  .ccc-btn-qr { padding: 0 12px; }
+}

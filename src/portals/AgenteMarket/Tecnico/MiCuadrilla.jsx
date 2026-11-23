@@ -3,13 +3,56 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   Users, UserPlus, Clock, Copy, Share2, Lock, Unlock, UserMinus, ShieldCheck,
-  GraduationCap, Star, Loader2, AlertCircle, Phone, ChevronDown, ChevronUp, HardHat
+  GraduationCap, Star, Loader2, AlertCircle, Phone, ChevronDown, ChevronUp, HardHat, QrCode, X, Download
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import RegisterModal from '../../../components/Auth/Register';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
-import { URL_PUBLICA } from '../../../plataforma';
+import { enlaceInvitacionCuadrilla, dibujarQrCuadrilla } from '../Shared/qrCuadrilla';
 import '../../../styles/AgenteMarket/Tecnico/MiCuadrilla.css';
+import '../../../styles/AgenteMarket/Shared/TecnicoQr.css';
+
+// QR para que el técnico lo escanee al registrarse (o lo abra con la cámara de su teléfono)
+const ModalQrCuadrilla = ({ codigo, nombre, onCerrar }) => {
+  const [imagen, setImagen] = useState(null);
+
+  useEffect(() => {
+    let vivo = true;
+    dibujarQrCuadrilla(codigo).then((url) => { if (vivo) setImagen(url); }).catch(() => {});
+    const alTeclear = (e) => { if (e.key === 'Escape') onCerrar(); };
+    window.addEventListener('keydown', alTeclear);
+    return () => { vivo = false; window.removeEventListener('keydown', alTeclear); };
+  }, [codigo, onCerrar]);
+
+  return (
+    <div className="tqr-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCerrar()}>
+      <div className="tqr-escaner mc-qr" role="dialog" aria-modal="true" aria-label="QR de tu cuadrilla">
+        <header className="tqr-escaner-cabeza">
+          <span className="tqr-escaner-icono"><QrCode size={18} /></span>
+          <div>
+            <h2>QR de tu cuadrilla</h2>
+            <p>Tu técnico lo escanea al registrarse como Técnico de cuadrilla</p>
+          </div>
+          <button type="button" className="tqr-cerrar" onClick={onCerrar} aria-label="Cerrar"><X size={20} /></button>
+        </header>
+
+        <div className="mc-qr-imagen">
+          {imagen ? <img src={imagen} alt={`Código QR de la cuadrilla ${codigo}`} /> : <Loader2 size={28} className="mc-girar" />}
+        </div>
+        <strong className="mc-codigo mc-qr-codigo">{codigo}</strong>
+
+        <a
+          className={`tqr-btn tqr-btn-primario tqr-btn-ancho ${imagen ? '' : 'mc-desactivado'}`}
+          href={imagen || undefined}
+          download={`QR_cuadrilla_${String(nombre || codigo).replace(/[^\w]+/g, '_')}.png`}
+          aria-disabled={!imagen}
+        >
+          <Download size={16} /> Descargar QR
+        </a>
+      </div>
+    </div>
+  );
+};
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -34,6 +77,7 @@ const MiCuadrilla = () => {
   const [mostrarAlta, setMostrarAlta] = useState(false);
   const [verFuera, setVerFuera] = useState(false);
   const [ocupadoId, setOcupadoId] = useState(null);
+  const [verQr, setVerQr] = useState(false);
 
   const cargar = useCallback(async () => {
     setError('');
@@ -53,7 +97,8 @@ const MiCuadrilla = () => {
   const equipo = datos?.equipo || [];
   const activos = equipo.filter(t => t.estado !== 'fuera');
   const fuera = equipo.filter(t => t.estado === 'fuera');
-  const enlaceRegistro = codigo ? `${URL_PUBLICA}/registro-cliente?role=8&code=${encodeURIComponent(codigo)}` : '';
+  const enlaceRegistro = codigo ? enlaceInvitacionCuadrilla(codigo) : '';
+  const cerrarQr = useCallback(() => setVerQr(false), []);
 
   const copiarCodigo = async () => {
     try {
@@ -202,10 +247,11 @@ const MiCuadrilla = () => {
               <article className="mc-tarjeta">
                 <span className="mc-etiqueta"><Share2 size={16} /> Código de tu cuadrilla</span>
                 <strong className="mc-codigo">{codigo || '—'}</strong>
-                <small className="mc-nota">Tu técnico se registra como &quot;Técnico de cuadrilla&quot; con este código y te llega a la Sala de espera.</small>
+                <small className="mc-nota">Tu técnico se registra como &quot;Técnico de cuadrilla&quot; con este código o escaneando tu QR, y te llega a la Sala de espera.</small>
                 <div className="mc-fila-botones">
                   <button type="button" className="mc-btn mc-btn-suave" disabled={!codigo} onClick={copiarCodigo}><Copy size={16} /> Copiar</button>
                   <button type="button" className="mc-btn mc-btn-suave" disabled={!codigo} onClick={compartirCodigo}><Share2 size={16} /> Compartir</button>
+                  <button type="button" className="mc-btn mc-btn-suave" disabled={!codigo} onClick={() => setVerQr(true)}><QrCode size={16} /> Ver QR</button>
                 </div>
               </article>
 
@@ -254,6 +300,9 @@ const MiCuadrilla = () => {
       </main>
 
       <RegisterModal isOpen={mostrarAlta} onClose={() => setMostrarAlta(false)} onSuccess={cargar} />
+      {verQr && codigo && (
+        <ModalQrCuadrilla codigo={codigo} nombre={datos?.cuadrilla?.nombre} onCerrar={cerrarQr} />
+      )}
     </div>
   );
 };

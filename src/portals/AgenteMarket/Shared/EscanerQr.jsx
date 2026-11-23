@@ -21,11 +21,19 @@ const leerDe = (fuente, ancho, alto, canvas, intentarAmbos = false) => {
 };
 
 /**
- * Escáner de QR de técnicos con la cámara trasera (o desde una foto).
- *  onCodigo(codigo): se llama una vez con el código del técnico leído
+ * Escáner de QR con la cámara trasera (o desde una foto). Por defecto lee el QR de un técnico.
+ *  onCodigo(codigo): se llama una vez con el código leído
  *  onCerrar()
+ *  interpretar(texto): saca el código del texto del QR, o null si no es el QR esperado
+ *  subtitulo, mensajeInvalido: textos para otro tipo de QR (p. ej. el de una cuadrilla)
  */
-const EscanerQr = ({ onCodigo, onCerrar }) => {
+const EscanerQr = ({
+  onCodigo,
+  onCerrar,
+  interpretar = codigoDeTexto,
+  subtitulo = 'Apunta la cámara al QR del técnico',
+  mensajeInvalido = 'Ese código QR no es de un técnico de Agente Market.',
+}) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const archivoRef = useRef(null);
@@ -37,9 +45,9 @@ const EscanerQr = ({ onCodigo, onCerrar }) => {
   onCodigoRef.current = onCodigo;
 
   const procesar = (texto) => {
-    const codigo = codigoDeTexto(texto);
+    const codigo = interpretar(texto);
     if (!codigo) {
-      setAviso('Ese código QR no es de un técnico de Agente Market.');
+      setAviso(mensajeInvalido);
       return false;
     }
     listoRef.current = true;
@@ -121,7 +129,7 @@ const EscanerQr = ({ onCodigo, onCerrar }) => {
           <span className="tqr-escaner-icono"><ScanLine size={18} /></span>
           <div>
             <h2>Escanear código QR</h2>
-            <p>Apunta la cámara al QR del técnico</p>
+            <p>{subtitulo}</p>
           </div>
           <button type="button" className="tqr-cerrar" onClick={onCerrar} aria-label="Cerrar"><X size={20} /></button>
         </header>

@@ -27,6 +27,7 @@ import Logo4 from "../../assets/Logo4.png";
 import LoginArtwork from "../../assets/Atardecer.png";
 import { esNativo, esIOS, sinPrecio } from "../../plataforma";
 import { googleNativoConfigurado, tokenGoogleNativo, tokenAppleNativo, fueCancelado } from "./loginNativo";
+import CampoCodigoCuadrilla from "./CampoCodigoCuadrilla";
 
 const IconoGoogle = () => (
   <svg className="aiw-google-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -252,6 +253,8 @@ const LoginAgente = () => {
   const [regSocial, setRegSocial] = useState(null);
   // Código del contratista (solo técnico de cuadrilla)
   const [regCodigoContratista, setRegCodigoContratista] = useState("");
+  // 'vacio' | 'verificando' | 'valido' | 'invalido' | 'sin_conexion' (lo informa CampoCodigoCuadrilla)
+  const [estadoCodigoContratista, setEstadoCodigoContratista] = useState("vacio");
   // Entró con Google o Apple sin tener cuenta: datos para ofrecerle crearla
   const [registroSugerido, setRegistroSugerido] = useState(null);
   // Solo la PC de desarrollo se salta el reCAPTCHA. La app de iPhone también corre en "localhost"
@@ -847,7 +850,15 @@ const LoginAgente = () => {
     }
 
     if (esCuadrilla && !regCodigoContratista.trim()) {
-      setRegMessage("Error: Escribe el código que te dio tu contratista.");
+      setRegMessage("Error: Escribe el código que te dio tu contratista o escanea su QR.");
+      return;
+    }
+    if (esCuadrilla && estadoCodigoContratista === "invalido") {
+      setRegMessage("Error: Ese código no es de ninguna cuadrilla. Revísalo o pídeselo de nuevo a tu contratista.");
+      return;
+    }
+    if (esCuadrilla && estadoCodigoContratista === "verificando") {
+      setRegMessage("Error: Espera un momento, estamos verificando el código de tu contratista.");
       return;
     }
 
@@ -1578,19 +1589,14 @@ const LoginAgente = () => {
                       </>
                     )}
 
-                    {/* Técnico de cuadrilla: código del contratista que lo aprobará */}
+                    {/* Técnico de cuadrilla: código del contratista que lo aprobará (escrito o del QR) */}
                     {rolActual.roleId === 8 && (
-                      <div className="aiw-input-field">
-                        <KeyRound size={15} className="aiw-field-icon" />
-                        <input
-                          type="text"
-                          placeholder="Código de tu contratista"
-                          className="aiw-input"
-                          value={regCodigoContratista}
-                          onChange={(e) => setRegCodigoContratista(e.target.value)}
-                          required
-                        />
-                      </div>
+                      <CampoCodigoCuadrilla
+                        valor={regCodigoContratista}
+                        onCambio={setRegCodigoContratista}
+                        onEstado={setEstadoCodigoContratista}
+                        clases={{ campo: "aiw-input-field", input: "aiw-input", icono: "aiw-field-icon" }}
+                      />
                     )}
 
                     {/* Nombre */}

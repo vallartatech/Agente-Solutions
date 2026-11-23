@@ -2707,7 +2707,8 @@ const MercadoTrabajos = () => {
                 <div className="mercado-board-col-list-header">
                   <span className="mercado-board-col-list-title">
                     <Briefcase size={15} color="#f26522" />
-                    Mis Trabajos ({filteredBoardJobs.length})
+                    <span className="rt-lista-titulo-texto">Mis Trabajos</span>
+                    <span className="rt-lista-titulo-total">({filteredBoardJobs.length})</span>
                   </span>
 
                 {/* Filtro: un botón que abre las opciones */}

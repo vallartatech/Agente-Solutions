@@ -141,10 +141,22 @@
 }
 
 .mercado-tablero-mode .mercado-board-col-list-title {
+  flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
   color: #ffffff;
   font-size: 0.74rem;
   white-space: nowrap;
+}
+
+/* Si no cabe junto al filtro se recorta la palabra, nunca el número ni el ícono */
+.mercado-tablero-mode .mercado-board-col-list-title > svg,
+.mercado-tablero-mode .rt-lista-titulo-total { flex-shrink: 0; }
+
+.mercado-tablero-mode .rt-lista-titulo-texto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Buscador de vidrio a todo el ancho de la columna */
