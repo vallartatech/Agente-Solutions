@@ -74,7 +74,7 @@ const FILTROS_CALENDARIO = [
   { key: 'today', label: 'Citas hoy', Icon: Zap, dot: 'dot-today' },
   { key: 'future', label: 'Próximos', Icon: CalendarDays, dot: 'dot-future' },
   { key: 'uncoordinated', label: 'Por coordinar', Icon: Hourglass, dot: 'dot-uncoordinated' },
-  { key: 'network', label: 'En red', Icon: Globe, dot: 'dot-network' },
+  { key: 'network', label: 'En Mercado', Icon: Globe, dot: 'dot-network' },
 ];
 
 // Fecha local YYYY-MM-DD (toISOString usa UTC y en la noche de México ya marca el día siguiente)
@@ -247,7 +247,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
 
       const techName = quote.technician?.first_name 
         ? `${quote.technician.first_name} ${quote.technician.last_name || ''}`.trim()
-        : (quote.technician?.name || 'Técnico de la Red');
+        : (quote.technician?.name || 'Técnico del Mercado');
 
       const isThisQuoteAccepted = Boolean(
         quote.status === 'accepted' || 
@@ -405,10 +405,10 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
     } else if (!hasScheduledDate) {
       if (!isAccepted && !isTechnician) {
         timingCategory = 'network';
-        timingBadge = 'En red';
+        timingBadge = 'En Mercado';
         timingRelative = 'Cotizaciones abiertas';
         statusType = 'network';
-        statusLabel = 'En Red / Cotizando';
+        statusLabel = 'En Mercado / Cotizando';
       } else {
         timingCategory = 'uncoordinated';
         timingBadge = 'Por Coordinar';
@@ -778,7 +778,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
       groups.push({ key: 'uncoordinated', isOverdueGroup: true, dateStr: `Por coordinar (${uncoordinated.length})`, items: uncoordinated });
     }
     if (enRed.length > 0) {
-      groups.push({ key: 'network', isNetworkGroup: true, dateStr: `En red, cotizando (${enRed.length})`, items: enRed });
+      groups.push({ key: 'network', isNetworkGroup: true, dateStr: `En Mercado, cotizando (${enRed.length})`, items: enRed });
     }
 
     const byDate = {};
@@ -925,7 +925,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
                 CALENDARIO <span className="modal-cal-title-extra">DE <span style={{ color: '#FF6600' }}>VISITAS Y SERVICIOS</span></span>
               </h2>
               <span className="modal-cal-subtext">
-                Gestión interactiva de citas coordinadas, servicios en red y cotizaciones con técnicos.
+                Gestión interactiva de citas coordinadas, servicios en Mercado y cotizaciones con técnicos.
               </span>
             </div>
           </div>
@@ -934,7 +934,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
             <button
               className="btn-modal-quick-new"
               onClick={() => setShowNewServiceModal(true)}
-              title="Publicar nuevo servicio en la red"
+              title="Publicar nuevo servicio en el Mercado"
             >
               <PlusCircle size={15} />
               <span className="btn-modal-quick-new-text">

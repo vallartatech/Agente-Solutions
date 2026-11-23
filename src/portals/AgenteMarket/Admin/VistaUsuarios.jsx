@@ -473,7 +473,7 @@ const VistaUsuarios = () => {
                     onClick={() => { setFiltro("TECNICOS_RED"); setFilterDropdownOpen(false); }}
                   >
                     <span className="vu-menu-icon cyan"><Wrench size={16} strokeWidth={2.4} /></span>
-                    <span>Técnicos de la Red</span>
+                    <span>Técnicos del Mercado</span>
                     <span className="vu-menu-badge">{countTecnicosRed}</span>
                   </button>
 

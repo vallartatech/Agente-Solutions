@@ -58,7 +58,7 @@ const PerfilTecnicoRed = () => {
 
   return (
     <div className="perfil-tecnico-container">
-      <Header title="Perfil del Técnico de la Red" />
+      <Header title="Perfil del Técnico del Mercado" />
 
       <div className="perfil-tecnico-content">
         <button className="perfil-back-btn" onClick={() => navigate(-1)}>

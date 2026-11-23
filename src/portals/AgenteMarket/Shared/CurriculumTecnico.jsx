@@ -103,7 +103,7 @@ const CurriculumTecnico = ({ tecnicoId, respaldo = null, onCerrar }) => {
                 </div>
                 <div className="cvt-identidad">
                   <h2>{p.nombre}</h2>
-                  <p>{p.rol || 'Técnico de la red'}{p.miembro_desde ? ` · En Agente Market desde ${anio(p.miembro_desde)}` : ''}</p>
+                  <p>{p.rol || 'Técnico del Mercado'}{p.miembro_desde ? ` · En Agente Market desde ${anio(p.miembro_desde)}` : ''}</p>
                   <div className="cvt-insignias">
                     {verificado
                       ? <span className="ok"><ShieldCheck size={14} /> Identidad verificada</span>
@@ -195,7 +195,7 @@ const CurriculumTecnico = ({ tecnicoId, respaldo = null, onCerrar }) => {
               </div>
 
               <footer className="cvt-pie">
-                <span><Wrench size={13} /> Agente Market · Red de técnicos</span>
+                <span><Wrench size={13} /> Agente Market · Mercado de técnicos</span>
                 <span>{verificado ? 'Perfil validado por Agente Solutions' : 'Perfil en validación'} · {hoy()}</span>
               </footer>
             </article>

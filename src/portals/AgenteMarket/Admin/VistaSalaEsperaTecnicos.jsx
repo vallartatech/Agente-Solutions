@@ -80,7 +80,7 @@ const VistaSalaEsperaTecnicos = () => {
     const r = parseInt(roleId, 10);
     switch (r) {
       case 9:
-        return '👷 Técnico de cuadrilla + red';
+        return '👷 Técnico de cuadrilla + Mercado';
       case 8:
         return '👷 Técnico de cuadrilla';
       case 2:

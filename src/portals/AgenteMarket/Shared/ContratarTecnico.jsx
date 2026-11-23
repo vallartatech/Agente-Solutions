@@ -43,7 +43,7 @@ const ContratarTecnico = ({ codigo, nombre, relacion, enMisTecnicos = false, onC
   }
 
   if (!relacion) {
-    return <p className="tqr-nota"><Info size={15} /> Solo los clientes de la red pueden contratar técnicos.</p>;
+    return <p className="tqr-nota"><Info size={15} /> Solo los clientes del Mercado pueden contratar técnicos.</p>;
   }
 
   if (relacion.no_disponible) {

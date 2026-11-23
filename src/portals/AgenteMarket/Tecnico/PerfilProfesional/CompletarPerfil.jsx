@@ -229,7 +229,7 @@ const CompletarPerfil = () => {
         <main className="pp-card pp-centro">
           <PartyPopper size={40} className="pp-icono-ok" />
           <h2>¡Tu perfil fue aprobado!</h2>
-          <p>Ya puedes usar tu cuenta, ver trabajos de la red y enviar cotizaciones.</p>
+          <p>Ya puedes usar tu cuenta, ver trabajos del Mercado y enviar cotizaciones.</p>
           <button type="button" className="pp-btn" onClick={() => navigate('/mercado-trabajos', { replace: true })}>
             Entrar a mi cuenta <ChevronRight size={16} />
           </button>
@@ -268,7 +268,7 @@ const CompletarPerfil = () => {
       <main className="pp-card">
         <div className="pp-intro">
           <h1>Completa tu perfil para empezar</h1>
-          <p>Antes de trabajar en la red necesitamos conocerte. Tus datos se guardan en cada paso; puedes salir y continuar después.</p>
+          <p>Antes de trabajar en el Mercado necesitamos conocerte. Tus datos se guardan en cada paso; puedes salir y continuar después.</p>
           <div className="pp-progreso" aria-label={`${completos} de ${pasos.length} pasos completos`}>
             <span style={{ width: `${(completos / pasos.length) * 100}%` }} />
           </div>

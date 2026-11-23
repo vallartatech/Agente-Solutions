@@ -740,7 +740,7 @@ const TrabajoPropiedad = () => {
                   <Calculator size={18} />
                   <span>
                     {isTecnicoRed 
-                      ? (data?.network_quotes && data.network_quotes.length > 0 ? 'VER PROPUESTAS' : 'COTIZACIÓN RED') 
+                      ? (data?.network_quotes && data.network_quotes.length > 0 ? 'VER PROPUESTAS' : 'COTIZACIÓN MERCADO') 
                       : (cotizacionExistente ? 'VER / EDITAR COTIZACIÓN' : 'COTIZAR TRABAJO')
                     }
                   </span>
@@ -1484,7 +1484,7 @@ const TrabajoPropiedad = () => {
         <ChatModal
           quoteId={activeChatQuote.id}
           isNetworkQuote={true}
-          jobTitle={activeChatQuote.jobTitle || data?.titulo || 'Trabajo en la Red'}
+          jobTitle={activeChatQuote.jobTitle || data?.titulo || 'Trabajo en el Mercado'}
           otherPartyName={activeChatQuote.cliente || data?.propietario || 'Cliente'}
           otherPartyRole="Cliente / Autónomo"
           initialMessages={activeChatQuote.chat_history || []}

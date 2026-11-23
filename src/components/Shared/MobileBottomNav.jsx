@@ -18,6 +18,7 @@ import {
   ReceiptText,
   CalendarClock,
   LayoutGrid,
+  Layers,
   X
 } from 'lucide-react';
 import '../../styles/Shared/MobileBottomNav.css';
@@ -168,6 +169,9 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
     currentPath.includes('/usuarios') ||
     currentPath.includes('/vista-tecnicos')
   );
+
+  // Cliente de la red: tablero de todas sus propiedades
+  const isTableroGlobalActive = !isPerfilActive && (activeModule === 'tablero-global' || currentPath.includes('/tablero-global'));
 
   const isPropiedadesActive = !isPerfilActive && !isInicioActive && (
     activeModule === 'propiedades' || 
@@ -358,7 +362,7 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
       { key: 'mantenimiento', label: 'Mantenimiento', Icon: CalendarClock, path: '/mantenimiento', active: currentPath.includes('/mantenimiento') },
       { key: 'mapa', label: 'Mapa en vivo', Icon: Navigation, path: '/mapa-equipo', active: isMapaActive },
       { key: 'comprobantes', label: 'Comprobantes', Icon: ReceiptText, path: '/comprobantes', active: currentPath.includes('/comprobantes') },
-      ...(isRoot ? [{ key: 'mercado', label: 'Mercado / Red', Icon: Globe, path: '/red-autonomos', active: isMercadoActive }] : []),
+      ...(isRoot ? [{ key: 'mercado', label: 'Mercado', Icon: Globe, path: '/red-autonomos', active: isMercadoActive }] : []),
     ];
 
     return (
@@ -502,13 +506,28 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
         type="button" 
         className={`vcp-mobile-nav-item ${isReportesActive || (unificarVistas && (isCotizacionesActive || isLevantamientosActive || isPropiedadesActive)) ? 'active' : ''}`}
         onClick={() => navigate(unificarVistas ? '/propiedades' : '/reportes-globales')}
-        title={unificarVistas ? 'Detalles de propiedad' : 'Reportes'}
-        aria-label={unificarVistas ? 'Detalles de propiedad' : 'Reportes'}
+        title={unificarVistas ? 'Propiedades' : 'Reportes'}
+        aria-label={unificarVistas ? 'Propiedades' : 'Reportes'}
         data-ayuda={unificarVistas ? 'menu-propiedades' : undefined}
       >
         <FileText size={22} className="vcp-mobile-nav-icon" />
-          <span className="vcp-mobile-nav-text">{unificarVistas ? 'Detalles' : 'Reportes'}</span>
+          <span className="vcp-mobile-nav-text">{unificarVistas ? 'Propiedades' : 'Reportes'}</span>
       </button>
+
+      {/* Cliente de la red: tablero global de todas sus propiedades */}
+      {unificarVistas && (
+        <button
+          type="button"
+          className={`vcp-mobile-nav-item ${isTableroGlobalActive ? 'active' : ''}`}
+          onClick={() => navigate('/tablero-global')}
+          title="Tablero global"
+          aria-label="Tablero global"
+          data-ayuda="menu-tablero-global"
+        >
+          <Layers size={22} className="vcp-mobile-nav-icon" />
+          <span className="vcp-mobile-nav-text">Tablero</span>
+        </button>
+      )}
 
       {!unificarVistas && (
         <button
@@ -554,8 +573,8 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
             navigate('/red-autonomos');
           }
         }}
-        title="Mercado / Red"
-        aria-label="Mercado / Red"
+        title="Mercado"
+        aria-label="Mercado"
         data-ayuda="menu-mercado"
       >
         <Globe size={22} className="vcp-mobile-nav-icon" />

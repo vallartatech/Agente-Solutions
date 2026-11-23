@@ -1145,8 +1145,8 @@ const VistaCotizaciones = () => {
                   type="button"
                   className="tb-actions-btn"
                   onClick={() => esRed ? navigate('/mercado-trabajos') : setShowCreateModal(true)}
-                  title={esRed ? 'Explorar red de trabajos' : 'Nueva cotización'}
-                  aria-label={esRed ? 'Explorar red de trabajos' : 'Nueva cotización'}
+                  title={esRed ? 'Explorar Mercado de trabajos' : 'Nueva cotización'}
+                  aria-label={esRed ? 'Explorar Mercado de trabajos' : 'Nueva cotización'}
                 >
                   <Plus size={20} />
                 </button>
@@ -1364,7 +1364,7 @@ const VistaCotizaciones = () => {
                   <div className="rq-header">
                     <div className="rq-header-icon"><Briefcase size={20} /></div>
                     <div className="rq-header-text">
-                      <span className="rq-tag"><Globe size={12} /> Cotización de la red</span>
+                      <span className="rq-tag"><Globe size={12} /> Cotización del Mercado</span>
                       <h2>{c.folio}</h2>
                     </div>
                     <span className={`rq-estado rq-estado-${tonoEstado}`}>{estado}</span>
@@ -1388,7 +1388,7 @@ const VistaCotizaciones = () => {
                         </div>
                       )}
 
-                      <h3 className="rq-titulo">{c.propiedad_nombre || 'Trabajo de la Red'}</h3>
+                      <h3 className="rq-titulo">{c.propiedad_nombre || 'Trabajo del Mercado'}</h3>
 
                       <div className="rq-datos">
                         <div className="rq-dato">
@@ -1412,7 +1412,7 @@ const VistaCotizaciones = () => {
                           <span className="rq-dato-icon"><Wrench size={15} /></span>
                           <div>
                             <small>Técnico oferente</small>
-                            <strong>{c.tecnico || 'Técnico de la Red'}</strong>
+                            <strong>{c.tecnico || 'Técnico del Mercado'}</strong>
                           </div>
                         </div>
                         <div className="rq-dato">
@@ -1439,7 +1439,7 @@ const VistaCotizaciones = () => {
                         <div className="rq-monto-valor">
                           ${parseFloat(c.total || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })} <span>MXN</span>
                         </div>
-                        <span className="rq-origen"><Globe size={12} /> Red de trabajos</span>
+                        <span className="rq-origen"><Globe size={12} /> Mercado de trabajos</span>
                       </div>
 
                       {estado === 'Aprobado' && (

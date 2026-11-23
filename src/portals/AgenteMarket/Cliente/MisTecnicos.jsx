@@ -56,7 +56,7 @@ const MisTecnicos = () => {
   const cambiarEstado = async (tecnico, estado) => {
     if (estado === 'bloqueado') {
       const ok = await confirmarAccion(
-        `${tecnico.nombre} ya no verá los trabajos que publiques en la red y no podrá enviarte mensajes. Puedes desbloquearlo cuando quieras.`,
+        `${tecnico.nombre} ya no verá los trabajos que publiques en el Mercado y no podrá enviarte mensajes. Puedes desbloquearlo cuando quieras.`,
         { titulo: '¿Bloquear a este técnico?', confirmar: 'Sí, bloquear', peligro: true }
       );
       if (!ok) return;
@@ -197,7 +197,7 @@ const MisTecnicos = () => {
                 : filtro === 'bloqueado' ? 'No has bloqueado a ningún técnico'
                 : 'Ningún técnico coincide con la búsqueda'}
             </strong>
-            {tecnicos.length === 0 && <p>Cuando publiques un trabajo en la red y un técnico te cotice o lo atienda, aparecerá aquí. También puedes escanear el código QR de un técnico para contratarlo.</p>}
+            {tecnicos.length === 0 && <p>Cuando publiques un trabajo en el Mercado y un técnico te cotice o lo atienda, aparecerá aquí. También puedes escanear el código QR de un técnico para contratarlo.</p>}
           </div>
         ) : (
           <div className="mt-grid">
@@ -249,7 +249,7 @@ const MisTecnicos = () => {
                   </div>
 
                   <p className="mt-miembro">
-                    <CalendarDays size={13} /> {t.miembro_desde ? `En la red desde ${fechaCorta(t.miembro_desde)}` : 'Técnico de la red'}
+                    <CalendarDays size={13} /> {t.miembro_desde ? `En el Mercado desde ${fechaCorta(t.miembro_desde)}` : 'Técnico del Mercado'}
                   </p>
 
                   <footer className="mt-acciones">{accionesDe(t, { conDetalles: true })}</footer>

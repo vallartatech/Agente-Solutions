@@ -206,7 +206,7 @@ const VistaTableroGlobal = () => {
 
   return (
     <div className="tg-page">
-      <Header activeModule="inicio" titulo="TABLERO GLOBAL" />
+      <Header activeModule="tablero-global" titulo="TABLERO GLOBAL" />
 
       <div className="tg-contenido">
         {/* Título */}

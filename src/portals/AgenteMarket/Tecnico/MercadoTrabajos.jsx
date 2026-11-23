@@ -296,7 +296,7 @@ export const MAPA_ROLES_USUARIOS = {
   5: "AUTÓNOMO PER.",
   6: "CONTRATISTA",
   7: "ADMIN. PROP.",
-  8: "TÉCNICO RED"
+  8: "TÉCNICO MERCADO"
 };
 
 export const getRoleBadgeInfo = (roleId) => {
@@ -310,7 +310,7 @@ export const getRoleBadgeInfo = (roleId) => {
     case 2:
       return { label: 'TÉCNICO', bg: 'rgba(2, 132, 199, 0.18)', color: '#38bdf8', border: '#0284c7' };
     case 8:
-      return { label: 'TÉCNICO RED', bg: 'rgba(6, 182, 212, 0.18)', color: '#22d3ee', border: '#0891b2' };
+      return { label: 'TÉCNICO MERCADO', bg: 'rgba(6, 182, 212, 0.18)', color: '#22d3ee', border: '#0891b2' };
     case 3:
       return { label: 'CLIENTE', bg: 'rgba(22, 163, 74, 0.18)', color: '#4ade80', border: '#16a34a' };
     case 4:
@@ -1434,7 +1434,7 @@ const MercadoTrabajos = () => {
       html: `
         <div style="text-align: left; font-size: 0.9rem; color: #475569; line-height: 1.55;">
           <p style="margin: 0 0 12px;">
-            Se avisará de inmediato al cliente para que califique tu puntualidad con el sistema de <strong style="color:#0f172a;">5 relojes</strong> y pueda reenviar su solicitud a la red.
+            Se avisará de inmediato al cliente para que califique tu puntualidad con el sistema de <strong style="color:#0f172a;">5 relojes</strong> y pueda reenviar su solicitud al Mercado.
           </p>
           <div style="display:flex; gap:10px; padding: 12px 14px; border-radius: 16px; background: rgba(254, 242, 242, 0.85); border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 2px 10px rgba(220, 38, 38, 0.08);">
             <span style="flex-shrink:0; width:30px; height:30px; border-radius:10px; background:#dc2626; display:inline-flex; align-items:center; justify-content:center;">
@@ -2443,7 +2443,7 @@ const MercadoTrabajos = () => {
       const r = await Swal.fire({
         icon: 'warning',
         title: '¿Bloquear a este cliente?',
-        text: `Ya no verás los trabajos que ${client.nombre} publique en la red y no podrá enviarte mensajes. Puedes desbloquearlo cuando quieras.`,
+        text: `Ya no verás los trabajos que ${client.nombre} publique en el Mercado y no podrá enviarte mensajes. Puedes desbloquearlo cuando quieras.`,
         showCancelButton: true,
         confirmButtonText: 'Sí, bloquear',
         cancelButtonText: 'Cancelar',
@@ -2482,7 +2482,7 @@ const MercadoTrabajos = () => {
     const map = new Map();
 
     acceptedJobs.forEach(job => {
-      const clientName = job.client_name || job.cliente || 'Cliente de la Red';
+      const clientName = job.client_name || job.cliente || 'Cliente del Mercado';
       const cleanPhone = (job.client_phone || '').replace(/\D/g, '');
       const key = job.client_user_id ? `u${job.client_user_id}` : (cleanPhone || clientName.toLowerCase().trim());
 
@@ -2564,8 +2564,8 @@ const MercadoTrabajos = () => {
   const totalFacturadoHistorico = myClientsDirectory.reduce((sum, c) => sum + c.totalFacturado, 0);
 
   const userInitial = authUser?.name ? authUser.name.charAt(0).toUpperCase() : 'T';
-  const userFullName = authUser?.name || 'TÉCNICO DE LA RED';
-  const userRole = ({ 6: 'TÉCNICO INDEPENDIENTE', 7: 'CONTRATISTA', 8: 'TÉCNICO DE CUADRILLA' })[Number(authUser?.role_id)] || 'TÉCNICO DE LA RED';
+  const userFullName = authUser?.name || 'TÉCNICO DEL MERCADO';
+  const userRole = ({ 6: 'TÉCNICO INDEPENDIENTE', 7: 'CONTRATISTA', 8: 'TÉCNICO DE CUADRILLA' })[Number(authUser?.role_id)] || 'TÉCNICO DEL MERCADO';
   const userAvatar = authUser?.avatar_url || authUser?.avatar || null;
 
   // Renderizador de Tarjetas Kanban para Trabajos Aceptados (Estilo Imagen 3)
@@ -3367,7 +3367,7 @@ const MercadoTrabajos = () => {
       )}
 
       {/* ════════════════════════════════════════════════════════════
-          VISTA 3: MIS CLIENTES Y FAVORITOS DE LA RED (HISTORIAL PERSONALIZADO)
+          VISTA 3: MIS CLIENTES Y FAVORITOS DEL MERCADO (HISTORIAL PERSONALIZADO)
       ════════════════════════════════════════════════════════════ */}
       {mainView === 'usuarios' && (
         <div className="mercado-users-view">
@@ -3379,7 +3379,7 @@ const MercadoTrabajos = () => {
                 </button>
                 <div>
                   <h2 className="mercado-users-main-title">
-                    <Users size={22} color="#ffffff" /> MIS CLIENTES Y CONTACTOS DE LA RED
+                    <Users size={22} color="#ffffff" /> MIS CLIENTES Y CONTACTOS DEL MERCADO
                   </h2>
                   <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#94a3b8' }}>
                     Clientes a los que les has trabajado. Guarda a tus favoritos o bloquea a quien no quieras volver a atender.
@@ -3619,7 +3619,7 @@ const MercadoTrabajos = () => {
                           )}
                         </div>
                       ) : (
-                        <span style={{ fontSize: '11px', color: '#64748b' }}>Cliente sin cuenta en la red</span>
+                        <span style={{ fontSize: '11px', color: '#64748b' }}>Cliente sin cuenta en el Mercado</span>
                       )}
 
                       <button
@@ -3813,7 +3813,7 @@ const MercadoTrabajos = () => {
                   : <><ChevronUp size={15} /> Mostrar lista ({activeTab === 'disponibles' ? filteredNetworkJobs.length : filteredAcceptedJobs.length})</>}
               </span>
               <div className="red-sidebar-head">
-                <h2><Globe size={18} /> Trabajos en Red</h2>
+                <h2><Globe size={18} /> Trabajos en Mercado</h2>
                 <p>
                   <span className="mercado-map-live-dot" />
                   {activeTab === 'disponibles'
@@ -3996,7 +3996,7 @@ const MercadoTrabajos = () => {
                   setNavDirections(null);
                 }}
               >
-                <Globe size={15} /> En red <span>{filteredNetworkJobs.length}</span>
+                <Globe size={15} /> En Mercado <span>{filteredNetworkJobs.length}</span>
               </button>
               <button
                 type="button"
@@ -4013,7 +4013,7 @@ const MercadoTrabajos = () => {
             <div className="mercado-job-list">
               {activeTab === 'disponibles' ? (
                 /* ══════════════════════════════════════════
-                   PESTAÑA 1: SOLICITUDES DISPONIBLES EN RED
+                   PESTAÑA 1: SOLICITUDES DISPONIBLES EN MERCADO
                    ══════════════════════════════════════════ */
                 <>
                   {filteredNetworkJobs.length === 0 && (
@@ -5783,7 +5783,7 @@ const MercadoTrabajos = () => {
                     Folio #{selectedBoardJob.id}{selectedBoardJob.property?.property_code ? ` · ${selectedBoardJob.property.property_code}` : ''}
                   </span>
                   <strong className="phv-cliente">
-                    <User size={14} /> {selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente de la Red'}
+                    <User size={14} /> {selectedBoardJob.client_name || selectedBoardJob.cliente || 'Cliente del Mercado'}
                   </strong>
                   <span className="phv-direccion">
                     <MapPin size={13} /> <span>{selectedBoardJob.full_address || selectedBoardJob.calle || selectedBoardJob.zona || 'Mérida'}</span>

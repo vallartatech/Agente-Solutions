@@ -51,7 +51,7 @@ const recortar = (ctx, texto, ancho) => {
  * Tarjeta lista para imprimir o compartir: nombre, QR y una leyenda.
  * Devuelve un Blob PNG.
  */
-export const tarjetaQrPng = async (codigo, nombre, subtitulo = 'Técnico de la red') => {
+export const tarjetaQrPng = async (codigo, nombre, subtitulo = 'Técnico del Mercado') => {
   const W = 720, H = 940, QR = 520;
   const canvas = document.createElement('canvas');
   canvas.width = W;
@@ -79,7 +79,7 @@ export const tarjetaQrPng = async (codigo, nombre, subtitulo = 'Técnico de la r
   ctx.fillText('Escanéame para contratarme', W / 2, 760);
   ctx.fillStyle = '#f26522';
   ctx.font = '700 26px "Plus Jakarta Sans", "Segoe UI", sans-serif';
-  ctx.fillText('Agente Market · Red de técnicos', W / 2, 806);
+  ctx.fillText('Agente Market · Mercado de técnicos', W / 2, 806);
   ctx.fillStyle = '#94a3b8';
   ctx.font = '600 20px "Plus Jakarta Sans", "Segoe UI", sans-serif';
   ctx.fillText(recortar(ctx, urlDeCodigo(codigo).replace(/^https?:\/\//, ''), W - 80), W / 2, 870);

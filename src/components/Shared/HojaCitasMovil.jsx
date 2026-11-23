@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, ClipboardList, Search, X, Zap } from 'lucide-react';
 
 /*
-  Hoja inferior del calendario (solo celular), como la lista de "Trabajos en Red":
+  Hoja inferior del calendario (solo celular), como la lista de "Trabajos en Mercado":
   plegada solo asoma la barrita "Mostrar lista"; al tocarla o deslizarla hacia arriba
   se abre con dos pestañas (Trabajos próximos / Resumen de citas) y un buscador.
   Vive dentro de .modal-calendario-window para que los modales de detalle queden encima.

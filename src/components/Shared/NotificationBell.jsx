@@ -80,7 +80,7 @@ const getNotificationMeta = (notif) => {
   // Mensajes del chat de la Red (su tipo contiene "quote", pero no son de costo)
   if (type === 'new_quote_message') {
     return {
-      category: 'Mensaje en la Red',
+      category: 'Mensaje en el Mercado',
       icon: <MessageCircle size={18} strokeWidth={2.2} color="#0f172a" />,
       tab: 'servicios'
     };
@@ -412,7 +412,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
       const workOrderId = notification.data?.work_order_id || notification.data?.service_id || notification.data?.id || notification.work_order_id || notification.service_id || notification.id;
       const titleLower = (notification.data?.title || notification.title || notification.titulo || notification.data?.titulo || '').toLowerCase();
 
-      if (type === 'new_quote_message' || titleLower.includes('nuevo mensaje') || titleLower.includes('mensaje en la red')) {
+      if (type === 'new_quote_message' || titleLower.includes('nuevo mensaje') || titleLower.includes('mensaje en la red') || titleLower.includes('mensaje en el mercado')) {
         if (ROLES_TECNICO.includes(Number(user?.role_id))) {
           url = notification.data?.network_quote_id ? `/mercado-trabajos` : `/vista-cotizaciones`;
         } else if ([3, ...ROLES_CLIENTE_RED].includes(Number(user?.role_id))) {
@@ -420,7 +420,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
         } else {
           url = notification.data?.url || '/vista-cotizaciones';
         }
-      } else if (type === 'network_quote_received' || titleLower.includes('nueva cotización en la red') || titleLower.includes('cotización en la red')) {
+      } else if (type === 'network_quote_received' || titleLower.includes('nueva cotización en la red') || titleLower.includes('cotización en la red') || titleLower.includes('cotización en el mercado')) {
         url = '/red-autonomos';
       } else if (type === 'network_quote_rejected' || type === 'network_quote_accepted') {
         url = ROLES_TECNICO.includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';

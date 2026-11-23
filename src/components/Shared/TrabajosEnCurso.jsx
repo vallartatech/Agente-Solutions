@@ -155,7 +155,7 @@ const FilaTrabajo = ({ trabajo, propiedadId, onIr }) => {
         <span className="tec-trabajo-texto">
           <span className="tec-trabajo-arriba">
             <span className={`tec-chip ${estado.tono}`}>{estado.texto}</span>
-            {trabajo.enRed && <span className="tec-chip red-net"><Globe size={11} /> En la Red</span>}
+            {trabajo.enRed && <span className="tec-chip red-net"><Globe size={11} /> En el Mercado</span>}
           </span>
           <strong>{trabajo.titulo || 'Sin título'}</strong>
           <span className="tec-trabajo-meta"><UserRound size={12} /> {nombreTecnicos(trabajo)}</span>
@@ -174,7 +174,7 @@ const FilaTrabajo = ({ trabajo, propiedadId, onIr }) => {
           className="tec-btn-red"
           onClick={() => onIr(`/red-autonomos?trabajo=${trabajo.id}`)}
         >
-          <Globe size={13} /> Ver en la Red
+          <Globe size={13} /> Ver en el Mercado
         </button>
       )}
     </div>

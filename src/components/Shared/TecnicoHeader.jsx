@@ -113,8 +113,8 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
   // Técnico de cuadrilla (8): pide acceso a la red (rol 9) para trabajar también por su cuenta
   const pedirAccesoRed = async () => {
     const ok = await confirmarAccion(
-      'Con el acceso a la red, además de los trabajos de tu contratista, podrás ver el Mercado y cotizar por tu cuenta. Tiene un costo extra. ¿Quieres solicitarlo?',
-      { titulo: 'Acceso a la red', confirmar: 'Sí, solicitarlo', peligro: false }
+      'Con el acceso al Mercado, además de los trabajos de tu contratista, podrás ver el Mercado y cotizar por tu cuenta. Tiene un costo extra. ¿Quieres solicitarlo?',
+      { titulo: 'Acceso al Mercado', confirmar: 'Sí, solicitarlo', peligro: false }
     );
     if (!ok) return;
     try {
@@ -392,7 +392,7 @@ const TecnicoHeader = ({ activeTab = 'tablero', onTabChange, acceptedCount, user
                   pedirAccesoRed();
                 }}
               >
-                <Globe size={16} /> Quiero acceso a la red
+                <Globe size={16} /> Quiero acceso al Mercado
               </button>
             )}
             {isRol2 && (

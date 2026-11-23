@@ -10,7 +10,7 @@ import '../../../styles/AgenteMarket/Shared/AjusteCotizacion.css';
 const pedirMotivo = async () => {
   const { isConfirmed, value } = await Swal.fire({
     title: '¿Por qué cancelas el servicio?',
-    text: 'Se lo enviaremos al técnico. Después podrás reenviar la solicitud a la red o cancelarla por completo.',
+    text: 'Se lo enviaremos al técnico. Después podrás reenviar la solicitud al Mercado o cancelarla por completo.',
     input: 'textarea',
     inputPlaceholder: 'Ej. Ya se resolvió el problema / Cambié de fecha / Encontré otra opción',
     inputAttributes: { maxlength: 1000 },
@@ -65,7 +65,7 @@ const CancelacionServicioCliente = ({ job, onCambio, onCerrar }) => {
     setOcupado(true);
     try {
       const res = await resolverCancelado(job.id, action);
-      await Swal.fire({ icon: 'success', title: action === 'reopen' ? 'Reenviado a la red' : 'Servicio cancelado', text: res.message, confirmButtonColor: '#f26522' });
+      await Swal.fire({ icon: 'success', title: action === 'reopen' ? 'Reenviado al Mercado' : 'Servicio cancelado', text: res.message, confirmButtonColor: '#f26522' });
       onCambio?.();
       if (action === 'delete') onCerrar?.();
     } catch (e) {
@@ -93,11 +93,11 @@ const CancelacionServicioCliente = ({ job, onCambio, onCerrar }) => {
           </div>
           {job.cancellation_reason && <p className="aj-propuesta-motivo"><b>Motivo:</b> {job.cancellation_reason}</p>}
           <p className="aj-propuesta-motivo">
-            Si lo reenvías a la red, podrás elegir una de las cotizaciones que otros técnicos ya te enviaron (si siguen disponibles) o esperar nuevas.
+            Si lo reenvías al Mercado, podrás elegir una de las cotizaciones que otros técnicos ya te enviaron (si siguen disponibles) o esperar nuevas.
           </p>
           <div className="aj-propuesta-acciones">
             <button type="button" className="aj-btn primario" onClick={() => resolver('reopen')} disabled={ocupado}>
-              <Globe size={16} /> Reenviar a la red
+              <Globe size={16} /> Reenviar al Mercado
             </button>
             <button type="button" className="aj-btn peligro" onClick={() => resolver('delete')} disabled={ocupado}>
               <XCircle size={16} /> Cancelar por completo

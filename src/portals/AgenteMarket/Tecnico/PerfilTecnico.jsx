@@ -250,7 +250,7 @@ const PerfilTecnico = () => {
     switch(Number(roleId)) {
       case 2: return 'Técnico Agente';
       case 6: return 'Contratista';
-      case 8: return 'Técnico de la Red';
+      case 8: return 'Técnico del Mercado';
       default: return 'Técnico';
     }
   };

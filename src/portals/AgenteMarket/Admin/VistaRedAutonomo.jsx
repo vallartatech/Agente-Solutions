@@ -210,7 +210,7 @@ const VistaRedAutonomo = () => {
 
       const techName = quote.technician?.first_name 
         ? `${quote.technician.first_name} ${quote.technician.last_name || ''}`.trim()
-        : (quote.technician?.name || 'Técnico de la Red');
+        : (quote.technician?.name || 'Técnico del Mercado');
 
       const isThisQuoteAccepted = Boolean(
         quote.status === 'accepted' || 
@@ -422,7 +422,7 @@ const VistaRedAutonomo = () => {
   }, [user]);
 
   const handleDeleteJob = async (jobId) => {
-    if (!await confirmarAccion("¿Estás seguro de que deseas eliminar y cancelar esta publicación de la Red? Ya no será visible para los técnicos ni recibirá más cotizaciones.")) {
+    if (!await confirmarAccion("¿Estás seguro de que deseas eliminar y cancelar esta publicación del Mercado? Ya no será visible para los técnicos ni recibirá más cotizaciones.")) {
       return;
     }
 
@@ -441,7 +441,7 @@ const VistaRedAutonomo = () => {
       }
     } catch (e) {
       console.error("Error al eliminar publicación:", e);
-      mostrarAviso("Hubo un error al eliminar la publicación de la Red.");
+      mostrarAviso("Hubo un error al eliminar la publicación del Mercado.");
     }
   };
 
@@ -513,7 +513,7 @@ const VistaRedAutonomo = () => {
 
   return (
     <div className="mercado-container red-mapa-vivo">
-      <Header title="Red de Autónomos / Mis Publicaciones" />
+      <Header title="Mercado / Mis Publicaciones" />
       
       <div className="mercado-content">
         {/* Floating Mobile Toggle Button (Tipo Uber) */}
@@ -543,7 +543,7 @@ const VistaRedAutonomo = () => {
               <div className="mercado-map-top-bar">
                 <div className="mercado-map-overlay-badge">
                   <span className="mercado-map-live-dot" />
-                  {activeTab === 'en_red' ? `${enRedJobs.length} en red` : `${aceptadosJobs.length} asignados`}
+                  {activeTab === 'en_red' ? `${enRedJobs.length} en Mercado` : `${aceptadosJobs.length} asignados`}
                 </div>
               </div>
 
@@ -698,11 +698,11 @@ const VistaRedAutonomo = () => {
 
           {/* Título: fuera del encabezado para que en celular se desplace con la lista */}
           <div className="red-sidebar-head">
-            <h2><Globe size={18} /> Trabajos en Red</h2>
+            <h2><Globe size={18} /> Trabajos en Mercado</h2>
             <p>
               <span className="mercado-map-live-dot" />
               {activeTab === 'en_red'
-                ? `${enRedJobs.length} ${enRedJobs.length === 1 ? 'publicación' : 'publicaciones'} en red`
+                ? `${enRedJobs.length} ${enRedJobs.length === 1 ? 'publicación' : 'publicaciones'} en Mercado`
                 : `${aceptadosJobs.length} ${aceptadosJobs.length === 1 ? 'trabajo asignado' : 'trabajos asignados'}`}
             </p>
           </div>
@@ -785,7 +785,7 @@ const VistaRedAutonomo = () => {
               onClick={() => setActiveTab('en_red')}
               data-ayuda="pestana-en-red"
             >
-              <Globe size={15} /> En red <span>{enRedJobs.length}</span>
+              <Globe size={15} /> En Mercado <span>{enRedJobs.length}</span>
             </button>
             <button
               type="button"
@@ -822,7 +822,7 @@ const VistaRedAutonomo = () => {
                 ) : activeTab === 'en_red' ? (
                   <>
                     <div className="red-vacio-icono"><Globe size={24} /></div>
-                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#ffffff' }}>No tienes publicaciones abiertas en la red</p>
+                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#ffffff' }}>No tienes publicaciones abiertas en el Mercado</p>
                     <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>Toca "Publicar problema" para solicitar cotizaciones de técnicos.</span>
                   </>
                 ) : (

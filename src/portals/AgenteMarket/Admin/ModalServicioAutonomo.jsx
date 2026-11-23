@@ -395,7 +395,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
     const targetTechId = (!isToNetwork && selectedTechId) ? selectedTechId : null;
 
     if (!isToNetwork && tecnicos.length === 0) {
-      mostrarAviso("No cuentas con técnicos vinculados actualmente. Te recomendamos enviarlo a la Red de Técnicos.");
+      mostrarAviso("No cuentas con técnicos vinculados actualmente. Te recomendamos enviarlo al Mercado de Técnicos.");
       return;
     }
 
@@ -679,7 +679,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                           <small className="msa-hab-nota"><Sparkles size={12} /> La elegimos por el equipo; cámbiala si no es correcta.</small>
                         )}
                         {elegida === SIN_HABILIDAD && (
-                          <small className="msa-hab-nota">Le llegará a todos los técnicos de la red.</small>
+                          <small className="msa-hab-nota">Le llegará a todos los técnicos del Mercado.</small>
                         )}
                       </div>
                     );
@@ -914,7 +914,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                     >
                       <div className="msa-destino-btn-head">
                         <Globe size={16} />
-                        <span>A LA RED</span>
+                        <span>AL MERCADO</span>
                       </div>
                       <span className="msa-destino-btn-sub">
                         Técnicos autónomos
@@ -1003,8 +1003,8 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                           </div>
                           <p className="msa-no-tecnicos-desc">
                             {esClienteRed
-                              ? <>Agrega hasta 3 favoritos desde <strong>Mis técnicos</strong> o escaneando el código QR de un técnico. Mientras tanto, envía esta solicitud a la <strong>Red de Técnicos</strong> para recibir cotizaciones.</>
-                              : <>No tienes técnicos directos registrados. Te recomendamos enviar esta solicitud a la <strong>Red de Técnicos</strong> para recibir cotizaciones.</>}
+                              ? <>Agrega hasta 3 favoritos desde <strong>Mis técnicos</strong> o escaneando el código QR de un técnico. Mientras tanto, envía esta solicitud al <strong>Mercado de Técnicos</strong> para recibir cotizaciones.</>
+                              : <>No tienes técnicos directos registrados. Te recomendamos enviar esta solicitud al <strong>Mercado de Técnicos</strong> para recibir cotizaciones.</>}
                           </p>
                           <button
                             type="button"
@@ -1015,7 +1015,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                             disabled={loadingSubmit || (!selectedPropertyId && carritoServicios.length === 0)}
                             className="msa-btn-submit-orange"
                           >
-                            <Globe size={15} /> PUBLICAR EN LA RED DE TÉCNICOS
+                            <Globe size={15} /> PUBLICAR EN EL MERCADO DE TÉCNICOS
                           </button>
                         </div>
                       )}
@@ -1024,7 +1024,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                     /* MODO RED PÚBLICA */
                     <div className="msa-destino-panel">
                       <p className="msa-network-desc">
-                        Tu solicitud será visible para técnicos de la red para que recibas cotizaciones en tiempo real.
+                        Tu solicitud será visible para técnicos del Mercado para que recibas cotizaciones en tiempo real.
                       </p>
                       <button 
                         type="button" 
@@ -1033,7 +1033,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                         className="msa-btn-submit-orange"
                       >
                         <Globe size={17} />
-                        {loadingSubmit ? "PUBLICANDO EN LA RED..." : `PUBLICAR EN LA RED ${totalItemsCount > 1 ? `(${totalItemsCount})` : ''}`}
+                        {loadingSubmit ? "PUBLICANDO EN EL MERCADO..." : `PUBLICAR EN EL MERCADO ${totalItemsCount > 1 ? `(${totalItemsCount})` : ''}`}
                       </button>
                     </div>
                   )}
@@ -1106,7 +1106,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                 <CheckCircle2 size={36} color="#16a34a" strokeWidth={2.4} />
               </div>
               <h3 className="msa-ficha-title">
-                {solicitudExitosa.isToNetwork ? '¡Solicitud Publicada en la Red!'
+                {solicitudExitosa.isToNetwork ? '¡Solicitud Publicada en el Mercado!'
                   : solicitudExitosa.esDirigida ? '¡Solicitud enviada a tu técnico!' : '¡Solicitud Asignada con Éxito!'}
               </h3>
               <p className="msa-ficha-subtitle">
@@ -1122,10 +1122,10 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
             <div className="msa-ficha-body">
               <div className="msa-ficha-badge-row">
                 <span className="msa-ficha-folio">
-                  {solicitudExitosa.loteId ? `LOTE: ${solicitudExitosa.loteId}` : 'FOLIO: EN RED'}
+                  {solicitudExitosa.loteId ? `LOTE: ${solicitudExitosa.loteId}` : 'FOLIO: EN MERCADO'}
                 </span>
                 <span className={`msa-ficha-status-pill ${solicitudExitosa.isToNetwork ? 'network' : 'tech'}`}>
-                  ● {solicitudExitosa.isToNetwork ? 'EN VIVO EN LA RED' : solicitudExitosa.esDirigida ? 'ESPERANDO COTIZACIÓN' : 'ASIGNADO'}
+                  ● {solicitudExitosa.isToNetwork ? 'EN VIVO EN EL MERCADO' : solicitudExitosa.esDirigida ? 'ESPERANDO COTIZACIÓN' : 'ASIGNADO'}
                 </span>
               </div>
 

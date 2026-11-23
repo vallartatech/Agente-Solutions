@@ -53,7 +53,7 @@ const DatosPersonales = ({ perfil, onPerfil }) => {
   const guardarFecha = async (valor) => {
     setEstadoFecha(null);
     if (!valor || valor === perfil?.fecha_nacimiento) return;
-    if (valor > fechaMayorEdad()) { setEstadoFecha({ ok: false, texto: 'Debes ser mayor de edad para trabajar en la red.' }); return; }
+    if (valor > fechaMayorEdad()) { setEstadoFecha({ ok: false, texto: 'Debes ser mayor de edad para trabajar en el Mercado.' }); return; }
     setGuardandoFecha(true);
     try {
       const data = await guardarPerfil({ fecha_nacimiento: valor });

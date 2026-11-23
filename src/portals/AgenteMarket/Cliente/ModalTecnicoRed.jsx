@@ -52,7 +52,7 @@ const ModalTecnicoRed = ({ tecnico = null, codigo = null, pie = null, onContrata
         if (tecnico) {
           setPerfil(desdeTarjeta(tecnico));
           setSinQr(e.response?.status === 404 && e.response?.data?.message ? 'no_red' : 'error');
-        } else setError(e.response?.status === 404 ? 'Este código QR no corresponde a ningún técnico de la red.' : 'No se pudo cargar el perfil del técnico.');
+        } else setError(e.response?.status === 404 ? 'Este código QR no corresponde a ningún técnico del Mercado.' : 'No se pudo cargar el perfil del técnico.');
       })
       .finally(() => { if (vivo) setCargando(false); });
     return () => { vivo = false; };
@@ -101,7 +101,7 @@ const ModalTecnicoRed = ({ tecnico = null, codigo = null, pie = null, onContrata
                 </section>
               )}
               {sinQr === 'no_red' && (
-                <p className="tqr-nota"><AlertCircle size={15} /> Este técnico no es de la red de técnicos independientes, por eso no tiene código QR.</p>
+                <p className="tqr-nota"><AlertCircle size={15} /> Este técnico no es del Mercado de técnicos independientes, por eso no tiene código QR.</p>
               )}
               {sinQr === 'error' && (
                 <p className="tqr-nota tqr-nota-alerta"><AlertCircle size={15} /> No se pudo cargar el perfil completo ni el código QR. Intenta de nuevo en unos minutos.</p>

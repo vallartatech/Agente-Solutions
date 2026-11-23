@@ -255,7 +255,7 @@ const PerfilCliente = () => {
       case 5: return 'Autónomo';
       case 6: return 'Contratista';
       case 7: return 'Admin Propiedades';
-      case 8: return 'Técnico de la Red';
+      case 8: return 'Técnico del Mercado';
       default: return 'Cliente';
     }
   };

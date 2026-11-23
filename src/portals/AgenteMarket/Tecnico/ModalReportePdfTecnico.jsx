@@ -90,7 +90,7 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], bo
     : '09:00 AM - 01:00 PM';
 
   // Datos Cliente
-  const clienteNombre = finalReportData?.cliente?.nombre || job.client_name || job.cliente || job.propietario || 'Cliente de la Red';
+  const clienteNombre = finalReportData?.cliente?.nombre || job.client_name || job.cliente || job.propietario || 'Cliente del Mercado';
   const clienteTelefono = finalReportData?.cliente?.telefono || job.client_phone || job.telefono_cliente || job.telefono || 'No registrado';
   const clienteCorreo = finalReportData?.cliente?.correo || job.client_email || job.email || 'Contacto vía Plataforma Agente';
 
@@ -100,7 +100,7 @@ const ModalReportePdfTecnico = ({ isOpen, onClose, job, boardJobReports = [], bo
   const propiedadDireccion = finalReportData?.propiedad?.direccion || job.full_address || job.calle || job.property?.address || job.address || job.zona || 'Mérida, Yucatán';
 
   // Datos Técnico
-  const tecnicoNombre = finalReportData?.tecnico?.nombre || job.tecnico_nombre || job.technician_name || 'Técnico Especialista de la Red';
+  const tecnicoNombre = finalReportData?.tecnico?.nombre || job.tecnico_nombre || job.technician_name || 'Técnico Especialista del Mercado';
   const tecnicoEspecialidad = finalReportData?.tecnico?.especialidad || job.tecnico_specialty || job.tipo || 'Instalaciones y Mantenimiento';
   const tecnicoCelular = finalReportData?.tecnico?.celular || job.tecnico_celular || 'Soporte Agente Solutions';
   const tecnicoCorreo = finalReportData?.tecnico?.correo || job.tecnico_email || 'soporte@agentesolutions.com';

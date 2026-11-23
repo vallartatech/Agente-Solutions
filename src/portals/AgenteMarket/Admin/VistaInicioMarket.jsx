@@ -90,7 +90,7 @@ const VistaInicioAdmin = () => {
       { id: 5, title: 'COTIZACIONES', icon: '🧾', path: '/vista-cotizaciones' },
       { id: 6, title: 'SERVICIOS', icon: '🔧', path: '/tablero-servicios' },
       { id: 7, title: '¿NECESITAS AYUDA?', icon: '🤝', path: '/apoyo-autonomo' },
-      { id: 8, title: 'MERCADO / RED', icon: '🗺️', path: '/red-autonomos' },
+      { id: 8, title: 'MERCADO', icon: '🗺️', path: '/red-autonomos' },
     ];
   } else if (isGestorInmobiliario) {
     // 🏢 ROL 5: GESTOR INMOBILIARIO (ADMIN PRO COMPLETO)
@@ -109,17 +109,17 @@ const VistaInicioAdmin = () => {
       { id: 12, title: 'SALA DE ESPERA', icon: '⏳', path: '/sala-espera-tecnicos' },
       { id: 13, title: `MI CÓDIGO (${codeDisplay})`, icon: '📲', path: '/mi-codigo-autonomo' },
       { id: 14, title: '¿NECESITAS AYUDA?', icon: '🤝', path: '/apoyo-autonomo' },
-      { id: 15, title: 'MERCADO / RED', icon: '🗺️', path: '/red-autonomos' },
+      { id: 15, title: 'MERCADO', icon: '🗺️', path: '/red-autonomos' },
     ];
   } else if (isContratista) {
     // 🏗️ ROL 7: CONTRATISTA / LÍDER
     const codeDisplay = subInfo?.tenant?.code || 'AUT_C';
     menuItems = [
       { id: 1, title: 'MI CUADRILLA', icon: '👥', path: '/usuarios' },
-      { id: 2, title: 'COTIZACIONES RED', icon: '🧾', path: '/vista-cotizaciones' },
+      { id: 2, title: 'COTIZACIONES MERCADO', icon: '🧾', path: '/vista-cotizaciones' },
       { id: 3, title: 'TRABAJOS Y ÓRDENES', icon: '🔧', path: '/tablero-servicios' },
       { id: 4, title: 'REPORTES', icon: '📸', path: '/reportes-globales' },
-      { id: 5, title: 'MERCADO / RED', icon: '🗺️', path: '/red-autonomos' },
+      { id: 5, title: 'MERCADO', icon: '🗺️', path: '/red-autonomos' },
       { id: 6, title: 'SALA DE ESPERA CUADRILLA', icon: '⏳', path: '/sala-espera-tecnicos' },
       { id: 7, title: `CÓDIGO CUADRILLA (${codeDisplay})`, icon: '📲', path: '/mi-codigo-autonomo' },
       { id: 8, title: '¿NECESITAS AYUDA?', icon: '🤝', path: '/apoyo-autonomo' },
@@ -134,7 +134,7 @@ const VistaInicioAdmin = () => {
       { id: 5, title: 'COTIZACIONES', icon: '🧾', path: '/vista-cotizaciones' },
       { id: 6, title: 'SERVICIOS', icon: '🔧', path: '/tablero-servicios' },
       { id: 14, title: '¿NECESITAS AYUDA?', icon: '🤝', path: '/apoyo-autonomo' },
-      { id: 15, title: 'MERCADO / RED', icon: '🗺️', path: '/red-autonomos' },
+      { id: 15, title: 'MERCADO', icon: '🗺️', path: '/red-autonomos' },
     ];
   }
 

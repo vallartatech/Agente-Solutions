@@ -185,7 +185,7 @@ const MiCuadrilla = () => {
         {!salio && (
           <div className="mc-perfil">
             <span className={`mc-insignia mc-insignia-${perfil.clase}`}>{perfil.texto}</span>
-            {t.con_red && <span className="mc-insignia mc-insignia-espera">🌐 También trabaja en la red</span>}
+            {t.con_red && <span className="mc-insignia mc-insignia-espera">🌐 También trabaja en el Mercado</span>}
             {t.perfil?.identidad_verificada && <span className="mc-insignia mc-insignia-ok"><ShieldCheck size={13} /> Identidad verificada</span>}
             {t.perfil?.estudios_verificados && <span className="mc-insignia mc-insignia-ok"><GraduationCap size={13} /> Estudios verificados</span>}
           </div>

@@ -262,7 +262,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
   };
 
   const handleDeleteJob = async () => {
-    if (!await confirmarAccion('¿Estás seguro de que deseas eliminar y cancelar esta publicación de la Red? Ya no será visible para los técnicos ni recibirá más cotizaciones.')) return;
+    if (!await confirmarAccion('¿Estás seguro de que deseas eliminar y cancelar esta publicación del Mercado? Ya no será visible para los técnicos ni recibirá más cotizaciones.')) return;
     try {
       const res = await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}`, { headers: authHeaders() });
       if (res.data?.success) {
@@ -274,7 +274,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
       }
     } catch (e) {
       console.error('Error al eliminar publicación:', e);
-      mostrarAviso('Hubo un error al eliminar la publicación de la Red.');
+      mostrarAviso('Hubo un error al eliminar la publicación del Mercado.');
     }
   };
 
@@ -289,7 +289,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
       }
     } catch (e) {
       console.error('Error reenviando solicitud a la red:', e);
-      mostrarAviso(e.response?.data?.message || 'Hubo un error al reenviar la solicitud a la red.');
+      mostrarAviso(e.response?.data?.message || 'Hubo un error al reenviar la solicitud al Mercado.');
     }
   };
 
@@ -501,9 +501,9 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                   <div className="red-dirigida">
                     <span>
                       <Star size={15} fill="currentColor" />
-                      Enviada solo a tu técnico favorito {job.tecnico_dirigido_nombre}. Si no te responde o prefieres más opciones, ábrela a toda la red.
+                      Enviada solo a tu técnico favorito {job.tecnico_dirigido_nombre}. Si no te responde o prefieres más opciones, ábrela a todo el Mercado.
                     </span>
-                    <button type="button" onClick={handleReabrirEnRed}>Abrir a toda la red</button>
+                    <button type="button" onClick={handleReabrirEnRed}>Abrir a todo el Mercado</button>
                   </div>
                 )}
 
@@ -514,7 +514,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                     <span style={{ fontSize: '13px', color: '#94a3b8' }}>
                       {job.tecnico_dirigido_id
                         ? `${job.tecnico_dirigido_nombre || 'Tu técnico'} te notificará en cuanto envíe su propuesta.`
-                        : 'Los técnicos de la red te notificarán en cuanto envíen su propuesta.'}
+                        : 'Los técnicos del Mercado te notificarán en cuanto envíen su propuesta.'}
                     </span>
                   </div>
                 ) : (

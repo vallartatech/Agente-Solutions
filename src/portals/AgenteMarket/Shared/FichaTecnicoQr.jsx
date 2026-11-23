@@ -41,7 +41,7 @@ const FichaTecnicoQr = ({ perfil: p, conQr = true, children }) => {
         <div className="tqr-foto">{foto ? <img src={foto} alt="" /> : (p.nombre || 'T').charAt(0).toUpperCase()}</div>
         <div className="tqr-identidad">
           <h2>{p.nombre || 'Técnico'}</h2>
-          <p>{p.rol || 'Técnico de la red'}{p.miembro_desde ? ` · En la red desde ${anio(p.miembro_desde)}` : ''}</p>
+          <p>{p.rol || 'Técnico del Mercado'}{p.miembro_desde ? ` · En el Mercado desde ${anio(p.miembro_desde)}` : ''}</p>
           {p.insignias && (
             <div className="tqr-insignias">
               {verificado

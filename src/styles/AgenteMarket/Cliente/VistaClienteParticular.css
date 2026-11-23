@@ -3612,3 +3612,12 @@
   .vcp-bajar-btn svg,
   .vcp-titulo-cambia { animation: none; }
 }
+
+/* Celular: la ficha va justo debajo del botón MENÚ. El relleno inferior del bloque de arriba
+   (pensado para la barra de abajo) dejaba un hueco; la ficha ya trae su propio espacio abajo. */
+@media (max-width: 900px) {
+  .vcp-root .vcp-body-layout:has(+ .vcp-tablero-seccion) { padding-bottom: 4px !important; }
+  .vcp-root .vcp-tablero-seccion { padding-top: 6px; }
+  /* El tablero global está en la barra de abajo */
+  .vcp-root .vcp-ts-global-btn { display: none; }
+}

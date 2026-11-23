@@ -12,7 +12,7 @@ const uno = (v) => Number(v).toFixed(1);
  * <Calificacion estrellas={4.8} relojes={4.6} total={12} etiquetas={{ estrellas: 'Calidad', relojes: 'Puntualidad' }} />
  * compacta: solo números (para tarjetas pequeñas)
  */
-const Calificacion = ({ estrellas, relojes, total = 0, etiquetas = {}, compacta = false, textoNuevo = 'Nuevo en la red' }) => {
+const Calificacion = ({ estrellas, relojes, total = 0, etiquetas = {}, compacta = false, textoNuevo = 'Nuevo en el Mercado' }) => {
   if (!total) {
     return <span className="cal-nuevo"><Sparkles size={12} /> {textoNuevo}</span>;
   }

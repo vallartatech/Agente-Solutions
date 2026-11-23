@@ -237,7 +237,7 @@ const VistaClienteParticular = () => {
       case 5: return 'Autónomo';
       case 6: return 'Contratista';
       case 7: return 'Admin Propiedades';
-      case 8: return 'Técnico de la Red';
+      case 8: return 'Técnico del Mercado';
       default: return 'Cliente Particular';
     }
   }, [user]);
@@ -1305,7 +1305,7 @@ const VistaClienteParticular = () => {
             </div>
 
             {/* Botón al tablero global de todas las propiedades */}
-            <button type="button" className="vcp-ts-global-btn" onClick={() => navigate('/tablero-global')}>
+            <button type="button" className="vcp-ts-global-btn" onClick={() => navigate('/tablero-global')} data-ayuda="menu-tablero-global">
               <span className="vcp-ts-head-ico"><Layers size={18} /></span>
               <span className="vcp-ts-global-txt">
                 <strong>Tablero global</strong>

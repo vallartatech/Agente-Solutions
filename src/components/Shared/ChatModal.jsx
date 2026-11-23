@@ -7,9 +7,9 @@ import { mostrarAviso } from '../../utils/dialogos';
 const ChatModal = ({
   quoteId,
   isNetworkQuote = true,
-  jobTitle = 'Trabajo en la Red',
+  jobTitle = 'Trabajo en el Mercado',
   otherPartyName = 'Usuario',
-  otherPartyRole = 'Técnico de la Red',
+  otherPartyRole = 'Técnico del Mercado',
   onClose,
   initialMessages = []
 }) => {

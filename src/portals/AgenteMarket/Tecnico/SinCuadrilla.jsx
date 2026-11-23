@@ -133,7 +133,7 @@ const SinCuadrilla = () => {
             <article className="mc-tarjeta">
               <span className="mc-etiqueta"><UserCheck size={16} /> Trabajar por mi cuenta</span>
               <small className="mc-nota">
-                Como técnico independiente cotizas en la red y recibes tus propios trabajos. Le avisaremos al equipo
+                Como técnico independiente cotizas en el Mercado y recibes tus propios trabajos. Le avisaremos al equipo
                 de Agente Market para activar tu cuenta.
               </small>
               <button type="button" className="mc-btn mc-btn-suave" disabled={enviando !== null} onClick={pedirIndependiente}>

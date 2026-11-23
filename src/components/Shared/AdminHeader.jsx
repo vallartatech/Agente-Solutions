@@ -123,7 +123,7 @@ const AdminHeader = ({ activeModule, navTabs, navBack }) => {
   const masItems = [
     // Mapa en vivo: propiedades para Root/Admin y, con permiso de ubicación, el equipo
     { key: 'mapa', label: 'Mapa en vivo', Icon: Navigation, path: '/mapa-equipo', active: isMapaActive },
-    ...(isRoot ? [{ key: 'mercado', label: 'Mercado / Red', Icon: Globe, path: '/red-autonomos', active: isMercadoActive }] : [])
+    ...(isRoot ? [{ key: 'mercado', label: 'Mercado', Icon: Globe, path: '/red-autonomos', active: isMercadoActive }] : [])
   ];
   const masActivo = masItems.find(i => i.active);
 

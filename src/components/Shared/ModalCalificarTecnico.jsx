@@ -128,7 +128,7 @@ const ModalCalificarTecnico = ({
         icon: 'success',
         title: '¡Evaluación Registrada!',
         text: actionType === 'reopen'
-          ? 'La calificación de puntualidad fue guardada y tu solicitud ha sido enviada nuevamente a la red para recibir nuevas cotizaciones.'
+          ? 'La calificación de puntualidad fue guardada y tu solicitud ha sido enviada nuevamente al Mercado para recibir nuevas cotizaciones.'
           : 'La calificación de puntualidad fue guardada y el servicio quedó cancelado.',
         confirmButtonColor: '#f26522',
         background: '#191e2b',
@@ -242,7 +242,7 @@ const ModalCalificarTecnico = ({
               </h3>
               <p className="calif-header-sub">
                 {isCancellation
-                  ? 'El técnico canceló su asistencia. Califícalo para continuar: después eliges si reenvías tu solicitud a la red o cancelas el servicio.'
+                  ? 'El técnico canceló su asistencia. Califícalo para continuar: después eliges si reenvías tu solicitud al Mercado o cancelas el servicio.'
                   : 'Tu evaluación ayuda a reconocer el buen trabajo y la puntualidad'}
               </p>
             </div>
@@ -418,10 +418,10 @@ const ModalCalificarTecnico = ({
                     transition: 'all 0.2s ease',
                     opacity: isSubmitting ? 0.7 : 1
                   }}
-                  title="Permitir que otros técnicos de la red envíen cotizaciones"
+                  title="Permitir que otros técnicos del Mercado envíen cotizaciones"
                 >
                   <Sparkles size={15} />
-                  <span>{isSubmitting ? 'Enviando...' : '🌐 Enviar a la Red'}</span>
+                  <span>{isSubmitting ? 'Enviando...' : '🌐 Enviar al Mercado'}</span>
                 </button>
 
                 <button

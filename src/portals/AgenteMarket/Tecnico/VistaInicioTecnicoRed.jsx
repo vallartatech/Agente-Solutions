@@ -38,7 +38,7 @@ const VistaInicioTecnico = () => {
             <div className="menu-card">
               <div className="card-inner" onClick={() => navigate('/mercado-trabajos')}>
                 <div className="icon-placeholder">🌍</div>
-                <span className="card-title">MERCADO / RED</span>
+                <span className="card-title">MERCADO</span>
               </div>
             </div>
           ) : (

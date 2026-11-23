@@ -221,7 +221,7 @@ const VistaServiciosAdmin = () => {
       } else if (!isUnknownClient) {
         titularTarjeta = rawClient;
       } else if (isFromNetwork) {
-        titularTarjeta = 'Técnico de la Red (Por Asignar)';
+        titularTarjeta = 'Técnico del Mercado (Por Asignar)';
       } else {
         titularTarjeta = 'Por Asignar';
       }
@@ -812,7 +812,7 @@ const VistaServiciosAdmin = () => {
                           {info.texto}
                         </span>
                         {is2daReq && <span className="ttc-chip naranja"><AlertTriangle size={12} /> 2da visita solicitada</span>}
-                        {tarea.isFromNetwork && <span className="ttc-chip morado">Red</span>}
+                        {tarea.isFromNetwork && <span className="ttc-chip morado">Mercado</span>}
                         {loteMatch && loteMatch[2] !== '1' && <span className="ttc-chip azul">📦 Lote {loteMatch[1]}/{loteMatch[2]}</span>}
                       </div>
 
@@ -1267,7 +1267,7 @@ const VistaServiciosAdmin = () => {
                             <span style={{ fontSize: '24px' }}>⚡</span>
                             <div>
                               <strong style={{ color: '#c2410c', fontSize: '0.88rem', display: 'block' }}>
-                                SERVICIO SOLICITADO EN LA RED DE TÉCNICOS
+                                SERVICIO SOLICITADO EN EL MERCADO DE TÉCNICOS
                               </strong>
                               <span style={{ color: '#9a3412', fontSize: '0.78rem', lineHeight: '1.4', display: 'block', marginTop: '2px' }}>
                                 Este trabajo es de atención inmediata al momento (On-demand). No requiere programar fecha de visita ni asignación de materiales.

@@ -25,7 +25,7 @@ const PerfilQrPublico = () => {
     axios.get(`${API}/red/qr/${codigo}`)
       .then((r) => { setPerfil(r.data.data); setRelacion(r.data.relacion || null); setError(null); })
       .catch((e) => setError(e.response?.status === 404
-        ? 'Este código QR no corresponde a ningún técnico de la red.'
+        ? 'Este código QR no corresponde a ningún técnico del Mercado.'
         : 'No se pudo cargar el perfil. Revisa tu conexión e intenta de nuevo.'))
       .finally(() => setCargando(false));
   };
