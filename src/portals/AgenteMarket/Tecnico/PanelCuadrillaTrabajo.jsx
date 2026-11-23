@@ -29,7 +29,7 @@ const PanelCuadrillaTrabajo = ({ job, onCambio }) => {
   const [elegidos, setElegidos] = useState([]);
 
   if (!job) return null;
-  const equipo = job.equipo || [];
+  const equipo = job.equipo_cuadrilla || [];
 
   if (job.es_cuadrilla) {
     const companeros = equipo.filter(p => !p.es_titular);

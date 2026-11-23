@@ -1095,6 +1095,8 @@ const MercadoTrabajos = () => {
 
           acceptedMap.set(order.id, {
             ...order,
+            // "equipo" es el equipo afectado (texto) en todo el tablero; quién va está en equipo_cuadrilla
+            equipo: order.equipment || '',
             lat: rawLat,
             lng: rawLng,
             coordinates: coordsObj ? coordsObj.formatted : (order.coordinates || order.coordenadas || order.property?.coordinates || null),
