@@ -2787,3 +2787,75 @@
     overflow: visible !important;
   }
 }
+
+/* ── Chat del cliente con el técnico: caja que crece al escribir (EntradaMensaje) ── */
+.mercado-chat-input-bar { align-items: flex-end; }
+
+.mercado-chat-input-bar .entrada-mensaje {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: #12141c;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 12.5px;
+  line-height: 1.4;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+  scrollbar-width: none;
+}
+
+.mercado-chat-input-bar .entrada-mensaje:focus {
+  border-color: #f26522;
+  box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.25);
+}
+
+.chat-lateral .mercado-chat-input-bar .entrada-mensaje {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+  font-size: 16px; /* evita el zoom de iOS */
+}
+
+/* ── Detalle de publicación (cliente): datos del trabajo y perfil del técnico plegables ── */
+.red-plegable-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 4px 0 10px;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #334155;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.red-plegable-btn > svg:first-child { color: #f26522; flex-shrink: 0; }
+.red-plegable-btn > span { flex: 1; }
+.red-plegable-btn > svg:last-child { color: #94a3b8; flex-shrink: 0; }
+.red-plegable-btn:hover { background: #ffffff; border-color: rgba(242, 101, 34, 0.35); }
+.red-plegable-btn:focus-visible { outline: 2px solid #f26522; outline-offset: 2px; }
+
+/* Dentro de la tarjeta de cada oferta: mismo margen que sus bloques */
+.red-quote-card .red-plegable-btn { width: auto; margin: 10px 16px; }
+
+/* Las acciones (Aceptar oferta, Chat, Rechazar) van arriba, debajo del técnico y su precio */
+.red-detalle-publicacion .red-quote-header + .red-quote-pie,
+.red-detalle-publicacion .red-visita + .red-quote-pie { margin-top: 0; }
+
+/* Técnico en celular con una ruta activa: la lista plegada ("Mostrar lista") tapaba el panel
+   "En camino" (Llegué al lugar). Se oculta mientras dura la ruta; al cerrarla vuelve. */
+@media (max-width: 900px) {
+  .red-mapa-vivo .mercado-content .mercado-sidebar.con-ruta:not(.mobile-open) { display: none !important; }
+  .red-mapa-vivo .mercado-content .mercado-sidebar.con-ruta ~ .mercado-mobile-toggle-btn { display: none !important; }
+}

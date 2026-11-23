@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Activity, Building2, ChevronDown, ChevronRight, Globe, Hammer, ClipboardList, UserRound, RefreshCw, ChevronUp } from 'lucide-react';
-import { API, authHeaders, esActivo, calcularFlujo, etiquetaEstado, nombreTecnicos } from '../../portals/AgenteSolutions/Admin/Expediente/flujoTrabajo';
+import { Activity, Building2, ChevronDown, ChevronRight, Globe, Hammer, ClipboardList, UserRound, RefreshCw, ChevronUp, FileText } from 'lucide-react';
+import { API, authHeaders, esActivo, esFinalizado, calcularFlujo, etiquetaEstado, nombreTecnicos } from '../../portals/AgenteSolutions/Admin/Expediente/flujoTrabajo';
 import '../../styles/Shared/TrabajosEnCurso.css';
 
 // Cada vez que se vuelve al inicio se monta de nuevo: se guarda lo último cargado para mostrarlo al instante
@@ -77,6 +77,25 @@ const useArrastreHorizontal = () => {
 
 const enCurso = (t) => esActivo(t) && !String(t.status || '').trim().toLowerCase().startsWith('cancel');
 
+// Agente Market: un trabajo del Mercado que terminó sigue en la lista como "Finalizado" (abre su reporte)
+// hasta que se abre 2 veces. Solo los terminados en los últimos días, para no traer el historial.
+const DIAS_FINALIZADO = 7;
+const VECES_FINALIZADO = 2;
+const finalizadoReciente = (t, enRed) => {
+  if (t.kind !== 'trabajo' || !esFinalizado(t) || !enRed.has(String(t.id))) return false;
+  const fecha = new Date(String(t.updated_at || '').replace(' ', 'T')).getTime();
+  return Boolean(fecha) && Date.now() - fecha < DIAS_FINALIZADO * 86400000;
+};
+
+// Cuántas veces se abrió cada trabajo finalizado (solo en este navegador)
+const claveVistas = (usuarioId) => `tec_finalizados_vistos_${usuarioId}`;
+const leerVistas = (usuarioId) => {
+  try { return JSON.parse(localStorage.getItem(claveVistas(usuarioId)) || '{}') || {}; } catch { return {}; }
+};
+const guardarVistas = (usuarioId, vistas) => {
+  try { localStorage.setItem(claveVistas(usuarioId), JSON.stringify(vistas)); } catch { /* sin almacenamiento: solo dura esta visita */ }
+};
+
 // Trabajos sin terminar de todas las propiedades, agrupados por propiedad.
 // conRed: marca los trabajos publicados en la Red (solo clientes de la Red).
 // cadaMinuto: refresca solo cada 60 s (la interna solo al abrir o con el botón).
@@ -111,10 +130,13 @@ export const useTrabajosEnCurso = (activo, usuarioId, { conRed = true, cadaMinut
         return {
           id: p.id,
           nombre: p.property_name || p.nombre_propiedad || p.nombre || `Propiedad ${p.id}`,
-          trabajos: trabajos.filter(enCurso).map((t) => ({
-            ...t,
-            enRed: t.kind === 'trabajo' && enRed.has(String(t.id)),
-          })),
+          trabajos: trabajos
+            .filter((t) => enCurso(t) || (conRed && finalizadoReciente(t, enRed)))
+            .map((t) => ({
+              ...t,
+              enRed: t.kind === 'trabajo' && enRed.has(String(t.id)),
+              finalizado: !enCurso(t),
+            })),
         };
       }).filter((g) => g.trabajos.length);
 
@@ -134,22 +156,25 @@ export const useTrabajosEnCurso = (activo, usuarioId, { conRed = true, cadaMinut
     return () => clearInterval(intervalo);
   }, [recargar, activo, cadaMinuto]);
 
-  const total = useMemo(() => grupos.reduce((n, g) => n + g.trabajos.length, 0), [grupos]);
+  // Solo cuentan los que siguen en curso (los finalizados se muestran aparte)
+  const total = useMemo(() => grupos.reduce((n, g) => n + g.trabajos.filter((t) => !t.finalizado).length, 0), [grupos]);
   return { grupos, total, cargando, recargar };
 };
 
-const FilaTrabajo = ({ trabajo, propiedadId, onIr }) => {
+const FilaTrabajo = ({ trabajo, propiedadId, onIr, onAbrirFinalizado }) => {
   const { pasos, hechos, total, actual } = calcularFlujo(trabajo);
   const estado = etiquetaEstado(trabajo);
   const Icono = trabajo.kind === 'levantamiento' ? ClipboardList : Hammer;
+  // Finalizado: como el aviso "Trabajo finalizado", lleva al reporte del trabajo
+  const irAlReporte = () => onAbrirFinalizado(trabajo);
 
   return (
-    <div className="tec-trabajo">
+    <div className={`tec-trabajo ${trabajo.finalizado ? 'finalizado' : ''}`}>
       <button
         type="button"
         className="tec-trabajo-main"
-        onClick={() => onIr(`/detalle-propiedad/${propiedadId}/trabajo/${trabajo.uid}`)}
-        title="Ver el trabajo en la propiedad"
+        onClick={trabajo.finalizado ? irAlReporte : () => onIr(`/detalle-propiedad/${propiedadId}/trabajo/${trabajo.uid}`)}
+        title={trabajo.finalizado ? 'Ver el reporte del trabajo' : 'Ver el trabajo en la propiedad'}
       >
         <span className="tec-trabajo-icono"><Icono size={16} /></span>
         <span className="tec-trabajo-texto">
@@ -163,12 +188,18 @@ const FilaTrabajo = ({ trabajo, propiedadId, onIr }) => {
             {pasos.map((p) => <span key={p.key} className={`seg ${p.estado}`} />)}
           </span>
           <span className="tec-paso">
-            Paso {Math.min(hechos + 1, total)} de {total}{actual ? ` · ${actual.label}` : ''}
+            {trabajo.finalizado
+              ? 'Trabajo terminado · toca para ver el reporte'
+              : <>Paso {Math.min(hechos + 1, total)} de {total}{actual ? ` · ${actual.label}` : ''}</>}
           </span>
         </span>
         <ChevronRight size={16} className="tec-flecha" />
       </button>
-      {trabajo.enRed && (
+      {trabajo.finalizado ? (
+        <button type="button" className="tec-btn-red" onClick={irAlReporte}>
+          <FileText size={13} /> Ver reporte
+        </button>
+      ) : trabajo.enRed && (
         <button
           type="button"
           className="tec-btn-red"
@@ -188,8 +219,20 @@ export const PildoraTrabajosEnCurso = ({ usuarioId, interna = false }) => {
   const [abierto, setAbierto] = useState(false);
   const [filtro, setFiltro] = useState('todas');
   const [plegados, setPlegados] = useState({});
-  const { grupos, total, cargando, recargar } = useTrabajosEnCurso(true, usuarioId, { conRed: !interna, cadaMinuto: !interna });
+  const { grupos: todos, total, cargando, recargar } = useTrabajosEnCurso(true, usuarioId, { conRed: !interna, cadaMinuto: !interna });
   const arrastreFiltros = useArrastreHorizontal();
+
+  // Los finalizados se quitan de la lista después de abrirlos 2 veces
+  const [vistas, setVistas] = useState(() => leerVistas(usuarioId));
+  const grupos = useMemo(() => todos
+    .map((g) => ({ ...g, trabajos: g.trabajos.filter((t) => !t.finalizado || (vistas[t.id] || 0) < VECES_FINALIZADO) }))
+    .filter((g) => g.trabajos.length), [todos, vistas]);
+  const abrirFinalizado = (trabajo) => {
+    const nuevas = { ...vistas, [trabajo.id]: (vistas[trabajo.id] || 0) + 1 };
+    guardarVistas(usuarioId, nuevas);
+    setVistas(nuevas);
+    navigate(`/reportes-globales?trabajo=${trabajo.id}`);
+  };
 
   // Si la propiedad filtrada ya no tiene trabajos en curso, volver a "Todas"
   useEffect(() => {
@@ -284,7 +327,7 @@ export const PildoraTrabajosEnCurso = ({ usuarioId, interna = false }) => {
                 <ChevronDown size={15} className={`tec-grupo-flecha ${plegado ? 'plegado' : ''}`} />
               </button>
               {!plegado && g.trabajos.map((t) => (
-                <FilaTrabajo key={t.uid} trabajo={t} propiedadId={g.id} onIr={navigate} />
+                <FilaTrabajo key={t.uid} trabajo={t} propiedadId={g.id} onIr={navigate} onAbrirFinalizado={abrirFinalizado} />
               ))}
             </section>
           );

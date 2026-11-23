@@ -3,9 +3,10 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import {
   MapPin, Clock, CheckCircle, User, Calendar, MessageCircle, Maximize2, Image as ImageIcon,
-  FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Check, ClipboardList, Star, Sparkles
+  FileText, X, Trash2, Send, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, ClipboardList, Star, Sparkles
 } from 'lucide-react';
 import PanelChatLateral from '../../../components/Shared/PanelChatLateral';
+import EntradaMensaje from '../../../components/Shared/EntradaMensaje';
 import ModalCalificarTecnico from '../../../components/Shared/ModalCalificarTecnico';
 import CurriculumTecnico from '../Shared/CurriculumTecnico';
 import ResumenTecnico, { FotoTecnico, InsigniaTecnico } from '../Shared/ResumenTecnico';
@@ -38,6 +39,14 @@ const horaCorta = (valor) => {
 };
 
 const techDe = (q) => q?.technician_id || q?.technician?.id;
+// Primero la oferta aceptada, luego las que el cliente puede aceptar y al final las rechazadas
+const pesoCotizacion = (q, job) => {
+  if (q.status === 'accepted' || q.is_assigned || (job.is_accepted && Number(job.tecnico_id) === Number(techDe(q)))) return 0;
+  if (q.status === 'rejected') return 3;
+  return q.price > 0 ? 1 : 2;
+};
+const ordenarCotizaciones = (job) => [...(job.cotizaciones_list || [])]
+  .sort((a, b) => pesoCotizacion(a, job) - pesoCotizacion(b, job));
 const escaparHtml = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // Estado de la visita (propuesta, re-coordinación o confirmada) según el chat de la oferta
@@ -90,6 +99,10 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
   const [calificando, setCalificando] = useState(null);
   // Recién aceptada la cotización y el cliente eligió "Agregar acceso": el panel abre su formulario
   const [abrirAcceso, setAbrirAcceso] = useState(false);
+  // Menos texto al entrar: los datos del trabajo y el perfil de cada técnico se abren con su botón
+  const [datosAbiertos, setDatosAbiertos] = useState(false);
+  const [perfilesAbiertos, setPerfilesAbiertos] = useState({});
+  const alternarPerfil = (id) => setPerfilesAbiertos(prev => ({ ...prev, [id]: !prev[id] }));
   const chatEndRef = useRef(null);
 
   const refrescar = useCallback(() => onRefresh?.(), [onRefresh]);
@@ -366,6 +379,17 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
 
               <div className="mercado-premium-text">
                 <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '10px 0' }}>{job.titulo}</h3>
+                <button
+                  type="button"
+                  className="red-plegable-btn"
+                  onClick={() => setDatosAbiertos(v => !v)}
+                  aria-expanded={datosAbiertos}
+                >
+                  <FileText size={15} />
+                  <span>{datosAbiertos ? 'Ocultar datos del trabajo' : 'Ver datos del trabajo'}</span>
+                  {datosAbiertos ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+                {datosAbiertos && (
                 <div className="mercado-premium-info-grid">
                   <div className="red-dato red-dato-ancho">
                     <span className="red-dato-icono"><MapPin size={15} /></span>
@@ -405,6 +429,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Quién va a la casa: el contratista y/o los técnicos de su cuadrilla (sin teléfonos) */}
                 {job.equipo_en_sitio?.length > 0 && (
@@ -466,6 +491,10 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                   </div>
                 )}
 
+                {/* El técnico propone un nuevo precio para la cotización aceptada */}
+                {job.is_accepted && (
+                  <AjusteCotizacionCliente key={job.id} workOrderId={job.id} onCambio={refrescar} />
+                )}
                 {/* Con técnico asignado: QR o código para entrar a la propiedad (vence en máx. 7 días) */}
                 <AccesoPropiedadCliente
                   key={`acceso-${job.id}`}
@@ -474,10 +503,6 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                   abrirAlCargar={abrirAcceso}
                 />
 
-                {/* El técnico propone un nuevo precio para la cotización aceptada */}
-                {job.is_accepted && (
-                  <AjusteCotizacionCliente key={job.id} workOrderId={job.id} onCambio={refrescar} />
-                )}
                 {/* Después de cancelar: elegir si se reenvía a la red o se cancela por completo.
                     El botón "Cancelar servicio" va en la oferta aceptada, debajo del chat */}
                 {cancelado && (
@@ -519,7 +544,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {job.cotizaciones_list.map((quote) => {
+                    {ordenarCotizaciones(job).map((quote) => {
                       const isAcceptedQuote = Boolean(
                         quote.status === 'accepted' ||
                         quote.is_assigned ||
@@ -557,26 +582,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                             </div>
                           </div>
 
-                          {/* Currículum simplificado: calificación, experiencia y especialidades */}
-                          <ResumenTecnico tecnicoId={techDe(quote)} onVerCompleto={() => verPerfil(quote)} />
-
-                          {/* Propuesta del técnico; si reajustó la cotización: la nueva y, desplegables, las anteriores */}
-                          <VersionesCotizacionRed
-                            quote={quote}
-                            workOrderId={job.id}
-                            aceptada={isAcceptedQuote}
-                            recarga={`${quote.price}-${quote.chat_history?.length || 0}`}
-                          />
-
-                          {/* Último mensaje del técnico, si no es la misma propuesta */}
-                          {quote.hasNewTechMessage && quote.chat_history?.length > 0 && quote.displayAlertMsg !== quote.message && (
-                            <div className="red-quote-bloque red-quote-bloque-mensaje">
-                              <small><span className="red-msg-dot-pulse" /> Último mensaje</small>
-                              <p>{quote.displayAlertMsg}</p>
-                            </div>
-                          )}
-
-                          {/* Horario de visita propuesto por el técnico asignado: confirmar o re-coordinar aquí mismo */}
+                          {/* Lo que el cliente tiene que aceptar va arriba: horario de visita propuesto por el técnico asignado */}
                           {isAcceptedQuote && job.scheduled_at && (() => {
                             const sched = getJobScheduleStatus(job, quote);
                             const fechaTxt = new Date(job.scheduled_at).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' });
@@ -612,7 +618,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                             );
                           })()}
 
-                          {/* Estado y acciones de esta oferta */}
+                          {/* Estado y acciones de esta oferta (Aceptar oferta, Chat, Rechazar) */}
                           <div className="red-quote-pie">
                             <span className="red-quote-fecha">
                               <Clock size={12} /> {new Date(quote.created_at).toLocaleString('es-MX')}
@@ -646,6 +652,37 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                               <CancelacionServicioCliente job={job} onCambio={refrescar} onCerrar={onClose} />
                             )}
                           </div>
+                          {/* Currículum simplificado (calificación, experiencia y especialidades): se abre con su botón */}
+                          <button
+                            type="button"
+                            className="red-plegable-btn"
+                            onClick={() => alternarPerfil(quote.id)}
+                            aria-expanded={Boolean(perfilesAbiertos[quote.id])}
+                          >
+                            <Star size={15} />
+                            <span>{perfilesAbiertos[quote.id] ? 'Ocultar perfil del técnico' : 'Ver perfil del técnico'}</span>
+                            {perfilesAbiertos[quote.id] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </button>
+                          {perfilesAbiertos[quote.id] && (
+                            <ResumenTecnico tecnicoId={techDe(quote)} onVerCompleto={() => verPerfil(quote)} />
+                          )}
+
+                          {/* Propuesta del técnico; si reajustó la cotización: la nueva y, desplegables, las anteriores */}
+                          <VersionesCotizacionRed
+                            quote={quote}
+                            workOrderId={job.id}
+                            aceptada={isAcceptedQuote}
+                            recarga={`${quote.price}-${quote.chat_history?.length || 0}`}
+                          />
+
+                          {/* Último mensaje del técnico, si no es la misma propuesta */}
+                          {quote.hasNewTechMessage && quote.chat_history?.length > 0 && quote.displayAlertMsg !== quote.message && (
+                            <div className="red-quote-bloque red-quote-bloque-mensaje">
+                              <small><span className="red-msg-dot-pulse" /> Último mensaje</small>
+                              <p>{quote.displayAlertMsg}</p>
+                            </div>
+                          )}
+
                           {!isAcceptedQuote && <EstadoCotizacionRed quote={quote} job={job} onCambio={refrescar} />}
                         </div>
                       );
@@ -727,11 +764,10 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                   ))}
 
                   <form onSubmit={handleSendClientChat} className="mercado-chat-input-bar">
-                    <input
-                      type="text"
+                    <EntradaMensaje
                       placeholder={`Escribe un mensaje a ${activeChatQuote.technicianName}...`}
                       value={clientChatInput}
-                      onChange={(e) => setClientChatInput(e.target.value)}
+                      onChange={setClientChatInput}
                       disabled={sendingClientChat}
                     />
                     <button type="submit" className="mercado-chat-send-btn" disabled={sendingClientChat || !clientChatInput.trim()}>

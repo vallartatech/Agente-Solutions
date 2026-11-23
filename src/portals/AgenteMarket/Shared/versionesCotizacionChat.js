@@ -5,6 +5,17 @@
 const MARCA = '🔄 Actualicé mi cotización';
 const PREFIJO_PROPUESTA = 'Propuesta anterior:';
 
+// Texto que el servidor ponía al abrir el chat antes de cotizar: no es una propuesta del técnico
+const INICIO_CHAT = 'Chat iniciado por el técnico';
+const RE_INICIO_CHAT = new RegExp(`\\n?${PREFIJO_PROPUESTA}\\s*${INICIO_CHAT}\\s*$`);
+
+/** Mensaje de la cotización sin el texto automático de "chat iniciado" (queda en blanco). */
+export const limpiarPropuesta = (texto) => {
+  const t = String(texto || '').trim();
+  if (t === INICIO_CHAT) return '';
+  return t.replace(RE_INICIO_CHAT, '').trim();
+};
+
 const fmt = (n) => Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export const mensajeCotizacionActualizada = (precioAnterior, precioNuevo, propuestaAnterior) =>
@@ -27,7 +38,7 @@ export const versionesDesdeChat = (chat = []) => (chat || [])
     return {
       precio: aNumero(precios[1]),
       precioNuevo: aNumero(precios[2]),
-      propuesta: i >= 0 ? texto.slice(i + PREFIJO_PROPUESTA.length).trim() : '',
+      propuesta: i >= 0 ? limpiarPropuesta(texto.slice(i + PREFIJO_PROPUESTA.length)) : '',
       reemplazada_at: m.created_at,
     };
   })

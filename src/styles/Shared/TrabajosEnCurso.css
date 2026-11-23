@@ -316,3 +316,8 @@
   width: 0;
   height: 0;
 }
+
+/* Agente Market: trabajo del Mercado ya terminado (abre su reporte; se quita tras abrirlo 2 veces) */
+.tec-trabajo.finalizado { border-color: rgba(74, 222, 128, 0.45); }
+.tec-trabajo.finalizado .tec-trabajo-icono { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.tec-trabajo.finalizado .tec-paso { color: #86efac; font-weight: 700; }

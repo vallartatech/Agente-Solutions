@@ -34,10 +34,11 @@ import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 import ModalCalificarCliente from './ModalCalificarCliente';
 import Calificacion from '../Shared/Calificacion';
 import { obtenerAjustes } from '../Shared/ajusteCotizacionApi';
+import EntradaMensaje from '../../../components/Shared/EntradaMensaje';
 import AccesoPropiedadTecnico from './AccesoPropiedadTecnico';
 import { retirarCotizacion, confirmarDisponibilidad, errorDeRed } from '../Shared/redCancelacionApi';
 import '../../../styles/AgenteMarket/Shared/AjusteCotizacion.css';
-import { mensajeCotizacionActualizada } from '../Shared/versionesCotizacionChat';
+import { mensajeCotizacionActualizada, limpiarPropuesta } from '../Shared/versionesCotizacionChat';
 
 const mapContainerStyle = {
   width: '100%',
@@ -875,7 +876,18 @@ const MercadoTrabajos = () => {
   };
 
   // Iniciar ruta de navegación hacia el trabajo (Modo Uber)
-  const handleStartRoute = (job) => {
+  // abrirMaps: solo desde el botón "Iniciar ruta" (tocar la tarjeta o el pin del mapa no lo abre)
+  const handleStartRoute = (job, { abrirMaps = false } = {}) => {
+    if (abrirMaps) {
+      // La ruta se sigue en Google Maps (app en el celular, pestaña nueva en computadora).
+      // Se abre primero, dentro del toque, para que el navegador no la bloquee.
+      const destino = job.lat && job.lng
+        ? `${job.lat},${job.lng}`
+        : encodeURIComponent(job.full_address || job.calle || job.zona || 'Mérida, Yucatán');
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${destino}&travelmode=driving`, '_blank', 'noopener');
+    }
+
+    // Aquí queda el panel "En camino" para marcar "Llegué al lugar" al volver.
     // En celular la lista se pliega para que se vea la ruta en el mapa
     setMobileDrawerOpen(false);
     setActiveNavJob(job);
@@ -1325,7 +1337,7 @@ const MercadoTrabajos = () => {
         // Oferta modificada: dejar la versión anterior en el chat para que el cliente vea el historial
         const anterior = selectedJob.myQuote;
         const precioAnterior = Number(anterior?.price) || 0;
-        const mensajeAnterior = String(anterior?.message || '').trim();
+        const mensajeAnterior = limpiarPropuesta(anterior?.message);
         const cambio = precioAnterior > 0 && (
           Math.abs(precioAnterior - Number(quotePrice)) >= 0.01 || mensajeAnterior !== String(quoteMessage || '').trim()
         );
@@ -1510,7 +1522,8 @@ const MercadoTrabajos = () => {
     const targetJob = isJobAccepted ? (acceptedJobs.find(a => a.id === job.id) || { ...job, is_accepted: true }) : job;
     setSelectedJob(targetJob);
     setQuotePrice(targetJob.myQuote && targetJob.myQuote.price > 0 ? targetJob.myQuote.price : '');
-    setQuoteMessage(targetJob.myQuote ? targetJob.myQuote.message : '');
+    // En blanco si solo tiene el texto automático de "chat iniciado"
+    setQuoteMessage(targetJob.myQuote ? limpiarPropuesta(targetJob.myQuote.message) : '');
     setActivePhoto(targetJob.problem_photos?.[0] || (isJobAccepted ? targetJob.facade_photo : null) || targetJob.fotos?.[0] || null);
     if (targetJob.scheduled_at) {
       const d = new Date(targetJob.scheduled_at);
@@ -3784,7 +3797,7 @@ const MercadoTrabajos = () => {
           </button>
 
           {/* ─── Sidebar (Solo Trabajos Disponibles / Solicitudes) ─── */}
-          <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+          <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} ${activeNavJob ? 'con-ruta' : ''}`}>
             
             {/* Pestaña lateral con flecha para ocultar / mostrar (Edge Tab) */}
             <button
@@ -4207,7 +4220,7 @@ const MercadoTrabajos = () => {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (isArrived) abrirTableroDeTrabajo(job);
-                                else handleStartRoute(job);
+                                else handleStartRoute(job, { abrirMaps: true });
                               }}
                             >
                               {isArrived
@@ -4461,7 +4474,7 @@ const MercadoTrabajos = () => {
                           className="mi-globo-btn"
                           onClick={() => {
                             if (selectedJob.is_accepted) {
-                              handleStartRoute(selectedJob);
+                              handleStartRoute(selectedJob, { abrirMaps: true });
                             } else {
                               openQuoteModalForJob(selectedJob);
                             }
@@ -4729,7 +4742,7 @@ const MercadoTrabajos = () => {
           className={esEscritorio && mainView === 'mercado' && mapaSeccionRef.current ? 'jm-en-mapa' : 'mercado-modal-overlay'}
           onClick={(e) => e.target === e.currentTarget && setShowQuoteModal(false)}
         >
-          <div className="mercado-premium-modal jm-modal" style={{ maxWidth: '1080px' }}>
+          <div className={`mercado-premium-modal jm-modal ${quoteStep === 1 && activeModalTab === 'chat' ? 'jm-modo-chat' : ''}`} style={{ maxWidth: '1080px' }}>
             
             {/* ══════════════════════════════════════════════════
                 PASO 1: DETALLES DEL TRABAJO / COORDINACIÓN / CHAT
@@ -5152,11 +5165,10 @@ const MercadoTrabajos = () => {
                           </div>
 
                           <form onSubmit={handleSendEmbeddedChat} className="jm-chat-input">
-                            <input
-                              type="text"
+                            <EntradaMensaje
                               placeholder="Escribe un mensaje al cliente…"
                               value={chatInput}
-                              onChange={(e) => setChatInput(e.target.value)}
+                              onChange={setChatInput}
                               disabled={sendingChat}
                             />
                             <button
@@ -5438,11 +5450,10 @@ const MercadoTrabajos = () => {
                           </div>
 
                           <form onSubmit={handleSendEmbeddedChat} className="jm-chat-input">
-                            <input
-                              type="text"
+                            <EntradaMensaje
                               placeholder="Escribe un mensaje al cliente…"
                               value={chatInput}
-                              onChange={(e) => setChatInput(e.target.value)}
+                              onChange={setChatInput}
                               disabled={sendingChat}
                             />
                             <button

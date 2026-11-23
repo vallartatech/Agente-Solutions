@@ -2,6 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallba
 import { createPortal } from 'react-dom';
 import HojaCitasMovil from '../../../components/Shared/HojaCitasMovil';
 import axios from 'axios';
+import { limpiarPropuesta } from '../Shared/versionesCotizacionChat';
 import { useAuth } from '../../../context/AuthContext';
 import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
 import ModalCalificarTecnico from '../../../components/Shared/ModalCalificarTecnico';
@@ -260,9 +261,9 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
         const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
         const hasNewTechMessage = Boolean(
           (lastMsg && Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente') ||
-          (quote.message && quote.message.trim().length > 0)
+          limpiarPropuesta(quote.message).length > 0
         );
-        const displayAlertMsg = lastMsg?.message || quote.message || '';
+        const displayAlertMsg = limpiarPropuesta(lastMsg?.message || quote.message);
 
         techMap.set(techId, {
           ...quote,
@@ -283,7 +284,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
         if (quote.id > existing.id || (quote.price > 0 && existing.price == 0)) {
           existing.id = quote.id;
           if (quote.price > 0) existing.price = quote.price;
-          if (quote.message) existing.message = quote.message;
+          if (limpiarPropuesta(quote.message)) existing.message = quote.message;
           if (quote.status === 'accepted' || existing.is_assigned) {
             existing.status = 'accepted';
             existing.is_assigned = true;
@@ -302,7 +303,7 @@ const ModalCalendarioCliente = ({ isOpen, onClose: onCloseProp, onSelectJob }) =
           (lastMsg && Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente') ||
           (existing.message && existing.message.trim().length > 0)
         );
-        existing.displayAlertMsg = lastMsg?.message || existing.message || '';
+        existing.displayAlertMsg = limpiarPropuesta(lastMsg?.message || existing.message);
       }
     });
 

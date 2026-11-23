@@ -4722,3 +4722,48 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
   }
 }
+
+/* ── Chat con el cliente: caja que crece al escribir (EntradaMensaje) ── */
+.jm-chat-input { align-items: flex-end; }
+
+.jm-chat-input .entrada-mensaje {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 11px 16px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 22px;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+  scrollbar-width: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.jm-chat-input .entrada-mensaje::placeholder { color: #94a3b8; }
+.jm-chat-input .entrada-mensaje:focus { border-color: rgba(242, 101, 34, 0.55); box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.12); }
+
+/* Celular, pestaña de chat: el chat va primero y ocupa la pantalla (también con el teclado abierto).
+   Los datos del trabajo y la cotización quedan debajo; el aviso de mensaje nuevo sobra dentro del chat. */
+@media (max-width: 860px) {
+  .jm-chat-input .entrada-mensaje { font-size: 16px; } /* evita el zoom de iOS al escribir */
+
+  .jm-modal.jm-modo-chat .mercado-premium-footer,
+  .jm-modal.jm-modo-chat .jm-aviso-chat,
+  .jm-modal.jm-modo-chat .jm-volver { display: none; }
+
+  .jm-modal.jm-modo-chat .jm-grid-chat > .jm-chat {
+    order: -1;
+    height: calc(100dvh - 200px);
+    min-height: 260px;
+  }
+
+  .jm-modal.jm-modo-chat .jm-chat-head { padding: 10px 14px; }
+  .jm-modal.jm-modo-chat .jm-chat-mensajes { padding: 12px; }
+  .jm-modal.jm-modo-chat .jm-chat-input { padding: 10px 12px; }
+}

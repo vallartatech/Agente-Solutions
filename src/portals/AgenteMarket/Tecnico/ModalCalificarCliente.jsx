@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Star, Clock, MessageSquare, Award, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import '../../../styles/Shared/ModalCalificarTecnico.css';
 
-// El técnico califica al cliente al terminar un trabajo de la red (★ trato, ⏱ pago).
+// El técnico califica al cliente al terminar un trabajo de la red (estrellas: trato; relojes: pago).
 // Es obligatorio: la ventana no se cierra mientras haya trabajos terminados sin calificar,
 // y el backend no deja cotizar hasta terminar.
 
@@ -62,7 +62,7 @@ const ModalCalificarCliente = ({ pendientes, onListo }) => {
   const [error, setError] = useState('');
 
   if (!actual) return null;
-  // El cliente canceló el trabajo asignado: ★ trato y ⏱ seriedad
+  // El cliente canceló el trabajo asignado: estrellas (trato) y relojes (seriedad)
   const esCancelacion = Boolean(actual.cancelacion);
 
   const enviar = async (e) => {
@@ -123,9 +123,10 @@ const ModalCalificarCliente = ({ pendientes, onListo }) => {
         </div>
 
         {esCancelacion && actual.motivo && (
-          <p className="calif-factor-desc" style={{ margin: '0 0 12px', padding: '10px 12px', borderRadius: 12, background: 'rgba(239, 68, 68, 0.12)', color: '#fecaca' }}>
-            <b>Motivo del cliente:</b> {actual.motivo}
-          </p>
+          <div className="calif-aviso">
+            <AlertCircle size={18} />
+            <div><strong>Motivo del cliente</strong>{actual.motivo}</div>
+          </div>
         )}
 
         <form onSubmit={enviar} className="calif-form-body">
@@ -165,7 +166,7 @@ const ModalCalificarCliente = ({ pendientes, onListo }) => {
           </div>
 
           {error && (
-            <p role="alert" style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '0 0 10px', color: '#fca5a5', fontSize: 13, fontWeight: 600 }}>
+            <p role="alert" className="calif-error">
               <AlertCircle size={15} /> {error}
             </p>
           )}

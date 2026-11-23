@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { Star, Clock, X, Award, Sparkles, MessageSquare, AlertCircle, Trash2 } from 'lucide-react';
+import { Star, Clock, X, Award, Sparkles, MessageSquare, AlertCircle, Trash2, Globe } from 'lucide-react';
 import '../../styles/Shared/ModalCalificarTecnico.css';
 
 const ModalCalificarTecnico = ({
@@ -15,6 +15,7 @@ const ModalCalificarTecnico = ({
   onlyTime = false,
   isCancellation = false,
   cancellationReason = '',
+  encabezado = '', // título propio (p. ej. "El trabajo terminó" al pedir la calificación)
   onSuccess
 }) => {
   const [ratingStars, setRatingStars] = useState(onlyTime || isCancellation ? null : 5);
@@ -69,8 +70,6 @@ const ModalCalificarTecnico = ({
         icon: 'error',
         title: 'Error',
         text: 'No se encontró la información del técnico.',
-        background: '#191e2b',
-        color: '#fff'
       });
       return;
     }
@@ -131,8 +130,6 @@ const ModalCalificarTecnico = ({
           ? 'La calificación de puntualidad fue guardada y tu solicitud ha sido enviada nuevamente al Mercado para recibir nuevas cotizaciones.'
           : 'La calificación de puntualidad fue guardada y el servicio quedó cancelado.',
         confirmButtonColor: '#f26522',
-        background: '#191e2b',
-        color: '#fff'
       });
 
       if (onSuccess) {
@@ -145,8 +142,6 @@ const ModalCalificarTecnico = ({
         icon: 'error',
         title: 'Error al procesar',
         text: error.response?.data?.message || 'No fue posible completar la acción. Inténtalo de nuevo.',
-        background: '#191e2b',
-        color: '#fff'
       });
     } finally {
       setIsSubmitting(false);
@@ -166,8 +161,6 @@ const ModalCalificarTecnico = ({
         icon: 'error',
         title: 'Error',
         text: 'No se encontró la información del técnico.',
-        background: '#191e2b',
-        color: '#fff'
       });
       return;
     }
@@ -205,8 +198,6 @@ const ModalCalificarTecnico = ({
         title: '¡Muchas Gracias!',
         text: 'Tu calificación y opinión ayudan a mantener la más alta calidad en el servicio.',
         confirmButtonColor: '#f26522',
-        background: '#191e2b',
-        color: '#fff'
       });
 
       if (onSuccess) {
@@ -219,8 +210,6 @@ const ModalCalificarTecnico = ({
         icon: 'error',
         title: 'Error al enviar',
         text: error.response?.data?.message || 'No fue posible registrar tu calificación. Inténtalo de nuevo.',
-        background: '#191e2b',
-        color: '#fff'
       });
     } finally {
       setIsSubmitting(false);
@@ -236,14 +225,16 @@ const ModalCalificarTecnico = ({
             <Sparkles size={22} className="calif-sparkle-icon" />
             <div>
               <h3>
-                {isCancellation 
-                  ? 'Evaluación de Puntualidad' 
-                  : (onlyTime ? 'Calificar Puntualidad' : 'Calificar Servicio')}
+                {encabezado || (isCancellation
+                  ? 'Evaluación de Puntualidad'
+                  : (onlyTime ? 'Calificar Puntualidad' : 'Calificar Servicio'))}
               </h3>
               <p className="calif-header-sub">
                 {isCancellation
                   ? 'El técnico canceló su asistencia. Califícalo para continuar: después eliges si reenvías tu solicitud al Mercado o cancelas el servicio.'
-                  : 'Tu evaluación ayuda a reconocer el buen trabajo y la puntualidad'}
+                  : (encabezado
+                    ? 'Califica al técnico: la calidad del trabajo y su puntualidad ayudan a otros clientes a elegir.'
+                    : 'Tu evaluación ayuda a reconocer el buen trabajo y la puntualidad')}
               </p>
             </div>
           </div>
@@ -256,24 +247,11 @@ const ModalCalificarTecnico = ({
 
         {/* Notice if cancelled */}
         {isCancellation && (
-          <div style={{
-            margin: '16px 24px 0 24px',
-            padding: '12px 14px',
-            background: 'rgba(239, 68, 68, 0.12)',
-            border: '1px solid rgba(239, 68, 68, 0.35)',
-            borderRadius: '12px',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '10px'
-          }}>
-            <AlertCircle size={18} color="#ef4444" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div className="calif-aviso">
+            <AlertCircle size={18} />
             <div>
-              <strong style={{ color: '#fca5a5', fontSize: '13px', display: 'block' }}>
-                Servicio Cancelado por el Técnico
-              </strong>
-              <p style={{ margin: '4px 0 0 0', color: '#cbd5e1', fontSize: '12.5px' }}>
-                {cancellationReason ? `Motivo indicado: "${cancellationReason}"` : 'El técnico notificó que no asistirá a la cita programada.'}
-              </p>
+              <strong>Servicio cancelado por el técnico</strong>
+              {cancellationReason ? `Motivo indicado: "${cancellationReason}"` : 'El técnico notificó que no asistirá a la cita programada.'}
             </div>
           </div>
         )}
@@ -392,64 +370,28 @@ const ModalCalificarTecnico = ({
 
           {/* Submit buttons */}
           {isCancellation ? (
-            <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <div style={{ textAlign: 'center', marginBottom: '12px', fontSize: '13px', color: '#cbd5e1', fontWeight: '600' }}>
-                ¿Qué deseas hacer con esta solicitud de servicio?
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => handleCancellationAction('reopen')}
-                  style={{
-                    background: 'linear-gradient(135deg, #f26522 0%, #ea580c 100%)',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '12px 14px',
-                    borderRadius: '12px',
-                    fontWeight: '800',
-                    fontSize: '12.5px',
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    boxShadow: '0 4px 14px rgba(242, 101, 34, 0.35)',
-                    transition: 'all 0.2s ease',
-                    opacity: isSubmitting ? 0.7 : 1
-                  }}
-                  title="Permitir que otros técnicos del Mercado envíen cotizaciones"
-                >
-                  <Sparkles size={15} />
-                  <span>{isSubmitting ? 'Enviando...' : '🌐 Enviar al Mercado'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => handleCancellationAction('delete')}
-                  style={{
-                    background: 'rgba(239, 68, 68, 0.15)',
-                    color: '#f87171',
-                    border: '1px solid rgba(239, 68, 68, 0.45)',
-                    padding: '12px 14px',
-                    borderRadius: '12px',
-                    fontWeight: '800',
-                    fontSize: '12.5px',
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s ease',
-                    opacity: isSubmitting ? 0.7 : 1
-                  }}
-                  title="Cerrar esta solicitud; queda en tu historial"
-                >
-                  <Trash2 size={15} />
-                  <span>{isSubmitting ? 'Cancelando...' : 'Cancelar servicio'}</span>
-                </button>
-              </div>
+            <div className="calif-acciones-cancelacion">
+              <p className="calif-acciones-titulo">¿Qué deseas hacer con esta solicitud de servicio?</p>
+              <button
+                type="button"
+                className="calif-btn-submit"
+                disabled={isSubmitting}
+                onClick={() => handleCancellationAction('reopen')}
+                title="Permitir que otros técnicos del Mercado envíen cotizaciones"
+              >
+                <Globe size={16} />
+                <span>{isSubmitting ? 'Enviando...' : 'Enviar al Mercado'}</span>
+              </button>
+              <button
+                type="button"
+                className="calif-btn-peligro"
+                disabled={isSubmitting}
+                onClick={() => handleCancellationAction('delete')}
+                title="Cerrar esta solicitud; queda en tu historial"
+              >
+                <Trash2 size={16} />
+                <span>{isSubmitting ? 'Cancelando...' : 'Cancelar servicio'}</span>
+              </button>
               {/* Calificar al técnico que canceló es obligatorio: no hay "cerrar sin calificar" */}
             </div>
           ) : (
@@ -460,7 +402,7 @@ const ModalCalificarTecnico = ({
                 onClick={onClose}
                 disabled={isSubmitting}
               >
-                Cerrar
+                {encabezado ? 'Después' : 'Cerrar'}
               </button>
               <button
                 type="submit"

@@ -947,3 +947,10 @@
 
   .rg-textarea { font-size: 16px; } /* evita zoom en iOS */
 }
+
+/* Celular: la hoja de la propiedad va encima de la barra inferior (z-index 1000002).
+   Antes la barra tapaba el final de la lista y parecía que no se podía bajar. */
+@media (max-width: 900px) {
+  .rg-sheet-overlay { z-index: 1000004; }
+  .rg-modal-overlay { z-index: 1000005; }
+}

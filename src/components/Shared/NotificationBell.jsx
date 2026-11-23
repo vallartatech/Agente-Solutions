@@ -69,6 +69,14 @@ const getNotificationMeta = (notif) => {
       tab: 'alertas'
     };
   }
+  // Agente Market: el técnico entregó el reporte (lleva al reporte del trabajo)
+  if (type === 'trabajo_finalizado') {
+    return {
+      category: 'Trabajo finalizado',
+      icon: <CheckCircle2 size={18} strokeWidth={2.2} color="#0f172a" />,
+      tab: 'servicios'
+    };
+  }
   // El técnico cambió el horario: es una modificación del trabajo, no un mensaje ni un costo
   if (type === 'red_horario_modificado' || title.includes('modificación del trabajo')) {
     return {
@@ -412,7 +420,10 @@ const NotificationBell = ({ triggerClassName = '' }) => {
       const workOrderId = notification.data?.work_order_id || notification.data?.service_id || notification.data?.id || notification.work_order_id || notification.service_id || notification.id;
       const titleLower = (notification.data?.title || notification.title || notification.titulo || notification.data?.titulo || '').toLowerCase();
 
-      if (type === 'new_quote_message' || titleLower.includes('nuevo mensaje') || titleLower.includes('mensaje en la red') || titleLower.includes('mensaje en el mercado')) {
+      // Agente Market: trabajo finalizado: el reporte de ese trabajo (la URL ya viene en el aviso)
+      if (type === 'trabajo_finalizado' && (notification.data?.url || notification.url)) {
+        url = notification.data?.url || notification.url;
+      } else if (type === 'new_quote_message' || titleLower.includes('nuevo mensaje') || titleLower.includes('mensaje en la red') || titleLower.includes('mensaje en el mercado')) {
         if (ROLES_TECNICO.includes(Number(user?.role_id))) {
           url = notification.data?.network_quote_id ? `/mercado-trabajos` : `/vista-cotizaciones`;
         } else if ([3, ...ROLES_CLIENTE_RED].includes(Number(user?.role_id))) {

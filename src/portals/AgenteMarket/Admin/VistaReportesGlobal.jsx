@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../components/Shared/Header';
 import SelectorVistas from '../../../components/Shared/SelectorVistas';
 import { esTecnicoRed, usaSelectorRed } from '../../../utils/entorno';
@@ -326,6 +326,23 @@ const VistaReportesGlobal = () => {
 
   const propiedadSeleccionada = propiedadesConReportes.find(p => p.propKey === selectedPropKey) || null;
   const grupoSeleccionado = propiedadSeleccionada?.servicios.find(g => g.groupKey === selectedGroupKey) || null;
+
+  // Desde el aviso "Trabajo finalizado" o "Trabajos en curso" (?trabajo=ID): abre el reporte de ese trabajo
+  const location = useLocation();
+  const trabajoDeLaUrl = new URLSearchParams(location.search).get('trabajo');
+  const abiertoDesdeUrl = useRef(null);
+  useEffect(() => {
+    if (!trabajoDeLaUrl || abiertoDesdeUrl.current === trabajoDeLaUrl || !propiedadesConReportes.length) return;
+    for (const propiedad of propiedadesConReportes) {
+      const servicio = propiedad.servicios.find(g => String(g.trabajoId) === String(trabajoDeLaUrl));
+      if (servicio) {
+        abiertoDesdeUrl.current = trabajoDeLaUrl;
+        setSelectedPropKey(propiedad.propKey);
+        setSelectedGroupKey(servicio.groupKey);
+        return;
+      }
+    }
+  }, [trabajoDeLaUrl, propiedadesConReportes]);
   const numeroServicio = grupoSeleccionado ? propiedadSeleccionada.servicios.indexOf(grupoSeleccionado) + 1 : 0;
 
   const cerrarPanel = () => {

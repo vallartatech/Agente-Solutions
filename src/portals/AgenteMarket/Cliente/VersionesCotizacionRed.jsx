@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { ChevronDown, ChevronUp, History } from 'lucide-react';
 import { obtenerAjustes, dinero, fechaCorta } from '../Shared/ajusteCotizacionApi';
 import { ArchivoAjuste, DesgloseAjuste, FotosAjuste } from '../Shared/HistorialAjustes';
-import { versionesDesdeChat } from '../Shared/versionesCotizacionChat';
+import { versionesDesdeChat, limpiarPropuesta } from '../Shared/versionesCotizacionChat';
 import '../../../styles/AgenteMarket/Shared/AjusteCotizacion.css';
 
 const ESTADO_ANTERIOR = {
@@ -46,7 +46,7 @@ const VersionesCotizacionRed = ({ quote, workOrderId, aceptada, recarga }) => {
   const base = {
     id: 'base',
     precio: datos?.precio_original ?? quote.price,
-    motivo: quote.message,
+    motivo: limpiarPropuesta(quote.message),
     fecha: quote.created_at,
     fechaTexto: 'Enviada el',
     status: 'reemplazada',
@@ -63,10 +63,10 @@ const VersionesCotizacionRed = ({ quote, workOrderId, aceptada, recarga }) => {
 
   // Sin cambios: la propuesta de siempre
   if (!anteriores.length) {
-    return quote.message ? (
+    return limpiarPropuesta(quote.message) ? (
       <div className="red-quote-bloque">
         <small>Propuesta del técnico</small>
-        <p>{quote.message}</p>
+        <p>{limpiarPropuesta(quote.message)}</p>
       </div>
     ) : null;
   }

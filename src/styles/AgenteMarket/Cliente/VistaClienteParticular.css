@@ -3613,11 +3613,16 @@
   .vcp-titulo-cambia { animation: none; }
 }
 
-/* Celular: la ficha va justo debajo del botón MENÚ. El relleno inferior del bloque de arriba
-   (pensado para la barra de abajo) dejaba un hueco; la ficha ya trae su propio espacio abajo. */
+/* Celular: la ficha va justo debajo del botón MENÚ.
+   El bloque de arriba conserva su relleno inferior (deja el botón TABLERO por encima de la barra
+   de abajo); la ficha sube sobre ese relleno para no dejar hueco al bajar. */
 @media (max-width: 900px) {
-  .vcp-root .vcp-body-layout:has(+ .vcp-tablero-seccion) { padding-bottom: 4px !important; }
-  .vcp-root .vcp-tablero-seccion { padding-top: 6px; }
+  .vcp-root .vcp-tablero-seccion { margin-top: -66px; padding-top: 6px; }
   /* El tablero global está en la barra de abajo */
   .vcp-root .vcp-ts-global-btn { display: none; }
+}
+
+@media (max-width: 576px) {
+  /* Aquí el relleno inferior del bloque de arriba es mayor (84px) */
+  .vcp-root .vcp-tablero-seccion { margin-top: -76px; }
 }

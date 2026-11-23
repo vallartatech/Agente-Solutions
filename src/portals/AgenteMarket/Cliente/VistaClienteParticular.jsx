@@ -8,6 +8,7 @@ import ModalCompraEspacios from '../../../components/Shared/ModalCompraEspacios'
 import { sinVentasDigitales, sinPrecio } from '../../../plataforma';
 import ModalCalendarioCliente from './ModalCalendarioCliente';
 import AvisoCancelacionTecnico from './AvisoCancelacionTecnico';
+import AvisoCalificarTecnico from './AvisoCalificarTecnico';
 import AvisoCambioHorario from './AvisoCambioHorario';
 import ModalRegistroInmueble from './ModalRegistroInmueble';
 import ModalEditarPropiedadCliente from './ModalEditarPropiedadCliente';
@@ -1380,6 +1381,8 @@ const VistaClienteParticular = () => {
 
       {/* El técnico canceló: calificarlo es obligatorio y después se elige reenviar o cancelar */}
       <AvisoCancelacionTecnico onResuelto={() => fetchData()} />
+      {/* El técnico terminó: el cliente lo califica (calidad y puntualidad) */}
+      <AvisoCalificarTecnico onCalificado={() => fetchData()} />
       <AvisoCambioHorario onResuelto={() => fetchData()} />
     </div>
   );

@@ -231,7 +231,10 @@ const VistaNotificaciones = () => {
     const isTecnico = user?.role_id === 2;
     const isCliente = user?.role_id === 3;
 
-    if (type === 'new_quote_message' || titleLower.includes('nuevo mensaje') || titleLower.includes('mensaje en la red') || titleLower.includes('mensaje en el mercado')) {
+    // Agente Market: trabajo finalizado: el reporte de ese trabajo (la URL ya viene en el aviso)
+    if (type === 'trabajo_finalizado' && (n.data?.url || n.url)) {
+      url = n.data?.url || n.url;
+    } else if (type === 'new_quote_message' || titleLower.includes('nuevo mensaje') || titleLower.includes('mensaje en la red') || titleLower.includes('mensaje en el mercado')) {
       if (ROLES_TECNICO.includes(Number(user?.role_id))) {
         url = n.data?.network_quote_id ? `/mercado-trabajos` : `/vista-cotizaciones`;
       } else if ([3, ...ROLES_CLIENTE_RED].includes(Number(user?.role_id))) {

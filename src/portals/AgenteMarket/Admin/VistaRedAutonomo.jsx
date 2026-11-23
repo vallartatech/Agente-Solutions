@@ -4,6 +4,7 @@ import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig"
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
+import { limpiarPropuesta } from '../Shared/versionesCotizacionChat';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ModalServicioAutonomo from './ModalServicioAutonomo';
 import DetallePublicacionRed, { getJobScheduleStatus } from '../Cliente/DetallePublicacionRed';
@@ -14,6 +15,7 @@ import { DARK_MAP_STYLES, getCategoryIcon, ICONOS_CATEGORIA, descripcionTarjeta,
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
 import AvisoCancelacionTecnico from '../Cliente/AvisoCancelacionTecnico';
+import AvisoCalificarTecnico from '../Cliente/AvisoCalificarTecnico';
 import AvisoCambioHorario from '../Cliente/AvisoCambioHorario';
 import { usaSelectorRed } from '../../../utils/entorno';
 const mapContainerStyle = {
@@ -223,9 +225,9 @@ const VistaRedAutonomo = () => {
         const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
         const hasNewTechMessage = Boolean(
           (lastMsg && Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente') ||
-          (quote.message && quote.message.trim().length > 0)
+          limpiarPropuesta(quote.message).length > 0
         );
-        const displayAlertMsg = lastMsg?.message || quote.message || '';
+        const displayAlertMsg = limpiarPropuesta(lastMsg?.message || quote.message);
 
         techMap.set(techId, {
           ...quote,
@@ -246,7 +248,7 @@ const VistaRedAutonomo = () => {
         if (quote.id > existing.id || (quote.price > 0 && existing.price == 0)) {
           existing.id = quote.id;
           if (quote.price > 0) existing.price = quote.price;
-          if (quote.message) existing.message = quote.message;
+          if (limpiarPropuesta(quote.message)) existing.message = quote.message;
           if (quote.status === 'accepted' || existing.is_assigned) {
             existing.status = 'accepted';
             existing.is_assigned = true;
@@ -265,7 +267,7 @@ const VistaRedAutonomo = () => {
           (lastMsg && Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente') ||
           (existing.message && existing.message.trim().length > 0)
         );
-        existing.displayAlertMsg = lastMsg?.message || existing.message || '';
+        existing.displayAlertMsg = limpiarPropuesta(lastMsg?.message || existing.message);
       }
     });
 
@@ -1021,6 +1023,8 @@ const VistaRedAutonomo = () => {
 
       {/* El técnico canceló: calificarlo es obligatorio y después se elige reenviar o cancelar */}
       {usaSelectorRed(user) && <AvisoCancelacionTecnico onResuelto={() => fetchJobs()} />}
+      {/* El técnico terminó: el cliente lo califica (calidad y puntualidad) */}
+      {usaSelectorRed(user) && <AvisoCalificarTecnico onCalificado={() => fetchJobs()} />}
       {usaSelectorRed(user) && <AvisoCambioHorario onResuelto={() => fetchJobs()} />}
     </div>
   );
