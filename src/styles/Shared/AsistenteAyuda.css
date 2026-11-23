@@ -384,3 +384,19 @@
 @media (prefers-reduced-motion: reduce) {
   .asis-panel, .asis-burbuja, .asis-senal, .asis-senal-etiqueta, .asis-escribiendo span { animation: none; }
 }
+
+/* ── Botón movible (useBotonArrastrable): mantener presionado y arrastrar ── */
+.asis-boton {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none; /* sin el menú de "copiar" al mantener presionado */
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, top 0.25s ease, left 0.25s ease, right 0.25s ease;
+}
+
+.asis-boton.is-moviendo,
+.asis-boton.is-moviendo:hover {
+  cursor: grabbing;
+  transform: scale(1.08);
+  box-shadow: 0 18px 40px rgba(242, 101, 34, 0.45);
+}

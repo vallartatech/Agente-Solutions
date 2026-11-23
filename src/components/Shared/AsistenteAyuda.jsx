@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Sparkles, X, ArrowUp, RotateCcw, MousePointerClick, Home, Wrench, FileCheck2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BOTONES_AYUDA, senalarBoton } from './senalarBoton';
+import useBotonArrastrable from './useBotonArrastrable';
 import '../../styles/Shared/AsistenteAyuda.css';
 
 // Asistente de ayuda con IA: explica cómo usar la app. Solo el Cliente particular (rol 4) por ahora.
@@ -68,6 +69,8 @@ const AsistenteAyuda = () => {
   const [enviando, setEnviando] = useState(false);
   const finRef = useRef(null);
   const entradaRef = useRef(null);
+  // El botón se puede mover: mantener presionado (celular) o arrastrar (computadora)
+  const arrastre = useBotonArrastrable('asistente_boton_posicion');
 
   // La caja crece hacia arriba conforme se escribe, hasta ALTO_MAX_ENTRADA
   useEffect(() => {
@@ -140,7 +143,18 @@ const AsistenteAyuda = () => {
   return (
     <>
       {!abierto && (
-        <button type="button" className="asis-boton" onClick={() => setAbierto(true)} aria-label="Abrir asistente de ayuda" title="¿Necesitas ayuda?">
+        <button
+          type="button"
+          ref={arrastre.ref}
+          className={`asis-boton ${arrastre.moviendo ? 'is-moviendo' : ''}`}
+          style={arrastre.style}
+          onPointerDown={arrastre.onPointerDown}
+          onClickCapture={arrastre.onClickCapture}
+          onClick={() => setAbierto(true)}
+          onContextMenu={(e) => e.preventDefault()}
+          aria-label="Abrir asistente de ayuda (mantén presionado para moverlo)"
+          title="¿Necesitas ayuda? Arrástralo para moverlo"
+        >
           <Sparkles size={24} />
           <span className="asis-boton-txt">Ayuda</span>
         </button>
