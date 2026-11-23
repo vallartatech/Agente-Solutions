@@ -19,6 +19,7 @@ import { esNativo } from "./plataforma";
 import InstallPrompt from "./components/Shared/InstallPrompt";
 import LocationSharing from "./components/Shared/LocationSharing";
 import IndicadorSubida from "./components/Shared/IndicadorSubida";
+import AsistenteAyuda from "./components/Shared/AsistenteAyuda";
 import { instalarProgresoSubida } from "./components/Shared/progresoSubida";
 
 // Decoración de temporada: el código del fantasma solo se descarga del 15 oct al 2 nov
@@ -386,6 +387,7 @@ function App() {
         {!esNativo && <InstallPrompt />}
         <LocationSharing />
         <IndicadorSubida />
+        <AsistenteAyuda />
         {esTemporadaHalloween() && (
           <Suspense fallback={null}>
             <HalloweenGhost />
