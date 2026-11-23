@@ -20,6 +20,7 @@ import CarruselEtapas from '../../AgenteSolutions/Shared/CarruselEtapas';
 import { VisorFotos } from '../../AgenteSolutions/Admin/Expediente/ExpedienteUI';
 import '../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
 import '../../../styles/AgenteSolutions/Tecnico/EvidenciasTrabajo.css';
+import '../../../styles/AgenteMarket/Tecnico/GaleriaReportesRed.css';
 
 // Tonos apagados por etapa (los de ETAPAS_EVIDENCIA son para insignias sólidas y resultan chillones aquí)
 const TONO_ETAPA = {
@@ -421,7 +422,7 @@ const GaleriaReportes = () => {
   return (
     <>
       <TecnicoHeader activeTab="tablero" />
-      <div className="ge-page">
+      <div className="ge-page ge-red">
         <div className="ge-container">
 
           {/* Datos del trabajo */}

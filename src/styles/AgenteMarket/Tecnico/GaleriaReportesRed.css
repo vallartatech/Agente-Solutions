@@ -1,0 +1,93 @@
+/* ══════════════════════════════════════════════════════════════
+   RED: AJUSTES DE DISEÑO EN COMPUTADORA para la galería de evidencias.
+   Solo aplica dentro de .ge-red (la galería de Agente Market); la app interna no cambia.
+   ══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1101px) {
+  /* Etapas: la pista compartida trae 5 columnas (la interna lleva ticket). En la Red son 4
+     (o las que tenga el elemento): reparten todo el ancho sin dejar hueco a la derecha. */
+  .ge-red .ce-pista {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .ge-red .gr-etapas { margin-top: 0; }
+
+  /* Con tarjetas más anchas el nombre de la etapa cabe en una línea */
+  .ge-red .ge-etapa { padding: 16px; gap: 14px; }
+  .ge-red .ge-etapa-nombre { font-size: 0.82rem; }
+  .ge-red .ge-foto { max-height: 220px; }
+
+  /* Barra de progreso: algo más de presencia */
+  .ge-red .ge-progreso { padding: 10px 16px; }
+  .ge-red .ge-progreso-barra { width: 160px; }
+
+  /* ── Ajuste de cotización: franja ligera en lugar de una caja punteada dentro de otra ── */
+  .ge-red .ge-container > .aj-panel {
+    padding: 10px;
+    gap: 8px;
+    border-radius: 20px;
+  }
+
+  .ge-red .aj-btn-ajustar {
+    gap: 14px;
+    padding: 10px 10px 10px 12px;
+    border: 1px solid rgba(242, 101, 34, 0.2);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  }
+
+  .ge-red .aj-btn-ajustar:hover {
+    background: #ffffff;
+    border-color: rgba(242, 101, 34, 0.45);
+  }
+
+  .ge-red .aj-btn-ajustar > svg {
+    width: 18px;
+    height: 18px;
+    padding: 10px;
+    box-sizing: content-box;
+    border-radius: 12px;
+    background: #fff1e8;
+    color: #f26522;
+  }
+
+  .ge-red .aj-btn-ajustar span { flex: 1; min-width: 0; }
+  .ge-red .aj-btn-ajustar strong { color: #0f172a; font-size: 0.92rem; }
+  .ge-red .aj-btn-ajustar small { font-size: 0.78rem; }
+
+  /* Llamado a la acción a la derecha, como los botones de la galería */
+  .ge-red .aj-btn-ajustar::after {
+    content: 'Proponer nuevo precio';
+    flex-shrink: 0;
+    padding: 10px 18px;
+    border-radius: 12px;
+    background: #f26522;
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 800;
+    box-shadow: 0 6px 16px rgba(242, 101, 34, 0.25);
+    transition: background 0.2s ease;
+  }
+
+  .ge-red .aj-btn-ajustar:hover::after { background: #ea580c; }
+
+  /* Avisos (pendiente, rechazado, aceptado) con el mismo radio que el resto */
+  .ge-red .ge-container > .aj-panel .aj-aviso {
+    padding: 12px 14px;
+    border-radius: 14px;
+    font-size: 0.84rem;
+  }
+
+  /* Historial: alineado con el contenido de la franja */
+  .ge-red .ge-container > .aj-panel .aj-historial { padding: 0 6px; }
+
+  /* Aviso de "el trabajo aún no comienza" con el vidrio de las tarjetas */
+  .ge-red .ge-container > .aj-nota-reporte {
+    padding: 16px 18px;
+    border-radius: 20px;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.07);
+  }
+}
