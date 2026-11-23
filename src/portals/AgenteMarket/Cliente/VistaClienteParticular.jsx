@@ -15,6 +15,7 @@ import ModalServicioAutonomo from '../Admin/ModalServicioAutonomo';
 import NotificationBell from '../../../components/Shared/NotificationBell';
 import Header from '../../../components/Shared/Header';
 import { PildoraTrabajosEnCurso } from '../../../components/Shared/TrabajosEnCurso';
+import { API, authHeaders, etiquetaEstado } from '../../AgenteSolutions/Admin/Expediente/flujoTrabajo';
 import '../../../styles/AgenteMarket/Cliente/VistaClienteParticular.css';
 
 import {
@@ -45,7 +46,10 @@ import {
   Bell,
   Shield,
   Hourglass,
-  Eye
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  Layers
 } from 'lucide-react';
 
 import defaultPropImg from '../../../assets/propiedad_ejemplo.jpg';
@@ -104,6 +108,7 @@ const VistaClienteParticular = () => {
   const [selectedPropId, setSelectedPropId] = useState(null);
   const [subInfo, setSubInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [recargaTableros, setRecargaTableros] = useState(0);
   const [appLogo, setAppLogo] = useState(defaultLogo);
 
   // Modales y Dropdowns
@@ -190,6 +195,7 @@ const VistaClienteParticular = () => {
       console.error("Error al cargar datos de cliente particular:", err);
     } finally {
       setLoading(false);
+      setRecargaTableros(n => n + 1);
     }
   };
 
@@ -241,7 +247,7 @@ const VistaClienteParticular = () => {
     ? user.first_name.charAt(0).toUpperCase() 
     : (user?.name ? user.name.charAt(0).toUpperCase() : (user?.nombre ? user.nombre.charAt(0).toUpperCase() : 'P'));
 
-  // Estado para el orden personalizado de propiedades
+  // Orden personalizado de propiedades (guardado antes con el carrusel; se respeta)
   const [customOrder, setCustomOrder] = useState(() => {
     try {
       const key = `agente_props_order_${user?.id || user?.email || 'client'}`;
@@ -252,8 +258,6 @@ const VistaClienteParticular = () => {
     }
   });
 
-  const [draggedPropId, setDraggedPropId] = useState(null);
-  const [dragOverPropId, setDragOverPropId] = useState(null);
   const hasSelectedInitRef = useRef(false);
 
   // Cargar orden personalizado de propiedades desde localStorage cuando el usuario esté listo
@@ -303,41 +307,75 @@ const VistaClienteParticular = () => {
     return found || userPropiedades[0];
   }, [userPropiedades, selectedPropId]);
 
-  // Estados de Estadísticas para el Tablero de Control de la Propiedad
-  const [propertyStats, setPropertyStats] = useState({
-    sos: 0,
-    pendientes: 0,
-    proceso: 0,
-    listos: 0
-  });
+  // ── TABLERO: datos de cada propiedad (para la propiedad activa y el global) ──
+  const [tableros, setTableros] = useState({});
+  const idsPropiedades = userPropiedades.map(p => p.id).join(',');
 
   useEffect(() => {
-    if (!activeProperty?.id) return;
-    let isMounted = true;
-    const fetchStats = async () => {
-      try {
-        const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
-        const authHeader = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/propiedades/${activeProperty.id}/dashboard`, authHeader);
-        if (isMounted && res.data?.stats) {
-          setPropertyStats({
-            sos: Number(res.data.stats.sos || 0),
-            pendientes: Number(res.data.stats.pendientes || res.data.stats.todo || 0),
-            proceso: Number(res.data.stats.proceso || res.data.stats.in_progress || 0),
-            listos: Number(res.data.stats.listos || res.data.stats.done || 0)
-          });
-        }
-      } catch {
-        if (isMounted) {
-          setPropertyStats({ sos: 0, pendientes: 0, proceso: 0, listos: 0 });
-        }
-      }
-    };
-    fetchStats();
+    if (!idsPropiedades) {
+      setTableros({});
+      return;
+    }
+    let vivo = true;
+    const ids = idsPropiedades.split(',');
+    const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+    const authHeader = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    Promise.allSettled(
+      ids.map(id => axios.get(`${import.meta.env.VITE_API_BASE_URL}/propiedades/${id}/dashboard`, authHeader))
+    ).then(resultados => {
+      if (!vivo) return;
+      const mapa = {};
+      resultados.forEach((r, i) => {
+        const d = r.status === 'fulfilled' ? r.value.data : null;
+        const st = d?.stats || {};
+        mapa[ids[i]] = {
+          stats: {
+            sos: Number(st.sos || 0),
+            pendientes: Number(st.pendientes || st.todo || 0),
+            proceso: Number(st.proceso || st.in_progress || 0),
+            listos: Number(st.listos || st.done || 0)
+          },
+          historial: Array.isArray(d?.historial) ? d.historial : []
+        };
+      });
+      setTableros(mapa);
+    });
     return () => {
-      isMounted = false;
+      vivo = false;
     };
-  }, [activeProperty?.id]);
+  }, [idsPropiedades, recargaTableros]);
+
+  const statsVacios = { sos: 0, pendientes: 0, proceso: 0, listos: 0 };
+  const propertyStats = tableros[String(activeProperty?.id)]?.stats || statsVacios;
+
+  // Últimos trabajos de la propiedad activa (del expediente, con estado y fechas)
+  const [expActivo, setExpActivo] = useState({ id: null, trabajos: [], cargando: false });
+  useEffect(() => {
+    const id = activeProperty?.id;
+    if (!id) return undefined;
+    let vivo = true;
+    setExpActivo(e => ({ id, trabajos: e.id === id ? e.trabajos : [], cargando: true }));
+    axios.get(`${API}/propiedades/${id}/expediente`, { headers: authHeaders() })
+      .then(r => { if (vivo) setExpActivo({ id, trabajos: r.data?.trabajos || [], cargando: false }); })
+      .catch(() => { if (vivo) setExpActivo({ id, trabajos: [], cargando: false }); });
+    return () => { vivo = false; };
+  }, [activeProperty?.id, recargaTableros]);
+
+  const fechaDeTrabajo = (t) => t.updated_at || t.created_at;
+  const ultimosTrabajos = [...expActivo.trabajos]
+    .sort((a, b) => new Date(String(fechaDeTrabajo(b) || '').replace(' ', 'T')) - new Date(String(fechaDeTrabajo(a) || '').replace(' ', 'T')))
+    .slice(0, 4);
+  const fechaCorta = (v) => {
+    const d = new Date(String(v || '').replace(' ', 'T'));
+    return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const totalDe = (st) => st.sos + st.pendientes + st.proceso + st.listos;
+  const avanceDe = (st) => {
+    const total = totalDe(st);
+    return total > 0 ? Math.round((st.listos / total) * 100) : 0;
+  };
+
 
   // Al entrar a la vista o cargar propiedades, la primera propiedad de la lista ordenada es la activa por defecto
   useEffect(() => {
@@ -349,7 +387,10 @@ const VistaClienteParticular = () => {
     }
   }, [userPropiedades, selectedPropId]);
 
-  // Handlers para Drag & Drop (Reordenamiento visual y persistente)
+  // Handlers para Drag & Drop del carrusel (solo escritorio; en celular se usan las flechas)
+  const [draggedPropId, setDraggedPropId] = useState(null);
+  const [dragOverPropId, setDragOverPropId] = useState(null);
+
   const handleDragStart = (e, propId) => {
     setDraggedPropId(propId);
     e.dataTransfer.effectAllowed = 'move';
@@ -407,6 +448,108 @@ const VistaClienteParticular = () => {
     setDraggedPropId(null);
     setDragOverPropId(null);
   };
+
+  // ── Navegación entre propiedades (flechas izquierda / derecha y deslizar) ──
+  const indiceActivo = Math.max(0, userPropiedades.findIndex(p => p.id === activeProperty?.id));
+  const hayVariasPropiedades = userPropiedades.length > 1;
+
+  const cambiarPropiedad = (paso) => {
+    if (!hayVariasPropiedades) return;
+    const total = userPropiedades.length;
+    const siguiente = (indiceActivo + paso + total) % total;
+    setSelectedPropId(userPropiedades[siguiente].id);
+  };
+
+  const toqueInicio = useRef(null);
+  const alTocarInicio = (e) => {
+    // Los gestos sobre botones, píldoras o la pestaña del perfil no cambian de propiedad
+    if (e.target.closest?.('button, .vcp-mobile-prop-drawer-wrap, .vcp-pildoras-row')) {
+      toqueInicio.current = null;
+      return;
+    }
+    const t = e.touches[0];
+    toqueInicio.current = { x: t.clientX, y: t.clientY };
+  };
+  const alTocarFin = (e) => {
+    if (!toqueInicio.current) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - toqueInicio.current.x;
+    const dy = t.clientY - toqueInicio.current.y;
+    toqueInicio.current = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      cambiarPropiedad(dx < 0 ? 1 : -1);
+    }
+  };
+
+  // ── Bajar al tablero ──
+  const rootRef = useRef(null);
+  const tableroRef = useRef(null);
+  const [yaBajo, setYaBajo] = useState(false);
+  const pieRef = useRef(null);
+  // Baja hasta que el botón MENÚ quede hasta arriba (el perfil y el nombre ya no se ven)
+  const irAlTablero = () => (pieRef.current || tableroRef.current)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const subirArriba = () => {
+    rootRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  // "Abajo" = la ficha ya ocupa buena parte de la pantalla (escucha cualquier contenedor que se desplace)
+  useEffect(() => {
+    const revisar = () => {
+      const el = tableroRef.current;
+      if (!el) return;
+      setYaBajo(el.getBoundingClientRect().top < window.innerHeight * 0.6);
+    };
+    document.addEventListener('scroll', revisar, true);
+    window.addEventListener('resize', revisar);
+    revisar();
+    return () => {
+      document.removeEventListener('scroll', revisar, true);
+      window.removeEventListener('resize', revisar);
+    };
+  }, [hasProperties]);
+
+  // Imán (celular): si se suelta a medio camino entre el menú y la ficha,
+  // se acomoda sola en la posición más cercana. Más abajo de la ficha no interviene.
+  useEffect(() => {
+    if (!hasProperties) return undefined;
+    let espera = null;
+    let tocando = false;
+
+    const acomodar = (scroller) => {
+      const pie = pieRef.current;
+      if (tocando || !pie || !scroller.contains(pie) || window.innerWidth > 900) return;
+      const actual = scroller.scrollTop;
+      const destinoAbajo = actual + pie.getBoundingClientRect().top - 8;
+      // Ya está en una de las dos posiciones, o bajó más allá de la ficha
+      if (actual <= 2 || actual >= destinoAbajo - 2) return;
+      scroller.scrollTo({ top: actual > destinoAbajo / 2 ? destinoAbajo : 0, behavior: 'smooth' });
+    };
+
+    let ultimoScroller = null;
+    const programar = () => {
+      clearTimeout(espera);
+      if (ultimoScroller) espera = setTimeout(() => acomodar(ultimoScroller), 140);
+    };
+    const alDesplazar = (e) => {
+      const scroller = e.target === document ? document.scrollingElement : e.target;
+      if (!scroller || typeof scroller.scrollTo !== 'function') return;
+      ultimoScroller = scroller;
+      programar();
+    };
+    const alTocar = () => { tocando = true; clearTimeout(espera); };
+    const alSoltar = () => { tocando = false; programar(); };
+
+    document.addEventListener('scroll', alDesplazar, true);
+    document.addEventListener('touchstart', alTocar, { passive: true });
+    document.addEventListener('touchend', alSoltar, { passive: true });
+    return () => {
+      clearTimeout(espera);
+      document.removeEventListener('scroll', alDesplazar, true);
+      document.removeEventListener('touchstart', alTocar);
+      document.removeEventListener('touchend', alSoltar);
+    };
+  }, [hasProperties]);
+
 
   // Helper para resolver la URL de la imagen de la propiedad (Cloudinary / DB)
   const getPropImage = (p) => {
@@ -746,7 +889,7 @@ const VistaClienteParticular = () => {
   );
 
   return (
-    <div className="vcp-root">
+    <div className="vcp-root" ref={rootRef}>
       {/* Full-bleed Background Image Layer across entire viewport including navbar */}
       <div 
         className="vcp-hero-bg-layer" 
@@ -760,7 +903,32 @@ const VistaClienteParticular = () => {
       {/* ── MAIN SPLIT VIEW CONTAINER ── */}
       <main className="vcp-body-layout">
         {/* ── LEFT HERO PROPERTY SHOWCASE ── */}
-        <section className="vcp-hero-side">
+        <section className="vcp-hero-side" onTouchStart={alTocarInicio} onTouchEnd={alTocarFin}>
+          {/* Flechas sobre el fondo: pasan de una propiedad a otra */}
+          {/* Se esconden mientras el perfil (Detalles) está abierto para no taparlo */}
+          {hasProperties && hayVariasPropiedades && !isMobilePropProfileOpen && (
+            <>
+              <button
+                type="button"
+                className="vcp-fondo-flecha is-izq"
+                onClick={() => cambiarPropiedad(-1)}
+                aria-label="Propiedad anterior"
+                title="Propiedad anterior"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                type="button"
+                className="vcp-fondo-flecha is-der"
+                onClick={() => cambiarPropiedad(1)}
+                aria-label="Siguiente propiedad"
+                title="Siguiente propiedad"
+              >
+                <ChevronRight size={24} />
+              </button>
+            </>
+          )}
+
           {/* Píldoras desplegables: plan y trabajos en curso */}
           <div className="vcp-pildoras-row">
           {/* Top Floating Subscription Plan Card (Oculto por defecto / Desplegable) */}
@@ -861,7 +1029,7 @@ const VistaClienteParticular = () => {
               </div>
 
               {hasProperties && (
-                <div className="vcp-title-edit-row">
+                <div className="vcp-title-edit-row vcp-titulo-cambia" key={activeProperty.id}>
                   <h1 className="vcp-prop-main-title">
                     {activeProperty.nombre_propiedad || activeProperty.nombre || activeProperty.alias || activeProperty.titulo || 'MI PROPIEDAD'}
                   </h1>
@@ -930,7 +1098,47 @@ const VistaClienteParticular = () => {
               )}
             </div>
 
-            {/* 3. Carousel Block: Label + Thumbnails Carousel (Colocado abajo en móvil) */}
+            {/* 3. Puntos (qué propiedad se ve) y flecha para bajar al tablero */}
+            {hasProperties && (
+              <div className="vcp-hero-pie" ref={pieRef}>
+                {hayVariasPropiedades && (
+                  <div className="vcp-puntos" aria-label="Propiedades">
+                    {userPropiedades.map((p, i) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className={`vcp-punto ${i === indiceActivo ? 'is-activo' : ''}`}
+                        onClick={() => setSelectedPropId(p.id)}
+                        aria-label={p.nombre_propiedad || p.nombre || `Propiedad ${i + 1}`}
+                        title={p.nombre_propiedad || p.nombre || `Propiedad ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+                {/* Arriba: "TABLERO" con flecha abajo. Abajo: "MENÚ" con la flecha arriba, regresa al inicio */}
+                <button
+                  type="button"
+                  className={`vcp-bajar-btn ${yaBajo ? 'is-arriba' : ''}`}
+                  onClick={yaBajo ? subirArriba : irAlTablero}
+                  aria-label={yaBajo ? 'Volver al menú' : 'Bajar al tablero'}
+                  title={yaBajo ? 'Volver al menú' : 'Ver el tablero de la propiedad'}
+                >
+                  {yaBajo ? (
+                    <>
+                      <ChevronUp size={20} />
+                      <span>MENÚ</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>TABLERO</span>
+                      <ChevronDown size={20} />
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* 4. Carrusel de miniaturas (solo escritorio; en celular se oculta por CSS) */}
             <div className="vcp-prop-carousel-block">
               <div className="vcp-prop-category-label">
                 PROPIEDADES
@@ -944,7 +1152,7 @@ const VistaClienteParticular = () => {
                     const isDragOver = prop.id === dragOverPropId;
                     const thumbImg = getPropImage(prop);
                     return (
-                      <div 
+                      <div
                         key={prop.id}
                         draggable={true}
                         onDragStart={(e) => handleDragStart(e, prop.id)}
@@ -956,10 +1164,10 @@ const VistaClienteParticular = () => {
                         onClick={() => setSelectedPropId(prop.id)}
                         title={`Arrastra para reordenar o haz clic para ver:\n${prop.nombre_propiedad || prop.nombre || `Propiedad #${prop.id}`}`}
                       >
-                        <img 
-                          src={thumbImg} 
-                          alt={prop.nombre_propiedad || 'Propiedad'} 
-                          className="vcp-thumb-img" 
+                        <img
+                          src={thumbImg}
+                          alt={prop.nombre_propiedad || 'Propiedad'}
+                          className="vcp-thumb-img"
                           draggable={false}
                         />
                         {idx === 0 && (
@@ -997,6 +1205,132 @@ const VistaClienteParticular = () => {
           {renderPropertyProfileCard(false)}
         </aside>
       </main>
+
+      {/* ── FICHA DE LA PROPIEDAD (se llega bajando; cambia con las flechas) ── */}
+      {hasProperties && (
+        <section className="vcp-tablero-seccion" ref={tableroRef}>
+          <div className="vcp-ts-grid is-una">
+            <div className="vcp-ts-card vcp-titulo-cambia" key={activeProperty.id}>
+              <div className="vcp-ts-card-head">
+                <div className="vcp-ts-fila-foto is-cabeza">
+                  <img src={getPropImage(activeProperty)} alt="" />
+                </div>
+                <div className="vcp-ts-head-txt">
+                  <span className="vcp-ts-kicker">
+                    PROPIEDAD {indiceActivo + 1} DE {userPropiedades.length}
+                  </span>
+                  <h3 className="vcp-ts-title">
+                    {activeProperty.nombre_propiedad || activeProperty.nombre || activeProperty.alias || 'Mi propiedad'}
+                  </h3>
+                </div>
+                {hayVariasPropiedades && (
+                  <div className="vcp-ts-nav">
+                    <button type="button" onClick={() => cambiarPropiedad(-1)} aria-label="Propiedad anterior"><ChevronLeft size={16} /></button>
+                    <button type="button" onClick={() => cambiarPropiedad(1)} aria-label="Siguiente propiedad"><ChevronRight size={16} /></button>
+                  </div>
+                )}
+              </div>
+
+              {(activeProperty.address || activeProperty.direccion || activeProperty.calle) && (
+                <button type="button" className="vcp-ts-direccion" onClick={handleOpenMaps} title="Ver en Google Maps">
+                  <MapPin size={14} />
+                  <span>{activeProperty.address || activeProperty.direccion || activeProperty.calle}</span>
+                  <ExternalLink size={12} />
+                </button>
+              )}
+
+              {/* Tablero de esta propiedad */}
+              <div className="vcp-ts-stats">
+                <div className="vcp-ts-stat ts-sos"><AlertCircle size={16} /><strong>{propertyStats.sos}</strong><span>SOS</span></div>
+                <div className="vcp-ts-stat ts-todo"><ClipboardList size={16} /><strong>{propertyStats.pendientes}</strong><span>Por hacer</span></div>
+                <div className="vcp-ts-stat ts-proc"><Clock size={16} /><strong>{propertyStats.proceso}</strong><span>Proceso</span></div>
+                <div className="vcp-ts-stat ts-done"><CheckCircle2 size={16} /><strong>{propertyStats.listos}</strong><span>Listos</span></div>
+              </div>
+
+              <div className="vcp-ts-avance">
+                <div className="vcp-ts-avance-txt">
+                  <span>Avance de trabajos</span>
+                  <strong>{avanceDe(propertyStats)}%</strong>
+                </div>
+                <div className="vcp-ts-barra">
+                  <div className="vcp-ts-barra-fill" style={{ width: `${avanceDe(propertyStats)}%` }} />
+                </div>
+                <span className="vcp-ts-nota">
+                  {totalDe(propertyStats) === 0
+                    ? 'Aún no hay trabajos en esta propiedad'
+                    : `${propertyStats.listos} de ${totalDe(propertyStats)} trabajos terminados`}
+                </span>
+              </div>
+
+              {/* Últimos trabajos (tocar uno abre su detalle) */}
+              <div className="vcp-ts-historial">
+                <div className="vcp-ts-sub"><Clock size={14} /> Últimos trabajos</div>
+                {expActivo.cargando && ultimosTrabajos.length === 0 ? (
+                  <p className="vcp-ts-vacio">Cargando…</p>
+                ) : ultimosTrabajos.length === 0 ? (
+                  <p className="vcp-ts-vacio">Todavía no hay trabajos en esta propiedad.</p>
+                ) : (
+                  <ul>
+                    {ultimosTrabajos.map((t) => {
+                      const estado = etiquetaEstado(t);
+                      return (
+                        <li key={t.uid || t.id}>
+                          <button
+                            type="button"
+                            className="vcp-ts-trabajo"
+                            onClick={() => navigate(`/detalle-propiedad/${activeProperty.id}/trabajo/${t.uid}`)}
+                          >
+                            <div>
+                              <strong>{t.titulo || 'Sin título'}</strong>
+                              <span className={`vcp-ts-chip tono-${estado.tono}`}>{estado.texto}</span>
+                              <span className="vcp-ts-fecha">{fechaCorta(fechaDeTrabajo(t))}</span>
+                            </div>
+                            <ChevronRight size={16} className="vcp-ts-fila-flecha" />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+
+              <div className="vcp-ts-acciones">
+                <button type="button" className="vcp-ts-btn is-naranja" onClick={() => setShowModalSolicitarServicio(true)}>
+                  <Plus size={15} /> SOLICITAR SERVICIO
+                </button>
+                <button type="button" className="vcp-ts-btn" onClick={() => navigate(`/detalle-propiedad/${activeProperty.id}`)}>
+                  <Eye size={15} /> VER PROPIEDAD
+                </button>
+              </div>
+            </div>
+
+            {/* Botón al tablero global de todas las propiedades */}
+            <button type="button" className="vcp-ts-global-btn" onClick={() => navigate('/tablero-global')}>
+              <span className="vcp-ts-head-ico"><Layers size={18} /></span>
+              <span className="vcp-ts-global-txt">
+                <strong>Tablero global</strong>
+                <small>Todas tus propiedades, trabajos y fechas</small>
+              </span>
+              <ChevronRight size={18} />
+            </button>
+
+            <button
+              type="button"
+              className={`vcp-ts-fila is-agregar ${currentPropsCount >= maxAllowed ? 'is-limite' : ''}`}
+              onClick={handleAgregarPropiedad}
+              title={currentPropsCount >= maxAllowed ? 'Límite de propiedades alcanzado' : 'Registrar una nueva propiedad'}
+            >
+              <div className="vcp-ts-fila-foto is-icono">
+                {currentPropsCount >= maxAllowed ? <Lock size={18} /> : <Plus size={20} />}
+              </div>
+              <div className="vcp-ts-fila-info">
+                <strong>Agregar propiedad</strong>
+                <span className="vcp-ts-nota">{currentPropsCount} de {maxAllowed} espacios usados</span>
+              </div>
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* La barra inferior ya la incluye <Header> (dos barras encimadas rompían la animación) */}
 

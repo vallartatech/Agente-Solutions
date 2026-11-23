@@ -138,6 +138,7 @@ const RedLevantamientoPropiedad = lazy(() => import("./portals/AgenteMarket/Tecn
 const CompletarPerfil = lazy(() => import("./portals/AgenteMarket/Tecnico/PerfilProfesional/CompletarPerfil"));
 // Contratista (rol 7): su equipo, el cupo, el código para invitar y la Sala de espera
 const MiCuadrilla = lazy(() => import("./portals/AgenteMarket/Tecnico/MiCuadrilla"));
+const VistaTableroGlobal = lazy(() => import("./portals/AgenteMarket/Cliente/VistaTableroGlobal"));
 // Técnico que quedó sin cuadrilla: unirse a otra o pedir ser independiente
 const SinCuadrilla = lazy(() => import("./portals/AgenteMarket/Tecnico/SinCuadrilla"));
 const RUTAS_SIN_CUADRILLA = ['/', '/sin-cuadrilla', '/privacidad', '/eliminar-cuenta'];
@@ -327,6 +328,8 @@ const AppRoutes = () => {
       <Route path="/calendario-cliente" element={<CalendarioWrapper />} />
       <Route path="/calendario" element={<CalendarioWrapper />} />
       <Route path="/mis-tecnicos" element={<MisTecnicos />} />
+      {/* Red: tablero global de todas las propiedades del cliente (filtros de trabajos y fechas) */}
+      <Route path="/tablero-global" element={<ProtectedRoute><Suspense fallback={<CasaLoader />}><VistaTableroGlobal /></Suspense></ProtectedRoute>} />
       <Route path="/mis-favoritos" element={<Navigate to="/mis-tecnicos" replace />} />
       <Route path="/tecnico-perfil/:id" element={<PerfilTecnicoRed />} />
       <Route path="/mercado-trabajos" element={<MercadoTrabajos />} />

@@ -12,7 +12,7 @@ import '../../../styles/AgenteMarket/Shared/SelectorFechaRed.css';
 import { mostrarAviso } from '../../../utils/dialogos';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
 import { useAuth } from '../../../context/AuthContext';
-import { esTecnicoRed } from '../../../utils/entorno';
+import { esTecnicoRed, esRed } from '../../../utils/entorno';
 
 // ── Fecha estimada ("Programar") ──
 // Es la fecha en que el cliente necesita el trabajo, no una cita confirmada: el técnico propone la cita después.
@@ -111,6 +111,8 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
   const [zonasDisponibles, setZonasDisponibles] = useState([]);
   const [equiposDisponibles, setEquiposDisponibles] = useState({});
   const [loadingZonas, setLoadingZonas] = useState(false);
+  // Propiedad cuyas zonas ya se cargaron bien (para no esconder campos mientras carga o si falló)
+  const [zonasCargadasDe, setZonasCargadasDe] = useState(null);
   const [loadingEquipos, setLoadingEquipos] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   
@@ -250,6 +252,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       setZonasDisponibles(res.data || []);
+      setZonasCargadasDe(pId);
     } catch (error) {
       console.error("Error al cargar zonas:", error);
     } finally {
@@ -337,21 +340,38 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
     setIsPhotoMenuOpen(false);
   };
 
+  // Red: si la propiedad no tiene levantamiento (no hay zonas registradas),
+  // no se muestran "Zona de la propiedad" ni "Equipo afectado"
+  const sinLevantamiento = esRed(user)
+    && !!selectedPropertyId
+    && !loadingZonas
+    && String(zonasCargadasDe) === String(selectedPropertyId)
+    && zonasDisponibles.length === 0;
+
+  // Problema escrito y listo para enviar (sin levantamiento la zona no se pide)
+  const formularioCompleto = !!(nuevoServicio.tipo && (sinLevantamiento || nuevoServicio.area_id) && nuevoServicio.descripcion);
+
   const handleAnadirAlCarrito = (e) => {
     e.preventDefault();
     if (!selectedPropertyId) {
       mostrarAviso("Por favor selecciona una propiedad primero.");
       return;
     }
-    if (!nuevoServicio.tipo || !nuevoServicio.area_id || !nuevoServicio.descripcion) {
-      mostrarAviso("Por favor completa los campos obligatorios (Tipo, Zona y Descripción).");
+    if (!nuevoServicio.tipo || (!sinLevantamiento && !nuevoServicio.area_id) || !nuevoServicio.descripcion) {
+      mostrarAviso(sinLevantamiento
+        ? "Por favor completa los campos obligatorios (Tipo y Descripción)."
+        : "Por favor completa los campos obligatorios (Tipo, Zona y Descripción).");
       return;
     }
     if (nuevoServicio.especialidadId === '') {
       mostrarAviso("Elige qué técnico necesitas. Si no sabes, toca «No estoy seguro».");
       return;
     }
-    setCarritoServicios([...carritoServicios, { ...nuevoServicio }]);
+    // Sin levantamiento no hay zonas: el trabajo va a la propiedad en general
+    const servicio = sinLevantamiento
+      ? { ...nuevoServicio, area_id: '', zona: 'Área General', equipo: '' }
+      : { ...nuevoServicio };
+    setCarritoServicios([...carritoServicios, servicio]);
     setNuevoServicio({ ...SERVICIO_VACIO });
   };
 
@@ -364,12 +384,14 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
     }
 
     let lote = [...carritoServicios];
-    if (nuevoServicio.tipo && nuevoServicio.area_id && nuevoServicio.descripcion) {
+    if (formularioCompleto) {
       if (nuevoServicio.especialidadId === '') {
         mostrarAviso("Elige qué técnico necesitas. Si no sabes, toca «No estoy seguro».");
         return;
       }
-      lote.push({ ...nuevoServicio });
+      lote.push(sinLevantamiento
+        ? { ...nuevoServicio, area_id: '', zona: 'Área General', equipo: '' }
+        : { ...nuevoServicio });
     }
 
     if (lote.length === 0) {
@@ -507,7 +529,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
     if (onClose) onClose();
   };
 
-  const totalItemsCount = carritoServicios.length + (nuevoServicio.tipo && nuevoServicio.area_id && nuevoServicio.descripcion ? 1 : 0);
+  const totalItemsCount = carritoServicios.length + (formularioCompleto ? 1 : 0);
 
   return createPortal(
     <>
@@ -577,6 +599,8 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                     </select>
                   </div>
 
+                  {/* ZONA y EQUIPO: solo si la propiedad tiene levantamiento */}
+                  {!sinLevantamiento && (<>
                   {/* ZONA DE LA PROPIEDAD */}
                   <div className="msa-form-group">
                     <label className="msa-label">
@@ -637,6 +661,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                       <option value="otro">Otro / Ninguno en específico</option>
                     </select>
                   </div>
+                  </>)}
 
                   {/* ¿QUÉ TÉCNICO NECESITA? (habilidad) */}
                   {(() => {
