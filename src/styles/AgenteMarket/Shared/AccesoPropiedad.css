@@ -25,6 +25,46 @@
 }
 .acr-panel.tecnico { margin: 0; border-color: #fdba74; background: #fff7ed; }
 
+/* Cliente: ya hay técnico asignado y aún no responde si tiene QR o código → pregunta destacada */
+.acr-panel.acr-pregunta { border-color: #fdba74; background: #fff7ed; box-shadow: 0 6px 18px rgba(242, 101, 34, 0.12); }
+
+.acr-quien {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: var(--acr-fondo-2);
+  border: 1px solid var(--acr-borde);
+  color: var(--acr-suave);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+.acr-quien > svg { flex-shrink: 0; margin-top: 1px; color: var(--acr-naranja); }
+.acr-quien strong { color: var(--acr-texto); font-weight: 800; }
+
+.acr-opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.acr-opcion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--acr-borde);
+  background: var(--acr-fondo);
+  color: var(--acr-texto);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+.acr-opcion.si { background: var(--acr-naranja); border-color: var(--acr-naranja); color: #ffffff; }
+.acr-opcion:hover { filter: brightness(0.96); }
+.acr-opcion:focus-visible { outline: 2px solid var(--acr-naranja); outline-offset: 2px; }
+
 .acr-cab { display: flex; align-items: flex-start; gap: 10px; color: var(--acr-naranja); }
 .acr-cab > svg { flex-shrink: 0; margin-top: 2px; }
 .acr-cab > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }

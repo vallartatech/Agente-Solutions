@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 import {
   MapPin, Clock, CheckCircle, User, Calendar, MessageCircle, Maximize2, Image as ImageIcon,
   FileText, X, Trash2, Send, ChevronLeft, ChevronRight, Check, ClipboardList, Star, Sparkles
@@ -11,7 +12,7 @@ import ResumenTecnico, { FotoTecnico, InsigniaTecnico } from '../Shared/ResumenT
 import AjusteCotizacionCliente from './AjusteCotizacionCliente';
 import VersionesCotizacionRed from './VersionesCotizacionRed';
 import CancelacionServicioCliente from './CancelacionServicioCliente';
-import AccesoPropiedadCliente from './AccesoPropiedadCliente';
+import AccesoPropiedadCliente, { marcarSinAcceso } from './AccesoPropiedadCliente';
 import EstadoCotizacionRed, { cotizacionAceptable } from './EstadoCotizacionRed';
 import { pideConfirmacion } from '../Shared/redCancelacionApi';
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
@@ -37,6 +38,7 @@ const horaCorta = (valor) => {
 };
 
 const techDe = (q) => q?.technician_id || q?.technician?.id;
+const escaparHtml = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // Estado de la visita (propuesta, re-coordinación o confirmada) según el chat de la oferta
 export const getJobScheduleStatus = (job, activeQuote) => {
@@ -86,6 +88,8 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
   const [llegadaConfirmadaAt, setLlegadaConfirmadaAt] = useState(null);
   // Técnico de la cuadrilla que el cliente está calificando (el contratista se califica con el botón de siempre)
   const [calificando, setCalificando] = useState(null);
+  // Recién aceptada la cotización y el cliente eligió "Agregar acceso": el panel abre su formulario
+  const [abrirAcceso, setAbrirAcceso] = useState(false);
   const chatEndRef = useRef(null);
 
   const refrescar = useCallback(() => onRefresh?.(), [onRefresh]);
@@ -230,9 +234,25 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
         return;
       }
       if (res.data.success) {
-        mostrarAviso('🎉 ' + res.data.message);
         onAceptada?.(job);
         refrescar();
+        // Ya hay técnico asignado: es el momento de pedir el QR o código (algunas casetas lo generan a su nombre)
+        const r = await Swal.fire({
+          icon: 'success',
+          title: '¡Cotización aceptada!',
+          html: `${escaparHtml(res.data.message || '')}<br><br><strong>¿Tu propiedad tiene algún QR o código de acceso?</strong> Agrégalo aquí. `
+            + `Si la caseta pide un nombre, genéralo a nombre de <strong>${escaparHtml(techName)}</strong>.`,
+          showCancelButton: true,
+          confirmButtonText: 'Agregar acceso',
+          cancelButtonText: 'No tiene',
+          confirmButtonColor: '#f26522',
+          cancelButtonColor: '#64748b',
+        });
+        if (r.isConfirmed) {
+          setAbrirAcceso(true);
+          return;
+        }
+        if (r.dismiss === Swal.DismissReason.cancel) marcarSinAcceso(job.id);
         onClose();
       }
     } catch (e) {
@@ -296,6 +316,13 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
       setConfirmandoLlegada(false);
     }
   };
+
+  // Quién va a la propiedad: la cuadrilla en sitio o, si no, el técnico de la cotización aceptada
+  const quoteAsignada = (job.cotizaciones_list || []).find(q =>
+    q.status === 'accepted' || q.is_assigned || (job.is_accepted && Number(job.tecnico_id) === Number(techDe(q))));
+  const nombresAcceso = job.equipo_en_sitio?.length
+    ? job.equipo_en_sitio.map(p => p.nombre)
+    : [quoteAsignada?.technicianName || (quoteAsignada?.technician ? `${quoteAsignada.technician.first_name || ''} ${quoteAsignada.technician.last_name || ''}`.trim() : '')];
 
   const puedeCalificar = onCalificar && (job.is_accepted || ['Terminado', 'Completado', 'Listo', 'Asignado'].includes(job.status));
 
@@ -439,6 +466,14 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                   </div>
                 )}
 
+                {/* Con técnico asignado: QR o código para entrar a la propiedad (vence en máx. 7 días) */}
+                <AccesoPropiedadCliente
+                  key={`acceso-${job.id}`}
+                  job={job}
+                  nombres={nombresAcceso}
+                  abrirAlCargar={abrirAcceso}
+                />
+
                 {/* El técnico propone un nuevo precio para la cotización aceptada */}
                 {job.is_accepted && (
                   <AjusteCotizacionCliente key={job.id} workOrderId={job.id} onCambio={refrescar} />
@@ -448,8 +483,6 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                 {cancelado && (
                   <CancelacionServicioCliente job={job} onCambio={refrescar} onCerrar={onClose} />
                 )}
-                {/* QR o código para entrar a la propiedad (vence en máx. 7 días) */}
-                <AccesoPropiedadCliente key={`acceso-${job.id}`} job={job} />
 
                 <div style={{ marginBottom: '16px' }}>
                   <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>

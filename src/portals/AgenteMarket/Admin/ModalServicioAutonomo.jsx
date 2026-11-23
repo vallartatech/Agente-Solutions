@@ -2,10 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { 
-  X, FileText, Home, Wrench, MessageSquare, Camera, Trash2, PlusCircle, Globe, Users, Shield, AlertCircle, CheckCircle2, UserCheck, Clock, Calendar, Check, KeyRound, QrCode, Plus, HelpCircle, Sparkles
+  X, FileText, Home, Wrench, MessageSquare, Camera, Trash2, PlusCircle, Globe, Users, Shield, AlertCircle, CheckCircle2, UserCheck, Clock, Calendar, Check, HelpCircle, Sparkles
 } from 'lucide-react';
-import FormularioAcceso from '../Cliente/FormularioAcceso';
-import { guardarAcceso, textoVigencia } from '../Shared/accesoRedApi';
 import { IconoEspecialidad } from '../Shared/iconoEspecialidad';
 import '../../../styles/AgenteMarket/Admin/ModalServicioAutonomo.css';
 import '../../../styles/AgenteMarket/Shared/SelectorFechaRed.css';
@@ -119,12 +117,6 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
   const [isPhotoMenuOpen, setIsPhotoMenuOpen] = useState(false);
   const [solicitudExitosa, setSolicitudExitosa] = useState(null);
   const [errorEnvio, setErrorEnvio] = useState(null);
-  // Acceso a la propiedad (QR y/o código, máx. 2): se guarda en cada trabajo creado al publicar
-  const [accesos, setAccesos] = useState([]);
-  const [agregandoAcceso, setAgregandoAcceso] = useState(null); // slot del formulario abierto
-  const [tieneAcceso, setTieneAcceso] = useState(null); // null: sin responder | 'si' | 'no'
-  const [preguntaAcceso, setPreguntaAcceso] = useState(null); // destino pendiente mientras se pregunta por el acceso
-  const accesoRef = useRef(null);
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
 
@@ -375,7 +367,7 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
     setNuevoServicio({ ...SERVICIO_VACIO });
   };
 
-  const handleSubmitBatch = async (forcedMode = null, { sinPreguntarAcceso = false } = {}) => {
+  const handleSubmitBatch = async (forcedMode = null) => {
     const mode = forcedMode || destinoEnvio;
 
     if (!selectedPropertyId) {
@@ -407,19 +399,13 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
       return;
     }
 
-    // Si no agregó acceso ni marcó "No tiene", se le pregunta antes de publicar
-    if (!sinPreguntarAcceso && accesos.length === 0 && tieneAcceso !== 'no') {
-      setPreguntaAcceso(mode);
-      return;
-    }
-
     setLoadingSubmit(true);
     const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
     const loteId = `LOTE-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     const total = lote.length;
 
     try {
-      const respuestas = await Promise.all(lote.map(async (item, index) => {
+      await Promise.all(lote.map(async (item, index) => {
         const formData = new FormData();
         formData.append('property_id', selectedPropertyId);
         formData.append('type', item.tipo);
@@ -478,18 +464,6 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
         });
       }));
 
-      // Acceso a la propiedad: se guarda en cada trabajo creado. Si falla, la solicitud ya quedó publicada
-      // y el cliente puede agregarlo después desde el detalle del trabajo.
-      let accesoFallido = false;
-      if (accesos.length) {
-        const ids = respuestas.map(r => r?.data?.id).filter(Boolean);
-        const resultados = await Promise.allSettled(
-          ids.flatMap(id => accesos.map(a => guardarAcceso(id, a)))
-        );
-        accesoFallido = ids.length < lote.length || resultados.some(r => r.status === 'rejected');
-        if (accesoFallido) console.error('Acceso a la propiedad no guardado:', resultados.filter(r => r.status === 'rejected'));
-      }
-
       const techObj = tecnicos.find(t => String(t.id) === String(targetTechId));
       const techName = techObj ? `${techObj.first_name || techObj.name || ''} ${techObj.last_name || ''}`.trim() : 'tu técnico';
       const propObj = propiedades.find(p => String(p.id) === String(selectedPropertyId));
@@ -504,8 +478,6 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
         totalSolicitudes: total,
         primerServicio: lote[0],
         loteId: total > 1 ? loteId : null,
-        conAcceso: accesos.length > 0 && !accesoFallido,
-        accesoFallido,
         fecha: new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
       };
 
@@ -522,9 +494,6 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
     setSolicitudExitosa(null);
     setCarritoServicios([]);
     setNuevoServicio({ ...SERVICIO_VACIO });
-    setAccesos([]);
-    setAgregandoAcceso(null);
-    setTieneAcceso(null);
     if (onSuccess) onSuccess();
     if (onClose) onClose();
   };
@@ -930,102 +899,6 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                   })()}
                 </div>
 
-                {/* 🔑 ACCESO A LA PROPIEDAD (QR y/o código) */}
-                {(() => {
-                  const libre = [1, 2].find(s => !accesos.some(a => a.slot === s));
-                  const mostrarAccesos = tieneAcceso === 'si' || accesos.length > 0;
-                  return (
-                    <div ref={accesoRef} className="msa-card-box msa-acceso-box acr-panel">
-                      <div className="msa-card-box-header">
-                        <label className="msa-label">
-                          <KeyRound size={14} color="#ea580c" /> Acceso a la propiedad
-                        </label>
-                        {mostrarAccesos && <span className="msa-counter-badge">{accesos.length}/2</span>}
-                      </div>
-
-                      {tieneAcceso === 'no' && accesos.length === 0 ? (
-                        <div className="msa-acceso-no">
-                          <span>Sin código ni QR: el técnico entrará directamente.</span>
-                          <button type="button" className="msa-acceso-cambiar" onClick={() => setTieneAcceso(null)}>
-                            Cambiar
-                          </button>
-                        </div>
-                      ) : !mostrarAccesos ? (
-                        <>
-                          <p className="msa-acceso-pregunta">¿Tu propiedad tiene algún código o QR de acceso?</p>
-                          <p className="msa-acceso-desc">
-                            Por ejemplo, para la caseta o el portón. Si no vas a estar, déjalo aquí: el técnico lo verá solo cuando llegue.
-                          </p>
-                          <div className="msa-acceso-opciones">
-                            <button
-                              type="button"
-                              className="msa-acceso-opcion si"
-                              disabled={!selectedPropertyId}
-                              onClick={() => { setTieneAcceso('si'); setAgregandoAcceso(1); }}
-                            >
-                              <QrCode size={15} /> Sí, agregarlo
-                            </button>
-                            <button
-                              type="button"
-                              className="msa-acceso-opcion"
-                              disabled={!selectedPropertyId}
-                              onClick={() => { setTieneAcceso('no'); setAgregandoAcceso(null); }}
-                            >
-                              No tiene
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          {accesos.map(a => (
-                            <div key={a.slot} className="acr-item">
-                              <span className="acr-item-icono">{a.imagen ? <QrCode size={18} /> : <KeyRound size={18} />}</span>
-                              <div className="acr-item-txt">
-                                <strong>{a.label || (a.imagen ? 'QR de acceso' : 'Código de acceso')}</strong>
-                                {a.codigo && <span className="acr-codigo">{a.codigo}</span>}
-                                <span className="acr-vence">{textoVigencia(a.validUntil.toISOString())}</span>
-                              </div>
-                              <button
-                                type="button"
-                                className="acr-icono-btn peligro"
-                                onClick={() => setAccesos(accesos.filter(x => x.slot !== a.slot))}
-                                title="Quitar acceso"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </div>
-                          ))}
-
-                          {agregandoAcceso ? (
-                            <FormularioAcceso
-                              borrador
-                              slot={agregandoAcceso}
-                              onCancelar={() => {
-                                setAgregandoAcceso(null);
-                                // Si canceló sin agregar ninguno, vuelve a la pregunta
-                                if (accesos.length === 0) setTieneAcceso(null);
-                              }}
-                              onGuardado={(datos) => {
-                                setAccesos([...accesos, datos].sort((x, y) => x.slot - y.slot));
-                                setAgregandoAcceso(null);
-                              }}
-                            />
-                          ) : libre && (
-                            <button
-                              type="button"
-                              className="acr-agregar"
-                              onClick={() => setAgregandoAcceso(libre)}
-                              disabled={!selectedPropertyId}
-                            >
-                              <Plus size={16} /> {accesos.length ? 'Agregar otro acceso' : 'Agregar QR o código de acceso'}
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  );
-                })()}
-
                 {/* 🛡️ DESTINO DEL SERVICIO */}
                 <div className="msa-card-box msa-destino-box">
                   <label className="msa-label">
@@ -1305,17 +1178,6 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
                 </div>
               )}
 
-              {solicitudExitosa.conAcceso && (
-                <div className="msa-ficha-batch-banner">
-                  <span>🔑 Acceso a la propiedad guardado: el técnico lo verá cuando marque que llegó</span>
-                </div>
-              )}
-              {solicitudExitosa.accesoFallido && (
-                <div className="msa-ficha-batch-banner msa-ficha-aviso-acceso">
-                  <span>⚠️ No se pudo guardar el acceso a la propiedad. Agrégalo desde el detalle del trabajo.</span>
-                </div>
-              )}
-
               {solicitudExitosa.totalSolicitudes > 1 && (
                 <div className="msa-ficha-batch-banner">
                   <span>💼 Incluye {solicitudExitosa.totalSolicitudes} problemas enviados en este lote</span>
@@ -1332,54 +1194,6 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
               >
                 <Check size={18} strokeWidth={2.5} />
                 <span>Aceptar y Ver en el Mapa</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════
-          RECORDATORIO: ¿TIENE CÓDIGO O QR DE ACCESO?
-          ══════════════════════════════════════════ */}
-      {preguntaAcceso && (
-        <div className="msa-overlay msa-pregunta-acceso-overlay" onClick={() => setPreguntaAcceso(null)}>
-          <div className="msa-ficha-card msa-pregunta-acceso" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="msa-pregunta-acceso-titulo">
-            <div className="msa-ficha-top-bar" />
-            <div className="msa-ficha-header">
-              <div className="msa-ficha-icon-circle acceso">
-                <KeyRound size={32} color="#ea580c" strokeWidth={2.4} />
-              </div>
-              <h3 className="msa-ficha-title" id="msa-pregunta-acceso-titulo">¿Tu propiedad tiene algún código o QR de acceso?</h3>
-              <p className="msa-ficha-subtitle">
-                Si hay caseta o portón y no vas a estar, agrégalo para que el técnico pueda entrar. Solo lo verá cuando llegue.
-              </p>
-            </div>
-            <div className="msa-ficha-footer msa-pregunta-acceso-acciones">
-              <button
-                type="button"
-                className="msa-ficha-btn-ok"
-                onClick={() => {
-                  setPreguntaAcceso(null);
-                  setTieneAcceso('si');
-                  setAgregandoAcceso(1);
-                  setTimeout(() => accesoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
-                }}
-              >
-                <QrCode size={18} strokeWidth={2.5} />
-                <span>Sí, agregarlo</span>
-              </button>
-              <button
-                type="button"
-                className="msa-pregunta-acceso-no"
-                onClick={() => {
-                  const destino = preguntaAcceso;
-                  setPreguntaAcceso(null);
-                  setTieneAcceso('no');
-                  setAgregandoAcceso(null);
-                  handleSubmitBatch(destino, { sinPreguntarAcceso: true });
-                }}
-              >
-                No tiene, enviar solicitud
               </button>
             </div>
           </div>
