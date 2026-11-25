@@ -384,7 +384,7 @@ const GaleriaReportes = () => {
   const enviarAprobacion = async () => {
     const result = await Swal.fire({
       title: '¿Enviar el reporte al cliente?',
-      text: 'El cliente recibirá tu reporte con las evidencias. Después de enviarlo ya no se podrá modificar.',
+      text: 'El cliente recibirá tu reporte con las evidencias y tendrá 48 horas para confirmarlo (si no, se confirma solo). Después de enviarlo ya no se podrá modificar.',
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#16a34a',
@@ -402,7 +402,7 @@ const GaleriaReportes = () => {
       Swal.fire({
         icon: 'success',
         title: '¡Reporte enviado al cliente!',
-        text: 'El trabajo quedó concluido y el reporte ya no se puede modificar.',
+        text: 'El reporte ya no se puede modificar. Te avisaremos cuando el cliente lo confirme.',
         timer: 2400,
         showConfirmButton: false
       });

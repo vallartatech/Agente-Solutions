@@ -7,8 +7,10 @@ import SelectorVistas from '../../../components/Shared/SelectorVistas';
 import { esTecnicoRed, usaSelectorRed } from '../../../utils/entorno';
 import CasaLoader from '../../../components/Shared/CasaLoader';
 import { useAuth } from '../../../context/AuthContext';
-import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Upload, CheckCircle2, Pencil, Calendar, ClipboardList, Image as ImageIcon } from 'lucide-react';
+import { Search, MapPin, FileText, ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Upload, CheckCircle2, Pencil, Calendar, ClipboardList, ShieldCheck, Star, Image as ImageIcon } from 'lucide-react';
 import Swal from 'sweetalert2';
+import ModalCalificarTecnico from '../../../components/Shared/ModalCalificarTecnico';
+import { fechaConfirmacionAuto } from '../../../utils/confirmacionReporte';
 import '../../../styles/Shared/UniversalSearch.css';
 import '../../../styles/Shared/ToolbarAcciones.css';
 import '../../../styles/Shared/VistaRedUnificada.css';
@@ -54,6 +56,12 @@ const resolverFotoPropiedad = (prop) => {
   return `${hostBase}/storage/${raw.replace(/^\//, '')}`;
 };
 
+// Token de la sesión para las llamadas del cliente (confirmar y calificar)
+const encabezadosToken = () => {
+  const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 const VistaReportesGlobal = () => {
   const { user } = useAuth();
   const isTech = Boolean(esTecnicoRed(user) || user?.role_id === 2);
@@ -80,9 +88,60 @@ const VistaReportesGlobal = () => {
   const [isSheetDragging, setIsSheetDragging] = useState(false);
   const sheetTouchStartY = useRef(0);
 
+  // Cliente: reportes que debe confirmar y trabajos confirmados que falta calificar (por work_order_id)
+  const [pendientesCliente, setPendientesCliente] = useState({ porConfirmar: {}, calificar: {} });
+  const [confirmando, setConfirmando] = useState(false);
+  const [calificando, setCalificando] = useState(null);
+
+  const fetchPendientesCliente = async () => {
+    if (isTech) return;
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/red/calificaciones-tecnico/pendientes`, { headers: encabezadosToken() });
+      const porId = (lista) => Object.fromEntries((lista || []).map(p => [String(p.work_order_id), p]));
+      setPendientesCliente({ porConfirmar: porId(res.data?.por_confirmar), calificar: porId(res.data?.data) });
+    } catch {
+      // Sin la lista no se muestran los botones; el aviso de la campanita sigue llegando
+    }
+  };
+
   useEffect(() => {
     fetchReportesYCotizaciones();
+    fetchPendientesCliente();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Estado del reporte para el cliente: 'por_confirmar', 'calificar' o null
+  const estadoParaCliente = (grupo) => {
+    if (isTech || !grupo || grupo.tipo !== 'work_order') return null;
+    const id = String(grupo.trabajoId);
+    if (pendientesCliente.porConfirmar[id]) return 'por_confirmar';
+    if (pendientesCliente.calificar[id]) return 'calificar';
+    return null;
+  };
+
+  const confirmarReporte = async (grupo) => {
+    const r = await Swal.fire({
+      title: '¿El reporte está correcto?',
+      text: 'Confirma que revisaste las evidencias y que el trabajo quedó bien. Después podrás calificar al técnico.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#16a34a',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, todo está correcto',
+      cancelButtonText: 'Seguir revisando'
+    });
+    if (!r.isConfirmed) return;
+    setConfirmando(true);
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/red/trabajos/${grupo.trabajoId}/confirmar-reporte`, {}, { headers: encabezadosToken() });
+      await fetchPendientesCliente();
+      if (res.data?.data?.tecnico?.id) setCalificando(res.data.data);
+    } catch (error) {
+      Swal.fire('Error', error.response?.data?.error || 'No se pudo confirmar el reporte. Inténtalo de nuevo.', 'error');
+    } finally {
+      setConfirmando(false);
+    }
+  };
 
   const fetchReportesYCotizaciones = async () => {
     try {
@@ -565,7 +624,11 @@ const VistaReportesGlobal = () => {
                     >
                       <span className="rg-service-number">{idx + 1}</span>
                       <span className="rg-service-info">
-                        <span className="rg-service-label">SERVICIO {idx + 1} · #{servicio.trabajoId}</span>
+                        <span className="rg-service-label">
+                          SERVICIO {idx + 1} · #{servicio.trabajoId}
+                          {estadoParaCliente(servicio) === 'por_confirmar' && <span className="rg-chip-confirmar">POR CONFIRMAR</span>}
+                          {estadoParaCliente(servicio) === 'calificar' && <span className="rg-chip-calificar">POR CALIFICAR</span>}
+                        </span>
                         <span className="rg-service-title">{servicio.tituloTrabajo}</span>
                         <span className="rg-service-meta">
                           <Calendar size={13} /> {servicio.fechaTexto}
@@ -581,6 +644,37 @@ const VistaReportesGlobal = () => {
             ) : (
             /* NIVEL 2: REPORTE DEL SERVICIO SELECCIONADO */
             <>
+            {/* Cliente: confirmar el reporte (o se confirma solo a las 48 h) y después calificar al técnico */}
+            {estadoParaCliente(grupoSeleccionado) === 'por_confirmar' && (() => {
+              const p = pendientesCliente.porConfirmar[String(grupoSeleccionado.trabajoId)];
+              const fecha = fechaConfirmacionAuto(p?.confirma_solo_at);
+              return (
+                <div className="rg-confirmar-aviso">
+                  <div className="rg-confirmar-texto">
+                    <strong><ShieldCheck size={16} /> Revisa el reporte de {p?.tecnico?.nombre || 'el técnico'}</strong>
+                    <span>Si las evidencias y el trabajo están correctos, confírmalo para calificar al técnico.{fecha && ` Si no lo confirmas, se confirmará solo el ${fecha}.`}</span>
+                  </div>
+                  <button type="button" className="rg-btn-confirmar" onClick={() => confirmarReporte(grupoSeleccionado)} disabled={confirmando}>
+                    <CheckCircle2 size={16} /> {confirmando ? 'CONFIRMANDO…' : 'CONFIRMAR REPORTE'}
+                  </button>
+                </div>
+              );
+            })()}
+            {estadoParaCliente(grupoSeleccionado) === 'calificar' && (
+              <div className="rg-confirmar-aviso listo">
+                <div className="rg-confirmar-texto">
+                  <strong><CheckCircle2 size={16} /> Reporte confirmado</strong>
+                  <span>Falta calificar al técnico por este trabajo.</span>
+                </div>
+                <button
+                  type="button"
+                  className="rg-btn-confirmar"
+                  onClick={() => setCalificando(pendientesCliente.calificar[String(grupoSeleccionado.trabajoId)])}
+                >
+                  <Star size={16} /> CALIFICAR AL TÉCNICO
+                </button>
+              </div>
+            )}
             <div className="rg-sheet-actions">
               {(() => {
                 const cotizacionAsociada = getCotizacionAsociada(grupoSeleccionado);
@@ -737,6 +831,20 @@ const VistaReportesGlobal = () => {
           </button>
         </div>,
         document.body
+      )}
+
+      {/* Cliente: calificar al técnico después de confirmar el reporte */}
+      {calificando && (
+        <ModalCalificarTecnico
+          isOpen
+          onClose={() => setCalificando(null)}
+          onSuccess={() => { setCalificando(null); fetchPendientesCliente(); }}
+          technician={{ id: calificando.tecnico.id, name: calificando.tecnico.nombre, picture: calificando.tecnico.foto, specialty: calificando.titulo }}
+          workOrderId={calificando.work_order_id}
+          scheduledAt={calificando.scheduled_at}
+          arrivedAt={calificando.arrived_at}
+          encabezado="Reporte confirmado"
+        />
       )}
 
       {/* La barra inferior ya la incluye <Header> (dos barras encimadas rompían la animación) */}

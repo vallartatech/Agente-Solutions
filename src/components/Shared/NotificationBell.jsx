@@ -70,9 +70,9 @@ const getNotificationMeta = (notif) => {
     };
   }
   // Agente Market: el técnico entregó el reporte (lleva al reporte del trabajo)
-  if (type === 'trabajo_finalizado') {
+  if (type === 'trabajo_finalizado' || type === 'reporte_confirmado') {
     return {
-      category: 'Trabajo finalizado',
+      category: type === 'reporte_confirmado' ? 'Reporte confirmado' : (title.includes('reporte recibido') ? 'Reporte recibido' : 'Trabajo finalizado'),
       icon: <CheckCircle2 size={18} strokeWidth={2.2} color="#0f172a" />,
       tab: 'servicios'
     };
@@ -421,7 +421,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
       const titleLower = (notification.data?.title || notification.title || notification.titulo || notification.data?.titulo || '').toLowerCase();
 
       // Agente Market: trabajo finalizado: el reporte de ese trabajo (la URL ya viene en el aviso)
-      if (type === 'trabajo_finalizado' && (notification.data?.url || notification.url)) {
+      if ((type === 'trabajo_finalizado' || type === 'reporte_confirmado') && (notification.data?.url || notification.url)) {
         url = notification.data?.url || notification.url;
       } else if (type === 'new_quote_message' || titleLower.includes('nuevo mensaje') || titleLower.includes('mensaje en la red') || titleLower.includes('mensaje en el mercado')) {
         if (ROLES_TECNICO.includes(Number(user?.role_id))) {
