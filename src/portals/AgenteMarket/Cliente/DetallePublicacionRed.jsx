@@ -17,6 +17,7 @@ import AccesoPropiedadCliente, { marcarSinAcceso } from './AccesoPropiedadClient
 import EstadoCotizacionRed, { cotizacionAceptable } from './EstadoCotizacionRed';
 import { pideConfirmacion } from '../Shared/redCancelacionApi';
 import { mostrarAviso, confirmarAccion, pedirTexto } from '../../../utils/dialogos';
+import { useNavigate } from 'react-router-dom';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
 
@@ -119,6 +120,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
   const [perfilesAbiertos, setPerfilesAbiertos] = useState({});
   const alternarPerfil = (id) => setPerfilesAbiertos(prev => ({ ...prev, [id]: !prev[id] }));
   const chatEndRef = useRef(null);
+  const navigate = useNavigate();
   // Reloj para los avisos que dependen de la hora (técnico 15 min tarde)
   const [ahora, setAhora] = useState(() => Date.now());
   useEffect(() => {
@@ -634,6 +636,23 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                         <CheckCircle size={15} /> {confirmandoLlegada ? 'Confirmando…' : 'Confirmar llegada'}
                       </button>
                     )}
+                  </div>
+                )}
+
+                {/* Trabajo terminado: el reporte se revisa (y confirma) en Reportes */}
+                {job.terminado && (
+                  <div className={`cl-horario-aviso ${job.reporte_por_confirmar ? 'alerta' : ''}`} role="status">
+                    <strong>{job.reporte_por_confirmar ? '📋 El técnico terminó: revisa el reporte' : '✅ Trabajo finalizado'}</strong>
+                    <span>
+                      {job.reporte_por_confirmar
+                        ? 'Revisa las evidencias y confirma el reporte para calificar al técnico. Si no lo confirmas, se confirmará solo a las 48 horas.'
+                        : 'El reporte ya está confirmado. Puedes verlo cuando quieras.'}
+                    </span>
+                    <div className="cl-horario-acciones">
+                      <button type="button" className="cl-horario-btn ok" onClick={() => navigate(`/reportes-globales?trabajo=${job.id}`)}>
+                        <FileText size={14} /> {job.reporte_por_confirmar ? 'Revisar y confirmar reporte' : 'Ver reporte'}
+                      </button>
+                    </div>
                   </div>
                 )}
 

@@ -678,6 +678,20 @@ const VistaReportesGlobal = () => {
             <div className="rg-sheet-actions">
               {(() => {
                 const cotizacionAsociada = getCotizacionAsociada(grupoSeleccionado);
+                const ordenRed = grupoSeleccionado.tipo === 'work_order'
+                  && grupoSeleccionado.reports?.some(r => Number((r.work_order || r.workOrder)?.publish_network) === 1);
+                // Mercado: su cotización (con los ajustes v2, v3…) vive en el detalle de la publicación
+                if (ordenRed) {
+                  return (
+                    <button
+                      type="button"
+                      className="rg-btn-secondary"
+                      onClick={() => navigate(isTech ? `/mercado-trabajos?trabajo=${grupoSeleccionado.trabajoId}` : `/red-autonomos?trabajo=${grupoSeleccionado.trabajoId}`)}
+                    >
+                      <FileText size={15} /> VER COTIZACIÓN
+                    </button>
+                  );
+                }
                 return cotizacionAsociada ? (
                   <button type="button" className="rg-btn-secondary" onClick={() => abrirCotizacion(cotizacionAsociada)}>
                     <FileText size={15} /> VER COTIZACIÓN

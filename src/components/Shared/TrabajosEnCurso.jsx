@@ -77,10 +77,10 @@ const useArrastreHorizontal = () => {
 
 const enCurso = (t) => esActivo(t) && !String(t.status || '').trim().toLowerCase().startsWith('cancel');
 
-// Agente Market: un trabajo del Mercado que terminó sigue en la lista como "Finalizado" (abre su reporte)
-// hasta que se abre 2 veces. Solo los terminados en los últimos días, para no traer el historial.
+// Agente Market: un trabajo del Mercado que terminó aparece una vez como "Finalizado" (abre su reporte)
+// y se quita de la lista al consultarlo. Solo los terminados en los últimos días, para no traer el historial.
 const DIAS_FINALIZADO = 7;
-const VECES_FINALIZADO = 2;
+const VECES_FINALIZADO = 1;
 const finalizadoReciente = (t, enRed) => {
   if (t.kind !== 'trabajo' || !esFinalizado(t) || !enRed.has(String(t.id))) return false;
   const fecha = new Date(String(t.updated_at || '').replace(' ', 'T')).getTime();
@@ -111,7 +111,8 @@ export const useTrabajosEnCurso = (activo, usuarioId, { conRed = true, cadaMinut
       const headers = authHeaders();
       const [propsRes, redRes] = await Promise.allSettled([
         axios.get(`${API}/propiedades`, { headers }),
-        conRed ? axios.get(`${API}/mercado-trabajos?only_mine=1`, { headers }) : Promise.resolve(null),
+        // con_terminados: sin él, un trabajo del Mercado ya terminado no se reconocía como del Mercado y desaparecía
+        conRed ? axios.get(`${API}/mercado-trabajos?only_mine=1&con_terminados=1`, { headers }) : Promise.resolve(null),
       ]);
       if (propsRes.status !== 'fulfilled') return;
       const propiedades = Array.isArray(propsRes.value.data) ? propsRes.value.data : (propsRes.value.data?.data || []);
@@ -222,7 +223,7 @@ export const PildoraTrabajosEnCurso = ({ usuarioId, interna = false }) => {
   const { grupos: todos, total, cargando, recargar } = useTrabajosEnCurso(true, usuarioId, { conRed: !interna, cadaMinuto: !interna });
   const arrastreFiltros = useArrastreHorizontal();
 
-  // Los finalizados se quitan de la lista después de abrirlos 2 veces
+  // Los finalizados se quitan de la lista en cuanto se consultan
   const [vistas, setVistas] = useState(() => leerVistas(usuarioId));
   const grupos = useMemo(() => todos
     .map((g) => ({ ...g, trabajos: g.trabajos.filter((t) => !t.finalizado || (vistas[t.id] || 0) < VECES_FINALIZADO) }))

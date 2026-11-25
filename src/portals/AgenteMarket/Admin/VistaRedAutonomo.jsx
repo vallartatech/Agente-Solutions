@@ -18,6 +18,9 @@ import AvisoCancelacionTecnico from '../Cliente/AvisoCancelacionTecnico';
 import AvisoCalificarTecnico from '../Cliente/AvisoCalificarTecnico';
 import AvisoCambioHorario from '../Cliente/AvisoCambioHorario';
 import { usaSelectorRed } from '../../../utils/entorno';
+
+// Estados con el reporte ya enviado por el técnico
+const ESTADOS_TERMINADO = ['Listo', 'Por Aprobar', 'Finalizado', 'Terminado', 'Completado'];
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
@@ -285,7 +288,8 @@ const VistaRedAutonomo = () => {
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos?only_mine=1`, { headers });
+      // con_terminados: los trabajos terminados siguen en "Aceptados" (reporte por confirmar, cotización final)
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos?only_mine=1&con_terminados=1`, { headers });
       
       if (res.data.success) {
         const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name) : '';
@@ -357,6 +361,8 @@ const VistaRedAutonomo = () => {
             acceptedQuote ||
             order.tecnico_id
           );
+          // El técnico ya envió el reporte (Listo / Por Aprobar / Finalizado…)
+          const terminado = ESTADOS_TERMINADO.includes(order.status);
 
           const assignedTechName = acceptedQuote?.technicianName || (order.technician ? `${order.technician.first_name} ${order.technician.last_name || ''}`.trim() : null);
           const agreedPrice = acceptedQuote?.price ? parseFloat(acceptedQuote.price) : 0;
@@ -369,7 +375,10 @@ const VistaRedAutonomo = () => {
             lat: rawLat,
             lng: rawLng,
             presupuesto: "A convenir",
-            estado: isAccepted ? (order.status === 'Terminado' ? 'Terminado' : 'Asignado') : (order.status || 'Por Hacer'),
+            estado: terminado ? 'Finalizado' : (isAccepted ? 'Asignado' : (order.status || 'Por Hacer')),
+            terminado,
+            // Reporte enviado que el cliente todavía no confirma
+            reporte_por_confirmar: Boolean(terminado && order.report_sent_at && !order.client_confirmed_at),
             // Estado real y datos de cancelación / reenvío a la red
             status: order.status,
             tecnico_id: order.tecnico_id,
@@ -492,8 +501,8 @@ const VistaRedAutonomo = () => {
     setSelectedJobForQuotes(null);
   };
 
-  const enRedJobs = networkJobs.filter(j => !j.is_accepted);
-  const aceptadosJobs = networkJobs.filter(j => j.is_accepted);
+  const enRedJobs = networkJobs.filter(j => !j.is_accepted && !j.terminado);
+  const aceptadosJobs = networkJobs.filter(j => j.is_accepted || j.terminado);
   const textoBusqueda = busqueda.trim().toLowerCase();
   const dosDigitos = (n) => String(n).padStart(2, '0');
   const coincideFechaHora = (j) => {
@@ -900,8 +909,8 @@ const VistaRedAutonomo = () => {
                       </div>
                     </div>
 
-                    <span className={`rj-estado ${job.is_accepted ? 'asignado' : ''}`}>
-                      {job.is_accepted ? 'Asignado' : job.estado}
+                    <span className={`rj-estado ${job.terminado ? (job.reporte_por_confirmar ? 'por-confirmar' : 'finalizado') : (job.is_accepted ? 'asignado' : '')}`}>
+                      {job.terminado ? (job.reporte_por_confirmar ? 'Revisa el reporte' : 'Finalizado') : (job.is_accepted ? 'Asignado' : job.estado)}
                     </span>
                   </div>
 
@@ -994,7 +1003,7 @@ const VistaRedAutonomo = () => {
                         </button>
                       )}
                       <span className={`rj-btn-ver ${job.is_accepted ? 'verde' : ''}`} data-ayuda="ver-ofertas">
-                        {job.is_accepted ? 'Coordinar' : 'Ver ofertas'}
+                        {job.terminado ? 'Ver detalle' : (job.is_accepted ? 'Coordinar' : 'Ver ofertas')}
                         <ChevronRight size={14} />
                       </span>
                     </div>

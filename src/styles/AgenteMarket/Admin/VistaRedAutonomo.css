@@ -2977,3 +2977,7 @@
 }
 .red-quote-horario.vencida { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
 .red-quote-horario svg { flex-shrink: 0; }
+
+/* Trabajo terminado: reporte por confirmar o finalizado */
+.rj-estado.por-confirmar { background: #2563eb; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); }
+.rj-estado.finalizado { background: #475569; box-shadow: 0 4px 10px rgba(71, 85, 105, 0.3); }
