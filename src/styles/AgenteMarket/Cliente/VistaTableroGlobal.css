@@ -580,7 +580,9 @@ div.tg-prop { cursor: default; box-sizing: border-box; }
 
 /* ── Tablet / celular ── */
 @media (max-width: 1100px) {
-  .tg-columnas { grid-template-columns: 1fr; }
+  /* minmax(0, …): la columna no se ensancha con su contenido (los chips la empujaban fuera de la pantalla) */
+  .tg-columnas { grid-template-columns: minmax(0, 1fr); }
+  .tg-columnas > * { min-width: 0; }
   /* Una columna: el filtro por propiedad va antes de la lista de trabajos */
   .tg-resumen { position: static; order: -1; }
   .tg-estados { grid-template-columns: repeat(3, 1fr); }
@@ -601,6 +603,9 @@ div.tg-prop { cursor: default; box-sizing: border-box; }
   .tg-filtros, .tg-avance { padding: 12px; }
   .tg-lista, .tg-resumen { padding: 10px; }
   .tg-trabajo { padding: 10px; gap: 10px; }
+  /* Celular: todas las opciones de filtro a la vista, en renglones, sin cortarse por la derecha */
+  .tg-chips { flex-wrap: wrap; overflow-x: visible; }
+  .tg-opciones-pie .tg-aplicar { max-width: 100%; }
 }
 
 @media (max-width: 420px) {
