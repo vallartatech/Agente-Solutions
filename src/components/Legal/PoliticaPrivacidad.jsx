@@ -240,9 +240,10 @@ export default function PoliticaPrivacidad() {
           <li style={s.li}>
             <strong>Anthropic:</strong> modelo de inteligencia artificial (Claude) del asistente de ayuda.
             Recibe sus preguntas y, solo cuando usted pregunta por ellos, datos de su cuenta necesarios para
-            responder: nombre y colonia de sus propiedades, sus trabajos, los nombres de los técnicos que le
-            atendieron, sus citas y las cotizaciones del Mercado. No recibe su teléfono, correo, CURP,
-            ubicación GPS, datos bancarios ni de pago.
+            responder: nombre y colonia de sus propiedades, el inventario de equipos e instalaciones
+            registrado en ellas (con sus fotos), sus trabajos y sus precios, los nombres de los técnicos que
+            le atendieron, sus citas y las cotizaciones del Mercado. No recibe su teléfono,
+            correo, CURP, ubicación GPS, datos bancarios ni los datos de sus tarjetas o pagos.
           </li>
         </ul>
         <p>

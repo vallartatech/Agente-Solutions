@@ -231,6 +231,21 @@
   40% { opacity: 1; transform: translateY(-3px); }
 }
 
+/* Foto de un equipo registrado (se abre completa al tocarla) */
+.asis-foto {
+  display: block;
+  margin-top: 10px;
+}
+.asis-foto img {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
 /* Botón "Muéstrame" */
 .asis-mostrar {
   display: inline-flex;

@@ -16,7 +16,7 @@ const API = import.meta.env.VITE_API_BASE_URL;
 
 const SALUDO = {
   rol: 'assistant',
-  texto: '¡Hola! Soy tu asistente. Te ayudo a usar la app y también puedo decirte tus últimos trabajos, técnicos, citas y cotizaciones. ¿Qué necesitas?',
+  texto: '¡Hola! Soy tu asistente. Te ayudo a usar la app y también puedo decirte tus últimos trabajos, técnicos, citas, cotizaciones y los equipos registrados en tu propiedad. ¿Qué necesitas?',
 };
 const SUGERENCIAS = [
   { texto: '¿Cómo pido un servicio?', icono: Wrench },
@@ -28,9 +28,17 @@ const ALTO_MAX_ENTRADA = 132; // ~5 renglones; después la caja se desplaza por 
 
 // La IA marca el botón a señalar con [[señalar:id]]: se quita del texto y se vuelve un botón "Muéstrame"
 const ETIQUETA = /\[\[\s*se[ñn]alar\s*:\s*([a-z-]+)\s*\]\]/gi;
+// Fotos de equipos con [[foto:URL]]: solo de Cloudinary (el backend ya filtra las que no vinieron de la cuenta)
+const FOTO = /\[\[\s*foto\s*:\s*([^\]\s]+)\s*\]\]/gi;
+const esFoto = (url) => url.startsWith('https://res.cloudinary.com/');
 const separarSenales = (texto) => {
   const ids = [...texto.matchAll(ETIQUETA)].map((m) => m[1].toLowerCase()).filter((id) => BOTONES_AYUDA[id]);
-  return { limpio: texto.replace(ETIQUETA, '').trim(), ids: [...new Set(ids)].slice(0, 2) };
+  const fotos = [...texto.matchAll(FOTO)].map((m) => m[1]).filter(esFoto);
+  return {
+    limpio: texto.replace(ETIQUETA, '').replace(FOTO, '').trim(),
+    ids: [...new Set(ids)].slice(0, 2),
+    fotos: [...new Set(fotos)].slice(0, 2),
+  };
 };
 
 // Negritas (**texto**), listas y saltos de línea, sin meter HTML
@@ -201,12 +209,17 @@ const AsistenteAyuda = () => {
               if (m.rol === 'user') {
                 return <div key={i} className="asis-burbuja asis-usuario">{m.texto}</div>;
               }
-              const { limpio, ids } = separarSenales(m.texto);
+              const { limpio, ids, fotos } = separarSenales(m.texto);
               return (
                 <div key={i} className="asis-fila-ia">
                   <span className="asis-avatar"><Sparkles size={13} /></span>
                   <div className={`asis-burbuja asis-ia ${m.error ? 'asis-error' : ''}`}>
                     <TextoFormateado texto={limpio} />
+                    {fotos.map((url) => (
+                      <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="asis-foto">
+                        <img src={url} alt="Foto del equipo registrado" loading="lazy" />
+                      </a>
+                    ))}
                     {ids.map((id) => (
                       <button type="button" key={id} className="asis-mostrar" onClick={() => mostrar(id)}>
                         <MousePointerClick size={15} /> Muéstrame: {BOTONES_AYUDA[id].texto}
