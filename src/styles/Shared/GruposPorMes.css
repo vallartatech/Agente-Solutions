@@ -1,0 +1,94 @@
+/* Lista agrupada por año y mes (Tablero del cliente y "Mis trabajos" del técnico) */
+.gm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.gm-anio {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gm-anio-titulo {
+  margin: 0;
+  padding: 0 4px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.gm-mes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gm-mes-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.gm-mes-btn:hover { border-color: #fdba74; }
+.gm-mes.abierto > .gm-mes-btn {
+  border-color: #f26522;
+  background: rgba(242, 101, 34, 0.06);
+}
+
+.gm-mes-flecha {
+  flex-shrink: 0;
+  color: #f26522;
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+}
+.gm-mes.abierto .gm-mes-flecha { transform: rotate(0deg); }
+
+.gm-mes-nombre { flex: 1; min-width: 0; }
+
+.gm-mes-n {
+  flex-shrink: 0;
+  min-width: 26px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: center;
+}
+.gm-mes.abierto .gm-mes-n {
+  background: #f26522;
+  color: #ffffff;
+}
+
+.gm-mes-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gm-mas {
+  padding: 10px;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 12px;
+  background: transparent;
+  color: #475569;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gm-mas:hover { border-color: #f26522; color: #f26522; }

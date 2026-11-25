@@ -28,6 +28,7 @@ import defaultLogo from '../../../assets/Logo4.png';
 import ModalCalendarioCliente from '../Cliente/ModalCalendarioCliente';
 import RegisterModal from '../../../components/Auth/Register';
 import TecnicoHeader from '../../../components/Shared/TecnicoHeader';
+import GruposPorMes from '../../../components/Shared/GruposPorMes';
 import ModalReportePdfTecnico from './ModalReportePdfTecnico';
 import { mostrarAviso } from '../../../utils/dialogos';
 import CampoFechaHora from '../../../components/Shared/CampoFechaHora';
@@ -46,6 +47,10 @@ const mapContainerStyle = {
 };
 
 const defaultCenter = { lat: 21.0181, lng: -89.6242 };
+
+// Mis Trabajos agrupado por mes: fecha de solicitud y key de cada trabajo
+const fechaSolicitudTrabajo = (job) => job.created_at;
+const claveTrabajoTablero = (job) => job.id;
 
 export const DARK_MAP_STYLES = [
   { elementType: "geometry", stylers: [{ color: "#141720" }] },
@@ -2806,7 +2811,14 @@ const MercadoTrabajos = () => {
                       No hay trabajos que coincidan con este filtro
                     </div>
                   ) : (
-                    filteredBoardJobs.map(job => {
+                    /* Agrupados por año y mes de solicitud; el mes más reciente (o el del trabajo abierto) se despliega */
+                    <GruposPorMes
+                      items={filteredBoardJobs}
+                      fecha={fechaSolicitudTrabajo}
+                      clave={claveTrabajoTablero}
+                      abrirTodos={boardSearch.trim() !== ''}
+                      seleccionado={(job) => Boolean(selectedBoardJob && selectedBoardJob.id === job.id)}
+                      render={(job) => {
                       const isSelected = selectedBoardJob && selectedBoardJob.id === job.id;
                       const isUrgent = job.is_urgent || job.priority === 'Urgente' || job.tipo === 'SOS';
                       const isInProgress = job.status === 'En Progreso';
@@ -2867,7 +2879,8 @@ const MercadoTrabajos = () => {
                           </div>
                         </div>
                       );
-                    })
+                      }}
+                    />
                   )}
                 </div>
               </div>

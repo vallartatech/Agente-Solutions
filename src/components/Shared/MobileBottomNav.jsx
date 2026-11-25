@@ -148,27 +148,40 @@ const MobileBottomNav = ({ activeModule, onTabChange }) => {
     currentPath === '/vistatecnico'
   );
 
-  const isMercadoActive = !isPerfilActive && !isInicioActive && (
-    activeModule === 'mercado' || 
-    currentView === 'mercado' ||
-    currentPath.includes('/red-autonomos') || 
-    (currentPath.includes('/mercado-trabajos') && currentView !== 'tablero' && currentView !== 'usuarios') ||
-    (currentPath.includes('/mercado') && !currentPath.includes('/tablero') && !currentPath.includes('/usuarios'))
-  );
+  // En /mercado-trabajos la pestaña la decide una sola fuente: la que manda la pantalla (cambia al tocar
+  // un botón) y, si no manda ninguna, la vista con la que se llegó. Antes se sumaban las dos y, al
+  // tocar Mercado después de llegar al tablero, quedaban marcados Mercado y Trabajos a la vez.
+  const enMercadoTrabajos = currentPath.includes('/mercado-trabajos');
+  const vistaMercadoTrabajos = enMercadoTrabajos
+    ? (['mercado', 'tablero', 'usuarios'].includes(activeModule) ? activeModule : (currentView || 'mercado'))
+    : null;
 
-  const isTableroActive = !isPerfilActive && !isInicioActive && (
-    activeModule === 'tablero' || 
-    currentView === 'tablero' || 
-    currentPath.includes('/trabajos-tecnico') || 
-    currentPath.includes('/tablero-servicios')
-  );
+  const isMercadoActive = !isPerfilActive && !isInicioActive && (enMercadoTrabajos
+    ? vistaMercadoTrabajos === 'mercado'
+    : (
+      activeModule === 'mercado' ||
+      currentView === 'mercado' ||
+      currentPath.includes('/red-autonomos') ||
+      (currentPath.includes('/mercado') && !currentPath.includes('/tablero') && !currentPath.includes('/usuarios'))
+    ));
 
-  const isUsuariosActive = !isPerfilActive && !isInicioActive && (
-    activeModule === 'usuarios' || 
-    currentView === 'usuarios' || 
-    currentPath.includes('/usuarios') ||
-    currentPath.includes('/vista-tecnicos')
-  );
+  const isTableroActive = !isPerfilActive && !isInicioActive && (enMercadoTrabajos
+    ? vistaMercadoTrabajos === 'tablero'
+    : (
+      activeModule === 'tablero' ||
+      currentView === 'tablero' ||
+      currentPath.includes('/trabajos-tecnico') ||
+      currentPath.includes('/tablero-servicios')
+    ));
+
+  const isUsuariosActive = !isPerfilActive && !isInicioActive && (enMercadoTrabajos
+    ? vistaMercadoTrabajos === 'usuarios'
+    : (
+      activeModule === 'usuarios' ||
+      currentView === 'usuarios' ||
+      currentPath.includes('/usuarios') ||
+      currentPath.includes('/vista-tecnicos')
+    ));
 
   // Cliente de la red: tablero de todas sus propiedades
   const isTableroGlobalActive = !isPerfilActive && (activeModule === 'tablero-global' || currentPath.includes('/tablero-global'));

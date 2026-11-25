@@ -6,6 +6,7 @@ import {
   Search, Building2, CalendarDays, Hammer, UserRound, ChevronRight, FilterX, ListChecks, SlidersHorizontal, X
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
+import GruposPorMes from '../../../components/Shared/GruposPorMes';
 import {
   API, authHeaders, esFinalizado, esCancelado, etiquetaEstado, etiquetaTipo, nombreTecnicos, visitaLocal
 } from '../../AgenteSolutions/Admin/Expediente/flujoTrabajo';
@@ -75,6 +76,10 @@ const TIPOS = [
 
 const POR_PAGINA = 25;
 
+// Agrupado por mes: fecha de solicitud y key única de cada trabajo
+const fechaSolicitud = (t) => t.created_at;
+const claveTrabajo = (t) => `${t.propId}-${t.uid || t.id}`;
+
 const nombreProp = (p) => p.nombre_propiedad || p.property_name || p.nombre || p.alias || `Propiedad #${p.id}`;
 
 const VistaTableroGlobal = () => {
@@ -91,7 +96,6 @@ const VistaTableroGlobal = () => {
   const [hasta, setHasta] = useState('');
   const [tipo, setTipo] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
-  const [mostrar, setMostrar] = useState(POR_PAGINA);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -117,9 +121,6 @@ const VistaTableroGlobal = () => {
   }, []);
 
   useEffect(() => { cargar(); }, [cargar]);
-
-  // Al cambiar un filtro se vuelve a mostrar desde el inicio
-  useEffect(() => { setMostrar(POR_PAGINA); }, [propiedad, estado, periodo, desde, hasta, tipo, busqueda]);
 
   // Límites de fecha del periodo elegido (fecha de solicitud)
   const [inicio, fin] = useMemo(() => {
@@ -275,13 +276,18 @@ const VistaTableroGlobal = () => {
               ) : lista.length === 0 ? (
                 <p className="tg-vacio">No hay trabajos con estos filtros.</p>
               ) : (
-                <>
-                  {lista.slice(0, mostrar).map((t) => {
+                /* Agrupados por año y mes de solicitud; el mes más reciente abre desplegado */
+                <GruposPorMes
+                  items={lista}
+                  fecha={fechaSolicitud}
+                  clave={claveTrabajo}
+                  abrirTodos={busqueda.trim() !== ''}
+                  porPagina={POR_PAGINA}
+                  render={(t) => {
                     const est = etiquetaEstado(t);
                     const visita = fechaHoraCorta(visitaLocal(t.scheduled_at));
                     return (
                       <button
-                        key={`${t.propId}-${t.uid || t.id}`}
                         type="button"
                         className="tg-trabajo"
                         onClick={() => navigate(`/detalle-propiedad/${t.propId}/trabajo/${t.uid}`)}
@@ -307,13 +313,8 @@ const VistaTableroGlobal = () => {
                         <ChevronRight size={17} className="tg-flecha" />
                       </button>
                     );
-                  })}
-                  {lista.length > mostrar && (
-                    <button type="button" className="tg-mas" onClick={() => setMostrar((n) => n + POR_PAGINA)}>
-                      Ver más ({lista.length - mostrar} restantes)
-                    </button>
-                  )}
-                </>
+                  }}
+                />
               )}
             </div>
           </div>
