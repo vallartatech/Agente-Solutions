@@ -785,6 +785,43 @@
   color: #334155 !important;
 }
 
+/* Fotos del cliente: sombra suave y aire entre la foto grande y las miniaturas */
+.red-detalle-publicacion .mercado-photo-gallery {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+.red-detalle-publicacion .mercado-premium-image-wrapper {
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12) !important;
+}
+
+.red-detalle-publicacion .mercado-premium-image-wrapper:hover {
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.2) !important;
+}
+
+.red-detalle-publicacion .mercado-thumbnails-row {
+  gap: 10px !important;
+  padding: 4px 4px 6px !important;
+  margin: 0 !important;
+  flex-shrink: 0;
+}
+
+.red-detalle-publicacion .mercado-thumb-item {
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 10px !important;
+  border: 2px solid #e2e8f0 !important;
+  background: #f1f5f9 !important;
+  box-shadow: none !important;
+}
+
+.red-detalle-publicacion .mercado-thumb-item.active {
+  border-color: #f26522 !important;
+  box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.25) !important;
+}
+
 /* Celular: un solo scroll; en dos zonas con scroll propio los datos quedaban ocultos */
 @media (max-width: 900px) {
   .red-detalle-publicacion {

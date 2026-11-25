@@ -5403,7 +5403,7 @@ const MercadoTrabajos = () => {
                     const estadoCotizacion = cotizacion?.status === 'rejected' ? 'rechazada' : (cotizacion?.status === 'accepted' ? 'aceptada' : '');
 
                     return (
-                      <div className="jm-grid">
+                      <div className="jm-grid jm-grid-detalle">
                         {/* ── Columna izquierda: el trabajo ── */}
                         <div className="jm-col">
                           <section className="jm-card">
@@ -5576,7 +5576,7 @@ const MercadoTrabajos = () => {
                             </div>
                           </section>
 
-                          <section className="jm-card">
+                          <section className="jm-card jm-cotizacion-chat">
                             <div className="jm-seccion-titulo">
                               <span>Tu cotización</span>
                               {cotizacion && (

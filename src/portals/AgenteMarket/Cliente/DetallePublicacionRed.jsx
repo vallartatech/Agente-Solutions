@@ -3,7 +3,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import {
   MapPin, Clock, CheckCircle, User, Calendar, MessageCircle, Maximize2, Image as ImageIcon,
-  FileText, X, Trash2, Send, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, ClipboardList, Star, Sparkles
+  FileText, X, Trash2, Send, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, ClipboardList, Star, Sparkles, Hourglass
 } from 'lucide-react';
 import PanelChatLateral from '../../../components/Shared/PanelChatLateral';
 import EntradaMensaje from '../../../components/Shared/EntradaMensaje';
@@ -264,7 +264,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
         { headers: authHeaders() }
       );
       if (res.data.success) {
-        mostrarAviso('✅ ' + res.data.message);
+        mostrarAviso(res.data.message);
         refrescar();
       }
     } catch (e) {
@@ -285,7 +285,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quote.id}/accept`, {}, { headers: authHeaders() });
       if (res.data.success && res.data.requiere_confirmacion) {
-        mostrarAviso('⏳ ' + res.data.message);
+        mostrarAviso(res.data.message);
         refrescar();
         return;
       }
@@ -322,7 +322,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
     try {
       const res = await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}`, { headers: authHeaders() });
       if (res.data?.success) {
-        mostrarAviso('✅ Publicación eliminada y cancelada con éxito.');
+        mostrarAviso('Publicación eliminada y cancelada con éxito.');
         refrescar();
         onClose();
       } else {
@@ -339,7 +339,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}/reabrir-red`, {}, { headers: authHeaders() });
       if (res.data?.success) {
-        mostrarAviso('🌐 ' + res.data.message);
+        mostrarAviso(res.data.message);
         refrescar();
         onClose();
       }
@@ -455,7 +455,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
       );
       if (res.data?.success) {
         setLlegadaConfirmadaAt(res.data.arrival_confirmed_at || new Date().toISOString());
-        mostrarAviso('✅ ' + res.data.message);
+        mostrarAviso(res.data.message);
         refrescar();
       }
     } catch (e) {
@@ -732,14 +732,18 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                 )}
 
                 {(!job.cotizaciones_list || job.cotizaciones_list.length === 0) ? (
-                  <div style={{ textAlign: 'center', color: '#64748b', padding: '40px 20px', background: '#fffaf5', borderRadius: '16px', border: '2px dashed #fed7aa', margin: '20px 0' }}>
-                    <div style={{ fontSize: '36px', marginBottom: '10px' }}>⏳</div>
-                    <p style={{ margin: '0 0 6px 0', fontWeight: '700', fontSize: '15px', color: '#0f172a' }}>Aún no hay cotizaciones</p>
-                    <span style={{ fontSize: '13px', color: '#94a3b8' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', color: '#64748b', padding: '12px 14px', background: '#fffaf5', borderRadius: '14px', border: '1.5px dashed #fed7aa', margin: '4px 0 8px' }}>
+                    <span style={{ width: 36, height: 36, borderRadius: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#ffedd5', color: '#f26522', flexShrink: 0 }}>
+                      <Hourglass size={18} strokeWidth={2.4} />
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                    <p style={{ margin: '0 0 2px 0', fontWeight: '700', fontSize: '14px', color: '#0f172a' }}>Aún no hay cotizaciones</p>
+                    <span style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.4 }}>
                       {job.tecnico_dirigido_id
                         ? `${job.tecnico_dirigido_nombre || 'Tu técnico'} te notificará en cuanto envíe su propuesta.`
                         : 'Los técnicos del Mercado te notificarán en cuanto envíen su propuesta.'}
                     </span>
+                    </div>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -768,8 +772,8 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                                 >
                                   {quote.technicianName}
                                   {isAcceptedQuote && (
-                                    <span style={{ fontSize: '11px', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '10px', border: '1px solid #86efac' }}>
-                                      ✓ Asignado
+                                    <span style={{ fontSize: '11px', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '10px', border: '1px solid #86efac', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                      <Check size={11} strokeWidth={3} /> Asignado
                                     </span>
                                   )}
                                 </h4>

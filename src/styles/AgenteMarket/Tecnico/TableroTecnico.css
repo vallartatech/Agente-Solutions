@@ -4763,6 +4763,17 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
     min-height: 260px;
   }
 
+  /* Trabajo disponible: la cotización va arriba del chat para cotizar rápido */
+  .jm-modal.jm-modo-chat .jm-grid-chat > .jm-col { display: contents; }
+  .jm-modal.jm-modo-chat .jm-grid-chat .jm-cotizacion-chat { order: -2; }
+  .jm-modal.jm-modo-chat .jm-grid-chat:has(.jm-cotizacion-chat) > .jm-chat { height: calc(100dvh - 340px); }
+
+  /* Pestaña de detalle: cotización y chat primero; el detalle del trabajo debajo */
+  .jm-grid-detalle > .jm-col { display: contents; }
+  .jm-grid-detalle .jm-cotizacion { order: -3; }
+  .jm-grid-detalle .jm-aviso-mensaje { order: -2; }
+  .jm-grid-detalle .jm-chat-btn { order: -1; }
+
   .jm-modal.jm-modo-chat .jm-chat-head { padding: 10px 14px; }
   .jm-modal.jm-modo-chat .jm-chat-mensajes { padding: 12px; }
   .jm-modal.jm-modo-chat .jm-chat-input { padding: 10px 12px; }
