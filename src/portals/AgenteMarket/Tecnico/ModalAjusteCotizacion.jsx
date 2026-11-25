@@ -219,8 +219,8 @@ const ModalAjusteCotizacion = ({ workOrderId, precioVigente, version, onClose, o
           </div>
 
           {error && <p className="ajc-error" role="alert">{error}</p>}
-        </div>
 
+        {/* Totales al final del contenido (se desplazan con él, no quedan fijos) */}
         <div className="ajc-summary">
           {tab === 'manual' && (
             <>
@@ -251,6 +251,7 @@ const ModalAjusteCotizacion = ({ workOrderId, precioVigente, version, onClose, o
               {enviando ? 'ENVIANDO…' : 'ENVIAR AL CLIENTE'}
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>,

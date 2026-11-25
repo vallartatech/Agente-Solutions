@@ -552,7 +552,7 @@ const GaleriaReportes = () => {
                 Cargando evidencias del trabajo...
               </div>
             ) : (
-              <CarruselEtapas className="gr-etapas">
+              <CarruselEtapas className="gr-etapas ce-flechas-solas">
                 {etapas.map((stage) => {
                   const report = getReportForSlot(stage);
                   const localState = slotData[claveSlot(stage)] || SLOT_VACIO;
