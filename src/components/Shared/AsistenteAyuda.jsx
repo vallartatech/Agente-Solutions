@@ -7,33 +7,24 @@ import { BOTONES_AYUDA, senalarBoton } from './senalarBoton';
 import useBotonArrastrable from './useBotonArrastrable';
 import '../../styles/Shared/AsistenteAyuda.css';
 
-// Asistente de ayuda con IA: explica cómo usar la app. Solo el Cliente particular (rol 4) por ahora.
-// La conversación vive en sessionStorage (se borra al cerrar la pestaña) y se manda completa al backend.
+// Asistente de ayuda con IA: explica cómo usar la app y consulta los datos del propio usuario
+// (trabajos, técnicos, citas, Mercado). Solo el Cliente particular (rol 4) por ahora.
+// La conversación la guarda el backend 30 días: aquí se carga al abrir y solo se manda la pregunta nueva.
 const ROLES_CON_ASISTENTE = [4];
 const RUTAS_SIN_ASISTENTE = ['/', '/completar-perfil', '/sin-cuadrilla', '/registro', '/registro-cliente'];
-const MAX_MENSAJES = 20; // el backend acepta hasta 20
-const CLAVE = 'asistente_ayuda_conversacion';
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const SALUDO = {
   rol: 'assistant',
-  texto: '¡Hola! Soy tu asistente. Te ayudo a usar la app: registrar tu propiedad, pedir un servicio, elegir una cotización y más. ¿Qué necesitas?',
+  texto: '¡Hola! Soy tu asistente. Te ayudo a usar la app y también puedo decirte tus últimos trabajos, técnicos, citas y cotizaciones. ¿Qué necesitas?',
 };
 const SUGERENCIAS = [
-  { texto: '¿Cómo registro mi propiedad?', icono: Home },
   { texto: '¿Cómo pido un servicio?', icono: Wrench },
-  { texto: '¿Cómo acepto una cotización?', icono: FileCheck2 },
+  { texto: '¿Cuál fue mi último trabajo?', icono: Home },
+  { texto: '¿Tengo cotizaciones pendientes?', icono: FileCheck2 },
 ];
 const MAX_CARACTERES = 1000;
 const ALTO_MAX_ENTRADA = 132; // ~5 renglones; después la caja se desplaza por dentro
-
-const leerConversacion = () => {
-  try {
-    const guardada = JSON.parse(sessionStorage.getItem(CLAVE) || 'null');
-    return Array.isArray(guardada) && guardada.length ? guardada : [SALUDO];
-  } catch {
-    return [SALUDO];
-  }
-};
 
 // La IA marca el botón a señalar con [[señalar:id]]: se quita del texto y se vuelve un botón "Muéstrame"
 const ETIQUETA = /\[\[\s*se[ñn]alar\s*:\s*([a-z-]+)\s*\]\]/gi;
@@ -64,9 +55,11 @@ const AsistenteAyuda = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [abierto, setAbierto] = useState(false);
-  const [mensajes, setMensajes] = useState(leerConversacion);
+  const [mensajes, setMensajes] = useState([SALUDO]);
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
+  // Usuario cuya conversación ya se cargó (null = falta cargarla)
+  const [cargadaDe, setCargadaDe] = useState(null);
   const finRef = useRef(null);
   const entradaRef = useRef(null);
   // El botón se puede mover: mantener presionado (celular) o arrastrar (computadora)
@@ -81,34 +74,55 @@ const AsistenteAyuda = () => {
     el.style.overflowY = el.scrollHeight > ALTO_MAX_ENTRADA ? 'auto' : 'hidden';
   }, [texto, abierto]);
 
+  const puedeUsarlo = !!user && ROLES_CON_ASISTENTE.includes(Number(user.role_id));
+
+  // Al cambiar de usuario o cerrar sesión se olvida la conversación de la pantalla
   useEffect(() => {
-    try { sessionStorage.setItem(CLAVE, JSON.stringify(mensajes)); } catch { /* sin almacenamiento: no pasa nada */ }
-  }, [mensajes]);
+    setMensajes([SALUDO]);
+    setCargadaDe(null);
+    setAbierto(false);
+    // Copia vieja de cuando la conversación vivía en el navegador
+    try { sessionStorage.removeItem('asistente_ayuda_conversacion'); } catch { /* sin almacenamiento */ }
+  }, [user?.id]);
+
+  // La conversación guardada se carga la primera vez que se abre el panel
+  useEffect(() => {
+    if (!abierto || !puedeUsarlo || cargadaDe === user.id) return;
+    let vigente = true;
+    const id = user.id;
+    axios.get(`${API}/asistente/conversacion`)
+      .then(({ data }) => {
+        if (!vigente) return;
+        const guardados = Array.isArray(data?.mensajes) ? data.mensajes : [];
+        // Si ya preguntó algo mientras cargaba, se conserva lo de la pantalla
+        setMensajes((prev) => (prev.length > 1 ? prev : [SALUDO, ...guardados]));
+        setCargadaDe(id);
+      })
+      .catch((err) => {
+        console.warn('No se pudo cargar la conversación del asistente', err);
+        if (vigente) setCargadaDe(id);
+      });
+    return () => { vigente = false; };
+  }, [abierto, puedeUsarlo, cargadaDe, user?.id]);
 
   useEffect(() => {
     if (abierto) finRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes, abierto, enviando]);
 
-  const visible = user && ROLES_CON_ASISTENTE.includes(Number(user.role_id))
-    && !RUTAS_SIN_ASISTENTE.includes(location.pathname);
+  const visible = puedeUsarlo && !RUTAS_SIN_ASISTENTE.includes(location.pathname);
   if (!visible) return null;
 
   const preguntar = async (pregunta) => {
     const limpia = pregunta.trim().slice(0, MAX_CARACTERES);
     if (!limpia || enviando) return;
-    const nuevos = [...mensajes, { rol: 'user', texto: limpia }];
-    setMensajes(nuevos);
+    setMensajes((prev) => [...prev, { rol: 'user', texto: limpia }]);
     setTexto('');
     setEnviando(true);
     try {
-      // El saludo es local: al backend va desde la primera pregunta del usuario
-      // Los avisos de error y los de "no encontré el botón" son locales: no van a la IA
-      const conversacion = nuevos.filter((m) => !m.error && !m.local);
-      const inicio = conversacion.findIndex((m) => m.rol === 'user');
-      let historial = conversacion.slice(inicio).slice(-MAX_MENSAJES);
-      if (historial[0]?.rol !== 'user') historial = historial.slice(1);
-      const { data } = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/asistente/ayuda`, {
-        mensajes: historial.map(({ rol, texto: t }) => ({ rol, texto: t })),
+      // El historial lo arma el backend con lo guardado; aquí solo va la pregunta nueva.
+      // Los avisos de error y los de "no encontré el botón" son locales: no se guardan ni van a la IA
+      const { data } = await axios.post(`${API}/asistente/ayuda`, {
+        pregunta: limpia,
         pantalla: location.pathname,
       });
       setMensajes((prev) => [...prev, { rol: 'assistant', texto: data.respuesta }]);
@@ -137,7 +151,15 @@ const AsistenteAyuda = () => {
     }
   };
 
-  const reiniciar = () => setMensajes([SALUDO]);
+  // "Nueva conversación": también se borra lo guardado en el servidor
+  const reiniciar = async () => {
+    setMensajes([SALUDO]);
+    try {
+      await axios.delete(`${API}/asistente/conversacion`);
+    } catch (err) {
+      console.warn('No se pudo borrar la conversación del asistente', err);
+    }
+  };
   const soloSaludo = mensajes.length === 1;
 
   return (
@@ -166,7 +188,7 @@ const AsistenteAyuda = () => {
             <span className="asis-avatar is-grande"><Sparkles size={18} /></span>
             <div className="asis-titulos">
               <span className="asis-titulo">Asistente de ayuda</span>
-              <span className="asis-subtitulo">Te explico cómo usar la app</span>
+              <span className="asis-subtitulo">Te ayudo con la app y tus servicios</span>
             </div>
             {!soloSaludo && (
               <button type="button" className="asis-icono-btn" onClick={reiniciar} aria-label="Nueva conversación" title="Nueva conversación"><RotateCcw size={16} /></button>

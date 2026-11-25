@@ -12,7 +12,7 @@ const EMPRESA = {
   encargadaDatos: "Tania A. García Montero, Asistente de Dirección",
   telefonoEncargada: "999 110 0088",
   url: "app.agentesolutions.com.mx/privacidad",
-  ultimaActualizacion: "9 de noviembre de 2026",
+  ultimaActualizacion: "26 de noviembre de 2026",
 };
 
 const C = {
@@ -145,6 +145,11 @@ export default function PoliticaPrivacidad() {
             técnicos y personal dentro de la aplicación.
           </li>
           <li style={s.li}>
+            <strong>Conversación con el asistente de ayuda:</strong> las preguntas que usted le hace al
+            asistente con inteligencia artificial y sus respuestas. Se guardan 30 días para que pueda
+            retomarlas y después se borran; usted puede borrarlas antes con el botón “Nueva conversación”.
+          </li>
+          <li style={s.li}>
             <strong>Datos técnicos:</strong> dirección IP, navegador o tipo de dispositivo, sistema
             operativo, fecha y hora de acceso y registros necesarios para el funcionamiento y la seguridad
             del servicio.
@@ -231,6 +236,13 @@ export default function PoliticaPrivacidad() {
           <li style={s.li}>
             <strong>Railway:</strong> hospedaje en la nube de la aplicación, su base de datos y documentos
             privados (como INE y comprobantes de los técnicos).
+          </li>
+          <li style={s.li}>
+            <strong>Anthropic:</strong> modelo de inteligencia artificial (Claude) del asistente de ayuda.
+            Recibe sus preguntas y, solo cuando usted pregunta por ellos, datos de su cuenta necesarios para
+            responder: nombre y colonia de sus propiedades, sus trabajos, los nombres de los técnicos que le
+            atendieron, sus citas y las cotizaciones del Mercado. No recibe su teléfono, correo, CURP,
+            ubicación GPS, datos bancarios ni de pago.
           </li>
         </ul>
         <p>
