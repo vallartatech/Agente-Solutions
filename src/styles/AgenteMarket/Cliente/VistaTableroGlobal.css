@@ -236,6 +236,19 @@
   transition: background 0.2s ease, color 0.2s ease;
 }
 .tg-btn-filtros:hover { background: #fff; }
+/* Escanear el QR de un trabajo: botón cuadrado solo con ícono */
+.tg-btn-qr { justify-content: center; width: 44px; padding: 0; color: #f26522; }
+
+/* Folio del trabajo en cada fila de la lista */
+.tg-folio {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
 .tg-btn-filtros.abierto,
 .tg-btn-filtros.con-activos { color: #f26522; border-color: rgba(242, 101, 34, 0.35); }
 .tg-btn-filtros.abierto { background: #fff1e8; }

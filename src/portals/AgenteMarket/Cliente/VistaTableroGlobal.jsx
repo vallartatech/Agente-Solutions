@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   Layers, ArrowLeft, RefreshCw, AlertCircle, ClipboardList, Clock, CheckCircle2, XCircle,
-  Search, Building2, CalendarDays, Hammer, UserRound, ChevronRight, FilterX, ListChecks, SlidersHorizontal, X
+  Search, Building2, CalendarDays, Hammer, UserRound, ChevronRight, FilterX, ListChecks, SlidersHorizontal, X, ScanLine
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import GruposPorMes from '../../../components/Shared/GruposPorMes';
+import EscanerQr from '../Shared/EscanerQr';
+import { folioDeTexto, buscarPorFolio, folioVisible } from './qrTrabajo';
+import { mostrarAviso } from '../../../utils/dialogos';
 import {
   API, authHeaders, esFinalizado, esCancelado, etiquetaEstado, etiquetaTipo, nombreTecnicos, visitaLocal
 } from '../../AgenteSolutions/Admin/Expediente/flujoTrabajo';
@@ -97,6 +100,10 @@ const VistaTableroGlobal = () => {
   const [tipo, setTipo] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+  const [escaneando, setEscaneando] = useState(false);
+  // Folio que llegó por el enlace del QR (?folio=...): se abre en cuanto cargan los trabajos
+  const [searchParams, setSearchParams] = useSearchParams();
+  const folioEnlace = searchParams.get('folio');
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -121,6 +128,21 @@ const VistaTableroGlobal = () => {
   }, []);
 
   useEffect(() => { cargar(); }, [cargar]);
+
+  const abrirTrabajo = useCallback((t) => navigate(`/detalle-propiedad/${t.propId}/trabajo/${t.uid}`), [navigate]);
+
+  // Abre el trabajo de un folio leído del QR; solo existe si es de una propiedad del cliente
+  const abrirFolio = useCallback((folio) => {
+    const t = buscarPorFolio(trabajos, folio);
+    if (t) abrirTrabajo(t);
+    else mostrarAviso('No encontramos ese trabajo en tus propiedades.', 'warning');
+  }, [trabajos, abrirTrabajo]);
+
+  useEffect(() => {
+    if (!folioEnlace || cargando) return;
+    setSearchParams({}, { replace: true });
+    abrirFolio(folioEnlace);
+  }, [folioEnlace, cargando, abrirFolio, setSearchParams]);
 
   // Límites de fecha del periodo elegido (fecha de solicitud)
   const [inicio, fin] = useMemo(() => {
@@ -151,7 +173,9 @@ const VistaTableroGlobal = () => {
   const pasaBusqueda = useCallback((t) => {
     const q = norm(busqueda);
     if (!q) return true;
-    return [t.titulo, t.descripcion, t.propNombre, nombreTecnicos(t)].some((x) => norm(x).includes(q));
+    // Por folio: "237" o "#237" encuentra la orden 237
+    if (/^#?\d+$/.test(q) && t.kind === 'trabajo' && String(t.id) === q.replace('#', '')) return true;
+    return [t.titulo, t.descripcion, t.propNombre, nombreTecnicos(t), t.uid].some((x) => norm(x).includes(q));
   }, [busqueda]);
 
   // Fecha, tipo y búsqueda (sin propiedad ni estado)
@@ -290,13 +314,14 @@ const VistaTableroGlobal = () => {
                       <button
                         type="button"
                         className="tg-trabajo"
-                        onClick={() => navigate(`/detalle-propiedad/${t.propId}/trabajo/${t.uid}`)}
+                        onClick={() => abrirTrabajo(t)}
                       >
                         <span className={`tg-trabajo-ico tg-e-${t.cat}`}>
                           {t.kind === 'levantamiento' ? <ClipboardList size={16} /> : <Hammer size={16} />}
                         </span>
                         <span className="tg-trabajo-txt">
                           <span className="tg-trabajo-arriba">
+                            <span className="tg-folio">{folioVisible(t)}</span>
                             <span className={`tg-tono tono-${est.tono}`}>{est.texto}</span>
                             <span className="tg-tipo">{etiquetaTipo(t.kind)}</span>
                           </span>
@@ -329,7 +354,7 @@ const VistaTableroGlobal = () => {
                     type="text"
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
-                    placeholder="Buscar trabajo, técnico o propiedad..."
+                    placeholder="Buscar por folio, trabajo, técnico o propiedad..."
                   />
                   {busqueda && (
                     <button type="button" className="tg-borrar" onClick={() => setBusqueda('')} aria-label="Borrar búsqueda">
@@ -337,6 +362,15 @@ const VistaTableroGlobal = () => {
                     </button>
                   )}
                 </label>
+                <button
+                  type="button"
+                  className="tg-btn-filtros tg-btn-qr"
+                  onClick={() => setEscaneando(true)}
+                  title="Escanear el QR de un trabajo"
+                  aria-label="Escanear el QR de un trabajo"
+                >
+                  <ScanLine size={18} />
+                </button>
                 <button
                   type="button"
                   className={`tg-btn-filtros ${filtrosAbiertos ? 'abierto' : ''} ${activos.length ? 'con-activos' : ''}`}
@@ -423,6 +457,16 @@ const VistaTableroGlobal = () => {
           </aside>
         </div>
       </div>
+
+      {escaneando && (
+        <EscanerQr
+          interpretar={folioDeTexto}
+          subtitulo="Apunta la cámara al QR de tu trabajo"
+          mensajeInvalido="Ese código QR no es de un trabajo de Agente Market."
+          onCerrar={() => setEscaneando(false)}
+          onCodigo={(folio) => { setEscaneando(false); abrirFolio(folio); }}
+        />
+      )}
     </div>
   );
 };
