@@ -182,6 +182,86 @@ export const fechaDeseada = (desc) => {
   return { fecha: m[1], hora, texto: [dia, horarioTxt].filter(Boolean).join(' · '), vencida: dias < 0 };
 };
 
+// ── Horario en la cotización (solicitudes nuevas, flujo_horario) ──
+// El técnico cotiza con una hora exacta. Cada hora distinta a la del cliente cuenta 1 cambio, máximo 2
+// (reenviar la misma, la del cliente o una nueva después de que la anterior venció no cuenta). Misma regla que el backend.
+export const MAX_CAMBIOS_HORARIO = 2;
+const pad2 = (n) => String(n).padStart(2, '0');
+// Date → 'YYYY-MM-DDTHH:MM' (formato de CampoFechaHora)
+const aCampoFechaHora = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+// 'YYYY-MM-DD HH:MM[:SS]' (hora de Mérida, sin zona) → Date
+export const leerFechaHora = (valor) => {
+  const m = String(valor || '').match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5])) : null;
+};
+// "Jueves 26 nov · 10:00 a.m."
+export const textoFechaHora = (d) => {
+  if (!d) return '';
+  const dia = d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'short' }).replace(/\./g, '').replace(',', '');
+  return `${dia.charAt(0).toUpperCase()}${dia.slice(1)} · ${d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+};
+// Lo antes posible: dentro de 1 h, redondeado a 15 min
+const proximoHorario = () => {
+  const d = new Date(Date.now() + 60 * 60000);
+  d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0);
+  return d;
+};
+const esUrgenteJob = (job) => Boolean(job?.is_urgent || job?.priority === 'Urgente' || String(job?.descripcion || job?.description || '').includes('[URGENCIA]'));
+// { fecha: 'YYYY-MM-DD', hora: 'HH:MM' | null, urgente }
+export const horarioDelCliente = (job) => {
+  if (esUrgenteJob(job)) return { fecha: aCampoFechaHora(new Date()).slice(0, 10), hora: null, urgente: true };
+  const nota = fechaDeseada(job?.descripcion || job?.description);
+  const fecha = job?.fecha_deseada ? String(job.fecha_deseada).slice(0, 10) : nota?.fecha;
+  const hora = job?.hora_deseada ? String(job.hora_deseada).slice(0, 5) : (nota?.hora || null);
+  return { fecha: fecha || null, hora, urgente: false };
+};
+export const textoHorarioCliente = (job) => {
+  const h = horarioDelCliente(job);
+  if (h.urgente) return 'Hoy, lo antes posible';
+  if (!h.fecha) return '';
+  const d = leerFechaHora(`${h.fecha} ${h.hora || '00:00'}`);
+  return h.hora ? textoFechaHora(d) : `${textoFechaHora(d).split(' · ')[0]} · a cualquier hora`;
+};
+// Valor inicial del campo: su horario anterior (si no venció), o el del cliente, o lo antes posible
+export const horarioInicialCotizacion = (job) => {
+  const q = job?.myQuote;
+  const minimo = new Date(Date.now() + 30 * 60000);
+  const anterior = q?.horario_propuesto && !q.vencida ? leerFechaHora(q.horario_propuesto) : null;
+  if (anterior && anterior > minimo) return aCampoFechaHora(anterior);
+  const h = horarioDelCliente(job);
+  if (!h.urgente && h.fecha) {
+    const d = leerFechaHora(`${h.fecha} ${h.hora || '10:00'}`);
+    if (d && d > minimo) return aCampoFechaHora(d);
+  }
+  return aCampoFechaHora(proximoHorario());
+};
+// ¿Este horario gasta uno de sus cambios?
+export const horarioCuentaCambio = (job, valor) => {
+  const d = leerFechaHora(valor);
+  if (!d) return false;
+  const h = horarioDelCliente(job);
+  const mismoDia = h.fecha && aCampoFechaHora(d).slice(0, 10) === h.fecha;
+  if (mismoDia && (!h.hora || aCampoFechaHora(d).slice(11, 16) === h.hora)) return false;
+  const q = job?.myQuote;
+  if (q?.vencida || q?.vencida_at) return false;
+  const anterior = q?.horario_propuesto ? leerFechaHora(q.horario_propuesto) : null;
+  return !(anterior && aCampoFechaHora(anterior) === aCampoFechaHora(d));
+};
+// Respaldo de la llegada: si el cliente no la confirma en 15 min, el técnico puede comenzar de todos modos
+export const MIN_ESPERA_CONFIRMAR_LLEGADA = 15;
+export const esperaLlegadaVencida = (job) => {
+  const llegada = job?.arrived_at ? leerFechaHora(job.arrived_at) : null;
+  return Boolean(llegada && !job.arrival_confirmed_at && Date.now() - llegada.getTime() >= MIN_ESPERA_CONFIRMAR_LLEGADA * 60000);
+};
+// La cotización está "por editar" desde el mapa: rechazada por el cliente (no retirada) o vencida
+export const cotizacionPorEditar = (job) => {
+  const q = job?.myQuote;
+  if (!q || !(Number(q.price) > 0) || job?.is_accepted) return null;
+  if (q.status === 'rejected' && !q.retirada_at) return 'rechazada';
+  if (q.status === 'pending' && (q.vencida || q.vencida_at)) return 'vencida';
+  return null;
+};
+
 // Camino de progreso horizontal (celular): cada paso ocupa CAMINO_PASO_ANCHO px y sube/baja en zigzag
 const PASOS_CAMINO = [
   { step: 1, title: 'Cita', Icono: Home },
@@ -239,6 +319,11 @@ const estadoHorarioDe = (job) => {
 // Si el cliente pidió otro horario, la nueva propuesta no gasta oportunidad. Misma regla que el backend.
 export const MAX_AGENDADOS = 2;
 export const oportunidadesHorario = (job) => {
+  // Solicitudes nuevas: el horario se acordó al aceptar; queda 1 sola re-programación que el cliente aprueba
+  if (job?.flujo_horario) {
+    const usada = Boolean(job.reprogramacion_usada);
+    return { usadas: usada ? 1 : 0, restantes: usada ? 0 : 1, max: 1, clientePidioOtro: false, puedeAgendar: !usada && !job.arrived_at, flujoNuevo: true };
+  }
   let usadas = 0;
   let clientePidioOtro = false;
   (job?.myQuote?.chat_history || []).forEach((m) => {
@@ -250,7 +335,7 @@ export const oportunidadesHorario = (job) => {
     }
   });
   const restantes = Math.max(0, MAX_AGENDADOS - usadas);
-  return { usadas, restantes, clientePidioOtro, puedeAgendar: clientePidioOtro || restantes > 0 };
+  return { usadas, restantes, max: MAX_AGENDADOS, clientePidioOtro, puedeAgendar: clientePidioOtro || restantes > 0 };
 };
 
 // Quita emojis de textos guardados (ej. "[URGENCIA]: ⚡ Atención Urgente")
@@ -525,6 +610,8 @@ const MercadoTrabajos = () => {
   const [networkJobs, setNetworkJobs] = useState([]);
   const [quotePrice, setQuotePrice] = useState('');
   const [quoteMessage, setQuoteMessage] = useState('');
+  // Horario de la visita que va en la cotización ('YYYY-MM-DDTHH:MM', solo solicitudes nuevas)
+  const [quoteHorario, setQuoteHorario] = useState('');
   const [quoteStep, setQuoteStep] = useState(1);
   const [activePhoto, setActivePhoto] = useState(null);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
@@ -892,6 +979,14 @@ const MercadoTrabajos = () => {
       window.open(`https://www.google.com/maps/dir/?api=1&destination=${destino}&travelmode=driving`, '_blank', 'noopener');
     }
 
+    // Queda registrado que va en camino: el cliente lo ve si se retrasa y no sale el recordatorio de 10 min
+    if (abrirMaps && job.is_accepted && !job.arrived_at && !job.ruta_iniciada_at) {
+      const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
+      axios.post(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}/en-camino`, {}, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      }).catch(err => console.warn('No se pudo registrar "En camino":', err?.message));
+    }
+
     // Aquí queda el panel "En camino" para marcar "Llegué al lugar" al volver.
     // En celular la lista se pliega para que se vea la ruta en el mapa
     setMobileDrawerOpen(false);
@@ -1084,6 +1179,10 @@ const MercadoTrabajos = () => {
             is_urgent: Boolean(order.is_urgent || order.priority === 'Urgente' || order.type === 'SOS'),
             dirigida_a_mi: Boolean(order.dirigida_a_mi),
             scheduled_at: order.scheduled_at,
+            // Horario en la cotización (solicitudes nuevas): lo que pidió el cliente
+            flujo_horario: Boolean(order.flujo_horario),
+            fecha_deseada: order.fecha_deseada || null,
+            hora_deseada: order.hora_deseada || null,
             agreed_price: myQuote?.price ? parseFloat(myQuote.price) : 0,
             is_accepted: isAccepted,
             myQuote,
@@ -1331,11 +1430,15 @@ const MercadoTrabajos = () => {
       mostrarAviso("Por favor ingresa un precio mayor a cero.");
       return;
     }
+    if (selectedJob.flujo_horario && !leerFechaHora(quoteHorario)) {
+      mostrarAviso("Elige el día y la hora en que puedes hacer el trabajo.");
+      return;
+    }
     try {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${selectedJob.id}/cotizar`,
-        { price: quotePrice, message: quoteMessage },
+        { price: quotePrice, message: quoteMessage, ...(selectedJob.flujo_horario ? { horario: quoteHorario } : {}) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
@@ -1362,6 +1465,7 @@ const MercadoTrabajos = () => {
         setQuoteStep(1);
         setQuotePrice('');
         setQuoteMessage('');
+        setQuoteHorario('');
         fetchJobs();
       }
     } catch (e) {
@@ -1371,7 +1475,8 @@ const MercadoTrabajos = () => {
         return;
       }
       console.error(e);
-      mostrarAviso("Hubo un error al enviar tu cotización. Intenta de nuevo.");
+      // Horario inválido, límite de cambios, trabajo no disponible…: el servidor explica qué pasó
+      mostrarAviso(e?.response?.data?.message || "Hubo un error al enviar tu cotización. Intenta de nuevo.");
     }
   };
 
@@ -1529,6 +1634,7 @@ const MercadoTrabajos = () => {
     setQuotePrice(targetJob.myQuote && targetJob.myQuote.price > 0 ? targetJob.myQuote.price : '');
     // En blanco si solo tiene el texto automático de "chat iniciado"
     setQuoteMessage(targetJob.myQuote ? limpiarPropuesta(targetJob.myQuote.message) : '');
+    setQuoteHorario(targetJob.flujo_horario ? horarioInicialCotizacion(targetJob) : '');
     setActivePhoto(targetJob.problem_photos?.[0] || (isJobAccepted ? targetJob.facade_photo : null) || targetJob.fotos?.[0] || null);
     if (targetJob.scheduled_at) {
       const d = new Date(targetJob.scheduled_at);
@@ -1548,6 +1654,34 @@ const MercadoTrabajos = () => {
     setQuoteStep(1);
     setShowQuoteModal(true);
   };
+
+  // Abre directo el formulario para modificar la cotización (aviso del mapa o notificación de rechazo/vencida)
+  const abrirEdicionCotizacion = (job) => {
+    setMainView('mercado');
+    setActiveTab('disponibles');
+    openQuoteModalForJob(job);
+    setQuoteStep(2);
+  };
+
+  // ─── Avisos en el mapa: cotizaciones rechazadas o vencidas (se pueden ocultar; vuelven si cambia algo) ───
+  const [avisosCerrados, setAvisosCerrados] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('agente_avisos_cotizacion_cerrados') || '{}') || {}; } catch { return {}; }
+  });
+  const cerrarAvisoCotizacion = (clave) => {
+    setAvisosCerrados(prev => {
+      const nuevo = { ...prev, [clave]: true };
+      try { localStorage.setItem('agente_avisos_cotizacion_cerrados', JSON.stringify(nuevo)); } catch { /* sin almacenamiento */ }
+      return nuevo;
+    });
+  };
+  const avisosCotizacionMapa = networkJobs
+    .map(job => {
+      const tipo = cotizacionPorEditar(job);
+      if (!tipo) return null;
+      const clave = `${job.id}-${tipo}-${job.myQuote?.updated_at || ''}`;
+      return avisosCerrados[clave] ? null : { job, tipo, clave };
+    })
+    .filter(Boolean);
 
   // ─── Aviso en vivo cuando el cliente responde el horario propuesto ───
   // Se guarda la última respuesta vista por trabajo; la primera carga solo registra (no avisa).
@@ -1588,10 +1722,16 @@ const MercadoTrabajos = () => {
   }, [acceptedJobs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Enlace desde la notificación: /mercado-trabajos?trabajo=ID abre ese trabajo ───
+  // &editar=1 (cotización rechazada o vencida) abre directo el formulario para modificarla
   const trabajoDeEnlaceRef = useRef(null);
+  const editarDeEnlaceRef = useRef(false);
   useEffect(() => {
-    const id = new URLSearchParams(location.search).get('trabajo');
-    if (id) trabajoDeEnlaceRef.current = id;
+    const params = new URLSearchParams(location.search);
+    const id = params.get('trabajo');
+    if (id) {
+      trabajoDeEnlaceRef.current = id;
+      editarDeEnlaceRef.current = params.get('editar') === '1';
+    }
   }, [location.search]);
   useEffect(() => {
     const id = trabajoDeEnlaceRef.current;
@@ -1604,6 +1744,8 @@ const MercadoTrabajos = () => {
     setMainView('mercado');
     setActiveTab(aceptado ? 'aceptados' : 'disponibles');
     openQuoteModalForJob(job);
+    if (editarDeEnlaceRef.current && !aceptado) setQuoteStep(2);
+    editarDeEnlaceRef.current = false;
     navigate(location.pathname, { replace: true });
   }, [acceptedJobs, networkJobs, location.search]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -2134,11 +2276,11 @@ const MercadoTrabajos = () => {
       if (r.isConfirmed) handleConfirmArrival(selectedBoardJob);
       return;
     }
-    if (!selectedBoardJob.arrival_confirmed_at) {
+    if (!selectedBoardJob.arrival_confirmed_at && !esperaLlegadaVencida(selectedBoardJob)) {
       Swal.fire({
         icon: 'info',
         title: 'Esperando al cliente',
-        text: 'El cliente aún no confirma tu llegada. Podrás comenzar el trabajo en cuanto lo haga.',
+        text: `El cliente aún no confirma tu llegada. Podrás comenzar en cuanto lo haga, o de todos modos ${MIN_ESPERA_CONFIRMAR_LLEGADA} minutos después de que llegaste.`,
         confirmButtonText: 'Entendido',
         confirmButtonColor: '#f26522',
       });
@@ -2319,7 +2461,9 @@ const MercadoTrabajos = () => {
     // Límite de oportunidades para agendar (con el chat vivo del trabajo)
     const vivo = acceptedJobs.find(j => j.id === targetJob.id) || targetJob;
     if (!oportunidadesHorario(vivo).puedeAgendar) {
-      mostrarAviso(`Ya usaste tus ${MAX_AGENDADOS} oportunidades para agendar esta visita. Solo podrás proponer otro horario si el cliente lo solicita.`, 'warning');
+      mostrarAviso(vivo.flujo_horario
+        ? 'Ya usaste tu única re-programación de esta visita. Si no puedes ir, cancela el servicio.'
+        : `Ya usaste tus ${MAX_AGENDADOS} oportunidades para agendar esta visita. Solo podrás proponer otro horario si el cliente lo solicita.`, 'warning');
       return;
     }
 
@@ -2913,7 +3057,9 @@ const MercadoTrabajos = () => {
                     <span>
                       {selectedBoardJob.arrival_confirmed_at
                         ? <><strong>El cliente confirmó tu llegada.</strong> Ya puedes comenzar el trabajo.</>
-                        : <><strong>Llegaste a las {horaLlegada(selectedBoardJob.arrived_at)}.</strong> Esperando que el cliente confirme tu llegada.</>}
+                        : esperaLlegadaVencida(selectedBoardJob)
+                          ? <><strong>Llegaste a las {horaLlegada(selectedBoardJob.arrived_at)}.</strong> El cliente no confirmó en {MIN_ESPERA_CONFIRMAR_LLEGADA} minutos: ya puedes comenzar.</>
+                          : <><strong>Llegaste a las {horaLlegada(selectedBoardJob.arrived_at)}.</strong> Esperando que el cliente confirme tu llegada (o comienza en {MIN_ESPERA_CONFIRMAR_LLEGADA} minutos).</>}
                     </span>
                   </div>
                 ) : null;
@@ -2933,7 +3079,7 @@ const MercadoTrabajos = () => {
                         >
                           <MapPin size={15} /> LLEGUÉ AL LUGAR
                         </button>
-                      ) : !selectedBoardJob.arrival_confirmed_at ? (
+                      ) : (!selectedBoardJob.arrival_confirmed_at && !esperaLlegadaVencida(selectedBoardJob)) ? (
                         <button
                           type="button"
                           className="mercado-board-flow-btn btn-start"
@@ -3199,7 +3345,7 @@ const MercadoTrabajos = () => {
                                     className="rd-herramienta"
                                     onClick={() => handleOpenBoardScheduler(selectedBoardJob)}
                                     disabled={!op.puedeAgendar}
-                                    title={op.puedeAgendar ? `Te quedan ${op.clientePidioOtro ? 'cambios por petición del cliente' : `${op.restantes} de ${MAX_AGENDADOS} oportunidades`}` : 'Ya usaste tus oportunidades para agendar'}
+                                    title={op.puedeAgendar ? (op.flujoNuevo ? 'Puedes pedir 1 cambio de horario; el cliente lo aprueba' : `Te quedan ${op.clientePidioOtro ? 'cambios por petición del cliente' : `${op.restantes} de ${op.max} oportunidades`}`) : 'Ya usaste tus oportunidades para agendar'}
                                   >
                                     <span><Calendar size={16} /></span>
                                     {!op.puedeAgendar ? 'Sin cambios disponibles' : (selectedBoardJob.scheduled_at ? `Cambiar horario (${op.clientePidioOtro ? 'el cliente lo pidió' : `${op.restantes} restante${op.restantes === 1 ? '' : 's'}`})` : 'Agendar llegada')}
@@ -4263,6 +4409,33 @@ const MercadoTrabajos = () => {
                   </div>
                 </div>
 
+                {/* Cotización rechazada o vencida: al tocar el aviso se abre la edición de la cotización */}
+                {avisosCotizacionMapa.length > 0 && (
+                  <div className="jm-aviso-mapa" role="status">
+                    {avisosCotizacionMapa.slice(0, 3).map(({ job, tipo, clave }) => (
+                      <div key={clave} className={`jm-aviso-mapa-item ${tipo}`} role="button" tabIndex={0}
+                        onClick={() => abrirEdicionCotizacion(job)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') abrirEdicionCotizacion(job); }}>
+                        <span className="jm-aviso-mapa-icono">
+                          {tipo === 'vencida' ? <Clock size={16} strokeWidth={2.4} /> : <AlertTriangle size={16} strokeWidth={2.4} />}
+                        </span>
+                        <span className="jm-aviso-mapa-txt">
+                          <strong>{tipo === 'vencida' ? 'Tu cotización venció' : 'El cliente rechazó tu cotización'}: {job.titulo}</strong>
+                          <span>
+                            {tipo === 'vencida'
+                              ? 'Toca para enviarla con un nuevo horario.'
+                              : (job.myQuote?.motivo_rechazo ? `“${job.myQuote.motivo_rechazo}” · Toca para modificarla.` : 'Toca para modificarla.')}
+                          </span>
+                        </span>
+                        <button type="button" className="jm-aviso-mapa-cerrar" aria-label="Ocultar aviso"
+                          onClick={(e) => { e.stopPropagation(); cerrarAvisoCotizacion(clave); }}>
+                          <X size={15} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Cambiar entre mapa claro y oscuro (junto al botón de pantalla completa) */}
                 <button
                   type="button"
@@ -4639,7 +4812,7 @@ const MercadoTrabajos = () => {
                               onClick={() => handleOpenBoardScheduler(activeNavJob)}
                               disabled={!op.puedeAgendar}
                               title={op.puedeAgendar
-                                ? (op.clientePidioOtro ? 'El cliente pidió otro horario' : `Te quedan ${op.restantes} de ${MAX_AGENDADOS} oportunidades para agendar`)
+                                ? (op.clientePidioOtro ? 'El cliente pidió otro horario' : `Te quedan ${op.restantes} de ${op.max} oportunidades para agendar`)
                                 : 'Ya usaste tus oportunidades para agendar'}
                             >
                               <Calendar size={14} strokeWidth={2.4} />
@@ -4683,6 +4856,15 @@ const MercadoTrabajos = () => {
                         <div className="nv-aviso nv-aviso-espera">
                           <span className="nv-aviso-icono"><Clock size={16} strokeWidth={2.4} /></span>
                           <div className="nv-aviso-txt"><strong>Esperando que el cliente confirme el horario</strong></div>
+                        </div>
+                      )}
+                      {navVivo?.reprogramacion_propuesta && (
+                        <div className="nv-aviso nv-aviso-espera">
+                          <span className="nv-aviso-icono"><Clock size={16} strokeWidth={2.4} /></span>
+                          <div className="nv-aviso-txt">
+                            <strong>Pediste cambiar la visita</strong>
+                            <span>{textoFechaHora(leerFechaHora(navVivo.reprogramacion_propuesta))} · esperando que el cliente lo apruebe</span>
+                          </div>
                         </div>
                       )}
 
@@ -5619,9 +5801,27 @@ const MercadoTrabajos = () => {
                               ) : (
                                 <>
                                   <strong>Tu oferta anterior de ${selectedJob.myQuote.price} fue rechazada</strong>
+                                  {selectedJob.myQuote.motivo_rechazo && (
+                                    <span style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                                      <b>Motivo del cliente:</b> {selectedJob.myQuote.motivo_rechazo}
+                                    </span>
+                                  )}
                                   <span>Puedes ajustar el precio o explicarle al cliente qué incluye.</span>
                                 </>
                               )}
+                            </div>
+                          </div>
+                        )}
+
+                        {cotizacionPorEditar(selectedJob) === 'vencida' && (
+                          <div className="jm-rechazo">
+                            <span className="jm-rechazo-icono"><Clock size={16} strokeWidth={2.4} /></span>
+                            <div>
+                              <strong>Tu cotización venció</strong>
+                              <span>
+                                El horario que propusiste ({textoFechaHora(leerFechaHora(selectedJob.myQuote.horario_propuesto))}) ya está
+                                muy cerca y el cliente no la aceptó. Envíala con un nuevo horario; este cambio no cuenta.
+                              </span>
                             </div>
                           </div>
                         )}
@@ -5647,6 +5847,38 @@ const MercadoTrabajos = () => {
                           />
                           <span className="jm-precio-moneda">MXN</span>
                         </div>
+
+                        {/* Horario de la visita (solicitudes nuevas): el cliente acepta precio y horario juntos */}
+                        {selectedJob.flujo_horario && (() => {
+                          const usados = Number(selectedJob.myQuote?.cambios_horario) || 0;
+                          const cuenta = horarioCuentaCambio(selectedJob, quoteHorario);
+                          const sinCambios = usados >= MAX_CAMBIOS_HORARIO;
+                          const delCliente = textoHorarioCliente(selectedJob);
+                          return (
+                            <>
+                              <label className="jm-label" htmlFor="jm-horario-input">Horario de la visita</label>
+                              <CampoFechaHora
+                                id="jm-horario-input"
+                                type="datetime-local"
+                                className="jm-horario-campo"
+                                value={quoteHorario}
+                                onChange={(e) => setQuoteHorario(e.target.value)}
+                                min={aCampoFechaHora(new Date(Date.now() + 15 * 60000))}
+                                required
+                              />
+                              <div className={`jm-horario-ayuda ${cuenta && sinCambios ? 'error' : ''}`}>
+                                {delCliente && <span>El cliente lo pidió: <strong>{delCliente}</strong></span>}
+                                <span>
+                                  {cuenta
+                                    ? (sinCambios
+                                        ? `Ya usaste tus ${MAX_CAMBIOS_HORARIO} cambios de horario: envía el del cliente o el último que propusiste.`
+                                        : `Este horario es distinto al del cliente: usarás 1 de tus ${MAX_CAMBIOS_HORARIO - usados} cambios restantes.`)
+                                    : `Cambios de horario usados: ${usados} de ${MAX_CAMBIOS_HORARIO}.`}
+                                </span>
+                              </div>
+                            </>
+                          );
+                        })()}
 
                         <label className="jm-label" htmlFor="jm-mensaje-input">
                           Mensaje para el cliente <span>(opcional)</span>

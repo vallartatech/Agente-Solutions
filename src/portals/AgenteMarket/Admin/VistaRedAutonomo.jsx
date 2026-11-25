@@ -397,6 +397,14 @@ const VistaRedAutonomo = () => {
             // Llegada del técnico (el cliente la confirma) y solicitud dirigida a un favorito
             arrived_at: order.arrived_at || null,
             arrival_confirmed_at: order.arrival_confirmed_at || null,
+            // Horario en la cotización (solicitudes nuevas): tardanza, re-programación y "nadie cotizó"
+            flujo_horario: Boolean(order.flujo_horario),
+            fecha_deseada: order.fecha_deseada || null,
+            hora_deseada: order.hora_deseada || null,
+            ruta_iniciada_at: order.ruta_iniciada_at || null,
+            aviso_tardanza_at: order.aviso_tardanza_at || null,
+            sin_tecnico_avisado_at: order.sin_tecnico_avisado_at || null,
+            reprogramacion_propuesta: order.reprogramacion_propuesta || null,
             tecnico_dirigido_id: order.tecnico_dirigido_id || null,
             tecnico_dirigido_nombre: order.tecnico_dirigido_nombre || null,
             service_id: order.service_id,

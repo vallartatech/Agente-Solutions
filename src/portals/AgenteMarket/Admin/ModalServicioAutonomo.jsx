@@ -423,6 +423,9 @@ const ModalServicioAutonomo = ({ propertyId, onClose, onSuccess }) => {
           // La columna priority solo acepta Normal/Urgente; lo "programado" vive en la nota de fecha.
           formData.append('priority', 'Normal');
           scheduleNote = `\n\n[FECHA / HORARIO DESEADO]: ${item.fechaProgramada} - ${textoHorario(item.horarioPreferido)}`;
+          // Mercado: el técnico cotiza con este horario (sin hora = a cualquier hora del día)
+          formData.append('fecha_deseada', item.fechaProgramada);
+          if (esHoraExacta(item.horarioPreferido)) formData.append('hora_deseada', item.horarioPreferido);
         } else {
           formData.append('priority', 'Urgente');
           scheduleNote = `\n\n[URGENCIA]: ⚡ Atención Urgente - Hoy Mismo`;

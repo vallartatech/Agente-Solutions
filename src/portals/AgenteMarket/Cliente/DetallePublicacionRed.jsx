@@ -38,6 +38,21 @@ const horaCorta = (valor) => {
   return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
+// ── Horario en la cotización (solicitudes nuevas) ──
+// 'YYYY-MM-DD HH:MM[:SS]' (hora de Mérida, sin zona) → Date
+const leerFechaHora = (valor) => {
+  const m = String(valor || '').match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5])) : null;
+};
+// "Jueves 26 nov · 10:00 a.m."
+const textoFechaHora = (d) => {
+  if (!d) return '';
+  const dia = d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'short' }).replace(/\./g, '').replace(',', '');
+  return `${dia.charAt(0).toUpperCase()}${dia.slice(1)} · ${d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+};
+const TOLERANCIA_MIN = 15; // minutos tarde para avisar que el técnico no ha llegado
+const hoyLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
 const techDe = (q) => q?.technician_id || q?.technician?.id;
 // Primero la oferta aceptada, luego las que el cliente puede aceptar y al final las rechazadas
 const pesoCotizacion = (q, job) => {
@@ -104,6 +119,15 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
   const [perfilesAbiertos, setPerfilesAbiertos] = useState({});
   const alternarPerfil = (id) => setPerfilesAbiertos(prev => ({ ...prev, [id]: !prev[id] }));
   const chatEndRef = useRef(null);
+  // Reloj para los avisos que dependen de la hora (técnico 15 min tarde)
+  const [ahora, setAhora] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setAhora(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
+  // "Seguir esperando": el aviso se oculta hasta esta hora (el servidor avisa de nuevo en 15 min)
+  const [esperandoHasta, setEsperandoHasta] = useState(0);
+  const [accionHorario, setAccionHorario] = useState(false);
 
   const refrescar = useCallback(() => onRefresh?.(), [onRefresh]);
   const refrescarRef = useRef(refrescar);
@@ -195,9 +219,28 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
   };
 
   const handleRejectQuote = async (quoteId) => {
-    if (!await confirmarAccion('¿Estás seguro de que deseas rechazar esta cotización?')) return;
+    // El técnico ve el motivo para mejorar su oferta
+    const r = await Swal.fire({
+      title: 'Rechazar cotización',
+      text: '¿Por qué la rechazas? El técnico verá tu respuesta.',
+      input: 'textarea',
+      inputPlaceholder: 'Ej. El precio es muy alto, necesito que incluya material…',
+      inputAttributes: { maxlength: '500' },
+      showCancelButton: true,
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      reverseButtons: true,
+      inputValidator: (v) => (String(v || '').trim().length < 3 ? 'Escribe el motivo del rechazo.' : undefined),
+    });
+    if (!r.isConfirmed) return;
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quoteId}/reject`, {}, { headers: authHeaders() });
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/network-quotes/${quoteId}/reject`,
+        { motivo: String(r.value).trim() },
+        { headers: authHeaders() }
+      );
       if (res.data.success) {
         mostrarAviso('Cotización rechazada. El técnico ha sido notificado para mejorar su oferta.');
         refrescar();
@@ -236,7 +279,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
     const conConfirmacion = pideConfirmacion(quote, job);
     if (!await confirmarAccion(conConfirmacion
       ? `Le pediremos a ${techName} que confirme que sigue disponible con su cotización de $${parseFloat(quote.price).toFixed(2)}. Cuando confirme, el trabajo quedará asignado. ¿Continuar?`
-      : `¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}? El trabajo le será asignado de inmediato.`)) {
+      : `¿Confirmas que deseas ACEPTAR la cotización de $${parseFloat(quote.price).toFixed(2)} de ${techName}${quote.horario_propuesto ? `, con la visita el ${textoFechaHora(leerFechaHora(quote.horario_propuesto))}` : ''}? El trabajo le será asignado de inmediato.`)) {
       return;
     }
     try {
@@ -306,6 +349,99 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
     }
   };
 
+  // ── El técnico no ha llegado (15 min tarde): seguir esperando o regresar el trabajo al Mercado ──
+  const handleSeguirEsperando = async () => {
+    setEsperandoHasta(Date.now() + TOLERANCIA_MIN * 60000);
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}/seguir-esperando`, {}, { headers: authHeaders() });
+      mostrarAviso(res.data?.message || 'Listo. Te volvemos a avisar si no llega.');
+    } catch (e) {
+      console.error('Error al seguir esperando', e);
+    }
+  };
+
+  const handleRegresarAlMercado = async () => {
+    if (accionHorario) return;
+    if (!await confirmarAccion('¿Regresar el trabajo al Mercado? Se le quitará al técnico, quedará registrado que no llegó y ya no podrá ver este trabajo. Podrás elegir otra cotización vigente o esperar nuevas.')) return;
+    setAccionHorario(true);
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}/tecnico-no-llego`, {}, { headers: authHeaders() });
+      if (res.data?.success) {
+        mostrarAviso('🌐 ' + res.data.message);
+        refrescar();
+      }
+    } catch (e) {
+      console.error('Error al regresar el trabajo al Mercado', e);
+      mostrarAviso(e.response?.data?.message || 'No se pudo regresar el trabajo al Mercado. Inténtalo de nuevo.');
+    } finally {
+      setAccionHorario(false);
+    }
+  };
+
+  // ── El técnico pidió cambiar la visita (1 sola vez): aceptar o mantener el horario original ──
+  const handleResponderReprogramacion = async (aceptar) => {
+    if (accionHorario) return;
+    setAccionHorario(true);
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}/responder-visita-cliente`,
+        { action: aceptar ? 'confirm' : 'reschedule' },
+        { headers: authHeaders() }
+      );
+      if (res.data?.success) {
+        mostrarAviso('✅ ' + res.data.message);
+        refrescar();
+      }
+    } catch (e) {
+      console.error('Error respondiendo el cambio de horario', e);
+      mostrarAviso(e.response?.data?.message || 'No se pudo responder. Inténtalo de nuevo.');
+    } finally {
+      setAccionHorario(false);
+    }
+  };
+
+  // ── Nadie cotizó a tiempo: programar para otro día ──
+  const handleProgramarOtroDia = async () => {
+    const hoy = hoyLocal();
+    const r = await Swal.fire({
+      title: 'Programar para otro día',
+      html: `
+        <div style="display:flex;flex-direction:column;gap:10px;text-align:left">
+          <label style="font-weight:700;font-size:14px">Día<input id="rp-fecha" type="date" class="swal2-input" style="margin:6px 0 0;width:100%" min="${hoy}" value="${hoy}"></label>
+          <label style="font-weight:700;font-size:14px">Hora <span style="font-weight:500;color:#64748b">(opcional: vacío = a cualquier hora)</span><input id="rp-hora" type="time" class="swal2-input" style="margin:6px 0 0;width:100%"></label>
+        </div>`,
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: 'Publicar',
+      denyButtonText: '⚡ Urgente (hoy)',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#f26522',
+      denyButtonColor: '#dc2626',
+      reverseButtons: true,
+      preConfirm: () => {
+        const fecha = document.getElementById('rp-fecha')?.value;
+        const hora = document.getElementById('rp-hora')?.value || '';
+        if (!fecha) {
+          Swal.showValidationMessage('Elige el día que necesitas el trabajo.');
+          return false;
+        }
+        return { fecha, hora };
+      },
+    });
+    if (!r.isConfirmed && !r.isDenied) return;
+    const datos = r.isDenied ? { urgente: true } : { urgente: false, fecha: r.value.fecha, hora: r.value.hora || null };
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}/reprogramar-solicitud`, datos, { headers: authHeaders() });
+      if (res.data?.success) {
+        mostrarAviso('📅 ' + res.data.message);
+        refrescar();
+      }
+    } catch (e) {
+      console.error('Error al reprogramar la solicitud', e);
+      mostrarAviso(e.response?.data?.message || 'No se pudo programar. Inténtalo de nuevo.');
+    }
+  };
+
   // El técnico marcó "Llegué al lugar": el dueño confirma que ya está aquí y autoriza que comience
   const handleConfirmarLlegada = async () => {
     if (confirmandoLlegada) return;
@@ -338,6 +474,16 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
     : [quoteAsignada?.technicianName || (quoteAsignada?.technician ? `${quoteAsignada.technician.first_name || ''} ${quoteAsignada.technician.last_name || ''}`.trim() : '')];
 
   const puedeCalificar = onCalificar && (job.is_accepted || ['Terminado', 'Completado', 'Listo', 'Asignado'].includes(job.status));
+
+  // Horario en la cotización (solicitudes nuevas)
+  const visita = leerFechaHora(job.scheduled_at);
+  const tecnicoTarde = Boolean(
+    job.flujo_horario && job.status === 'Asignado' && !job.arrived_at && visita
+    && ahora >= visita.getTime() + TOLERANCIA_MIN * 60000 && ahora >= esperandoHasta
+  );
+  const nombreTecnicoAsignado = quoteAsignada?.technicianName || 'El técnico';
+  const reprogramacion = job.flujo_horario && job.status === 'Asignado' ? leerFechaHora(job.reprogramacion_propuesta) : null;
+  const sinTecnico = Boolean(job.flujo_horario && job.sin_tecnico_avisado_at && job.status === 'Por Hacer' && !job.tecnico_id && job.is_mine);
 
   return (
     <>
@@ -491,6 +637,59 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                   </div>
                 )}
 
+                {/* El técnico no ha llegado 15 min después de la hora acordada */}
+                {tecnicoTarde && (
+                  <div className="cl-horario-aviso alerta" role="alert">
+                    <strong>{job.ruta_iniciada_at ? `🚗 ${nombreTecnicoAsignado} va en camino` : `⏰ ${nombreTecnicoAsignado} no ha llegado`}</strong>
+                    <span>
+                      La visita era el {textoFechaHora(visita)}.
+                      {job.ruta_iniciada_at ? ' Marcó que va en camino, pero aún no llega.' : ''} ¿Qué quieres hacer?
+                    </span>
+                    <div className="cl-horario-acciones">
+                      <button type="button" className="cl-horario-btn" onClick={handleSeguirEsperando} disabled={accionHorario}>
+                        <Clock size={14} /> Seguir esperando
+                      </button>
+                      <button type="button" className="cl-horario-btn peligro" onClick={handleRegresarAlMercado} disabled={accionHorario}>
+                        Regresar al Mercado
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* El técnico pidió cambiar la visita (1 sola vez): el cliente decide */}
+                {reprogramacion && (
+                  <div className="cl-horario-aviso" role="status">
+                    <strong>🗓️ {nombreTecnicoAsignado} pide cambiar la visita</strong>
+                    <span>
+                      Propone el <b>{textoFechaHora(reprogramacion)}</b>{visita ? <> en lugar del {textoFechaHora(visita)}</> : null}.
+                    </span>
+                    <div className="cl-horario-acciones">
+                      <button type="button" className="cl-horario-btn ok" onClick={() => handleResponderReprogramacion(true)} disabled={accionHorario}>
+                        <Check size={14} /> Aceptar cambio
+                      </button>
+                      <button type="button" className="cl-horario-btn" onClick={() => handleResponderReprogramacion(false)} disabled={accionHorario}>
+                        Mantener horario
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Nadie cotizó a tiempo (urgente a las 8 pm o la fecha ya pasó) */}
+                {sinTecnico && (
+                  <div className="cl-horario-aviso alerta" role="status">
+                    <strong>{job.is_urgent ? '😕 Nadie estuvo disponible hoy' : '📅 La fecha de tu solicitud ya pasó'}</strong>
+                    <span>Esta solicitud no tiene cotizaciones vigentes. Prográmala para otro día o cancélala.</span>
+                    <div className="cl-horario-acciones">
+                      <button type="button" className="cl-horario-btn ok" onClick={handleProgramarOtroDia}>
+                        <Calendar size={14} /> Programar para otro día
+                      </button>
+                      <button type="button" className="cl-horario-btn peligro" onClick={handleDeleteJob}>
+                        Cancelar solicitud
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* El técnico propone un nuevo precio para la cotización aceptada */}
                 {job.is_accepted && (
                   <AjusteCotizacionCliente key={job.id} workOrderId={job.id} onCambio={refrescar} />
@@ -582,6 +781,18 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                             </div>
                           </div>
 
+                          {/* Horario que propone el técnico (solicitudes nuevas): se acepta junto con el precio */}
+                          {job.flujo_horario && quote.horario_propuesto && !isAcceptedQuote && quote.status !== 'rejected' && (
+                            <div className={`red-quote-horario ${quote.vencida ? 'vencida' : ''}`}>
+                              <Calendar size={14} />
+                              <span>
+                                {quote.vencida ? 'Venció · ' : 'Visita: '}
+                                <strong>{textoFechaHora(leerFechaHora(quote.horario_propuesto))}</strong>
+                                {quote.vencida && ' · le avisamos al técnico para que envíe otro horario'}
+                              </span>
+                            </div>
+                          )}
+
                           {/* Lo que el cliente tiene que aceptar va arriba: horario de visita propuesto por el técnico asignado */}
                           {isAcceptedQuote && job.scheduled_at && (() => {
                             const sched = getJobScheduleStatus(job, quote);
@@ -630,10 +841,16 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                             {!isAcceptedQuote && quote.status === 'rejected' && !quote.retirada_at && (
                               <div className="red-quote-estado rechazada"><X size={14} /> Oferta rechazada</div>
                             )}
+                            {!isAcceptedQuote && quote.status === 'rejected' && !quote.retirada_at && quote.motivo_rechazo && (
+                              <div className="red-quote-motivo-rechazo">
+                                <small>Tu motivo</small>
+                                <p>{quote.motivo_rechazo}</p>
+                              </div>
+                            )}
 
                             <div className="red-quote-acciones">
                               {!isAcceptedQuote && !job.is_accepted && quote.status !== 'rejected' && quote.price > 0
-                                && cotizacionAceptable(quote) && !cancelado && (
+                                && cotizacionAceptable(quote) && !cancelado && !quote.vencida && (
                                 <button type="button" className="red-btn-accept" onClick={() => handleAcceptQuote(quote)}>
                                   <Check size={15} /> Aceptar oferta
                                 </button>
@@ -752,7 +969,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                       </span>
                       <span className="red-chat-oferta-chip">Técnico asignado</span>
                     </div>
-                  ) : (activeChatQuote.price > 0 && activeChatQuote.status !== 'rejected' && (
+                  ) : (activeChatQuote.price > 0 && activeChatQuote.status !== 'rejected' && !activeChatQuote.vencida && (
                     <div className="red-chat-oferta">
                       <span className="red-chat-oferta-texto">
                         Propuesta de {activeChatQuote.technicianName}: ${parseFloat(activeChatQuote.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}

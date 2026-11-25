@@ -809,6 +809,9 @@
 
   .red-detalle-publicacion .red-lista-cotizaciones { padding: 14px !important; }
 
+  /* Las cotizaciones primero; las fotos y los datos del trabajo quedan abajo */
+  .red-detalle-publicacion .mercado-premium-form { order: -1; }
+
   /* Eliminar ocupa el espacio libre y Cerrar solo lo que necesita */
   .red-detalle-publicacion .mercado-premium-footer {
     display: grid !important;
@@ -2859,3 +2862,81 @@
   .red-mapa-vivo .mercado-content .mercado-sidebar.con-ruta:not(.mobile-open) { display: none !important; }
   .red-mapa-vivo .mercado-content .mercado-sidebar.con-ruta ~ .mercado-mobile-toggle-btn { display: none !important; }
 }
+
+/* Motivo con el que el cliente rechazó la cotización */
+.red-quote-motivo-rechazo {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+.red-quote-motivo-rechazo small {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #b91c1c;
+}
+.red-quote-motivo-rechazo p {
+  margin: 0;
+  font-size: 13px;
+  color: #334155;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Horario en la cotización (solicitudes nuevas): tardanza, re-programación y "nadie cotizó" */
+.cl-horario-aviso {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #eff6ff;
+  border: 1.5px solid #93c5fd;
+  color: #0f172a;
+}
+.cl-horario-aviso.alerta { background: #fff7ed; border-color: #fdba74; }
+.cl-horario-aviso strong { font-size: 15px; overflow-wrap: anywhere; }
+.cl-horario-aviso > span { color: #475569; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.cl-horario-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.cl-horario-btn {
+  display: inline-flex;
+  flex: 1 1 140px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.cl-horario-btn.ok { border-color: #16a34a; background: #16a34a; color: #ffffff; }
+.cl-horario-btn.peligro { border-color: #fca5a5; color: #b91c1c; }
+.cl-horario-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Horario que propone el técnico en su cotización */
+.red-quote-horario {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0c4a6e;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.red-quote-horario.vencida { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.red-quote-horario svg { flex-shrink: 0; }

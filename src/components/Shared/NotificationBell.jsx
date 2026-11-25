@@ -22,6 +22,9 @@ import { suscribirPushOneSignal, estaSuscritoOneSignal } from './oneSignalPush';
 import { esNativo } from '../../plataforma';
 import "../../styles/Shared/NotificationBell.css";
 
+// Agente Market, horario en la cotización: estos avisos ya traen su enlace
+const AVISOS_HORARIO_MERCADO = ['network_quote_vencida', 'recordatorio_trabajo', 'tecnico_retrasado', 'tecnico_no_ha_llegado', 'mercado_sin_tecnico', 'horario_reprogramacion', 'horario_reprogramacion_respuesta'];
+
 const timeAgo = (dateString) => {
   if (!dateString) return "";
   const date = new Date(dateString);
@@ -411,6 +414,8 @@ const NotificationBell = ({ triggerClassName = '' }) => {
       }
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
       setIsOpen(false);
+      // Agente Market: aviso solo de información (p. ej. le quitaron el trabajo al técnico): no abre nada
+      if (notification.data?.solo_informativa) return;
 
       let url = notification.data?.url || notification.url;
       const type = notification.data?.alert_type || notification.data?.type || notification.type || notification.alert_type;
@@ -421,7 +426,7 @@ const NotificationBell = ({ triggerClassName = '' }) => {
       const titleLower = (notification.data?.title || notification.title || notification.titulo || notification.data?.titulo || '').toLowerCase();
 
       // Agente Market: trabajo finalizado: el reporte de ese trabajo (la URL ya viene en el aviso)
-      if ((type === 'trabajo_finalizado' || type === 'reporte_confirmado') && (notification.data?.url || notification.url)) {
+      if ((type === 'trabajo_finalizado' || type === 'reporte_confirmado' || AVISOS_HORARIO_MERCADO.includes(type)) && (notification.data?.url || notification.url)) {
         url = notification.data?.url || notification.url;
       } else if (type === 'new_quote_message' || titleLower.includes('nuevo mensaje') || titleLower.includes('mensaje en la red') || titleLower.includes('mensaje en el mercado')) {
         if (ROLES_TECNICO.includes(Number(user?.role_id))) {
@@ -434,7 +439,8 @@ const NotificationBell = ({ triggerClassName = '' }) => {
       } else if (type === 'network_quote_received' || titleLower.includes('nueva cotización en la red') || titleLower.includes('cotización en la red') || titleLower.includes('cotización en el mercado')) {
         url = '/red-autonomos';
       } else if (type === 'network_quote_rejected' || type === 'network_quote_accepted') {
-        url = ROLES_TECNICO.includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
+        // Rechazada: el enlace abre directo la edición de su cotización
+        url = ROLES_TECNICO.includes(Number(user?.role_id)) ? ((type === 'network_quote_rejected' && notification.data?.url) || '/mercado-trabajos') : '/red-autonomos';
       } else if (type === 'work_order_scheduled' || titleLower.includes('visita de técnico') || titleLower.includes('visita programada')) {
         url = ROLES_TECNICO.includes(Number(user?.role_id)) ? '/mercado-trabajos' : '/red-autonomos';
       } else if (type === 'technician_arrived' && (notification.data?.es_red || ROLES_CLIENTE_RED.includes(Number(user?.role_id)))) {
