@@ -20,6 +20,7 @@ import InstallPrompt from "./components/Shared/InstallPrompt";
 import LocationSharing from "./components/Shared/LocationSharing";
 import IndicadorSubida from "./components/Shared/IndicadorSubida";
 import AsistenteAyuda from "./components/Shared/AsistenteAyuda";
+import TerminosMercado from "./components/Shared/TerminosMercado";
 import { instalarProgresoSubida } from "./components/Shared/progresoSubida";
 
 // Decoración de temporada: el código del fantasma solo se descarga del 15 oct al 2 nov
@@ -391,6 +392,8 @@ function App() {
         <LocationSharing />
         <IndicadorSubida />
         <AsistenteAyuda />
+        {/* Agente Market: técnicos y clientes aceptan la cláusula de intermediario antes de usar la app */}
+        <TerminosMercado />
         {esTemporadaHalloween() && (
           <Suspense fallback={null}>
             <HalloweenGhost />
