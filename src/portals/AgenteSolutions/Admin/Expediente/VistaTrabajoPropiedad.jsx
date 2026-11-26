@@ -15,8 +15,7 @@ import CarritoCotizaciones from '../Mantenimiento/CarritoCotizaciones';
 import { AccesoQRAdmin } from '../../Shared/AccesoQR';
 import ModalCotizacion from './ModalCotizacion';
 import { useAuth } from '../../../../context/AuthContext';
-import { esRed, usaSelectorRed } from '../../../../utils/entorno';
-import QrTrabajoCliente from '../../../AgenteMarket/Cliente/QrTrabajoCliente';
+import { esRed } from '../../../../utils/entorno';
 import '../../../../styles/AgenteSolutions/Admin/ExpedientePropiedad.css';
 
 const TABS = [
@@ -226,14 +225,6 @@ const VistaTrabajoPropiedad = () => {
               </section>
             </div>
           </div>
-        )}
-
-        {/* Cliente de la red: QR del trabajo hasta abajo, para encontrarlo desde su tablero */}
-        {tab === 'datos' && usaSelectorRed(user) && (
-          <QrTrabajoCliente
-            trabajo={trabajo}
-            propiedad={propiedad.property_name || propiedad.nombre_propiedad || propiedad.address}
-          />
         )}
 
         {tab === 'cotizaciones' && (

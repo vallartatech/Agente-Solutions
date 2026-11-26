@@ -18,6 +18,7 @@ import AvisoCancelacionTecnico from '../Cliente/AvisoCancelacionTecnico';
 import AvisoCalificarTecnico from '../Cliente/AvisoCalificarTecnico';
 import AvisoCambioHorario from '../Cliente/AvisoCambioHorario';
 import { usaSelectorRed } from '../../../utils/entorno';
+import { useTecnicosEnCamino, MarcadorTecnicoEnCamino, TarjetasTecnicosEnCamino, destinoDe } from '../Cliente/TecnicosEnCamino';
 
 // Estados con el reporte ya enviado por el técnico
 const ESTADOS_TERMINADO = ['Listo', 'Por Aprobar', 'Finalizado', 'Terminado', 'Completado'];
@@ -473,6 +474,35 @@ const VistaRedAutonomo = () => {
     setShowQuotesModal(true);
   };
 
+  // Técnicos que van en camino a mis trabajos: pin en vivo y tarjeta arriba del mapa
+  const tecnicosEnCamino = useTecnicosEnCamino(true);
+  const mapaRef = useRef(null);
+  const encuadradosRef = useRef(new Set());
+  // Cuando aparece un técnico en camino, el mapa se acomoda para verlo junto con la propiedad (una vez)
+  useEffect(() => {
+    const mapa = mapaRef.current;
+    const g = window.google?.maps;
+    if (!mapa || !g) return;
+    const nuevo = tecnicosEnCamino.find(t => !encuadradosRef.current.has(t.work_order_id));
+    if (!nuevo) return;
+    encuadradosRef.current.add(nuevo.work_order_id);
+    const trabajo = networkJobs.find(j => Number(j.id) === Number(nuevo.work_order_id));
+    const destino = destinoDe(nuevo, trabajo);
+    if (destino) {
+      const limites = new g.LatLngBounds();
+      limites.extend(nuevo.ubicacion);
+      limites.extend(destino);
+      mapa.fitBounds(limites, 90);
+    } else {
+      mapa.panTo(nuevo.ubicacion);
+    }
+  }, [tecnicosEnCamino, networkJobs]);
+
+  const abrirTrabajoEnCamino = (item, trabajo) => {
+    if (trabajo) openQuotesModal(trabajo);
+    else if (item.property_id) navigate(`/detalle-propiedad/${item.property_id}`);
+  };
+
   // Desde una notificación (/red-autonomos?trabajo=ID): abrir ese trabajo en cuanto carguen
   // (también si el cliente ya estaba en esta pantalla y toca la notificación desde la campana)
   const location = useLocation();
@@ -595,6 +625,8 @@ const VistaRedAutonomo = () => {
                 mapContainerStyle={mapContainerStyle}
                 center={defaultCenter}
                 zoom={13}
+                onLoad={(mapa) => { mapaRef.current = mapa; }}
+                onUnmount={() => { mapaRef.current = null; }}
                 options={{
                   disableDefaultUI: false,
                   styles: mapTheme === 'dark' ? DARK_MAP_STYLES : [],
@@ -603,7 +635,7 @@ const VistaRedAutonomo = () => {
                   streetViewControl: false
                 }}
               >
-                {displayedJobs.map(job => (
+                {displayedJobs.filter(job => !tecnicosEnCamino.some(t => Number(t.work_order_id) === Number(job.id))).map(job => (
                   <React.Fragment key={job.id}>
                     <Circle
                       center={{ lat: job.lat, lng: job.lng }}
@@ -634,6 +666,14 @@ const VistaRedAutonomo = () => {
                   </React.Fragment>
                 ))}
 
+                {tecnicosEnCamino.map(item => (
+                  <MarcadorTecnicoEnCamino
+                    key={`camino-${item.work_order_id}`}
+                    item={item}
+                    destino={destinoDe(item, networkJobs.find(j => Number(j.id) === Number(item.work_order_id)))}
+                  />
+                ))}
+
                 {selectedJob && (
                   <InfoWindow
                     position={{ lat: selectedJob.lat, lng: selectedJob.lng }}
@@ -656,6 +696,13 @@ const VistaRedAutonomo = () => {
                   </InfoWindow>
                 )}
               </GoogleMap>
+
+              {/* Técnico en camino: tarjeta arriba del mapa; al tocarla abre el detalle del trabajo */}
+              <TarjetasTecnicosEnCamino
+                lista={tecnicosEnCamino}
+                trabajos={networkJobs}
+                onAbrir={abrirTrabajoEnCamino}
+              />
 
               {/* Leyenda de colores de los marcadores */}
               <div className="red-map-legend">

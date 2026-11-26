@@ -1744,17 +1744,17 @@
     background: transparent !important;
   }
 
-  /* Mapa: tarjeta redondeada con borde blanco */
+  /* Mapa: ocupa todo el ancho, de orilla a orilla, hasta la barra de navegación */
   .red-mapa-vivo .mercado-content .mercado-map-section {
-    top: 8px !important;
-    left: 10px !important;
-    right: 10px !important;
-    bottom: var(--red-hueco-nav) !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: calc(62px + env(safe-area-inset-bottom, 0px)) !important;
     width: auto !important;
     height: auto !important;
-    border-radius: 22px !important;
-    border: 1.5px solid rgba(255, 255, 255, 0.7) !important;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25) !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
     overflow: hidden !important;
   }
 

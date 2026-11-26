@@ -1,15 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   Layers, ArrowLeft, RefreshCw, AlertCircle, ClipboardList, Clock, CheckCircle2, XCircle,
-  Search, Building2, CalendarDays, Hammer, UserRound, ChevronRight, FilterX, ListChecks, SlidersHorizontal, X, ScanLine
+  Search, Building2, CalendarDays, Hammer, UserRound, ChevronRight, FilterX, ListChecks, SlidersHorizontal, X
 } from 'lucide-react';
 import Header from '../../../components/Shared/Header';
 import GruposPorMes from '../../../components/Shared/GruposPorMes';
-import EscanerQr from '../Shared/EscanerQr';
-import { folioDeTexto, buscarPorFolio, folioVisible } from './qrTrabajo';
-import { mostrarAviso } from '../../../utils/dialogos';
+import { folioVisible } from './folioTrabajo';
 import {
   API, authHeaders, esFinalizado, esCancelado, etiquetaEstado, etiquetaTipo, nombreTecnicos, visitaLocal
 } from '../../AgenteSolutions/Admin/Expediente/flujoTrabajo';
@@ -100,10 +98,6 @@ const VistaTableroGlobal = () => {
   const [tipo, setTipo] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
-  const [escaneando, setEscaneando] = useState(false);
-  // Folio que llegó por el enlace del QR (?folio=...): se abre en cuanto cargan los trabajos
-  const [searchParams, setSearchParams] = useSearchParams();
-  const folioEnlace = searchParams.get('folio');
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -130,19 +124,6 @@ const VistaTableroGlobal = () => {
   useEffect(() => { cargar(); }, [cargar]);
 
   const abrirTrabajo = useCallback((t) => navigate(`/detalle-propiedad/${t.propId}/trabajo/${t.uid}`), [navigate]);
-
-  // Abre el trabajo de un folio leído del QR; solo existe si es de una propiedad del cliente
-  const abrirFolio = useCallback((folio) => {
-    const t = buscarPorFolio(trabajos, folio);
-    if (t) abrirTrabajo(t);
-    else mostrarAviso('No encontramos ese trabajo en tus propiedades.', 'warning');
-  }, [trabajos, abrirTrabajo]);
-
-  useEffect(() => {
-    if (!folioEnlace || cargando) return;
-    setSearchParams({}, { replace: true });
-    abrirFolio(folioEnlace);
-  }, [folioEnlace, cargando, abrirFolio, setSearchParams]);
 
   // Límites de fecha del periodo elegido (fecha de solicitud)
   const [inicio, fin] = useMemo(() => {
@@ -364,15 +345,6 @@ const VistaTableroGlobal = () => {
                 </label>
                 <button
                   type="button"
-                  className="tg-btn-filtros tg-btn-qr"
-                  onClick={() => setEscaneando(true)}
-                  title="Escanear el QR de un trabajo"
-                  aria-label="Escanear el QR de un trabajo"
-                >
-                  <ScanLine size={18} />
-                </button>
-                <button
-                  type="button"
                   className={`tg-btn-filtros ${filtrosAbiertos ? 'abierto' : ''} ${activos.length ? 'con-activos' : ''}`}
                   onClick={() => setFiltrosAbiertos((v) => !v)}
                   aria-expanded={filtrosAbiertos}
@@ -458,15 +430,6 @@ const VistaTableroGlobal = () => {
         </div>
       </div>
 
-      {escaneando && (
-        <EscanerQr
-          interpretar={folioDeTexto}
-          subtitulo="Apunta la cámara al QR de tu trabajo"
-          mensajeInvalido="Ese código QR no es de un trabajo de Agente Market."
-          onCerrar={() => setEscaneando(false)}
-          onCodigo={(folio) => { setEscaneando(false); abrirFolio(folio); }}
-        />
-      )}
     </div>
   );
 };

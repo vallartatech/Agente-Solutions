@@ -14,7 +14,8 @@ import {
   Wrench,
   Globe,
   ClipboardList,
-  HardHat
+  HardHat,
+  Layers
 } from 'lucide-react';
 import logo from '../../assets/Logo4.png'; 
 import NotificationBell from './NotificationBell';
@@ -116,6 +117,7 @@ const ClienteHeader = ({ activeModule }) => {
   const isServiciosActive = activeModule === 'servicios' || currentPath.includes('/tablero-servicios') || currentPath.includes('/servicios');
   const isMercadoActive = activeModule === 'mercado' || currentPath.includes('/red-autonomos') || currentPath.includes('/mercado');
   const isLevantamientoActive = activeModule === 'levantamientos' || currentPath.includes('/levantamientos');
+  const isTableroGlobalActive = activeModule === 'tablero-global' || currentPath.includes('/tablero-global');
   // Reportes, Cotizaciones y Levantamientos comparten un botón; dentro se cambia con el selector de la vista
   const unificarVistas = usaSelectorRed(user);
   const esClienteParticular = Number(user?.role_id) === 4;
@@ -160,6 +162,7 @@ const ClienteHeader = ({ activeModule }) => {
           )}
 
           {unificarVistas ? (
+            <>
             <button
               type="button"
               className={`vcp-nav-btn ${isReportesActive || isCotizacionesActive || isLevantamientoActive || currentPath.startsWith('/propiedades') ? 'active' : ''}`}
@@ -170,6 +173,19 @@ const ClienteHeader = ({ activeModule }) => {
               <ClipboardList size={18} className="vcp-nav-icon" />
               <span className="vcp-nav-text">PROPIEDADES</span>
             </button>
+
+            {/* Cliente de la red: tablero global de todas sus propiedades */}
+            <button
+              type="button"
+              className={`vcp-nav-btn ${isTableroGlobalActive ? 'active' : ''}`}
+              onClick={() => navigate('/tablero-global')}
+              title="Tablero global: todas tus propiedades, trabajos y fechas"
+              data-ayuda="menu-tablero-global"
+            >
+              <Layers size={18} className="vcp-nav-icon" />
+              <span className="vcp-nav-text">TABLERO</span>
+            </button>
+            </>
           ) : (
             <>
               <button

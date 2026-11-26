@@ -40,6 +40,7 @@ import AccesoPropiedadTecnico from './AccesoPropiedadTecnico';
 import { retirarCotizacion, confirmarDisponibilidad, errorDeRed } from '../Shared/redCancelacionApi';
 import '../../../styles/AgenteMarket/Shared/AjusteCotizacion.css';
 import { mensajeCotizacionActualizada, limpiarPropuesta } from '../Shared/versionesCotizacionChat';
+import { useCompartirUbicacionRuta } from '../Shared/seguimientoTecnicoApi';
 
 const mapContainerStyle = {
   width: '100%',
@@ -662,6 +663,8 @@ const MercadoTrabajos = () => {
   // Live GPS & Navigation State (Uber Style)
   const [technicianLocation, setTechnicianLocation] = useState({ lat: 21.0181, lng: -89.6242 });
   const [hasTechnicianGps, setHasTechnicianGps] = useState(false);
+  // Trabajos donde tocó "Iniciar ruta" en esta sesión (el servidor también lo guarda en ruta_iniciada_at)
+  const [rutasIniciadas, setRutasIniciadas] = useState([]);
   const [activeNavJob, setActiveNavJob] = useState(null);
   // Panel "En camino" plegable (la línea de arriba lo oculta para ver la ruta sin cerrarla)
   const [navPlegado, setNavPlegado] = useState(false);
@@ -824,6 +827,19 @@ const MercadoTrabajos = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Trabajos en camino: el cliente ve al técnico en su mapa (de "Iniciar ruta" a "Llegué al lugar").
+  // Al reabrir la app se retoma con ruta_iniciada_at si fue en las últimas 6 horas.
+  const trabajosEnRuta = useMemo(() => acceptedJobs
+    .filter(j => j.status === 'Asignado' && !j.arrived_at && j.arrival_status !== 'EN_SITIO')
+    .filter(j => {
+      if (rutasIniciadas.includes(j.id)) return true;
+      if (!j.ruta_iniciada_at) return false;
+      const inicio = new Date(String(j.ruta_iniciada_at).replace(' ', 'T')).getTime();
+      return Number.isFinite(inicio) && Date.now() - inicio < 6 * 60 * 60 * 1000;
+    })
+    .map(j => String(j.id)), [acceptedJobs, rutasIniciadas]);
+  useCompartirUbicacionRuta(trabajosEnRuta, hasTechnicianGps ? technicianLocation : null);
+
   // GPS Tracking en tiempo real del técnico
   useEffect(() => {
     if ('geolocation' in navigator) {
@@ -985,6 +1001,10 @@ const MercadoTrabajos = () => {
       axios.post(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}/en-camino`, {}, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       }).catch(err => console.warn('No se pudo registrar "En camino":', err?.message));
+    }
+    // Desde aquí el cliente lo ve en su mapa hasta que marque "Llegué al lugar"
+    if (abrirMaps && job.is_accepted && !job.arrived_at) {
+      setRutasIniciadas(prev => (prev.includes(job.id) ? prev : [...prev, job.id]));
     }
 
     // Aquí queda el panel "En camino" para marcar "Llegué al lugar" al volver.

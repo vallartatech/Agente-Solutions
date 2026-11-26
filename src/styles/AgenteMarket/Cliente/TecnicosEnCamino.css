@@ -1,0 +1,148 @@
+/* Red: tarjeta "va en camino" sobre el mapa del Mercado del cliente.
+   Vidrio gris oscuro (flota sobre el mapa claro u oscuro), borde blanco, sin emojis. */
+.tec-camino-pila {
+  position: absolute;
+  top: 66px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: min(440px, calc(100% - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 40%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  pointer-events: none;
+}
+.tec-camino-pila::-webkit-scrollbar { display: none; }
+
+.tec-camino-tarjeta {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.62), rgba(30, 41, 59, 0.5));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+  animation: tecCaminoEntrar 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.tec-camino-tarjeta:hover { background: linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(30, 41, 59, 0.6)); }
+.tec-camino-tarjeta:active { transform: scale(0.98); }
+.tec-camino-tarjeta:focus { outline: none; }
+.tec-camino-tarjeta:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.7); outline-offset: 2px; }
+
+@keyframes tecCaminoEntrar {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tec-camino-avatar {
+  position: relative;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #f26522;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.05rem;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}
+.tec-camino-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+/* Punto verde que late: está compartiendo en vivo */
+.tec-camino-pulso {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid #0f172a;
+}
+.tec-camino-pulso::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: tecCaminoPulso 1.6s ease-out infinite;
+}
+@keyframes tecCaminoPulso {
+  from { transform: scale(1); opacity: 0.6; }
+  to { transform: scale(2.4); opacity: 0; }
+}
+
+.tec-camino-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tec-camino-texto strong {
+  font-size: 0.92rem;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tec-camino-texto small {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tec-camino-texto .tec-camino-sin-senal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #fcd34d;
+}
+
+.tec-camino-eta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.tec-camino-eta svg { align-self: center; color: #fdba74; }
+.tec-camino-eta b { font-size: 1.05rem; font-weight: 800; }
+.tec-camino-eta em { font-style: normal; font-size: 0.7rem; color: rgba(255, 255, 255, 0.75); }
+
+.tec-camino-flecha { flex-shrink: 0; color: rgba(255, 255, 255, 0.7); }
+
+@media (max-width: 900px) {
+  .tec-camino-pila { top: 60px; }
+  .tec-camino-tarjeta { padding: 10px 12px; gap: 10px; }
+  .tec-camino-avatar { width: 38px; height: 38px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tec-camino-tarjeta { animation: none; }
+  .tec-camino-pulso::after { animation: none; }
+}

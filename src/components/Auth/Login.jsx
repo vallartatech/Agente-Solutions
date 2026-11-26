@@ -15,14 +15,27 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  CheckCircle2,
   Globe,
   Building2,
   KeyRound,
   User,
   Phone,
-  Sparkles
+  Sparkles,
+  Home,
+  Wrench,
+  HardHat,
+  Users,
+  Check,
+  Gift
 } from "lucide-react";
+
+// Ícono lucide por rol (selector de roles en celular)
+const ICONO_ROL = {
+  market_client_personal: Home,
+  market_tech_independent: Wrench,
+  market_contractor: HardHat,
+  market_crew_tech: Users
+};
 import Logo4 from "../../assets/Logo4.png";
 import LoginArtwork from "../../assets/Atardecer.png";
 import { esNativo, esIOS, sinPrecio } from "../../plataforma";
@@ -192,6 +205,28 @@ const LoginAgente = () => {
 
   // Welcome / Onboarding Intro Screen State
   const [showWelcome, setShowWelcome] = useState(true);
+
+  // Teclado abierto (celular): se ocultan los enlaces legales fijos para que no tapen el formulario
+  const [tecladoAbierto, setTecladoAbierto] = useState(false);
+  useEffect(() => {
+    const esCampo = (el) => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT');
+    const alEnfocar = (e) => { if (esCampo(e.target)) setTecladoAbierto(true); };
+    const alSalir = () => setTimeout(() => setTecladoAbierto(esCampo(document.activeElement)), 50);
+    const vv = window.visualViewport;
+    const altoInicial = vv ? vv.height : window.innerHeight;
+    const alRedimensionar = () => {
+      if (vv && altoInicial - vv.height > 150) setTecladoAbierto(true);
+      else if (!esCampo(document.activeElement)) setTecladoAbierto(false);
+    };
+    document.addEventListener('focusin', alEnfocar);
+    document.addEventListener('focusout', alSalir);
+    vv?.addEventListener('resize', alRedimensionar);
+    return () => {
+      document.removeEventListener('focusin', alEnfocar);
+      document.removeEventListener('focusout', alSalir);
+      vv?.removeEventListener('resize', alRedimensionar);
+    };
+  }, []);
   const [welcomeSlide, setWelcomeSlide] = useState(0);
   const [welcomeTouchStartX, setWelcomeTouchStartX] = useState(null);
   // Arrastre: el texto sigue al dedo; al soltar entra el siguiente desde el lado correcto
@@ -355,6 +390,68 @@ const LoginAgente = () => {
 
   // Filtrado de roles según la categoría activa
   const rolesFiltrados = ROLES_PUBLICOS.filter(r => r.category === activeCategory);
+  const indiceRolActivo = Math.max(0, rolesFiltrados.findIndex(rf => rf.key === selectedRoleKey));
+
+  // Contenido de una tarjeta de rol (mismo diseño en celular y PC)
+  const renderTarjetaRol = (r, isCenter) => {
+    const Icono = ICONO_ROL[r.key] || User;
+    return (
+      <>
+        <div className="aiw-cf-head">
+          <span className="aiw-cf-icon-tile" style={{ background: r.color }}>
+            <Icono size={20} />
+          </span>
+          <div className="aiw-cf-head-text">
+            <h3 className="aiw-cf-title">{r.label}</h3>
+            <span className="aiw-cf-badge">{r.badge}</span>
+          </div>
+        </div>
+
+        <div className="aiw-cf-info">
+          <p className="aiw-cf-tagline">{r.tagline}</p>
+          <ul className="aiw-cf-features">
+            {r.features.map((feat, fIdx) => (
+              <li key={fIdx} className="aiw-cf-feat-item">
+                <Check size={14} className="aiw-cf-check" />
+                <span>{feat.replace(/\s*⭐/g, "")}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="aiw-cf-bottom-bar">
+          <span className="aiw-cf-trial-info">
+            <Gift size={13} /> {sinPrecio(r.trialInfo)}
+          </span>
+          <button
+            type="button"
+            className="aiw-cf-action-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSelectRoleFromExplorer(r);
+            }}
+          >
+            {isCenter ? `Registrarme como ${r.shortLabel.toLowerCase()}` : `Elegir ${r.shortLabel.toLowerCase()}`}
+          </button>
+        </div>
+      </>
+    );
+  };
+
+  // Puntos indicadores del carrusel de roles
+  const renderPuntosRoles = () => rolesFiltrados.length > 1 && (
+    <div className="aiw-mcarousel-dots">
+      {rolesFiltrados.map((r, i) => (
+        <button
+          key={r.key}
+          type="button"
+          aria-label={`Ver ${r.shortLabel}`}
+          className={`aiw-mcarousel-dot ${i === indiceRolActivo ? "active" : ""}`}
+          onClick={() => handleDotClick(r.key)}
+        />
+      ))}
+    </div>
+  );
   const rolActual = ROLES_PUBLICOS.find(r => r.key === selectedRoleKey) || rolesFiltrados[0] || ROLES_PUBLICOS[0];
 
   const handleCategoryChange = (cat) => {
@@ -1045,6 +1142,13 @@ const LoginAgente = () => {
               <span>{welcomeSlide === WELCOME_SLIDES.length - 1 ? "Comenzar" : "Continuar"}</span>
               <ArrowRight size={18} />
             </button>
+
+            {/* Enlaces legales (requeridos por Google Play), separados del botón */}
+            <div className="aiw-welcome-legal">
+              <Link to="/privacidad">Aviso de privacidad</Link>
+              <span aria-hidden="true">·</span>
+              <Link to="/eliminar-cuenta">Eliminar cuenta</Link>
+            </div>
           </div>
         </div>
       )}
@@ -1080,20 +1184,21 @@ const LoginAgente = () => {
           {isSignUp && isSheetCollapsed && (
             <div className="aiw-mobile-floating-carousel">
               {/* Category selector buttons */}
+              <p className="aiw-mcarousel-heading">¿Cómo quieres usar la red?</p>
               <div className="aiw-mcarousel-cat-row">
                 <button
                   type="button"
                   className={`aiw-mcarousel-cat-btn ${activeCategory === "agente" ? "active" : ""}`}
                   onClick={() => handleCategoryChange("agente")}
                 >
-                  Clientes ({ROLES_PUBLICOS.filter(r => r.category === 'agente').length})
+                  <Home size={15} /> Soy cliente
                 </button>
                 <button
                   type="button"
                   className={`aiw-mcarousel-cat-btn ${activeCategory === "autonomo" ? "active" : ""}`}
                   onClick={() => handleCategoryChange("autonomo")}
                 >
-                  Proveedores ({ROLES_PUBLICOS.filter(r => r.category === 'autonomo').length})
+                  <Wrench size={15} /> Soy proveedor
                 </button>
               </div>
 
@@ -1155,11 +1260,7 @@ const LoginAgente = () => {
                           transform,
                           zIndex,
                           opacity,
-                          pointerEvents,
-                          borderColor: isCenter ? r.color : `${r.color}55`,
-                          boxShadow: isCenter
-                            ? `0 22px 50px rgba(0, 0, 0, 0.9), 0 0 28px ${r.color}35`
-                            : `0 10px 25px rgba(0, 0, 0, 0.6)`
+                          pointerEvents
                         }}
                         onClick={() => {
                           if (!isCenter) {
@@ -1169,60 +1270,14 @@ const LoginAgente = () => {
                           }
                         }}
                       >
-                        {/* Top Header Badge */}
-                        <div className="aiw-cf-top-row">
-                          <span
-                            className="aiw-cf-badge"
-                            style={{
-                              borderColor: `${r.color}66`,
-                              color: r.color,
-                              background: `${r.color}18`
-                            }}
-                          >
-                            {r.badge}
-                          </span>
-                          <span className="aiw-cf-category-tag">
-                            {r.category === 'agente' ? 'MATRIZ OFICIAL' : 'RED DE TRABAJO'}
-                          </span>
-                        </div>
-
-                        {/* Full Role Information */}
-                        <div className="aiw-cf-info">
-                          <h3 className="aiw-cf-title">{r.label}</h3>
-                          <p className="aiw-cf-tagline" style={{ color: r.color }}>{r.tagline}</p>
-                          <p className="aiw-cf-desc">{r.description}</p>
-
-                          <div className="aiw-cf-features">
-                            {r.features.map((feat, fIdx) => (
-                              <div key={fIdx} className="aiw-cf-feat-item">
-                                <span className="aiw-cf-bullet" style={{ color: r.color }}>•</span>
-                                <span>{feat}</span>
-                              </div>
-                            ))}
-                          </div>
-
-                          <span className="aiw-cf-trial-info">{sinPrecio(r.trialInfo)}</span>
-                        </div>
-
-                        {/* Bottom CTA Action Button */}
-                        <div className="aiw-cf-bottom-bar">
-                          <button
-                            type="button"
-                            className="aiw-cf-action-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectRoleFromExplorer(r);
-                            }}
-                            style={{ background: isCenter ? `linear-gradient(135deg, ${r.color}, #f26522)` : '#262934' }}
-                          >
-                            <span>{isCenter ? `REGISTRARME COMO ${r.shortLabel.toUpperCase()}` : `ELEGIR ${r.shortLabel.toUpperCase()}`}</span>
-                          </button>
-                        </div>
+                        {renderTarjetaRol(r, isCenter)}
                       </div>
                     );
                   })}
                 </div>
               </div>
+
+              {renderPuntosRoles()}
             </div>
           )}
         </div>
@@ -1425,9 +1480,6 @@ const LoginAgente = () => {
                       {/* Submit Button */}
                       <button type="submit" className="aiw-btn-primary" disabled={isLoading}>
                         <span>{isLoading ? "CONECTANDO..." : "INICIAR SESIÓN"}</span>
-                        <div className="aiw-btn-arrow">
-                          <ArrowRight size={18} />
-                        </div>
                       </button>
 
                       {/* Sign in with Apple: solo en la app de iPhone (Apple lo exige si hay login con Google) */}
@@ -1855,8 +1907,8 @@ const LoginAgente = () => {
               {/* Roles Header */}
               <div className="aiw-roles-header">
                 <div className="aiw-roles-header-left">
-                  <span className="aiw-roles-eyebrow">REGISTRO MULTI-ROL</span>
-                  <h2 className="aiw-roles-title">TIPOS DE USUARIO AGENTE SOLUTIONS</h2>
+                  <span className="aiw-roles-eyebrow">Crear cuenta</span>
+                  <h2 className="aiw-roles-title">¿Cómo quieres usar la red?</h2>
                 </div>
               </div>
 
@@ -1867,14 +1919,14 @@ const LoginAgente = () => {
                   className={`aiw-roles-cat-btn ${activeCategory === "agente" ? "active" : ""}`}
                   onClick={() => handleCategoryChange("agente")}
                 >
-                  Clientes ({ROLES_PUBLICOS.filter(r => r.category === 'agente').length})
+                  <Home size={16} /> Soy cliente
                 </button>
                 <button
                   type="button"
                   className={`aiw-roles-cat-btn ${activeCategory === "autonomo" ? "active" : ""}`}
                   onClick={() => handleCategoryChange("autonomo")}
                 >
-                  Proveedores ({ROLES_PUBLICOS.filter(r => r.category === 'autonomo').length})
+                  <Wrench size={16} /> Soy proveedor
                 </button>
               </div>
 
@@ -1946,11 +1998,7 @@ const LoginAgente = () => {
                             zIndex,
                             opacity,
                             pointerEvents,
-                            filter,
-                            borderColor: isCenter ? r.color : `${r.color}55`,
-                            boxShadow: isCenter
-                              ? `0 24px 55px rgba(0, 0, 0, 0.9), 0 0 35px ${r.color}40`
-                              : `0 10px 25px rgba(0, 0, 0, 0.6)`
+                            filter
                           }}
                           onClick={() => {
                             if (!isCenter) {
@@ -1960,72 +2008,7 @@ const LoginAgente = () => {
                             }
                           }}
                         >
-                          <div className="aiw-rcard-top">
-                            <span
-                              className="aiw-rcard-badge"
-                              style={{
-                                borderColor: `${r.color}77`,
-                                color: r.color,
-                                background: `${r.color}1a`
-                              }}
-                            >
-                              {r.badge}
-                            </span>
-                            <span className="aiw-cf-category-tag">
-                              {r.category === 'agente' ? 'MATRIZ OFICIAL' : 'RED DE TRABAJO'}
-                            </span>
-                          </div>
-
-                          <h3 className="aiw-rcard-title">{r.label}</h3>
-
-                          <p className="aiw-rcard-tagline" style={{ color: r.color }}>{r.tagline}</p>
-                          <p className="aiw-rcard-desc">{r.description}</p>
-
-                          <div className="aiw-rcard-features-box">
-                            {r.features.map((feat, fIdx) => (
-                              <div key={fIdx} className="aiw-rcard-feat-item">
-                                <CheckCircle2 size={16} className="aiw-feat-check-icon" style={{ color: r.color }} />
-                                <span>{feat}</span>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Dots pagination */}
-                          <div className="aiw-rcard-dots">
-                            {rolesFiltrados.map((item) => (
-                              <button
-                                key={item.key}
-                                type="button"
-                                className={`aiw-rcard-dot ${item.key === selectedRoleKey ? "active" : ""}`}
-                                style={item.key === selectedRoleKey ? { background: r.color, boxShadow: `0 0 10px ${r.color}99` } : {}}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDotClick(item.key);
-                                }}
-                                aria-label={`Ver ${item.label}`}
-                              />
-                            ))}
-                          </div>
-
-                          {/* Select Role Button */}
-                          <button
-                            type="button"
-                            className="aiw-rcard-cta-btn"
-                            style={{
-                              background: isCenter
-                                ? `linear-gradient(135deg, ${r.color} 0%, #f26522 60%, #e11d48 100%)`
-                                : undefined
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectRoleFromExplorer(r);
-                            }}
-                          >
-                            <span>{r.cta}</span>
-                            <ArrowRight size={17} />
-                          </button>
-
-                          <span className="aiw-rcard-trial-info">{sinPrecio(r.trialInfo)}</span>
+                          {renderTarjetaRol(r, isCenter)}
                         </div>
                       );
                     })}
@@ -2033,6 +2016,8 @@ const LoginAgente = () => {
                 </div>
 
               </div>
+
+              {renderPuntosRoles()}
 
               {/* Bottom helper */}
               <div className="aiw-roles-bottom-footer">
@@ -2202,8 +2187,9 @@ const LoginAgente = () => {
         </div>
       )}
 
-      {/* Enlaces legales (requeridos por Google Play) */}
-      <div style={{
+      {/* Enlaces legales (requeridos por Google Play). En bienvenida van debajo del botón;
+          con el teclado abierto se ocultan para no tapar los campos. */}
+      {!showWelcome && !tecladoAbierto && <div style={{
         position: 'fixed', bottom: 8, left: 0, right: 0, zIndex: 50,
         textAlign: 'center', fontSize: '0.75rem', pointerEvents: 'none'
       }}>
@@ -2214,7 +2200,7 @@ const LoginAgente = () => {
         <Link to="/eliminar-cuenta" style={{ color: '#aaa', textDecoration: 'underline', pointerEvents: 'auto' }}>
           Eliminar cuenta
         </Link>
-      </div>
+      </div>}
     </div>
   );
 };
