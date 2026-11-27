@@ -16,7 +16,9 @@ const NuevoReporte = () => {
 
   const trabajoId = location.state?.trabajoId;
   const servicio = location.state?.servicio;
-  const returnPath = location.state?.from || '/mercado-trabajos';
+  // Sin "from" regresa al trabajo interno (igual que la galería), nunca al mercado de trabajos
+  const returnPath = location.state?.from
+    || (trabajoId && String(trabajoId).startsWith('work_order-') ? '/trabajos-tecnico' : trabajoId ? `/trabajo-propiedad/${trabajoId}` : '/trabajos-tecnico');
   const stageKey = location.state?.stageKey || 'ANTES';
 
   const [imagePreview, setImagePreview] = useState(null);
@@ -96,7 +98,7 @@ const NuevoReporte = () => {
       });
 
       navigate(`/galeria-reportes/${trabajoId}`, { 
-        state: { trabajoId, servicio, from: returnPath } 
+        state: { trabajoId, servicio, from: returnPath }
       });
     } catch (error) {
       console.error('Error al guardar reporte:', error);

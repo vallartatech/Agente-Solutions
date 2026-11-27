@@ -104,7 +104,7 @@ import VistaDetallePropiedadCliente from "./portals/AgenteSolutions/Cliente/Vist
 
 import VistaCotizacionPrint from "./portals/AgenteSolutions/Admin/VistaCotizacionPrint";
 import CasaLoader from "./components/Shared/CasaLoader";
-import { esRed, usaSelectorRed, estaSinCuadrilla } from "./utils/entorno";
+import { esRed, esInterno, usaSelectorRed, estaSinCuadrilla } from "./utils/entorno";
 
 /* ------PANTALLAS PROPIAS DE LA RED (AgenteMarket) ------*/
 // Copias de las pantallas internas que también usa la red: se editan sin afectar al uso interno.
@@ -190,6 +190,20 @@ const PorEntorno = ({ interno, red }) => {
   const { user } = useAuth();
   if (!esRed(user)) return interno;
   return <Suspense fallback={<CasaLoader />}>{red}</Suspense>;
+};
+
+// El mercado de trabajos es solo de la red: los roles internos (0-3) que lleguen aquí
+// (enlace, botón o notificación) regresan a su inicio de Agente Solutions.
+const inicioInterno = (user) => {
+  const roleId = Number(user?.role_id);
+  if (roleId === 0 || roleId === 1) return '/VistaRoot';
+  if (roleId === 2) return '/VistaTecnico';
+  return '/propiedades';
+};
+const SoloRed = ({ children }) => {
+  const { user } = useAuth();
+  if (user && esInterno(user)) return <Navigate to={inicioInterno(user)} replace />;
+  return children;
 };
 
 // El tablero de servicios es para quien organiza el trabajo. El cliente de la red (roles 4, 5, 7)
@@ -343,8 +357,8 @@ const AppRoutes = () => {
       <Route path="/tablero-global/trabajo/:id" element={<ProtectedRoute><TrabajoMercadoWrapper /></ProtectedRoute>} />
       <Route path="/mis-favoritos" element={<Navigate to="/mis-tecnicos" replace />} />
       <Route path="/tecnico-perfil/:id" element={<PerfilTecnicoRed />} />
-      <Route path="/mercado-trabajos" element={<MercadoTrabajos />} />
-      <Route path="/mercado_trabajos" element={<MercadoTrabajos />} />
+      <Route path="/mercado-trabajos" element={<SoloRed><MercadoTrabajos /></SoloRed>} />
+      <Route path="/mercado_trabajos" element={<SoloRed><MercadoTrabajos /></SoloRed>} />
 
 
       <Route path="/map" element={<Map />} />
