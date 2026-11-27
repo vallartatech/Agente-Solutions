@@ -1010,7 +1010,7 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
                       onChange={setClientChatInput}
                       disabled={sendingClientChat}
                     />
-                    <button type="submit" className="mercado-chat-send-btn" disabled={sendingClientChat || !clientChatInput.trim()}>
+                    <button type="submit" className="mercado-chat-send-btn" onMouseDown={(e) => e.preventDefault()} disabled={sendingClientChat || !clientChatInput.trim()}>
                       <Send size={15} />
                       <span>{sendingClientChat ? 'Enviando...' : 'Enviar'}</span>
                     </button>

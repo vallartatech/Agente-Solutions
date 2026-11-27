@@ -254,6 +254,8 @@ export const esperaLlegadaVencida = (job) => {
   const llegada = job?.arrived_at ? leerFechaHora(job.arrived_at) : null;
   return Boolean(llegada && !job.arrival_confirmed_at && Date.now() - llegada.getTime() >= MIN_ESPERA_CONFIRMAR_LLEGADA * 60000);
 };
+// Trabajos cuya aceptación ya se avisó en el mapa (por dispositivo)
+const CLAVE_ACEPTADAS_VISTAS = 'agente_cotizaciones_aceptadas_vistas';
 // La cotización está "por editar" desde el mapa: rechazada por el cliente (no retirada) o vencida
 export const cotizacionPorEditar = (job) => {
   const q = job?.myQuote;
@@ -617,6 +619,78 @@ const MercadoTrabajos = () => {
   const [activePhoto, setActivePhoto] = useState(null);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(true); // En celular la lista empieza abierta, como en la vista del cliente
+  // Abierta tiene dos niveles en celular: a la mitad (normal) y hasta arriba (hojaCompleta)
+  const [hojaCompleta, setHojaCompleta] = useState(false);
+  useEffect(() => { if (!mobileDrawerOpen) setHojaCompleta(false); }, [mobileDrawerOpen]);
+
+  // Gesto táctil para subir y bajar la hoja inferior en celular (igual que en la vista del cliente)
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+  const [isDraggingSheet, setIsDraggingSheet] = useState(false);
+  const pointerStartYRef = useRef(null);
+  const currentDragYRef = useRef(0);
+  const isDraggingSheetRef = useRef(false);
+  const didDragRef = useRef(false);
+
+  const handleSheetPointerDown = (e) => {
+    if (window.innerWidth > 992) return;
+    if (e.target.closest('button, input, select, textarea, a')) return;
+    e.preventDefault();
+    pointerStartYRef.current = e.clientY;
+    currentDragYRef.current = 0;
+    didDragRef.current = false;
+    isDraggingSheetRef.current = true;
+    setIsDraggingSheet(true);
+    try { e.currentTarget?.setPointerCapture?.(e.pointerId); } catch (err) {}
+  };
+
+  const handleSheetPointerMove = (e) => {
+    if (!isDraggingSheetRef.current || pointerStartYRef.current === null) return;
+    const deltaY = e.clientY - pointerStartYRef.current;
+    currentDragYRef.current = deltaY;
+    if (Math.abs(deltaY) > 6) didDragRef.current = true;
+    if (mobileDrawerOpen) {
+      // Abierta: hacia abajo se va cerrando; hacia arriba, ligera resistencia
+      setDragOffsetY(deltaY > 0 ? deltaY : deltaY * 0.2);
+    } else {
+      // Plegada: hacia arriba se va abriendo
+      setDragOffsetY(deltaY < 0 ? deltaY : deltaY * 0.2);
+    }
+  };
+
+  const handleSheetPointerUp = (e) => {
+    if (!isDraggingSheetRef.current) return;
+    const deltaY = currentDragYRef.current;
+
+    if (!didDragRef.current) {
+      // Toque simple: plegada → mitad, mitad → plegada, arriba → mitad
+      if (hojaCompleta) setHojaCompleta(false);
+      else setMobileDrawerOpen(prev => !prev);
+    } else if (mobileDrawerOpen && hojaCompleta) {
+      // Hasta arriba: bajar regresa a la mitad (un jalón largo la pliega)
+      if (deltaY > 220) setMobileDrawerOpen(false);
+      else if (deltaY > 45) setHojaCompleta(false);
+    } else if (mobileDrawerOpen) {
+      // A la mitad: hacia arriba sube al segundo nivel; hacia abajo se pliega
+      if (deltaY < -40) setHojaCompleta(true);
+      else if (deltaY > 45) setMobileDrawerOpen(false);
+    } else if (deltaY < -40) {
+      setMobileDrawerOpen(true);
+    }
+
+    try { e.currentTarget?.releasePointerCapture?.(e.pointerId); } catch (err) {}
+    isDraggingSheetRef.current = false;
+    pointerStartYRef.current = null;
+    currentDragYRef.current = 0;
+    setIsDraggingSheet(false);
+    setDragOffsetY(0);
+    setTimeout(() => { didDragRef.current = false; }, 50);
+  };
+
+  const sidebarDragTransform = isDraggingSheet
+    ? mobileDrawerOpen
+      ? `translateY(${Math.max(0, dragOffsetY)}px)`
+      : `translateY(calc(100% - 68px + ${Math.min(0, dragOffsetY)}px))`
+    : undefined;
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('disponibles'); // 'disponibles' | 'aceptados'
   const [acceptedJobs, setAcceptedJobs] = useState([]);
@@ -674,6 +748,9 @@ const MercadoTrabajos = () => {
   const [navDistance, setNavDistance] = useState('');
   const [navDuration, setNavDuration] = useState('');
   const [navStatus, setNavStatus] = useState('idle'); // 'idle' | 'en_camino' | 'en_sitio'
+  // Ruta en la app: se vuelve a trazar conforme avanza el técnico (sin mover el zoom que él eligió)
+  const navOrigenRutaRef = useRef(null);
+  const [navRutaSeguida, setNavRutaSeguida] = useState(false);
 
   // Embedded Chat State
   const [chatInput, setChatInput] = useState('');
@@ -860,6 +937,32 @@ const MercadoTrabajos = () => {
     }
   }, []);
 
+  // En camino: al avanzar ~150 m se vuelve a trazar la ruta y se actualizan tiempo y distancia
+  useEffect(() => {
+    if (!activeNavJob || navStatus !== 'en_camino' || !hasTechnicianGps || !window.google) return;
+    if (!activeNavJob.lat || !activeNavJob.lng) return;
+    const prev = navOrigenRutaRef.current;
+    if (prev && Number(calculateDistanceKm(prev.lat, prev.lng, technicianLocation.lat, technicianLocation.lng)) < 0.15) return;
+    navOrigenRutaRef.current = technicianLocation;
+    new window.google.maps.DirectionsService().route(
+      {
+        origin: new window.google.maps.LatLng(technicianLocation.lat, technicianLocation.lng),
+        destination: new window.google.maps.LatLng(activeNavJob.lat, activeNavJob.lng),
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status !== window.google.maps.DirectionsStatus.OK) return;
+        setNavRutaSeguida(true);
+        setNavDirections(result);
+        const leg = result.routes[0]?.legs[0];
+        if (leg) {
+          setNavDistance(leg.distance?.text || '');
+          setNavDuration(leg.duration?.text || '');
+        }
+      }
+    );
+  }, [technicianLocation, hasTechnicianGps, activeNavJob, navStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Calcular distancia en km entre dos puntos geográficos (Haversine)
   const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
     if (!lat1 || !lon1 || !lat2 || !lon2) return null;
@@ -983,27 +1086,29 @@ const MercadoTrabajos = () => {
     return { isUrgentGlow: false, label: null, minutesLeft: info.minutesDiff };
   };
 
-  // Iniciar ruta de navegación hacia el trabajo (Modo Uber)
-  // abrirMaps: solo desde el botón "Iniciar ruta" (tocar la tarjeta o el pin del mapa no lo abre)
-  const handleStartRoute = (job, { abrirMaps = false } = {}) => {
-    if (abrirMaps) {
-      // La ruta se sigue en Google Maps (app en el celular, pestaña nueva en computadora).
-      // Se abre primero, dentro del toque, para que el navegador no la bloquee.
-      const destino = job.lat && job.lng
-        ? `${job.lat},${job.lng}`
-        : encodeURIComponent(job.full_address || job.calle || job.zona || 'Mérida, Yucatán');
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${destino}&travelmode=driving`, '_blank', 'noopener');
-    }
+  // Abre la ruta en Google Maps (opcional, desde el panel "En camino"; la ruta principal se ve en la app)
+  const abrirEnGoogleMaps = (job) => {
+    const destino = job.lat && job.lng
+      ? `${job.lat},${job.lng}`
+      : encodeURIComponent(job.full_address || job.calle || job.zona || 'Mérida, Yucatán');
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${destino}&travelmode=driving`, '_blank', 'noopener');
+  };
 
+  // ¿Ya tocó "Iniciar trabajo" en este trabajo? (en esta sesión o guardado en el servidor)
+  const rutaYaIniciada = (job) => Boolean(job && (rutasIniciadas.includes(job.id) || job.ruta_iniciada_at));
+
+  // Muestra la ruta hacia el trabajo dentro de la app (Modo Uber).
+  // iniciar: solo después de confirmar "Iniciar trabajo"; ahí empieza a compartirse la ubicación con el cliente
+  const handleStartRoute = (job, { iniciar = false } = {}) => {
     // Queda registrado que va en camino: el cliente lo ve si se retrasa y no sale el recordatorio de 10 min
-    if (abrirMaps && job.is_accepted && !job.arrived_at && !job.ruta_iniciada_at) {
+    if (iniciar && job.is_accepted && !job.arrived_at && !job.ruta_iniciada_at) {
       const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
       axios.post(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos/${job.id}/en-camino`, {}, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       }).catch(err => console.warn('No se pudo registrar "En camino":', err?.message));
     }
     // Desde aquí el cliente lo ve en su mapa hasta que marque "Llegué al lugar"
-    if (abrirMaps && job.is_accepted && !job.arrived_at) {
+    if (iniciar && job.is_accepted && !job.arrived_at) {
       setRutasIniciadas(prev => (prev.includes(job.id) ? prev : [...prev, job.id]));
     }
 
@@ -1013,6 +1118,8 @@ const MercadoTrabajos = () => {
     setActiveNavJob(job);
     setNavStatus('en_camino');
 
+    navOrigenRutaRef.current = hasTechnicianGps ? technicianLocation : null;
+    setNavRutaSeguida(false);
     if (window.google && technicianLocation && job.lat && job.lng) {
       const directionsService = new window.google.maps.DirectionsService();
       directionsService.route(
@@ -1305,6 +1412,13 @@ const MercadoTrabajos = () => {
 
         setNetworkJobs(availableList);
         setAcceptedJobs(acceptedList);
+        // Primera vez en este dispositivo: lo ya aceptado cuenta como visto (solo se avisa de aceptaciones nuevas)
+        setAceptadasVistas(prev => {
+          if (prev) return prev;
+          const semilla = Object.fromEntries(acceptedList.map(j => [j.id, true]));
+          try { localStorage.setItem(CLAVE_ACEPTADAS_VISTAS, JSON.stringify(semilla)); } catch { /* sin almacenamiento */ }
+          return semilla;
+        });
 
         // Si tenemos un trabajo seleccionado en el modal, actualizar su estado en vivo dando prioridad a la lista aceptada
         if (selectedJob) {
@@ -1702,6 +1816,66 @@ const MercadoTrabajos = () => {
       return avisosCerrados[clave] ? null : { job, tipo, clave };
     })
     .filter(Boolean);
+
+  // ─── Aviso en el mapa: el cliente aceptó tu cotización (se oculta al tocarlo o cerrarlo) ───
+  // null = todavía no se registra lo ya aceptado en este dispositivo
+  const [aceptadasVistas, setAceptadasVistas] = useState(() => {
+    try { const raw = localStorage.getItem(CLAVE_ACEPTADAS_VISTAS); return raw ? JSON.parse(raw) : null; } catch { return null; }
+  });
+  const marcarAceptadaVista = (jobId) => {
+    setAceptadasVistas(prev => {
+      const nuevo = { ...(prev || {}), [jobId]: true };
+      try { localStorage.setItem(CLAVE_ACEPTADAS_VISTAS, JSON.stringify(nuevo)); } catch { /* sin almacenamiento */ }
+      return nuevo;
+    });
+  };
+  const avisosAceptadasMapa = aceptadasVistas
+    ? acceptedJobs.filter(j =>
+        !aceptadasVistas[j.id]
+        && !j.arrived_at
+        && !rutaYaIniciada(j)
+        && !['En Progreso', 'Listo', 'Finalizado'].includes(j.status))
+    : [];
+  const abrirTrabajoAceptado = (job) => {
+    marcarAceptadaVista(job.id);
+    setActiveTab('aceptados');
+    openQuoteModalForJob(job);
+  };
+
+  // "Iniciar trabajo": pide confirmación y, al aceptar, se ve la ruta en la app
+  // y empieza a compartirse la ubicación con el cliente (hasta "Llegué al lugar")
+  const iniciarTrabajo = async (job) => {
+    if (!job) return;
+    if (job.arrived_at || job.arrival_status === 'EN_SITIO') { abrirTableroDeTrabajo(job); return; }
+    if (rutaYaIniciada(job)) { setSelectedJob(job); handleStartRoute(job); return; }
+    const r = await Swal.fire({
+      title: '¿Iniciar el trabajo?',
+      html: `Vas en camino a <b>${String(job.titulo || 'el trabajo').replace(/[<>&"]/g, '')}</b>.<br/>Desde ahora ${String(job.client_name || 'el cliente').replace(/[<>&"]/g, '')} verá tu ubicación hasta que marques "Llegué al lugar".`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, iniciar',
+      cancelButtonText: 'Todavía no',
+      confirmButtonColor: '#f26522',
+      reverseButtons: true,
+    });
+    if (!r.isConfirmed) return;
+    marcarAceptadaVista(job.id);
+    setActiveTab('aceptados');
+    setSelectedJob(job);
+    handleStartRoute(job, { iniciar: true });
+  };
+
+  // Tocar un trabajo aceptado (tarjeta o pin): si ya inició, se ve su ruta; si no, solo se selecciona
+  // (el globo del mapa ofrece "Iniciar trabajo"); nada arranca solo
+  const tocarTrabajoAceptado = (job) => {
+    setSelectedJob(job);
+    if (job.arrived_at || job.arrival_status === 'EN_SITIO') { abrirTableroDeTrabajo(job); return; }
+    if (rutaYaIniciada(job)) { handleStartRoute(job); return; }
+    setActiveNavJob(null);
+    setNavDirections(null);
+    setNavStatus('idle');
+    setMobileDrawerOpen(false);
+  };
 
   // ─── Aviso en vivo cuando el cliente responde el horario propuesto ───
   // Se guarda la última respuesta vista por trabajo; la primera carga solo registra (no avisa).
@@ -3976,7 +4150,14 @@ const MercadoTrabajos = () => {
           </button>
 
           {/* ─── Sidebar (Solo Trabajos Disponibles / Solicitudes) ─── */}
-          <div className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} ${activeNavJob ? 'con-ruta' : ''}`}>
+          <div
+            className={`mercado-sidebar ${mobileDrawerOpen ? 'mobile-open' : ''} ${mobileDrawerOpen && hojaCompleta ? 'hoja-completa' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} ${activeNavJob ? 'con-ruta' : ''} ${isDraggingSheet ? 'is-dragging' : ''}`}
+            style={
+              isDraggingSheet && sidebarDragTransform
+                ? { '--sidebar-drag-transform': sidebarDragTransform }
+                : undefined
+            }
+          >
             
             {/* Pestaña lateral con flecha para ocultar / mostrar (Edge Tab) */}
             <button
@@ -3993,26 +4174,36 @@ const MercadoTrabajos = () => {
               )}
             </button>
 
-            <div className="mercado-sidebar-header">
+            <div
+              className="mercado-sidebar-header"
+              onPointerDown={handleSheetPointerDown}
+              onPointerMove={handleSheetPointerMove}
+              onPointerUp={handleSheetPointerUp}
+              onPointerCancel={handleSheetPointerUp}
+            >
               <div
                 className="mercado-mobile-drag-handle"
-                onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
+                title={hojaCompleta ? "Desliza hacia abajo o toca para bajar" : mobileDrawerOpen ? "Desliza hacia arriba para ver más, o hacia abajo para plegar" : "Desliza hacia arriba o toca para abrir"}
               />
               {/* Solo celular: texto de la barrita */}
-              <span className="red-grabber-txt" onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}>
-                {mobileDrawerOpen
+              <span className="red-grabber-txt">
+                {hojaCompleta
+                  ? <><ChevronDown size={15} /> Ver mapa</>
+                  : mobileDrawerOpen
                   ? <><ChevronDown size={15} /> Ver mapa completo</>
                   : <><ChevronUp size={15} /> Mostrar lista ({activeTab === 'disponibles' ? filteredNetworkJobs.length : filteredAcceptedJobs.length})</>}
               </span>
-              <div className="red-sidebar-head">
-                <h2><Globe size={18} /> Trabajos en Mercado</h2>
-                <p>
-                  <span className="mercado-map-live-dot" />
-                  {activeTab === 'disponibles'
-                    ? `${filteredNetworkJobs.length} ${filteredNetworkJobs.length === 1 ? 'solicitud disponible' : 'solicitudes disponibles'}`
-                    : `${filteredAcceptedJobs.length} ${filteredAcceptedJobs.length === 1 ? 'trabajo aceptado' : 'trabajos aceptados'}`}
-                </p>
-              </div>
+            </div>
+
+            {/* Título: fuera del encabezado para que se oculte al bajar la hoja */}
+            <div className="red-sidebar-head">
+              <h2><Globe size={18} /> Trabajos en Mercado</h2>
+              <p>
+                <span className="mercado-map-live-dot" />
+                {activeTab === 'disponibles'
+                  ? `${filteredNetworkJobs.length} ${filteredNetworkJobs.length === 1 ? 'solicitud disponible' : 'solicitudes disponibles'}`
+                  : `${filteredAcceptedJobs.length} ${filteredAcceptedJobs.length === 1 ? 'trabajo aceptado' : 'trabajos aceptados'}`}
+              </p>
             </div>
 
             {/* Buscador + filtro: el filtro solo filtra por fecha, hora y trabajo */}
@@ -4321,10 +4512,8 @@ const MercadoTrabajos = () => {
                         key={job.id}
                         className={`mercado-job-card red-job-card accepted-job ${selectedJob?.id === job.id ? 'active' : ''} ${scheduleInfo.isUrgentGlow ? 'is-urgent-glow' : ''}`}
                         onClick={() => {
-                          setSelectedJob(job);
-                          // Si ya llegó, no tiene caso la ruta: se abre su tablero
-                          if (isArrived) abrirTableroDeTrabajo(job);
-                          else handleStartRoute(job);
+                          // Si ya llegó se abre su tablero; si ya inició, su ruta; si no, solo se selecciona
+                          tocarTrabajoAceptado(job);
                         }}
                       >
                         {/* Encabezado: ícono de categoría, título y estado */}
@@ -4398,13 +4587,14 @@ const MercadoTrabajos = () => {
                               className="rj-btn-ver rj-btn-ruta"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (isArrived) abrirTableroDeTrabajo(job);
-                                else handleStartRoute(job, { abrirMaps: true });
+                                iniciarTrabajo(job);
                               }}
                             >
                               {isArrived
                                 ? <><ClipboardList size={13} /> Ir al tablero</>
-                                : <><Navigation size={13} /> Iniciar ruta</>}
+                                : rutaYaIniciada(job)
+                                ? <><Navigation size={13} /> Ver ruta</>
+                                : <><Navigation size={13} /> Iniciar trabajo</>}
                             </button>
                           </div>
                         </div>
@@ -4430,9 +4620,35 @@ const MercadoTrabajos = () => {
                 </div>
 
                 {/* Cotización rechazada o vencida: al tocar el aviso se abre la edición de la cotización */}
-                {avisosCotizacionMapa.length > 0 && (
+                {(avisosCotizacionMapa.length > 0 || avisosAceptadasMapa.length > 0) && (
                   <div className="jm-aviso-mapa" role="status">
-                    {avisosCotizacionMapa.slice(0, 3).map(({ job, tipo, clave }) => (
+                    {/* El cliente aceptó la cotización: al tocarlo se abre el trabajo */}
+                    {avisosAceptadasMapa.slice(0, 3).map(job => (
+                      <div key={`aceptada-${job.id}`} className="jm-aviso-mapa-item aceptada" role="button" tabIndex={0}
+                        onClick={() => abrirTrabajoAceptado(job)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') abrirTrabajoAceptado(job); }}>
+                        <span className="jm-aviso-mapa-icono">
+                          <CheckCircle2 size={16} strokeWidth={2.4} />
+                        </span>
+                        <span className="jm-aviso-mapa-txt">
+                          <strong>{job.client_name || 'El cliente'} aceptó tu cotización: {job.titulo}</strong>
+                          <span>
+                            {Number(job.agreed_price || job.myQuote?.price) > 0
+                              ? `$${Number(job.agreed_price || job.myQuote?.price).toLocaleString('es-MX')} · Toca para ver el detalle.`
+                              : 'Toca para ver el detalle.'}
+                          </span>
+                          <button type="button" className="jm-aviso-mapa-accion"
+                            onClick={(e) => { e.stopPropagation(); iniciarTrabajo(job); }}>
+                            <Navigation size={14} strokeWidth={2.4} /> Iniciar trabajo
+                          </button>
+                        </span>
+                        <button type="button" className="jm-aviso-mapa-cerrar" aria-label="Ocultar aviso"
+                          onClick={(e) => { e.stopPropagation(); marcarAceptadaVista(job.id); }}>
+                          <X size={15} />
+                        </button>
+                      </div>
+                    ))}
+                    {avisosCotizacionMapa.slice(0, Math.max(0, 3 - avisosAceptadasMapa.length)).map(({ job, tipo, clave }) => (
                       <div key={clave} className={`jm-aviso-mapa-item ${tipo}`} role="button" tabIndex={0}
                         onClick={() => abrirEdicionCotizacion(job)}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') abrirEdicionCotizacion(job); }}>
@@ -4548,8 +4764,7 @@ const MercadoTrabajos = () => {
                               clickable: true
                             }}
                             onClick={() => {
-                              setSelectedJob(job);
-                              handleStartRoute(job);
+                              tocarTrabajoAceptado(job);
                             }}
                           />
                         )}
@@ -4566,16 +4781,14 @@ const MercadoTrabajos = () => {
                             clickable: true
                           }}
                           onClick={() => {
-                            setSelectedJob(job);
-                            handleStartRoute(job);
+                            tocarTrabajoAceptado(job);
                           }}
                         />
 
                         <Marker
                           position={{ lat: job.lat, lng: job.lng }}
                           onClick={() => {
-                            setSelectedJob(job);
-                            handleStartRoute(job);
+                            tocarTrabajoAceptado(job);
                           }}
                           title={`Trabajo: ${job.titulo} (${job.client_name || 'Cliente'})`}
                           icon={{
@@ -4625,6 +4838,8 @@ const MercadoTrabajos = () => {
                       options={{
                         // Sin marcadores A/B: el origen es el casco del técnico y el destino ya tiene su pin
                         suppressMarkers: true,
+                        // Al re-trazar mientras avanza, no se mueve el zoom
+                        preserveViewport: navRutaSeguida,
                         polylineOptions: {
                           strokeColor: '#f26522',
                           strokeWeight: 5,
@@ -4680,14 +4895,16 @@ const MercadoTrabajos = () => {
                           className="mi-globo-btn"
                           onClick={() => {
                             if (selectedJob.is_accepted) {
-                              handleStartRoute(selectedJob, { abrirMaps: true });
+                              iniciarTrabajo(selectedJob);
                             } else {
                               openQuoteModalForJob(selectedJob);
                             }
                           }}
                         >
                           {selectedJob.is_accepted
-                            ? <><Navigation size={15} strokeWidth={2.4} /> Iniciar ruta</>
+                            ? (rutaYaIniciada(selectedJob)
+                              ? <><Navigation size={15} strokeWidth={2.4} /> Ver ruta</>
+                              : <><Navigation size={15} strokeWidth={2.4} /> Iniciar trabajo</>)
                             : (selectedJob.myQuote
                               ? <><FileText size={15} strokeWidth={2.4} /> Ver detalle y chat</>
                               : <><DollarSign size={15} strokeWidth={2.4} /> Cotizar este trabajo</>)}
@@ -4914,6 +5131,17 @@ const MercadoTrabajos = () => {
                       )}
 
                       <div className="nv-secundarias">
+                        {/* La ruta se ve en la app; Google Maps queda como opción */}
+                        {!navVivo.arrived_at && (
+                          <button
+                            type="button"
+                            className="nv-btn-blanco"
+                            onClick={() => abrirEnGoogleMaps(activeNavJob)}
+                            title="Abrir la ruta en Google Maps"
+                          >
+                            <MapIcon size={15} strokeWidth={2.4} /> Google Maps
+                          </button>
+                        )}
                         {activeNavJob.client_phone && (
                           <button
                             type="button"
@@ -5389,6 +5617,7 @@ const MercadoTrabajos = () => {
                             <button
                               type="submit"
                               className="jm-chat-enviar"
+                              onMouseDown={(e) => e.preventDefault()}
                               disabled={sendingChat || !chatInput.trim()}
                               title="Enviar mensaje"
                               aria-label="Enviar mensaje"
@@ -5674,6 +5903,7 @@ const MercadoTrabajos = () => {
                             <button
                               type="submit"
                               className="jm-chat-enviar"
+                              onMouseDown={(e) => e.preventDefault()}
                               disabled={sendingChat || !chatInput.trim()}
                               title="Enviar mensaje"
                               aria-label="Enviar mensaje"

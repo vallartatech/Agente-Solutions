@@ -10,7 +10,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 40%;
+  max-height: 55%;
   overflow-y: auto;
   scrollbar-width: none;
   pointer-events: none;
@@ -20,7 +20,8 @@
 .tec-camino-tarjeta {
   pointer-events: auto;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 12px;
   width: 100%;
   padding: 12px 14px;
@@ -123,18 +124,151 @@
 .tec-camino-eta {
   flex-shrink: 0;
   display: flex;
-  align-items: baseline;
-  gap: 3px;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
   padding: 6px 10px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
-.tec-camino-eta svg { align-self: center; color: #fdba74; }
-.tec-camino-eta b { font-size: 1.05rem; font-weight: 800; }
-.tec-camino-eta em { font-style: normal; font-size: 0.7rem; color: rgba(255, 255, 255, 0.75); }
+.tec-camino-eta > span { font-size: 0.72rem; color: rgba(255, 255, 255, 0.8); white-space: nowrap; }
+.tec-camino-eta b { font-size: 1.15rem; font-weight: 800; color: #ffffff; }
+.tec-camino-eta em { font-style: normal; font-size: 0.64rem; color: #fdba74; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
 
 .tec-camino-flecha { flex-shrink: 0; color: rgba(255, 255, 255, 0.7); }
+
+/* Fila de arriba: avatar, nombre y tiempo de llegada */
+.tec-camino-fila {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Barra de progreso (estilo DiDi): el casco avanza hacia la casa */
+.tec-camino-progreso {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+.tec-camino-riel {
+  position: relative;
+  height: 6px;
+  margin: 8px 14px 4px 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+.tec-camino-relleno {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #fdba74 0%, #f26522 100%);
+  box-shadow: 0 0 10px rgba(242, 101, 34, 0.55);
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tec-camino-casco {
+  position: absolute;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #f26522;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.5);
+  transform: translate(-50%, -50%);
+  transition: left 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+}
+.tec-camino-casa {
+  position: absolute;
+  top: 50%;
+  right: -14px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #0f172a;
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  transform: translateY(-50%);
+}
+.tec-camino-etapas {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+}
+.tec-camino-restante {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+/* Aviso "inició tu trabajo" arriba de la tarjeta */
+.tec-camino-aviso {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(22, 101, 52, 0.78), rgba(15, 23, 42, 0.62));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(134, 239, 172, 0.45);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  box-sizing: border-box;
+  animation: tecCaminoEntrar 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tec-camino-aviso-icono {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #22c55e;
+  color: #ffffff;
+}
+.tec-camino-aviso-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.tec-camino-aviso-txt strong { font-size: 0.86rem; font-weight: 800; }
+.tec-camino-aviso-txt small { font-size: 0.72rem; color: rgba(255, 255, 255, 0.8); }
+/* Recotización: aviso naranja que se puede tocar para revisarla */
+.tec-camino-aviso.recotizacion {
+  cursor: pointer;
+  background: linear-gradient(135deg, rgba(154, 52, 18, 0.8), rgba(15, 23, 42, 0.62));
+  border-color: rgba(253, 186, 116, 0.5);
+}
+.tec-camino-aviso.recotizacion .tec-camino-aviso-icono { background: #f26522; }
+.tec-camino-aviso.recotizacion:active { transform: scale(0.98); }
+.tec-camino-aviso-txt .tec-camino-aviso-accion { color: #fdba74; font-weight: 700; }
+
+.tec-camino-aviso-cerrar {
+  flex-shrink: 0;
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+}
 
 @media (max-width: 900px) {
   .tec-camino-pila { top: 60px; }
@@ -143,6 +277,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tec-camino-tarjeta { animation: none; }
+  .tec-camino-tarjeta, .tec-camino-aviso { animation: none; }
+  .tec-camino-relleno, .tec-camino-casco { transition: none; }
   .tec-camino-pulso::after { animation: none; }
 }

@@ -72,6 +72,24 @@
   color: #94a3b8 !important;
 }
 
+/* Textarea: misma letra de la app (el navegador pone una de máquina de escribir) */
+.swal2-container .swal2-textarea {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+  font-weight: 500;
+  line-height: 1.5 !important;
+  letter-spacing: 0;
+  width: auto !important;
+  min-height: 110px !important;
+  margin: 1em 1.2em 0.4em !important;
+  padding: 12px 14px !important;
+  resize: none !important;
+}
+
+.swal2-container .swal2-textarea::placeholder {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 500;
+}
+
 .swal2-container .swal2-input:focus,
 .swal2-container .swal2-textarea:focus,
 .swal2-container .swal2-select:focus {

@@ -4,13 +4,13 @@ import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig"
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
-import { limpiarPropuesta } from '../Shared/versionesCotizacionChat';
+import { limpiarPropuesta, esMensajeCotizacionActualizada, versionesDesdeChat } from '../Shared/versionesCotizacionChat';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ModalServicioAutonomo from './ModalServicioAutonomo';
 import DetallePublicacionRed, { getJobScheduleStatus } from '../Cliente/DetallePublicacionRed';
 import '../../../styles/AgenteMarket/Admin/VistaRedAutonomo.css';
 import '../../../styles/AgenteMarket/Tecnico/MercadoTrabajos.css';
-import { Plus, MapPin, Clock, User, Calendar, List, Map as MapIcon, MessageCircle, Trash2, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, ChevronDown, ChevronUp, Zap, Wrench, X, SearchX, BadgeCheck, Wallet } from 'lucide-react';
+import { Plus, MapPin, Clock, User, Calendar, List, Map as MapIcon, MessageCircle, Trash2, ChevronLeft, ChevronRight, Sun, Moon, Globe, Briefcase, Maximize, Minimize, Search, SlidersHorizontal, ChevronDown, ChevronUp, Zap, Wrench, X, SearchX, BadgeCheck, Wallet, RefreshCw } from 'lucide-react';
 import { DARK_MAP_STYLES, getCategoryIcon, ICONOS_CATEGORIA, descripcionTarjeta, fechaDeseada } from '../Tecnico/MercadoTrabajos';
 import { mostrarAviso, confirmarAccion } from '../../../utils/dialogos';
 
@@ -41,6 +41,28 @@ const limpiarDescripcion = (rawDesc) => {
   return clean.trim() || rawDesc;
 };
 
+// Recotizaciones: el técnico actualizó su oferta (deja en el chat "Actualicé mi cotización: de $X a $Y").
+// Solo cuentan las ofertas que siguen por revisar en publicaciones sin técnico asignado.
+const CLAVE_RECOTIZACIONES_VISTAS = 'agente_recotizaciones_vistas';
+const recotizacionesDe = (jobs) => jobs.flatMap(job => {
+  if (job.is_accepted || job.terminado) return [];
+  return (job.cotizaciones_list || []).map(q => {
+    if (q.is_assigned || q.status === 'accepted' || q.status === 'rejected' || q.retirada_at) return null;
+    const msg = [...(q.chat_history || [])].reverse()
+      .find(m => esMensajeCotizacionActualizada(m) && m.sender_role !== 'Cliente' && m.sender_role !== 'Usuario');
+    if (!msg) return null;
+    const version = versionesDesdeChat([msg])[0];
+    return {
+      clave: `${q.id}-${msg.created_at || ''}`,
+      job,
+      tecnico: q.technicianName || 'Un técnico',
+      precioAnterior: version?.precio ?? null,
+      precioNuevo: version?.precioNuevo ?? (Number(q.price) || null),
+    };
+  }).filter(Boolean);
+});
+const pesos = (n) => `$${Number(n || 0).toLocaleString('es-MX', { maximumFractionDigits: 2 })}`;
+
 const VistaRedAutonomo = () => {
   const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
@@ -48,6 +70,17 @@ const VistaRedAutonomo = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [selectedJobForQuotes, setSelectedJobForQuotes] = useState(null);
   const [networkJobs, setNetworkJobs] = useState([]);
+  // Recotizaciones ya vistas en el mapa (null = todavía no se registran las que ya existían)
+  const [recotizacionesVistas, setRecotizacionesVistas] = useState(() => {
+    try { const raw = localStorage.getItem(CLAVE_RECOTIZACIONES_VISTAS); return raw ? JSON.parse(raw) : null; } catch { return null; }
+  });
+  const marcarRecotizacionVista = (clave) => {
+    setRecotizacionesVistas(prev => {
+      const nuevo = { ...(prev || {}), [clave]: true };
+      try { localStorage.setItem(CLAVE_RECOTIZACIONES_VISTAS, JSON.stringify(nuevo)); } catch { /* sin almacenamiento */ }
+      return nuevo;
+    });
+  };
   // En celular la lista empieza abierta debajo del mapa (como Mapa en vivo); la barrita la oculta
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(true);
   // Abierta tiene dos niveles en celular: a la mitad (normal) y hasta arriba (hojaCompleta)
@@ -426,6 +459,13 @@ const VistaRedAutonomo = () => {
         });
 
         setNetworkJobs(jobs);
+        // Primera vez en este dispositivo: las recotizaciones que ya existían cuentan como vistas
+        setRecotizacionesVistas(prev => {
+          if (prev) return prev;
+          const semilla = Object.fromEntries(recotizacionesDe(jobs).map(r => [r.clave, true]));
+          try { localStorage.setItem(CLAVE_RECOTIZACIONES_VISTAS, JSON.stringify(semilla)); } catch { /* sin almacenamiento */ }
+          return semilla;
+        });
 
         // El detalle abierto recibe el trabajo actualizado
         setSelectedJobForQuotes(prevSel => (prevSel ? (jobs.find(j => j.id === prevSel.id) || prevSel) : prevSel));
@@ -702,6 +742,37 @@ const VistaRedAutonomo = () => {
                 lista={tecnicosEnCamino}
                 trabajos={networkJobs}
                 onAbrir={abrirTrabajoEnCamino}
+                avisos={recotizacionesVistas
+                  ? recotizacionesDe(networkJobs).filter(r => !recotizacionesVistas[r.clave]).slice(0, 2).map(r => (
+                    <div
+                      key={r.clave}
+                      className="tec-camino-aviso recotizacion"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => { marcarRecotizacionVista(r.clave); openQuotesModal(r.job); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { marcarRecotizacionVista(r.clave); openQuotesModal(r.job); } }}
+                    >
+                      <span className="tec-camino-aviso-icono"><RefreshCw size={16} strokeWidth={2.4} /></span>
+                      <span className="tec-camino-aviso-txt">
+                        <strong>{r.tecnico} te envió una nueva cotización</strong>
+                        <small>
+                          {r.precioAnterior != null && r.precioNuevo != null
+                            ? `De ${pesos(r.precioAnterior)} a ${pesos(r.precioNuevo)} · ${r.job.titulo}`
+                            : r.job.titulo}
+                        </small>
+                        <small className="tec-camino-aviso-accion">Toca para revisarla</small>
+                      </span>
+                      <button
+                        type="button"
+                        className="tec-camino-aviso-cerrar"
+                        onClick={(e) => { e.stopPropagation(); marcarRecotizacionVista(r.clave); }}
+                        aria-label="Ocultar aviso"
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+                  ))
+                  : []}
               />
 
               {/* Leyenda de colores de los marcadores */}

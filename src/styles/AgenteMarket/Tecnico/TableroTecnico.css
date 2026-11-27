@@ -4846,6 +4846,27 @@ body:has(.mercado-usuarios-mode)::-webkit-scrollbar,
   color: #b91c1c;
 }
 .jm-aviso-mapa-item.vencida .jm-aviso-mapa-icono { background: #fef3c7; color: #b45309; }
+/* Cotización aceptada por el cliente */
+.jm-aviso-mapa-item.aceptada { border-color: #bbf7d0; }
+.jm-aviso-mapa-item.aceptada .jm-aviso-mapa-icono { background: #dcfce7; color: #15803d; }
+.jm-aviso-mapa-accion {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff7a2f 0%, #f26522 100%);
+  box-shadow: 0 6px 16px rgba(242, 101, 34, 0.3);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.jm-aviso-mapa-accion:active { transform: scale(0.97); }
 .jm-aviso-mapa-txt { display: flex; flex: 1; min-width: 0; flex-direction: column; }
 .jm-aviso-mapa-txt strong { font-size: 0.85rem; overflow-wrap: anywhere; }
 .jm-aviso-mapa-txt span { color: #64748b; font-size: 0.76rem; overflow-wrap: anywhere; }

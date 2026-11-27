@@ -30,7 +30,9 @@ const EntradaMensaje = ({ value, onChange, placeholder, disabled, className = ''
         }
       }}
       placeholder={placeholder}
-      disabled={disabled}
+      // readOnly (no disabled) mientras se envía: así la caja no pierde el foco y se puede seguir escribiendo
+      readOnly={disabled}
+      aria-busy={disabled || undefined}
       maxLength={maxLength}
       aria-label={ariaLabel || placeholder}
     />
