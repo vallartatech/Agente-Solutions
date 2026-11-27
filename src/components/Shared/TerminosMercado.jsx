@@ -13,7 +13,9 @@ import '../../styles/Shared/TerminosMercado.css';
 const API = import.meta.env.VITE_API_BASE_URL;
 // Páginas públicas que se pueden leer sin aceptar (se abren desde la propia ventana o desde la tienda)
 const RUTAS_LIBRES = ['/privacidad', '/eliminar-cuenta'];
-const claveAceptado = (id) => `terminos_mercado_ok_${id}`;
+// La versión cambia junto con $terminosVigente del backend: así todos vuelven a ver el texto nuevo
+const VERSION_TERMINOS = 2;
+const claveAceptado = (id) => `terminos_mercado_ok_v${VERSION_TERMINOS}_${id}`;
 
 const encabezados = () => {
   const token = localStorage.getItem('agente_token') || localStorage.getItem('token');
