@@ -41,12 +41,29 @@ const diaCorto = (fecha) => {
   return fecha.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
 };
 
-// La BD guarda la visita con la hora de Mérida tal cual, pero la API la manda marcada como UTC ("...Z").
-// Se lee la fecha y hora escritas, sin convertir de zona horaria, para que se vea igual en cualquier equipo.
-const fechaVisita = (valor) => {
-  const m = String(valor || '').match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+// La BD guarda la visita con la hora de Mérida. Algunas rutas la mandan tal cual ("2026-11-28 18:00:00" o con
+// "-06:00") y otras convertida a UTC ("2026-11-29T00:00:00Z"). Si trae zona horaria se pasa a la hora de Mérida;
+// si no trae, se toma la fecha y hora escritas. Así se ve igual en todas las pantallas y en cualquier equipo.
+const partesVisitaMerida = (valor) => {
+  const s = String(valor || '').trim();
+  const m = s.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
   if (!m) return null;
-  const [, anio, mes, dia, hora, minuto] = m;
+  if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(s)) return m.slice(1, 6);
+  const d = new Date(s.replace(' ', 'T').replace(/(\.\d{3})\d+/, '$1'));
+  if (Number.isNaN(d.getTime())) return m.slice(1, 6);
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Merida', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(d).map((x) => [x.type, x.value])
+  );
+  return [p.year, p.month, p.day, p.hour, p.minute];
+};
+
+const fechaVisita = (valor) => {
+  const p = partesVisitaMerida(valor);
+  if (!p) return null;
+  const [anio, mes, dia, hora, minuto] = p;
   return {
     fecha: `${anio}-${mes}-${dia}`,
     hora: `${hora}:${minuto}`,

@@ -101,11 +101,28 @@ export const fechaHora = (v) => {
   return d.toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
 };
 
-// La BD guarda la visita con la hora de Mérida tal cual, pero la API la manda marcada como UTC ("...Z").
-// Se toma la fecha y hora escritas, sin zona, para que coincida con el tablero de Servicios.
+// La BD guarda la visita con la hora de Mérida. Algunas rutas la mandan tal cual ("2026-11-28 18:00:00" o con
+// "-06:00") y otras convertida a UTC ("2026-11-29T00:00:00Z"). Si trae zona horaria se pasa a la hora de Mérida;
+// si no trae, se toma la fecha y hora escritas. Así se ve igual en todas las pantallas y en cualquier equipo.
+const partesVisitaMerida = (valor) => {
+  const s = String(valor || '').trim();
+  const m = s.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) return null;
+  if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(s)) return m.slice(1, 6);
+  const d = new Date(s.replace(' ', 'T').replace(/(\.\d{3})\d+/, '$1'));
+  if (Number.isNaN(d.getTime())) return m.slice(1, 6);
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Merida', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(d).map((x) => [x.type, x.value])
+  );
+  return [p.year, p.month, p.day, p.hour, p.minute];
+};
+
 export const visitaLocal = (v) => {
-  const m = String(v || '').match(/(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
-  return m ? `${m[1]}T${m[2]}` : null;
+  const p = partesVisitaMerida(v);
+  return p ? `${p[0]}-${p[1]}-${p[2]}T${p[3]}:${p[4]}` : null;
 };
 
 export const dinero = (n) =>
