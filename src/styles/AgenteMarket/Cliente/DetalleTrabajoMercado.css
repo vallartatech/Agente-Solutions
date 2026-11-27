@@ -1,0 +1,176 @@
+/* Agente Market: detalle de un trabajo del Mercado desde el Tablero global (DetalleTrabajoMercado.jsx
+   + DetallePublicacionRed en modo página). Mismo vidrio blanco que el Tablero global. Prefijo dtm-. */
+
+.dtm-page {
+  min-height: 100vh;
+  background: url('../../../assets/geometric-poly-bg.png') center center / cover no-repeat fixed;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
+  padding-bottom: 40px;
+}
+
+.dtm-contenido {
+  width: 96%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-top: 20px;
+  box-sizing: border-box;
+}
+
+.dtm-cargando {
+  padding: 40px 20px;
+  text-align: center;
+  font-weight: 700;
+  color: #475569;
+}
+
+/* La clase red-detalle-publicacion trae el tema claro de las tarjetas del Mercado; aquí no es ventana */
+.dtm-pagina.red-detalle-publicacion {
+  height: auto !important;
+  max-height: none !important;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Vidrio blanco (igual que .tg-panel) */
+.dtm-encabezado,
+.dtm-tarjeta,
+.dtm-pie {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.86) 0%, rgba(255, 255, 255, 0.7) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  border-radius: 22px;
+  box-sizing: border-box;
+}
+
+/* ── Encabezado ── */
+.dtm-encabezado {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.dtm-volver {
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+.dtm-volver:hover { background: #fff; }
+.dtm-encabezado-txt { flex: 1; min-width: 0; }
+.dtm-encabezado h1 {
+  margin: 4px 0 2px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.dtm-lugar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #475569;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.dtm-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.dtm-folio,
+.dtm-estado,
+.dtm-origen {
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.dtm-folio { background: #f1f5f9; color: #0f172a; }
+.dtm-origen { background: #fff1e8; color: #c2410c; }
+.dtm-estado-espera { background: #fef3c7; color: #b45309; }
+.dtm-estado-proceso { background: #dbeafe; color: #1d4ed8; }
+.dtm-estado-atencion { background: #ffedd5; color: #c2410c; }
+.dtm-estado-terminado { background: #dcfce7; color: #15803d; }
+.dtm-estado-cancelado { background: #e2e8f0; color: #475569; }
+
+/* ── Columnas ── */
+.dtm-columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.dtm-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+.dtm-tarjeta { padding: 16px; min-width: 0; }
+.dtm-tarjeta > * + * { margin-top: 12px; }
+.dtm-tarjeta-acceso:empty { display: none; }
+.dtm-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.dtm-titulo svg { color: #f26522; }
+.dtm-lista { display: flex; flex-direction: column; gap: 14px; }
+.dtm-vacio { margin: 8px 0 0; color: #64748b; font-size: 0.88rem; }
+
+/* Avisos del Mercado dentro de la tarjeta: sin márgenes extra */
+.dtm-tarjeta .cl-llegada,
+.dtm-tarjeta .cl-horario-aviso { margin-bottom: 0; }
+
+/* Fotos: la galería del Mercado, más alta en la página */
+.dtm-pagina .mercado-premium-image-wrapper { height: 240px; background: #f8fafc; border-color: #e2e8f0; box-shadow: none; }
+.dtm-pagina .mercado-no-photo-placeholder { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
+.dtm-datos { margin-top: 12px; }
+
+/* ── Pie ── */
+.dtm-pie {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+}
+.dtm-btn-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dtm-btn-volver:hover { border-color: #f26522; color: #f26522; }
+
+/* ── Celular y tableta: una sola columna ── */
+@media (max-width: 900px) {
+  .dtm-page { padding-bottom: 96px; } /* espacio para la barra de abajo */
+  .dtm-columnas { grid-template-columns: 1fr; }
+  .dtm-pie { flex-direction: column-reverse; align-items: stretch; }
+  .dtm-btn-volver,
+  .dtm-pie .mercado-btn-delete-publication { width: 100%; justify-content: center; margin-left: 0; }
+}
+
+@media (max-width: 420px) {
+  .dtm-contenido { width: 100%; padding: 12px 10px 0; }
+  .dtm-tarjeta { padding: 14px 12px; border-radius: 18px; }
+  .dtm-encabezado h1 { font-size: 1.12rem; }
+  .dtm-pagina .mercado-premium-image-wrapper { height: 200px; }
+}

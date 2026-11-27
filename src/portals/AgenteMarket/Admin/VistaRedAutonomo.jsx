@@ -4,7 +4,7 @@ import { GOOGLE_MAPS_LOADER } from "../../../components/Shared/googleMapsConfig"
 import Header from '../../../components/Shared/Header';
 import { useAuth } from '../../../context/AuthContext';
 import axios from 'axios';
-import { limpiarPropuesta } from '../Shared/versionesCotizacionChat';
+import { armarTrabajoMercado, esPublicacionDelUsuario } from '../Cliente/trabajoMercado';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ModalServicioAutonomo from './ModalServicioAutonomo';
 import DetallePublicacionRed, { getJobScheduleStatus } from '../Cliente/DetallePublicacionRed';
@@ -20,8 +20,6 @@ import AvisoCambioHorario from '../Cliente/AvisoCambioHorario';
 import { usaSelectorRed } from '../../../utils/entorno';
 import { useTecnicosEnCamino, MarcadorTecnicoEnCamino, TarjetasTecnicosEnCamino, destinoDe } from '../Cliente/TecnicosEnCamino';
 
-// Estados con el reporte ya enviado por el técnico
-const ESTADOS_TERMINADO = ['Listo', 'Por Aprobar', 'Finalizado', 'Terminado', 'Completado'];
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
@@ -32,14 +30,6 @@ const defaultCenter = { lat: 21.0181, lng: -89.6242 }; // Mérida, Yucatán
 // Los mensajes automáticos traen emojis (✅...); en la tarjeta se muestran sin ellos
 const sinEmojis = (texto) => String(texto || '').replace(/[\p{Extended_Pictographic}\uFE0F]/gu, '').replace(/\s{2,}/g, ' ').trim();
 
-const limpiarDescripcion = (rawDesc) => {
-  if (!rawDesc) return 'Sin descripción adicional';
-  let clean = rawDesc;
-  clean = clean.replace(/\[LOTE-[A-Z0-9]+\]\s*(\(\d+\/\d+\))?\s*/gi, '');
-  clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*(otro|Otro|ninguno|Ninguno|n\/a|N\/A)\s*/gi, '');
-  clean = clean.replace(/\s*\[EQUIPO AFECTADO\]:\s*/gi, ' - Equipo: ');
-  return clean.trim() || rawDesc;
-};
 
 const VistaRedAutonomo = () => {
   const { user } = useAuth();
@@ -205,85 +195,6 @@ const VistaRedAutonomo = () => {
     }, 120);
   };
 
-  // Agrupar cotizaciones por técnico para consolidar el chat y ofertas
-  const groupQuotesByTechnician = (quotesList, order) => {
-    if (!Array.isArray(quotesList)) return [];
-    const techMap = new Map();
-
-    quotesList.forEach(quote => {
-      const techId = quote.technician_id || quote.technician?.id;
-      if (!techId) return;
-
-      const techName = quote.technician?.first_name 
-        ? `${quote.technician.first_name} ${quote.technician.last_name || ''}`.trim()
-        : (quote.technician?.name || 'Técnico del Mercado');
-
-      const isThisQuoteAccepted = Boolean(
-        quote.status === 'accepted' || 
-        (order && (order.status === 'Asignado' || order.status === 'En Progreso' || order.status === 'Terminado') && Number(order.tecnico_id) === Number(techId))
-      );
-
-      const existing = techMap.get(techId);
-      if (!existing) {
-        const msgs = quote.chat_history || [];
-        const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
-        const hasNewTechMessage = Boolean(
-          (lastMsg && Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente') ||
-          limpiarPropuesta(quote.message).length > 0
-        );
-        const displayAlertMsg = limpiarPropuesta(lastMsg?.message || quote.message);
-
-        techMap.set(techId, {
-          ...quote,
-          status: isThisQuoteAccepted ? 'accepted' : quote.status,
-          is_assigned: isThisQuoteAccepted,
-          allQuotes: [quote],
-          lastMsg,
-          hasNewTechMessage,
-          displayAlertMsg,
-          technicianName: techName,
-        });
-      } else {
-        existing.allQuotes.push(quote);
-        if (isThisQuoteAccepted) {
-          existing.status = 'accepted';
-          existing.is_assigned = true;
-        }
-        if (quote.id > existing.id || (quote.price > 0 && existing.price == 0)) {
-          existing.id = quote.id;
-          if (quote.price > 0) existing.price = quote.price;
-          if (limpiarPropuesta(quote.message)) existing.message = quote.message;
-          if (quote.status === 'accepted' || existing.is_assigned) {
-            existing.status = 'accepted';
-            existing.is_assigned = true;
-          } else if (existing.status !== 'accepted') {
-            existing.status = quote.status;
-          }
-          existing.created_at = quote.created_at;
-        }
-        if (quote.chat_history && (!existing.chat_history || quote.chat_history.length > existing.chat_history.length)) {
-          existing.chat_history = quote.chat_history;
-        }
-        const msgs = existing.chat_history || [];
-        const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
-        existing.lastMsg = lastMsg;
-        existing.hasNewTechMessage = Boolean(
-          (lastMsg && Number(lastMsg.sender_id) !== Number(user?.id) && lastMsg.sender_role !== 'Cliente') ||
-          (existing.message && existing.message.trim().length > 0)
-        );
-        existing.displayAlertMsg = limpiarPropuesta(lastMsg?.message || existing.message);
-      }
-    });
-
-    const result = Array.from(techMap.values());
-    result.sort((a, b) => {
-      if (a.is_assigned || a.status === 'accepted') return -1;
-      if (b.is_assigned || b.status === 'accepted') return 1;
-      return b.id - a.id;
-    });
-
-    return result;
-  };
 
   const fetchJobs = async () => {
     try {
@@ -293,137 +204,9 @@ const VistaRedAutonomo = () => {
       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/mercado-trabajos?only_mine=1&con_terminados=1`, { headers });
       
       if (res.data.success) {
-        const userFullName = user ? (user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name) : '';
-
-        // Filtrar estrictamente solo las publicaciones creadas por este usuario autónomo
-        const rawFiltered = res.data.data.filter(order => {
-          if (!user) return false;
-          if (user.role_id === 0) return true; // SuperAdmin / Root puede ver todas
-          if (order.is_mine === true) return true;
-
-          const matchesTenant = Boolean(user.tenant_id && (
-            order.tenant_id == user.tenant_id || 
-            order.owner_tenant_id == user.tenant_id || 
-            order.property?.tenant_id == user.tenant_id
-          ));
-          const matchesUser = Boolean(
-            order.owner_user_id == user.id || 
-            order.client_id == user.id || 
-            order.property?.client?.user_id == user.id || 
-            order.user_id == user.id
-          );
-          const matchesEmail = Boolean(
-            user.email && (
-              order.property?.client?.email?.toLowerCase() === user.email.toLowerCase() ||
-              order.client?.email?.toLowerCase() === user.email.toLowerCase()
-            )
-          );
-          const matchesName = Boolean(
-            order.owner_name && userFullName && (
-              order.owner_name.toLowerCase().trim() === userFullName.toLowerCase().trim() ||
-              order.owner_name.toLowerCase().includes(userFullName.toLowerCase()) ||
-              userFullName.toLowerCase().includes(order.owner_name.toLowerCase())
-            )
-          );
-
-          return matchesTenant || matchesUser || matchesEmail || matchesName;
-        });
-
-        const jobs = rawFiltered.map(order => {
-          const rawLat = order.lat ? parseFloat(order.lat) : (order.area_lat ? parseFloat(order.area_lat) : (21.0181 + Math.sin(order.id * 17) * 0.025));
-          const rawLng = order.lng ? parseFloat(order.lng) : (order.area_lng ? parseFloat(order.area_lng) : (-89.6242 + Math.cos(order.id * 17) * 0.025));
-          const coloniaTexto = order.colonia_cercana || order.zona_colonia || order.zona || 'Mérida, Yucatán';
-          const tituloProblema = order.type 
-            ? `${order.type}${order.equipment ? ' - ' + order.equipment : ''}` 
-            : 'Problema / Servicio Solicitado';
-
-          const isGenericOwner = !order.owner_name || 
-            order.owner_name === 'Cliente de la Red' || 
-            order.owner_name === 'Cliente Desconocido' || 
-            order.owner_name === 'Cliente de Prueba';
-
-          const displayOwner = !isGenericOwner ? order.owner_name : (userFullName || 'Mi Solicitud');
-
-          const fotos = [
-            order.evidence_path,
-            order.evidence_path_2,
-            order.property?.facade_photo_path
-          ].filter(Boolean);
-
-          const groupedQuotes = groupQuotesByTechnician(order.network_quotes || [], order);
-          const hasNewTechMessage = groupedQuotes.some(q => q.hasNewTechMessage);
-          const lastTechMsg = groupedQuotes.find(q => q.hasNewTechMessage)?.lastMsg || null;
-
-          const acceptedQuote = groupedQuotes.find(q => q.status === 'accepted' || q.is_assigned) || null;
-          const isAccepted = Boolean(
-            order.status === 'Asignado' ||
-            order.status === 'En Progreso' ||
-            order.status === 'Terminado' ||
-            acceptedQuote ||
-            order.tecnico_id
-          );
-          // El técnico ya envió el reporte (Listo / Por Aprobar / Finalizado…)
-          const terminado = ESTADOS_TERMINADO.includes(order.status);
-
-          const assignedTechName = acceptedQuote?.technicianName || (order.technician ? `${order.technician.first_name} ${order.technician.last_name || ''}`.trim() : null);
-          const agreedPrice = acceptedQuote?.price ? parseFloat(acceptedQuote.price) : 0;
-
-          return {
-            id: order.id,
-            titulo: tituloProblema,
-            tipo: order.type || 'Problema',
-            equipo: order.equipment || '',
-            lat: rawLat,
-            lng: rawLng,
-            presupuesto: "A convenir",
-            estado: terminado ? 'Finalizado' : (isAccepted ? 'Asignado' : (order.status || 'Por Hacer')),
-            terminado,
-            // Reporte enviado que el cliente todavía no confirma
-            reporte_por_confirmar: Boolean(terminado && order.report_sent_at && !order.client_confirmed_at),
-            // Estado real y datos de cancelación / reenvío a la red
-            status: order.status,
-            tecnico_id: order.tecnico_id,
-            cancellation_reason: order.cancellation_reason,
-            reabierta_at: order.reabierta_at,
-            is_accepted: isAccepted,
-            assigned_tech_name: assignedTechName,
-            agreed_price: agreedPrice,
-            fecha: new Date(order.created_at).toLocaleDateString('es-MX'),
-            created_at: order.created_at,
-            lugar: order.property?.property_name || 'Lugar no especificado',
-            zona: coloniaTexto,
-            colonia: coloniaTexto,
-            calle: order.property?.address || 'Dirección no especificada',
-            descripcion: limpiarDescripcion(order.description),
-            foto: fotos[0] || null,
-            fotos: fotos,
-            cotizaciones: groupedQuotes.length,
-            cotizaciones_list: groupedQuotes,
-            cliente: displayOwner,
-            is_mine: true,
-            priority: order.priority || 'Normal',
-            is_urgent: Boolean(order.is_urgent || order.priority === 'Urgente' || order.type === 'SOS'),
-            scheduled_at: order.scheduled_at,
-            // Llegada del técnico (el cliente la confirma) y solicitud dirigida a un favorito
-            arrived_at: order.arrived_at || null,
-            arrival_confirmed_at: order.arrival_confirmed_at || null,
-            // Horario en la cotización (solicitudes nuevas): tardanza, re-programación y "nadie cotizó"
-            flujo_horario: Boolean(order.flujo_horario),
-            fecha_deseada: order.fecha_deseada || null,
-            hora_deseada: order.hora_deseada || null,
-            ruta_iniciada_at: order.ruta_iniciada_at || null,
-            aviso_tardanza_at: order.aviso_tardanza_at || null,
-            sin_tecnico_avisado_at: order.sin_tecnico_avisado_at || null,
-            reprogramacion_propuesta: order.reprogramacion_propuesta || null,
-            tecnico_dirigido_id: order.tecnico_dirigido_id || null,
-            tecnico_dirigido_nombre: order.tecnico_dirigido_nombre || null,
-            service_id: order.service_id,
-            // Quién va a la casa (el contratista y/o los técnicos de su cuadrilla)
-            equipo_en_sitio: order.equipo_en_sitio || [],
-            hasNewTechMessage,
-            lastTechMsg,
-          };
-        });
+        // Solo las publicaciones del usuario, armadas igual que en el detalle del Tablero (trabajoMercado.js)
+        const rawFiltered = res.data.data.filter(order => esPublicacionDelUsuario(order, user));
+        const jobs = rawFiltered.map(order => armarTrabajoMercado(order, user));
 
         setNetworkJobs(jobs);
 

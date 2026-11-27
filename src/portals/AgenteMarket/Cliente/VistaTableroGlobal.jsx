@@ -123,7 +123,15 @@ const VistaTableroGlobal = () => {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  const abrirTrabajo = useCallback((t) => navigate(`/detalle-propiedad/${t.propId}/trabajo/${t.uid}`), [navigate]);
+  // Órdenes de trabajo: detalle completo del Mercado (si no es del Mercado, ahí mismo se abre el expediente).
+  // Servicios y levantamientos: expediente de siempre
+  const abrirTrabajo = useCallback((t) => {
+    if (t.kind === 'trabajo') {
+      navigate(`/tablero-global/trabajo/${t.id}`, { state: { propId: t.propId, uid: t.uid } });
+    } else {
+      navigate(`/detalle-propiedad/${t.propId}/trabajo/${t.uid}`);
+    }
+  }, [navigate]);
 
   // Límites de fecha del periodo elegido (fecha de solicitud)
   const [inicio, fin] = useMemo(() => {
