@@ -3626,3 +3626,31 @@
   /* Aquí el relleno inferior del bloque de arriba es mayor (84px) */
   .vcp-root .vcp-tablero-seccion { margin-top: -76px; }
 }
+
+/* iPhone (app de Capacitor): el encabezado crece con la muesca (safe-area-inset-top) y la barra
+   de abajo con la rayita de inicio (safe-area-inset-bottom). Las alturas de Inicio se restan
+   esos márgenes para que el botón TABLERO quede encima de la barra y "Ayuda" no tape "Detalles".
+   En Android y en la web los env() valen 0 y nada cambia. */
+@media (max-width: 900px) {
+  .vcp-root .vcp-body-layout {
+    min-height: calc(100dvh - 66px - env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .vcp-root .vcp-hero-side {
+    min-height: calc(100dvh - 148px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .vcp-root .vcp-tablero-seccion {
+    margin-top: calc(-66px - env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(100dvh - 90px - env(safe-area-inset-top, 0px));
+  }
+}
+
+@media (max-width: 576px) {
+  .vcp-root .vcp-body-layout {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .vcp-root .vcp-tablero-seccion {
+    margin-top: calc(-76px - env(safe-area-inset-bottom, 0px));
+  }
+}
