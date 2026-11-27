@@ -1191,19 +1191,43 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
   }
 
 
-  // ── Modo página (detalle del Tablero global): todo en una columna ordenada ──
+  // ── Modo página (detalle del Tablero global) ──
+  // Arriba lo que espera una respuesta del cliente; a la izquierda el técnico y su cotización;
+  // a la derecha (fija al bajar) el resumen con las fechas, los datos del trabajo y el acceso.
   const ordenadas = ordenarCotizaciones(job);
   const asignadas = ordenadas.filter(esCotizacionAsignada);
   const otras = ordenadas.filter(q => !esCotizacionAsignada(q));
-  // El ajuste de precio va en la tarjeta del técnico (solo se muestra si hay uno)
-  const hayProceso = Boolean(job.arrived_at || job.terminado || tecnicoTarde || reprogramacion || sinTecnico || cancelado);
-  const borrable = job.is_mine && !['Asignado', 'En Progreso', 'Cancelado_Cliente'].includes(job.status);
+  const asignada = asignadas[0] || null;
+  const borrable = job.is_mine && !job.terminado && !cancelado
+    && !['Asignado', 'En Progreso', 'Cancelado_Cliente'].includes(job.status);
+  // La cuadrilla solo se muestra si va alguien además del responsable (el responsable ya sale en su cotización)
+  const conCuadrilla = (job.equipo_en_sitio || []).some(p => !p.es_titular);
+  const llegadaPendiente = Boolean(job.arrived_at && !llegadaConfirmada);
+  const precioAcordado = asignada?.price > 0 ? parseFloat(asignada.price) : 0;
+  const visitaTxt = job.scheduled_at
+    ? (textoFechaHora(leerFechaHora(job.scheduled_at)) || new Date(job.scheduled_at).toLocaleString('es-MX'))
+    : '';
+  // "[URGENCIA]: Atención urgente" → "Urgencia: Atención urgente"
+  const problema = String(job.descripcion || 'Sin descripción adicional')
+    .replace(/\[([^\]]+)\]:\s*/g, (_, t) => `${t.charAt(0)}${t.slice(1).toLowerCase()}: `);
+  const abrirChat = (quote) => { setActiveChatQuote(quote); setChatAbierto(true); };
+
+  const paso = (hecho, titulo, detalle, extra = null) => (
+    <li className={`dtm-paso ${hecho ? 'hecho' : ''}`}>
+      <span className="dtm-paso-punto">{hecho ? <Check size={12} strokeWidth={3} /> : null}</span>
+      <div className="dtm-paso-txt">
+        <strong>{titulo}</strong>
+        {detalle && <span>{detalle}</span>}
+        {extra}
+      </div>
+    </li>
+  );
 
   return (
     <>
       <div className="red-detalle-publicacion dtm-pagina">
         <header className="dtm-encabezado">
-          <button type="button" className="dtm-volver" onClick={onClose} aria-label="Volver">
+          <button type="button" className="dtm-volver" onClick={onClose} aria-label="Volver al tablero" title="Volver al tablero">
             <ChevronLeft size={20} />
           </button>
           <div className="dtm-encabezado-txt">
@@ -1215,94 +1239,112 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
             <h1>{job.titulo}</h1>
             <span className="dtm-lugar"><MapPin size={14} /> {job.lugar}</span>
           </div>
+          <div className="dtm-acciones">
+            {asignada && (
+              <button type="button" className="dtm-accion" onClick={() => abrirChat(asignada)}>
+                <MessageCircle size={16} /> Chat ({asignada.chat_history?.length || 0})
+              </button>
+            )}
+            {job.terminado && (
+              <button type="button" className="dtm-accion principal" onClick={() => navigate(`/reportes-globales?trabajo=${job.id}`)}>
+                <FileText size={16} /> {job.reporte_por_confirmar ? 'Revisar reporte' : 'Ver reporte'}
+              </button>
+            )}
+          </div>
         </header>
 
-        <div className="dtm-columnas">
-          <div className="dtm-col">
-            {hayProceso && (
-              <section className="dtm-tarjeta">
-                <h2 className="dtm-titulo"><Clock size={16} /> Seguimiento del servicio</h2>
-                {seccionLlegada}
-                {seccionTerminado}
-                {seccionAvisosHorario}
-                {seccionCancelado}
-              </section>
-            )}
+        {/* Lo que espera una respuesta del cliente (si no hay nada, no se muestra) */}
+        <section className="dtm-atencion">
+          {seccionAjuste}
+          {llegadaPendiente && seccionLlegada}
+          {job.reporte_por_confirmar && seccionTerminado}
+          {seccionAvisosHorario}
+          {seccionCancelado}
+        </section>
 
-            {(job.is_accepted || asignadas.length > 0 || job.equipo_en_sitio?.length > 0) && (
+        <div className="dtm-columnas">
+          {/* Izquierda: técnico y cotizaciones */}
+          <div className="dtm-col">
+            {asignada ? (
               <section className="dtm-tarjeta">
-                <h2 className="dtm-titulo"><User size={16} /> Técnico asignado</h2>
-                {seccionAjuste}
-                {seccionQuienVa}
+                <h2 className="dtm-titulo"><User size={16} /> Tu técnico</h2>
+                {conCuadrilla && seccionQuienVa}
                 {seccionCalificar}
                 <div className="dtm-lista">{asignadas.map(renderCotizacion)}</div>
               </section>
+            ) : (
+              <section className="dtm-tarjeta">
+                {encabezadoCotizaciones}
+                {seccionDirigida}
+                {ordenadas.length === 0 ? sinCotizaciones : <div className="dtm-lista">{ordenadas.map(renderCotizacion)}</div>}
+              </section>
             )}
 
-            <section className="dtm-tarjeta">
-              {asignadas.length > 0 ? (
-                <>
-                  <button
-                    type="button"
-                    className="red-plegable-btn"
-                    onClick={() => setOtrasAbiertas(v => !v)}
-                    aria-expanded={otrasAbiertas}
-                  >
-                    <ClipboardList size={15} />
-                    <span>{otrasAbiertas ? 'Ocultar otras cotizaciones' : `Ver otras cotizaciones (${otras.length})`}</span>
-                    {otrasAbiertas ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  </button>
-                  {otrasAbiertas && (
-                    otras.length === 0
-                      ? <p className="dtm-vacio">No hubo otras cotizaciones.</p>
-                      : <div className="dtm-lista">{otras.map(renderCotizacion)}</div>
-                  )}
-                </>
-              ) : (
-                <>
-                  {encabezadoCotizaciones}
-                  {seccionDirigida}
-                  {ordenadas.length === 0 ? sinCotizaciones : <div className="dtm-lista">{ordenadas.map(renderCotizacion)}</div>}
-                </>
-              )}
-            </section>
+            {asignada && otras.length > 0 && (
+              <section className="dtm-tarjeta">
+                <button
+                  type="button"
+                  className="red-plegable-btn"
+                  onClick={() => setOtrasAbiertas(v => !v)}
+                  aria-expanded={otrasAbiertas}
+                >
+                  <ClipboardList size={15} />
+                  <span>{otrasAbiertas ? 'Ocultar otras cotizaciones' : `Ver otras cotizaciones (${otras.length})`}</span>
+                  {otrasAbiertas ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+                {otrasAbiertas && <div className="dtm-lista">{otras.map(renderCotizacion)}</div>}
+              </section>
+            )}
+
+            {borrable && (
+              <button type="button" className="dtm-eliminar" onClick={handleDeleteJob}>
+                <Trash2 size={15} /> Cancelar / Eliminar publicación
+              </button>
+            )}
           </div>
 
-          <div className="dtm-col">
+          {/* Derecha: resumen, datos y acceso */}
+          <aside className="dtm-col dtm-lateral">
+            <section className="dtm-tarjeta">
+              <h2 className="dtm-titulo"><Clock size={16} /> Resumen</h2>
+              {(asignada || precioAcordado > 0) && (
+                <div className="dtm-cifras">
+                  {asignada && (
+                    <div>
+                      <small>Técnico</small>
+                      <strong>{asignada.technicianName}</strong>
+                    </div>
+                  )}
+                  {precioAcordado > 0 && (
+                    <div>
+                      <small>Precio acordado</small>
+                      <strong className="dtm-precio">${precioAcordado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>
+                    </div>
+                  )}
+                </div>
+              )}
+              <ol className="dtm-pasos">
+                {paso(true, 'Publicado', job.fecha)}
+                {paso(Boolean(job.is_accepted), job.is_accepted ? 'Técnico asignado' : 'Esperando técnico', job.is_accepted ? asignada?.technicianName : `${ordenadas.length} cotización${ordenadas.length === 1 ? '' : 'es'}`)}
+                {job.scheduled_at && paso(Boolean(job.arrived_at), 'Visita', visitaTxt)}
+                {job.arrived_at && paso(Boolean(llegadaConfirmada), llegadaConfirmada ? 'Llegada confirmada' : 'El técnico llegó', `Llegó a las ${horaCorta(job.arrived_at)}`)}
+                {paso(Boolean(job.terminado && !job.reporte_por_confirmar),
+                  job.terminado ? (job.reporte_por_confirmar ? 'Reporte por confirmar' : 'Trabajo finalizado') : 'Trabajo finalizado',
+                  job.terminado ? (job.reporte_por_confirmar ? 'Revisa y confirma el reporte' : 'Reporte confirmado') : 'Pendiente')}
+              </ol>
+            </section>
+
             <section className="dtm-tarjeta">
               <h2 className="dtm-titulo"><FileText size={16} /> Datos del trabajo</h2>
               {seccionFotos}
-              <div className="mercado-premium-info-grid dtm-datos">
-                <div className="red-dato red-dato-ancho">
-                  <span className="red-dato-icono"><MapPin size={15} /></span>
-                  <div>
-                    <small>Propiedad</small>
-                    <strong>{job.lugar}</strong>
-                    {job.calle && <span>{job.calle}</span>}
-                  </div>
+              <div className="dtm-datos">
+                <div>
+                  <small>Problema</small>
+                  <p>{problema}</p>
                 </div>
-                <div className="red-dato">
-                  <span className="red-dato-icono"><Calendar size={15} /></span>
-                  <div>
-                    <small>Publicado</small>
-                    <strong>{job.fecha}</strong>
-                  </div>
-                </div>
-                {job.scheduled_at && (
-                  <div className="red-dato">
-                    <span className="red-dato-icono"><Clock size={15} /></span>
-                    <div>
-                      <small>Visita</small>
-                      <strong>{textoFechaHora(leerFechaHora(job.scheduled_at)) || new Date(job.scheduled_at).toLocaleString('es-MX')}</strong>
-                    </div>
-                  </div>
-                )}
-                <div className="red-dato red-dato-ancho">
-                  <span className="red-dato-icono"><FileText size={15} /></span>
-                  <div>
-                    <small>Problema</small>
-                    <strong className="red-dato-normal">{job.descripcion || 'Sin descripción adicional'}</strong>
-                  </div>
+                <div>
+                  <small>Propiedad</small>
+                  <p><strong>{job.lugar}</strong>{job.calle && <><br />{job.calle}</>}</p>
                 </div>
               </div>
             </section>
@@ -1310,19 +1352,8 @@ const DetallePublicacionRed = ({ job, user, onClose, onRefresh, onAceptada, onCa
             <section className="dtm-tarjeta dtm-tarjeta-acceso">
               {seccionAcceso}
             </section>
-          </div>
+          </aside>
         </div>
-
-        <footer className="dtm-pie">
-          {borrable && (
-            <button type="button" className="mercado-btn-delete-publication red-btn-eliminar-publicacion" onClick={handleDeleteJob}>
-              <Trash2 size={16} /> Cancelar / Eliminar publicación
-            </button>
-          )}
-          <button type="button" className="dtm-btn-volver" onClick={onClose}>
-            <ChevronLeft size={16} /> Volver al tablero
-          </button>
-        </footer>
 
         {seccionChat}
       </div>

@@ -99,14 +99,57 @@
 .dtm-estado-terminado { background: #dcfce7; color: #15803d; }
 .dtm-estado-cancelado { background: #e2e8f0; color: #475569; }
 
-/* ── Columnas ── */
+/* Acciones rápidas del encabezado (chat con el técnico y reporte) */
+.dtm-acciones { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.dtm-accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dtm-accion:hover { border-color: #f26522; color: #f26522; }
+.dtm-accion.principal { background: #16a34a; border-color: #16a34a; color: #fff; }
+.dtm-accion.principal:hover { background: #15803d; color: #fff; }
+
+/* ── Requiere tu atención: solo aparece si hay algo que responder ── */
+.dtm-atencion:empty { display: none; }
+.dtm-atencion:not(:empty) {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 16px;
+  border-color: #fdba74;
+  box-shadow: 0 14px 36px rgba(242, 101, 34, 0.14), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+}
+.dtm-atencion::before {
+  content: 'Requiere tu atención';
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #c2410c;
+}
+.dtm-atencion > * { margin: 0 !important; }
+
+/* ── Columnas: técnico (ancha) y resumen (fija al bajar) ── */
 .dtm-columnas {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
   gap: 14px;
   align-items: start;
 }
 .dtm-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.dtm-lateral { position: sticky; top: 90px; }
 
 .dtm-tarjeta { padding: 16px; min-width: 0; }
 .dtm-tarjeta > * + * { margin-top: 12px; }
@@ -123,54 +166,104 @@
 }
 .dtm-titulo svg { color: #f26522; }
 .dtm-lista { display: flex; flex-direction: column; gap: 14px; }
-.dtm-vacio { margin: 8px 0 0; color: #64748b; font-size: 0.88rem; }
 
-/* Avisos del Mercado dentro de la tarjeta: sin márgenes extra */
-.dtm-tarjeta .cl-llegada,
-.dtm-tarjeta .cl-horario-aviso { margin-bottom: 0; }
+/* La cotización asignada ya va dentro de su tarjeta: sin doble marco */
+.dtm-pagina .dtm-lista .red-quote-card { box-shadow: none; }
 
-/* Fotos: la galería del Mercado, más alta en la página */
-.dtm-pagina .mercado-premium-image-wrapper { height: 240px; background: #f8fafc; border-color: #e2e8f0; box-shadow: none; }
-.dtm-pagina .mercado-no-photo-placeholder { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
-.dtm-datos { margin-top: 12px; }
-
-/* ── Pie ── */
-.dtm-pie {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 12px 16px;
+/* Resumen: técnico y precio */
+.dtm-cifras {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
-.dtm-btn-volver {
+.dtm-cifras > div {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.9);
+  border: 1px solid #e2e8f0;
+  min-width: 0;
+}
+.dtm-cifras small,
+.dtm-datos small {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.dtm-cifras strong { display: block; margin-top: 2px; font-size: 0.95rem; overflow-wrap: anywhere; }
+.dtm-precio { color: #16a34a; font-family: 'Outfit', sans-serif; font-size: 1.15rem !important; }
+
+/* Resumen: pasos del servicio */
+.dtm-pasos { list-style: none; margin: 0; padding: 0; }
+.dtm-paso { position: relative; display: flex; gap: 10px; padding-bottom: 12px; }
+.dtm-paso:last-child { padding-bottom: 0; }
+.dtm-paso:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 22px;
+  bottom: 2px;
+  width: 2px;
+  background: #e2e8f0;
+}
+.dtm-paso.hecho:not(:last-child)::after { background: #86efac; }
+.dtm-paso-punto {
+  display: grid;
+  place-items: center;
+  flex: 0 0 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  background: #fff;
+  color: #fff;
+  box-sizing: border-box;
+}
+.dtm-paso.hecho .dtm-paso-punto { background: #22c55e; border-color: #22c55e; }
+.dtm-paso-txt { min-width: 0; display: flex; flex-direction: column; }
+.dtm-paso-txt strong { font-size: 0.88rem; }
+.dtm-paso-txt span { font-size: 0.8rem; color: #64748b; overflow-wrap: anywhere; }
+.dtm-paso:not(.hecho) .dtm-paso-txt strong { color: #64748b; }
+
+/* Datos del trabajo */
+.dtm-pagina .mercado-premium-image-wrapper { height: 200px; background: #f8fafc; border-color: #e2e8f0; box-shadow: none; }
+.dtm-pagina .mercado-no-photo-placeholder { background: #f8fafc; border-color: #e2e8f0; color: #64748b; height: 120px; }
+.dtm-datos { display: flex; flex-direction: column; gap: 10px; }
+.dtm-datos p { margin: 3px 0 0; font-size: 0.9rem; color: #0f172a; white-space: pre-line; overflow-wrap: anywhere; }
+
+/* Eliminar publicación: discreto, al final */
+.dtm-eliminar {
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-left: auto;
-  padding: 10px 16px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #0f172a;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+  background: rgba(255, 255, 255, 0.8);
+  color: #dc2626;
   font: inherit;
+  font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
 }
-.dtm-btn-volver:hover { border-color: #f26522; color: #f26522; }
+.dtm-eliminar:hover { background: #fef2f2; }
 
-/* ── Celular y tableta: una sola columna ── */
+/* ── Celular y tableta: una sola columna; el resumen va primero ── */
 @media (max-width: 900px) {
   .dtm-page { padding-bottom: 96px; } /* espacio para la barra de abajo */
   .dtm-columnas { grid-template-columns: 1fr; }
-  .dtm-pie { flex-direction: column-reverse; align-items: stretch; }
-  .dtm-btn-volver,
-  .dtm-pie .mercado-btn-delete-publication { width: 100%; justify-content: center; margin-left: 0; }
+  .dtm-lateral { position: static; order: -1; }
+  .dtm-encabezado { flex-wrap: wrap; }
+  .dtm-acciones { width: 100%; justify-content: stretch; }
+  .dtm-accion { flex: 1; justify-content: center; }
+  .dtm-eliminar { align-self: stretch; justify-content: center; }
 }
 
 @media (max-width: 420px) {
   .dtm-contenido { width: 100%; padding: 12px 10px 0; }
   .dtm-tarjeta { padding: 14px 12px; border-radius: 18px; }
   .dtm-encabezado h1 { font-size: 1.12rem; }
-  .dtm-pagina .mercado-premium-image-wrapper { height: 200px; }
+  .dtm-cifras { grid-template-columns: 1fr; }
 }
