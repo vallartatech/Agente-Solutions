@@ -3415,3 +3415,12 @@
   outline: 2px solid #ff6600;
   outline-offset: 2px;
 }
+
+/* iPhone (app de Capacitor): en celular el calendario ocupa toda la pantalla y su barra de arriba
+   quedaba debajo de la muesca y la hora. Se baja con safe-area-inset-top.
+   En Android y en la web vale 0 y no cambia nada. */
+@media (max-width: 900px) {
+  .modal-calendario-window.cal-market .modal-cal-topbar {
+    padding-top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+  }
+}
